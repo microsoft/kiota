@@ -1,5 +1,7 @@
 namespace kiota.core {
     public class GenerationConfiguration {
-        public string SomeArg { get; set; }
+        public string OpenAPIFilePath { get; set; } = "definition.yml";
+        public string OutputPath { get; set; } = "./ouput";
+        public string ClientClassName { get; set; } = "GraphClient";
     }
 }
