@@ -1,29 +1,77 @@
 ﻿using System;
+using System.CommandLine;
+using System.CommandLine.Invocation;
 using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using kiota.core;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace kiota
 {
     class Program
     {
-        static async Task Main(string[] args)
+        static async Task<int> Main(string[] args)
         {
-            var configuration = LoadConfiguration(args);
-            await KiotaBuilder.GenerateSDK(configuration);
+            var configuration = LoadDefaultConfiguration();
+            var command = GetRootCommand(configuration);
 
+            return await command.InvokeAsync(args);
         }
-        private static GenerationConfiguration LoadConfiguration(string[] args) {
+
+        private static RootCommand GetRootCommand(GenerationConfiguration configuration)
+        {
+            var outputOption = new Option("--output", "The ouput path of the folder the code will be generated in.") { Argument = new Argument<string>() };
+            outputOption.AddAlias("-o");
+            var languageOption = new Option("--language", "The language to generate the code in.") { Argument = new Argument<GenerationLanguage?>() };
+            languageOption.AddAlias("-l");
+            var classOption = new Option("--class-name", "The class name to use the for main entry point") { Argument = new Argument<string>() };
+            classOption.AddAlias("-c");
+
+            var command = new RootCommand {
+                outputOption,
+                languageOption,
+                new Option("--openapi", "The path to the OpenAPI description file used to generate the code.") {Argument = new Argument<string>(() => "openapi.yml")},
+                classOption,
+                new Option("--loglevel") { Argument = new Argument<LogLevel>(() => LogLevel.Warning)},
+            };
+            command.Handler = CommandHandler.Create<string, GenerationLanguage?, string, string, LogLevel>(async (output, language, openapi, classname, loglevel) =>
+            {
+                if (!string.IsNullOrEmpty(output))
+                    configuration.OutputPath = output;
+                if (!string.IsNullOrEmpty(openapi))
+                    configuration.OpenAPIFilePath = openapi;
+                if (!string.IsNullOrEmpty(classname))
+                    configuration.ClientClassName = classname;
+                if (language.HasValue)
+                    configuration.Language = language.Value;
+
+                configuration.OpenAPIFilePath = GetAbsolutePath(configuration.OpenAPIFilePath);
+                configuration.OutputPath = GetAbsolutePath(configuration.OutputPath);
+
+                var logger = LoggerFactory.Create((builder) => {
+                    builder
+                        .AddConsole()
+                        .AddDebug()
+                        .SetMinimumLevel(loglevel);
+                }).CreateLogger("kiota");
+
+                logger.LogTrace($"configuration: {JsonSerializer.Serialize(configuration)}");
+
+                await KiotaBuilder.GenerateSDK(configuration, logger);
+
+            });
+            return command;
+        }
+
+        private static GenerationConfiguration LoadDefaultConfiguration() {
             var builder = new ConfigurationBuilder();
             var configuration = builder.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                     .AddEnvironmentVariables(prefix: "KIOTA_")
-                    .AddCommandLine(args)
                     .Build();
             var configObject = new GenerationConfiguration();
             configuration.Bind(configObject);
-            configObject.OpenAPIFilePath = GetAbsolutePath(configObject.OpenAPIFilePath);
-            configObject.OutputPath = GetAbsolutePath(configObject.OutputPath);
             return configObject;
         }
 

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
 
@@ -13,6 +14,7 @@ namespace kiota.core
 {
     public static class KiotaBuilder
     {
+        public static async Task GenerateSDK(GenerationConfiguration config, ILogger logger)
         private static ILanguageRenderer GetRenderer(string language)
         {
             switch (language.ToLower())
