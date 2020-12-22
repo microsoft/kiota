@@ -46,9 +46,12 @@ namespace kiota.core
             var doc = reader.Read(input, out var diag);
             // TODO: Check for errors
 
-            // Generate Code Model
+            // Generate API Model
             var root = KiotaBuilder.Generate(doc);
-          
+           // SyntaxTree syntaxTree = KiotaBuilder.GenerateSyntaxTree(root);
+
+           // SyntaxTree syntaxTree = KiotaBuilder.RefineSyntaxTreeByLanguage(syntaxTree, language);
+
             // Render source output
             var renderer = GetRenderer("csharp");
             renderer.Render(root, config);

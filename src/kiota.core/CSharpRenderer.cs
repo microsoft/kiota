@@ -63,7 +63,9 @@ namespace kiota.core
             var outfile = new FileStream(outputPath, FileMode.Create);
 
             var writer = new StreamWriter(outfile);
+            // syntaxTree.AddUsing("System");
             writer.WriteLine($"using System;");
+            // var namespace = syntaxTree.CreateNamespace("OpenApiClient");
             writer.WriteLine($"namespace OpenApiClient {{ ");
             return writer;
         }

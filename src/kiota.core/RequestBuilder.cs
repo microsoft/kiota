@@ -19,7 +19,6 @@ namespace kiota.core
             set
             {
                 pathItem = value;
-                //QueryParameters = new TypedQueryParameters() { Parameters = pathItem.Parameters }
             }
         }
         internal string Path = "";
