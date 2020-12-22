@@ -2,9 +2,11 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using kiota.core;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace kiota
 {
@@ -30,11 +32,11 @@ namespace kiota
             var command = new RootCommand {
                 outputOption,
                 languageOption,
-                new Option("--openapi", "The path to the OpenAPI description file used to generate the code.") {Argument = new Argument<string>(_ => "openapi.yml")},
+                new Option("--openapi", "The path to the OpenAPI description file used to generate the code.") {Argument = new Argument<string>(() => "openapi.yml")},
                 classOption,
-                new Option("--verbose") { Argument = new Argument<bool?>()},
+                new Option("--loglevel") { Argument = new Argument<LogLevel>(() => LogLevel.Warning)},
             };
-            command.Handler = CommandHandler.Create<string, GenerationLanguage?, string, string, bool?>(async (output, language, openapi, classname, verbose) =>
+            command.Handler = CommandHandler.Create<string, GenerationLanguage?, string, string, LogLevel>(async (output, language, openapi, classname, loglevel) =>
             {
                 if (!string.IsNullOrEmpty(output))
                     configuration.OutputPath = output;
@@ -44,13 +46,20 @@ namespace kiota
                     configuration.ClientClassName = classname;
                 if (language.HasValue)
                     configuration.Language = language.Value;
-                if (verbose.HasValue)
-                    configuration.Verbose = verbose.Value;
 
                 configuration.OpenAPIFilePath = GetAbsolutePath(configuration.OpenAPIFilePath);
                 configuration.OutputPath = GetAbsolutePath(configuration.OutputPath);
 
-                await KiotaBuilder.GenerateSDK(configuration);
+                var logger = LoggerFactory.Create((builder) => {
+                    builder
+                        .AddConsole()
+                        .AddDebug()
+                        .SetMinimumLevel(loglevel);
+                }).CreateLogger("kiota");
+
+                logger.LogTrace($"configuration: {JsonSerializer.Serialize(configuration)}");
+
+                await KiotaBuilder.GenerateSDK(configuration, logger);
 
             });
             return command;

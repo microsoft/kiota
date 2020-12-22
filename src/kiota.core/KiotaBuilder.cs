@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
 
@@ -12,7 +13,7 @@ namespace kiota.core
 {
     public static class KiotaBuilder
     {
-        public static async Task GenerateSDK(GenerationConfiguration config)
+        public static async Task GenerateSDK(GenerationConfiguration config, ILogger logger)
         {
             string inputPath = config.OpenAPIFilePath;
             string outputPath = Path.Combine(config.OutputPath, config.ClientClassName + ".cs");
