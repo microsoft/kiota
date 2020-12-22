@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.OpenApi" Version="1.2.3" />
+    <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.2.3" />
   </ItemGroup>
 
 </Project>

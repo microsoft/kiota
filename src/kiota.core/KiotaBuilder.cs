@@ -1,14 +1,50 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Readers;
 
 namespace kiota.core
 {
     public static class KiotaBuilder
     {
+        public static void GenerateSDK(GenerationConfiguration config)
+        {
+            string inputPath = config.OpenAPIFilePath;
+            string outputPath = config.OutputPath;
+
+            Stream input;
+            if (inputPath.StartsWith("http"))
+            {
+                var httpClient = new HttpClient();
+                input = httpClient.GetStreamAsync(inputPath).GetAwaiter().GetResult();
+            }
+            else
+            {
+                input = new FileStream(inputPath, FileMode.Open);
+            }
+
+            // Parse OpenAPI Input
+            var reader = new OpenApiStreamReader();
+            var doc = reader.Read(input, out var diag);
+            // TODO: Check for errors
+
+            // Generate Code Model
+            var root = KiotaBuilder.Generate(doc);
+
+            // Render source output
+            var outfile = new FileStream(outputPath, FileMode.Create);
+            var renderer = new CSharpRenderer();
+            renderer.Render(root, outfile);
+            outfile.Close();
+        }
+
+
+
         public static RequestBuilder Generate(OpenApiDocument doc)
         {
             RequestBuilder root = null;
