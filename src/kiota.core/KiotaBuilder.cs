@@ -15,7 +15,7 @@ namespace kiota.core
         public static void GenerateSDK(GenerationConfiguration config)
         {
             string inputPath = config.OpenAPIFilePath;
-            string outputPath = config.OutputPath;
+            string outputPath = Path.Combine(config.OutputPath, config.ClientClassName + ".cs");
 
             Stream input;
             if (inputPath.StartsWith("http"))
