@@ -14,7 +14,6 @@ namespace kiota.core
 {
     public static class KiotaBuilder
     {
-        public static async Task GenerateSDK(GenerationConfiguration config, ILogger logger)
         private static ILanguageRenderer GetRenderer(string language)
         {
             switch (language.ToLower())
@@ -26,7 +25,7 @@ namespace kiota.core
             } 
         }
 
-        public static async Task GenerateSDK(GenerationConfiguration config)
+        public static async Task GenerateSDK(GenerationConfiguration config, ILogger logger)
         {
             string inputPath = config.OpenAPIFilePath;
             
