@@ -3,5 +3,7 @@
         public string OpenAPIFilePath { get; set; } = "openapi.yaml";
         public string OutputPath { get; set; } = "./output";
         public string ClientClassName { get; set; } = "GraphClient";
+        public GenerationLanguage Language { get; set; } = GenerationLanguage.CSharp;
+        public bool Verbose { get; set; }
     }
 }
