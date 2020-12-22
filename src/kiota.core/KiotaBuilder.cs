@@ -12,7 +12,7 @@ namespace kiota.core
 {
     public static class KiotaBuilder
     {
-        public static void GenerateSDK(GenerationConfiguration config)
+        public static async Task GenerateSDK(GenerationConfiguration config)
         {
             string inputPath = config.OpenAPIFilePath;
             string outputPath = config.OutputPath;
@@ -20,8 +20,8 @@ namespace kiota.core
             Stream input;
             if (inputPath.StartsWith("http"))
             {
-                var httpClient = new HttpClient();
-                input = httpClient.GetStreamAsync(inputPath).GetAwaiter().GetResult();
+                using var httpClient = new HttpClient();
+                input = await httpClient.GetStreamAsync(inputPath);
             }
             else
             {
@@ -37,10 +37,10 @@ namespace kiota.core
             var root = KiotaBuilder.Generate(doc);
 
             // Render source output
-            var outfile = new FileStream(outputPath, FileMode.Create);
+            using var outfile = new FileStream(outputPath, FileMode.Create);
             var renderer = new CSharpRenderer();
             renderer.Render(root, outfile);
-            outfile.Close();
+            input?.Close();
         }
 
 

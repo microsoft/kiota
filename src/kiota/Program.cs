@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 using kiota.core;
 using Microsoft.Extensions.Configuration;
 
@@ -7,13 +8,11 @@ namespace kiota
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             var configuration = LoadConfiguration(args);
+            await KiotaBuilder.GenerateSDK(configuration);
 
-            KiotaBuilder.GenerateSDK(configuration);
-
-            Console.WriteLine($"{nameof(configuration.OpenAPIFilePath)} equals {configuration.OpenAPIFilePath}");
         }
         private static GenerationConfiguration LoadConfiguration(string[] args) {
             var builder = new ConfigurationBuilder();
