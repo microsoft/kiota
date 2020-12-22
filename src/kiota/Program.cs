@@ -1,9 +1,6 @@
 ﻿using System;
 using System.IO;
-<<<<<<< HEAD
 using System.Net.Http;
-=======
->>>>>>> d0b21302829b9a2b0b32c9f56110233417b50868
 using kiota.core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.OpenApi.Readers;
@@ -30,7 +27,6 @@ namespace kiota
             configObject.OutputPath = GetAbsolutePath(configObject.OutputPath);
             return configObject;
         }
-<<<<<<< HEAD
 
         private static void GenerateSDK(string inputPath, string outputPath)
         {
@@ -59,8 +55,6 @@ namespace kiota
             renderer.Render(root, outfile);
             outfile.Close();
         }
-=======
         private static string GetAbsolutePath(string source) => Path.IsPathRooted(source) ? source : Path.Combine(Directory.GetCurrentDirectory(), source);
->>>>>>> d0b21302829b9a2b0b32c9f56110233417b50868
     }
 }
