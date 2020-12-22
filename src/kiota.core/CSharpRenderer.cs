@@ -2,30 +2,70 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace kiota.core
 {
-    public class CSharpRenderer
+    public class CSharpRenderer : ILanguageRenderer
     {
         public bool AddSuffix { get; set; } = true;
         public bool InnerClasses { get; set; } = false;
+        
+        public bool SingleFile { get; set; } = false;
 
-        public void Render(RequestBuilder root, FileStream outfile)
+        private GenerationConfiguration config;
+
+        public void Render(RequestBuilder root, GenerationConfiguration config)
         {
-            var info = new FileInfo(outfile.Name);
-            var clientName = info.Name.Split('.').First();
+            this.config = config;
+            var clientName = config.ClientClassName;
+                       
+            var writer = CreateNewFile(config.ClientClassName);
+            RenderRequestBuilder(writer, root, clientName);
+            CloseFile(writer);
 
-            using (var writer = new StreamWriter(outfile))
+            if (!this.SingleFile)
             {
-                writer.WriteLine($"using System;");
-                writer.WriteLine($"namespace OpenApiClient {{ ");
+                // Get list of RequestBuilders
+                var requestBuilders = new List<RequestBuilder>();
+                GetAllChildRequestBuilders(root,requestBuilders);
 
-                RenderRequestBuilder(writer, root, clientName);
-                writer.WriteLine($"}} ");
-                writer.Flush();
+                foreach (var requestBuilder in requestBuilders)
+                {
+                    writer = CreateNewFile(requestBuilder.Identifier + "_" + requestBuilder.Hash());
+                    RenderRequestBuilder(writer,requestBuilder, requestBuilder.Identifier);
+                    CloseFile(writer);
+                }
             }
+        }
+
+        private void GetAllChildRequestBuilders(RequestBuilder root, List<RequestBuilder> builders)
+        {
+            foreach(var rb in root.Children)
+            {
+                builders.Add(rb.Value);
+                GetAllChildRequestBuilders(rb.Value, builders);
+            }
+        }
+
+        private static void CloseFile(StreamWriter writer)
+        {
+            writer.WriteLine($"}} ");
+            writer.Flush();
+            writer.Close();
+        }
+
+        private StreamWriter CreateNewFile(string className)
+        {
+            string outputPath = Path.Combine(this.config.OutputPath, className + ".cs");
+            var outfile = new FileStream(outputPath, FileMode.Create);
+
+            var writer = new StreamWriter(outfile);
+            writer.WriteLine($"using System;");
+            writer.WriteLine($"namespace OpenApiClient {{ ");
+            return writer;
         }
 
         private void RenderRequestBuilder(TextWriter writer, RequestBuilder node, string identifier = "")
@@ -65,17 +105,20 @@ namespace kiota.core
                 RenderToRequest(writer, node);
             }
 
-            if (!InnerClasses) writer.WriteLine($"}}");
+            if (!this.InnerClasses) writer.WriteLine($"}}");
 
-            foreach (var child in node.Children)
+            if (this.SingleFile)
             {
-                if (!child.Value.IsFunction())
+                foreach (var child in node.Children)
                 {
-                    RenderRequestBuilder(writer, child.Value, child.Value.Identifier);
+                    if (!child.Value.IsFunction())
+                    {
+                        RenderRequestBuilder(writer, child.Value, child.Value.Identifier);
+                    }
                 }
             }
 
-            if (InnerClasses) writer.WriteLine($"}}");
+            if (this.InnerClasses) writer.WriteLine($"}}");
 
         }
 

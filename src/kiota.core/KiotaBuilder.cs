@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -12,10 +13,21 @@ namespace kiota.core
 {
     public static class KiotaBuilder
     {
+        private static ILanguageRenderer GetRenderer(string language)
+        {
+            switch (language.ToLower())
+            {
+                case "csharp" :
+                    return new CSharpRenderer();
+                default:
+                    throw new ArgumentException($"Unknown language {language}");
+            } 
+        }
+
         public static async Task GenerateSDK(GenerationConfiguration config)
         {
             string inputPath = config.OpenAPIFilePath;
-            string outputPath = Path.Combine(config.OutputPath, config.ClientClassName + ".cs");
+            
 
             Stream input;
             if (inputPath.StartsWith("http"))
@@ -35,11 +47,10 @@ namespace kiota.core
 
             // Generate Code Model
             var root = KiotaBuilder.Generate(doc);
-
+          
             // Render source output
-            using var outfile = new FileStream(outputPath, FileMode.Create);
-            var renderer = new CSharpRenderer();
-            renderer.Render(root, outfile);
+            var renderer = GetRenderer("csharp");
+            renderer.Render(root, config);
             input?.Close();
         }
 
