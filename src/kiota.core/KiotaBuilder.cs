@@ -12,23 +12,27 @@ using Microsoft.OpenApi.Readers;
 
 namespace kiota.core
 {
-    public static class KiotaBuilder
+    public class KiotaBuilder
     {
-        private static ILanguageRenderer GetRenderer(string language)
+        private ILogger<KiotaBuilder> logger;
+        public KiotaBuilder(ILogger<KiotaBuilder> logger)
         {
-            switch (language.ToLower())
+            this.logger = logger;
+        }
+        private ILanguageRenderer GetRenderer(GenerationLanguage language)
+        {
+            switch (language)
             {
-                case "csharp" :
+                case GenerationLanguage.CSharp:
                     return new CSharpRenderer();
                 default:
                     throw new ArgumentException($"Unknown language {language}");
             } 
         }
 
-        public static async Task GenerateSDK(GenerationConfiguration config, ILogger logger)
+        public async Task GenerateSDK(GenerationConfiguration config)
         {
             string inputPath = config.OpenAPIFilePath;
-            
 
             Stream input;
             if (inputPath.StartsWith("http"))
@@ -46,21 +50,22 @@ namespace kiota.core
             var doc = reader.Read(input, out var diag);
             // TODO: Check for errors
 
-            // Generate API Model
-            var root = KiotaBuilder.Generate(doc);
            // SyntaxTree syntaxTree = KiotaBuilder.GenerateSyntaxTree(root);
 
            // SyntaxTree syntaxTree = KiotaBuilder.RefineSyntaxTreeByLanguage(syntaxTree, language);
 
+            // Generate Code Model
+            var root = Generate(doc);
+          
             // Render source output
-            var renderer = GetRenderer("csharp");
+            var renderer = GetRenderer(config.Language);
             renderer.Render(root, config);
             input?.Close();
         }
 
 
 
-        public static RequestBuilder Generate(OpenApiDocument doc)
+        public RequestBuilder Generate(OpenApiDocument doc)
         {
             RequestBuilder root = null;
 
@@ -77,7 +82,7 @@ namespace kiota.core
             return root;
         }
 
-        private static RequestBuilder Attach(RequestBuilder root, string path, OpenApiPathItem pathItem)
+        private RequestBuilder Attach(RequestBuilder root, string path, OpenApiPathItem pathItem)
         {
             if (path.StartsWith("/"))  // remove leading slash
             {
@@ -87,7 +92,7 @@ namespace kiota.core
             return Attach(root, segments, pathItem, path);
         }
 
-        private static RequestBuilder Attach(RequestBuilder current, IEnumerable<string> segments, OpenApiPathItem pathItem, string path)
+        private RequestBuilder Attach(RequestBuilder current, IEnumerable<string> segments, OpenApiPathItem pathItem, string path)
         {
 
             var segment = segments.FirstOrDefault();

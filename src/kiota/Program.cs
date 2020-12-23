@@ -55,11 +55,11 @@ namespace kiota
                         .AddConsole()
                         .AddDebug()
                         .SetMinimumLevel(loglevel);
-                }).CreateLogger("kiota");
+                }).CreateLogger<KiotaBuilder>();
 
                 logger.LogTrace($"configuration: {JsonSerializer.Serialize(configuration)}");
 
-                await KiotaBuilder.GenerateSDK(configuration, logger);
+                await new KiotaBuilder(logger).GenerateSDK(configuration);
 
             });
             return command;
