@@ -59,7 +59,7 @@ namespace kiota
 
                 logger.LogTrace($"configuration: {JsonSerializer.Serialize(configuration)}");
 
-                await new KiotaBuilder(logger).GenerateSDK(configuration);
+                await new KiotaBuilder(logger, configuration).GenerateSDK();
 
             });
             return command;

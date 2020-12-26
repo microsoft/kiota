@@ -2,12 +2,12 @@
 
 namespace kiota.core
 {
-    public class TypedPayload
+    public class CodeType : CodeTerminal
     {
-        public OpenApiMediaType Content
+        public override string Name
         {
             get; set;
         }
+        public OpenApiSchema Schema;
     }
-
 }
