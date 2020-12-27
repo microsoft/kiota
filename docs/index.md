@@ -1,37 +1,76 @@
-## Welcome to GitHub Pages
+# Welcome to Kiota
 
-You can use the [editor on GitHub](https://github.com/microsoft/kiota/edit/main/docs/index.md) to maintain and preview the content for your website in Markdown files.
+Kiota is an OpenAPI based code generator for creating SDKs for HTTP APIs. The goal is to produce a lightweight, low maintenance, code generator that is fast enough to run as part of the compile time tool-chain but scalable enough to handle the largest APIs.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+Current SDK tooling assumes that consumers of the API want to consume API resources using the same boundaries as the teams that provide the APIs. However, that is often not the case.  Many companies are beginning to use API Management gateways and portals to bring APIs across their organization together and provide a coherent and consistent experience across many APIs.  However, SDKs continue to be shipped based on the team that provided the API.  HTTP URI spaces allow for seamless integration of many APIs into a coherent whole. SDK tooling should enable the same level of integration.
 
-### Markdown
+### Goals
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+- Fast and scalable source code generator to simplify calling HTTP APIs
+- Leverage the full capabilities of OpenAPI descriptions
+- Enable low effort implmentation of new language support
+- Generate only the source code necessary by building on core library
+- Minimize external dependencies
+- Leverage JSON Schema descriptions to generate primitive based model serizalization/deserializtion code
+- Enable generation of code for only a specified subset of an OpenAPI description
+- Generate code that enables IDE autocomplete to aid in API resource discovery
+- Enable full access to HTTP capabilities
+- Lightweight, easy to install command line tool
 
-```markdown
-Syntax highlighted code block
+### Non-Goals
 
-# Header 1
-## Header 2
-### Header 3
+- Extensibility model for creating different SDK API shapes
+- Support for other API description formats
 
-- Bulleted
-- List
+### API Style
 
-1. Numbered
-2. List
+Basic read and write syntax for a resource.
 
-**Bold** and _Italic_ and `Code` text
+```csharp
 
-[Link](url) and ![Image](src)
+var client = new ApiClient();
+var user = await client.Users["bob@contoso.com"].GetAsync();
+
+var newUser = new User() {
+    FirstName = "Bill",
+    LastName = "Brown"
+}
+
+await client.Users.PostAsync(newUser)
+
 ```
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+Resources are accessed via relation properties starting from the client object.  Collections of resources can be accessed by an indexer and a parameter. Once the desired resource has been referenced, the supported HTTP methods are exposed by corresponding methors.  Deeply nested resource hierarchy can be accessed by continuing to traverse relationships.
 
-### Jekyll Themes
+```csharp
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/microsoft/kiota/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+var client = new ApiClient();
+var message = await client.Users["bob@contoso.com"]
+                          .MailFolders["Inbox"]
+                          .Messages[23242]
+                          .GetAsync();
 
-### Support or Contact
+```
 
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+The client object is a "request builder" object, and forms the root of a hierarchy of request builder objects that can access any number of APIs that are merged into a common URI space.
+
+Requests can be further refined by providing query parameters. Each HTTP operation method that supports query parameters accepts a lambda that can configure an object with the desired query parameters.
+
+```csharp
+
+var client = new ApiClient();
+var message = await client.Users["bob@contoso.com"]
+                          .Events
+                          .GetAsync(q => {  q.StartDateTime = DateTime.Now;
+                                            q.EndDateTime = DateTime.Now.AddDays(7);
+                                        });
+
+```
+
+Using a configured query parameter object prevents tight coupling on the order of query parameters and make optional parameters easy to implement across languages.
+
+For more information on the various components used by the Kiota SDK, see the following topics:
+
+- [Request Builders](requestbuilders)
+- [Models](models)
+- [Core Library](corelibrary)
