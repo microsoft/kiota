@@ -2,10 +2,7 @@
 {
     public class CodeParameter : CodeTerminal
     {
-        public override string Name
-        {
-            get; set;
-        }
         public CodeType Type;
+        public bool Optional = false;
     }
 }

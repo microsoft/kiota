@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using Microsoft.OpenApi.Models;
 
 namespace kiota.core
 {
@@ -15,6 +16,10 @@ namespace kiota.core
 
         public override void WriteNamespaceDeclaration(CodeNamespace.Declaration code)
         {
+            foreach (var codeUsing in code.Usings)
+            {
+                WriteLine($"using {codeUsing.Name};");
+            }
             WriteLine($"namespace {code.Name} {{");
             IncreaseIndent();
         }
@@ -33,22 +38,58 @@ namespace kiota.core
 
         public override void WriteProperty(CodeProperty code)
         {
-            WriteLine($"public {code.Type.Name} {code.Name} {{get;}}");
+
+            WriteLine($"public {GetTypeString(code.Type)} {code.Name} {{get;}}");
         }
 
         public override void WriteIndexer(CodeIndexer code)
         {
-            WriteLine($"public {code.ReturnType} this[string {code.Name}] {{get {{ return null; }} }}");
+            WriteLine($"public {GetTypeString(code.ReturnType)} this[{GetTypeString(code.IndexType)} {code.Name}] {{get {{ return null; }} }}");
         }
 
         public override void WriteMethod(CodeMethod code)
         {
-            WriteLine($"public Task<{code.ReturnType}> {code.Name}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return base.GetAsync(); }}");
+            WriteLine($"public Task<{GetTypeString(code.ReturnType)}> {code.Name}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
         }
+
+        public override void WriteType(CodeType code)
+        {
+            Write(GetTypeString(code), includeIndent: false);
+
+        }
+
+        private string GetTypeString(CodeType code)
+        {
+            var typeName = TranslateType(code.Name, code.Schema);
+            if (code.ActionOf)
+            {
+                return $"Action<{typeName}>";
+            }
+            else
+            {
+                return typeName;
+            }
+        }
+
+        private static string TranslateType(string typeName, OpenApiSchema schema)
+        {
+            switch (typeName)
+            {
+                case "integer": typeName = "int"; break;
+                case "boolean": return "bool"; 
+                case "array":
+                    typeName = TranslateType(schema.Items.Type, schema.Items) + "[]";
+                    break;
+            }
+
+            return typeName;
+        }
+
         private string GetParameterSignature(CodeParameter parameter)
         {
-            return $"{parameter.Type.Name}  : {parameter.Name}";
+            return $"{GetTypeString(parameter.Type)} {parameter.Name}";
         }
+
         public override string GetFileSuffix()
         {
             return ".cs";

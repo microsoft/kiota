@@ -5,8 +5,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.WebSockets;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading.Tasks;
+using kiota.core.CodeDOM;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
@@ -62,12 +65,34 @@ namespace kiota.core
             
             // Translate OpenApi PathItems into a tree structure that will define the classes
             var openApiTree = OpenApiUrlSpaceNode.Create(doc);
-            var generatedNamespace = GenerateCode(openApiTree);
+            var generatedCode = GenerateCode(openApiTree);
             logger.LogInformation("{timestamp}ms: Source code generated", stopWatch.ElapsedMilliseconds);
 
+            // RefineByLanguage
+            ApplyLanguageRefinement(GenerationLanguage.CSharp, generatedCode);
+
             // Render source output
-            CodeRenderer.RenderCodeNamespaceToFilePerClass(new CSharpWriter(), generatedNamespace, config.OutputPath);
+            CodeRenderer.RenderCodeNamespaceToFilePerClass(new CSharpWriter(), generatedCode, config.OutputPath);
             logger.LogInformation("{timestamp}ms: Files written to {path}", stopWatch.ElapsedMilliseconds, config.OutputPath);
+        }
+
+        /// <summary>
+        /// Manipulate CodeDOM for language specific issues
+        /// </summary>
+        /// <param name="language"></param>
+        /// <param name="generatedCode"></param>
+        private void ApplyLanguageRefinement(GenerationLanguage language, CodeNamespace generatedCode)
+        {
+            // TODO: Refactor into something more scaleable
+            switch (language)
+            {
+                case GenerationLanguage.CSharp:
+                    generatedCode.AddUsing(new CodeUsing() { Name = "System" });
+                    generatedCode.AddUsing(new CodeUsing() { Name = "System.Threading.Tasks" });
+                    break;
+                default:
+                    break; //Do nothing
+            }
         }
 
         /// <summary>
@@ -96,7 +121,7 @@ namespace kiota.core
             }
             else
             {
-                className = node.Identifier + "RequestBuilder" + (this.AddSuffix ? "_" + node.Hash() : "");
+                className = FixPathIdentifier(node.Identifier) + "RequestBuilder" + (this.AddSuffix ? "_" + node.Hash() : "");
             }
             var codeClass = new CodeClass() { Name = className };
 
@@ -106,13 +131,19 @@ namespace kiota.core
 
             foreach (var child in node.Children)
             {
-                var childType = child.Value.Identifier + "RequestBuilder" + (this.AddSuffix ? "_" + child.Value.Hash() : "");
+                var childIdentifier = FixPathIdentifier(child.Value.Identifier);
+                var childType = childIdentifier + "RequestBuilder" + (this.AddSuffix ? "_" + child.Value.Hash() : "");
                 if (child.Value.IsParameter())
                 {
-                    logger.LogDebug("Creating indexer {name}", child.Value.Identifier);
-                    var prop = new CodeIndexer() {
-                        IndexType = "string",
-                        ReturnType = childType
+                    logger.LogDebug("Creating indexer {name}", childIdentifier);
+                    var prop = new CodeIndexer()
+                    {
+                        Name = childIdentifier,
+                        IndexType = new CodeType() { Name = "string" },
+                        ReturnType = new CodeType()
+                        {
+                            Name = childType
+                        }
                     };
                     codeClass.SetIndexer(prop);
                 }
@@ -124,7 +155,7 @@ namespace kiota.core
                 {
                     var prop = new CodeProperty()
                     {
-                        Name = child.Value.Identifier,
+                        Name = childIdentifier,
                         Type = new CodeType() { Name = childType }
                     };
                     logger.LogDebug("Creating property {name} of {type}", prop.Name,prop.Type.Name);
@@ -159,12 +190,12 @@ namespace kiota.core
         {
             var method = new CodeMethod() {
                 Name = operationType.ToString() + "Async",
-                ReturnType = parameterClass.Name
+                ReturnType = new CodeType() { Name = "object"}
             };
             var methodParameter = new CodeParameter()
             {
                 Name = "q",
-                Type = new CodeType() { Name = parameterClass.Name }
+                Type = new CodeType() { Name = parameterClass.Name, ActionOf = true }
             };
             method.AddParameter(methodParameter);
             return method;
@@ -176,12 +207,12 @@ namespace kiota.core
             {
                 Name = operation.Key.ToString() + "QueryParameters"
             };
-            var parameters = node.PathItem.Parameters.Union(operation.Value.Parameters);
+            var parameters = node.PathItem.Parameters.Union(operation.Value.Parameters).Where(p => p.In == ParameterLocation.Query);
             foreach (var parameter in parameters)
             {
                 var prop = new CodeProperty()
                 {
-                    Name = parameter.Name,
+                    Name = FixQueryParameterIdentifier(parameter),
                     Type = new CodeType()
                     {
                         Name = parameter.Schema.Type,
@@ -192,13 +223,32 @@ namespace kiota.core
                 if (!parameterClass.ContainsMember(parameter.Name))
                 {
                     parameterClass.AddProperty(prop);
-                } else
+                }
+                else
                 {
                     logger.LogWarning("Ignoring duplicate parameter {name}", parameter.Name);
                 }
             }
 
             return parameterClass;
+        }
+
+        private static string FixQueryParameterIdentifier(OpenApiParameter parameter)
+        {
+            // Replace with regexes pulled from settings that are API specific
+
+            var identifier = parameter.Name.Replace("$","");
+            return IdentifierUtils.ToCamelCase(identifier);
+        }
+
+        private static string FixPathIdentifier(string identifier)
+        {
+            // Replace with regexes pulled from settings that are API specific
+            if(identifier.Contains("$value"))
+            {
+                identifier = identifier.Replace("$value", "Content");
+            }
+            return IdentifierUtils.ToCamelCase(identifier);
         }
     }
 }

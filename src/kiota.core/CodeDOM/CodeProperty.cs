@@ -6,6 +6,7 @@
         {
             get; set;
         }
+        public bool ReadOnly = false;
         public CodeType Type;
     }
 }

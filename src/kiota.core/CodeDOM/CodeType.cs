@@ -8,6 +8,8 @@ namespace kiota.core
         {
             get; set;
         }
+        public bool ActionOf = false;
+
         public OpenApiSchema Schema;
     }
 }

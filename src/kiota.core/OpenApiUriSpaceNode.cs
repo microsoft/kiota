@@ -39,12 +39,11 @@ namespace kiota.core
                 string identifier;
                 if (IsParameter())
                 {
-                    identifier = Segment.Substring(1, Segment.Length - 2).Replace("-", "");
-                    identifier = FirstUpperCase(identifier);
+                    identifier = IdentifierUtils.ToPascalCase(Segment.Substring(1, Segment.Length - 2));
                 }
                 else
                 {
-                    identifier = FirstUpperCase(Segment).Replace("()", "").Replace("-", "");
+                    identifier = IdentifierUtils.ToPascalCase(Segment).Replace("()", "");
                     var openParen = identifier.IndexOf("(");
                     if (openParen >= 0)
                     {
@@ -60,11 +59,6 @@ namespace kiota.core
             return PathItem != null && PathItem.Operations != null && PathItem.Operations.Count() > 0;
         }
 
-        private string FirstUpperCase(string input)
-        {
-            if (input.Length == 0) return input;
-            return Char.ToUpper(input[0]) + input.Substring(1);
-        }
         public string Hash()
         {
             using (SHA256 sha256Hash = SHA256.Create())

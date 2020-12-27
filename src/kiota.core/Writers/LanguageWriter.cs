@@ -48,7 +48,7 @@ namespace kiota.core
 
         protected void Write(string text, bool includeIndent = true)
         {
-            writer.WriteLine(includeIndent ? GetIndent() + text : text);
+            writer.Write(includeIndent ? GetIndent() + text : text);
         }
         /// <summary>
         /// Dispatch call to Write the code element to the proper derivative write method
@@ -65,6 +65,7 @@ namespace kiota.core
                 case CodeProperty c: WriteProperty(c); break;
                 case CodeIndexer c: WriteIndexer(c); break;
                 case CodeMethod c: WriteMethod(c); break;
+                case CodeType c: WriteType(c); break;
                 case CodeNamespace: break;
                 case CodeClass: break;
                 default:
@@ -82,6 +83,10 @@ namespace kiota.core
         {
         }
         public virtual void WriteMethod(CodeMethod code)
+        {
+        }
+
+        public virtual void WriteType(CodeType code)
         {
         }
 

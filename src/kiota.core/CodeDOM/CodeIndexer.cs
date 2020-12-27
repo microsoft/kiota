@@ -2,7 +2,7 @@
 {
     public class CodeIndexer : CodeTerminal
     {
-        public string IndexType;
-        public string ReturnType;
+        public CodeType IndexType;
+        public CodeType ReturnType;
     }
 }

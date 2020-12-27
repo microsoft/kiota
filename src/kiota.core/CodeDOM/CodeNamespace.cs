@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using kiota.core.CodeDOM;
 
 namespace kiota.core
 {
@@ -14,7 +15,7 @@ namespace kiota.core
             StartBlock = new Declaration();
             EndBlock = new End();
         }
-        public string Name
+        public override string Name
         {
             get { return name;
             }
@@ -28,10 +29,21 @@ namespace kiota.core
         {
             this.InnerChildElements.Add(codeClass);
         }
-
+        public void AddUsing(CodeUsing codeUsing)
+        {
+            ((Declaration)this.StartBlock).Usings.Add(codeUsing);
+        }
+        public void AddUsing(IEnumerable<CodeUsing> codeUsings)
+        {
+            foreach (var codeUsing in codeUsings)
+            {
+                ((Declaration)this.StartBlock).Usings.Add(codeUsing);
+            }
+        }
         public class Declaration : CodeTerminal
         {
-            public string Name;
+            public override string Name { get; set; }
+            public List<CodeUsing> Usings = new List<CodeUsing>();
         }
 
         public class End : CodeTerminal

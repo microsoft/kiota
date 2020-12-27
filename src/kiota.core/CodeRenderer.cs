@@ -40,6 +40,7 @@ namespace kiota.core
                 if (codeClass is not null)
                 {
                     var codeNamespace = new CodeNamespace() { Name = root.Name };
+                    codeNamespace.AddUsing(((CodeNamespace.Declaration)root.StartBlock).Usings);
                     codeNamespace.AddClass(codeClass);
                     RenderCodeNamespaceToSingleFile(writer, codeNamespace, Path.Combine(outputPath, codeClass.Name + writer.GetFileSuffix()));
                 }
