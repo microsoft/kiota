@@ -69,8 +69,12 @@ var message = await client.Users["bob@contoso.com"]
 
 Using a configured query parameter object prevents tight coupling on the order of query parameters and make optional parameters easy to implement across languages.
 
+### Related reading
+
 For more information on the various components used by the Kiota SDK, see the following topics:
 
 - [Request Builders](requestbuilders)
 - [Models](models)
 - [Core Library](corelibrary)
+
+For an overview of how the code generation process works, see the [Design Overview](designoverview).  This library was created to support the [Microsoft Graph](microsofgraph) API and therefore needs to support a number of [OData](odata) conventions.
