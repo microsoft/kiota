@@ -77,4 +77,4 @@ For more information on the various components used by the Kiota SDK, see the fo
 - [Models](models)
 - [Core Library](corelibrary)
 
-For an overview of how the code generation process works, see the [Design Overview](designoverview).  This library was created to support the [Microsoft Graph](microsofgraph) API and therefore needs to support a number of [OData](odata) conventions.
+For an overview of how the code generation process works, see the [Design Overview](designoverview).  This library was created to support the [Microsoft Graph](microsoftgraph) API and therefore needs to support a number of [OData](odata) conventions.
