@@ -132,16 +132,7 @@ namespace kiota.core
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            // TODO: Refactor into something more scaleable
-            switch (language)
-            {
-                case GenerationLanguage.CSharp:
-                    generatedCode.AddUsing(new CodeUsing() { Name = "System" });
-                    generatedCode.AddUsing(new CodeUsing() { Name = "System.Threading.Tasks" });
-                    break;
-                default:
-                    break; //Do nothing
-            }
+            ILanguageRefiner.Refine(language, generatedCode);
 
             stopwatch.Stop();
             logger.LogInformation("{timestamp}ms: Language refinement applied", stopwatch.ElapsedMilliseconds);
@@ -163,6 +154,9 @@ namespace kiota.core
                     break;
                 case GenerationLanguage.Java:
                     languageWriter = new JavaWriter();
+                    break;
+                case GenerationLanguage.TypeScript:
+                    languageWriter = new TypeScriptWriter();
                     break;
                 default:
                     throw new ArgumentException($"{language} language currently not supported.");
@@ -222,7 +216,6 @@ namespace kiota.core
                 foreach(var operation in node.PathItem.Operations)
                 {
                     var parameterClass = CreateOperationParameter(node, operation);
-                    codeClass.AddInnerClass(parameterClass);
 
                     var method = CreateOperationMethod(operation.Key, operation.Value, parameterClass);
                     logger.LogDebug("Creating method {name} of {type}", method.Name, method.ReturnType);
@@ -284,7 +277,7 @@ namespace kiota.core
             var methodParameter = new CodeParameter()
             {
                 Name = "q",
-                Type = new CodeType() { Name = parameterClass.Name, ActionOf = true }
+                Type = new CodeType() { Name = parameterClass.Name, ActionOf = true, TypeDefinition = parameterClass }
             };
             method.AddParameter(methodParameter);
             return method;

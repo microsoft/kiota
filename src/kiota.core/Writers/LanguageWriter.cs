@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Microsoft.OpenApi.Models;
 
@@ -25,15 +26,17 @@ namespace kiota.core
         }
 
         public abstract string GetFileSuffix();
-
-        public void IncreaseIndent()
+        private Stack<int> factorStack = new Stack<int>();
+        public void IncreaseIndent(int factor = 1)
         {
-            currentIndent += indentSize;
+            factorStack.Push(factor);
+            currentIndent += indentSize * factor;
         }
 
         public void DecreaseIndent()
         {
-            currentIndent -= indentSize;
+            var popped = factorStack.TryPop(out var factor);
+            currentIndent -= indentSize * (popped ? factor : 1);
         }
 
         public string GetIndent()
@@ -61,10 +64,10 @@ namespace kiota.core
         {
             switch (code)
             {
-                case CodeNamespace.Declaration c: WriteNamespaceDeclaration(c); break;
-                case CodeNamespace.End c: WriteNamespaceEnd(c); break;
                 case CodeClass.Declaration c: WriteCodeClassDeclaration(c); break;
                 case CodeClass.End c: WriteCodeClassEnd(c); break;
+                case CodeNamespace.BlockDeclaration c: WriteNamespaceDeclaration(c); break;
+                case CodeNamespace.BlockEnd c: WriteNamespaceEnd(c); break;
                 case CodeProperty c: WriteProperty(c); break;
                 case CodeIndexer c: WriteIndexer(c); break;
                 case CodeMethod c: WriteMethod(c); break;
@@ -84,8 +87,8 @@ namespace kiota.core
         public abstract void WriteIndexer(CodeIndexer code);
         public abstract void WriteMethod(CodeMethod code);
         public abstract void WriteType(CodeType code);
-        public abstract void WriteNamespaceEnd(CodeNamespace.End code);
-        public abstract void WriteNamespaceDeclaration(CodeNamespace.Declaration code);
+        public abstract void WriteNamespaceEnd(CodeNamespace.BlockEnd code);
+        public abstract void WriteNamespaceDeclaration(CodeNamespace.BlockDeclaration code);
         public abstract void WriteCodeClassDeclaration(CodeClass.Declaration code);
         public abstract void WriteCodeClassEnd(CodeClass.End code);
     }

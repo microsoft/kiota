@@ -1,16 +1,17 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.OpenApi.Models;
 
 namespace kiota.core
 {
-    public class JavaWriter : LanguageWriter
+    public class TypeScriptWriter : LanguageWriter
     {
-        public override string GetFileSuffix() => ".java";
+        public override string GetFileSuffix() => ".ts";
 
         public override string GetParameterSignature(CodeParameter parameter)
         {
-            return $"@javax.annotation.Nonnull final {GetTypeString(parameter.Type)} {parameter.Name}";
+            return $"{parameter.Name}{(parameter.Optional ? "?" : string.Empty)}: {GetTypeString(parameter.Type)}{(parameter.Optional ? " | undefined": string.Empty)}";
         }
 
         public override string GetTypeString(CodeType code)
@@ -18,7 +19,16 @@ namespace kiota.core
             var typeName = TranslateType(code.Name, code.Schema);
             if (code.ActionOf)
             {
-                return $"java.util.function.Consumer<{typeName}>";
+                IncreaseIndent(4);
+                var childElements = code.TypeDefinition
+                                            .InnerChildElements
+                                            .OfType<CodeProperty>()
+                                            .Select(x => $"{x.Name}?: {GetTypeString(x.Type)}");
+                var innerDeclaration = childElements.Any() ? childElements
+                                            .Aggregate((x, y) => $"{x};{Environment.NewLine}{GetIndent()}{y}")
+                                            : string.Empty;
+                DecreaseIndent();
+                return $"(options?: {{{innerDeclaration}}}) => void";
             }
             else
             {
@@ -30,20 +40,21 @@ namespace kiota.core
         {
             switch (typeName)
             {//TODO we're probably missing a bunch of type mappings
-                case "integer": return "Integer";
-                case "boolean": return "Boolean";
-                case "string": return "String";
-                case "object": return "Object";
+                case "integer": return "number";
                 case "array": return $"{TranslateType(schema.Items.Type, schema.Items)}[]";
-            }
+            } // string, boolean, object : same casing
 
             return typeName;
         }
 
         public override void WriteCodeClassDeclaration(CodeClass.Declaration code)
         {
-            //TODO: missing javadoc
-            WriteLine($"public class {code.Name} {{");
+            foreach (var codeUsing in code.Usings)
+            {
+                WriteLine($"import {{{codeUsing.Name}}} from './{codeUsing.Name}';");
+            }
+            WriteLine();
+            WriteLine($"export class {code.Name} {{");
             IncreaseIndent();
         }
 
@@ -70,28 +81,16 @@ namespace kiota.core
 
         public override void WriteMethod(CodeMethod code)
         {
-            //TODO javadoc
-            WriteLine("@javax.annotation.Nonnull");
-            WriteLine($"public java.util.concurrent.Future<{GetTypeString(code.ReturnType)}> {code.Name}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
+            WriteLine($"public readonly {code.Name} = ({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : Promise<{GetTypeString(code.ReturnType)}> => {{ return Promise.resolve({(code.ReturnType.Name.Equals("string") ? "''" : "{}")}); }}");
         }
 
-        public override void WriteNamespaceDeclaration(CodeNamespace.BlockDeclaration code)
-        {
-            WriteLine($"package {code.Name};");
-            WriteLine();
-            foreach (var codeUsing in code.Usings)
-            {
-                WriteLine($"import {codeUsing.Name}.*;");
-            }
-        }
+        public override void WriteNamespaceDeclaration(CodeNamespace.BlockDeclaration code) => WriteLine();
 
         public override void WriteNamespaceEnd(CodeNamespace.BlockEnd code) => WriteLine();
 
         public override void WriteProperty(CodeProperty code)
         {
-            //TODO: missing javadoc
-            WriteLine("@javax.annotation.Nullable");
-            WriteLine($"public {GetTypeString(code.Type)} {code.Name};");
+            WriteLine($"public {code.Name}?: {GetTypeString(code.Type)}");
         }
 
         public override void WriteType(CodeType code)
