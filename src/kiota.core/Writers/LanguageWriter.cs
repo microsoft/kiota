@@ -26,14 +26,14 @@ namespace kiota.core
 
         public abstract string GetFileSuffix();
 
-        public void IncreaseIndent()
+        public void IncreaseIndent(int factor = 1)
         {
-            currentIndent += indentSize;
+            currentIndent += indentSize * factor;
         }
 
-        public void DecreaseIndent()
+        public void DecreaseIndent(int factor = 1)
         {
-            currentIndent -= indentSize;
+            currentIndent -= indentSize * factor;
         }
 
         public string GetIndent()
