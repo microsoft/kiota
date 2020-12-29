@@ -8,9 +8,9 @@ namespace kiota.core
     /// </summary>
     public class CodeBlock : CodeElement
     {
-        public CodeElement StartBlock;
+        public BlockDeclaration StartBlock = new BlockDeclaration();
         public List<CodeElement> InnerChildElements = new List<CodeElement>();
-        public CodeElement EndBlock;
+        public BlockEnd EndBlock = new BlockEnd();
 
         public override string Name
         {
@@ -23,6 +23,20 @@ namespace kiota.core
             elements.Insert(0, StartBlock);
             elements.Add(EndBlock);
             return elements;
+        }
+        public void AddUsing(params CodeUsing[] codeUsings)
+        {
+            StartBlock.Usings.AddRange(codeUsings);
+        }
+        public class BlockDeclaration : CodeTerminal
+        {
+            public override string Name { get; set; }
+            public List<CodeUsing> Usings = new List<CodeUsing>();
+        }
+
+        public class BlockEnd : CodeTerminal
+        {
+
         }
     }
 }

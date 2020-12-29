@@ -6,13 +6,13 @@ namespace kiota.core
     public class CSharpWriter : LanguageWriter
     {
 
-        public override void WriteNamespaceEnd(CodeNamespace.End code)
+        public override void WriteNamespaceEnd(CodeNamespace.BlockEnd code)
         {
             DecreaseIndent();
             WriteLine("}");
         }
 
-        public override void WriteNamespaceDeclaration(CodeNamespace.Declaration code)
+        public override void WriteNamespaceDeclaration(CodeNamespace.BlockDeclaration code)
         {
             foreach (var codeUsing in code.Usings)
             {

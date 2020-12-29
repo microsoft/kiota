@@ -75,7 +75,7 @@ namespace kiota.core
             WriteLine($"public java.util.concurrent.Future<{GetTypeString(code.ReturnType)}> {code.Name}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
         }
 
-        public override void WriteNamespaceDeclaration(CodeNamespace.Declaration code)
+        public override void WriteNamespaceDeclaration(CodeNamespace.BlockDeclaration code)
         {
             WriteLine($"package {code.Name};");
             WriteLine();
@@ -85,7 +85,7 @@ namespace kiota.core
             }
         }
 
-        public override void WriteNamespaceEnd(CodeNamespace.End code) => WriteLine();
+        public override void WriteNamespaceEnd(CodeNamespace.BlockEnd code) => WriteLine();
 
         public override void WriteProperty(CodeProperty code)
         {

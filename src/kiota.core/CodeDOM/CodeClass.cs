@@ -53,7 +53,7 @@ namespace kiota.core
             this.InnerChildElements.Add(codeClass);
         }
 
-        public class Declaration : CodeTerminal
+        public class Declaration : BlockDeclaration
         {
             /// <summary>
             /// Class name
@@ -66,7 +66,7 @@ namespace kiota.core
             public CodeType Type;
         }
 
-        public class End : CodeTerminal
+        public class End : BlockEnd
         {
         }
     }

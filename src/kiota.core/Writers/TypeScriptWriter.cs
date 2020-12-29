@@ -50,6 +50,11 @@ namespace kiota.core
 
         public override void WriteCodeClassDeclaration(CodeClass.Declaration code)
         {
+            foreach (var codeUsing in code.Usings)
+            {
+                WriteLine($"import {{{codeUsing.Name}}} from './{codeUsing.Name}';");
+            }
+            WriteLine();
             WriteLine($"export class {code.Name} {{");
             IncreaseIndent();
         }
@@ -80,21 +85,9 @@ namespace kiota.core
             WriteLine($"public readonly {code.Name} = ({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : Promise<{GetTypeString(code.ReturnType)}> => {{ return Promise.resolve({(code.ReturnType.Name.Equals("string") ? "''" : "{}")}); }}");
         }
 
-        public override void WriteNamespaceDeclaration(CodeNamespace.Declaration code)
-        {
-            foreach (var codeUsing in code.Usings)
-            {
-                WriteLine($"import {{{codeUsing.Name}}} from '{codeUsing.Name}';");
-            }
-            // WriteLine();
-            // WriteLine($"export namespace {code.Name} {{");
-            // IncreaseIndent();
-        }
+        public override void WriteNamespaceDeclaration(CodeNamespace.BlockDeclaration code) => WriteLine();
 
-        public override void WriteNamespaceEnd(CodeNamespace.End code) => WriteLine();// {
-        //     DecreaseIndent();
-        //     WriteLine("}");
-        // }
+        public override void WriteNamespaceEnd(CodeNamespace.BlockEnd code) => WriteLine();
 
         public override void WriteProperty(CodeProperty code)
         {
