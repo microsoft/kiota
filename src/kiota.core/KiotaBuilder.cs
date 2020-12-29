@@ -138,6 +138,10 @@ namespace kiota.core
                 case GenerationLanguage.CSharp:
                     generatedCode.AddUsing(new CodeUsing() { Name = "System" });
                     generatedCode.AddUsing(new CodeUsing() { Name = "System.Threading.Tasks" });
+                    AddInnerClasses(generatedCode);
+                    break;
+                case GenerationLanguage.TypeScript:
+                    AddRelativeImports(generatedCode);
                     break;
                 default:
                     break; //Do nothing
@@ -145,6 +149,18 @@ namespace kiota.core
 
             stopwatch.Stop();
             logger.LogInformation("{timestamp}ms: Language refinement applied", stopwatch.ElapsedMilliseconds);
+        }
+
+        private void AddRelativeImports(CodeElement current) {
+
+        }
+        private void AddInnerClasses(CodeElement current) {
+            if(current is CodeClass currentClass) {
+                foreach(var parameter in current.GetChildElements().OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf))
+                    currentClass.AddInnerClass(parameter.Type.TypeDefinition);
+            }
+            foreach(var childClass in current.GetChildElements().OfType<CodeClass>())
+                AddInnerClasses(childClass);
         }
 
         /// <summary>
@@ -163,6 +179,9 @@ namespace kiota.core
                     break;
                 case GenerationLanguage.Java:
                     languageWriter = new JavaWriter();
+                    break;
+                case GenerationLanguage.TypeScript:
+                    languageWriter = new TypeScriptWriter();
                     break;
                 default:
                     throw new ArgumentException($"{language} language currently not supported.");
@@ -222,7 +241,6 @@ namespace kiota.core
                 foreach(var operation in node.PathItem.Operations)
                 {
                     var parameterClass = CreateOperationParameter(node, operation);
-                    codeClass.AddInnerClass(parameterClass);
 
                     var method = CreateOperationMethod(operation.Key, operation.Value, parameterClass);
                     logger.LogDebug("Creating method {name} of {type}", method.Name, method.ReturnType);
@@ -284,7 +302,7 @@ namespace kiota.core
             var methodParameter = new CodeParameter()
             {
                 Name = "q",
-                Type = new CodeType() { Name = parameterClass.Name, ActionOf = true }
+                Type = new CodeType() { Name = parameterClass.Name, ActionOf = true, TypeDefinition = parameterClass }
             };
             method.AddParameter(methodParameter);
             return method;
