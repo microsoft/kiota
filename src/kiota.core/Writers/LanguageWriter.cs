@@ -35,8 +35,8 @@ namespace kiota.core
 
         public void DecreaseIndent()
         {
-            var factor = factorStack.Pop();
-            currentIndent -= indentSize * factor;
+            var popped = factorStack.TryPop(out var factor);
+            currentIndent -= indentSize * (popped ? factor : 1);
         }
 
         public string GetIndent()
