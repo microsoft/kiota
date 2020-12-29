@@ -11,7 +11,14 @@
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/src/kiota/bin/Debug/net5.0/kiota.dll",
-            "args": [],
+            "args": ["--openapi",
+                 "C:/sources/github/msgraph-sdk-powershell/openApiDocs/v1.0/mail.yml",
+                 "--language",
+                 "java",
+                 "-o",
+                 "C:/Users/vibiret/Desktop/graphjavav4/utilities/src/main/java/graphjavav4/utilities",
+                 "-n",
+                 "graphjavav4.utilities" ],
             "cwd": "${workspaceFolder}/src/kiota",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",

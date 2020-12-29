@@ -113,7 +113,7 @@ namespace kiota.core
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            var codeNamespace = new CodeNamespace() { Name = this.config.ClientClassName };
+            var codeNamespace = new CodeNamespace() { Name = this.config.ClientNamespaceName };
             CreateClass(codeNamespace, root);
 
             stopwatch.Stop();
@@ -160,6 +160,9 @@ namespace kiota.core
             {
                 case GenerationLanguage.CSharp:
                     languageWriter = new CSharpWriter();
+                    break;
+                case GenerationLanguage.Java:
+                    languageWriter = new JavaWriter();
                     break;
                 default:
                     throw new ArgumentException($"{language} language currently not supported.");

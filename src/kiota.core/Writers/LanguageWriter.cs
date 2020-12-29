@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Microsoft.OpenApi.Models;
 
 namespace kiota.core
 {
@@ -39,7 +40,10 @@ namespace kiota.core
         {
             return indentString.Substring(0, currentIndent);
         }
-
+        /// <summary>
+        /// Adds an empty line
+        /// </summary>
+        protected void WriteLine() => WriteLine(string.Empty, false);
         protected void WriteLine(string line, bool includeIndent = true)
         {
             writer.WriteLine(includeIndent ? GetIndent() + line : line);
@@ -73,36 +77,16 @@ namespace kiota.core
 
         }
 
-
-        public virtual void WriteProperty(CodeProperty code)
-        {
-        }
-
-        public virtual void WriteIndexer(CodeIndexer code)
-        {
-        }
-        public virtual void WriteMethod(CodeMethod code)
-        {
-        }
-
-        public virtual void WriteType(CodeType code)
-        {
-        }
-
-        public virtual void WriteNamespaceEnd(CodeNamespace.End code)
-        {
-        }
-
-        public virtual void WriteNamespaceDeclaration(CodeNamespace.Declaration code)
-        {
-        }
-
-        public virtual void WriteCodeClassDeclaration(CodeClass.Declaration code)
-        {
-        }
-
-        public virtual void WriteCodeClassEnd(CodeClass.End code)
-        {
-        }
+        public abstract string GetParameterSignature(CodeParameter parameter);
+        public abstract string GetTypeString(CodeType code);
+        public abstract string TranslateType(string typeName, OpenApiSchema schema);
+        public abstract void WriteProperty(CodeProperty code);
+        public abstract void WriteIndexer(CodeIndexer code);
+        public abstract void WriteMethod(CodeMethod code);
+        public abstract void WriteType(CodeType code);
+        public abstract void WriteNamespaceEnd(CodeNamespace.End code);
+        public abstract void WriteNamespaceDeclaration(CodeNamespace.Declaration code);
+        public abstract void WriteCodeClassDeclaration(CodeClass.Declaration code);
+        public abstract void WriteCodeClassEnd(CodeClass.End code);
     }
 }

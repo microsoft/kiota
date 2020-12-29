@@ -56,7 +56,7 @@ namespace kiota.core
 
         }
 
-        private string GetTypeString(CodeType code)
+        public override string GetTypeString(CodeType code)
         {
             var typeName = TranslateType(code.Name, code.Schema);
             if (code.ActionOf)
@@ -69,7 +69,7 @@ namespace kiota.core
             }
         }
 
-        private static string TranslateType(string typeName, OpenApiSchema schema)
+        public override string TranslateType(string typeName, OpenApiSchema schema)
         {
             switch (typeName)
             {
@@ -83,7 +83,7 @@ namespace kiota.core
             return typeName;
         }
 
-        private string GetParameterSignature(CodeParameter parameter)
+        public override string GetParameterSignature(CodeParameter parameter)
         {
             return $"{GetTypeString(parameter.Type)} {parameter.Name}";
         }
