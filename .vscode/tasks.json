@@ -5,6 +5,7 @@
             "label": "build",
             "command": "dotnet",
             "type": "process",
+            "group": "build",
             "args": [
                 "build",
                 "${workspaceFolder}/src/kiota/kiota.csproj",
@@ -14,9 +15,23 @@
             "problemMatcher": "$msCompile"
         },
         {
+            "label": "test",
+            "command": "dotnet",
+            "type": "process",
+            "group": "test",
+            "args": [
+                "test",
+                "${workspaceFolder}/tests/kiota.core.tests/kiota.core.tests.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
             "label": "publish",
             "command": "dotnet",
             "type": "process",
+            "group": "none",
             "args": [
                 "publish",
                 "${workspaceFolder}/src/kiota/kiota.csproj",
@@ -29,6 +44,7 @@
             "label": "watch",
             "command": "dotnet",
             "type": "process",
+            "group": "build",
             "args": [
                 "watch",
                 "run",

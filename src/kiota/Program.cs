@@ -22,12 +22,14 @@ namespace kiota
 
         private static RootCommand GetRootCommand(GenerationConfiguration configuration)
         {
-            var outputOption = new Option("--output", "The ouput path of the folder the code will be generated in.") { Argument = new Argument<string>() };
+            var outputOption = new Option("--output", "The ouput path of the folder the code will be generated in.") { Argument = new Argument<string>(() => "./output") };
             outputOption.AddAlias("-o");
-            var languageOption = new Option("--language", "The language to generate the code in.") { Argument = new Argument<GenerationLanguage?>() };
+            var languageOption = new Option("--language", "The language to generate the code in.") { Argument = new Argument<GenerationLanguage?>(() => GenerationLanguage.CSharp) };
             languageOption.AddAlias("-l");
-            var classOption = new Option("--class-name", "The class name to use the for main entry point") { Argument = new Argument<string>() };
+            var classOption = new Option("--class-name", "The class name to use the for main entry point") { Argument = new Argument<string>(() => "GraphClient") };
             classOption.AddAlias("-c");
+            var namespaceOption = new Option("--namespace-name", "The namespace name to use the for main entry point") { Argument = new Argument<string>(() => "GraphClient") };
+            namespaceOption.AddAlias("-n");
 
             var command = new RootCommand {
                 outputOption,
@@ -35,8 +37,9 @@ namespace kiota
                 new Option("--openapi", "The path to the OpenAPI description file used to generate the code.") {Argument = new Argument<string>(() => "openapi.yml")},
                 classOption,
                 new Option("--loglevel") { Argument = new Argument<LogLevel>(() => LogLevel.Warning)},
+                namespaceOption,
             };
-            command.Handler = CommandHandler.Create<string, GenerationLanguage?, string, string, LogLevel>(async (output, language, openapi, classname, loglevel) =>
+            command.Handler = CommandHandler.Create<string, GenerationLanguage?, string, string, LogLevel, string>(async (output, language, openapi, classname, loglevel, namespacename) =>
             {
                 if (!string.IsNullOrEmpty(output))
                     configuration.OutputPath = output;
@@ -44,6 +47,8 @@ namespace kiota
                     configuration.OpenAPIFilePath = openapi;
                 if (!string.IsNullOrEmpty(classname))
                     configuration.ClientClassName = classname;
+                if (!string.IsNullOrEmpty(namespacename))
+                    configuration.ClientNamespaceName = namespacename;
                 if (language.HasValue)
                     configuration.Language = language.Value;
 
