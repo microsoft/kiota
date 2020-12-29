@@ -4,17 +4,16 @@ namespace kiota.core
     {
         void Refine(CodeNamespace generatedCode);
         public static void Refine(GenerationLanguage language, CodeNamespace generatedCode) {
-            var csRefiner = new CSharpRefiner();
             switch (language)
             {
                 case GenerationLanguage.CSharp:
-                    csRefiner.Refine(generatedCode);
+                    new CSharpRefiner().Refine(generatedCode);
                     break;
                 case GenerationLanguage.TypeScript:
                     new TypeScriptRefiner().Refine(generatedCode);
                     break;
                 case GenerationLanguage.Java:
-                    csRefiner.Refine(generatedCode);
+                    new JavaRefiner().Refine(generatedCode);
                     break;
                 default:
                     break; //Do nothing
