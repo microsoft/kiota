@@ -143,6 +143,9 @@ namespace kiota.core
                 case GenerationLanguage.TypeScript:
                     AddRelativeImports(generatedCode);
                     break;
+                case GenerationLanguage.Java:
+                    AddInnerClasses(generatedCode);
+                    break;
                 default:
                     break; //Do nothing
             }
