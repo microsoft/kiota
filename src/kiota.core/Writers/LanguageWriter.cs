@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Microsoft.OpenApi.Models;
 
@@ -25,14 +26,16 @@ namespace kiota.core
         }
 
         public abstract string GetFileSuffix();
-
+        private Stack<int> factorStack = new Stack<int>();
         public void IncreaseIndent(int factor = 1)
         {
+            factorStack.Push(factor);
             currentIndent += indentSize * factor;
         }
 
-        public void DecreaseIndent(int factor = 1)
+        public void DecreaseIndent()
         {
+            var factor = factorStack.Pop();
             currentIndent -= indentSize * factor;
         }
 

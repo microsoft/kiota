@@ -19,8 +19,7 @@ namespace kiota.core
             var typeName = TranslateType(code.Name, code.Schema);
             if (code.ActionOf)
             {
-                var indentFactor = 4;
-                IncreaseIndent(indentFactor);
+                IncreaseIndent(4);
                 var childElements = code.TypeDefinition
                                             .InnerChildElements
                                             .OfType<CodeProperty>()
@@ -28,7 +27,7 @@ namespace kiota.core
                 var innerDeclaration = childElements.Any() ? childElements
                                             .Aggregate((x, y) => $"{x};{Environment.NewLine}{GetIndent()}{y}")
                                             : string.Empty;
-                DecreaseIndent(indentFactor);
+                DecreaseIndent();
                 return $"(options?: {{{innerDeclaration}}}) => void";
             }
             else
