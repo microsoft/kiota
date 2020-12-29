@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using kiota.core.CodeDOM;
 
 namespace kiota.core
 {

@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.OpenApi.Models;
+﻿using Microsoft.OpenApi.Models;
 using Xunit;
 
 namespace kiota.core.tests
