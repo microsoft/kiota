@@ -132,48 +132,10 @@ namespace kiota.core
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            // TODO: Refactor into something more scaleable
-            switch (language)
-            {
-                case GenerationLanguage.CSharp:
-                    generatedCode.AddUsing(new CodeUsing() { Name = "System" });
-                    generatedCode.AddUsing(new CodeUsing() { Name = "System.Threading.Tasks" });
-                    AddInnerClasses(generatedCode);
-                    break;
-                case GenerationLanguage.TypeScript:
-                    AddRelativeImports(generatedCode);
-                    break;
-                case GenerationLanguage.Java:
-                    AddInnerClasses(generatedCode);
-                    break;
-                default:
-                    break; //Do nothing
-            }
+            ILanguageRefiner.Refine(language, generatedCode);
 
             stopwatch.Stop();
             logger.LogInformation("{timestamp}ms: Language refinement applied", stopwatch.ElapsedMilliseconds);
-        }
-
-        private void AddRelativeImports(CodeElement current) {
-            if(current is CodeClass currentClass) {
-                currentClass.AddUsing(current
-                                    .GetChildElements()
-                                    .OfType<CodeProperty>()
-                                    .Select(x =>x.Type.Name)
-                                    .Distinct()
-                                    .Select(x => new CodeUsing{Name = x})
-                                    .ToArray());
-            }
-            foreach(var childClass in current.GetChildElements().OfType<CodeClass>())
-                AddRelativeImports(childClass);
-        }
-        private void AddInnerClasses(CodeElement current) {
-            if(current is CodeClass currentClass) {
-                foreach(var parameter in current.GetChildElements().OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf))
-                    currentClass.AddInnerClass(parameter.Type.TypeDefinition);
-            }
-            foreach(var childClass in current.GetChildElements().OfType<CodeClass>())
-                AddInnerClasses(childClass);
         }
 
         /// <summary>
