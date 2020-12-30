@@ -17,7 +17,7 @@ namespace kiota.core {
         {
             var targetPath = Path.Combine(RootPath, 
                                             currentNamespace.Name
-                                            .Replace(ClientNamespaceName + ".", string.Empty)
+                                            .Replace(ClientNamespaceName, string.Empty)
                                             .TrimStart('.')
                                             .Replace('.', Path.DirectorySeparatorChar),
                                             currentClass.Name.ToFirstCharacterLowerCase() + FileSuffix);
