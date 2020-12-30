@@ -18,9 +18,11 @@ namespace kiota.core
             };
         }
 
-        internal void AddParameter(CodeParameter methodParameter)
+        internal void AddParameter(params CodeParameter[] methodParameters)
         {
-            Parameters.Add(methodParameter);
+            if(!methodParameters.Any() || methodParameters.Any(x => x == null))
+                throw new ArgumentOutOfRangeException(nameof(methodParameters));
+            Parameters.AddRange(methodParameters);
         }
     }
 }

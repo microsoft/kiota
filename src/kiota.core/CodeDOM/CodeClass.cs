@@ -34,9 +34,11 @@ namespace kiota.core
             this.InnerChildElements.Add(indexer);
         }
 
-        public void AddProperty(CodeProperty property)
+        public void AddProperty(params CodeProperty[] properties)
         {
-            this.InnerChildElements.Add(property);
+            if(!properties.Any() || properties.Any(x => x == null))
+                throw new ArgumentNullException(nameof(properties));
+            this.InnerChildElements.AddRange(properties);
         }
 
         public bool ContainsMember(string name)
