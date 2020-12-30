@@ -73,7 +73,7 @@ namespace kiota.core
         public override void WriteIndexer(CodeIndexer code)
         {
             WriteMethod(new CodeMethod {
-                Name = "get",
+                Name = "item",
                 Parameters = new List<CodeParameter> {
                     new CodeParameter {
                         Name = "position",
@@ -87,7 +87,7 @@ namespace kiota.core
 
         public override void WriteMethod(CodeMethod code)
         {
-            WriteLine($"public readonly {code.Name} = ({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : Promise<{GetTypeString(code.ReturnType)}> => {{ return Promise.resolve({(code.ReturnType.Name.Equals("string") ? "''" : "{}")}); }}");
+            WriteLine($"public readonly {code.Name.ToFirstCharacterLowerCase()} = ({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : Promise<{GetTypeString(code.ReturnType)}> => {{ return Promise.resolve({(code.ReturnType.Name.Equals("string") ? "''" : "{}")}); }}");
         }
 
         public override void WriteNamespaceDeclaration(CodeNamespace.BlockDeclaration code) => WriteLine();

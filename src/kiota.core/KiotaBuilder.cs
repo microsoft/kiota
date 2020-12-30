@@ -275,7 +275,7 @@ namespace kiota.core
             }
 
             var method = new CodeMethod() {
-                Name = operationType.ToString() + "Async",
+                Name = operationType.ToString(),
                 ReturnType = new CodeType() { Name = "object"}
             };
             var methodParameter = new CodeParameter
@@ -292,6 +292,10 @@ namespace kiota.core
         private void CreateRequestModelClasses(OpenApiRequestBody requestBody, OpenApiOperation operation)
         {
             //TODO:
+            //if has reference, go find the type with the same id
+            //else insert inner declaration
+
+            // use the type declaration /reference for the operation parameter declaration
         }
 
         private void CreateModelClasses(OpenApiSchema schema, OpenApiOperation operation)
@@ -308,6 +312,11 @@ namespace kiota.core
                 codeClass = new CodeClass() { Name = operation.OperationId + "Response" };
             } else  // Reused schema from components
             {
+                if(false) // we can find it in the components
+                {
+                    
+                }
+                else // we can't find it so new it 
                 codeClass = new CodeClass() { Name = schema.Reference.Id };   // Id will contain "microsoft.Graph.foo"
             }
             // Add codeClass to model namespace in workspace
@@ -363,8 +372,7 @@ namespace kiota.core
         {
             // Replace with regexes pulled from settings that are API specific
 
-            var identifier = parameter.Name.Replace("$","");
-            return IdentifierUtils.ToCamelCase(identifier);
+            return parameter.Name.Replace("$","").ToCamelCase();
         }
 
         private static string FixPathIdentifier(string identifier)
@@ -374,7 +382,7 @@ namespace kiota.core
             {
                 identifier = identifier.Replace("$value", "Content");
             }
-            return IdentifierUtils.ToCamelCase(identifier);
+            return identifier.ToCamelCase();
         }
 
         private void CreateResponseHandler(CodeClass requestBuilder)
