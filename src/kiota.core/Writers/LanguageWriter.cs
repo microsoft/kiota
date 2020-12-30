@@ -43,6 +43,7 @@ namespace kiota.core
         {
             return indentString.Substring(0, currentIndent);
         }
+        public string NewLine { get => Environment.NewLine;}
         /// <summary>
         /// Adds an empty line
         /// </summary>

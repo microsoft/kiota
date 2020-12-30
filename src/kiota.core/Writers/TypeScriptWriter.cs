@@ -19,16 +19,22 @@ namespace kiota.core
             var typeName = TranslateType(code.Name, code.Schema);
             if (code.ActionOf)
             {
-                IncreaseIndent(4);
+                IncreaseIndent(5);
                 var childElements = code.TypeDefinition
                                             .InnerChildElements
                                             .OfType<CodeProperty>()
                                             .Select(x => $"{x.Name}?: {GetTypeString(x.Type)}");
-                var innerDeclaration = childElements.Any() ? childElements
-                                            .Aggregate((x, y) => $"{x};{Environment.NewLine}{GetIndent()}{y}")
+                var innerDeclaration = childElements.Any() ? 
+                                                NewLine +
+                                                GetIndent() +
+                                                childElements
+                                                .Aggregate((x, y) => $"{x};{NewLine}{GetIndent()}{y}")
+                                                .Replace(';', ',') +
+                                                NewLine +
+                                                GetIndent()
                                             : string.Empty;
                 DecreaseIndent();
-                return $"(options?: {{{innerDeclaration}}}) => void";
+                return $"{{{innerDeclaration}}}";
             }
             else
             {

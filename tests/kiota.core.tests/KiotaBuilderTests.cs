@@ -14,7 +14,7 @@ namespace kiota.core.tests
             var builder = new KiotaBuilder(new MockLogger(), new GenerationConfiguration() { ClientClassName = "Graph" });
             var codeModel = builder.CreateSourceModel(node);
 
-            Assert.Equal(1, codeModel.InnerChildElements.Count);
+            Assert.Single(codeModel.InnerChildElements);
         }
     }
 
