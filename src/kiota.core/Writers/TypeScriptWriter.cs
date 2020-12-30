@@ -73,7 +73,7 @@ namespace kiota.core
         public override void WriteIndexer(CodeIndexer code)
         {
             WriteMethod(new CodeMethod {
-                Name = "get",
+                Name = "item",
                 Parameters = new List<CodeParameter> {
                     new CodeParameter {
                         Name = "position",
