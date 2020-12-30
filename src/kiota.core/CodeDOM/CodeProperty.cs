@@ -8,5 +8,6 @@
         }
         public bool ReadOnly = false;
         public CodeType Type;
+        public string DefaultValue;
     }
 }
