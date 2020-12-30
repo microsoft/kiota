@@ -72,7 +72,7 @@ namespace kiota.core
         {
             //TODO javadoc
             WriteLine("@javax.annotation.Nonnull");
-            WriteLine($"public java.util.concurrent.Future<{GetTypeString(code.ReturnType)}> {code.Name.ToLowerFirstCharacter()}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
+            WriteLine($"public java.util.concurrent.Future<{GetTypeString(code.ReturnType)}> {code.Name.ToFirstCharacterLowerCase()}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
         }
 
         public override void WriteNamespaceDeclaration(CodeNamespace.BlockDeclaration code)

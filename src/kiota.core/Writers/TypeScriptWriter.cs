@@ -87,7 +87,7 @@ namespace kiota.core
 
         public override void WriteMethod(CodeMethod code)
         {
-            WriteLine($"public readonly {code.Name.ToLowerFirstCharacter()} = ({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : Promise<{GetTypeString(code.ReturnType)}> => {{ return Promise.resolve({(code.ReturnType.Name.Equals("string") ? "''" : "{}")}); }}");
+            WriteLine($"public readonly {code.Name.ToFirstCharacterLowerCase()} = ({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : Promise<{GetTypeString(code.ReturnType)}> => {{ return Promise.resolve({(code.ReturnType.Name.Equals("string") ? "''" : "{}")}); }}");
         }
 
         public override void WriteNamespaceDeclaration(CodeNamespace.BlockDeclaration code) => WriteLine();

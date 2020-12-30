@@ -38,11 +38,11 @@ namespace kiota.core
                 string identifier;
                 if (IsParameter())
                 {
-                    identifier = IdentifierUtils.ToPascalCase(Segment.Substring(1, Segment.Length - 2));
+                    identifier = Segment.Substring(1, Segment.Length - 2).ToPascalCase();
                 }
                 else
                 {
-                    identifier = IdentifierUtils.ToPascalCase(Segment).Replace("()", "");
+                    identifier = Segment.ToPascalCase().Replace("()", "");
                     var openParen = identifier.IndexOf("(");
                     if (openParen >= 0)
                     {
