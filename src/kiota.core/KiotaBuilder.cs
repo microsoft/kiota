@@ -271,7 +271,7 @@ namespace kiota.core
             }
 
             var method = new CodeMethod() {
-                Name = operationType.ToString() + "Async",
+                Name = operationType.ToString(),
                 ReturnType = new CodeType() { Name = "object"}
             };
             var methodParameter = new CodeParameter
