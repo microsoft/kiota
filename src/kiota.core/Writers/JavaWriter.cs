@@ -6,7 +6,13 @@ namespace kiota.core
 {
     public class JavaWriter : LanguageWriter
     {
-        public override string GetFileSuffix() => ".java";
+        private readonly IPathSegmenter segmenter;
+
+        public JavaWriter(string rootPath, string clientNamespaceName)
+        {
+            segmenter = new JavaPathSegmenter(rootPath, clientNamespaceName);
+        }
+        public override IPathSegmenter PathSegmenter => segmenter;
 
         public override string GetParameterSignature(CodeParameter parameter)
         {

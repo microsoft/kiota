@@ -24,8 +24,8 @@ namespace kiota.core
         {
             this.writer = writer;
         }
+        public abstract IPathSegmenter PathSegmenter { get; }
 
-        public abstract string GetFileSuffix();
         private Stack<int> factorStack = new Stack<int>();
         public void IncreaseIndent(int factor = 1)
         {

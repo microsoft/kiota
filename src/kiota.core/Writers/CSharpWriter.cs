@@ -5,6 +5,12 @@ namespace kiota.core
 {
     public class CSharpWriter : LanguageWriter
     {
+        public CSharpWriter(string rootPath, string clientNamespaceName)
+        {
+            segmenter = new CSharpPathSegmenter(rootPath, clientNamespaceName);
+        }
+        private readonly IPathSegmenter segmenter;
+        public override IPathSegmenter PathSegmenter => segmenter;
 
         public override void WriteNamespaceEnd(CodeNamespace.BlockEnd code)
         {
@@ -87,11 +93,6 @@ namespace kiota.core
         {
             var parameterType = GetTypeString(parameter.Type);
             return $"{parameterType} {parameter.Name}{(parameter.Optional ? $" = default({parameterType})": string.Empty)}";
-        }
-
-        public override string GetFileSuffix()
-        {
-            return ".cs";
         }
     }
 }

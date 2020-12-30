@@ -7,8 +7,12 @@ namespace kiota.core
 {
     public class TypeScriptWriter : LanguageWriter
     {
-        public override string GetFileSuffix() => ".ts";
-
+        public TypeScriptWriter(string rootPath, string clientNamespaceName)
+        {
+            segmenter = new TypeScriptPathSegmenter(rootPath,clientNamespaceName);
+        }
+        private readonly IPathSegmenter segmenter;
+        public override IPathSegmenter PathSegmenter => segmenter;
         public override string GetParameterSignature(CodeParameter parameter)
         {
             return $"{parameter.Name}{(parameter.Optional ? "?" : string.Empty)}: {GetTypeString(parameter.Type)}{(parameter.Optional ? " | undefined": string.Empty)}";
@@ -96,7 +100,7 @@ namespace kiota.core
 
         public override void WriteProperty(CodeProperty code)
         {
-            WriteLine($"public {code.Name}?: {GetTypeString(code.Type)}");
+            WriteLine($"public {code.Name}?: {GetTypeString(code.Type)} | undefined;");
         }
 
         public override void WriteType(CodeType code)

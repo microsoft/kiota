@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace kiota.core
@@ -27,18 +28,18 @@ namespace kiota.core
             await sw.FlushAsync();
         }
 
-        public static async Task RenderCodeNamespaceToFilePerClassAsync(LanguageWriter writer, CodeNamespace root, string outputPath)
+        public static async Task RenderCodeNamespaceToFilePerClassAsync(LanguageWriter writer, CodeNamespace root)
         {
             foreach (var codeElement in root.GetChildElements())
             {
-                CodeClass codeClass = codeElement as CodeClass;
-                if (codeClass is not null)
+                if (codeElement is CodeClass codeClass)
                 {
                     var codeNamespace = new CodeNamespace() { Name = root.Name };
                     codeNamespace.AddUsing(root.StartBlock.Usings.ToArray());
                     codeNamespace.AddClass(codeClass);
-                    await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, Path.Combine(outputPath, codeClass.Name + writer.GetFileSuffix()));
-                }
+                    await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(root, codeClass));
+                } else if(codeElement is CodeNamespace codeNamespace)
+                    await RenderCodeNamespaceToFilePerClassAsync(writer, codeNamespace);
             }
         }
 
