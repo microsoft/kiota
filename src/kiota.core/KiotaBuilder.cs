@@ -113,8 +113,12 @@ namespace kiota.core
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            var codeNamespace = new CodeNamespace() { Name = this.config.ClientNamespaceName };
-            CreateClass(codeNamespace, root);
+            var codeNamespace = new CodeNamespace { Name = this.config.ClientNamespaceName };
+            codeNamespace.AddNamespace(new CodeNamespace{
+                Name = $"{this.config.ClientNamespaceName}.requests",
+                IsRequestsNamespace = true
+            });
+            CreateRequestBuilderClass(codeNamespace, root);
 
             stopwatch.Stop();
             logger.LogInformation("{timestamp}ms: Created source model with {count} classes", stopwatch.ElapsedMilliseconds, codeNamespace.InnerChildElements.Count);
@@ -150,13 +154,13 @@ namespace kiota.core
             switch (language)
             {
                 case GenerationLanguage.CSharp:
-                    languageWriter = new CSharpWriter();
+                    languageWriter = new CSharpWriter(this.config.OutputPath, this.config.ClientNamespaceName);
                     break;
                 case GenerationLanguage.Java:
-                    languageWriter = new JavaWriter();
+                    languageWriter = new JavaWriter(this.config.OutputPath, this.config.ClientNamespaceName);
                     break;
                 case GenerationLanguage.TypeScript:
-                    languageWriter = new TypeScriptWriter();
+                    languageWriter = new TypeScriptWriter(this.config.OutputPath, this.config.ClientNamespaceName);
                     break;
                 default:
                     throw new ArgumentException($"{language} language currently not supported.");
@@ -164,7 +168,7 @@ namespace kiota.core
 
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            await CodeRenderer.RenderCodeNamespaceToFilePerClassAsync(languageWriter, generatedCode, config.OutputPath);
+            await CodeRenderer.RenderCodeNamespaceToFilePerClassAsync(languageWriter, generatedCode);
             stopwatch.Stop();
             logger.LogInformation("{timestamp}ms: Files written to {path}", stopwatch.ElapsedMilliseconds, config.OutputPath);
         }
@@ -173,7 +177,7 @@ namespace kiota.core
         /// <summary>
         /// Create a CodeClass instance that is a request builder class for the OpenApiUrlSpaceNode
         /// </summary>
-        private void CreateClass(CodeNamespace codeNamespace, OpenApiUrlSpaceNode node)
+        private void CreateRequestBuilderClass(CodeNamespace codeNamespace, OpenApiUrlSpaceNode node)
         {
             // Determine Class Name
             string className;
@@ -217,17 +221,17 @@ namespace kiota.core
                 {
                     var parameterClass = CreateOperationParameter(node, operation);
 
-                    var method = CreateOperationMethod(operation.Key, operation.Value, parameterClass);
+                    var method = CreateOperationMethod(operation.Key, operation.Value, parameterClass, codeNamespace);
                     logger.LogDebug("Creating method {name} of {type}", method.Name, method.ReturnType);
                     codeClass.AddMethod(method);
                 }
             }
 
-            codeNamespace.AddClass(codeClass);
+            codeNamespace.RequestsNamespace.AddClass(codeClass);
 
             foreach (var childNode in node.Children.Values)
             {
-                CreateClass(codeNamespace, childNode);
+                CreateRequestBuilderClass(codeNamespace, childNode);
             }
         }
 
@@ -246,76 +250,126 @@ namespace kiota.core
             return prop;
         }
 
-        private CodeProperty CreateProperty(string childIdentifier, string childType)
+        private CodeProperty CreateProperty(string childIdentifier, string childType, OpenApiSchema typeSchema = null)
         {
             var prop = new CodeProperty()
             {
                 Name = childIdentifier,
-                Type = new CodeType() { Name = childType }
+                Type = new CodeType() { Name = childType, Schema = typeSchema }
             };
             logger.LogDebug("Creating property {name} of {type}", prop.Name, prop.Type.Name);
             return prop;
         }
 
-        private CodeMethod CreateOperationMethod(OperationType operationType, OpenApiOperation operation, CodeClass parameterClass)
+        private CodeMethod CreateOperationMethod(OperationType operationType, OpenApiOperation operation, CodeClass parameterClass, CodeNamespace codeNamespace)
         {
             var schema = GetResponseSchema(operation);
+            var method = new CodeMethod() {
+                Name = operationType.ToString(),
+            };
             if (schema != null)
             {
-                CreateModelClasses(schema, operation);
-            }
+                var returnType = CreateModelClasses(schema, operation, codeNamespace);
+                method.ReturnType = returnType ?? new CodeType() { Name = "object"}; //TODO remove this temporary default when the method above handles all cases
+            } else 
+                method.ReturnType = new CodeType() { Name = "object"};
+
+            
 
             if (operation.RequestBody != null)
             {
-                CreateRequestModelClasses(operation.RequestBody, operation);
+                var requestBodyType = CreateRequestModelClasses(operation.RequestBody, operation);
+                // method.AddParameter(new CodeParameter {
+                //     Name = "body",
+                //     Type = requestBodyType,
+                //     Optional = false,
+                // });
             }
-
-            var method = new CodeMethod() {
-                Name = operationType.ToString(),
-                ReturnType = new CodeType() { Name = "object"}
-            };
-            var methodParameter = new CodeParameter
+            
+            method.AddParameter(new CodeParameter
             {
                 Name = "q",
                 Type = new CodeType() { Name = parameterClass.Name, ActionOf = true, TypeDefinition = parameterClass },
                 Optional = true,
                 IsQueryParameter = true,
-            };
-            method.AddParameter(methodParameter);
+            });
             return method;
         }
 
-        private void CreateRequestModelClasses(OpenApiRequestBody requestBody, OpenApiOperation operation)
+        private CodeType CreateRequestModelClasses(OpenApiRequestBody requestBody, OpenApiOperation operation)
         {
             //TODO:
             //if has reference, go find the type with the same id
             //else insert inner declaration
+            // if(requestBody.Reference == null) {
+            //     return new CodeType {
+            //       TypeDefinition = new CodeClass {
 
+            //       }  
+            //     };
+            // }
+            return null;
             // use the type declaration /reference for the operation parameter declaration
         }
-
-        private void CreateModelClasses(OpenApiSchema schema, OpenApiOperation operation)
+        private CodeType CreateModelClasses(OpenApiSchema schema, OpenApiOperation operation, CodeNamespace codeNamespace)
         {
+            var originalReferenceId = schema?.Reference?.Id;
+            var originalRefernece = schema?.Reference;
+            if(schema?.AllOf?.Any() ?? false)
+                schema = schema.AllOf.Last();
             // object type
             // array of object
             // all of object
             // one of object
             // any of object
-            CodeClass codeClass;
 
-            if (schema.Reference == null)  // Inline schema, i.e. specific to the Operation
-            {
-                codeClass = new CodeClass() { Name = operation.OperationId + "Response" };
+            if (originalRefernece == null)  // Inline schema, i.e. specific to the Operation
+            {//TODO
+                var codeClass = new CodeClass() { Name = operation.OperationId + "Response" };
             } else  // Reused schema from components
             {
-                if(false) // we can find it in the components
+                var targetNamespace = codeNamespace.GetNamespace(GetNamespaceNameFromReferenceId(originalReferenceId));
+                //TODO create namespace if we can't find it, and create the sub requests namespace
+                var className = GetClassNameFromReferenceId(originalReferenceId);
+                var existingClass = targetNamespace.InnerChildElements.OfType<CodeClass>().FirstOrDefault(x => x.Name?.Equals(className) ?? false);
+                if(existingClass == null) // we can find it in the components
                 {
-                    
+                    existingClass = new CodeClass { Name = className };
+                    if(schema.Properties.Any())//TODO handle collections
+                        existingClass.AddProperty(schema
+                                                    .Properties
+                                                    .Select(x => CreateProperty(x.Key, x.Value.Type,x.Value))
+                                                    .ToArray());
+                    targetNamespace.AddClass(existingClass);
                 }
-                else // we can't find it so new it 
-                codeClass = new CodeClass() { Name = schema.Reference.Id };   // Id will contain "microsoft.Graph.foo"
+                return new CodeType {
+                    TypeDefinition = existingClass,
+                    Name = className,
+                    Schema = schema
+                };
             }
+            return null;
             // Add codeClass to model namespace in workspace
+        }
+        private string GetClassNameFromReferenceId(string referenceId) {
+            if(string.IsNullOrEmpty(referenceId)) 
+                return referenceId;
+            
+            var truncatedNamespaceName = referenceId.Replace(this.config.SchemaRootNamespaceName, string.Empty);
+            if(truncatedNamespaceName.Contains('.')) 
+                return truncatedNamespaceName.Substring(truncatedNamespaceName.LastIndexOf('.') + 1);
+            else 
+                return truncatedNamespaceName;
+        }
+        private string GetNamespaceNameFromReferenceId(string referenceId) {
+            if(string.IsNullOrEmpty(referenceId)) 
+                return referenceId;
+            
+            var truncatedNamespaceName = referenceId.Replace(this.config.SchemaRootNamespaceName, string.Empty);
+            if(truncatedNamespaceName.Contains('.')) 
+                return this.config.ClientNamespaceName + truncatedNamespaceName.Substring(0, truncatedNamespaceName.LastIndexOf('.'));
+            else 
+                return truncatedNamespaceName;
         }
 
         private OpenApiSchema GetResponseSchema(OpenApiOperation operation)
