@@ -36,8 +36,17 @@ namespace kiota.core
 
         public override void WriteProperty(CodeProperty code)
         {
-
-            WriteLine($"public {GetTypeString(code.Type)} {code.Name} {{get;}}");
+            var simpleBody = "get;";
+            if (!code.ReadOnly)
+            {
+                simpleBody = "get;set;";
+            }
+            var defaultValue = "";
+            if (code.DefaultValue != null)
+            {
+                defaultValue = " = " + code.DefaultValue + ";";
+            }
+            WriteLine($"public {GetTypeString(code.Type)} {code.Name} {{{simpleBody}}} {defaultValue}");
         }
 
         public override void WriteIndexer(CodeIndexer code)
@@ -47,7 +56,10 @@ namespace kiota.core
 
         public override void WriteMethod(CodeMethod code)
         {
-            WriteLine($"public Task<{GetTypeString(code.ReturnType)}> {code.Name}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
+            var staticModifier = code.IsStatic ? "static " : "";
+            // Task type should be moved into the refiner
+            WriteLine($"public {staticModifier}Task<{GetTypeString(code.ReturnType)}> {code.Name}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
+
         }
 
         public override void WriteType(CodeType code)

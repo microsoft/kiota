@@ -379,12 +379,16 @@ namespace kiota.core
 
         private void CreateResponseHandler(CodeClass requestBuilder)
         {
-            // ResponseHandler
-            var responseHandlerImpl = new CodeMethod() { Name = "ResponseHandlerImpl" };
+            // Default ResponseHandler Implementation
+            var responseHandlerImpl = new CodeMethod() { Name = "DefaultResponseHandler", IsStatic = true };
             responseHandlerImpl.AddParameter(new CodeParameter() { Name = "response", Type = new CodeType() { Name = "object" } });  // replace native HTTP response object type in language refiner
             responseHandlerImpl.ReturnType = new CodeType() { Name = "object" };
             requestBuilder.AddMethod(responseHandlerImpl);
-            requestBuilder.AddProperty(CreateProperty("ResponseHandler", "Func<object,object>"));  // model, HttpResponseMessage
+
+            // Property to allow replacing Response Handler
+            var responseHandlerProperty = CreateProperty("ResponseHandler", "Func<object,object>", "DefaultResponseHandler"); // HttpResponseMessage, model
+            responseHandlerProperty.ReadOnly = false;
+            requestBuilder.AddProperty(responseHandlerProperty);  
         }
     }
 }
