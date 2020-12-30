@@ -85,7 +85,8 @@ namespace kiota.core
 
         public override string GetParameterSignature(CodeParameter parameter)
         {
-            return $"{GetTypeString(parameter.Type)} {parameter.Name}";
+            var parameterType = GetTypeString(parameter.Type);
+            return $"{parameterType} {parameter.Name}{(parameter.Optional ? $" = default({parameterType})": string.Empty)}";
         }
 
         public override string GetFileSuffix()
