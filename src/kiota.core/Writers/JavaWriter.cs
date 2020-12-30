@@ -10,7 +10,7 @@ namespace kiota.core
 
         public override string GetParameterSignature(CodeParameter parameter)
         {
-            return $"@javax.annotation.Nonnull final {GetTypeString(parameter.Type)} {parameter.Name}";
+            return $"@javax.annotation.{(parameter.Optional ? "Nullable" : "Nonnull")} final {GetTypeString(parameter.Type)} {parameter.Name}";
         }
 
         public override string GetTypeString(CodeType code)
