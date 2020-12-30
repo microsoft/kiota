@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 
 namespace kiota.core
 {
@@ -43,9 +44,11 @@ namespace kiota.core
             return this.InnerChildElements.Any(e => e.Name == name);
         }
 
-        public void AddMethod(CodeMethod method)
+        public void AddMethod(params CodeMethod[] methods)
         {
-            this.InnerChildElements.Add(method);
+            if(!methods.Any() || methods.Any(x => x == null))
+                throw new ArgumentOutOfRangeException(nameof(methods));
+            this.InnerChildElements.AddRange(methods);
         }
 
         public void AddInnerClass(CodeClass codeClass)
