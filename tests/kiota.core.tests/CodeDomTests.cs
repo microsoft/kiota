@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using System.IO;
+using Xunit;
 
 namespace kiota.core.tests
 {
@@ -13,7 +14,7 @@ namespace kiota.core.tests
             var myClass = new CodeClass() { Name = "bar"};
             myNamespace.AddClass(myClass);
 
-            var outputCode = CodeRenderer.RenderCodeAsString(new CSharpWriter(),myNamespace);
+            var outputCode = CodeRenderer.RenderCodeAsString(new CSharpWriter(Path.GetRandomFileName(), "foo"),myNamespace);
 
             Assert.Equal(@"namespace foo {
     public class bar {
