@@ -274,10 +274,12 @@ namespace kiota.core
                 Name = operationType.ToString() + "Async",
                 ReturnType = new CodeType() { Name = "object"}
             };
-            var methodParameter = new CodeParameter()
+            var methodParameter = new CodeParameter
             {
                 Name = "q",
-                Type = new CodeType() { Name = parameterClass.Name, ActionOf = true, TypeDefinition = parameterClass }
+                Type = new CodeType() { Name = parameterClass.Name, ActionOf = true, TypeDefinition = parameterClass },
+                Optional = true,
+                IsQueryParameter = true,
             };
             method.AddParameter(methodParameter);
             return method;
