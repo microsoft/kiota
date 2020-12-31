@@ -180,17 +180,17 @@ namespace kiota.core
         private void CreateRequestBuilderClass(CodeNamespace codeNamespace, OpenApiUrlSpaceNode node)
         {
             // Determine Class Name
-            string className;
+            CodeClass codeClass;
             if (String.IsNullOrEmpty(node.Identifier))
             {
-                className = this.config.ClientClassName;
+                codeClass = new CodeClass(codeNamespace) { Name = this.config.ClientClassName };
             }
             else
             {
-                className = FixPathIdentifier(node.Identifier) + "RequestBuilder" + (this.AddSuffix ? "_" + node.Hash() : "");
+                var className = FixPathIdentifier(node.Identifier) + "RequestBuilder" + (this.AddSuffix ? "_" + node.Hash() : "");
+                codeClass = new CodeClass(codeNamespace.RequestsNamespace) { Name = className };
             }
 
-            var codeClass = new CodeClass(codeNamespace.RequestsNamespace) { Name = className };
             logger.LogDebug("Creating class {class}", codeClass.Name);
 
             // Add properties for children
@@ -227,7 +227,7 @@ namespace kiota.core
                 }
             }
 
-            codeNamespace.RequestsNamespace.AddClass(codeClass);
+            (string.IsNullOrEmpty(node.Identifier) ? codeNamespace : codeNamespace.RequestsNamespace).AddClass(codeClass);
 
             foreach (var childNode in node.Children.Values)
             {
