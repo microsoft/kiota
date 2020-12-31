@@ -41,7 +41,7 @@ namespace kiota.core
             {
                 simpleBody = "get;set;";
             }
-            var defaultValue = "";
+            var defaultValue = string.Empty;
             if (code.DefaultValue != null)
             {
                 defaultValue = " = " + code.DefaultValue + ";";
