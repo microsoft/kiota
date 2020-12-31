@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace kiota.core {
     public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
-        private Regex responseHandlerType = new Regex("<(.*),object>");
+        private static readonly Regex responseHandlerType = new Regex("<(.*),object>");
         public override void Refine(CodeNamespace generatedCode)
         {
             generatedCode.AddUsing(new CodeUsing() { Name = "System" });
