@@ -222,7 +222,10 @@ namespace kiota.core
                     logger.LogDebug("Creating method {name} of {type}", method.Name, method.ReturnType);
                     codeClass.AddMethod(method);
                 }
+
+                CreateResponseHandler(codeClass);
             }
+           
 
             (string.IsNullOrEmpty(node.Identifier) ? codeNamespace : codeNamespace.EnsureRequestsNamespace()).AddClass(codeClass);
 
@@ -250,11 +253,12 @@ namespace kiota.core
             return prop;
         }
 
-        private CodeProperty CreateProperty(string childIdentifier, string childType, CodeClass codeClass, OpenApiSchema typeSchema = null)
+        private CodeProperty CreateProperty(string childIdentifier, string childType, CodeClass codeClass, string defaultValue = null, OpenApiSchema typeSchema = null)
         {
             var prop = new CodeProperty(codeClass)
             {
                 Name = childIdentifier,
+                DefaultValue = defaultValue
             };
             prop.Type = new CodeType(prop) { Name = childType, Schema = typeSchema };
             logger.LogDebug("Creating property {name} of {type}", prop.Name, prop.Type.Name);
@@ -289,7 +293,7 @@ namespace kiota.core
             {
                 Name = "q",
                 Optional = true,
-                IsQueryParameter = true,
+                ParameterKind = CodeParameterKind.QueryParameter
             };
             qsParam.Type = new CodeType(qsParam) { Name = parameterClass.Name, ActionOf = true, TypeDefinition = parameterClass };
             method.AddParameter(qsParam);
@@ -341,7 +345,7 @@ namespace kiota.core
                     if(schema.Properties.Any())//TODO handle collections
                         existingClass.AddProperty(schema
                                                     .Properties
-                                                    .Select(x => CreateProperty(x.Key, x.Value.Type, existingClass, x.Value))
+                                                    .Select(x => CreateProperty(x.Key, x.Value.Type, existingClass, null, x.Value))
                                                     .ToArray());
                     targetNamespace.AddClass(existingClass);
                 }
@@ -436,6 +440,23 @@ namespace kiota.core
                 identifier = identifier.Replace("$value", "Content");
             }
             return identifier.ToCamelCase();
+        }
+
+        private void CreateResponseHandler(CodeClass requestBuilder)
+        {
+            // Default ResponseHandler Implementation
+            var responseHandlerImpl = new CodeMethod(requestBuilder) { Name = "DefaultResponseHandler", IsStatic = true, MethodKind = CodeMethodKind.ResponseHandler };
+            var parameter = new CodeParameter(responseHandlerImpl) { Name = "response" };
+            parameter.Type = new CodeType(parameter) { Name = "object" };
+            responseHandlerImpl.AddParameter(parameter);  // replace native HTTP response object type in language refiner
+            responseHandlerImpl.ReturnType = new CodeType(responseHandlerImpl) { Name = "object" };
+            requestBuilder.AddMethod(responseHandlerImpl);
+
+            // Property to allow replacing Response Handler
+            var responseHandlerProperty = CreateProperty("ResponseHandler", "Func<object,object>", requestBuilder, "DefaultResponseHandler"); // HttpResponseMessage, model
+            responseHandlerProperty.PropertyKind = CodePropertyKind.ResponseHandler;
+            responseHandlerProperty.ReadOnly = false;
+            requestBuilder.AddProperty(responseHandlerProperty);  
         }
     }
 }
