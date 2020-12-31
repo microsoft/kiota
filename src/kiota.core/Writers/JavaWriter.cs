@@ -48,6 +48,14 @@ namespace kiota.core
 
         public override void WriteCodeClassDeclaration(CodeClass.Declaration code)
         {
+            if(code?.Parent?.Parent is CodeNamespace) {
+                WriteLine($"package {code.Parent.Parent.Name};");
+                WriteLine();
+                foreach (var codeUsing in code.Usings)
+                {
+                    WriteLine($"import {codeUsing.Name}.*;");
+                }
+            }
             //TODO: missing javadoc
             WriteLine($"public class {code.Name} {{");
             IncreaseIndent();
@@ -79,18 +87,6 @@ namespace kiota.core
             WriteLine("@javax.annotation.Nonnull");
             WriteLine($"public java.util.concurrent.Future<{GetTypeString(code.ReturnType)}> {code.Name.ToFirstCharacterLowerCase()}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
         }
-
-        public override void WriteNamespaceDeclaration(CodeNamespace.BlockDeclaration code)
-        {
-            WriteLine($"package {code.Name};");
-            WriteLine();
-            foreach (var codeUsing in code.Usings)
-            {
-                WriteLine($"import {codeUsing.Name}.*;");
-            }
-        }
-
-        public override void WriteNamespaceEnd(CodeNamespace.BlockEnd code) => WriteLine();
 
         public override void WriteProperty(CodeProperty code)
         {

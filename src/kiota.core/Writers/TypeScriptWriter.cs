@@ -154,10 +154,6 @@ namespace kiota.core
             WriteLine($"public readonly {code.Name.ToFirstCharacterLowerCase()} = ({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : Promise<{GetTypeString(code.ReturnType)}> => {{ return Promise.resolve({(code.ReturnType.Name.Equals("string") ? "''" : "{}")}); }}");
         }
 
-        public override void WriteNamespaceDeclaration(CodeNamespace.BlockDeclaration code) => WriteLine();
-
-        public override void WriteNamespaceEnd(CodeNamespace.BlockEnd code) => WriteLine();
-
         public override void WriteProperty(CodeProperty code)
         {
             WriteLine($"public {code.Name}?: {GetTypeString(code.Type)} | undefined;");

@@ -113,17 +113,14 @@ namespace kiota.core
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            var codeNamespace = new CodeNamespace(null) { Name = this.config.ClientNamespaceName };
-            codeNamespace.AddNamespace(new CodeNamespace(codeNamespace){
-                Name = $"{this.config.ClientNamespaceName}.requests",
-                IsRequestsNamespace = true
-            });
+            var rootPlaceholder = CodeNamespace.InitRootNamespace();
+            var codeNamespace = rootPlaceholder.AddNamespace(this.config.ClientNamespaceName);
             CreateRequestBuilderClass(codeNamespace, root);
 
             stopwatch.Stop();
             logger.LogInformation("{timestamp}ms: Created source model with {count} classes", stopwatch.ElapsedMilliseconds, codeNamespace.InnerChildElements.Count);
 
-            return codeNamespace;
+            return rootPlaceholder;
         }
 
         /// <summary>
@@ -188,7 +185,7 @@ namespace kiota.core
             else
             {
                 var className = FixPathIdentifier(node.Identifier) + "RequestBuilder" + (this.AddSuffix ? "_" + node.Hash() : "");
-                codeClass = new CodeClass(codeNamespace.RequestsNamespace) { Name = className };
+                codeClass = new CodeClass(codeNamespace.EnsureRequestsNamespace()) { Name = className };
             }
 
             logger.LogDebug("Creating class {class}", codeClass.Name);
@@ -227,11 +224,14 @@ namespace kiota.core
                 }
             }
 
-            (string.IsNullOrEmpty(node.Identifier) ? codeNamespace : codeNamespace.RequestsNamespace).AddClass(codeClass);
+            (string.IsNullOrEmpty(node.Identifier) ? codeNamespace : codeNamespace.EnsureRequestsNamespace()).AddClass(codeClass);
 
+            var rootNamespace = codeNamespace.GetRootNamespace();
             foreach (var childNode in node.Children.Values)
             {
-                CreateRequestBuilderClass(codeNamespace, childNode);
+                var targetNamespaceName = GetNamespaceNameFromReferenceId(this.config.SchemaRootNamespaceName + '.' + childNode.Identifier.ToFirstCharacterLowerCase());
+                var targetNamespace = rootNamespace.GetNamespace(targetNamespaceName) ?? rootNamespace.AddNamespace(targetNamespaceName);
+                CreateRequestBuilderClass(targetNamespace, childNode);
             }
         }
 
@@ -329,8 +329,10 @@ namespace kiota.core
                 var codeClass = new CodeClass(codeNamespace) { Name = operation.OperationId + "Response" };
             } else  // Reused schema from components
             {
-                var targetNamespace = codeNamespace.GetRootNamespace().GetNamespace(GetNamespaceNameFromReferenceId(originalReferenceId));
-                //TODO create namespace if we can't find it, and create the sub requests namespace
+                var targetNamespaceName = GetNamespaceNameFromReferenceId(originalReferenceId);
+                var targetNamespace = codeNamespace.GetRootNamespace().GetNamespace(targetNamespaceName);
+                if(targetNamespace == null)
+                    targetNamespace = codeNamespace.AddNamespace(targetNamespaceName);
                 var className = GetClassNameFromReferenceId(originalReferenceId);
                 var existingClass = targetNamespace.InnerChildElements.OfType<CodeClass>().FirstOrDefault(x => x.Name?.Equals(className) ?? false);
                 if(existingClass == null) // we can find it in the components

@@ -8,9 +8,8 @@ namespace kiota.core.tests
         [Fact]
         public void CreateClassAndRender()
         {
-            var myNamespace = new CodeNamespace(null) {
-                Name = "foo"
-            };
+            var rootNamespace = CodeNamespace.InitRootNamespace();
+            var myNamespace = rootNamespace.AddNamespace("foo");
             var myClass = new CodeClass(myNamespace) { Name = "bar"};
             myNamespace.AddClass(myClass);
 

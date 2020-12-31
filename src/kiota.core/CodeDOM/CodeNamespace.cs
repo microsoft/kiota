@@ -9,9 +9,12 @@ namespace kiota.core
     /// </summary>
     public class CodeNamespace : CodeBlock
     {
-        public CodeNamespace(CodeElement parent):base(parent)
+        private CodeNamespace(CodeElement parent):base(parent)
         {
             
+        }
+        public static CodeNamespace InitRootNamespace() {
+            return new CodeNamespace(null);
         }
         private string name;
         public override string Name
@@ -33,19 +36,56 @@ namespace kiota.core
             AddMissingParent(codeClasses);
             this.InnerChildElements.AddRange(codeClasses);
         }
-        public void AddNamespace(params CodeNamespace[] codeNamespaces) {
+        private void AddNamespace(params CodeNamespace[] codeNamespaces) {
             if(!codeNamespaces.Any() || codeNamespaces.Any(x => x == null))
                 throw new ArgumentOutOfRangeException(nameof(codeNamespaces));
             AddMissingParent(codeNamespaces);
             this.InnerChildElements.AddRange(codeNamespaces);
         }
-        public bool IsRequestsNamespace { get; set; }
-        public CodeNamespace RequestsNamespace { get => IsRequestsNamespace ? this : this.InnerChildElements.OfType<CodeNamespace>().FirstOrDefault(x => x.IsRequestsNamespace);}
+        private static readonly char namespaceNameSeparator = '.';
+        public CodeNamespace AddNamespace(string namespaceName) {
+            if(string.IsNullOrEmpty(namespaceName))
+                throw new ArgumentNullException(nameof(namespaceName));
+            var rootNamespace = GetRootNamespace();
+            var namespaceNameSegements = namespaceName.Split(namespaceNameSeparator, StringSplitOptions.RemoveEmptyEntries);
+            var lastPresentSegmentIndex = default(int);
+            CodeNamespace lastPresentSegmentNamespace = rootNamespace;
+            while(lastPresentSegmentIndex < namespaceNameSegements.Count()) {
+                var segmentNameSpace = rootNamespace.GetNamespace(namespaceNameSegements.Take(lastPresentSegmentIndex + 1).Aggregate((x, y) => $"{x}.{y}"));
+                if(segmentNameSpace == null)
+                    break;
+                else {
+                    lastPresentSegmentNamespace = segmentNameSpace;
+                    lastPresentSegmentIndex++;
+                }
+            }
+            if(lastPresentSegmentNamespace != null)
+                foreach(var childSegment in namespaceNameSegements.Skip(lastPresentSegmentIndex)) {
+                    var newNS = new CodeNamespace(lastPresentSegmentNamespace) {
+                        Name = $"{lastPresentSegmentNamespace?.Name}{(string.IsNullOrEmpty(lastPresentSegmentNamespace?.Name) ? string.Empty : ".")}{childSegment}",
+                    };
+                    lastPresentSegmentNamespace.AddNamespace(newNS);
+                    lastPresentSegmentNamespace = newNS;
+                }
+            return lastPresentSegmentNamespace;
+        }
+        public bool IsRequestsNamespace { get; private set; }
+        public CodeNamespace EnsureRequestsNamespace() { 
+            if (IsRequestsNamespace) return this;
+            else {
+                var childNamespace = this.InnerChildElements.OfType<CodeNamespace>().FirstOrDefault(x => x.IsRequestsNamespace);
+                if(childNamespace == null) {
+                    childNamespace = GetRootNamespace().AddNamespace($"{this.Name}.requests");
+                    childNamespace.IsRequestsNamespace = true;
+                }
+                return childNamespace;
+            } 
+        }
         public CodeNamespace GetNamespace(string namespaceName) {
             if(string.IsNullOrEmpty(namespaceName))
                 throw new ArgumentNullException(nameof(namespaceName));
             else
-                return this.GetChildElementOfType<CodeNamespace>(x => x.Name.Equals(namespaceName, StringComparison.InvariantCultureIgnoreCase));
+                return this.GetChildElementOfType<CodeNamespace>(x => x.Name?.Equals(namespaceName, StringComparison.InvariantCultureIgnoreCase) ?? false);
         }
         public CodeNamespace GetRootNamespace(CodeNamespace ns = null) {
             if(ns == null)
