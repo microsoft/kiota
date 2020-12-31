@@ -1,0 +1,41 @@
+openapi: 3.0.0
+info:
+  title: "Todo API"
+  version: "1.0.0"
+paths:
+  /todos: 
+    get:
+      parameters:
+          - name: active
+            in: query
+            schema:
+              type: boolean
+          - name: keyword
+            in: query
+            schema:
+              type: string
+      responses:
+        '200':
+          description: OK
+    post:
+      responses:
+        '201':
+          description: OK
+  /todos/{todoId}:
+    get:
+      responses:
+        '200':
+          description: OK
+    delete:
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    todo:
+      type: object
+      properties:
+        id:
+          type: string
+        subject:
+          type: string
