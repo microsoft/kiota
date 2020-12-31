@@ -46,7 +46,7 @@ namespace kiota.core
             {
                 defaultValue = " = " + code.DefaultValue + ";";
             }
-            WriteLine($"public {GetTypeString(code.Type)} {code.Name} {{{simpleBody}}} {defaultValue}");
+            WriteLine($"public {GetTypeString(code.Type)} {code.Name} {{{simpleBody}}}{defaultValue}");
         }
 
         public override void WriteIndexer(CodeIndexer code)
