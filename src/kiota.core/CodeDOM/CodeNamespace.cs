@@ -42,14 +42,10 @@ namespace kiota.core
         public bool IsRequestsNamespace { get; set; }
         public CodeNamespace RequestsNamespace { get => IsRequestsNamespace ? this : this.InnerChildElements.OfType<CodeNamespace>().FirstOrDefault(x => x.IsRequestsNamespace);}
         public CodeNamespace GetNamespace(string namespaceName) {
-            if(string.IsNullOrEmpty(namespaceName)) 
+            if(string.IsNullOrEmpty(namespaceName))
                 throw new ArgumentNullException(nameof(namespaceName));
-            else if(Name.Equals(namespaceName, StringComparison.InvariantCultureIgnoreCase)) 
-                return this;
-            else if(this.InnerChildElements.OfType<CodeNamespace>().Any()) 
-                return this.InnerChildElements.OfType<CodeNamespace>().FirstOrDefault(x => x.GetNamespace(namespaceName) != null);
-            else 
-                return null;
+            else
+                return this.GetChildElementOfType<CodeNamespace>(x => x.Name.Equals(namespaceName, StringComparison.InvariantCultureIgnoreCase));
         }
         public CodeNamespace GetRootNamespace(CodeNamespace ns = null) {
             if(ns == null)

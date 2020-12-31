@@ -38,6 +38,21 @@ namespace kiota.core
             AddMissingParent(codeUsings);
             StartBlock.Usings.AddRange(codeUsings);
         }
+        public T GetChildElementOfType<T>(Func<T,bool> predicate) where T : CodeBlock {
+            if(predicate == null) 
+                throw new ArgumentNullException(nameof(predicate));
+            else if(this is T thisT && predicate(thisT)) 
+                return thisT;
+            else if (this.InnerChildElements.OfType<T>().Any(predicate))
+                return this.InnerChildElements.OfType<T>().First(predicate);
+            else if(this.InnerChildElements.OfType<CodeBlock>().Any())
+                return this.InnerChildElements.OfType<CodeBlock>()
+                                                .Select(x => x.GetChildElementOfType<T>(predicate))
+                                                .OfType<T>()
+                                                .FirstOrDefault();
+            else 
+                return null;
+        }
         public class BlockDeclaration : CodeTerminal
         {
             public override string Name { get; set; }
