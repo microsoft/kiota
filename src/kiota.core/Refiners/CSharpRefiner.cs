@@ -29,7 +29,7 @@ namespace kiota.core {
                             responseHandlerProp.Type.Name = responseHandlerType.Replace(responseHandlerProp.Type.Name, "<HttpResponseMessage,Task<$1>>"); // TODO: We should probably generic types properly 
                         }
                         var defaultResponseHandler = c.InnerChildElements.Where(e => e is CodeMethod && e.Name == "DefaultResponseHandler")
-                                                                      .Cast<CodeMethod>().FirstOrDefault();
+                                                                      .OfType<CodeMethod>().FirstOrDefault();
                         if (defaultResponseHandler != null)
                         {
                             defaultResponseHandler.Parameters.FirstOrDefault().Type.Name = "HttpResponseMessage";
