@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Microsoft.OpenApi.Models;
 
 namespace kiota.core
@@ -61,11 +62,58 @@ namespace kiota.core
         {
             foreach (var codeUsing in code.Usings)
             {
-                WriteLine($"import {{{codeUsing.Name}}} from './{codeUsing.Name}';");
+                var relativeImportPath = codeUsing.Declaration == null ? 
+                                                string.Empty : //it's an external import, add nothing
+                                                (codeUsing.Declaration.TypeDefinition == null ? 
+                                                    "./" : // it's relative to the folder, with no declaration (default failsafe)
+                                                    GetImportRelativePath(code.GetImmediateParentOfType<CodeNamespace>(), 
+                                                            codeUsing.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>()));
+                WriteLine($"import {{{codeUsing.Name}}} from '{relativeImportPath}{(string.IsNullOrEmpty(relativeImportPath) ? codeUsing.Name : codeUsing.Name.ToFirstCharacterLowerCase())}';");
             }
             WriteLine();
             WriteLine($"export class {code.Name} {{");
             IncreaseIndent();
+        }
+        private static char namespaceNameSeparator = '.';
+        private string GetImportRelativePath(CodeNamespace currentNamespace, CodeNamespace importNamespace) {
+            if(currentNamespace == null)
+                throw new ArgumentNullException(nameof(currentNamespace));
+            else if (importNamespace == null)
+                throw new ArgumentNullException(nameof(importNamespace));
+            else if(currentNamespace.Name.Equals(importNamespace.Name)) // we're in the same namespace
+                return "./";
+            else {
+                var currentNamespaceSegements = currentNamespace
+                                    .Name
+                                    .Split(namespaceNameSeparator, StringSplitOptions.RemoveEmptyEntries);
+                var importNamespaceSegments = importNamespace
+                                    .Name
+                                    .Split(namespaceNameSeparator, StringSplitOptions.RemoveEmptyEntries);
+                var importNamespaceSegmentsCount = importNamespaceSegments.Count();
+                var currentNamespaceSegementsCount = currentNamespaceSegements.Count();
+                var deeperMostSegmentIndex = 0;
+                while(deeperMostSegmentIndex < Math.Min(importNamespaceSegmentsCount, currentNamespaceSegementsCount)) {
+                    if(currentNamespaceSegements.ElementAt(deeperMostSegmentIndex).Equals(importNamespaceSegments.ElementAt(deeperMostSegmentIndex)))
+                        deeperMostSegmentIndex++;
+                    else
+                        break;
+                }
+                if(importNamespaceSegmentsCount > currentNamespaceSegementsCount) { // we're in a parent namespace and need to import with a relative path
+                    return "./" + GetRemainingImportPath(importNamespaceSegments.Skip(deeperMostSegmentIndex));
+                } else { // we're in a sub namespace and need to go "up" with dot dots
+                    var upMoves = currentNamespaceSegementsCount - importNamespaceSegmentsCount;
+                    var upMovesBuilder = new StringBuilder();
+                    for(var i = 0; i < upMoves; i++)
+                        upMovesBuilder.Append("../");
+                    return upMovesBuilder.ToString() + GetRemainingImportPath(importNamespaceSegments.Skip(deeperMostSegmentIndex));
+                }
+            }
+        }
+        private string GetRemainingImportPath(IEnumerable<string> remainingSegments) {
+            if(remainingSegments.Any())
+                return remainingSegments.Aggregate((x, y) => $"{x}/{y}");
+            else
+                return string.Empty;
         }
 
         public override void WriteCodeClassEnd(CodeClass.End code)
@@ -76,17 +124,16 @@ namespace kiota.core
 
         public override void WriteIndexer(CodeIndexer code)
         {
-            WriteMethod(new CodeMethod {
+            var method = new CodeMethod(code) {
                 Name = "item",
-                Parameters = new List<CodeParameter> {
-                    new CodeParameter {
+                ReturnType = code.IndexType
+            };
+            method.AddParameter(new CodeParameter(method) {
                         Name = "position",
                         Type = code.IndexType,
                         Optional = false,
-                    }
-                },
-                ReturnType = code.IndexType
-            });
+                    });
+            WriteMethod(method);
         }
 
         public override void WriteMethod(CodeMethod code)

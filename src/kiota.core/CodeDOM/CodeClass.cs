@@ -10,10 +10,10 @@ namespace kiota.core
     {
         private string name;
 
-        public CodeClass()
+        public CodeClass(CodeElement parent):base(parent)
         {
-            StartBlock = new Declaration();
-            EndBlock = new End();
+            StartBlock = new Declaration(this);
+            EndBlock = new End(this);
         }
 
         /// <summary>
@@ -25,7 +25,7 @@ namespace kiota.core
             set
             {
                 name = value;
-                StartBlock = new Declaration() { Name = name };
+                StartBlock = new Declaration(this) { Name = name };
             }
         }
 
@@ -38,6 +38,7 @@ namespace kiota.core
         {
             if(!properties.Any() || properties.Any(x => x == null))
                 throw new ArgumentNullException(nameof(properties));
+            AddMissingParent(properties);
             this.InnerChildElements.AddRange(properties);
         }
 
@@ -50,16 +51,24 @@ namespace kiota.core
         {
             if(!methods.Any() || methods.Any(x => x == null))
                 throw new ArgumentOutOfRangeException(nameof(methods));
+            AddMissingParent(methods);
             this.InnerChildElements.AddRange(methods);
         }
 
-        public void AddInnerClass(CodeClass codeClass)
+        public void AddInnerClass(params CodeClass[] codeClasses)
         {
-            this.InnerChildElements.Add(codeClass);
+            if(!codeClasses.Any() || codeClasses.Any(x => x == null))
+                throw new ArgumentOutOfRangeException(nameof(codeClasses));
+            AddMissingParent(codeClasses);
+            this.InnerChildElements.AddRange(codeClasses);
         }
 
         public class Declaration : BlockDeclaration
         {
+            public Declaration(CodeElement parent):base(parent)
+            {
+                
+            }
             /// <summary>
             /// Class name
             /// </summary>
@@ -73,6 +82,10 @@ namespace kiota.core
 
         public class End : BlockEnd
         {
+            public End(CodeElement parent):base(parent)
+            {
+                
+            }
         }
     }
 }

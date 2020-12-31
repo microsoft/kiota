@@ -61,17 +61,16 @@ namespace kiota.core
 
         public override void WriteIndexer(CodeIndexer code)
         {
-            WriteMethod(new CodeMethod {
+            var method = new CodeMethod(code) {
                 Name = "get",
-                Parameters = new List<CodeParameter> {
-                    new CodeParameter {
+                ReturnType = code.IndexType
+            };
+            method.AddParameter(new CodeParameter(method) {
                         Name = "position",
                         Type = code.IndexType,
                         Optional = false,
-                    }
-                },
-                ReturnType = code.IndexType
-            });
+                    });
+            WriteMethod(method);
         }
 
         public override void WriteMethod(CodeMethod code)

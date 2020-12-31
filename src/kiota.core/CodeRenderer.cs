@@ -34,8 +34,9 @@ namespace kiota.core
             {
                 if (codeElement is CodeClass codeClass)
                 {
-                    var codeNamespace = new CodeNamespace() { Name = root.Name };
-                    codeNamespace.AddUsing(root.StartBlock.Usings.ToArray());
+                    var codeNamespace = new CodeNamespace(null) { Name = root.Name };
+                    if(root.StartBlock.Usings.Any())
+                        codeNamespace.AddUsing(root.StartBlock.Usings.ToArray());
                     codeNamespace.AddClass(codeClass);
                     await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(root, codeClass));
                 } else if(codeElement is CodeNamespace codeNamespace)

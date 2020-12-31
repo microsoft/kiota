@@ -5,8 +5,8 @@ namespace kiota.core {
     {
         public override void Refine(CodeNamespace generatedCode)
         {
-            generatedCode.AddUsing(new CodeUsing() { Name = "System" });
-            generatedCode.AddUsing(new CodeUsing() { Name = "System.Threading.Tasks" });
+            generatedCode.AddUsing(new CodeUsing(generatedCode) { Name = "System" });
+            generatedCode.AddUsing(new CodeUsing(generatedCode) { Name = "System.Threading.Tasks" });
             AddAsyncSuffix(generatedCode);
             AddInnerClasses(generatedCode);
         }

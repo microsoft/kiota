@@ -113,8 +113,8 @@ namespace kiota.core
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            var codeNamespace = new CodeNamespace { Name = this.config.ClientNamespaceName };
-            codeNamespace.AddNamespace(new CodeNamespace{
+            var codeNamespace = new CodeNamespace(null) { Name = this.config.ClientNamespaceName };
+            codeNamespace.AddNamespace(new CodeNamespace(codeNamespace){
                 Name = $"{this.config.ClientNamespaceName}.requests",
                 IsRequestsNamespace = true
             });
@@ -190,7 +190,7 @@ namespace kiota.core
                 className = FixPathIdentifier(node.Identifier) + "RequestBuilder" + (this.AddSuffix ? "_" + node.Hash() : "");
             }
 
-            var codeClass = new CodeClass() { Name = className };
+            var codeClass = new CodeClass(codeNamespace.RequestsNamespace) { Name = className };
             logger.LogDebug("Creating class {class}", codeClass.Name);
 
             // Add properties for children
@@ -200,7 +200,7 @@ namespace kiota.core
                 var propType = propIdentifier + "RequestBuilder" + (this.AddSuffix ? "_" + child.Value.Hash() : "");
                 if (child.Value.IsParameter())
                 {
-                    var prop = CreateIndexer(propIdentifier, propType);
+                    var prop = CreateIndexer(propIdentifier, propType, codeClass);
                     codeClass.SetIndexer(prop);
                 }
                 else if (child.Value.IsFunction())
@@ -209,7 +209,7 @@ namespace kiota.core
                 }
                 else
                 {
-                    var prop = CreateProperty(propIdentifier, propType);
+                    var prop = CreateProperty(propIdentifier, propType, codeClass);
                     codeClass.AddProperty(prop);
                 }
             }
@@ -219,9 +219,9 @@ namespace kiota.core
             {
                 foreach(var operation in node.PathItem.Operations)
                 {
-                    var parameterClass = CreateOperationParameter(node, operation);
+                    var parameterClass = CreateOperationParameter(node, operation, codeClass);
 
-                    var method = CreateOperationMethod(operation.Key, operation.Value, parameterClass, codeNamespace);
+                    var method = CreateOperationMethod(operation.Key, operation.Value, parameterClass, codeClass);
                     logger.LogDebug("Creating method {name} of {type}", method.Name, method.ReturnType);
                     codeClass.AddMethod(method);
                 }
@@ -235,44 +235,44 @@ namespace kiota.core
             }
         }
 
-        private CodeIndexer CreateIndexer(string childIdentifier, string childType)
+        private CodeIndexer CreateIndexer(string childIdentifier, string childType, CodeClass codeClass)
         {
-            var prop = new CodeIndexer()
+            var prop = new CodeIndexer(codeClass)
             {
                 Name = childIdentifier,
-                IndexType = new CodeType() { Name = "string" },
-                ReturnType = new CodeType()
-                {
-                    Name = childType
-                }
+            };
+            prop.IndexType = new CodeType(prop) { Name = "string" };
+            prop.ReturnType = new CodeType(prop)
+            {
+                Name = childType
             };
             logger.LogDebug("Creating indexer {name}", childIdentifier);
             return prop;
         }
 
-        private CodeProperty CreateProperty(string childIdentifier, string childType, OpenApiSchema typeSchema = null)
+        private CodeProperty CreateProperty(string childIdentifier, string childType, CodeClass codeClass, OpenApiSchema typeSchema = null)
         {
-            var prop = new CodeProperty()
+            var prop = new CodeProperty(codeClass)
             {
                 Name = childIdentifier,
-                Type = new CodeType() { Name = childType, Schema = typeSchema }
             };
+            prop.Type = new CodeType(prop) { Name = childType, Schema = typeSchema };
             logger.LogDebug("Creating property {name} of {type}", prop.Name, prop.Type.Name);
             return prop;
         }
 
-        private CodeMethod CreateOperationMethod(OperationType operationType, OpenApiOperation operation, CodeClass parameterClass, CodeNamespace codeNamespace)
+        private CodeMethod CreateOperationMethod(OperationType operationType, OpenApiOperation operation, CodeClass parameterClass, CodeClass parentClass)
         {
             var schema = GetResponseSchema(operation);
-            var method = new CodeMethod() {
+            var method = new CodeMethod(parentClass) {
                 Name = operationType.ToString(),
             };
             if (schema != null)
             {
-                var returnType = CreateModelClasses(schema, operation, codeNamespace);
-                method.ReturnType = returnType ?? new CodeType() { Name = "object"}; //TODO remove this temporary default when the method above handles all cases
+                var returnType = CreateModelClasses(schema, operation, method);
+                method.ReturnType = returnType ?? new CodeType(method) { Name = "object"}; //TODO remove this temporary default when the method above handles all cases
             } else 
-                method.ReturnType = new CodeType() { Name = "object"};
+                method.ReturnType = new CodeType(method) { Name = "object"};
 
             
 
@@ -285,14 +285,14 @@ namespace kiota.core
                 //     Optional = false,
                 // });
             }
-            
-            method.AddParameter(new CodeParameter
+            var qsParam = new CodeParameter(method)
             {
                 Name = "q",
-                Type = new CodeType() { Name = parameterClass.Name, ActionOf = true, TypeDefinition = parameterClass },
                 Optional = true,
                 IsQueryParameter = true,
-            });
+            };
+            qsParam.Type = new CodeType(qsParam) { Name = parameterClass.Name, ActionOf = true, TypeDefinition = parameterClass };
+            method.AddParameter(qsParam);
             return method;
         }
 
@@ -311,10 +311,11 @@ namespace kiota.core
             return null;
             // use the type declaration /reference for the operation parameter declaration
         }
-        private CodeType CreateModelClasses(OpenApiSchema schema, OpenApiOperation operation, CodeNamespace codeNamespace)
+        private CodeType CreateModelClasses(OpenApiSchema schema, OpenApiOperation operation, CodeMethod parentMethod)
         {
             var originalReferenceId = schema?.Reference?.Id;
-            var originalRefernece = schema?.Reference;
+            var originalReference = schema?.Reference;
+            var codeNamespace = parentMethod.GetImmediateParentOfType<CodeNamespace>();
             if(schema?.AllOf?.Any() ?? false)
                 schema = schema.AllOf.Last();
             // object type
@@ -323,26 +324,26 @@ namespace kiota.core
             // one of object
             // any of object
 
-            if (originalRefernece == null)  // Inline schema, i.e. specific to the Operation
+            if (originalReference == null)  // Inline schema, i.e. specific to the Operation
             {//TODO
-                var codeClass = new CodeClass() { Name = operation.OperationId + "Response" };
+                var codeClass = new CodeClass(codeNamespace) { Name = operation.OperationId + "Response" };
             } else  // Reused schema from components
             {
-                var targetNamespace = codeNamespace.GetNamespace(GetNamespaceNameFromReferenceId(originalReferenceId));
+                var targetNamespace = codeNamespace.GetRootNamespace().GetNamespace(GetNamespaceNameFromReferenceId(originalReferenceId));
                 //TODO create namespace if we can't find it, and create the sub requests namespace
                 var className = GetClassNameFromReferenceId(originalReferenceId);
                 var existingClass = targetNamespace.InnerChildElements.OfType<CodeClass>().FirstOrDefault(x => x.Name?.Equals(className) ?? false);
                 if(existingClass == null) // we can find it in the components
                 {
-                    existingClass = new CodeClass { Name = className };
+                    existingClass = new CodeClass(targetNamespace) { Name = className };
                     if(schema.Properties.Any())//TODO handle collections
                         existingClass.AddProperty(schema
                                                     .Properties
-                                                    .Select(x => CreateProperty(x.Key, x.Value.Type,x.Value))
+                                                    .Select(x => CreateProperty(x.Key, x.Value.Type, existingClass, x.Value))
                                                     .ToArray());
                     targetNamespace.AddClass(existingClass);
                 }
-                return new CodeType {
+                return new CodeType(parentMethod) {
                     TypeDefinition = existingClass,
                     Name = className,
                     Schema = schema
@@ -386,24 +387,24 @@ namespace kiota.core
             return schemas.FirstOrDefault();
         }
 
-        private CodeClass CreateOperationParameter(OpenApiUrlSpaceNode node, KeyValuePair<OperationType, OpenApiOperation> operation)
+        private CodeClass CreateOperationParameter(OpenApiUrlSpaceNode node, KeyValuePair<OperationType, OpenApiOperation> operation, CodeClass parentClass)
         {
-            var parameterClass = new CodeClass()
+            var parameterClass = new CodeClass(parentClass)
             {
                 Name = operation.Key.ToString() + "QueryParameters"
             };
             var parameters = node.PathItem.Parameters.Union(operation.Value.Parameters).Where(p => p.In == ParameterLocation.Query);
             foreach (var parameter in parameters)
             {
-                var prop = new CodeProperty()
+                var prop = new CodeProperty(parameterClass)
                 {
                     Name = FixQueryParameterIdentifier(parameter),
-                    Type = new CodeType()
+                };
+                prop.Type = new CodeType(prop)
                     {
                         Name = parameter.Schema.Type,
                         Schema = parameter.Schema
-                    }
-                };
+                    };
 
                 if (!parameterClass.ContainsMember(parameter.Name))
                 {
