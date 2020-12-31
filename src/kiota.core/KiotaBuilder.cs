@@ -283,7 +283,7 @@ namespace kiota.core
                 Name = "q",
                 Type = new CodeType() { Name = parameterClass.Name, ActionOf = true, TypeDefinition = parameterClass },
                 Optional = true,
-                IsQueryParameter = true,
+                ParameterKind = CodeParameterKind.QueryParameter
             };
             method.AddParameter(methodParameter);
             return method;
@@ -388,13 +388,14 @@ namespace kiota.core
         private void CreateResponseHandler(CodeClass requestBuilder)
         {
             // Default ResponseHandler Implementation
-            var responseHandlerImpl = new CodeMethod { Name = "DefaultResponseHandler", IsStatic = true };
+            var responseHandlerImpl = new CodeMethod { Name = "DefaultResponseHandler", IsStatic = true, MethodKind = CodeMethodKind.ResponseHandler };
             responseHandlerImpl.AddParameter(new CodeParameter { Name = "response", Type = new CodeType { Name = "object" } });  // replace native HTTP response object type in language refiner
             responseHandlerImpl.ReturnType = new CodeType { Name = "object" };
             requestBuilder.AddMethod(responseHandlerImpl);
 
             // Property to allow replacing Response Handler
             var responseHandlerProperty = CreateProperty("ResponseHandler", "Func<object,object>", "DefaultResponseHandler"); // HttpResponseMessage, model
+            responseHandlerProperty.PropertyKind = CodePropertyKind.ResponseHandler;
             responseHandlerProperty.ReadOnly = false;
             requestBuilder.AddProperty(responseHandlerProperty);  
         }

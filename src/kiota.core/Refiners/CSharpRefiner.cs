@@ -22,14 +22,15 @@ namespace kiota.core {
                 switch (codeElement)
                 {
                     case CodeClass c:
-                        var responseHandlerProp = c.InnerChildElements.OfType<CodeProperty>().Where(e => e.Name == "ResponseHandler")
-                                                                        .OfType<CodeProperty>().FirstOrDefault();
+                        var responseHandlerProp = c.InnerChildElements.OfType<CodeProperty>().Where(e => e.PropertyKind == CodePropertyKind.ResponseHandler)
+                                                                        .FirstOrDefault();
                         if (responseHandlerProp != null)
                         {
                             responseHandlerProp.Type.Name = responseHandlerType.Replace(responseHandlerProp.Type.Name, "<HttpResponseMessage,Task<$1>>"); // TODO: We should probably generic types properly 
                         }
-                        var defaultResponseHandler = c.InnerChildElements.Where(e => e is CodeMethod && e.Name == "DefaultResponseHandler")
-                                                                      .OfType<CodeMethod>().FirstOrDefault();
+                        var defaultResponseHandler = c.InnerChildElements.OfType<CodeMethod>()
+                                                                            .Where(m=> m.MethodKind == CodeMethodKind.ResponseHandler)
+                                                                            .FirstOrDefault();
                         if (defaultResponseHandler != null)
                         {
                             defaultResponseHandler.Parameters.FirstOrDefault().Type.Name = "HttpResponseMessage";
