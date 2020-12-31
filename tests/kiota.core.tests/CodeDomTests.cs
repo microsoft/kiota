@@ -8,10 +8,10 @@ namespace kiota.core.tests
         [Fact]
         public void CreateClassAndRender()
         {
-            var myNamespace = new CodeNamespace() {
+            var myNamespace = new CodeNamespace(null) {
                 Name = "foo"
             };
-            var myClass = new CodeClass() { Name = "bar"};
+            var myClass = new CodeClass(myNamespace) { Name = "bar"};
             myNamespace.AddClass(myClass);
 
             var outputCode = CodeRenderer.RenderCodeAsString(new CSharpWriter(Path.GetRandomFileName(), "foo"),myNamespace);
