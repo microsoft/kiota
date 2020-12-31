@@ -56,7 +56,7 @@ namespace kiota.core
 
         public override void WriteMethod(CodeMethod code)
         {
-            var staticModifier = code.IsStatic ? "static " : "";
+            var staticModifier = code.IsStatic ? "static " : string.Empty;
             // Task type should be moved into the refiner
             WriteLine($"public {staticModifier}Task<{GetTypeString(code.ReturnType)}> {code.Name}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
 
