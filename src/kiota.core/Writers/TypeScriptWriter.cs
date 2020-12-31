@@ -62,20 +62,33 @@ namespace kiota.core
         {
             foreach (var codeUsing in code.Usings)
             {
-                var relativeImportPath = codeUsing.Declaration == null ? 
-                                                string.Empty : //it's an external import, add nothing
-                                                (codeUsing.Declaration.TypeDefinition == null ? 
-                                                    "./" : // it's relative to the folder, with no declaration (default failsafe)
-                                                    GetImportRelativePath(code.GetImmediateParentOfType<CodeNamespace>(), 
-                                                            codeUsing.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>()));
+                var relativeImportPath = GetRelativeImportPathForUsing(codeUsing, code.GetImmediateParentOfType<CodeNamespace>());
+                                                    
                 WriteLine($"import {{{codeUsing.Name}}} from '{relativeImportPath}{(string.IsNullOrEmpty(relativeImportPath) ? codeUsing.Name : codeUsing.Name.ToFirstCharacterLowerCase())}';");
             }
             WriteLine();
             WriteLine($"export class {code.Name} {{");
             IncreaseIndent();
         }
+        private string GetRelativeImportPathForUsing(CodeUsing codeUsing, CodeNamespace currentNamespace) {
+            if(codeUsing.Declaration == null)
+                return string.Empty;//it's an external import, add nothing
+            var typeDef = codeUsing.Declaration.TypeDefinition;
+            if(typeDef == null) {
+                // sometimes the definition is not attached to the declaration because it's generated after the fact, we need to search it
+                typeDef = currentNamespace
+                    .GetRootNamespace()
+                    .GetChildElementOfType<CodeClass>(x => x.Name.Equals(codeUsing.Declaration.Name));
+            }
+
+            if(typeDef == null)
+                return "./"; // it's relative to the folder, with no declaration (default failsafe)
+            else
+                return GetImportRelativePathFromNamespaces(currentNamespace, 
+                                                        typeDef.GetImmediateParentOfType<CodeNamespace>());
+        }
         private static char namespaceNameSeparator = '.';
-        private string GetImportRelativePath(CodeNamespace currentNamespace, CodeNamespace importNamespace) {
+        private string GetImportRelativePathFromNamespaces(CodeNamespace currentNamespace, CodeNamespace importNamespace) {
             if(currentNamespace == null)
                 throw new ArgumentNullException(nameof(currentNamespace));
             else if (importNamespace == null)
@@ -111,7 +124,7 @@ namespace kiota.core
         }
         private string GetRemainingImportPath(IEnumerable<string> remainingSegments) {
             if(remainingSegments.Any())
-                return remainingSegments.Aggregate((x, y) => $"{x}/{y}");
+                return remainingSegments.Aggregate((x, y) => $"{x}/{y}") + '/';
             else
                 return string.Empty;
         }
