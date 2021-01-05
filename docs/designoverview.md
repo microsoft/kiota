@@ -45,3 +45,13 @@ All the different code constructs that are modelled are derived from a base Code
 The last step of the process is to take the code model and translate it to language specific text.  Traversing the CodeElement hierarchy and applying a concrete LanguageWriter implementation will output the desired source code.
 
 Implementing a language support for a new language requires, at minimum, implementing a class that derives from LanguageWriter.
+
+## Kiota Abstractions
+
+The generated source code, does not contain the logic to make HTTP requests directly. It requires being connected to a core library that will make the HTTP requests.  A Kiota.Core library will provide basic HTTP functionality, but API owners can choose to provide their own core libraries that are optimized for their API.
+
+Core libraries take a dependency on the Kiota abstractions library for a language and provide the services of making the HTTP call to the API.  
+
+![](./images/KiotaAbstractions.png)
+
+This abstraction prevents Kiota from taking a dependency on a particular HTTP client library for a platform. Kiota remains focused on providing a consistent experience for discovering resources, creating requests and deserialzing responses.

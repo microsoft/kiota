@@ -12,28 +12,51 @@ By creating properties on request builder classes, the developer can effectively
 ```csharp
 
 namespace Todo {
-    public class TodoClient : BaseRequestBuilder  {
-        
-        public TodoClient(HttpClient httpClient, string basePath) : base(httpClient, path) {
 
+    public class RequestInfo {
+        string Path;
+        Dictionary<string,object> QueryParameters = new Dictionary<string,string>();
+        Dictionary<string,string> Headers = new Dictionary<string,string>();
+    }
+
+`   public interface IHttpCore {
+        Task<Stream> SendAsync(RequestInfo requestInfo)
+    }
+
+    public class TodoClient   {
+        private RequestInfo requestInfo = new RequestInfo();
+        private IHttpCode httpCore;
+
+        public TodoClient(IHttpCore httpCore, string basePath)  {
+            requestInfo.AddPath(path);
         }
 
         public TodosRequestBuilder Todos {
+
             get { 
-                return new TodosRequestBuilder(this.httpClient, Path + "todos");
+                return new TodosRequestBuilder(this.httpCore, requestInfo.Path + "todos");
                 }
             }
     }
 
     public class TodosRequestBuilder {
+        private RequestInfo requestInfo = new RequestInfo();
+        private IHttpCode httpCore;
+
+        public TodosRequestBuilder(IHttpCore httpCore, string basePath)  {
+            requestInfo.AddPath(path);
+        }
+
         public TodoIdRequestBuilder this[string TodoId] {
             get { 
-                return new TodoIdRequestBuilder(this.HttpClient, Path + "/" + TodoId);
+                return new TodoIdRequestBuilder(this.httpCore, Path + "/" + TodoId);
                 }
             }
     }
 
     public class TodoIdRequestBuilder {
+        private RequestInfo requestInfo = new RequestInfo();
+        private IHttpCode httpCore;
 
     }
 }
@@ -44,53 +67,102 @@ Each request builder class exposes the set of HTTP methods that are supported on
 ```csharp
 
 namespace Todo {
-    public class TodoClient : BaseRequestBuilder  {
-        
-        public TodoClient(HttpClient httpClient, string basePath) : base(httpClient, path) {
 
+    public class TodoClient
+    {
+        private RequestInfo requestInfo = new RequestInfo();
+        private IHttpCore httpCore;
+
+        public TodoClient(IHttpCore httpCore, string path)
+        {
+            requestInfo.AddPath(path);
+            this.httpCore = httpCore;
         }
 
-        public TodosRequestBuilder Todos {
-            get { 
-                return new TodosRequestBuilder(this.httpClient, Path + "todos");
-                }
+        public TodosRequestBuilder Todos
+        {
+            get
+            {
+                return new TodosRequestBuilder(this.httpCore, requestInfo.Path + "todos");
             }
-    }
-
-    public class TodosRequestBuilder {
-        public TodoIdRequestBuilder this[string TodoId] {
-            get { 
-                return new TodoIdRequestBuilder(this.HttpClient, Path + "/" + TodoId);
-                }
-            }
-        public Task<object> GetAsync(Action<GetQueryParameters> q = default(Action<GetQueryParameters>)) 
-        { 
-            return ResponseHandler(base.SendAsync(this.ToHttpRequestMessage(HttpMethod.Get))); 
-        }
-        public Task<object> PostAsync(object todo) 
-        { 
-            return ResponseHandler(base.SendAsync(this.ToHttpRequestMessage(HttpMethod.Post, this.CreateContent(todo)))); 
-        }
-
-        public class GetQueryParameters {
-            public bool active {get;}
-            public string keyword {get;}
         }
     }
 
-    public class TodoIdRequestBuilder {
+    public class TodosRequestBuilder
+    {
+        private RequestInfo requestInfo = new RequestInfo();
+        private IHttpCore httpCore;
 
-        public Task<object> GetAsync(Action<GetQueryParameters> q = default(Action<GetQueryParameters>)) {         
-            return ResponseHandler(base.SendAsync(this.ToHttpRequestMessage(HttpMethod.Get))); 
+        public TodosRequestBuilder(IHttpCore httpCore, string path)
+        {
+            this.httpCore = httpCore;
+            this.requestInfo.AddPath(path);
         }
-        public Task<object> DeleteAsync(Action<DeleteQueryParameters> q = default(Action<DeleteQueryParameters>)) 
-        { 
-           return ResponseHandler(base.SendAsync(this.ToHttpRequestMessage(HttpMethod.Delete))); 
+        public static Task<IEnumerable<Todo>> DefaultResponseHandlerAsync(Stream content) { return null; }
+        public Func<Stream, Task<IEnumerable<Todo>>> ResponseHandler { get; set; } = DefaultResponseHandlerAsync;
+        public Func<Todo, Stream> CreateContent { get; set; }
+
+        public TodoIdRequestBuilder this[string TodoId]
+        {
+            get
+            {
+                return new TodoIdRequestBuilder(this.httpCore, requestInfo.Path + "/" + TodoId);
+            }
         }
 
-        public class GetQueryParameters {
+        public async Task<IEnumerable<Todo>> GetAsync(Action<GetQueryParameters> q = default(Action<GetQueryParameters>))
+        {
+            return await ResponseHandler(await this.httpCore.SendAsync(this.requestInfo.With(RequestMethod.get).WithParameters(q)));
         }
-        public class DeleteQueryParameters {
+        public async Task<IEnumerable<Todo>> PostAsync(Todo todo)
+        {
+            RequestInfo request = this.requestInfo.With(RequestMethod.post).WithContent(this.CreateContent(todo));
+            return await ResponseHandler(await this.httpCore.SendAsync(request));
+        }
+
+        public class GetQueryParameters : QueryParameters
+        {
+            public bool active
+            {
+                get { return Get<bool>("active"); }
+                set { Set("active", value); }
+            }
+            public string keyword
+            {
+                get { return Get<string>("keyword"); }
+                set { Set("keyword", value); }
+            }
+        }
+    }
+
+    public class TodoIdRequestBuilder
+    {
+        private readonly RequestInfo requestInfo = new RequestInfo();
+        private readonly IHttpCore httpCore;
+
+        public TodoIdRequestBuilder(IHttpCore httpCore, string path)
+        {
+            this.httpCore = httpCore;
+            this.requestInfo.AddPath(path);
+        }
+
+        public static Todo DefaultResponseHandlerAsync(Stream content) { return null; }
+        public Func<Stream, Todo> ResponseHandler { get; set; } = DefaultResponseHandlerAsync;
+
+        public async Task<Todo> GetAsync(Action<GetQueryParameters> q = default(Action<GetQueryParameters>))
+        {
+            return ResponseHandler(await this.httpCore.SendAsync(this.requestInfo.With(RequestMethod.get)));
+        }
+        public async Task<Todo> DeleteAsync(Action<DeleteQueryParameters> q = default(Action<DeleteQueryParameters>))
+        {
+            return ResponseHandler(await this.httpCore.SendAsync(this.requestInfo.With(RequestMethod.delete)));
+        }
+
+        public class GetQueryParameters
+        {
+        }
+        public class DeleteQueryParameters
+        {
         }
     }
 }
