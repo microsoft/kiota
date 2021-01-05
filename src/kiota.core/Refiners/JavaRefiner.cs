@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 
 namespace kiota.core {
     public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
@@ -15,7 +15,7 @@ namespace kiota.core {
             if(currentElement is CodeClass currentClass && codeMethods.Any()) {
                 codeMethods
                     .SelectMany(x => x.Parameters)
-                    .Where(x => x.IsQueryParameter)
+                    .Where(x => x.ParameterKind == CodeParameterKind.QueryParameter)
                     .ToList()
                     .ForEach(x => x.Optional = false);
                 currentClass.AddMethod(codeMethods
@@ -28,9 +28,9 @@ namespace kiota.core {
                 MakeQueryStringParametersNonOptionalAndInsertOverrideMethod(childElement);
         }
         private CodeMethod GetMethodClone(CodeMethod currentMethod) {
-            if(currentMethod.Parameters.Any(x => x.IsQueryParameter)) {
+            if(currentMethod.Parameters.Any(x => x.ParameterKind == CodeParameterKind.QueryParameter)) {
                 var cloneMethod = currentMethod.Clone() as CodeMethod;
-                cloneMethod.Parameters.RemoveAll(x => x.IsQueryParameter);
+                cloneMethod.Parameters.RemoveAll(x => x.ParameterKind == CodeParameterKind.QueryParameter);
                 return cloneMethod;
             }
             else return null;
