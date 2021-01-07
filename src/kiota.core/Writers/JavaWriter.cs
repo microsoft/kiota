@@ -56,7 +56,7 @@ namespace kiota.core
                 }
             }
             //TODO: missing javadoc
-            WriteLine($"public class {code.Name} {{");
+            WriteLine($"public class {code.Name.ToFirstCharacterUpperCase()} {{");
             IncreaseIndent();
         }
 
@@ -84,7 +84,7 @@ namespace kiota.core
         {
             //TODO javadoc
             WriteLine("@javax.annotation.Nonnull");
-            WriteLine($"public java.util.concurrent.Future<{GetTypeString(code.ReturnType)}> {code.Name.ToFirstCharacterLowerCase()}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
+            WriteLine($"public java.util.concurrent.Future<{GetTypeString(code.ReturnType).ToFirstCharacterUpperCase()}> {code.Name.ToFirstCharacterLowerCase()}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
         }
 
         public override void WriteProperty(CodeProperty code)

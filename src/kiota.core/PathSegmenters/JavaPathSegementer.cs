@@ -20,7 +20,7 @@ namespace kiota.core {
                                             .Replace(ClientNamespaceName, string.Empty)
                                             .TrimStart('.')
                                             .Replace('.', Path.DirectorySeparatorChar),
-                                            currentClass.Name.ToFirstCharacterLowerCase() + FileSuffix);
+                                            currentClass.Name.ToFirstCharacterUpperCase() + FileSuffix);
             var directoryPath = Path.GetDirectoryName(targetPath);
             if(!Directory.Exists(directoryPath))
                 Directory.CreateDirectory(directoryPath);
