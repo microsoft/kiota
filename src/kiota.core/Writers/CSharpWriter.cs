@@ -88,14 +88,11 @@ namespace kiota.core
         {
             switch (typeName)
             {
-                case "integer": typeName = "int"; break;
+                case "integer": return "int";
                 case "boolean": return "bool"; 
-                case "array":
-                    typeName = TranslateType(schema.Items.Type, schema.Items) + "[]";
-                    break;
+                case "array": return TranslateType(schema.Items.Type, schema.Items) + "[]";
+                default: return typeName;
             }
-
-            return typeName;
         }
 
         public override string GetParameterSignature(CodeParameter parameter)
