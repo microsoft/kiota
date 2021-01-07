@@ -7,12 +7,19 @@ namespace kiota.core {
         private static readonly Regex responseHandlerType = new Regex("<(.*),object>");
         public override void Refine(CodeNamespace generatedCode)
         {
-            generatedCode.AddUsing(new CodeUsing(generatedCode) { Name = "System" });
-            generatedCode.AddUsing(new CodeUsing(generatedCode) { Name = "System.Threading.Tasks" });
-            generatedCode.AddUsing(new CodeUsing(generatedCode) { Name = "System.Net.Http" });
+            AddDefaultImports(generatedCode);
             AddAsyncSuffix(generatedCode);
             AddInnerClasses(generatedCode);
             MakeNativeResponseHandlers(generatedCode);
+        }
+        private void AddDefaultImports(CodeElement current) {
+            if(current is CodeClass currentClass) {
+                currentClass.AddUsing(new CodeUsing(currentClass) { Name = "System" });
+                currentClass.AddUsing(new CodeUsing(currentClass) { Name = "System.Threading.Tasks" });
+                currentClass.AddUsing(new CodeUsing(currentClass) { Name = "System.Net.Http" });
+            }
+            foreach(var childClass in current.GetChildElements())
+                AddDefaultImports(childClass);
         }
 
         private void MakeNativeResponseHandlers(CodeNamespace generatedCode)
