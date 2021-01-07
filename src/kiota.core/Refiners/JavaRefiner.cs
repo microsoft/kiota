@@ -5,6 +5,7 @@ namespace kiota.core {
     {
         public override void Refine(CodeNamespace generatedCode)
         {
+            PatchResponseHandlerType(generatedCode);
             AddInnerClasses(generatedCode);
             MakeQueryStringParametersNonOptionalAndInsertOverrideMethod(generatedCode);
         }
@@ -34,6 +35,18 @@ namespace kiota.core {
                 return cloneMethod;
             }
             else return null;
+        }
+        private void PatchResponseHandlerType(CodeElement current) {
+            var properties = current.GetChildElements()
+                .OfType<CodeProperty>();
+            properties
+                .Where(x => x.PropertyKind == CodePropertyKind.ResponseHandler)
+                .ToList()
+                .ForEach(x => x.Type.Name = "java.util.function.Function<Object,Object>");
+            current.GetChildElements()
+                .Except(properties)
+                .ToList()
+                .ForEach(x => PatchResponseHandlerType(x));
         }
     }
 }
