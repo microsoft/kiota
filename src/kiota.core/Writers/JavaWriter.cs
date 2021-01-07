@@ -50,10 +50,11 @@ namespace kiota.core
             if(code?.Parent?.Parent is CodeNamespace) {
                 WriteLine($"package {code.Parent.Parent.Name};");
                 WriteLine();
-                foreach (var codeUsing in code.Usings)
-                {
-                    WriteLine($"import {codeUsing.Name}.*;");
-                }
+                code.Usings
+                    .Select(x => $"import {x.Declaration?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>()?.Name ?? code.Parent.Parent.Name}.{x.Name.ToFirstCharacterUpperCase()};")
+                    .Distinct()
+                    .ToList()
+                    .ForEach(x => WriteLine(x));
             }
             //TODO: missing javadoc
             WriteLine($"public class {code.Name.ToFirstCharacterUpperCase()} {{");
