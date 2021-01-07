@@ -91,7 +91,7 @@ namespace kiota.core
                 case "integer": return "int";
                 case "boolean": return "bool"; 
                 case "array": return TranslateType(schema.Items.Type, schema.Items) + "[]";
-                default: return typeName ?? "Object";
+                default: return typeName ?? "object";
             }
         }
 
