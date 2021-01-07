@@ -12,6 +12,10 @@ namespace kiota.core
 
     public class CodeMethod : CodeTerminal, ICloneable
     {
+        public CodeMethod(CodeElement parent): base(parent)
+        {
+            
+        }
         public CodeMethodKind MethodKind = CodeMethodKind.Custom;
         public CodeType ReturnType;
         public List<CodeParameter> Parameters = new List<CodeParameter>();
@@ -19,7 +23,7 @@ namespace kiota.core
 
         public object Clone()
         {
-            return new CodeMethod {
+            return new CodeMethod(Parent) {
                 MethodKind = MethodKind,
                 ReturnType = ReturnType.Clone() as CodeType,
                 Parameters = Parameters.Select(x => x.Clone() as CodeParameter).ToList(),
@@ -27,9 +31,12 @@ namespace kiota.core
             };
         }
 
-        internal void AddParameter(CodeParameter methodParameter)
+        internal void AddParameter(params CodeParameter[] methodParameters)
         {
-            Parameters.Add(methodParameter);
+            if(!methodParameters.Any() || methodParameters.Any(x => x == null))
+                throw new ArgumentOutOfRangeException(nameof(methodParameters));
+            AddMissingParent(methodParameters);
+            Parameters.AddRange(methodParameters);
         }
     }
 }

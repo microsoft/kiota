@@ -5,25 +5,24 @@ namespace kiota.core
 {
     public class CSharpWriter : LanguageWriter
     {
-
-        public override void WriteNamespaceEnd(CodeNamespace.BlockEnd code)
+        public CSharpWriter(string rootPath, string clientNamespaceName)
         {
-            DecreaseIndent();
-            WriteLine("}");
+            segmenter = new CSharpPathSegmenter(rootPath, clientNamespaceName);
         }
+        private readonly IPathSegmenter segmenter;
+        public override IPathSegmenter PathSegmenter => segmenter;
 
-        public override void WriteNamespaceDeclaration(CodeNamespace.BlockDeclaration code)
+        public override void WriteCodeClassDeclaration(CodeClass.Declaration code)
         {
             foreach (var codeUsing in code.Usings)
             {
                 WriteLine($"using {codeUsing.Name};");
             }
-            WriteLine($"namespace {code.Name} {{");
-            IncreaseIndent();
-        }
+            if(code?.Parent?.Parent is CodeNamespace) {
+                WriteLine($"namespace {code.Parent.Parent.Name} {{");
+                IncreaseIndent();
+            }
 
-        public override void WriteCodeClassDeclaration(CodeClass.Declaration code)
-        {
             WriteLine($"public class {code.Name} {{");
             IncreaseIndent();
         }
@@ -32,6 +31,10 @@ namespace kiota.core
         {
             DecreaseIndent();
             WriteLine("}");
+            if(code?.Parent?.Parent is CodeNamespace) {
+                DecreaseIndent();
+                WriteLine("}");
+            }
         }
 
         public override void WriteProperty(CodeProperty code)
@@ -99,11 +102,6 @@ namespace kiota.core
         {
             var parameterType = GetTypeString(parameter.Type);
             return $"{parameterType} {parameter.Name}{(parameter.Optional ? $" = default({parameterType})": string.Empty)}";
-        }
-
-        public override string GetFileSuffix()
-        {
-            return ".cs";
         }
     }
 }

@@ -24,8 +24,8 @@ namespace kiota.core
         {
             this.writer = writer;
         }
+        public abstract IPathSegmenter PathSegmenter { get; }
 
-        public abstract string GetFileSuffix();
         private Stack<int> factorStack = new Stack<int>();
         public void IncreaseIndent(int factor = 1)
         {
@@ -67,8 +67,8 @@ namespace kiota.core
             {
                 case CodeClass.Declaration c: WriteCodeClassDeclaration(c); break;
                 case CodeClass.End c: WriteCodeClassEnd(c); break;
-                case CodeNamespace.BlockDeclaration c: WriteNamespaceDeclaration(c); break;
-                case CodeNamespace.BlockEnd c: WriteNamespaceEnd(c); break;
+                case CodeNamespace.BlockDeclaration c: break;
+                case CodeNamespace.BlockEnd c: break;
                 case CodeProperty c: WriteProperty(c); break;
                 case CodeIndexer c: WriteIndexer(c); break;
                 case CodeMethod c: WriteMethod(c); break;
@@ -88,8 +88,6 @@ namespace kiota.core
         public abstract void WriteIndexer(CodeIndexer code);
         public abstract void WriteMethod(CodeMethod code);
         public abstract void WriteType(CodeType code);
-        public abstract void WriteNamespaceEnd(CodeNamespace.BlockEnd code);
-        public abstract void WriteNamespaceDeclaration(CodeNamespace.BlockDeclaration code);
         public abstract void WriteCodeClassDeclaration(CodeClass.Declaration code);
         public abstract void WriteCodeClassEnd(CodeClass.End code);
     }

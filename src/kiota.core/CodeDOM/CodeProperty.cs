@@ -8,6 +8,10 @@
 
     public class CodeProperty : CodeTerminal
     {
+        public CodeProperty(CodeElement parent): base(parent)
+        {
+            
+        }
         public CodePropertyKind PropertyKind = CodePropertyKind.Custom;
 
         public override string Name

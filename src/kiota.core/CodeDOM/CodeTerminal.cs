@@ -4,6 +4,10 @@ namespace kiota.core
 {
     public class CodeTerminal : CodeElement
     {
+        public CodeTerminal(CodeElement parent): base(parent)
+        {
+            
+        }
         public override string Name
         {
             get;set;

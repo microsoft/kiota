@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace kiota.core
@@ -17,28 +18,24 @@ namespace kiota.core
             return sw.GetStringBuilder().ToString();
         }
 
-        public static async Task RenderCodeNamespaceToSingleFileAsync(LanguageWriter writer, CodeNamespace root, string outputFile)
+        public static async Task RenderCodeNamespaceToSingleFileAsync(LanguageWriter writer, CodeClass codeClass, string outputFile)
         {
             using var stream = new FileStream(outputFile, FileMode.Create);
 
             var sw = new StreamWriter(stream);
             writer.SetTextWriter(sw);
-            RenderCode(writer, root);
+            RenderCode(writer, codeClass);
             await sw.FlushAsync();
         }
 
-        public static async Task RenderCodeNamespaceToFilePerClassAsync(LanguageWriter writer, CodeNamespace root, string outputPath)
+        public static async Task RenderCodeNamespaceToFilePerClassAsync(LanguageWriter writer, CodeNamespace root)
         {
             foreach (var codeElement in root.GetChildElements())
             {
-                CodeClass codeClass = codeElement as CodeClass;
-                if (codeClass is not null)
-                {
-                    var codeNamespace = new CodeNamespace() { Name = root.Name };
-                    codeNamespace.AddUsing(root.StartBlock.Usings.ToArray());
-                    codeNamespace.AddClass(codeClass);
-                    await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, Path.Combine(outputPath, codeClass.Name + writer.GetFileSuffix()));
-                }
+                if (codeElement is CodeClass codeClass)
+                    await RenderCodeNamespaceToSingleFileAsync(writer, codeClass, writer.PathSegmenter.GetPath(root, codeClass));
+                else if(codeElement is CodeNamespace codeNamespace)
+                    await RenderCodeNamespaceToFilePerClassAsync(writer, codeNamespace);
             }
         }
 

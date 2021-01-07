@@ -10,7 +10,7 @@ namespace kiota.core {
                 foreach(var parameter in current.GetChildElements().OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf))
                     currentClass.AddInnerClass(parameter.Type.TypeDefinition);
             }
-            foreach(var childClass in current.GetChildElements().OfType<CodeClass>())
+            foreach(var childClass in current.GetChildElements())
                 AddInnerClasses(childClass);
         }
     }

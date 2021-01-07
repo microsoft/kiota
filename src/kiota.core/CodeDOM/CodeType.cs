@@ -5,6 +5,10 @@ namespace kiota.core
 {
     public class CodeType : CodeTerminal, ICloneable
     {
+        public CodeType(CodeElement parent): base(parent)
+        {
+            
+        }
         public override string Name
         {
             get; set;
@@ -21,7 +25,7 @@ namespace kiota.core
 
         public object Clone()
         {
-            return new CodeType{
+            return new CodeType(Parent){
                 ActionOf = ActionOf,
                 Name = Name.Clone() as string,
                 Schema = Schema,
