@@ -53,7 +53,7 @@ namespace kiota.core
             {//TODO we're probably missing a bunch of type mappings
                 case "integer": return "number";
                 case "array": return $"{TranslateType(schema.Items.Type, schema.Items)}[]";
-                default: return typeName;
+                default: return typeName ?? "object";
             } // string, boolean, object : same casing
         }
 

@@ -41,7 +41,7 @@ namespace kiota.core
                 case "string": return "String";
                 case "object": return "Object";
                 case "array": return $"{TranslateType(schema.Items.Type, schema.Items)}[]";
-                default: return typeName;
+                default: return typeName ?? "Object";
             }
         }
 
