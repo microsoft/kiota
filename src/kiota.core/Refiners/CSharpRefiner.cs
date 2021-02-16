@@ -23,7 +23,7 @@ namespace kiota.core {
         private void AddPropertiesAndMethodTypesImports(CodeElement current) {
             if(current is CodeClass currentClass) {
                 var currentClassNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
-                var properties = currentClass
+                var propertiesNamespaces = currentClass
                                     .InnerChildElements
                                     .OfType<CodeProperty>()
                                     .Where(x => x.PropertyKind == CodePropertyKind.Custom)
@@ -33,14 +33,21 @@ namespace kiota.core {
                 var methods = currentClass
                                     .InnerChildElements
                                     .OfType<CodeMethod>()
-                                    .Where(x => x.MethodKind == CodeMethodKind.Custom)
+                                    .Where(x => x.MethodKind == CodeMethodKind.Custom);
+                var methodsReturnNamespaces = methods
+                                    .Select(x => x.ReturnType.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())
+                                    .Where(x => x != currentClassNamespace && x != null)
+                                    .Distinct();
+                var methodsParametersNamespaces = methods
                                     .SelectMany(x => x.Parameters)
                                     .Where(x => x.ParameterKind == CodeParameterKind.Custom)
                                     .Select(x => x.Type?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())
                                     .Where(x => x != currentClassNamespace && x != null)
                                     .Distinct();
-                var usingsToAdd = properties
-                                        .Union(methods)
+                var usingsToAdd = propertiesNamespaces
+                                        .Union(methodsParametersNamespaces)
+                                        .Union(methodsReturnNamespaces)
+                                        .Where(x => !currentClassNamespace.IsChildOf(x))
                                         .Distinct()
                                         .Select(x => new CodeUsing(currentClass) { Name = x.Name })
                                         .ToArray();

@@ -43,5 +43,11 @@ namespace kiota.core
             else
                 return GetImmediateParentOfType<T>(item.Parent);
         }
+        public bool IsChildOf(CodeElement codeElement, bool immediateOnly = false) {
+            if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
+            else if(this.Parent == codeElement) return true;
+            else if(immediateOnly || this.Parent == null) return false;
+            else return this.Parent.IsChildOf(codeElement, immediateOnly);
+        }
     }
 }
