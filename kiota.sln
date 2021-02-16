@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "kiota.core", "src\kiota.cor
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "kiota.core.tests", "tests\kiota.core.tests\kiota.core.tests.csproj", "{A2B2F620-BC5D-47EA-8B98-5A942EC9CA9A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kiota.core.integrationtests", "tests\kiota.core.integrationtests\kiota.core.integrationtests.csproj", "{019E5612-7663-40A2-A2EA-46E39D31F0A2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{A2B2F620-BC5D-47EA-8B98-5A942EC9CA9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A2B2F620-BC5D-47EA-8B98-5A942EC9CA9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A2B2F620-BC5D-47EA-8B98-5A942EC9CA9A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{019E5612-7663-40A2-A2EA-46E39D31F0A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{019E5612-7663-40A2-A2EA-46E39D31F0A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{019E5612-7663-40A2-A2EA-46E39D31F0A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{019E5612-7663-40A2-A2EA-46E39D31F0A2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
