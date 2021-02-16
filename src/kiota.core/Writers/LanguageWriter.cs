@@ -9,8 +9,8 @@ namespace kiota.core
     public abstract class LanguageWriter
     {
         private TextWriter writer;
-        const int indentSize = 4;
-        private string indentString = "                                                                                             ";
+        private const int indentSize = 4;
+        private static readonly string indentString = "                                                                                             ";
         private int currentIndent = 0;
 
         /// <summary>
