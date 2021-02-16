@@ -13,16 +13,6 @@ By creating properties on request builder classes, the developer can effectively
 
 namespace Todo {
 
-    public class RequestInfo {
-        string Path;
-        Dictionary<string,object> QueryParameters = new Dictionary<string,string>();
-        Dictionary<string,string> Headers = new Dictionary<string,string>();
-    }
-
-    public interface IHttpCore<NativeResponse> {
-        Task<Stream> SendAsync(RequestInfo requestInfo);
-        Task<NativeResponse> SendNativeAsync(RequestInfo requestInfo);
-    }
 
     public class TodoClient   {
         private RequestInfo requestInfo = new RequestInfo();
@@ -108,7 +98,6 @@ namespace Todo {
         }
         public static Task<IEnumerable<Todo>> DefaultResponseHandlerAsync(Stream content) { return null; }
         public Func<Stream, Task<IEnumerable<Todo>>> ResponseHandler { get; set; } = DefaultResponseHandlerAsync;
-        public Func<NativeResponse, Task<IEnumerable<Todo>>> NativeResponseHandler { get; set; } = DefaultResponseHandlerAsync;
         public Func<Todo, Stream> CreateContent { get; set; }
 
         public TodoIdRequestBuilder this[string TodoId]
