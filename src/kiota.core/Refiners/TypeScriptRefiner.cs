@@ -4,9 +4,10 @@ using System.Collections.Generic;
 namespace kiota.core {
     public class TypeScriptRefiner : ILanguageRefiner
     {
-        private readonly HashSet<string> defaultTypes = new HashSet<string> {"string", "integer", "boolean", "array", "object"};
+        private readonly HashSet<string> defaultTypes = new HashSet<string> {"string", "integer", "boolean", "array", "object", "(input: object) => object"};
         public void Refine(CodeNamespace generatedCode)
         {
+            PatchResponseHandlerType(generatedCode);
             AddRelativeImports(generatedCode);
         }
         private void AddRelativeImports(CodeElement current) {
@@ -23,6 +24,18 @@ namespace kiota.core {
             }
             foreach(var childClass in current.GetChildElements())
                 AddRelativeImports(childClass);
+        }
+        private void PatchResponseHandlerType(CodeElement current) {
+            var properties = current.GetChildElements()
+                .OfType<CodeProperty>();
+            properties
+                .Where(x => x.PropertyKind == CodePropertyKind.ResponseHandler)
+                .ToList()
+                .ForEach(x => x.Type.Name = "(input: object) => object");
+            current.GetChildElements()
+                .Except(properties)
+                .ToList()
+                .ForEach(x => PatchResponseHandlerType(x));
         }
     }
 }

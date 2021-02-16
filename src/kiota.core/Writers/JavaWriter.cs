@@ -41,9 +41,8 @@ namespace kiota.core
                 case "string": return "String";
                 case "object": return "Object";
                 case "array": return $"{TranslateType(schema.Items.Type, schema.Items)}[]";
+                default: return typeName ?? "Object";
             }
-
-            return typeName;
         }
 
         public override void WriteCodeClassDeclaration(CodeClass.Declaration code)
@@ -51,13 +50,14 @@ namespace kiota.core
             if(code?.Parent?.Parent is CodeNamespace) {
                 WriteLine($"package {code.Parent.Parent.Name};");
                 WriteLine();
-                foreach (var codeUsing in code.Usings)
-                {
-                    WriteLine($"import {codeUsing.Name}.*;");
-                }
+                code.Usings
+                    .Select(x => $"import {x.Declaration?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>()?.Name ?? code.Parent.Parent.Name}.{x.Name.ToFirstCharacterUpperCase()};")
+                    .Distinct()
+                    .ToList()
+                    .ForEach(x => WriteLine(x));
             }
             //TODO: missing javadoc
-            WriteLine($"public class {code.Name} {{");
+            WriteLine($"public class {code.Name.ToFirstCharacterUpperCase()} {{");
             IncreaseIndent();
         }
 
@@ -85,7 +85,7 @@ namespace kiota.core
         {
             //TODO javadoc
             WriteLine("@javax.annotation.Nonnull");
-            WriteLine($"public java.util.concurrent.Future<{GetTypeString(code.ReturnType)}> {code.Name.ToFirstCharacterLowerCase()}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
+            WriteLine($"public java.util.concurrent.Future<{GetTypeString(code.ReturnType).ToFirstCharacterUpperCase()}> {code.Name.ToFirstCharacterLowerCase()}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
         }
 
         public override void WriteProperty(CodeProperty code)
