@@ -8,18 +8,47 @@ namespace kiota.core {
         public override void Refine(CodeNamespace generatedCode)
         {
             AddDefaultImports(generatedCode);
+            AddPropertiesAndMethodTypesImports(generatedCode);
             AddAsyncSuffix(generatedCode);
             AddInnerClasses(generatedCode);
             MakeNativeResponseHandlers(generatedCode);
         }
+        private static readonly string[] defaultNamespacesForClasses = new string[] {"System", "System.Threading.Tasks", "System.Net.Http"};
         private void AddDefaultImports(CodeElement current) {
+            if(current is CodeClass currentClass)
+                currentClass.AddUsing(defaultNamespacesForClasses.Select(x => new CodeUsing(currentClass) { Name = x }).ToArray());
+            foreach(var childElement in current.GetChildElements())
+                AddDefaultImports(childElement);
+        }
+        private void AddPropertiesAndMethodTypesImports(CodeElement current) {
             if(current is CodeClass currentClass) {
-                currentClass.AddUsing(new CodeUsing(currentClass) { Name = "System" });
-                currentClass.AddUsing(new CodeUsing(currentClass) { Name = "System.Threading.Tasks" });
-                currentClass.AddUsing(new CodeUsing(currentClass) { Name = "System.Net.Http" });
+                var currentClassNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
+                var properties = currentClass
+                                    .InnerChildElements
+                                    .OfType<CodeProperty>()
+                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)
+                                    .Select(x => x.Type?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())
+                                    .Where(x => x != currentClassNamespace && x != null)
+                                    .Distinct();
+                var methods = currentClass
+                                    .InnerChildElements
+                                    .OfType<CodeMethod>()
+                                    .Where(x => x.MethodKind == CodeMethodKind.Custom)
+                                    .SelectMany(x => x.Parameters)
+                                    .Where(x => x.ParameterKind == CodeParameterKind.Custom)
+                                    .Select(x => x.Type?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())
+                                    .Where(x => x != currentClassNamespace && x != null)
+                                    .Distinct();
+                var usingsToAdd = properties
+                                        .Union(methods)
+                                        .Distinct()
+                                        .Select(x => new CodeUsing(currentClass) { Name = x.Name })
+                                        .ToArray();
+                if(usingsToAdd.Any())
+                    currentClass.AddUsing(usingsToAdd);
             }
-            foreach(var childClass in current.GetChildElements())
-                AddDefaultImports(childClass);
+            foreach(var childElement in current.GetChildElements())
+                AddPropertiesAndMethodTypesImports(childElement);
         }
 
         private void MakeNativeResponseHandlers(CodeNamespace generatedCode)

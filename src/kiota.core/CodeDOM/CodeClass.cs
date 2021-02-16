@@ -76,8 +76,6 @@ namespace kiota.core
             {
                 get; set;
             }
-
-            public CodeType Type;
         }
 
         public class End : BlockEnd

@@ -116,6 +116,7 @@ namespace kiota.core
             var rootPlaceholder = CodeNamespace.InitRootNamespace();
             var codeNamespace = rootPlaceholder.AddNamespace(this.config.ClientNamespaceName);
             CreateRequestBuilderClass(codeNamespace, root);
+            MapTypeDefinitions(codeNamespace);
 
             stopwatch.Stop();
             logger.LogInformation("{timestamp}ms: Created source model with {count} classes", stopwatch.ElapsedMilliseconds, codeNamespace.InnerChildElements.Count);
@@ -206,7 +207,7 @@ namespace kiota.core
                 }
                 else
                 {
-                    var prop = CreateProperty(propIdentifier, propType, codeClass);
+                    var prop = CreateProperty(propIdentifier, propType, codeClass); // we should add the type definition here but we can't as it might not have been generated yet
                     codeClass.AddProperty(prop);
                 }
             }
@@ -238,6 +239,35 @@ namespace kiota.core
             }
         }
 
+        /// <summary>
+        /// Remaps definitions to custom types so they can be used later in generation or in refiners
+        /// </summary>
+        private void MapTypeDefinitions(CodeElement codeElement) {
+            switch(codeElement) {
+                case CodeMethod method:
+                    MapTypeDefinition(method.Parameters.Select(x => x.Type).ToArray());
+                break;
+                case CodeProperty property:
+                    MapTypeDefinition(property.Type);
+                break;
+                case CodeIndexer indexer:
+                    MapTypeDefinition(indexer.ReturnType);
+                break;
+                case CodeParameter parameter:
+                    MapTypeDefinition(parameter.Type);
+                break;
+            }
+            foreach(var childElement in codeElement.GetChildElements())
+                MapTypeDefinitions(childElement);
+        }
+        private void MapTypeDefinition(params CodeType[] currentTypes) {
+            foreach(var currentType in currentTypes.Where(x => x.TypeDefinition == null))
+                currentType.TypeDefinition = currentType
+                        .GetImmediateParentOfType<CodeNamespace>()
+                        .GetRootNamespace()
+                        .GetChildElementOfType<CodeClass>(x => x.Name == currentType.Name);
+        }
+
         private CodeIndexer CreateIndexer(string childIdentifier, string childType, CodeClass codeClass)
         {
             var prop = new CodeIndexer(codeClass)
@@ -253,14 +283,14 @@ namespace kiota.core
             return prop;
         }
 
-        private CodeProperty CreateProperty(string childIdentifier, string childType, CodeClass codeClass, string defaultValue = null, OpenApiSchema typeSchema = null)
+        private CodeProperty CreateProperty(string childIdentifier, string childType, CodeClass codeClass, string defaultValue = null, OpenApiSchema typeSchema = null, CodeClass typeDefinition = null)
         {
             var prop = new CodeProperty(codeClass)
             {
                 Name = childIdentifier,
                 DefaultValue = defaultValue
             };
-            prop.Type = new CodeType(prop) { Name = childType, Schema = typeSchema };
+            prop.Type = new CodeType(prop) { Name = childType, Schema = typeSchema, TypeDefinition = typeDefinition };
             logger.LogDebug("Creating property {name} of {type}", prop.Name, prop.Type.Name);
             return prop;
         }
@@ -345,7 +375,7 @@ namespace kiota.core
                     if(schema.Properties.Any())//TODO handle collections
                         existingClass.AddProperty(schema
                                                     .Properties
-                                                    .Select(x => CreateProperty(x.Key, x.Value.Type, existingClass, null, x.Value))
+                                                    .Select(x => CreateProperty(x.Key, x.Value.Type, existingClass, typeSchema: x.Value)) //TODO missing type definition
                                                     .ToArray());
                     targetNamespace.AddClass(existingClass);
                 }
@@ -453,7 +483,7 @@ namespace kiota.core
             requestBuilder.AddMethod(responseHandlerImpl);
 
             // Property to allow replacing Response Handler
-            var responseHandlerProperty = CreateProperty("ResponseHandler", "Func<object,object>", requestBuilder, "DefaultResponseHandler"); // HttpResponseMessage, model
+            var responseHandlerProperty = CreateProperty("ResponseHandler", "Func<object,object>", requestBuilder, "DefaultResponseHandlerAsync"); // HttpResponseMessage, model
             responseHandlerProperty.PropertyKind = CodePropertyKind.ResponseHandler;
             responseHandlerProperty.ReadOnly = false;
             requestBuilder.AddProperty(responseHandlerProperty);  
