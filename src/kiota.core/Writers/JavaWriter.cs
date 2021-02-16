@@ -47,11 +47,11 @@ namespace kiota.core
 
         public override void WriteCodeClassDeclaration(CodeClass.Declaration code)
         {
-            if(code?.Parent?.Parent is CodeNamespace) {
-                WriteLine($"package {code.Parent.Parent.Name};");
+            if(code?.Parent?.Parent is CodeNamespace ns) {
+                WriteLine($"package {ns.Name};");
                 WriteLine();
                 code.Usings
-                    .Select(x => $"import {x.Declaration?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>()?.Name ?? code.Parent.Parent.Name}.{x.Name.ToFirstCharacterUpperCase()};")
+                    .Select(x => $"import {x.Name}.{x.Declaration.Name.ToFirstCharacterUpperCase()};")
                     .Distinct()
                     .ToList()
                     .ForEach(x => WriteLine(x));

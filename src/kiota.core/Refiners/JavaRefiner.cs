@@ -10,22 +10,7 @@ namespace kiota.core {
             PatchResponseHandlerType(generatedCode);
             AddInnerClasses(generatedCode);
             MakeQueryStringParametersNonOptionalAndInsertOverrideMethod(generatedCode);
-            AddRelativeImports(generatedCode);
-        }
-        private void AddRelativeImports(CodeElement current) {
-            if(current is CodeClass currentClass) {
-                var additionalUsings = current
-                                    .GetChildElements()
-                                    .OfType<CodeProperty>()
-                                    .Select(x =>x.Type)
-                                    .Union(current.GetChildElements().OfType<CodeMethod>().Select(x => x.ReturnType))
-                                    .Where(x => !defaultTypes.Contains(x.Name))
-                                    .Select(x => new CodeUsing(currentClass){Name = x.Name, Declaration = x});
-                if(additionalUsings.Any())
-                    currentClass.AddUsing(additionalUsings.ToArray());
-            }
-            foreach(var childClass in current.GetChildElements())
-                AddRelativeImports(childClass);
+            AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
         }
         private void MakeQueryStringParametersNonOptionalAndInsertOverrideMethod(CodeElement currentElement) {
             var codeMethods = currentElement
