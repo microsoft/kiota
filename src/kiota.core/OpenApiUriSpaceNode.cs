@@ -58,14 +58,6 @@ namespace kiota.core
             return PathItem != null && PathItem.Operations != null && PathItem.Operations.Count() > 0;
         }
 
-        public string Hash()
-        {
-            using (SHA256 sha256Hash = SHA256.Create())
-            {
-                return GetHash(sha256Hash,Path);
-            }
-        }
-
         private static string GetHash(HashAlgorithm hashAlgorithm, string input)
         {
 

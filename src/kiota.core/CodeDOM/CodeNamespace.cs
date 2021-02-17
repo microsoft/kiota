@@ -69,14 +69,14 @@ namespace kiota.core
                 }
             return lastPresentSegmentNamespace;
         }
-        public bool IsRequestsNamespace { get; private set; }
-        public CodeNamespace EnsureRequestsNamespace() { 
-            if (IsRequestsNamespace) return this;
+        public bool IsItemNamespace { get; private set; }
+        public CodeNamespace EnsureItemNamespace() { 
+            if (IsItemNamespace) return this;
             else {
-                var childNamespace = this.InnerChildElements.OfType<CodeNamespace>().FirstOrDefault(x => x.IsRequestsNamespace);
+                var childNamespace = this.InnerChildElements.OfType<CodeNamespace>().FirstOrDefault(x => x.IsItemNamespace);
                 if(childNamespace == null) {
-                    childNamespace = GetRootNamespace().AddNamespace($"{this.Name}.requests");
-                    childNamespace.IsRequestsNamespace = true;
+                    childNamespace = GetRootNamespace().AddNamespace($"{this.Name}.item");
+                    childNamespace.IsItemNamespace = true;
                 }
                 return childNamespace;
             } 
