@@ -36,9 +36,15 @@ namespace kiota.core {
                                     .Where(x => x.ParameterKind == CodeParameterKind.Custom)
                                     .Select(x => x.Type)
                                     .Distinct();
+                var indexerTypes = currentClass
+                                    .InnerChildElements
+                                    .OfType<CodeIndexer>()
+                                    .Select(x => x.ReturnType)
+                                    .Distinct();
                 var usingsToAdd = propertiesTypes
                                     .Union(methodsParametersTypes)
                                     .Union(methodsReturnTypes)
+                                    .Union(indexerTypes)
                                     .Select(x => new Tuple<CodeType, CodeNamespace>(x, x?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>()))
                                     .Where(x => x.Item2 != null && (includeCurrentNamespace || x.Item2 != currentClassNamespace))
                                     .Where(x => includeParentNamespaces || !currentClassNamespace.IsChildOf(x.Item2))
