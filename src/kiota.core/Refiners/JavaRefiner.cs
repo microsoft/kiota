@@ -28,8 +28,7 @@ namespace kiota.core {
                                     .ToArray());
             }
             
-            foreach(var childElement in currentElement.GetChildElements())
-                MakeQueryStringParametersNonOptionalAndInsertOverrideMethod(childElement);
+            CrawlTree(currentElement, MakeQueryStringParametersNonOptionalAndInsertOverrideMethod);
         }
         private CodeMethod GetMethodClone(CodeMethod currentMethod) {
             if(currentMethod.Parameters.Any(x => x.ParameterKind == CodeParameterKind.QueryParameter)) {

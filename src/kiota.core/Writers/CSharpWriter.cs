@@ -14,9 +14,12 @@ namespace kiota.core
 
         public override void WriteCodeClassDeclaration(CodeClass.Declaration code)
         {
-            foreach (var codeUsing in code.Usings)
+            foreach (var codeUsing in code.Usings.Where(x => !string.IsNullOrEmpty(x.Name)))
             {
-                WriteLine($"using {codeUsing.Name};");
+                if(codeUsing.Declaration == null)
+                    WriteLine($"using {codeUsing.Name};");
+                else
+                    WriteLine($"using {codeUsing.Name.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((x,y) => x + "." + y)};");
             }
             if(code?.Parent?.Parent is CodeNamespace) {
                 WriteLine($"namespace {code.Parent.Parent.Name} {{");

@@ -11,8 +11,7 @@ namespace kiota.core {
                 foreach(var parameter in current.GetChildElements().OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf))
                     currentClass.AddInnerClass(parameter.Type.TypeDefinition);
             }
-            foreach(var childClass in current.GetChildElements())
-                AddInnerClasses(childClass);
+            CrawlTree(current, AddInnerClasses);
         }
         private readonly CodeUsingComparer usingComparerWithDeclarations = new CodeUsingComparer(true);
         private readonly CodeUsingComparer usingComparerWithoutDeclarations = new CodeUsingComparer(false);
@@ -49,8 +48,11 @@ namespace kiota.core {
                 if(usingsToAdd.Any())
                     currentClass.AddUsing(usingsToAdd);
             }
-            foreach(var childElement in current.GetChildElements())
-                AddPropertiesAndMethodTypesImports(childElement, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration);
+            CrawlTree(current, (x) => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration));
+        }
+        protected void CrawlTree(CodeElement currentElement, Action<CodeElement> function) {
+            foreach(var childElement in currentElement.GetChildElements())
+                function.Invoke(childElement);
         }
     }
 }
