@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using Microsoft.OpenApi.Models;
 
 namespace kiota.core
@@ -56,27 +54,6 @@ namespace kiota.core
         internal bool HasOperations()
         {
             return PathItem != null && PathItem.Operations != null && PathItem.Operations.Count() > 0;
-        }
-
-        private static string GetHash(HashAlgorithm hashAlgorithm, string input)
-        {
-
-            // Convert the input string to a byte array and compute the hash.
-            byte[] data = hashAlgorithm.ComputeHash(Encoding.UTF8.GetBytes(input));
-
-            // Create a new Stringbuilder to collect the bytes
-            // and create a string.
-            var sBuilder = new StringBuilder();
-
-            // Loop through each byte of the hashed data
-            // and format each one as a hexadecimal string.
-            for (int i = 0; i < 2; i++)  //data.Length  Limit to 4 chars
-            {
-                sBuilder.Append(data[i].ToString("x2"));
-            }
-
-            // Return the hexadecimal string.
-            return sBuilder.ToString();
         }
 
         public static OpenApiUrlSpaceNode Create(OpenApiDocument doc, string layer = "")
@@ -146,6 +123,24 @@ namespace kiota.core
                 return node.Attach(segments.Skip(1), pathItem, layer, currentPath + "\\" + segment);
             }
         }
+        public bool DoesNodeBelongToItemSubnamespace() =>
+        (Segment?.StartsWith("{") ?? false) && (Segment?.EndsWith("}") ?? false);
+        private readonly char pathNameSeparator = '\\';
+        public string GetNodeNamespaceFromPath(string prefix = default) =>
+            prefix + 
+                    ((Path?.Contains(pathNameSeparator) ?? false) ?
+                        "." + Path
+                                ?.Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
+                                ?.Where(x => !x.StartsWith('{'))
+                                ?.Aggregate((x, y) => $"{x}.{y}") :
+                        string.Empty)
+                    .ReplaceValueIdentifier();
+        
+        public string GetClassName(string suffix = default, string prefix = default) {
+            var rawClassName = Identifier?.ReplaceValueIdentifier();
+            if(DoesNodeBelongToItemSubnamespace() && rawClassName.EndsWith("Id"))
+                rawClassName = rawClassName.Substring(0, rawClassName.Length - 2);
+            return prefix + rawClassName + suffix;
+        }
     }
-
 }
