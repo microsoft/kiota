@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Microsoft.OpenApi.Models;
 
 namespace kiota.core
@@ -135,11 +136,19 @@ namespace kiota.core
                                 ?.Aggregate((x, y) => $"{x}.{y}") :
                         string.Empty)
                     .ReplaceValueIdentifier();
-        
-        public string GetClassName(string suffix = default, string prefix = default) {
-            var rawClassName = Identifier?.ReplaceValueIdentifier();
-            if(DoesNodeBelongToItemSubnamespace() && rawClassName.EndsWith("Id"))
-                rawClassName = rawClassName.Substring(0, rawClassName.Length - 2);
+        private static readonly Regex idClassNameCleanup = new Regex(@"Id\d?$");
+        ///<summary>
+        /// Returns the class name for the node with more or less precision depending on the provided arguments
+        ///</summary>
+        public string GetClassName(string suffix = default, string prefix = default, OpenApiOperation operation = default) {
+            var referenceId = operation?.GetResponseSchema()
+                                ?.Reference
+                                ?.Id;
+            var rawClassName = referenceId?.Substring((referenceId?.LastIndexOf('.') ?? 0) + 1)
+                                          ?.ToFirstCharacterUpperCase() ?? 
+                                Identifier?.ReplaceValueIdentifier();
+            if(DoesNodeBelongToItemSubnamespace() && idClassNameCleanup.IsMatch(rawClassName))
+                rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
             return prefix + rawClassName + suffix;
         }
     }

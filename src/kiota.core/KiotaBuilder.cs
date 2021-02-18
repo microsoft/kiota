@@ -296,7 +296,7 @@ namespace kiota.core
 
         private CodeMethod CreateOperationMethod(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parameterClass, CodeClass parentClass)
         {
-            var schema = GetResponseSchema(operation);
+            var schema = operation.GetResponseSchema();
             var method = new CodeMethod(parentClass) {
                 Name = operationType.ToString(),
             };
@@ -384,9 +384,8 @@ namespace kiota.core
             {//TODO
                 var codeClass = new CodeClass(codeNamespace) { Name = operation.OperationId + "Response" };
             } else  // Reused schema from components
-            {//TODO this is non-deterministic, we should find all the references to that schema, look for the shortest one, see if it already exists and only generate if it doesn't
-                var className = GetClassNameFromReferenceId(originalReferenceId);
-                var tmpclassName = currentNode.GetClassName(); //TODO remove when done
+            {
+                var className = currentNode.GetClassName(operation: operation);
                 var shortestNamespaceName = GetShortestNamespaceNameForModelByReferenceId(rootNode, originalReferenceId);
                 var shortestNamespace = codeNamespace.GetRootNamespace().GetNamespace(shortestNamespaceName);
                 if(shortestNamespace == null)
@@ -394,7 +393,7 @@ namespace kiota.core
                 var existingClass = (currentNode.DoesNodeBelongToItemSubnamespace() ? shortestNamespace.EnsureItemNamespace() : shortestNamespace)
                                         .InnerChildElements
                                         ?.OfType<CodeClass>()
-                                        ?.FirstOrDefault(x => x.Name?.Equals(className) ?? false);
+                                        ?.FirstOrDefault(x => x.Name?.Equals(className, StringComparison.InvariantCultureIgnoreCase) ?? false);
                 if(existingClass == null) // we can find it in the components
                 {
                     existingClass = new CodeClass(shortestNamespace) { Name = className };
@@ -414,30 +413,6 @@ namespace kiota.core
             return null;
             // Add codeClass to model namespace in workspace
         }
-        private string GetClassNameFromReferenceId(string referenceId) {
-            if(string.IsNullOrEmpty(referenceId)) 
-                return referenceId;
-            
-            var truncatedNamespaceName = referenceId.Replace(this.config.SchemaRootNamespaceName, string.Empty);
-            if(truncatedNamespaceName.Contains('.')) 
-                return truncatedNamespaceName.Substring(truncatedNamespaceName.LastIndexOf('.') + 1);
-            else 
-                return truncatedNamespaceName;
-        }
-        private OpenApiSchema GetResponseSchema(OpenApiOperation operation)
-        {
-            // Return Schema that represents all the possible success responses!
-            // For the moment assume 200s and application/json
-            // TODO: figure out how to create types that accurately correspond to HTTP responses!
-            var schemas = operation.Responses.Where(r => r.Key == "200" || r.Key == "201")
-                                .SelectMany(re => re.Value.Content)
-                                .Where(c => c.Key == "application/json")
-                                .Select(co => co.Value.Schema)
-                                .Where(s => s is not null);
-
-            return schemas.FirstOrDefault();
-        }
-
         private CodeClass CreateOperationParameter(OpenApiUrlSpaceNode node, KeyValuePair<OperationType, OpenApiOperation> operation, CodeClass parentClass)
         {
             var parameterClass = new CodeClass(parentClass)
