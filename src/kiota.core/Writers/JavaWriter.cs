@@ -71,7 +71,8 @@ namespace kiota.core
         {
             var method = new CodeMethod(code) {
                 Name = "get",
-                ReturnType = code.IndexType
+                ReturnType = code.ReturnType,
+                IsAsync = false,
             };
             method.AddParameter(new CodeParameter(method) {
                         Name = "position",
@@ -85,7 +86,7 @@ namespace kiota.core
         {
             //TODO javadoc
             WriteLine("@javax.annotation.Nonnull");
-            WriteLine($"public java.util.concurrent.Future<{GetTypeString(code.ReturnType).ToFirstCharacterUpperCase()}> {code.Name.ToFirstCharacterLowerCase()}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
+            WriteLine($"public {(code.IsAsync ? "java.util.concurrent.Future<" : string.Empty)}{GetTypeString(code.ReturnType).ToFirstCharacterUpperCase()}{(code.IsAsync ? ">" : string.Empty)} {code.Name.ToFirstCharacterLowerCase()}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
         }
 
         public override void WriteProperty(CodeProperty code)
