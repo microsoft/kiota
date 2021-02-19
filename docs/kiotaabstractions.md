@@ -27,8 +27,8 @@ public class RequestInfo
 {
     public string Path;
     public string HttpMethod;
-    public IDictionary<string, object> QueryParameters = new Dictionary<string, object>();
-    public IDictionary<string, string> Headers = new Dictionary<string, string>();
+    public IDictionary<string, object> QueryParameters = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+    public IDictionary<string, string> Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
     public Stream Content;
 }
 ```
