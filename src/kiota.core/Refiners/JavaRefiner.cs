@@ -39,16 +39,11 @@ namespace kiota.core {
             else return null;
         }
         private void PatchResponseHandlerType(CodeElement current) {
-            var properties = current.GetChildElements()
-                .OfType<CodeProperty>();
-            properties
-                .Where(x => x.PropertyKind == CodePropertyKind.ResponseHandler)
-                .ToList()
-                .ForEach(x => x.Type.Name = "java.util.function.Function<Object,Object>");
-            current.GetChildElements()
-                .Except(properties)
-                .ToList()
-                .ForEach(x => PatchResponseHandlerType(x));
+            if(current is CodeProperty currentProperty && currentProperty.PropertyKind == CodePropertyKind.ResponseHandler) {
+                currentProperty.Type.Name = "java.util.function.Function<Object,java.util.concurrent.CompletableFuture<Object>>";
+                currentProperty.DefaultValue = "x -> defaultResponseHandler(x)";
+            }
+            CrawlTree(current, PatchResponseHandlerType);
         }
     }
 }
