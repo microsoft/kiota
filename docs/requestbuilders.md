@@ -13,15 +13,6 @@ By creating properties on request builder classes, the developer can effectively
 
 namespace Todo {
 
-    public class RequestInfo {
-        string Path;
-        Dictionary<string,object> QueryParameters = new Dictionary<string,string>();
-        Dictionary<string,string> Headers = new Dictionary<string,string>();
-    }
-
-`   public interface IHttpCore {
-        Task<Stream> SendAsync(RequestInfo requestInfo)
-    }
 
     public class TodoClient   {
         private RequestInfo requestInfo = new RequestInfo();
@@ -68,7 +59,13 @@ Each request builder class exposes the set of HTTP methods that are supported on
 
 namespace Todo {
 
-    public class TodoClient
+    var client = new TodoClient();
+
+    public class TodoClient: TodoClient<GraphResponse> {
+
+    }
+
+    public class TodoClient<T>
     {
         private RequestInfo requestInfo = new RequestInfo();
         private IHttpCore httpCore;
@@ -79,6 +76,7 @@ namespace Todo {
             this.httpCore = httpCore;
         }
 
+        
         public TodosRequestBuilder Todos
         {
             get
@@ -88,7 +86,7 @@ namespace Todo {
         }
     }
 
-    public class TodosRequestBuilder
+    public class TodosRequestBuilder<NativeResponse>
     {
         private RequestInfo requestInfo = new RequestInfo();
         private IHttpCore httpCore;
@@ -110,10 +108,20 @@ namespace Todo {
             }
         }
 
+        public async Task<NativeResponse> GetNativeResponseAsycn() {
+            
+        }
+
         public async Task<IEnumerable<Todo>> GetAsync(Action<GetQueryParameters> q = default(Action<GetQueryParameters>))
         {
             return await ResponseHandler(await this.httpCore.SendAsync(this.requestInfo.With(RequestMethod.get).WithParameters(q)));
         }
+
+        public async Task<NativeResponse> GetNativeAsync(Action<GetQueryParameters> q = default(Action<GetQueryParameters>))
+        {
+            return await this.httpCore.SendNativeAsync(this.requestInfo.With(RequestMethod.get).WithParameters(q));
+        }
+
         public async Task<IEnumerable<Todo>> PostAsync(Todo todo)
         {
             RequestInfo request = this.requestInfo.With(RequestMethod.post).WithContent(this.CreateContent(todo));
