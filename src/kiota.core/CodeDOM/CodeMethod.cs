@@ -7,7 +7,8 @@ namespace kiota.core
     public enum CodeMethodKind
     {
         Custom,
-        ResponseHandler
+        ResponseHandler,
+        IndexerBackwardCompatibility
     }
 
     public class CodeMethod : CodeTerminal, ICloneable

@@ -178,7 +178,8 @@ namespace kiota.core
         {
             // Determine Class Name
             CodeClass codeClass;
-            if (String.IsNullOrEmpty(currentNode.Identifier))
+            var isRootClientClass = String.IsNullOrEmpty(currentNode.Identifier);
+            if (isRootClientClass)
             {
                 codeClass = new CodeClass(codeNamespace) { Name = this.config.ClientClassName };
             }
@@ -225,6 +226,7 @@ namespace kiota.core
 
                 CreateResponseHandler(codeClass);
             }
+            CreatePathBuilder(codeClass, currentNode, isRootClientClass);
            
 
             (currentNode.DoesNodeBelongToItemSubnamespace() ? codeNamespace.EnsureItemNamespace() : codeNamespace).AddClass(codeClass);
@@ -236,6 +238,28 @@ namespace kiota.core
                 var targetNamespace = rootNamespace.GetNamespace(targetNamespaceName) ?? rootNamespace.AddNamespace(targetNamespaceName);
                 CreateRequestBuilderClass(targetNamespace, childNode, rootNode);
             }
+        }
+
+        private void CreatePathBuilder(CodeClass currentClass, OpenApiUrlSpaceNode currentNode, bool isRootClientClass) {
+            var pathProperty = new CodeProperty(currentClass) {
+                Access = AccessModifier.Private,
+                Name = "pathSegment",
+                DefaultValue = isRootClientClass ? $"\"{this.config.ApiRootUrl}\"" : (currentNode.IsParameter() ? "\"\"" : $"\"/{currentNode.Segment}\""),
+                ReadOnly = true,
+            };
+            pathProperty.Type = new CodeType(pathProperty) {
+                Name = "string",
+                IsNullable = false,
+            };
+            currentClass.AddProperty(pathProperty);
+
+            var pathBuilderProperty = new CodeProperty(currentClass) {
+                Name = "pathBuilder"
+            };
+            pathBuilderProperty.Type = new CodeType(pathBuilderProperty) {
+                Name = "string"
+            };
+            currentClass.AddProperty(pathBuilderProperty);
         }
 
         /// <summary>

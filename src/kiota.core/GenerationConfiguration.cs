@@ -6,5 +6,6 @@
         public string ClientNamespaceName { get; set; } = "GraphClient";
         public string SchemaRootNamespaceName { get; set; } = "microsoft.graph";
         public GenerationLanguage Language { get; set; } = GenerationLanguage.CSharp;
+        public string ApiRootUrl { get; set; } = "https://graph.microsoft.com/v1.0";
     }
 }

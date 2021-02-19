@@ -73,6 +73,7 @@ namespace kiota.core
                 Name = "get",
                 ReturnType = code.ReturnType,
                 IsAsync = false,
+                MethodKind = CodeMethodKind.IndexerBackwardCompatibility,
             };
             method.AddParameter(new CodeParameter(method) {
                         Name = "position",
@@ -85,15 +86,29 @@ namespace kiota.core
         public override void WriteMethod(CodeMethod code)
         {
             //TODO javadoc
-            WriteLine("@javax.annotation.Nonnull");
-            WriteLine($"{GetAccessModifier(code.Access)} {(code.IsAsync ? "java.util.concurrent.Future<" : string.Empty)}{GetTypeString(code.ReturnType).ToFirstCharacterUpperCase()}{(code.IsAsync ? ">" : string.Empty)} {code.Name.ToFirstCharacterLowerCase()}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
+            WriteLine(code.ReturnType.IsNullable ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
+            WriteLine($"{GetAccessModifier(code.Access)} {(code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty)}{GetTypeString(code.ReturnType).ToFirstCharacterUpperCase()}{(code.IsAsync ? ">" : string.Empty)} {code.Name.ToFirstCharacterLowerCase()}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
+            IncreaseIndent();
+            switch(code.MethodKind) {
+                case CodeMethodKind.IndexerBackwardCompatibility:
+                    WriteLine($"final {code.ReturnType.Name} builder = new {code.ReturnType.Name}();");
+                    WriteLine("builder.pathBuilder = this.pathBuilder + this.pathSegment + \"/\" + position;");
+                    WriteLine("return builder;");
+                break;
+                default:
+                    WriteLine("return null;");
+                break;
+            }
+            DecreaseIndent();
+            WriteLine("}");
         }
 
         public override void WriteProperty(CodeProperty code)
         {
             //TODO: missing javadoc
-            WriteLine("@javax.annotation.Nullable");
-            WriteLine($"{GetAccessModifier(code.Access)} {GetTypeString(code.Type)} {code.Name};");
+            var defaultValue = string.IsNullOrEmpty(code.DefaultValue) ? string.Empty : $" = {code.DefaultValue}";
+            WriteLine(code.Type.IsNullable ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
+            WriteLine($"{GetAccessModifier(code.Access)}{(code.ReadOnly ? " final " : " ")}{GetTypeString(code.Type)} {code.Name}{defaultValue};");
         }
 
         public override void WriteType(CodeType code)

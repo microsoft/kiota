@@ -139,6 +139,7 @@ namespace kiota.core
             var method = new CodeMethod(code) {
                 Name = "item",
                 ReturnType = code.ReturnType,
+                MethodKind = CodeMethodKind.IndexerBackwardCompatibility,
                 IsAsync = false,
             };
             method.AddParameter(new CodeParameter(method) {
@@ -151,13 +152,26 @@ namespace kiota.core
 
         public override void WriteMethod(CodeMethod code)
         {
-            WriteLine($"{GetAccessModifier(code.Access)} readonly {code.Name.ToFirstCharacterLowerCase()} = ({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.IsAsync ? ">": string.Empty)} => {{ return {(code.IsAsync ? "Promise.resolve(" : string.Empty)}{(code.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{(code.IsAsync ? ")" : string.Empty)}; }}");
+            WriteLine($"{GetAccessModifier(code.Access)} readonly {code.Name.ToFirstCharacterLowerCase()} = ({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.IsAsync ? ">": string.Empty)} => {{");
+            IncreaseIndent();
+            switch(code.MethodKind) {
+                case CodeMethodKind.IndexerBackwardCompatibility:
+                    WriteLine($"const builder = new {code.ReturnType.Name}();");
+                    WriteLine("builder.pathBuilder = this.pathBuilder && this.pathBuilder + this.pathSegment + \"/\" + position;");
+                    WriteLine("return builder;");
+                    break;
+                default:
+                    WriteLine($"return {(code.IsAsync ? "Promise.resolve(" : string.Empty)}{(code.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{(code.IsAsync ? ")" : string.Empty)};");
+                    break;
+            }
+            DecreaseIndent();
+            WriteLine("}");
         }
 
         public override void WriteProperty(CodeProperty code)
         {
             var defaultValue = string.IsNullOrEmpty(code.DefaultValue) ? string.Empty : $" = {code.DefaultValue}";
-            WriteLine($"{GetAccessModifier(code.Access)}{(code.ReadOnly ? " readonly ": " ")}{code.Name.ToFirstCharacterLowerCase()}?: {GetTypeString(code.Type)} | undefined{defaultValue};");
+            WriteLine($"{GetAccessModifier(code.Access)}{(code.ReadOnly ? " readonly ": " ")}{code.Name.ToFirstCharacterLowerCase()}{(code.Type.IsNullable ? "?" : string.Empty)}: {GetTypeString(code.Type)}{(code.Type.IsNullable ? " | undefined" : string.Empty)}{defaultValue};");
         }
 
         public override void WriteType(CodeType code)

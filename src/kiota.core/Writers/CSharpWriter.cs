@@ -42,10 +42,10 @@ namespace kiota.core
 
         public override void WriteProperty(CodeProperty code)
         {
-            var simpleBody = "get;";
+            var simpleBody = " get;";
             if (!code.ReadOnly)
             {
-                simpleBody = "get;set;";
+                simpleBody = " get; set; ";
             }
             var defaultValue = string.Empty;
             if (code.DefaultValue != null)
@@ -57,7 +57,8 @@ namespace kiota.core
 
         public override void WriteIndexer(CodeIndexer code)
         {
-            WriteLine($"public {GetTypeString(code.ReturnType)} this[{GetTypeString(code.IndexType)} {code.Name}] {{get {{ return null; }} }}");
+            var returnType = GetTypeString(code.ReturnType);
+            WriteLine($"public {returnType} this[{GetTypeString(code.IndexType)} position] {{ get {{ return new {returnType} {{ PathBuilder = PathBuilder + PathSegment + \"/\" + position }}; }} }}");
         }
 
         public override void WriteMethod(CodeMethod code)
