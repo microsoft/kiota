@@ -86,19 +86,23 @@ namespace kiota.core
         {
             //TODO javadoc
             WriteLine("@javax.annotation.Nonnull");
-            WriteLine($"public {(code.IsAsync ? "java.util.concurrent.Future<" : string.Empty)}{GetTypeString(code.ReturnType).ToFirstCharacterUpperCase()}{(code.IsAsync ? ">" : string.Empty)} {code.Name.ToFirstCharacterLowerCase()}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
+            WriteLine($"{GetAccessModifier(code.Access)} {(code.IsAsync ? "java.util.concurrent.Future<" : string.Empty)}{GetTypeString(code.ReturnType).ToFirstCharacterUpperCase()}{(code.IsAsync ? ">" : string.Empty)} {code.Name.ToFirstCharacterLowerCase()}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
         }
 
         public override void WriteProperty(CodeProperty code)
         {
             //TODO: missing javadoc
             WriteLine("@javax.annotation.Nullable");
-            WriteLine($"public {GetTypeString(code.Type)} {code.Name};");
+            WriteLine($"{GetAccessModifier(code.Access)} {GetTypeString(code.Type)} {code.Name};");
         }
 
         public override void WriteType(CodeType code)
         {
             Write(GetTypeString(code), includeIndent: false);
+        }
+        public override string GetAccessModifier(AccessModifier access)
+        {
+            return (access == AccessModifier.Public ? "public" : (access == AccessModifier.Protected ? "protected" : "private"));
         }
     }
 }

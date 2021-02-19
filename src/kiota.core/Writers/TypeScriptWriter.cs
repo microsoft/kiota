@@ -151,17 +151,22 @@ namespace kiota.core
 
         public override void WriteMethod(CodeMethod code)
         {
-            WriteLine($"public readonly {code.Name.ToFirstCharacterLowerCase()} = ({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.IsAsync ? ">": string.Empty)} => {{ return {(code.IsAsync ? "Promise.resolve(" : string.Empty)}{(code.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{(code.IsAsync ? ")" : string.Empty)}; }}");
+            WriteLine($"{GetAccessModifier(code.Access)} readonly {code.Name.ToFirstCharacterLowerCase()} = ({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.IsAsync ? ">": string.Empty)} => {{ return {(code.IsAsync ? "Promise.resolve(" : string.Empty)}{(code.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{(code.IsAsync ? ")" : string.Empty)}; }}");
         }
 
         public override void WriteProperty(CodeProperty code)
         {
-            WriteLine($"public {code.Name}?: {GetTypeString(code.Type)} | undefined;");
+            var defaultValue = string.IsNullOrEmpty(code.DefaultValue) ? string.Empty : $" = {code.DefaultValue}";
+            WriteLine($"{GetAccessModifier(code.Access)}{(code.ReadOnly ? " readonly ": " ")}{code.Name.ToFirstCharacterLowerCase()}?: {GetTypeString(code.Type)} | undefined{defaultValue};");
         }
 
         public override void WriteType(CodeType code)
         {
             Write(GetTypeString(code), includeIndent: false);
+        }
+        public override string GetAccessModifier(AccessModifier access)
+        {
+            return (access == AccessModifier.Public ? "public" : (access == AccessModifier.Protected ? "protected" : "private"));
         }
     }
 }
