@@ -21,13 +21,13 @@ namespace kiota.core {
                 var propertiesTypes = currentClass
                                     .InnerChildElements
                                     .OfType<CodeProperty>()
-                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)
+                                    .Where(x => x.PropertyKind != CodePropertyKind.ResponseHandler)
                                     .Select(x => x.Type)
                                     .Distinct();
                 var methods = currentClass
                                     .InnerChildElements
                                     .OfType<CodeMethod>()
-                                    .Where(x => x.MethodKind == CodeMethodKind.Custom);
+                                    .Where(x => x.MethodKind != CodeMethodKind.ResponseHandler);
                 var methodsReturnTypes = methods
                                     .Select(x => x.ReturnType)
                                     .Distinct();

@@ -3,7 +3,8 @@
     public enum CodePropertyKind
     {
         Custom,
-        ResponseHandler
+        ResponseHandler,
+        RequestBuilder
     }
 
     public class CodeProperty : CodeTerminal

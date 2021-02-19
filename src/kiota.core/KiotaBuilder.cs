@@ -207,7 +207,7 @@ namespace kiota.core
                 }
                 else
                 {
-                    var prop = CreateProperty(propIdentifier, propType, codeClass); // we should add the type definition here but we can't as it might not have been generated yet
+                    var prop = CreateProperty(propIdentifier, propType, codeClass, kind: CodePropertyKind.RequestBuilder); // we should add the type definition here but we can't as it might not have been generated yet
                     codeClass.AddProperty(prop);
                 }
             }
@@ -306,12 +306,13 @@ namespace kiota.core
             return prop;
         }
 
-        private CodeProperty CreateProperty(string childIdentifier, string childType, CodeClass codeClass, string defaultValue = null, OpenApiSchema typeSchema = null, CodeClass typeDefinition = null)
+        private CodeProperty CreateProperty(string childIdentifier, string childType, CodeClass codeClass, string defaultValue = null, OpenApiSchema typeSchema = null, CodeClass typeDefinition = null, CodePropertyKind kind = CodePropertyKind.Custom)
         {
             var prop = new CodeProperty(codeClass)
             {
                 Name = childIdentifier,
-                DefaultValue = defaultValue
+                DefaultValue = defaultValue,
+                PropertyKind = kind,
             };
             prop.Type = new CodeType(prop) { Name = childType, Schema = typeSchema, TypeDefinition = typeDefinition };
             logger.LogDebug("Creating property {name} of {type}", prop.Name, prop.Type.Name);

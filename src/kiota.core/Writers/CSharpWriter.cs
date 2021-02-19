@@ -42,17 +42,25 @@ namespace kiota.core
 
         public override void WriteProperty(CodeProperty code)
         {
-            var simpleBody = " get;";
+            var simpleBody = "get;";
             if (!code.ReadOnly)
             {
-                simpleBody = " get; set; ";
+                simpleBody = "get; set;";
             }
             var defaultValue = string.Empty;
             if (code.DefaultValue != null)
             {
                 defaultValue = " = " + code.DefaultValue + ";";
             }
-            WriteLine($"{GetAccessModifier(code.Access)} {GetTypeString(code.Type)} {code.Name.ToFirstCharacterUpperCase()} {{{simpleBody}}}{defaultValue}");
+            var propertyType = GetTypeString(code.Type);
+            switch(code.PropertyKind) {
+                case CodePropertyKind.RequestBuilder:
+                    WriteLine($"{GetAccessModifier(code.Access)} {propertyType} {code.Name.ToFirstCharacterUpperCase()} {{ get => new {propertyType} {{ PathBuilder = PathBuilder + PathSegment }}; }}");
+                break;
+                default:
+                    WriteLine($"{GetAccessModifier(code.Access)} {propertyType} {code.Name.ToFirstCharacterUpperCase()} {{ {simpleBody} }}{defaultValue}");
+                break;
+            }
         }
 
         public override void WriteIndexer(CodeIndexer code)
