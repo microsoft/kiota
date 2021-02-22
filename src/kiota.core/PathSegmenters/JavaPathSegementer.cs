@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 
 namespace kiota.core {
     public class JavaPathSegmenter : IPathSegmenter
@@ -19,7 +20,9 @@ namespace kiota.core {
                                             currentNamespace.Name
                                             .Replace(ClientNamespaceName, string.Empty)
                                             .TrimStart('.')
-                                            .Replace('.', Path.DirectorySeparatorChar),
+                                            .Split('.')
+                                            .Select(x => x.ToFirstCharacterLowerCase())
+                                            .Aggregate((x, y) => $"{x}{Path.DirectorySeparatorChar}{y}"),
                                             currentClass.Name.ToFirstCharacterUpperCase() + FileSuffix);
             var directoryPath = Path.GetDirectoryName(targetPath);
             if(!Directory.Exists(directoryPath))

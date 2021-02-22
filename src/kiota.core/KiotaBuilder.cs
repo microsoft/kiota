@@ -13,7 +13,6 @@ namespace kiota.core
 {
     public class KiotaBuilder
     {
-        public bool AddSuffix { get; set; } = true;
         private ILogger<KiotaBuilder> logger;
         private GenerationConfiguration config;
 
@@ -115,7 +114,7 @@ namespace kiota.core
 
             var rootPlaceholder = CodeNamespace.InitRootNamespace();
             var codeNamespace = rootPlaceholder.AddNamespace(this.config.ClientNamespaceName);
-            CreateRequestBuilderClass(codeNamespace, root);
+            CreateRequestBuilderClass(codeNamespace, root, root);
             MapTypeDefinitions(codeNamespace);
 
             stopwatch.Stop();
@@ -170,32 +169,32 @@ namespace kiota.core
             stopwatch.Stop();
             logger.LogInformation("{timestamp}ms: Files written to {path}", stopwatch.ElapsedMilliseconds, config.OutputPath);
         }
-
+        private static readonly string requestBuilderSuffix = "RequestBuilder";
 
         /// <summary>
         /// Create a CodeClass instance that is a request builder class for the OpenApiUrlSpaceNode
         /// </summary>
-        private void CreateRequestBuilderClass(CodeNamespace codeNamespace, OpenApiUrlSpaceNode node)
+        private void CreateRequestBuilderClass(CodeNamespace codeNamespace, OpenApiUrlSpaceNode currentNode, OpenApiUrlSpaceNode rootNode)
         {
             // Determine Class Name
             CodeClass codeClass;
-            if (String.IsNullOrEmpty(node.Identifier))
+            if (String.IsNullOrEmpty(currentNode.Identifier))
             {
                 codeClass = new CodeClass(codeNamespace) { Name = this.config.ClientClassName };
             }
             else
             {
-                var className = FixPathIdentifier(node.Identifier) + "RequestBuilder" + (this.AddSuffix ? "_" + node.Hash() : "");
-                codeClass = new CodeClass(codeNamespace.EnsureRequestsNamespace()) { Name = className };
+                var className = currentNode.GetClassName(requestBuilderSuffix);
+                codeClass = new CodeClass((currentNode.DoesNodeBelongToItemSubnamespace() ? codeNamespace.EnsureItemNamespace() : codeNamespace)) { Name = className };
             }
 
             logger.LogDebug("Creating class {class}", codeClass.Name);
 
             // Add properties for children
-            foreach (var child in node.Children)
+            foreach (var child in currentNode.Children)
             {
-                var propIdentifier = FixPathIdentifier(child.Value.Identifier);
-                var propType = propIdentifier + "RequestBuilder" + (this.AddSuffix ? "_" + child.Value.Hash() : "");
+                var propIdentifier = child.Value.GetClassName();
+                var propType = propIdentifier + requestBuilderSuffix;
                 if (child.Value.IsParameter())
                 {
                     var prop = CreateIndexer(propIdentifier, propType, codeClass);
@@ -213,13 +212,13 @@ namespace kiota.core
             }
 
             // Add methods for Operations
-            if (node.HasOperations())
+            if (currentNode.HasOperations())
             {
-                foreach(var operation in node.PathItem.Operations)
+                foreach(var operation in currentNode.PathItem.Operations)
                 {
-                    var parameterClass = CreateOperationParameter(node, operation, codeClass);
+                    var parameterClass = CreateOperationParameter(currentNode, operation, codeClass);
 
-                    var method = CreateOperationMethod(operation.Key, operation.Value, parameterClass, codeClass);
+                    var method = CreateOperationMethod(rootNode, currentNode, operation.Key, operation.Value, parameterClass, codeClass);
                     logger.LogDebug("Creating method {name} of {type}", method.Name, method.ReturnType);
                     codeClass.AddMethod(method);
                 }
@@ -228,14 +227,14 @@ namespace kiota.core
             }
            
 
-            (string.IsNullOrEmpty(node.Identifier) ? codeNamespace : codeNamespace.EnsureRequestsNamespace()).AddClass(codeClass);
+            (currentNode.DoesNodeBelongToItemSubnamespace() ? codeNamespace.EnsureItemNamespace() : codeNamespace).AddClass(codeClass);
 
             var rootNamespace = codeNamespace.GetRootNamespace();
-            foreach (var childNode in node.Children.Values)
+            foreach (var childNode in currentNode.Children.Values)
             {
-                var targetNamespaceName = GetNamespaceNameFromReferenceId(this.config.SchemaRootNamespaceName + '.' + childNode.Identifier.ToFirstCharacterLowerCase());
+                var targetNamespaceName = childNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName);
                 var targetNamespace = rootNamespace.GetNamespace(targetNamespaceName) ?? rootNamespace.AddNamespace(targetNamespaceName);
-                CreateRequestBuilderClass(targetNamespace, childNode);
+                CreateRequestBuilderClass(targetNamespace, childNode, rootNode);
             }
         }
 
@@ -295,15 +294,15 @@ namespace kiota.core
             return prop;
         }
 
-        private CodeMethod CreateOperationMethod(OperationType operationType, OpenApiOperation operation, CodeClass parameterClass, CodeClass parentClass)
+        private CodeMethod CreateOperationMethod(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parameterClass, CodeClass parentClass)
         {
-            var schema = GetResponseSchema(operation);
+            var schema = operation.GetResponseSchema();
             var method = new CodeMethod(parentClass) {
                 Name = operationType.ToString(),
             };
             if (schema != null)
             {
-                var returnType = CreateModelClasses(schema, operation, method);
+                var returnType = CreateModelClasses(rootNode, currentNode, schema, operation, method);
                 method.ReturnType = returnType ?? new CodeType(method) { Name = "object"}; //TODO remove this temporary default when the method above handles all cases
             } else 
                 method.ReturnType = new CodeType(method) { Name = "object"};
@@ -345,10 +344,33 @@ namespace kiota.core
             return null;
             // use the type declaration /reference for the operation parameter declaration
         }
-        private CodeType CreateModelClasses(OpenApiSchema schema, OpenApiOperation operation, CodeMethod parentMethod)
+        private IEnumerable<string> GetAllNamespaceNamesForModelByReferenceId(OpenApiUrlSpaceNode currentNode, string referenceId) {
+            if(string.IsNullOrEmpty(referenceId)) throw new ArgumentNullException(nameof(referenceId));
+            var currentNodePath = currentNode
+                                    ?.PathItem
+                                    ?.Operations
+                                    ?.Values
+                                    ?.Any(x => x?.Responses
+                                                    ?.Values
+                                                    ?.SelectMany(y => y.Content.Values)
+                                                    ?.Select(y => y.Schema)
+                                                    ?.Any(y => referenceId.Equals(y?.Reference?.Id)) ?? false) ?? false ?
+                                                    new List<string>() { currentNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName) }:
+                                                    Enumerable.Empty<string>();
+            if(currentNode?.Children?.Any() ?? false)
+                return currentNodePath
+                        .Union(currentNode.Children.Values.SelectMany(x => GetAllNamespaceNamesForModelByReferenceId(x, referenceId)));
+            else return currentNodePath;
+        }
+        private string GetShortestNamespaceNameForModelByReferenceId(OpenApiUrlSpaceNode rootNode, string referenceId) {
+            return GetAllNamespaceNamesForModelByReferenceId(rootNode, referenceId)
+                    .OrderBy(x => x.Count(y => y == '.'))
+                    .FirstOrDefault();
+        }
+        private CodeType CreateModelClasses(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeMethod parentMethod)
         {
-            var originalReferenceId = schema?.Reference?.Id;
             var originalReference = schema?.Reference;
+            var originalReferenceId = originalReference?.Id;
             var codeNamespace = parentMethod.GetImmediateParentOfType<CodeNamespace>();
             if(schema?.AllOf?.Any() ?? false)
                 schema = schema.AllOf.Last();
@@ -363,21 +385,24 @@ namespace kiota.core
                 var codeClass = new CodeClass(codeNamespace) { Name = operation.OperationId + "Response" };
             } else  // Reused schema from components
             {
-                var targetNamespaceName = GetNamespaceNameFromReferenceId(originalReferenceId);
-                var targetNamespace = codeNamespace.GetRootNamespace().GetNamespace(targetNamespaceName);
-                if(targetNamespace == null)
-                    targetNamespace = codeNamespace.AddNamespace(targetNamespaceName);
-                var className = GetClassNameFromReferenceId(originalReferenceId);
-                var existingClass = targetNamespace.InnerChildElements.OfType<CodeClass>().FirstOrDefault(x => x.Name?.Equals(className) ?? false);
+                var className = currentNode.GetClassName(operation: operation);
+                var shortestNamespaceName = GetShortestNamespaceNameForModelByReferenceId(rootNode, originalReferenceId);
+                var shortestNamespace = codeNamespace.GetRootNamespace().GetNamespace(shortestNamespaceName);
+                if(shortestNamespace == null)
+                    shortestNamespace = codeNamespace.AddNamespace(shortestNamespaceName);
+                var existingClass = (currentNode.DoesNodeBelongToItemSubnamespace() ? shortestNamespace.EnsureItemNamespace() : shortestNamespace)
+                                        .InnerChildElements
+                                        ?.OfType<CodeClass>()
+                                        ?.FirstOrDefault(x => x.Name?.Equals(className, StringComparison.InvariantCultureIgnoreCase) ?? false);
                 if(existingClass == null) // we can find it in the components
                 {
-                    existingClass = new CodeClass(targetNamespace) { Name = className };
+                    existingClass = new CodeClass(shortestNamespace) { Name = className };
                     if(schema.Properties.Any())//TODO handle collections
                         existingClass.AddProperty(schema
                                                     .Properties
                                                     .Select(x => CreateProperty(x.Key, x.Value.Type, existingClass, typeSchema: x.Value)) //TODO missing type definition
                                                     .ToArray());
-                    targetNamespace.AddClass(existingClass);
+                    shortestNamespace.AddClass(existingClass);
                 }
                 return new CodeType(parentMethod) {
                     TypeDefinition = existingClass,
@@ -388,41 +413,6 @@ namespace kiota.core
             return null;
             // Add codeClass to model namespace in workspace
         }
-        private string GetClassNameFromReferenceId(string referenceId) {
-            if(string.IsNullOrEmpty(referenceId)) 
-                return referenceId;
-            
-            var truncatedNamespaceName = referenceId.Replace(this.config.SchemaRootNamespaceName, string.Empty);
-            if(truncatedNamespaceName.Contains('.')) 
-                return truncatedNamespaceName.Substring(truncatedNamespaceName.LastIndexOf('.') + 1);
-            else 
-                return truncatedNamespaceName;
-        }
-        private string GetNamespaceNameFromReferenceId(string referenceId) {
-            if(string.IsNullOrEmpty(referenceId)) 
-                return referenceId;
-            
-            var truncatedNamespaceName = referenceId.Replace(this.config.SchemaRootNamespaceName, string.Empty);
-            if(truncatedNamespaceName.Contains('.')) 
-                return this.config.ClientNamespaceName + truncatedNamespaceName.Substring(0, truncatedNamespaceName.LastIndexOf('.'));
-            else 
-                return truncatedNamespaceName;
-        }
-
-        private OpenApiSchema GetResponseSchema(OpenApiOperation operation)
-        {
-            // Return Schema that represents all the possible success responses!
-            // For the moment assume 200s and application/json
-            // TODO: figure out how to create types that accurately correspond to HTTP responses!
-            var schemas = operation.Responses.Where(r => r.Key == "200" || r.Key == "201")
-                                .SelectMany(re => re.Value.Content)
-                                .Where(c => c.Key == "application/json")
-                                .Select(co => co.Value.Schema)
-                                .Where(s => s is not null);
-
-            return schemas.FirstOrDefault();
-        }
-
         private CodeClass CreateOperationParameter(OpenApiUrlSpaceNode node, KeyValuePair<OperationType, OpenApiOperation> operation, CodeClass parentClass)
         {
             var parameterClass = new CodeClass(parentClass)
@@ -461,17 +451,6 @@ namespace kiota.core
 
             return parameter.Name.Replace("$","").ToCamelCase();
         }
-
-        private static string FixPathIdentifier(string identifier)
-        {
-            // Replace with regexes pulled from settings that are API specific
-            if(identifier.Contains("$value"))
-            {
-                identifier = identifier.Replace("$value", "Content");
-            }
-            return identifier.ToCamelCase();
-        }
-
         private void CreateResponseHandler(CodeClass requestBuilder)
         {
             // Default ResponseHandler Implementation

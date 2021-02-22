@@ -20,6 +20,7 @@ namespace kiota.core
         public CodeType ReturnType;
         public List<CodeParameter> Parameters = new List<CodeParameter>();
         public bool IsStatic = false;
+        public bool IsAsync = true;
 
         public object Clone()
         {

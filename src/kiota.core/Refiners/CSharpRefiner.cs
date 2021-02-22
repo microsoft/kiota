@@ -12,47 +12,42 @@ namespace kiota.core {
             AddAsyncSuffix(generatedCode);
             AddInnerClasses(generatedCode);
             MakeNativeResponseHandlers(generatedCode);
+            CapitalizeNamespacesFirstLetters(generatedCode);
         }
         private static readonly string[] defaultNamespacesForClasses = new string[] {"System", "System.Threading.Tasks", "System.Net.Http"};
         private void AddDefaultImports(CodeElement current) {
             if(current is CodeClass currentClass)
                 currentClass.AddUsing(defaultNamespacesForClasses.Select(x => new CodeUsing(currentClass) { Name = x }).ToArray());
-            foreach(var childElement in current.GetChildElements())
-                AddDefaultImports(childElement);
+            CrawlTree(current, AddDefaultImports);
         }
-
-        private void MakeNativeResponseHandlers(CodeNamespace generatedCode)
+        private void CapitalizeNamespacesFirstLetters(CodeElement current) {
+            if(current is CodeNamespace currentNamespace)
+                currentNamespace.Name = currentNamespace.Name?.Split('.')?.Select(x => x.ToFirstCharacterUpperCase())?.Aggregate((x, y) => $"{x}.{y}");
+            CrawlTree(current, CapitalizeNamespacesFirstLetters);
+        }
+        private void MakeNativeResponseHandlers(CodeElement currentElement)
         {
-            foreach (var codeElement in generatedCode.InnerChildElements)
-            {
-                switch (codeElement)
+            if(currentElement is CodeClass currentClass) {
+                var responseHandlerProp = currentClass.InnerChildElements.OfType<CodeProperty>().Where(e => e.PropertyKind == CodePropertyKind.ResponseHandler)
+                                                                .FirstOrDefault();
+                if (responseHandlerProp != null)
                 {
-                    case CodeClass c:
-                        var responseHandlerProp = c.InnerChildElements.OfType<CodeProperty>().Where(e => e.PropertyKind == CodePropertyKind.ResponseHandler)
-                                                                        .FirstOrDefault();
-                        if (responseHandlerProp != null)
-                        {
-                            responseHandlerProp.Type.Name = responseHandlerType.Replace(responseHandlerProp.Type.Name, "<HttpResponseMessage,Task<$1>>"); // TODO: We should probably generic types properly 
-                        }
-                        var defaultResponseHandler = c.InnerChildElements.OfType<CodeMethod>()
-                                                                            .Where(m=> m.MethodKind == CodeMethodKind.ResponseHandler)
-                                                                            .FirstOrDefault();
-                        if (defaultResponseHandler != null)
-                        {
-                            defaultResponseHandler.Parameters.FirstOrDefault().Type.Name = "HttpResponseMessage";
-                        }
-                        break;
-                    case CodeNamespace n:
-                        MakeNativeResponseHandlers(n);
-                        break;
+                    responseHandlerProp.Type.Name = responseHandlerType.Replace(responseHandlerProp.Type.Name, "<HttpResponseMessage,Task<$1>>"); // TODO: We should probably generic types properly 
+                }
+                var defaultResponseHandler = currentClass.InnerChildElements.OfType<CodeMethod>()
+                                                                    .Where(m=> m.MethodKind == CodeMethodKind.ResponseHandler)
+                                                                    .FirstOrDefault();
+                if (defaultResponseHandler != null)
+                {
+                    defaultResponseHandler.Parameters.FirstOrDefault().Type.Name = "HttpResponseMessage";
                 }
             }
+            CrawlTree(currentElement, MakeNativeResponseHandlers);
         }
         private void AddAsyncSuffix(CodeElement currentElement) {
             if(currentElement is CodeMethod currentMethod)
                 currentMethod.Name += "Async";
-            foreach(var childElement in currentElement.GetChildElements())
-                AddAsyncSuffix(childElement);
+            CrawlTree(currentElement, AddAsyncSuffix);
         }
     }
 }

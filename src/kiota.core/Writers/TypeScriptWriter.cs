@@ -92,7 +92,7 @@ namespace kiota.core
                 throw new ArgumentNullException(nameof(currentNamespace));
             else if (importNamespace == null)
                 throw new ArgumentNullException(nameof(importNamespace));
-            else if(currentNamespace.Name.Equals(importNamespace.Name)) // we're in the same namespace
+            else if(currentNamespace.Name.Equals(importNamespace.Name, StringComparison.InvariantCultureIgnoreCase)) // we're in the same namespace
                 return "./";
             else {
                 var currentNamespaceSegements = currentNamespace
@@ -105,15 +105,15 @@ namespace kiota.core
                 var currentNamespaceSegementsCount = currentNamespaceSegements.Count();
                 var deeperMostSegmentIndex = 0;
                 while(deeperMostSegmentIndex < Math.Min(importNamespaceSegmentsCount, currentNamespaceSegementsCount)) {
-                    if(currentNamespaceSegements.ElementAt(deeperMostSegmentIndex).Equals(importNamespaceSegments.ElementAt(deeperMostSegmentIndex)))
+                    if(currentNamespaceSegements.ElementAt(deeperMostSegmentIndex).Equals(importNamespaceSegments.ElementAt(deeperMostSegmentIndex), StringComparison.InvariantCultureIgnoreCase))
                         deeperMostSegmentIndex++;
                     else
                         break;
                 }
-                if(importNamespaceSegmentsCount > currentNamespaceSegementsCount) { // we're in a parent namespace and need to import with a relative path
+                if (deeperMostSegmentIndex == currentNamespaceSegementsCount) { // we're in a parent namespace and need to import with a relative path
                     return "./" + GetRemainingImportPath(importNamespaceSegments.Skip(deeperMostSegmentIndex));
                 } else { // we're in a sub namespace and need to go "up" with dot dots
-                    var upMoves = currentNamespaceSegementsCount - importNamespaceSegmentsCount;
+                    var upMoves = currentNamespaceSegementsCount - deeperMostSegmentIndex;
                     var upMovesBuilder = new StringBuilder();
                     for(var i = 0; i < upMoves; i++)
                         upMovesBuilder.Append("../");
@@ -123,7 +123,7 @@ namespace kiota.core
         }
         private string GetRemainingImportPath(IEnumerable<string> remainingSegments) {
             if(remainingSegments.Any())
-                return remainingSegments.Aggregate((x, y) => $"{x}/{y}") + '/';
+                return remainingSegments.Select(x => x.ToFirstCharacterLowerCase()).Aggregate((x, y) => $"{x}/{y}") + '/';
             else
                 return string.Empty;
         }
@@ -138,7 +138,8 @@ namespace kiota.core
         {
             var method = new CodeMethod(code) {
                 Name = "item",
-                ReturnType = code.IndexType
+                ReturnType = code.ReturnType,
+                IsAsync = false,
             };
             method.AddParameter(new CodeParameter(method) {
                         Name = "position",
@@ -150,7 +151,7 @@ namespace kiota.core
 
         public override void WriteMethod(CodeMethod code)
         {
-            WriteLine($"public readonly {code.Name.ToFirstCharacterLowerCase()} = ({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : Promise<{GetTypeString(code.ReturnType)}> => {{ return Promise.resolve({(code.ReturnType.Name.Equals("string") ? "''" : "{}")}); }}");
+            WriteLine($"public readonly {code.Name.ToFirstCharacterLowerCase()} = ({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.IsAsync ? ">": string.Empty)} => {{ return {(code.IsAsync ? "Promise.resolve(" : string.Empty)}{(code.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{(code.IsAsync ? ")" : string.Empty)}; }}");
         }
 
         public override void WriteProperty(CodeProperty code)

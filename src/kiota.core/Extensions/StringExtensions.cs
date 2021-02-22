@@ -19,5 +19,7 @@ namespace kiota.core {
         public static string ToPascalCase(this string name)
             => string.IsNullOrEmpty(name) ? name : String.Join(null, name.Split("-", StringSplitOptions.RemoveEmptyEntries)
                                                                             .Select(s => ToFirstCharacterUpperCase(s)));
+        public static string ReplaceValueIdentifier(this string original) =>
+            original?.Replace("$value", "Content");
     }
 }

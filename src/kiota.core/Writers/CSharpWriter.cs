@@ -14,16 +14,19 @@ namespace kiota.core
 
         public override void WriteCodeClassDeclaration(CodeClass.Declaration code)
         {
-            foreach (var codeUsing in code.Usings)
+            foreach (var codeUsing in code.Usings.Where(x => !string.IsNullOrEmpty(x.Name)))
             {
-                WriteLine($"using {codeUsing.Name};");
+                if(codeUsing.Declaration == null)
+                    WriteLine($"using {codeUsing.Name};");
+                else
+                    WriteLine($"using {codeUsing.Name.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((x,y) => x + "." + y)};");
             }
             if(code?.Parent?.Parent is CodeNamespace) {
                 WriteLine($"namespace {code.Parent.Parent.Name} {{");
                 IncreaseIndent();
             }
 
-            WriteLine($"public class {code.Name} {{");
+            WriteLine($"public class {code.Name.ToFirstCharacterUpperCase()} {{");
             IncreaseIndent();
         }
 
@@ -49,7 +52,7 @@ namespace kiota.core
             {
                 defaultValue = " = " + code.DefaultValue + ";";
             }
-            WriteLine($"public {GetTypeString(code.Type)} {code.Name} {{{simpleBody}}}{defaultValue}");
+            WriteLine($"public {GetTypeString(code.Type)} {code.Name.ToFirstCharacterUpperCase()} {{{simpleBody}}}{defaultValue}");
         }
 
         public override void WriteIndexer(CodeIndexer code)
@@ -61,7 +64,7 @@ namespace kiota.core
         {
             var staticModifier = code.IsStatic ? "static " : string.Empty;
             // Task type should be moved into the refiner
-            WriteLine($"public {staticModifier}Task<{GetTypeString(code.ReturnType)}> {code.Name}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
+            WriteLine($"public {staticModifier}Task<{GetTypeString(code.ReturnType).ToFirstCharacterUpperCase()}> {code.Name}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
 
         }
 
