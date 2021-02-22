@@ -226,7 +226,7 @@ namespace kiota.core
 
                 CreateResponseHandler(codeClass);
             }
-            CreatePathBuilder(codeClass, currentNode, isRootClientClass);
+            CreatePathManagement(codeClass, currentNode, isRootClientClass);
            
 
             (currentNode.DoesNodeBelongToItemSubnamespace() ? codeNamespace.EnsureItemNamespace() : codeNamespace).AddClass(codeClass);
@@ -240,7 +240,7 @@ namespace kiota.core
             }
         }
 
-        private void CreatePathBuilder(CodeClass currentClass, OpenApiUrlSpaceNode currentNode, bool isRootClientClass) {
+        private void CreatePathManagement(CodeClass currentClass, OpenApiUrlSpaceNode currentNode, bool isRootClientClass) {
             var pathProperty = new CodeProperty(currentClass) {
                 Access = AccessModifier.Private,
                 Name = "pathSegment",
@@ -253,13 +253,13 @@ namespace kiota.core
             };
             currentClass.AddProperty(pathProperty);
 
-            var pathBuilderProperty = new CodeProperty(currentClass) {
-                Name = "pathBuilder"
+            var currentPathProperty = new CodeProperty(currentClass) {
+                Name = "currentPath"
             };
-            pathBuilderProperty.Type = new CodeType(pathBuilderProperty) {
+            currentPathProperty.Type = new CodeType(currentPathProperty) {
                 Name = "string"
             };
-            currentClass.AddProperty(pathBuilderProperty);
+            currentClass.AddProperty(currentPathProperty);
         }
 
         /// <summary>

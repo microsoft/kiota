@@ -55,7 +55,7 @@ namespace kiota.core
             var propertyType = GetTypeString(code.Type);
             switch(code.PropertyKind) {
                 case CodePropertyKind.RequestBuilder:
-                    WriteLine($"{GetAccessModifier(code.Access)} {propertyType} {code.Name.ToFirstCharacterUpperCase()} {{ get => new {propertyType} {{ PathBuilder = PathBuilder + PathSegment }}; }}");
+                    WriteLine($"{GetAccessModifier(code.Access)} {propertyType} {code.Name.ToFirstCharacterUpperCase()} {{ get => new {propertyType} {{ CurrentPath = CurrentPath + PathSegment }}; }}");
                 break;
                 default:
                     WriteLine($"{GetAccessModifier(code.Access)} {propertyType} {code.Name.ToFirstCharacterUpperCase()} {{ {simpleBody} }}{defaultValue}");
@@ -66,7 +66,7 @@ namespace kiota.core
         public override void WriteIndexer(CodeIndexer code)
         {
             var returnType = GetTypeString(code.ReturnType);
-            WriteLine($"public {returnType} this[{GetTypeString(code.IndexType)} position] {{ get {{ return new {returnType} {{ PathBuilder = PathBuilder + PathSegment + \"/\" + position }}; }} }}");
+            WriteLine($"public {returnType} this[{GetTypeString(code.IndexType)} position] {{ get {{ return new {returnType} {{ CurrentPath = CurrentPath + PathSegment + \"/\" + position }}; }} }}");
         }
 
         public override void WriteMethod(CodeMethod code)

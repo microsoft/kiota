@@ -92,7 +92,7 @@ namespace kiota.core
             switch(code.MethodKind) {
                 case CodeMethodKind.IndexerBackwardCompatibility:
                     WriteLine($"final {code.ReturnType.Name} builder = new {code.ReturnType.Name}();");
-                    WriteLine("builder.pathBuilder = this.pathBuilder + this.pathSegment + \"/\" + position;");
+                    WriteLine("builder.currentPath = this.currentPath + this.pathSegment + \"/\" + position;");
                     WriteLine("return builder;");
                 break;
                 default:
