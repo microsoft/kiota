@@ -92,7 +92,7 @@ namespace kiota.core
             switch(code.MethodKind) {
                 case CodeMethodKind.IndexerBackwardCompatibility:
                     WriteLine($"final {code.ReturnType.Name} builder = new {code.ReturnType.Name}();");
-                    WriteLine("builder.currentPath = this.currentPath + this.pathSegment + \"/\" + position;");
+                    WriteLine($"builder.currentPath = this.currentPath + this.{pathSegmentPropertyName} + \"/\" + position;");
                     WriteLine("return builder;");
                 break;
                 default:
@@ -102,13 +102,30 @@ namespace kiota.core
             DecreaseIndent();
             WriteLine("}");
         }
-
+        private const string pathSegmentPropertyName = "pathSegment";
+        private const string currentPathPropertyName = "currentPath";
         public override void WriteProperty(CodeProperty code)
         {
             //TODO: missing javadoc
-            var defaultValue = string.IsNullOrEmpty(code.DefaultValue) ? string.Empty : $" = {code.DefaultValue}";
-            WriteLine(code.Type.IsNullable ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
-            WriteLine($"{GetAccessModifier(code.Access)}{(code.ReadOnly ? " final " : " ")}{GetTypeString(code.Type)} {code.Name}{defaultValue};");
+            var returnType = GetTypeString(code.Type);
+            switch(code.PropertyKind) {
+                case CodePropertyKind.RequestBuilder:
+                    WriteLine("@javax.annotation.Nonnull");
+                    WriteLine($"{GetAccessModifier(code.Access)} {returnType} {code.Name.ToFirstCharacterLowerCase()}() {{");
+                    IncreaseIndent();
+                    // we're assigning this temp variable because java doesn't have a way to differentiate references with same names in properties initializers
+                    // and because if currentPath is null it'll add "null" to the string...
+                    WriteLine($"final String parentPath = {currentPathPropertyName} == null ? {pathSegmentPropertyName} : ({currentPathPropertyName} + {pathSegmentPropertyName});");
+                    WriteLine($"return new {returnType}() {{{{ {currentPathPropertyName} = parentPath; }}}};");
+                    DecreaseIndent();
+                    WriteLine("}");
+                break;
+                default:
+                    var defaultValue = string.IsNullOrEmpty(code.DefaultValue) ? string.Empty : $" = {code.DefaultValue}";
+                    WriteLine(code.Type.IsNullable ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
+                    WriteLine($"{GetAccessModifier(code.Access)}{(code.ReadOnly ? " final " : " ")}{returnType} {code.Name.ToFirstCharacterLowerCase()}{defaultValue};");
+                break;
+            }
         }
 
         public override void WriteType(CodeType code)
