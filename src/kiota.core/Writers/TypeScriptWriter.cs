@@ -63,7 +63,7 @@ namespace kiota.core
             {
                 var relativeImportPath = GetRelativeImportPathForUsing(codeUsing, code.GetImmediateParentOfType<CodeNamespace>());
                                                     
-                WriteLine($"import {{{codeUsing.Name}}} from '{relativeImportPath}{(string.IsNullOrEmpty(relativeImportPath) ? codeUsing.Name : codeUsing.Name.ToFirstCharacterLowerCase())}';");
+                WriteLine($"import {{{codeUsing.Declaration?.Name ?? codeUsing.Name}}} from '{relativeImportPath}{(string.IsNullOrEmpty(relativeImportPath) ? codeUsing.Name : codeUsing.Declaration.Name.ToFirstCharacterLowerCase())}';");
             }
             WriteLine();
             WriteLine($"export class {code.Name} {{");

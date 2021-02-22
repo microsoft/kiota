@@ -8,18 +8,17 @@ namespace kiota.core {
         public override void Refine(CodeNamespace generatedCode)
         {
             AddDefaultImports(generatedCode);
+            AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddAsyncSuffix(generatedCode);
             AddInnerClasses(generatedCode);
             MakeNativeResponseHandlers(generatedCode);
         }
+        private static readonly string[] defaultNamespacesForClasses = new string[] {"System", "System.Threading.Tasks", "System.Net.Http"};
         private void AddDefaultImports(CodeElement current) {
-            if(current is CodeClass currentClass) {
-                currentClass.AddUsing(new CodeUsing(currentClass) { Name = "System" });
-                currentClass.AddUsing(new CodeUsing(currentClass) { Name = "System.Threading.Tasks" });
-                currentClass.AddUsing(new CodeUsing(currentClass) { Name = "System.Net.Http" });
-            }
-            foreach(var childClass in current.GetChildElements())
-                AddDefaultImports(childClass);
+            if(current is CodeClass currentClass)
+                currentClass.AddUsing(defaultNamespacesForClasses.Select(x => new CodeUsing(currentClass) { Name = x }).ToArray());
+            foreach(var childElement in current.GetChildElements())
+                AddDefaultImports(childElement);
         }
 
         private void MakeNativeResponseHandlers(CodeNamespace generatedCode)
