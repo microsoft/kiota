@@ -149,6 +149,8 @@ namespace kiota.core
                     });
             WriteMethod(method);
         }
+        private const string currentPathPropertyName = "currentPath";
+        private const string pathSegmentPropertyName = "pathSegment";
 
         public override void WriteMethod(CodeMethod code)
         {
@@ -157,7 +159,7 @@ namespace kiota.core
             switch(code.MethodKind) {
                 case CodeMethodKind.IndexerBackwardCompatibility:
                     WriteLine($"const builder = new {code.ReturnType.Name}();");
-                    WriteLine("builder.currentPath = this.currentPath && this.currentPath + this.pathSegment + \"/\" + position;");
+                    WriteLine($"builder.{currentPathPropertyName} = this.{currentPathPropertyName} && this.{currentPathPropertyName} + this.{pathSegmentPropertyName} + \"/\" + position;");
                     WriteLine("return builder;");
                     break;
                 default:
@@ -170,8 +172,22 @@ namespace kiota.core
 
         public override void WriteProperty(CodeProperty code)
         {
-            var defaultValue = string.IsNullOrEmpty(code.DefaultValue) ? string.Empty : $" = {code.DefaultValue}";
-            WriteLine($"{GetAccessModifier(code.Access)}{(code.ReadOnly ? " readonly ": " ")}{code.Name.ToFirstCharacterLowerCase()}{(code.Type.IsNullable ? "?" : string.Empty)}: {GetTypeString(code.Type)}{(code.Type.IsNullable ? " | undefined" : string.Empty)}{defaultValue};");
+            var returnType = GetTypeString(code.Type);
+            switch(code.PropertyKind) {
+                case CodePropertyKind.RequestBuilder:
+                    WriteLine($"{GetAccessModifier(code.Access)} get {code.Name.ToFirstCharacterLowerCase()}(): {returnType} {{");
+                    IncreaseIndent();
+                    WriteLine($"const builder = new {returnType}();");
+                    WriteLine($"builder.{currentPathPropertyName} = this.{currentPathPropertyName} + this.{pathSegmentPropertyName};");
+                    WriteLine("return builder;");
+                    DecreaseIndent();
+                    WriteLine("}");
+                break;
+                default:
+                    var defaultValue = string.IsNullOrEmpty(code.DefaultValue) ? string.Empty : $" = {code.DefaultValue}";
+                    WriteLine($"{GetAccessModifier(code.Access)}{(code.ReadOnly ? " readonly ": " ")}{code.Name.ToFirstCharacterLowerCase()}{(code.Type.IsNullable ? "?" : string.Empty)}: {returnType}{(code.Type.IsNullable ? " | undefined" : string.Empty)}{defaultValue};");
+                break;
+            }
         }
 
         public override void WriteType(CodeType code)
