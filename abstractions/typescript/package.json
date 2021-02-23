@@ -1,5 +1,5 @@
 {
-  "name": "@microsoft/kiota-core",
+  "name": "@microsoft/kiota-abstractions",
   "version": "1.0.0",
   "description": "Core abstractions for kiota generated libraries in TypeScript and JavaScript",
   "main": "dist/index.js",

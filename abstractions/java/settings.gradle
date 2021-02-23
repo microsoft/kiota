@@ -7,5 +7,5 @@
  * in the user manual at https://docs.gradle.org/6.8/userguide/multi_project_builds.html
  */
 
-rootProject.name = 'kiota.core'
+rootProject.name = 'kiota.abstractions'
 include('lib')

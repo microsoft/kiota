@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace kiota.core
+namespace Kiota.Abstractions
 {
     public class RequestInfo
     {

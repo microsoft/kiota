@@ -1,4 +1,4 @@
-package kiota.core;
+package kiota.abstractions;
 
 import java.net.URI;
 import java.io.InputStream;

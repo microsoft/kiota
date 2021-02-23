@@ -1,4 +1,4 @@
-namespace kiota.core {
+namespace Kiota.Abstractions {
     public enum HttpMethod {
         GET,
         POST,
