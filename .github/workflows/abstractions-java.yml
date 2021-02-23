@@ -30,7 +30,7 @@ jobs:
           path: |
             ${{ env.relativePath }}/build/libs/lib.jar
   deploy:
-  # TODO condition
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     env:
       relativePath: ./abstractions/java
