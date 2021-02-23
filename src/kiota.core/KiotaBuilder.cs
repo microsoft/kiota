@@ -181,12 +181,15 @@ namespace kiota.core
             var isRootClientClass = String.IsNullOrEmpty(currentNode.Identifier);
             if (isRootClientClass)
             {
-                codeClass = new CodeClass(codeNamespace) { Name = this.config.ClientClassName };
+                codeClass = new CodeClass(codeNamespace) { Name = this.config.ClientClassName, ClassKind = CodeClassKind.RequestBuilder };
             }
             else
             {
                 var className = currentNode.GetClassName(requestBuilderSuffix);
-                codeClass = new CodeClass((currentNode.DoesNodeBelongToItemSubnamespace() ? codeNamespace.EnsureItemNamespace() : codeNamespace)) { Name = className };
+                codeClass = new CodeClass((currentNode.DoesNodeBelongToItemSubnamespace() ? codeNamespace.EnsureItemNamespace() : codeNamespace)) {
+                    Name = className, 
+                    ClassKind = CodeClassKind.RequestBuilder
+                };
             }
 
             logger.LogDebug("Creating class {class}", codeClass.Name);
@@ -260,6 +263,14 @@ namespace kiota.core
                 Name = "string"
             };
             currentClass.AddProperty(currentPathProperty);
+
+            var httpCoreProperty = new CodeProperty(currentClass) {
+                Name = "httpCore"
+            };
+            httpCoreProperty.Type = new CodeType(httpCoreProperty) {
+                Name = "IHttpCore"
+            };
+            currentClass.AddProperty(httpCoreProperty);
         }
 
         /// <summary>
@@ -324,6 +335,7 @@ namespace kiota.core
             var schema = operation.GetResponseSchema();
             var method = new CodeMethod(parentClass) {
                 Name = operationType.ToString(),
+                MethodKind = CodeMethodKind.RequestExecutor,
             };
             if (schema != null)
             {
@@ -351,6 +363,13 @@ namespace kiota.core
             };
             qsParam.Type = new CodeType(qsParam) { Name = parameterClass.Name, ActionOf = true, TypeDefinition = parameterClass };
             method.AddParameter(qsParam);
+            var headersParam = new CodeParameter(method) {
+                Name = "h",
+                Optional = true,
+                ParameterKind = CodeParameterKind.Headers,
+            };
+            headersParam.Type = new CodeType(headersParam) { Name = "IDictionary<string, string>", ActionOf = true };
+            method.AddParameter(headersParam);
             return method;
         }
 
@@ -421,7 +440,7 @@ namespace kiota.core
                                         ?.FirstOrDefault(x => x.Name?.Equals(className, StringComparison.InvariantCultureIgnoreCase) ?? false);
                 if(existingClass == null) // we can find it in the components
                 {
-                    existingClass = new CodeClass(shortestNamespace) { Name = className };
+                    existingClass = new CodeClass(shortestNamespace) { Name = className, ClassKind = CodeClassKind.Model };
                     if(schema.Properties.Any())//TODO handle collections
                         existingClass.AddProperty(schema
                                                     .Properties
@@ -487,7 +506,7 @@ namespace kiota.core
             requestBuilder.AddMethod(responseHandlerImpl);
 
             // Property to allow replacing Response Handler
-            var responseHandlerProperty = CreateProperty("ResponseHandler", "Func<object,object>", requestBuilder, "DefaultResponseHandlerAsync"); // HttpResponseMessage, model
+            var responseHandlerProperty = CreateProperty("ResponseHandler", "Func<object,object>", requestBuilder, "DefaultResponseHandlerAsync");
             responseHandlerProperty.PropertyKind = CodePropertyKind.ResponseHandler;
             responseHandlerProperty.ReadOnly = false;
             requestBuilder.AddProperty(responseHandlerProperty);  
