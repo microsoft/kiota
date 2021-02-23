@@ -3,8 +3,10 @@ name: .NET
 on:
   push:
     branches: [ main ]
+    path-ignore: ['abstractions/**', '**.md', '.vscode/**']
   pull_request:
     branches: [ main ]
+    path-ignore: ['abstractions/**', '**.md', '.vscode/**']
 
 jobs:
   build:
