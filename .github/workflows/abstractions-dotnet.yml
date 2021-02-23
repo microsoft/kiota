@@ -1,0 +1,54 @@
+name: Dotnet abstractions
+
+on:
+  push:
+    branches: [ main ]
+    paths: ['abstractions/dotnet/**', '.github/workflows/**']
+  pull_request:
+    branches: [ main ]
+    paths: ['abstractions/dotnet/**', '.github/workflows/**']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      relativePath: ./abstractions/dotnet
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.x
+      - name: Restore dependencies
+        run: dotnet restore KiotaAbstractions.sln
+        working-directory: ${{ env.relativePath }}
+      - name: Build
+        run: dotnet build KiotaAbstractions.sln --no-restore -c Release
+        working-directory: ${{ env.relativePath }}
+      - name: Test
+        run: dotnet test KiotaAbstractions.sln --no-build --verbosity normal -c Release
+        working-directory: ${{ env.relativePath }}
+      - name: Publish
+        run: dotnet publish KiotaAbstractions.sln --no-restore --no-build --verbosity normal -c Release
+        working-directory: ${{ env.relativePath }}
+      - name: Pack
+        run: dotnet pack KiotaAbstractions.sln --no-restore --no-build --verbosity normal -c Release
+        working-directory: ${{ env.relativePath }}
+      - uses: actions/upload-artifact@v2
+        with:
+          name: drop
+          path: |
+            ${{ env.relativePath }}/src/bin/Release/*.nupkg
+  deploy:
+  # TODO condition
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.x
+      - uses: actions/download-artifact@v2
+        with:
+          name: drop
+      - run: dotnet nuget push "*.nupkg" --skip-duplicate -s https://nuget.pkg.github.com/microsoft/index.json -k ${{ secrets.PUBLISH_GH_TOKEN }}
