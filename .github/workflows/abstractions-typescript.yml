@@ -1,0 +1,45 @@
+name: Typescript abstractions
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      relativePath: ./abstractions/typescript
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - run: npm ci
+        working-directory: ${{ env.relativePath }}
+      - run: npm run build
+      # - run: npm run test
+      #   working-directory: ${{ env.relativePath }}
+      - uses: actions/upload-artifact@v2
+        with:
+          name: drop
+          path: |
+            ${{ env.relativePath }}/dist/
+            ${{ env.relativePath }}/.npmignore
+            ${{ env.relativePath }}/README.md
+            ${{ env.relativePath }}/package.json
+            ${{ env.relativePath }}/package-lock.json
+  deploy:
+  # TODO condition
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - uses: actions/download-artifact@v2
+        with:
+          name: drop
+      - run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.PUBLISH_GH_TOKEN }}" > .npmrc
+      - run: npm publish
+      - run: rm .npmrc
