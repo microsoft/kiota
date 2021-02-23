@@ -21,6 +21,7 @@ jobs:
       - run: npm ci
         working-directory: ${{ env.relativePath }}
       - run: npm run build
+        working-directory: ${{ env.relativePath }}
       # - run: npm run test
       #   working-directory: ${{ env.relativePath }}
       - uses: actions/upload-artifact@v2
