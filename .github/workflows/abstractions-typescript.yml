@@ -3,10 +3,10 @@ name: Typescript abstractions
 on:
   push:
     branches: [ main ]
-    paths: ['abstractions/typescript/**']
+    paths: ['abstractions/typescript/**', '.github/workflows/**']
   pull_request:
     branches: [ main ]
-    paths: ['abstractions/typescript/**']
+    paths: ['abstractions/typescript/**', '.github/workflows/**']
 
 jobs:
   build:
