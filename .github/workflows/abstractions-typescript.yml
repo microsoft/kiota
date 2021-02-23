@@ -35,6 +35,7 @@ jobs:
   deploy:
   # TODO condition
     runs-on: ubuntu-latest
+    needs: [build]
     steps:
       - uses: actions/setup-node@v2
         with:
