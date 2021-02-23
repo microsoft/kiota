@@ -14,7 +14,7 @@ namespace kiota.core
 
         public override void WriteCodeClassDeclaration(CodeClass.Declaration code)
         {
-            foreach (var codeUsing in code.Usings.Where(x => !string.IsNullOrEmpty(x.Name)))
+            foreach (var codeUsing in code.Usings.Where(x => !string.IsNullOrEmpty(x.Name)).OrderBy(x => x.Name))
             {
                 if(codeUsing.Declaration == null)
                     WriteLine($"using {codeUsing.Name};");
@@ -55,25 +55,59 @@ namespace kiota.core
             var propertyType = GetTypeString(code.Type);
             switch(code.PropertyKind) {
                 case CodePropertyKind.RequestBuilder:
-                    WriteLine($"{GetAccessModifier(code.Access)} {propertyType} {code.Name.ToFirstCharacterUpperCase()} {{ get => new {propertyType} {{ CurrentPath = CurrentPath + PathSegment }}; }}");
+                    WriteLine($"{GetAccessModifier(code.Access)} {propertyType} {code.Name.ToFirstCharacterUpperCase()} {{ get =>");
+                    IncreaseIndent();
+                    AddRequestBuilderBody(propertyType);
+                    DecreaseIndent();
+                    WriteLine("}");
                 break;
                 default:
                     WriteLine($"{GetAccessModifier(code.Access)} {propertyType} {code.Name.ToFirstCharacterUpperCase()} {{ {simpleBody} }}{defaultValue}");
                 break;
             }
         }
-
+        private const string pathSegmentPropertyName = "PathSegment";
+        private const string currentPathPropertyName = "CurrentPath";
+        private const string httpCorePropertyName = "HttpCore";
+        private void AddRequestBuilderBody(string returnType, string suffix = default, string prefix = default) {
+            WriteLine($"{prefix}new {returnType} {{ {httpCorePropertyName} = {httpCorePropertyName}, {currentPathPropertyName} = {currentPathPropertyName} + {pathSegmentPropertyName} {suffix}}};");
+        }
         public override void WriteIndexer(CodeIndexer code)
         {
             var returnType = GetTypeString(code.ReturnType);
-            WriteLine($"public {returnType} this[{GetTypeString(code.IndexType)} position] {{ get {{ return new {returnType} {{ CurrentPath = CurrentPath + PathSegment + \"/\" + position }}; }} }}");
+            WriteLine($"public {returnType} this[{GetTypeString(code.IndexType)} position] {{ get {{");
+            IncreaseIndent();
+            AddRequestBuilderBody(returnType, " + \"/\" + position", "return ");
+            DecreaseIndent();
+            WriteLine("} }");
         }
 
         public override void WriteMethod(CodeMethod code)
         {
             var staticModifier = code.IsStatic ? "static " : string.Empty;
             // Task type should be moved into the refiner
-            WriteLine($"{GetAccessModifier(code.Access)} {staticModifier}Task<{GetTypeString(code.ReturnType).ToFirstCharacterUpperCase()}> {code.Name}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
+            WriteLine($"{GetAccessModifier(code.Access)} {staticModifier}async Task<{GetTypeString(code.ReturnType).ToFirstCharacterUpperCase()}> {code.Name}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
+            IncreaseIndent();
+            switch(code.MethodKind) {
+                case CodeMethodKind.RequestExecutor:
+                    WriteLine("var requestInfo = new RequestInfo {");
+                    IncreaseIndent();
+                    WriteLine($"HttpMethod = HttpMethod.{code.Name.Replace("Async", string.Empty).ToUpperInvariant()},");
+                    WriteLine($"URI = new Uri({currentPathPropertyName}),");
+                    DecreaseIndent();
+                    WriteLine("};");
+                    //TODO add missing query parameters serialization
+                    WriteLine("h?.Invoke(requestInfo.Headers);");
+                    WriteLine("using var resultStream = await HttpCore.SendAsync(requestInfo);");
+                    WriteLine("// return await ResponseHandler?.Invoke(resultStream);");
+                    WriteLine("return null;");
+                break;
+                default:
+                    WriteLine("return null;");
+                break;
+            }
+            DecreaseIndent();
+            WriteLine("}");
 
         }
 
