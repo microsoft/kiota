@@ -1,4 +1,4 @@
-package kiota.abstractions;
+package com.microsoft.kiota;
 
 public enum HttpMethod {
     GET,

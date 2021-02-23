@@ -1,4 +1,4 @@
-package kiota.abstractions;
+package com.microsoft.kiota;
 
 import java.io.InputStream;
 import java.util.concurrent.CompletableFuture;
