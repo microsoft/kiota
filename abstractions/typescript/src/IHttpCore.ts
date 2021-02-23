@@ -1,4 +1,4 @@
-export default interface IHttpCore<NativeResponseType> {
+export default interface IHttpCore {
     sendAsync(requestInfo: RequestInfo): Promise<ReadableStream>;
-    sendNativeAsync(requestInfo: RequestInfo): Promise<NativeResponseType>;
+    sendNativeAsync<NativeResponseType>(requestInfo: RequestInfo): Promise<NativeResponseType>;
 }

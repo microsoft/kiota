@@ -5,7 +5,7 @@ import java.util.concurrent.CompletableFuture;
 
 import javax.annotation.Nonnull;
 
-public interface HttpCore<NativeResponseType> {
+public interface HttpCore {
     CompletableFuture<InputStream> sendAsync(@Nonnull RequestInfo requestInfo);
-    CompletableFuture<NativeResponseType> sendNativeAsync(@Nonnull RequestInfo requestInfo);
+    <NativeResponseType> CompletableFuture<NativeResponseType> sendNativeAsync(@Nonnull RequestInfo requestInfo);
 }
