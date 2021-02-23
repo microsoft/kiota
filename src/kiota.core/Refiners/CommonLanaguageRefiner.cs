@@ -57,7 +57,7 @@ namespace kiota.core {
         }
         internal void AddInnerClasses(CodeElement current) {
             if(current is CodeClass currentClass) {
-                foreach(var parameter in current.GetChildElements().OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf))
+                foreach(var parameter in current.GetChildElements().OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf && x.ParameterKind == CodeParameterKind.QueryParameter))
                     currentClass.AddInnerClass(parameter.Type.TypeDefinition);
             }
             CrawlTree(current, AddInnerClasses);
