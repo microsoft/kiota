@@ -3,6 +3,11 @@ using System.Linq;
 
 namespace kiota.core
 {
+    public enum CodeClassKind {
+        Custom,
+        RequestBuilder,
+        Model,
+    }
     /// <summary>
     /// CodeClass represents an instance of a Class to be generated in source code
     /// </summary>
@@ -15,6 +20,7 @@ namespace kiota.core
             StartBlock = new Declaration(this);
             EndBlock = new End(this);
         }
+        public CodeClassKind ClassKind { get; set; } = CodeClassKind.Custom;
 
         /// <summary>
         /// Name of Class
