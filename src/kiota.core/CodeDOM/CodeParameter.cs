@@ -5,7 +5,8 @@ namespace kiota.core
     public enum CodeParameterKind
     {
         Custom,
-        QueryParameter
+        QueryParameter,
+        Headers
     }
 
     public class CodeParameter : CodeTerminal, ICloneable
