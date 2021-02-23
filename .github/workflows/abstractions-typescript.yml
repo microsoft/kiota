@@ -34,7 +34,7 @@ jobs:
             ${{ env.relativePath }}/package.json
             ${{ env.relativePath }}/package-lock.json
   deploy:
-  # TODO condition
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     needs: [build]
     steps:
