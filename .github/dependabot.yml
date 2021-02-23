@@ -15,3 +15,18 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 1
+- package-ecosystem: nuget
+  directory: "/abstractions/dotnet"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+- package-ecosystem: gradle
+  directory: "/abstractions/java"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+- package-ecosystem: npm
+  directory: "/abstractions/typescript"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
