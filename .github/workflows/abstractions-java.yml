@@ -40,6 +40,9 @@ jobs:
       - uses: actions/setup-java@v1
         with:
           java-version: 15
+      - name: Add execution right to the script
+        run: chmod +x gradlew
+        working-directory: ${{ env.relativePath }}
       - name: Publish SDK project
         run: ./gradlew --no-daemon publish
         working-directory: ${{ env.relativePath }}
