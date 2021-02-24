@@ -1,3 +1,3 @@
-export * from "./IHttpCore";
+export * from "./httpCore";
 export * from "./httpMethod";
 export * from "./requestInfo";

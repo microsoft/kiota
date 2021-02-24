@@ -1,6 +1,6 @@
 import { HttpMethod } from "./httpMethod";
 
-export default interface RequestInfo {
+export interface RequestInfo {
     URI?: URL;
     httpMethod?: HttpMethod;
     content?: ReadableStream;
