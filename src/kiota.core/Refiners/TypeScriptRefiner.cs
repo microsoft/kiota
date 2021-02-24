@@ -11,13 +11,13 @@ namespace kiota.core {
             PatchResponseHandlerType(generatedCode);
             AddDefaultImports(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, "ById");
-            CorrectCodeType(generatedCode);
+            CorrectCoreType(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
         }
         private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
-            new Tuple<string, string>("HttpCore", "@microsoft/kiota-abstractions"),
-            new Tuple<string, string>("HttpMethod", "@microsoft/kiota-abstractions"),
-            new Tuple<string, string>("RequestInfo", "@microsoft/kiota-abstractions")
+            new ("HttpCore", "@microsoft/kiota-abstractions"),
+            new ("HttpMethod", "@microsoft/kiota-abstractions"),
+            new ("RequestInfo", "@microsoft/kiota-abstractions")
         };
         private void AddDefaultImports(CodeElement current) {
             if(current is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.RequestBuilder) {
@@ -29,10 +29,10 @@ namespace kiota.core {
             }
             CrawlTree(current, AddDefaultImports);
         }
-        private void CorrectCodeType(CodeElement currentElement) {
+        private void CorrectCoreType(CodeElement currentElement) {
             if (currentElement is CodeProperty currentProperty && currentProperty.Type.Name.Equals("IHttpCore", StringComparison.InvariantCultureIgnoreCase))
                 currentProperty.Type.Name = "HttpCore";
-            CrawlTree(currentElement, CorrectCodeType);
+            CrawlTree(currentElement, CorrectCoreType);
         }
         private void PatchResponseHandlerType(CodeElement current) {
             if(current is CodeMethod currentMethod && currentMethod.Name.Equals("defaultResponseHandler", StringComparison.InvariantCultureIgnoreCase)) 
