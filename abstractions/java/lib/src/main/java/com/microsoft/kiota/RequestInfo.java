@@ -13,9 +13,9 @@ public class RequestInfo {
     @Nullable
     public HttpMethod httpMethod;
     @Nonnull
-    public HashMap<String, Object> QueryParameters = new HashMap<>(); //TODO case insensitive
+    public HashMap<String, Object> queryParameters = new HashMap<>(); //TODO case insensitive
     @Nonnull
-    public HashMap<String, String> Headers = new HashMap<>(); // TODO case insensitive
+    public HashMap<String, String> headers = new HashMap<>(); // TODO case insensitive
     @Nullable
     public InputStream Content;
 }
