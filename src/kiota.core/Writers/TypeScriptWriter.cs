@@ -78,7 +78,9 @@ namespace kiota.core
                 WriteLine($"import {{{codeUsing.Declaration?.Name ?? codeUsing.Name}}} from '{relativeImportPath}{(string.IsNullOrEmpty(relativeImportPath) ? codeUsing.Name : codeUsing.Declaration.Name.ToFirstCharacterLowerCase())}';");
             }
             WriteLine();
-            WriteLine($"export class {code.Name} {{");
+            var derivation = (code.Inherits == null ? string.Empty : $" extends {code.Inherits.Name}") +
+                            (!code.Implements.Any() ? string.Empty : $" implements {code.Implements.Select(x => x.Name).Aggregate((x,y) => x + " ," + y)}");
+            WriteLine($"export class {code.Name}{derivation} {{");
             IncreaseIndent();
         }
         private string GetRelativeImportPathForUsing(CodeUsing codeUsing, CodeNamespace currentNamespace) {
@@ -159,7 +161,7 @@ namespace kiota.core
         }
         public override void WriteMethod(CodeMethod code)
         {
-            WriteLine($"{GetAccessModifier(code.Access)} readonly {code.Name.ToFirstCharacterLowerCase()} = ({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.IsAsync ? ">": string.Empty)} => {{");
+            WriteLine($"{GetAccessModifier(code.Access)} readonly {code.Name.ToFirstCharacterLowerCase()} = ({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.IsAsync ? ">": string.Empty)} => {{");
             IncreaseIndent();
             switch(code.MethodKind) {
                 case CodeMethodKind.IndexerBackwardCompatibility:

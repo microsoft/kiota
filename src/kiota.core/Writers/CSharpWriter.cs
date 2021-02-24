@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Microsoft.OpenApi.Models;
 
 namespace kiota.core
@@ -26,9 +27,10 @@ namespace kiota.core
                 IncreaseIndent();
             }
 
-            var derivation = code.Inherits?.Name +
-                            (string.IsNullOrEmpty(code.Inherits?.Name) || !code.Implements.Any() ? string.Empty : ", ") +
-                            (code.Implements.Any() ? code.Implements.Select(x => x.Name).Aggregate((x, y) => $"{x}, {y}") : string.Empty);
+            var derivedTypes = code.Implements.Select(x => x.Name)
+                                            .Union(new List<string>{code.Inherits?.Name})
+                                            .Where(x => x != null);
+            var derivation = derivedTypes.Any() ? derivedTypes.Aggregate((x, y) => $"{x}, {y}") : string.Empty;
             if(!string.IsNullOrEmpty(derivation))
                 derivation = ": " + derivation + " ";
             WriteLine($"public class {code.Name.ToFirstCharacterUpperCase()} {derivation}{{");
