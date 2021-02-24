@@ -25,11 +25,11 @@ namespace kiota.core
             if (code.ActionOf)
             {
                 IncreaseIndent(4);
-                var childElements = code.TypeDefinition
-                                            .InnerChildElements
-                                            .OfType<CodeProperty>()
-                                            .Select(x => $"{x.Name}?: {GetTypeString(x.Type)}");
-                var innerDeclaration = childElements.Any() ? 
+                var childElements = code?.TypeDefinition
+                                            ?.InnerChildElements
+                                            ?.OfType<CodeProperty>()
+                                            ?.Select(x => $"{x.Name}?: {GetTypeString(x.Type)}");
+                var innerDeclaration = childElements?.Any() ?? false ? 
                                                 NewLine +
                                                 GetIndent() +
                                                 childElements
@@ -57,9 +57,21 @@ namespace kiota.core
             } // string, boolean, object : same casing
         }
 
+        private const string externalImportSymbolKey = "externalImportSymbol";
         public override void WriteCodeClassDeclaration(CodeClass.Declaration code)
         {
-            foreach (var codeUsing in code.Usings.Where(x => !x.Declaration.Name.Equals(code.Name, StringComparison.InvariantCultureIgnoreCase)))
+            foreach (var codeUsing in code.Usings
+                                        .Where(x => x.GenerationProperties.ContainsKey(externalImportSymbolKey))
+                                        .Select(x => new Tuple<string, string>(x.Name, x.GenerationProperties[externalImportSymbolKey] as string))
+                                        .GroupBy(x => x.Item2)
+                                        .OrderBy(x => x.Key))
+            {
+                WriteLine($"import {{{codeUsing.Select(x => x.Item1).Aggregate((x,y) => x + ", " + y)}}} from '{codeUsing.Key}';");
+            }
+            foreach (var codeUsing in code.Usings
+                                        .Where(x => !x.GenerationProperties.Any())
+                                        .Where(x => !x.Declaration.Name.Equals(code.Name, StringComparison.InvariantCultureIgnoreCase))
+                                        .OrderBy(x => x.Declaration.Name))
             {
                 var relativeImportPath = GetRelativeImportPathForUsing(codeUsing, code.GetImmediateParentOfType<CodeNamespace>());
                                                     
