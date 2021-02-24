@@ -26,7 +26,12 @@ namespace kiota.core
                 IncreaseIndent();
             }
 
-            WriteLine($"public class {code.Name.ToFirstCharacterUpperCase()} {{");
+            var derivation = code.Inherits?.Name +
+                            (string.IsNullOrEmpty(code.Inherits?.Name) || !code.Implements.Any() ? string.Empty : ", ") +
+                            (code.Implements.Any() ? code.Implements.Select(x => x.Name).Aggregate((x, y) => $"{x}, {y}") : string.Empty);
+            if(!string.IsNullOrEmpty(derivation))
+                derivation = ": " + derivation + " ";
+            WriteLine($"public class {code.Name.ToFirstCharacterUpperCase()} {derivation}{{");
             IncreaseIndent();
         }
 
@@ -90,17 +95,24 @@ namespace kiota.core
             IncreaseIndent();
             switch(code.MethodKind) {
                 case CodeMethodKind.RequestExecutor:
+                    var operationName = code.Name.Replace("Async", string.Empty);
                     WriteLine("var requestInfo = new RequestInfo {");
                     IncreaseIndent();
-                    WriteLine($"HttpMethod = HttpMethod.{code.Name.Replace("Async", string.Empty).ToUpperInvariant()},");
-                    WriteLine($"URI = new Uri({currentPathPropertyName}),");
+                    WriteLines($"HttpMethod = HttpMethod.{operationName.ToUpperInvariant()},",
+                               $"URI = new Uri({currentPathPropertyName}),");
                     DecreaseIndent();
-                    WriteLine("};");
-                    //TODO add missing query parameters serialization
-                    WriteLine("h?.Invoke(requestInfo.Headers);");
-                    WriteLine("using var resultStream = await HttpCore.SendAsync(requestInfo);");
-                    WriteLine("// return await ResponseHandler?.Invoke(resultStream);");
-                    WriteLine("return null;");
+                    WriteLines("};",
+                               "if (q != null) {");
+                    IncreaseIndent();
+                    WriteLines($"var qParams = new {operationName.ToFirstCharacterUpperCase()}QueryParameters();",
+                                "q.Invoke(qParams);",
+                                "qParams.AddQueryParameters(requestInfo.QueryParameters);");
+                    DecreaseIndent();
+                    WriteLines("}",
+                               "h?.Invoke(requestInfo.Headers);",
+                               "using var resultStream = await HttpCore.SendAsync(requestInfo);",
+                               "// return await ResponseHandler?.Invoke(resultStream);",
+                               "return null;");
                 break;
                 default:
                     WriteLine("return null;");

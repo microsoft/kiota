@@ -461,7 +461,8 @@ namespace kiota.core
         {
             var parameterClass = new CodeClass(parentClass)
             {
-                Name = operation.Key.ToString() + "QueryParameters"
+                Name = operation.Key.ToString() + "QueryParameters",
+                ClassKind = CodeClassKind.QueryParameters,
             };
             var parameters = node.PathItem.Parameters.Union(operation.Value.Parameters).Where(p => p.In == ParameterLocation.Query);
             foreach (var parameter in parameters)

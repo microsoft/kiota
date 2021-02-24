@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace kiota.core
@@ -7,6 +8,7 @@ namespace kiota.core
         Custom,
         RequestBuilder,
         Model,
+        QueryParameters,
     }
     /// <summary>
     /// CodeClass represents an instance of a Class to be generated in source code
@@ -82,6 +84,8 @@ namespace kiota.core
             {
                 get; set;
             }
+            public CodeType Inherits { get; set; }
+            public List<CodeType> Implements { get; set; } = new List<CodeType>();
         }
 
         public class End : BlockEnd
