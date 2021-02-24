@@ -161,13 +161,26 @@ namespace kiota.core
         }
         public override void WriteMethod(CodeMethod code)
         {
-            WriteLine($"{GetAccessModifier(code.Access)} readonly {code.Name.ToFirstCharacterLowerCase()} = ({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.IsAsync ? ">": string.Empty)} => {{");
+            WriteLine($"{GetAccessModifier(code.Access)} readonly {code.Name.ToFirstCharacterLowerCase()} = {(code.IsAsync ? "async ": string.Empty)}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.IsAsync ? ">": string.Empty)} => {{");
             IncreaseIndent();
+            var returnType = GetTypeString(code.ReturnType);
             switch(code.MethodKind) {
                 case CodeMethodKind.IndexerBackwardCompatibility:
-                    var returnType = GetTypeString(code.ReturnType);
                     var pathSegment = code.GenerationProperties.ContainsKey(pathSegmentPropertyName) ? code.GenerationProperties[pathSegmentPropertyName] as string : string.Empty;
                     AddRequestBuilderBody(returnType, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
+                    break;
+                case CodeMethodKind.RequestExecutor:
+                    WriteLines("const requestInfo = {");
+                    IncreaseIndent();
+                    WriteLines("URI: this.currentPath ? new URL(this.currentPath): null,",
+                                "headers: h,",
+                                "queryParameters: q,",
+                                $"httpMethod: HttpMethod.{code.Name.ToUpperInvariant()},");
+                    DecreaseIndent();
+                    WriteLines("} as RequestInfo;",
+                                "const resultStream = await this.httpCore?.sendAsync(requestInfo);",
+                                "const result = this.responseHandler && resultStream && await this.responseHandler(resultStream);",
+                                $"return result as {returnType};"); //TODO remove cast once response handlers properly type
                     break;
                 default:
                     WriteLine($"return {(code.IsAsync ? "Promise.resolve(" : string.Empty)}{(code.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{(code.IsAsync ? ")" : string.Empty)};");
