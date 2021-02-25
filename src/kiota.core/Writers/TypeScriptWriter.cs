@@ -154,7 +154,7 @@ namespace kiota.core
         private const string pathSegmentPropertyName = "pathSegment";
         private void AddRequestBuilderBody(string returnType, string suffix = default) {
             WriteLine($"const builder = new {returnType}();");
-            WriteLine($"builder.{currentPathPropertyName} = this.{currentPathPropertyName} && this.{currentPathPropertyName} + this.{pathSegmentPropertyName}{suffix};");
+            WriteLine($"builder.{currentPathPropertyName} = (this.{currentPathPropertyName} && this.{currentPathPropertyName}) + this.{pathSegmentPropertyName}{suffix};");
             WriteLine("return builder;");
         }
         public override void WriteMethod(CodeMethod code)
