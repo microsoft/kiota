@@ -16,8 +16,9 @@ namespace kiota.core {
             AddCollectionImports(generatedCode);
         }
         private void AddCollectionImports(CodeElement currentElement) {
-            if(currentElement is CodeProperty currentProperty && currentProperty.Type.IsCollection) {
-                var parentClass = (currentProperty.Parent as CodeClass);
+            if(currentElement is CodeProperty currentProperty && currentProperty.Type.CollectionKind == CodeType.CodeTypeCollectionKind.Complex) {
+                var parentClass = currentProperty.Parent.Parent as CodeClass ?? currentProperty.Parent as CodeClass; 
+                // in case it's a nested class the using needs to go to the parent
                 parentClass.AddUsing(new CodeUsing(parentClass) { Name = "System.Collections.Generic"});
             }
             CrawlTree(currentElement, AddCollectionImports);

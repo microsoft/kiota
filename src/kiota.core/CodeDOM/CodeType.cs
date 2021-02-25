@@ -5,6 +5,11 @@ namespace kiota.core
 {
     public class CodeType : CodeTerminal, ICloneable
     {
+        public enum CodeTypeCollectionKind {
+            None,
+            Array,
+            Complex
+        }
         public CodeType(CodeElement parent): base(parent)
         {
             
@@ -22,7 +27,7 @@ namespace kiota.core
         public bool ActionOf = false;
         public bool IsNullable = true;
         public bool IsExternal = false;
-        public bool IsCollection = false;
+        public CodeTypeCollectionKind CollectionKind = CodeTypeCollectionKind.None;
 
         public OpenApiSchema Schema;
 

@@ -139,8 +139,9 @@ namespace kiota.core
         public override string GetTypeString(CodeType code)
         {
             var typeName = TranslateType(code.Name, code.Schema);
-            var collectionPrefix = code.IsCollection ? "List<" : string.Empty;
-            var collectionSuffix = code.IsCollection ? ">" : string.Empty;
+            var collectionPrefix = code.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? "List<" : string.Empty;
+            var collectionSuffix = code.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? ">" : 
+                                        (code.CollectionKind == CodeType.CodeTypeCollectionKind.Array ? "[]" : string.Empty);
             if (code.ActionOf)
             {
                 return $"Action<{collectionPrefix}{typeName}{collectionSuffix}>";
