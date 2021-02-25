@@ -15,13 +15,16 @@ namespace kiota.core
 
         public override void WriteCodeClassDeclaration(CodeClass.Declaration code)
         {
-            foreach (var codeUsing in code.Usings.Where(x => !string.IsNullOrEmpty(x.Name)).OrderBy(x => x.Name))
-            {
-                if(codeUsing.Declaration == null)
-                    WriteLine($"using {codeUsing.Name};");
-                else
-                    WriteLine($"using {codeUsing.Name.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((x,y) => x + "." + y)};");
-            }
+            foreach (var codeUsing in code.Usings.Where(x => !string.IsNullOrEmpty(x.Name) && x.Declaration == null)
+                                                .Select(x => x.Name)
+                                                .Distinct()
+                                                .OrderBy(x => x))
+                WriteLine($"using {codeUsing};");
+            foreach (var codeUsing in code.Usings.Where(x => !string.IsNullOrEmpty(x.Name) && x.Declaration != null)
+                                                .Select(x => x.Name)
+                                                .Distinct()
+                                                .OrderBy(x => x))
+                WriteLine($"using {codeUsing.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((x,y) => x + "." + y)};");
             if(code?.Parent?.Parent is CodeNamespace) {
                 WriteLine($"namespace {code.Parent.Parent.Name} {{");
                 IncreaseIndent();
@@ -136,13 +139,15 @@ namespace kiota.core
         public override string GetTypeString(CodeType code)
         {
             var typeName = TranslateType(code.Name, code.Schema);
+            var collectionPrefix = code.IsCollection ? "List<" : string.Empty;
+            var collectionSuffix = code.IsCollection ? ">" : string.Empty;
             if (code.ActionOf)
             {
-                return $"Action<{typeName}>";
+                return $"Action<{collectionPrefix}{typeName}{collectionSuffix}>";
             }
             else
             {
-                return typeName;
+                return $"{collectionPrefix}{typeName}{collectionSuffix}";
             }
         }
 
@@ -152,7 +157,6 @@ namespace kiota.core
             {
                 case "integer": return "int";
                 case "boolean": return "bool"; 
-                case "array": return TranslateType(schema.Items.Type, schema.Items) + "[]";
                 default: return typeName ?? "object";
             }
         }

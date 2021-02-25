@@ -13,6 +13,14 @@ namespace kiota.core {
             AddInnerClasses(generatedCode);
             MakeNativeResponseHandlers(generatedCode);
             CapitalizeNamespacesFirstLetters(generatedCode);
+            AddCollectionImports(generatedCode);
+        }
+        private void AddCollectionImports(CodeElement currentElement) {
+            if(currentElement is CodeProperty currentProperty && currentProperty.Type.IsCollection) {
+                var parentClass = (currentProperty.Parent as CodeClass);
+                parentClass.AddUsing(new CodeUsing(parentClass) { Name = "System.Collections.Generic"});
+            }
+            CrawlTree(currentElement, AddCollectionImports);
         }
         private static readonly string[] defaultNamespacesForClasses = new string[] {"System", "System.Threading.Tasks", "System.IO"};
         private static readonly string[] defaultNamespacesForRequestBuilders = new string[] { "System.Collections.Generic", "Kiota.Abstractions"};
