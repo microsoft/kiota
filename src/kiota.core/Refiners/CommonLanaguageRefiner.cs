@@ -60,7 +60,7 @@ namespace kiota.core {
             if(current is CodeClass currentClass) {
                 foreach(var parameter in current.GetChildElements().OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf && x.ParameterKind == CodeParameterKind.QueryParameter)) {
                     currentClass.AddInnerClass(parameter.Type.TypeDefinition);
-                    (parameter.Type.TypeDefinition.StartBlock as Declaration).Inherits = new CodeType(parameter.Type.TypeDefinition) { Name = "QueryParametersBase" };
+                    (parameter.Type.TypeDefinition.StartBlock as Declaration).Inherits = new CodeType(parameter.Type.TypeDefinition) { Name = "QueryParametersBase", IsExternal = true };
                 }
             }
             CrawlTree(current, AddInnerClasses);

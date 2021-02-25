@@ -57,19 +57,17 @@ namespace kiota.core
             } // string, boolean, object : same casing
         }
 
-        private const string externalImportSymbolKey = "externalImportSymbol";
         public override void WriteCodeClassDeclaration(CodeClass.Declaration code)
         {
             foreach (var codeUsing in code.Usings
-                                        .Where(x => x.GenerationProperties.ContainsKey(externalImportSymbolKey))
-                                        .Select(x => new Tuple<string, string>(x.Name, x.GenerationProperties[externalImportSymbolKey] as string))
-                                        .GroupBy(x => x.Item2)
+                                        .Where(x => x.Declaration?.IsExternal ?? false)
+                                        .GroupBy(x => x.Declaration?.Name)
                                         .OrderBy(x => x.Key))
             {
-                WriteLine($"import {{{codeUsing.Select(x => x.Item1).Aggregate((x,y) => x + ", " + y)}}} from '{codeUsing.Key}';");
+                WriteLine($"import {{{codeUsing.Select(x => x.Name).Aggregate((x,y) => x + ", " + y)}}} from '{codeUsing.Key}';");
             }
             foreach (var codeUsing in code.Usings
-                                        .Where(x => !x.GenerationProperties.Any())
+                                        .Where(x => (!x.Declaration?.IsExternal) ?? true)
                                         .Where(x => !x.Declaration.Name.Equals(code.Name, StringComparison.InvariantCultureIgnoreCase))
                                         .OrderBy(x => x.Declaration.Name))
             {

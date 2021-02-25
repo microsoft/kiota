@@ -35,7 +35,7 @@ namespace kiota.core {
                                                         var nUsing = new CodeUsing(currentClass) { 
                                                             Name = x.Item2,
                                                         };
-                                                        nUsing.Declaration = new CodeType(nUsing) { Name = x.Item1 };
+                                                        nUsing.Declaration = new CodeType(nUsing) { Name = x.Item1, IsExternal = true };
                                                         return nUsing;
                                                     }).ToArray());
             }
@@ -53,7 +53,8 @@ namespace kiota.core {
                     Name = "java.util",
                 };
                 newUsing.Declaration = new CodeType(newUsing) {
-                    Name = "Objects"
+                    Name = "Objects",
+                    IsExternal = true,
                 };
                 parentClass?.AddUsing(newUsing);
             }

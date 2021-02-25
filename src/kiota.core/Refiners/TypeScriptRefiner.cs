@@ -22,10 +22,11 @@ namespace kiota.core {
         private void AddDefaultImports(CodeElement current) {
             if(current is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.RequestBuilder) {
                 currentClass.AddUsing(defaultNamespacesForRequestBuilders
-                                        .Select(x => new CodeUsing(currentClass) { 
-                                                            Name = x.Item1,
-                                                            GenerationProperties = new Dictionary<string, object>{ {"externalImportSymbol", x.Item2 } }
-                                                        }).ToArray());
+                                        .Select(x => {
+                                            var nUsing = new CodeUsing(currentClass) { Name = x.Item1 };
+                                            nUsing.Declaration = new CodeType(nUsing) { Name = x.Item2, IsExternal = true };
+                                            return nUsing;
+                                            }).ToArray());
             }
             CrawlTree(current, AddDefaultImports);
         }

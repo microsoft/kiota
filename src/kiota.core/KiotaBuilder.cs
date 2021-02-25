@@ -268,7 +268,8 @@ namespace kiota.core
                 Name = "httpCore"
             };
             httpCoreProperty.Type = new CodeType(httpCoreProperty) {
-                Name = "IHttpCore"
+                Name = "IHttpCore",
+                IsExternal = true
             };
             currentClass.AddProperty(httpCoreProperty);
         }
