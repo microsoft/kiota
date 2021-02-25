@@ -22,6 +22,7 @@ namespace kiota.core
         public bool ActionOf = false;
         public bool IsNullable = true;
         public bool IsExternal = false;
+        public bool IsCollection = false;
 
         public OpenApiSchema Schema;
 
