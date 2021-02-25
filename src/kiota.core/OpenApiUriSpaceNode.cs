@@ -141,11 +141,7 @@ namespace kiota.core
         /// Returns the class name for the node with more or less precision depending on the provided arguments
         ///</summary>
         public string GetClassName(string suffix = default, string prefix = default, OpenApiOperation operation = default) {
-            var referenceId = operation?.GetResponseSchema()
-                                ?.Reference
-                                ?.Id;
-            var rawClassName = referenceId?.Substring((referenceId?.LastIndexOf('.') ?? 0) + 1)
-                                          ?.ToFirstCharacterUpperCase() ?? 
+            var rawClassName = operation?.GetResponseSchema()?.Reference?.GetClassName() ?? 
                                 Identifier?.ReplaceValueIdentifier();
             if(DoesNodeBelongToItemSubnamespace() && idClassNameCleanup.IsMatch(rawClassName))
                 rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
