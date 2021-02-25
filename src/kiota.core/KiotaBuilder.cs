@@ -356,14 +356,16 @@ namespace kiota.core
                 //     Optional = false,
                 // });
             }
-            var qsParam = new CodeParameter(method)
-            {
-                Name = "q",
-                Optional = true,
-                ParameterKind = CodeParameterKind.QueryParameter
-            };
-            qsParam.Type = new CodeType(qsParam) { Name = parameterClass.Name, ActionOf = true, TypeDefinition = parameterClass };
-            method.AddParameter(qsParam);
+            if(parameterClass != null) {
+                var qsParam = new CodeParameter(method)
+                {
+                    Name = "q",
+                    Optional = true,
+                    ParameterKind = CodeParameterKind.QueryParameter
+                };
+                qsParam.Type = new CodeType(qsParam) { Name = parameterClass.Name, ActionOf = true, TypeDefinition = parameterClass };
+                method.AddParameter(qsParam);
+            }
             var headersParam = new CodeParameter(method) {
                 Name = "h",
                 Optional = true,
@@ -460,35 +462,37 @@ namespace kiota.core
         }
         private CodeClass CreateOperationParameter(OpenApiUrlSpaceNode node, KeyValuePair<OperationType, OpenApiOperation> operation, CodeClass parentClass)
         {
-            var parameterClass = new CodeClass(parentClass)
-            {
-                Name = operation.Key.ToString() + "QueryParameters",
-                ClassKind = CodeClassKind.QueryParameters,
-            };
             var parameters = node.PathItem.Parameters.Union(operation.Value.Parameters).Where(p => p.In == ParameterLocation.Query);
-            foreach (var parameter in parameters)
-            {
-                var prop = new CodeProperty(parameterClass)
+            if(parameters.Any()) {
+                var parameterClass = new CodeClass(parentClass)
                 {
-                    Name = FixQueryParameterIdentifier(parameter),
+                    Name = operation.Key.ToString() + "QueryParameters",
+                    ClassKind = CodeClassKind.QueryParameters,
                 };
-                prop.Type = new CodeType(prop)
+                foreach (var parameter in parameters)
+                {
+                    var prop = new CodeProperty(parameterClass)
                     {
-                        Name = parameter.Schema.Type,
-                        Schema = parameter.Schema
+                        Name = FixQueryParameterIdentifier(parameter),
                     };
+                    prop.Type = new CodeType(prop)
+                        {
+                            Name = parameter.Schema.Type,
+                            Schema = parameter.Schema
+                        };
 
-                if (!parameterClass.ContainsMember(parameter.Name))
-                {
-                    parameterClass.AddProperty(prop);
+                    if (!parameterClass.ContainsMember(parameter.Name))
+                    {
+                        parameterClass.AddProperty(prop);
+                    }
+                    else
+                    {
+                        logger.LogWarning("Ignoring duplicate parameter {name}", parameter.Name);
+                    }
                 }
-                else
-                {
-                    logger.LogWarning("Ignoring duplicate parameter {name}", parameter.Name);
-                }
-            }
 
-            return parameterClass;
+                return parameterClass;
+            } else return null;
         }
 
         private static string FixQueryParameterIdentifier(OpenApiParameter parameter)

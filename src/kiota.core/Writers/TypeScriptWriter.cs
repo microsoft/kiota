@@ -172,8 +172,9 @@ namespace kiota.core
                     IncreaseIndent();
                     WriteLines("URI: this.currentPath ? new URL(this.currentPath): null,",
                                 "headers: h,",
-                                "queryParameters: q,",
                                 $"httpMethod: HttpMethod.{code.Name.ToUpperInvariant()},");
+                    if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.QueryParameter))
+                        WriteLine("queryParameters: q,");
                     DecreaseIndent();
                     WriteLines("} as RequestInfo;",
                                 "const resultStream = await this.httpCore?.sendAsync(requestInfo);",

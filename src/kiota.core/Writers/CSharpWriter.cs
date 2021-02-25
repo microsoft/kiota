@@ -103,15 +103,17 @@ namespace kiota.core
                     WriteLines($"HttpMethod = HttpMethod.{operationName.ToUpperInvariant()},",
                                $"URI = new Uri({currentPathPropertyName}),");
                     DecreaseIndent();
-                    WriteLines("};",
-                               "if (q != null) {");
-                    IncreaseIndent();
-                    WriteLines($"var qParams = new {operationName.ToFirstCharacterUpperCase()}QueryParameters();",
-                                "q.Invoke(qParams);",
-                                "qParams.AddQueryParameters(requestInfo.QueryParameters);");
-                    DecreaseIndent();
-                    WriteLines("}",
-                               "h?.Invoke(requestInfo.Headers);",
+                    WriteLine("};");
+                    if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.QueryParameter)) {
+                        WriteLine("if (q != null) {");
+                        IncreaseIndent();
+                        WriteLines($"var qParams = new {operationName.ToFirstCharacterUpperCase()}QueryParameters();",
+                                    "q.Invoke(qParams);",
+                                    "qParams.AddQueryParameters(requestInfo.QueryParameters);");
+                        DecreaseIndent();
+                        WriteLine("}");
+                    }
+                    WriteLines("h?.Invoke(requestInfo.Headers);",
                                "using var resultStream = await HttpCore.SendAsync(requestInfo);",
                                "// return await ResponseHandler?.Invoke(resultStream);",
                                "return null;");

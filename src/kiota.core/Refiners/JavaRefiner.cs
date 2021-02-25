@@ -70,14 +70,13 @@ namespace kiota.core {
                     .Where(x => x.ParameterKind == CodeParameterKind.QueryParameter || x.ParameterKind == CodeParameterKind.Headers)
                     .ToList()
                     .ForEach(x => x.Optional = false);
-                currentClass.AddMethod(codeMethods
+                var methodsToAdd = codeMethods
                                     .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter))
-                                    .Where(x => x != null)
-                                    .ToArray());
-                currentClass.AddMethod(codeMethods
-                                    .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers))
-                                    .Where(x => x != null)
-                                    .ToArray());
+                                    .Union(codeMethods
+                                            .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers)))
+                                    .Where(x => x != null);
+                if(methodsToAdd.Any())
+                    currentClass.AddMethod(methodsToAdd.ToArray());
             }
             
             CrawlTree(currentElement, MakeQueryStringParametersNonOptionalAndInsertOverrideMethod);
