@@ -6,7 +6,8 @@ namespace kiota.core
     {
         Custom,
         QueryParameter,
-        Headers
+        Headers,
+        ResponseHandler
     }
 
     public class CodeParameter : CodeTerminal, ICloneable

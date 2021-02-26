@@ -1,8 +1,11 @@
-﻿namespace kiota.core
+﻿using System;
+
+namespace kiota.core
 {
     public enum CodePropertyKind
     {
         Custom,
+        [Obsolete]
         ResponseHandler,
         RequestBuilder
     }

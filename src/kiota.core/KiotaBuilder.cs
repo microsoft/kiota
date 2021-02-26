@@ -226,8 +226,6 @@ namespace kiota.core
                     logger.LogDebug("Creating method {name} of {type}", method.Name, method.ReturnType);
                     codeClass.AddMethod(method);
                 }
-
-                CreateResponseHandler(codeClass);
             }
             CreatePathManagement(codeClass, currentNode, isRootClientClass);
            
@@ -381,6 +379,14 @@ namespace kiota.core
             };
             headersParam.Type = new CodeType(headersParam) { Name = "IDictionary<string, string>", ActionOf = true };
             method.AddParameter(headersParam);
+
+            var handlerParam = new CodeParameter(method) {
+                Name = "responseHandler",
+                Optional = true,
+                ParameterKind = CodeParameterKind.ResponseHandler,
+            };
+            handlerParam.Type = new CodeType(handlerParam) { Name = "IResponseHandler" };
+            method.AddParameter(handlerParam);
             return method;
         }
 
@@ -556,22 +562,6 @@ namespace kiota.core
             // Replace with regexes pulled from settings that are API specific
 
             return parameter.Name.Replace("$","").ToCamelCase();
-        }
-        private void CreateResponseHandler(CodeClass requestBuilder)
-        {
-            // Default ResponseHandler Implementation
-            var responseHandlerImpl = new CodeMethod(requestBuilder) { Name = "DefaultResponseHandler", IsStatic = true, MethodKind = CodeMethodKind.ResponseHandler };
-            var parameter = new CodeParameter(responseHandlerImpl) { Name = "response" };
-            parameter.Type = new CodeType(parameter) { Name = "object" };
-            responseHandlerImpl.AddParameter(parameter);  // replace native HTTP response object type in language refiner
-            responseHandlerImpl.ReturnType = new CodeType(responseHandlerImpl) { Name = "object" };
-            requestBuilder.AddMethod(responseHandlerImpl);
-
-            // Property to allow replacing Response Handler
-            var responseHandlerProperty = CreateProperty("ResponseHandler", "Func<object,object>", requestBuilder, "DefaultResponseHandlerAsync");
-            responseHandlerProperty.PropertyKind = CodePropertyKind.ResponseHandler;
-            responseHandlerProperty.ReadOnly = false;
-            requestBuilder.AddProperty(responseHandlerProperty);  
         }
     }
 }

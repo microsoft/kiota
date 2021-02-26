@@ -95,8 +95,9 @@ namespace kiota.core
         public override void WriteMethod(CodeMethod code)
         {
             var staticModifier = code.IsStatic ? "static " : string.Empty;
+            var returnType = GetTypeString(code.ReturnType);
             // Task type should be moved into the refiner
-            WriteLine($"{GetAccessModifier(code.Access)} {staticModifier}async Task<{GetTypeString(code.ReturnType).ToFirstCharacterUpperCase()}> {code.Name}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
+            WriteLine($"{GetAccessModifier(code.Access)} {staticModifier}async Task<{returnType}> {code.Name}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
             IncreaseIndent();
             switch(code.MethodKind) {
                 case CodeMethodKind.RequestExecutor:
@@ -117,9 +118,7 @@ namespace kiota.core
                         WriteLine("}");
                     }
                     WriteLines("h?.Invoke(requestInfo.Headers);",
-                               "using var resultStream = await HttpCore.SendAsync(requestInfo);",
-                               "// return await ResponseHandler?.Invoke(resultStream);",
-                               "return null;");
+                               $"return await HttpCore.SendAsync<{returnType}>(requestInfo, responseHandler);");
                 break;
                 default:
                     WriteLine("return null;");
@@ -159,6 +158,7 @@ namespace kiota.core
                 case "integer": return "int";
                 case "boolean": return "bool";
                 case "string": return "string"; // little casing hack
+                case "object": return "object";
                 default: return typeName?.ToFirstCharacterUpperCase() ?? "object";
             }
         }
@@ -166,7 +166,7 @@ namespace kiota.core
         public override string GetParameterSignature(CodeParameter parameter)
         {
             var parameterType = GetTypeString(parameter.Type);
-            return $"{parameterType} {parameter.Name}{(parameter.Optional ? $" = default({parameterType})": string.Empty)}";
+            return $"{parameterType} {parameter.Name}{(parameter.Optional ? $" = default": string.Empty)}";
         }
 
         public override string GetAccessModifier(AccessModifier access)
