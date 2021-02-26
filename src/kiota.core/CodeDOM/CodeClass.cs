@@ -1,8 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace kiota.core
 {
+    public enum CodeClassKind {
+        Custom,
+        RequestBuilder,
+        Model,
+        QueryParameters,
+    }
     /// <summary>
     /// CodeClass represents an instance of a Class to be generated in source code
     /// </summary>
@@ -15,6 +22,7 @@ namespace kiota.core
             StartBlock = new Declaration(this);
             EndBlock = new End(this);
         }
+        public CodeClassKind ClassKind { get; set; } = CodeClassKind.Custom;
 
         /// <summary>
         /// Name of Class
@@ -76,6 +84,8 @@ namespace kiota.core
             {
                 get; set;
             }
+            public CodeType Inherits { get; set; }
+            public List<CodeType> Implements { get; set; } = new List<CodeType>();
         }
 
         public class End : BlockEnd

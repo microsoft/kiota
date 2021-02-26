@@ -57,8 +57,10 @@ namespace kiota.core
                     .ToList()
                     .ForEach(x => WriteLine(x));
             }
+            var derivation = (code.Inherits == null ? string.Empty : $" extends {code.Inherits.Name}") +
+                            (!code.Implements.Any() ? string.Empty : $" implements {code.Implements.Select(x => x.Name).Aggregate((x,y) => x + " ," + y)}");
             //TODO: missing javadoc
-            WriteLine($"public class {code.Name.ToFirstCharacterUpperCase()} {{");
+            WriteLine($"public class {code.Name.ToFirstCharacterUpperCase()}{derivation} {{");
             IncreaseIndent();
         }
 
@@ -77,9 +79,9 @@ namespace kiota.core
         {
             //TODO javadoc
             WriteLine(code.ReturnType.IsNullable ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
-            WriteLine($"{GetAccessModifier(code.Access)} {(code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty)}{GetTypeString(code.ReturnType).ToFirstCharacterUpperCase()}{(code.IsAsync ? ">" : string.Empty)} {code.Name.ToFirstCharacterLowerCase()}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
+            WriteLine($"{GetAccessModifier(code.Access)} {(code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty)}{GetTypeString(code.ReturnType).ToFirstCharacterUpperCase()}{(code.IsAsync ? ">" : string.Empty)} {code.Name.ToFirstCharacterLowerCase()}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
             IncreaseIndent();
-            foreach(var parameter in code.Parameters.Where(x => !x.Type.IsNullable)) {
+            foreach(var parameter in code.Parameters.Where(x => !x.Optional)) {
                 WriteLine($"Objects.requireNonNull({parameter.Name});");
             }
             switch(code.MethodKind) {
@@ -87,6 +89,30 @@ namespace kiota.core
                     var pathSegment = code.GenerationProperties.ContainsKey(pathSegmentPropertyName) ? code.GenerationProperties[pathSegmentPropertyName] as string : string.Empty;
                     var returnType = GetTypeString(code.ReturnType);
                     AddRequestBuilderBody(returnType, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
+                break;
+                case CodeMethodKind.RequestExecutor:
+                    WriteLine("try {");
+                    IncreaseIndent();
+                    WriteLine("final RequestInfo requestInfo = new RequestInfo() {{");
+                    IncreaseIndent();
+                    WriteLines("uri = new URI(currentPath);",
+                                $"httpMethod = HttpMethod.{code.Name.ToUpperInvariant()};");
+                    DecreaseIndent();
+                    WriteLine("}};");
+                    if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.QueryParameter))
+                        WriteLines($"final {code.Name.ToFirstCharacterUpperCase()}QueryParameters qParams = new {code.Name.ToFirstCharacterUpperCase()}QueryParameters();",
+                                   "q.accept(qParams);",
+                                   "qParams.AddQueryParameters(requestInfo.queryParameters);");
+                    if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.Headers))
+                        WriteLine("h.accept(requestInfo.headers);");
+                    WriteLine("// return this.httpCore.sendAsync(requestInfo).thenCompose(this.responseHandler);"); //TODO uncomment when response handler is figured out
+                    WriteLine("return null;");
+                    DecreaseIndent();
+                    WriteLine("} catch (URISyntaxException ex) {");
+                    IncreaseIndent();
+                    WriteLine("return java.util.concurrent.CompletableFuture.failedFuture(ex);");
+                    DecreaseIndent();
+                    WriteLine("}");
                 break;
                 default:
                     WriteLine("return null;");

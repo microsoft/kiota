@@ -8,7 +8,8 @@ namespace kiota.core
     {
         Custom,
         ResponseHandler,
-        IndexerBackwardCompatibility
+        IndexerBackwardCompatibility,
+        RequestExecutor
     }
 
     public class CodeMethod : CodeTerminal, ICloneable

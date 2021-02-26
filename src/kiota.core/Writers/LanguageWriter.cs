@@ -52,6 +52,11 @@ namespace kiota.core
         {
             writer.WriteLine(includeIndent ? GetIndent() + line : line);
         }
+        protected void WriteLines(params string[] lines) {
+            foreach(var line in lines) {
+                WriteLine(line, true);
+            }
+        }
 
         protected void Write(string text, bool includeIndent = true)
         {

@@ -181,12 +181,15 @@ namespace kiota.core
             var isRootClientClass = String.IsNullOrEmpty(currentNode.Identifier);
             if (isRootClientClass)
             {
-                codeClass = new CodeClass(codeNamespace) { Name = this.config.ClientClassName };
+                codeClass = new CodeClass(codeNamespace) { Name = this.config.ClientClassName, ClassKind = CodeClassKind.RequestBuilder };
             }
             else
             {
                 var className = currentNode.GetClassName(requestBuilderSuffix);
-                codeClass = new CodeClass((currentNode.DoesNodeBelongToItemSubnamespace() ? codeNamespace.EnsureItemNamespace() : codeNamespace)) { Name = className };
+                codeClass = new CodeClass((currentNode.DoesNodeBelongToItemSubnamespace() ? codeNamespace.EnsureItemNamespace() : codeNamespace)) {
+                    Name = className, 
+                    ClassKind = CodeClassKind.RequestBuilder
+                };
             }
 
             logger.LogDebug("Creating class {class}", codeClass.Name);
@@ -260,6 +263,15 @@ namespace kiota.core
                 Name = "string"
             };
             currentClass.AddProperty(currentPathProperty);
+
+            var httpCoreProperty = new CodeProperty(currentClass) {
+                Name = "httpCore"
+            };
+            httpCoreProperty.Type = new CodeType(httpCoreProperty) {
+                Name = "IHttpCore",
+                IsExternal = true
+            };
+            currentClass.AddProperty(httpCoreProperty);
         }
 
         /// <summary>
@@ -324,6 +336,7 @@ namespace kiota.core
             var schema = operation.GetResponseSchema();
             var method = new CodeMethod(parentClass) {
                 Name = operationType.ToString(),
+                MethodKind = CodeMethodKind.RequestExecutor,
             };
             if (schema != null)
             {
@@ -343,14 +356,23 @@ namespace kiota.core
                 //     Optional = false,
                 // });
             }
-            var qsParam = new CodeParameter(method)
-            {
-                Name = "q",
+            if(parameterClass != null) {
+                var qsParam = new CodeParameter(method)
+                {
+                    Name = "q",
+                    Optional = true,
+                    ParameterKind = CodeParameterKind.QueryParameter
+                };
+                qsParam.Type = new CodeType(qsParam) { Name = parameterClass.Name, ActionOf = true, TypeDefinition = parameterClass };
+                method.AddParameter(qsParam);
+            }
+            var headersParam = new CodeParameter(method) {
+                Name = "h",
                 Optional = true,
-                ParameterKind = CodeParameterKind.QueryParameter
+                ParameterKind = CodeParameterKind.Headers,
             };
-            qsParam.Type = new CodeType(qsParam) { Name = parameterClass.Name, ActionOf = true, TypeDefinition = parameterClass };
-            method.AddParameter(qsParam);
+            headersParam.Type = new CodeType(headersParam) { Name = "IDictionary<string, string>", ActionOf = true };
+            method.AddParameter(headersParam);
             return method;
         }
 
@@ -421,7 +443,7 @@ namespace kiota.core
                                         ?.FirstOrDefault(x => x.Name?.Equals(className, StringComparison.InvariantCultureIgnoreCase) ?? false);
                 if(existingClass == null) // we can find it in the components
                 {
-                    existingClass = new CodeClass(shortestNamespace) { Name = className };
+                    existingClass = new CodeClass(shortestNamespace) { Name = className, ClassKind = CodeClassKind.Model };
                     if(schema.Properties.Any())//TODO handle collections
                         existingClass.AddProperty(schema
                                                     .Properties
@@ -440,34 +462,37 @@ namespace kiota.core
         }
         private CodeClass CreateOperationParameter(OpenApiUrlSpaceNode node, KeyValuePair<OperationType, OpenApiOperation> operation, CodeClass parentClass)
         {
-            var parameterClass = new CodeClass(parentClass)
-            {
-                Name = operation.Key.ToString() + "QueryParameters"
-            };
             var parameters = node.PathItem.Parameters.Union(operation.Value.Parameters).Where(p => p.In == ParameterLocation.Query);
-            foreach (var parameter in parameters)
-            {
-                var prop = new CodeProperty(parameterClass)
+            if(parameters.Any()) {
+                var parameterClass = new CodeClass(parentClass)
                 {
-                    Name = FixQueryParameterIdentifier(parameter),
+                    Name = operation.Key.ToString() + "QueryParameters",
+                    ClassKind = CodeClassKind.QueryParameters,
                 };
-                prop.Type = new CodeType(prop)
+                foreach (var parameter in parameters)
+                {
+                    var prop = new CodeProperty(parameterClass)
                     {
-                        Name = parameter.Schema.Type,
-                        Schema = parameter.Schema
+                        Name = FixQueryParameterIdentifier(parameter),
                     };
+                    prop.Type = new CodeType(prop)
+                        {
+                            Name = parameter.Schema.Type,
+                            Schema = parameter.Schema
+                        };
 
-                if (!parameterClass.ContainsMember(parameter.Name))
-                {
-                    parameterClass.AddProperty(prop);
+                    if (!parameterClass.ContainsMember(parameter.Name))
+                    {
+                        parameterClass.AddProperty(prop);
+                    }
+                    else
+                    {
+                        logger.LogWarning("Ignoring duplicate parameter {name}", parameter.Name);
+                    }
                 }
-                else
-                {
-                    logger.LogWarning("Ignoring duplicate parameter {name}", parameter.Name);
-                }
-            }
 
-            return parameterClass;
+                return parameterClass;
+            } else return null;
         }
 
         private static string FixQueryParameterIdentifier(OpenApiParameter parameter)
@@ -487,7 +512,7 @@ namespace kiota.core
             requestBuilder.AddMethod(responseHandlerImpl);
 
             // Property to allow replacing Response Handler
-            var responseHandlerProperty = CreateProperty("ResponseHandler", "Func<object,object>", requestBuilder, "DefaultResponseHandlerAsync"); // HttpResponseMessage, model
+            var responseHandlerProperty = CreateProperty("ResponseHandler", "Func<object,object>", requestBuilder, "DefaultResponseHandlerAsync");
             responseHandlerProperty.PropertyKind = CodePropertyKind.ResponseHandler;
             responseHandlerProperty.ReadOnly = false;
             requestBuilder.AddProperty(responseHandlerProperty);  

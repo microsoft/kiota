@@ -25,11 +25,11 @@ namespace kiota.core
             if (code.ActionOf)
             {
                 IncreaseIndent(4);
-                var childElements = code.TypeDefinition
-                                            .InnerChildElements
-                                            .OfType<CodeProperty>()
-                                            .Select(x => $"{x.Name}?: {GetTypeString(x.Type)}");
-                var innerDeclaration = childElements.Any() ? 
+                var childElements = code?.TypeDefinition
+                                            ?.InnerChildElements
+                                            ?.OfType<CodeProperty>()
+                                            ?.Select(x => $"{x.Name}?: {GetTypeString(x.Type)}");
+                var innerDeclaration = childElements?.Any() ?? false ? 
                                                 NewLine +
                                                 GetIndent() +
                                                 childElements
@@ -59,14 +59,26 @@ namespace kiota.core
 
         public override void WriteCodeClassDeclaration(CodeClass.Declaration code)
         {
-            foreach (var codeUsing in code.Usings.Where(x => !x.Declaration.Name.Equals(code.Name, StringComparison.InvariantCultureIgnoreCase)))
+            foreach (var codeUsing in code.Usings
+                                        .Where(x => x.Declaration?.IsExternal ?? false)
+                                        .GroupBy(x => x.Declaration?.Name)
+                                        .OrderBy(x => x.Key))
+            {
+                WriteLine($"import {{{codeUsing.Select(x => x.Name).Aggregate((x,y) => x + ", " + y)}}} from '{codeUsing.Key}';");
+            }
+            foreach (var codeUsing in code.Usings
+                                        .Where(x => (!x.Declaration?.IsExternal) ?? true)
+                                        .Where(x => !x.Declaration.Name.Equals(code.Name, StringComparison.InvariantCultureIgnoreCase))
+                                        .OrderBy(x => x.Declaration.Name))
             {
                 var relativeImportPath = GetRelativeImportPathForUsing(codeUsing, code.GetImmediateParentOfType<CodeNamespace>());
                                                     
                 WriteLine($"import {{{codeUsing.Declaration?.Name ?? codeUsing.Name}}} from '{relativeImportPath}{(string.IsNullOrEmpty(relativeImportPath) ? codeUsing.Name : codeUsing.Declaration.Name.ToFirstCharacterLowerCase())}';");
             }
             WriteLine();
-            WriteLine($"export class {code.Name} {{");
+            var derivation = (code.Inherits == null ? string.Empty : $" extends {code.Inherits.Name}") +
+                            (!code.Implements.Any() ? string.Empty : $" implements {code.Implements.Select(x => x.Name).Aggregate((x,y) => x + " ," + y)}");
+            WriteLine($"export class {code.Name}{derivation} {{");
             IncreaseIndent();
         }
         private string GetRelativeImportPathForUsing(CodeUsing codeUsing, CodeNamespace currentNamespace) {
@@ -142,18 +154,32 @@ namespace kiota.core
         private const string pathSegmentPropertyName = "pathSegment";
         private void AddRequestBuilderBody(string returnType, string suffix = default) {
             WriteLine($"const builder = new {returnType}();");
-            WriteLine($"builder.{currentPathPropertyName} = this.{currentPathPropertyName} && this.{currentPathPropertyName} + this.{pathSegmentPropertyName}{suffix};");
+            WriteLine($"builder.{currentPathPropertyName} = (this.{currentPathPropertyName} && this.{currentPathPropertyName}) + this.{pathSegmentPropertyName}{suffix};");
             WriteLine("return builder;");
         }
         public override void WriteMethod(CodeMethod code)
         {
-            WriteLine($"{GetAccessModifier(code.Access)} readonly {code.Name.ToFirstCharacterLowerCase()} = ({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.IsAsync ? ">": string.Empty)} => {{");
+            WriteLine($"{GetAccessModifier(code.Access)} readonly {code.Name.ToFirstCharacterLowerCase()} = {(code.IsAsync ? "async ": string.Empty)}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.IsAsync ? ">": string.Empty)} => {{");
             IncreaseIndent();
+            var returnType = GetTypeString(code.ReturnType);
             switch(code.MethodKind) {
                 case CodeMethodKind.IndexerBackwardCompatibility:
-                    var returnType = GetTypeString(code.ReturnType);
                     var pathSegment = code.GenerationProperties.ContainsKey(pathSegmentPropertyName) ? code.GenerationProperties[pathSegmentPropertyName] as string : string.Empty;
                     AddRequestBuilderBody(returnType, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
+                    break;
+                case CodeMethodKind.RequestExecutor:
+                    WriteLines("const requestInfo = {");
+                    IncreaseIndent();
+                    WriteLines("URI: this.currentPath ? new URL(this.currentPath): null,",
+                                "headers: h,",
+                                $"httpMethod: HttpMethod.{code.Name.ToUpperInvariant()},");
+                    if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.QueryParameter))
+                        WriteLine("queryParameters: q,");
+                    DecreaseIndent();
+                    WriteLines("} as RequestInfo;",
+                                "const resultStream = await this.httpCore?.sendAsync(requestInfo);",
+                                "const result = this.responseHandler && resultStream && await this.responseHandler(resultStream);",
+                                $"return result as {returnType};"); //TODO remove cast once response handlers properly type
                     break;
                 default:
                     WriteLine($"return {(code.IsAsync ? "Promise.resolve(" : string.Empty)}{(code.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{(code.IsAsync ? ")" : string.Empty)};");
