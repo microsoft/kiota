@@ -8,6 +8,7 @@ namespace kiota.core {
         public override void Refine(CodeNamespace generatedCode)
         {
             PatchResponseHandlerType(generatedCode);
+            ReplaceIndexersByMethodsWithParameter(generatedCode, "ById");
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
         }
         private void PatchResponseHandlerType(CodeElement current) {

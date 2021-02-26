@@ -24,7 +24,7 @@ namespace kiota.core
             var typeName = TranslateType(code.Name, code.Schema);
             if (code.ActionOf)
             {
-                IncreaseIndent(5);
+                IncreaseIndent(4);
                 var childElements = code.TypeDefinition
                                             .InnerChildElements
                                             .OfType<CodeProperty>()
@@ -59,7 +59,7 @@ namespace kiota.core
 
         public override void WriteCodeClassDeclaration(CodeClass.Declaration code)
         {
-            foreach (var codeUsing in code.Usings)
+            foreach (var codeUsing in code.Usings.Where(x => !x.Declaration.Name.Equals(code.Name, StringComparison.InvariantCultureIgnoreCase)))
             {
                 var relativeImportPath = GetRelativeImportPathForUsing(codeUsing, code.GetImmediateParentOfType<CodeNamespace>());
                                                     
@@ -136,31 +136,24 @@ namespace kiota.core
 
         public override void WriteIndexer(CodeIndexer code)
         {
-            var method = new CodeMethod(code) {
-                Name = "item",
-                ReturnType = code.ReturnType,
-                MethodKind = CodeMethodKind.IndexerBackwardCompatibility,
-                IsAsync = false,
-            };
-            method.AddParameter(new CodeParameter(method) {
-                        Name = "position",
-                        Type = code.IndexType,
-                        Optional = false,
-                    });
-            WriteMethod(method);
+            throw new InvalidOperationException("indexers are not supported in TypeScript, the refiner should have removes those");
         }
         private const string currentPathPropertyName = "currentPath";
         private const string pathSegmentPropertyName = "pathSegment";
-
+        private void AddRequestBuilderBody(string returnType, string suffix = default) {
+            WriteLine($"const builder = new {returnType}();");
+            WriteLine($"builder.{currentPathPropertyName} = this.{currentPathPropertyName} && this.{currentPathPropertyName} + this.{pathSegmentPropertyName}{suffix};");
+            WriteLine("return builder;");
+        }
         public override void WriteMethod(CodeMethod code)
         {
             WriteLine($"{GetAccessModifier(code.Access)} readonly {code.Name.ToFirstCharacterLowerCase()} = ({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.IsAsync ? ">": string.Empty)} => {{");
             IncreaseIndent();
             switch(code.MethodKind) {
                 case CodeMethodKind.IndexerBackwardCompatibility:
-                    WriteLine($"const builder = new {code.ReturnType.Name}();");
-                    WriteLine($"builder.{currentPathPropertyName} = this.{currentPathPropertyName} && this.{currentPathPropertyName} + this.{pathSegmentPropertyName} + \"/\" + position;");
-                    WriteLine("return builder;");
+                    var returnType = GetTypeString(code.ReturnType);
+                    var pathSegment = code.GenerationProperties.ContainsKey(pathSegmentPropertyName) ? code.GenerationProperties[pathSegmentPropertyName] as string : string.Empty;
+                    AddRequestBuilderBody(returnType, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
                     break;
                 default:
                     WriteLine($"return {(code.IsAsync ? "Promise.resolve(" : string.Empty)}{(code.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{(code.IsAsync ? ")" : string.Empty)};");
@@ -177,9 +170,7 @@ namespace kiota.core
                 case CodePropertyKind.RequestBuilder:
                     WriteLine($"{GetAccessModifier(code.Access)} get {code.Name.ToFirstCharacterLowerCase()}(): {returnType} {{");
                     IncreaseIndent();
-                    WriteLine($"const builder = new {returnType}();");
-                    WriteLine($"builder.{currentPathPropertyName} = this.{currentPathPropertyName} + this.{pathSegmentPropertyName};");
-                    WriteLine("return builder;");
+                    AddRequestBuilderBody(returnType);
                     DecreaseIndent();
                     WriteLine("}");
                 break;

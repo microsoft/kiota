@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace kiota.core {
@@ -10,7 +11,22 @@ namespace kiota.core {
             PatchResponseHandlerType(generatedCode);
             AddInnerClasses(generatedCode);
             MakeQueryStringParametersNonOptionalAndInsertOverrideMethod(generatedCode);
+            ReplaceIndexersByMethodsWithParameter(generatedCode);
+            AddRequireNonNullImports(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
+        }
+        private void AddRequireNonNullImports(CodeElement currentElement) {
+            if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => !x.Type.IsNullable)) {
+                var parentClass = currentMethod.Parent as CodeClass;
+                var newUsing = new CodeUsing(parentClass) {
+                    Name = "java.util",
+                };
+                newUsing.Declaration = new CodeType(newUsing) {
+                    Name = "Objects"
+                };
+                parentClass?.AddUsing(newUsing);
+            }
+            CrawlTree(currentElement, AddRequireNonNullImports);
         }
         private void MakeQueryStringParametersNonOptionalAndInsertOverrideMethod(CodeElement currentElement) {
             var codeMethods = currentElement

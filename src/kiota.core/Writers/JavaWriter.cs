@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.OpenApi.Models;
@@ -69,18 +70,7 @@ namespace kiota.core
 
         public override void WriteIndexer(CodeIndexer code)
         {
-            var method = new CodeMethod(code) {
-                Name = "get",
-                ReturnType = code.ReturnType,
-                IsAsync = false,
-                MethodKind = CodeMethodKind.IndexerBackwardCompatibility,
-            };
-            method.AddParameter(new CodeParameter(method) {
-                        Name = "position",
-                        Type = code.IndexType,
-                        Optional = false,
-                    });
-            WriteMethod(method);
+            throw new InvalidOperationException("indexers are not supported in Java, the refiner should have replaced those by methods");
         }
 
         public override void WriteMethod(CodeMethod code)
@@ -89,11 +79,14 @@ namespace kiota.core
             WriteLine(code.ReturnType.IsNullable ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
             WriteLine($"{GetAccessModifier(code.Access)} {(code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty)}{GetTypeString(code.ReturnType).ToFirstCharacterUpperCase()}{(code.IsAsync ? ">" : string.Empty)} {code.Name.ToFirstCharacterLowerCase()}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
             IncreaseIndent();
+            foreach(var parameter in code.Parameters.Where(x => !x.Type.IsNullable)) {
+                WriteLine($"Objects.requireNonNull({parameter.Name});");
+            }
             switch(code.MethodKind) {
                 case CodeMethodKind.IndexerBackwardCompatibility:
-                    WriteLine($"final {code.ReturnType.Name} builder = new {code.ReturnType.Name}();");
-                    WriteLine($"builder.currentPath = this.currentPath + this.{pathSegmentPropertyName} + \"/\" + position;");
-                    WriteLine("return builder;");
+                    var pathSegment = code.GenerationProperties.ContainsKey(pathSegmentPropertyName) ? code.GenerationProperties[pathSegmentPropertyName] as string : string.Empty;
+                    var returnType = GetTypeString(code.ReturnType);
+                    AddRequestBuilderBody(returnType, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
                 break;
                 default:
                     WriteLine("return null;");
@@ -104,6 +97,12 @@ namespace kiota.core
         }
         private const string pathSegmentPropertyName = "pathSegment";
         private const string currentPathPropertyName = "currentPath";
+        private void AddRequestBuilderBody(string returnType, string suffix = default) {
+            // we're assigning this temp variable because java doesn't have a way to differentiate references with same names in properties initializers
+            // and because if currentPath is null it'll add "null" to the string...
+            WriteLine($"final String parentPath = ({currentPathPropertyName} == null ? \"\" : {currentPathPropertyName}) + {pathSegmentPropertyName}{suffix};");
+            WriteLine($"return new {returnType}() {{{{ {currentPathPropertyName} = parentPath; }}}};");
+        }
         public override void WriteProperty(CodeProperty code)
         {
             //TODO: missing javadoc
@@ -113,10 +112,7 @@ namespace kiota.core
                     WriteLine("@javax.annotation.Nonnull");
                     WriteLine($"{GetAccessModifier(code.Access)} {returnType} {code.Name.ToFirstCharacterLowerCase()}() {{");
                     IncreaseIndent();
-                    // we're assigning this temp variable because java doesn't have a way to differentiate references with same names in properties initializers
-                    // and because if currentPath is null it'll add "null" to the string...
-                    WriteLine($"final String parentPath = {currentPathPropertyName} == null ? {pathSegmentPropertyName} : ({currentPathPropertyName} + {pathSegmentPropertyName});");
-                    WriteLine($"return new {returnType}() {{{{ {currentPathPropertyName} = parentPath; }}}};");
+                    AddRequestBuilderBody(returnType);
                     DecreaseIndent();
                     WriteLine("}");
                 break;

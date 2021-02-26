@@ -31,6 +31,7 @@ namespace kiota.core
                 Name = Name.Clone() as string,
                 Schema = Schema,
                 TypeDefinition = TypeDefinition,
+                IsNullable = IsNullable
             };
         }
     }
