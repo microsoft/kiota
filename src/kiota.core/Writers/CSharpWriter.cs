@@ -157,8 +157,9 @@ namespace kiota.core
             switch (typeName)
             {
                 case "integer": return "int";
-                case "boolean": return "bool"; 
-                default: return typeName ?? "object";
+                case "boolean": return "bool";
+                case "string": return "string"; // little casing hack
+                default: return typeName?.ToFirstCharacterUpperCase() ?? "object";
             }
         }
 
