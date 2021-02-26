@@ -333,7 +333,7 @@ namespace kiota.core
                 Name = isCollection ? typeSchema?.Items?.Reference?.GetClassName() : childType,
                 Schema = typeSchema,
                 TypeDefinition = typeDefinition,
-                IsCollection = isCollection
+                CollectionKind = isCollection ? CodeType.CodeTypeCollectionKind.Complex : default
             };
             logger.LogDebug("Creating property {name} of {type}", prop.Name, prop.Type.Name);
             return prop;
@@ -448,13 +448,19 @@ namespace kiota.core
                 if(ns == null)
                     ns = codeNamespace.AddNamespace(namespaceName);
                 var className = currentNode.GetClassName(operation: operation, suffix: "Response");
-                var propertiesReferences = schema.Properties.Select(x => x.Value)
-                                                            .Where(x => x.Items != null)
-                                                            .Select(x => x.Items)
-                                                            .Where(x => x.Reference != null)
-                                                            .Select(x => x.Reference);
-                //TODO find the schema and operation and recurse
-                return AddModelClassAndTypeIfDoesntExit(currentNode, schema, className, ns, parentElement);
+                // var propertiesSchemasFromReferences = schema.Properties.Select(x => x.Value)
+                //                                             .Where(x => x.Items != null)
+                //                                             .Select(x => x.Items)
+                //                                             .Where(x => x.Reference != null);
+                //                                             // .Select(x => x.Reference);
+                var codeClass = AddModelClassIfDoesntExit(rootNode, currentNode, schema, operation, className, ns, parentElement);
+                // foreach(var propertySchemasFromReferences in propertiesSchemasFromReferences)
+                //     CreateModelClasses(rootNode, currentNode, propertySchemasFromReferences, operation, codeClass);
+                return new CodeType(parentElement) {
+                    TypeDefinition = codeClass,
+                    Name = className,
+                    Schema = schema
+                };
             } else  // Reused schema from components
             {
                 var className = currentNode.GetClassName(operation: operation);
@@ -462,10 +468,15 @@ namespace kiota.core
                 var shortestNamespace = codeNamespace.GetRootNamespace().GetNamespace(shortestNamespaceName);
                 if(shortestNamespace == null)
                     shortestNamespace = codeNamespace.AddNamespace(shortestNamespaceName);
-                return AddModelClassAndTypeIfDoesntExit(currentNode, schema, className, shortestNamespace, parentElement);
+                var codeClass = AddModelClassIfDoesntExit(rootNode, currentNode, schema, operation, className, shortestNamespace, parentElement);
+                return new CodeType(parentElement) {
+                    TypeDefinition = codeClass,
+                    Name = className,
+                    Schema = schema
+                };
             }
         }
-        private CodeType AddModelClassAndTypeIfDoesntExit(OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, string className, CodeNamespace shortestNamespace, CodeElement parentElement) {
+        private CodeClass AddModelClassIfDoesntExit(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, string className, CodeNamespace shortestNamespace, CodeElement parentElement) {
             var existingClass = (currentNode.DoesNodeBelongToItemSubnamespace() ? shortestNamespace.EnsureItemNamespace() : shortestNamespace)
                                         .InnerChildElements
                                         ?.OfType<CodeClass>()
@@ -473,20 +484,22 @@ namespace kiota.core
             if(existingClass == null) // we can find it in the components
             {
                 existingClass = new CodeClass(shortestNamespace) { Name = className, ClassKind = CodeClassKind.Model };
-                CreatePropertiesForModelClass(existingClass, schema);
+                CreatePropertiesForModelClass(rootNode, currentNode, schema, operation, shortestNamespace, existingClass, parentElement);
                 shortestNamespace.AddClass(existingClass);
             }
-            return new CodeType(parentElement) {
-                TypeDefinition = existingClass,
-                Name = className,
-                Schema = schema
-            };
-    }
-        private void CreatePropertiesForModelClass(CodeClass model, OpenApiSchema schema) {
-            if(schema.Properties.Any())
+            return existingClass;
+        }
+        private void CreatePropertiesForModelClass(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeNamespace ns, CodeClass model, CodeElement parent) {
+            if(schema?.Properties?.Any() ?? false)
                 model.AddProperty(schema
                                     .Properties
-                                    .Select(x => CreateProperty(x.Key, x.Value.Type, model, typeSchema: x.Value)) //TODO missing type definition
+                                    .Select(x => {
+                                        var className = x.Value.AnyOf.Any() || x.Value.AllOf.Any() || x.Value.OneOf.Any() ? string.Empty : (x.Value.Items?.Title ?? x.Value?.Title);
+                                        // only create the class if it's a non-addressable component, otherwise it'll be created by operations
+                                        // TODO deupude by looking in parent namespaces???
+                                        var definition = string.IsNullOrEmpty(className) ? null : AddModelClassIfDoesntExit(rootNode, currentNode, x.Value.Items ?? x.Value, operation, className, ns, parent);
+                                        return CreateProperty(x.Key, className ?? x.Value.Type, model, typeSchema: x.Value.Items ?? x.Value, typeDefinition: definition);
+                                    })
                                     .ToArray());
         }
         private CodeClass CreateOperationParameter(OpenApiUrlSpaceNode node, KeyValuePair<OperationType, OpenApiOperation> operation, CodeClass parentClass)
@@ -505,10 +518,11 @@ namespace kiota.core
                         Name = FixQueryParameterIdentifier(parameter),
                     };
                     prop.Type = new CodeType(prop)
-                        {
-                            Name = parameter.Schema.Type,
-                            Schema = parameter.Schema
-                        };
+                    {
+                        Name = parameter.Schema.Items?.Type ?? parameter.Schema.Type,
+                        Schema = parameter.Schema,
+                        CollectionKind = parameter.Schema.Type.Equals("array", StringComparison.InvariantCultureIgnoreCase) ? CodeType.CodeTypeCollectionKind.Array : default
+                    };
 
                     if (!parameterClass.ContainsMember(parameter.Name))
                     {
