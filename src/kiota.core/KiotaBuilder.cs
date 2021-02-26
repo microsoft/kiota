@@ -409,13 +409,22 @@ namespace kiota.core
                                                     ?.Values
                                                     ?.SelectMany(y => y.Content.Values)
                                                     ?.Select(y => y.Schema)
-                                                    ?.Any(y => referenceId.Equals(y?.Reference?.Id)) ?? false) ?? false ?
+                                                    ?.Any(y => DoesSchemaContainReferenceId(referenceId, y)) ?? false) ?? false ?
                                                     new List<string>() { currentNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName) }:
                                                     Enumerable.Empty<string>();
             if(currentNode?.Children?.Any() ?? false)
                 return currentNodePath
                         .Union(currentNode.Children.Values.SelectMany(x => GetAllNamespaceNamesForModelByReferenceId(x, referenceId)));
             else return currentNodePath;
+        }
+        private bool DoesSchemaContainReferenceId(string referenceId, OpenApiSchema schema) {
+            if (string.IsNullOrEmpty(referenceId)) return false;
+            else if (referenceId.Equals(schema.Reference?.Id)) return true;
+            else return 
+                (schema.Properties?.Any(x => DoesSchemaContainReferenceId(referenceId, x.Value)) ?? false) ||
+                (schema.AnyOf?.Any(x => DoesSchemaContainReferenceId(referenceId, x)) ?? false) ||
+                (schema.AllOf?.Any(x => DoesSchemaContainReferenceId(referenceId, x)) ?? false) ||
+                (schema.OneOf?.Any(x => DoesSchemaContainReferenceId(referenceId, x)) ?? false);
         }
         private string GetNamespaceNameForModelByOperationId(string operationId) {
             if(string.IsNullOrEmpty(operationId)) throw new ArgumentNullException(nameof(operationId));
@@ -448,14 +457,7 @@ namespace kiota.core
                 if(ns == null)
                     ns = codeNamespace.AddNamespace(namespaceName);
                 var className = currentNode.GetClassName(operation: operation, suffix: "Response");
-                // var propertiesSchemasFromReferences = schema.Properties.Select(x => x.Value)
-                //                                             .Where(x => x.Items != null)
-                //                                             .Select(x => x.Items)
-                //                                             .Where(x => x.Reference != null);
-                //                                             // .Select(x => x.Reference);
                 var codeClass = AddModelClassIfDoesntExit(rootNode, currentNode, schema, operation, className, ns, parentElement);
-                // foreach(var propertySchemasFromReferences in propertiesSchemasFromReferences)
-                //     CreateModelClasses(rootNode, currentNode, propertySchemasFromReferences, operation, codeClass);
                 return new CodeType(parentElement) {
                     TypeDefinition = codeClass,
                     Name = className,
@@ -476,16 +478,22 @@ namespace kiota.core
                 };
             }
         }
-        private CodeClass AddModelClassIfDoesntExit(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, string className, CodeNamespace shortestNamespace, CodeElement parentElement) {
-            var existingClass = (currentNode.DoesNodeBelongToItemSubnamespace() ? shortestNamespace.EnsureItemNamespace() : shortestNamespace)
-                                        .InnerChildElements
-                                        ?.OfType<CodeClass>()
-                                        ?.FirstOrDefault(x => x.Name?.Equals(className, StringComparison.InvariantCultureIgnoreCase) ?? false);
+        private CodeClass AddModelClassIfDoesntExit(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, string className, CodeNamespace currentNamespace, CodeElement parentElement, bool checkInAllNamespaces = false) {
+            var existingClass = checkInAllNamespaces ? 
+                    currentNamespace
+                        .GetRootNamespace()
+                        .GetChildElementOfType<CodeClass>(x => x.Name?.Equals(className, StringComparison.InvariantCultureIgnoreCase) ?? false) :
+                    (currentNode.DoesNodeBelongToItemSubnamespace() ? 
+                                    currentNamespace.EnsureItemNamespace() : 
+                                    currentNamespace)
+                        .InnerChildElements
+                        ?.OfType<CodeClass>()
+                        ?.FirstOrDefault(x => x.Name?.Equals(className, StringComparison.InvariantCultureIgnoreCase) ?? false);
             if(existingClass == null) // we can find it in the components
             {
-                existingClass = new CodeClass(shortestNamespace) { Name = className, ClassKind = CodeClassKind.Model };
-                CreatePropertiesForModelClass(rootNode, currentNode, schema, operation, shortestNamespace, existingClass, parentElement);
-                shortestNamespace.AddClass(existingClass);
+                existingClass = new CodeClass(currentNamespace) { Name = className, ClassKind = CodeClassKind.Model };
+                CreatePropertiesForModelClass(rootNode, currentNode, schema, operation, currentNamespace, existingClass, parentElement);
+                currentNamespace.AddClass(existingClass);
             }
             return existingClass;
         }
@@ -494,11 +502,16 @@ namespace kiota.core
                 model.AddProperty(schema
                                     .Properties
                                     .Select(x => {
-                                        var className = x.Value.AnyOf.Any() || x.Value.AllOf.Any() || x.Value.OneOf.Any() ? string.Empty : (x.Value.Items?.Title ?? x.Value?.Title);
-                                        // only create the class if it's a non-addressable component, otherwise it'll be created by operations
-                                        // TODO deupude by looking in parent namespaces???
-                                        var definition = string.IsNullOrEmpty(className) ? null : AddModelClassIfDoesntExit(rootNode, currentNode, x.Value.Items ?? x.Value, operation, className, ns, parent);
-                                        return CreateProperty(x.Key, className ?? x.Value.Type, model, typeSchema: x.Value.Items ?? x.Value, typeDefinition: definition);
+                                        var propertyDefinitionSchema = x.Value.Items ?? x.Value;
+                                        var className = x.Value.GetClassName();
+                                        CodeClass definition = default;
+                                        if(!string.IsNullOrEmpty(className)) {
+                                            var shortestNamespaceName = GetShortestNamespaceNameForModelByReferenceId(rootNode, propertyDefinitionSchema.Reference.Id);
+                                            var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns : 
+                                                                    (ns.GetRootNamespace().GetNamespace(shortestNamespaceName) ?? ns.GetRootNamespace().AddNamespace(shortestNamespaceName));
+                                            definition = AddModelClassIfDoesntExit(rootNode, currentNode, propertyDefinitionSchema, operation, className, targetNamespace, parent, true);
+                                        }
+                                        return CreateProperty(x.Key, className ?? x.Value.Type, model, typeSchema: x.Value, typeDefinition: definition);
                                     })
                                     .ToArray());
         }
