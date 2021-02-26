@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace kiota.core
+namespace Kiota.Builder
 {
     public enum CodeParameterKind
     {

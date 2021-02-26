@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace kiota.core {
+namespace Kiota.Builder {
     public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         private readonly HashSet<string> defaultTypes = new HashSet<string> {"string", "integer", "boolean", "array", "object", "java.util.function.Function<Object,Object>"};

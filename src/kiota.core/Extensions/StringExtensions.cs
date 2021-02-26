@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 
-namespace kiota.core {
+namespace Kiota.Builder {
     public static class StringExtensions {
         public static string ToFirstCharacterLowerCase(this string input)
             => string.IsNullOrEmpty(input) ? input : $"{char.ToLowerInvariant(input.FirstOrDefault())}{input.Substring(1)}";

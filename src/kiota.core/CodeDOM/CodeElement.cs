@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace kiota.core
+namespace Kiota.Builder
 {
     /// <summary>
     /// Abstract element of some piece of source code to be generated

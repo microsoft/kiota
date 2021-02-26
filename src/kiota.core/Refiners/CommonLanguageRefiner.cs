@@ -1,8 +1,8 @@
 using System;
 using System.Linq;
-using static kiota.core.CodeClass;
+using static Kiota.Builder.CodeClass;
 
-namespace kiota.core {
+namespace Kiota.Builder {
     public abstract class CommonLanguageRefiner : ILanguageRefiner
     {
         public abstract void Refine(CodeNamespace generatedCode);

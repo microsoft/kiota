@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\kiota.core\kiota.core.csproj" />
+    <ProjectReference Include="..\Kiota.Builder\Kiota.Builder.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Microsoft.OpenApi.Models;
 
-namespace kiota.core
+namespace Kiota.Builder
 {
     public class OpenApiUrlSpaceNode
     {

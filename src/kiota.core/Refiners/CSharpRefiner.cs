@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace kiota.core {
+namespace Kiota.Builder {
     public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         private static readonly Regex responseHandlerType = new Regex("<(.*),object>");

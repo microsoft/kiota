@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Microsoft.OpenApi.Models;
 
-namespace kiota.core
+namespace Kiota.Builder
 {
  
     public abstract class LanguageWriter

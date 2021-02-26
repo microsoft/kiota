@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\kiota.core\kiota.core.csproj" />
+    <ProjectReference Include="..\..\src\Kiota.Builder\Kiota.Builder.csproj" />
   </ItemGroup>
 
   <ItemGroup>

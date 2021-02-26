@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
 
-namespace kiota.core
+namespace Kiota.Builder
 {
     public class KiotaBuilder
     {

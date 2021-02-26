@@ -1,6 +1,6 @@
 using Microsoft.OpenApi.Models;
 
-namespace kiota.core {
+namespace Kiota.Builder {
     public static class OpenApiReferenceExtensions {
         public static string GetClassName(this OpenApiReference reference) {
             var referenceId = reference?.Id;

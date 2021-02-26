@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace kiota.core
+namespace Kiota.Builder
 {
     public enum CodeMethodKind
     {

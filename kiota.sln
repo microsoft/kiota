@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.30804.86
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "kiota", "src\kiota\kiota.csproj", "{944FCE5E-0CFA-4018-B353-E14FA1395007}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "kiota.core", "src\kiota.core\kiota.core.csproj", "{1F5FC53F-061A-4CED-8B53-FC5C63DBEBFF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kiota.Builder", "src\kiota.core\Kiota.Builder.csproj", "{1F5FC53F-061A-4CED-8B53-FC5C63DBEBFF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "kiota.core.tests", "tests\kiota.core.tests\kiota.core.tests.csproj", "{A2B2F620-BC5D-47EA-8B98-5A942EC9CA9A}"
 EndProject

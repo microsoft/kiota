@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace kiota.core
+namespace Kiota.Builder
 {
     public class CodeTerminal : CodeElement
     {

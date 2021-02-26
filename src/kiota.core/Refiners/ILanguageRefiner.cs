@@ -1,4 +1,4 @@
-namespace kiota.core
+namespace Kiota.Builder
 {
     public interface ILanguageRefiner
     {

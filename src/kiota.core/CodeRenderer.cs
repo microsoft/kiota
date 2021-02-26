@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace kiota.core
+namespace Kiota.Builder
 {
     /// <summary>
     /// Convert CodeDOM classes to strings or files

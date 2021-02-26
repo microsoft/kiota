@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using Xunit;
 
-namespace kiota.core.tests
+namespace Kiota.Builder.tests
 {
     public class CodeDomTests
     {

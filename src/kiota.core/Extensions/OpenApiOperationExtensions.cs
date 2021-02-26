@@ -1,7 +1,7 @@
 using System.Linq;
 using Microsoft.OpenApi.Models;
 
-namespace kiota.core {
+namespace Kiota.Builder {
     public static class OpenApiOperationExtensions {
         public static OpenApiSchema GetResponseSchema(this OpenApiOperation operation)
         {

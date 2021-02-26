@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
-namespace kiota.core.integrationtests
+namespace Kiota.Builder.integrationtests
 {
     public class GenerateSample
     {

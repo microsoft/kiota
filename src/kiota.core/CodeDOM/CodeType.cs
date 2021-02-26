@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.OpenApi.Models;
 
-namespace kiota.core
+namespace Kiota.Builder
 {
     public class CodeType : CodeTerminal, ICloneable
     {

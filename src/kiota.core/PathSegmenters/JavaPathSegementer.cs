@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 
-namespace kiota.core {
+namespace Kiota.Builder {
     public class JavaPathSegmenter : IPathSegmenter
     {
         public JavaPathSegmenter(string rootPath, string clientNamespaceName)

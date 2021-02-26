@@ -4,7 +4,7 @@ using System.CommandLine.Invocation;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
-using kiota.core;
+using Kiota.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
