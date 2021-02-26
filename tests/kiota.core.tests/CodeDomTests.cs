@@ -16,7 +16,7 @@ namespace kiota.core.tests
             var outputCode = CodeRenderer.RenderCodeAsString(new CSharpWriter(Path.GetRandomFileName(), "foo"),myNamespace);
 
             Assert.Equal(@"namespace foo {
-    public class bar {
+    public class Bar {
     }
 }
 ", outputCode);

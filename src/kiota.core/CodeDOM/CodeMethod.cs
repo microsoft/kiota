@@ -7,7 +7,8 @@ namespace kiota.core
     public enum CodeMethodKind
     {
         Custom,
-        ResponseHandler
+        ResponseHandler,
+        IndexerBackwardCompatibility
     }
 
     public class CodeMethod : CodeTerminal, ICloneable
@@ -17,6 +18,7 @@ namespace kiota.core
             
         }
         public CodeMethodKind MethodKind = CodeMethodKind.Custom;
+        public AccessModifier Access = AccessModifier.Public;
         public CodeType ReturnType;
         public List<CodeParameter> Parameters = new List<CodeParameter>();
         public bool IsStatic = false;

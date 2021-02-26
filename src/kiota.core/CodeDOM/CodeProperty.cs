@@ -3,7 +3,8 @@
     public enum CodePropertyKind
     {
         Custom,
-        ResponseHandler
+        ResponseHandler,
+        RequestBuilder
     }
 
     public class CodeProperty : CodeTerminal
@@ -19,6 +20,7 @@
             get; set;
         }
         public bool ReadOnly = false;
+        public AccessModifier Access = AccessModifier.Public;
         public CodeType Type;
         public string DefaultValue;
     }

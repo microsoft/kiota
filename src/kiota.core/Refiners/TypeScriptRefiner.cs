@@ -11,16 +11,11 @@ namespace kiota.core {
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
         }
         private void PatchResponseHandlerType(CodeElement current) {
-            var properties = current.GetChildElements()
-                .OfType<CodeProperty>();
-            properties
-                .Where(x => x.PropertyKind == CodePropertyKind.ResponseHandler)
-                .ToList()
-                .ForEach(x => x.Type.Name = "(input: object) => object");
-            current.GetChildElements()
-                .Except(properties)
-                .ToList()
-                .ForEach(x => PatchResponseHandlerType(x));
+            if(current is CodeProperty currentProperty && currentProperty.PropertyKind == CodePropertyKind.ResponseHandler) {
+                currentProperty.Type.Name = "(input: object) => Promise<object>";
+                currentProperty.DefaultValue = "this.defaultResponseHandler";
+            }
+            CrawlTree(current, PatchResponseHandlerType);
         }
     }
 }

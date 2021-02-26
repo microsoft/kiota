@@ -20,6 +20,7 @@ namespace kiota.core
         }
 
         public bool ActionOf = false;
+        public bool IsNullable = true;
 
         public OpenApiSchema Schema;
 

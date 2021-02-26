@@ -45,26 +45,35 @@ namespace kiota.core
             var simpleBody = "get;";
             if (!code.ReadOnly)
             {
-                simpleBody = "get;set;";
+                simpleBody = "get; set;";
             }
             var defaultValue = string.Empty;
             if (code.DefaultValue != null)
             {
                 defaultValue = " = " + code.DefaultValue + ";";
             }
-            WriteLine($"public {GetTypeString(code.Type)} {code.Name.ToFirstCharacterUpperCase()} {{{simpleBody}}}{defaultValue}");
+            var propertyType = GetTypeString(code.Type);
+            switch(code.PropertyKind) {
+                case CodePropertyKind.RequestBuilder:
+                    WriteLine($"{GetAccessModifier(code.Access)} {propertyType} {code.Name.ToFirstCharacterUpperCase()} {{ get => new {propertyType} {{ CurrentPath = CurrentPath + PathSegment }}; }}");
+                break;
+                default:
+                    WriteLine($"{GetAccessModifier(code.Access)} {propertyType} {code.Name.ToFirstCharacterUpperCase()} {{ {simpleBody} }}{defaultValue}");
+                break;
+            }
         }
 
         public override void WriteIndexer(CodeIndexer code)
         {
-            WriteLine($"public {GetTypeString(code.ReturnType)} this[{GetTypeString(code.IndexType)} {code.Name}] {{get {{ return null; }} }}");
+            var returnType = GetTypeString(code.ReturnType);
+            WriteLine($"public {returnType} this[{GetTypeString(code.IndexType)} position] {{ get {{ return new {returnType} {{ CurrentPath = CurrentPath + PathSegment + \"/\" + position }}; }} }}");
         }
 
         public override void WriteMethod(CodeMethod code)
         {
             var staticModifier = code.IsStatic ? "static " : string.Empty;
             // Task type should be moved into the refiner
-            WriteLine($"public {staticModifier}Task<{GetTypeString(code.ReturnType).ToFirstCharacterUpperCase()}> {code.Name}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
+            WriteLine($"{GetAccessModifier(code.Access)} {staticModifier}Task<{GetTypeString(code.ReturnType).ToFirstCharacterUpperCase()}> {code.Name}({string.Join(',', code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{ return null; }}");
 
         }
 
@@ -102,6 +111,11 @@ namespace kiota.core
         {
             var parameterType = GetTypeString(parameter.Type);
             return $"{parameterType} {parameter.Name}{(parameter.Optional ? $" = default({parameterType})": string.Empty)}";
+        }
+
+        public override string GetAccessModifier(AccessModifier access)
+        {
+            return (access == AccessModifier.Public ? "public" : (access == AccessModifier.Protected ? "protected" : "private"));
         }
     }
 }

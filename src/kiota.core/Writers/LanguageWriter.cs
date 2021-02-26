@@ -90,5 +90,6 @@ namespace kiota.core
         public abstract void WriteType(CodeType code);
         public abstract void WriteCodeClassDeclaration(CodeClass.Declaration code);
         public abstract void WriteCodeClassEnd(CodeClass.End code);
+        public abstract string GetAccessModifier(AccessModifier access);
     }
 }

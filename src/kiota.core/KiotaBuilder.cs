@@ -178,7 +178,8 @@ namespace kiota.core
         {
             // Determine Class Name
             CodeClass codeClass;
-            if (String.IsNullOrEmpty(currentNode.Identifier))
+            var isRootClientClass = String.IsNullOrEmpty(currentNode.Identifier);
+            if (isRootClientClass)
             {
                 codeClass = new CodeClass(codeNamespace) { Name = this.config.ClientClassName };
             }
@@ -206,7 +207,7 @@ namespace kiota.core
                 }
                 else
                 {
-                    var prop = CreateProperty(propIdentifier, propType, codeClass); // we should add the type definition here but we can't as it might not have been generated yet
+                    var prop = CreateProperty(propIdentifier, propType, codeClass, kind: CodePropertyKind.RequestBuilder); // we should add the type definition here but we can't as it might not have been generated yet
                     codeClass.AddProperty(prop);
                 }
             }
@@ -225,6 +226,7 @@ namespace kiota.core
 
                 CreateResponseHandler(codeClass);
             }
+            CreatePathManagement(codeClass, currentNode, isRootClientClass);
            
 
             (currentNode.DoesNodeBelongToItemSubnamespace() ? codeNamespace.EnsureItemNamespace() : codeNamespace).AddClass(codeClass);
@@ -236,6 +238,28 @@ namespace kiota.core
                 var targetNamespace = rootNamespace.GetNamespace(targetNamespaceName) ?? rootNamespace.AddNamespace(targetNamespaceName);
                 CreateRequestBuilderClass(targetNamespace, childNode, rootNode);
             }
+        }
+
+        private void CreatePathManagement(CodeClass currentClass, OpenApiUrlSpaceNode currentNode, bool isRootClientClass) {
+            var pathProperty = new CodeProperty(currentClass) {
+                Access = AccessModifier.Private,
+                Name = "pathSegment",
+                DefaultValue = isRootClientClass ? $"\"{this.config.ApiRootUrl}\"" : (currentNode.IsParameter() ? "\"\"" : $"\"/{currentNode.Segment}\""),
+                ReadOnly = true,
+            };
+            pathProperty.Type = new CodeType(pathProperty) {
+                Name = "string",
+                IsNullable = false,
+            };
+            currentClass.AddProperty(pathProperty);
+
+            var currentPathProperty = new CodeProperty(currentClass) {
+                Name = "currentPath"
+            };
+            currentPathProperty.Type = new CodeType(currentPathProperty) {
+                Name = "string"
+            };
+            currentClass.AddProperty(currentPathProperty);
         }
 
         /// <summary>
@@ -282,12 +306,13 @@ namespace kiota.core
             return prop;
         }
 
-        private CodeProperty CreateProperty(string childIdentifier, string childType, CodeClass codeClass, string defaultValue = null, OpenApiSchema typeSchema = null, CodeClass typeDefinition = null)
+        private CodeProperty CreateProperty(string childIdentifier, string childType, CodeClass codeClass, string defaultValue = null, OpenApiSchema typeSchema = null, CodeClass typeDefinition = null, CodePropertyKind kind = CodePropertyKind.Custom)
         {
             var prop = new CodeProperty(codeClass)
             {
                 Name = childIdentifier,
-                DefaultValue = defaultValue
+                DefaultValue = defaultValue,
+                PropertyKind = kind,
             };
             prop.Type = new CodeType(prop) { Name = childType, Schema = typeSchema, TypeDefinition = typeDefinition };
             logger.LogDebug("Creating property {name} of {type}", prop.Name, prop.Type.Name);
