@@ -7,16 +7,12 @@ On most platforms there are a range of different HTTP client library implementat
 The HTTP core interface is the primary point where Kiota service libraries will trigger the creation of a HTTP request.
 
 ```csharp
-    public interface IHttpCore<TNativeResponse>
-    {
-        Task<Stream> SendAsync(RequestInfo requestInfo);
-        Task<TNativeResponse> SendNativeAsync(RequestInfo requestInfo);
+    public interface IHttpCore {
+        Task<ModelType> SendAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = default);    
     }
 ```
 
-Kiota service libraries support two ways to access the response of an HTTP call. The first is the simplest and assumes that the core library will process the HTTP status codes and only return a stream of the response body. The service library will process this stream and deserialize into the appropriate model object. If an error is detected in core, an exception will be thrown up to be caught by the calling application. This is the classic RPC model.
-
-The second method returns a "native response object" that allows the caller direct access to the HTTP response. This type of method is provided to deal with scenarios where standard RPC behavior is not appropriate for handling the response.  The type of the native response object is defined by the core library and is the same type for all request builders. This type is provided to the code generator to ensure the native methods are generated correctly.
+Kiota service libraries return the model type that is associated with HTTP resource. This behavior can be overriden by changing the `responseHandler` to do something different than default behavior.  One use of this is to change the response type to be either a native HTTP response class, or return a generic API response class that provides access to more underlying metadata.
 
 ## RequestInfo
 
@@ -24,11 +20,48 @@ In order to enable Kiota service libraries to make requests, they need to be abl
 
 ```csharp
 public class RequestInfo
-{
-    public string Path;
-    public string HttpMethod;
-    public IDictionary<string, object> QueryParameters = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
-    public IDictionary<string, string> Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-    public Stream Content;
+    {
+        public Uri URI { get; set; }
+        public HttpMethod HttpMethod { get; set; }
+        public IDictionary<string, object> QueryParameters { get; set; } = new Dictionary<string, object>(StringComparer.InvariantCultureIgnoreCase);
+        public IDictionary<string, string> Headers { get; set; } = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+        public Stream Content { get; set; }
+    }
+```
+
+```TypeScript
+export interface RequestInfo {
+    URI?: URL;
+    httpMethod?: HttpMethod;
+    content?: ReadableStream;
+    queryParameters?: Map<string, object>;
+    headers?: Map<string, string>;
 }
+```
+
+```java
+public class RequestInfo {
+    @Nullable
+    public URI uri;
+    @Nullable
+    public HttpMethod httpMethod;
+    @Nonnull
+    public HashMap<String, Object> queryParameters = new HashMap<>(); //TODO case insensitive
+    @Nonnull
+    public HashMap<String, String> headers = new HashMap<>(); // TODO case insensitive
+    @Nullable
+    public InputStream Content;
+}
+```
+
+## ResponseHandler
+
+TBD
+- This allows core to do all the default hard work, but enables a custom response handler to change the behavior of the method.
+
+```CSharp
+    public interface IResponseHandler 
+    {
+        Task<ModelType> HandleResponseAsync<NativeResponseType, ModelType>(NativeResponseType response);
+    }
 ```

@@ -17,6 +17,16 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                title: collectionTodos
+                type: object
+                properties:
+                  value:
+                    items: 
+                      $ref: "#/components/schemas/todo"
+
     post:
       responses:
         '201':
