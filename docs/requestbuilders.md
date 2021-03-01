@@ -11,8 +11,8 @@ By creating properties on request builder classes, the developer can effectively
 
 ```csharp
 
-    var todo = todoClient.Todos["<todoId>"].GetAsync();
-    var responsiblePerson = todoClient.Todos["<todoId>"].AssignedTo.GetAsync();
+    var todo = await todoClient.Todos["<todoId>"].GetAsync();
+    var responsiblePerson =  await todoClient.Todos["<todoId>"].AssignedTo.GetAsync();
 ```
 
 Each request builder class exposes the set of HTTP methods that are supported on that resource. Each operation method allows setting configuring query parameters, setting HTTP headers and providing a custom response handler.
