@@ -1,11 +1,10 @@
 package com.microsoft.kiota;
 
-import java.io.InputStream;
 import java.util.concurrent.CompletableFuture;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public interface HttpCore {
-    CompletableFuture<InputStream> sendAsync(@Nonnull RequestInfo requestInfo);
-    <NativeResponseType> CompletableFuture<NativeResponseType> sendNativeAsync(@Nonnull RequestInfo requestInfo);
+    <NativeResponseType, ModelType> CompletableFuture<ModelType> sendAsync(@Nonnull final RequestInfo requestInfo, @Nullable final ResponseHandler responseHandler);
 }
