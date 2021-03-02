@@ -17,7 +17,8 @@ namespace Kiota.Builder {
         private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
             new ("HttpCore", "@microsoft/kiota-abstractions"),
             new ("HttpMethod", "@microsoft/kiota-abstractions"),
-            new ("RequestInfo", "@microsoft/kiota-abstractions")
+            new ("RequestInfo", "@microsoft/kiota-abstractions"),
+            new ("ResponseHandler", "@microsoft/kiota-abstractions"),
         };
         private void AddDefaultImports(CodeElement current) {
             if(current is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.RequestBuilder) {
@@ -31,17 +32,15 @@ namespace Kiota.Builder {
             CrawlTree(current, AddDefaultImports);
         }
         private void CorrectCoreType(CodeElement currentElement) {
-            if (currentElement is CodeProperty currentProperty && currentProperty.Type.Name.Equals("IHttpCore", StringComparison.InvariantCultureIgnoreCase))
+            if (currentElement is CodeProperty currentProperty && (currentProperty.Type.Name?.Equals("IHttpCore", StringComparison.InvariantCultureIgnoreCase) ?? false))
                 currentProperty.Type.Name = "HttpCore";
+            if (currentElement is CodeMethod currentMethod)
+                currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x => x.Type.Name = "ResponseHandler");
             CrawlTree(currentElement, CorrectCoreType);
         }
         private void PatchResponseHandlerType(CodeElement current) {
             if(current is CodeMethod currentMethod && currentMethod.Name.Equals("defaultResponseHandler", StringComparison.InvariantCultureIgnoreCase)) 
                 currentMethod.Parameters.First().Type.Name = "ReadableStream";
-            if(current is CodeProperty currentProperty && currentProperty.PropertyKind == CodePropertyKind.ResponseHandler) {
-                currentProperty.Type.Name = "(input: ReadableStream) => Promise<object>";
-                currentProperty.DefaultValue = "this.defaultResponseHandler";
-            }
             CrawlTree(current, PatchResponseHandlerType);
         }
     }
