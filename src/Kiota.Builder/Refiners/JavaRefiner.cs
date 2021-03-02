@@ -5,10 +5,9 @@ using System.Linq;
 namespace Kiota.Builder {
     public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
-        private readonly HashSet<string> defaultTypes = new HashSet<string> {"string", "integer", "boolean", "array", "object", "java.util.function.Function<Object,Object>"};
+        private readonly HashSet<string> defaultTypes = new HashSet<string> {"string", "integer", "boolean", "array", "object"};
         public override void Refine(CodeNamespace generatedCode)
         {
-            PatchResponseHandlerType(generatedCode);
             AddInnerClasses(generatedCode);
             MakeQueryStringParametersNonOptionalAndInsertOverrideMethod(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode);
@@ -17,16 +16,31 @@ namespace Kiota.Builder {
             AddDefaultImports(generatedCode);
             CorrectCoreType(generatedCode);
             PatchHeaderParametersType(generatedCode);
+            AddListImport(generatedCode);
+        }
+        private void AddListImport(CodeElement currentElement) {
+            if(currentElement is CodeClass currentClass &&
+                (currentClass.InnerChildElements.OfType<CodeProperty>().Any(x => x.Type.CollectionKind == CodeType.CodeTypeCollectionKind.Complex) ||
+                currentClass.InnerChildElements.OfType<CodeMethod>().Any(x => x.ReturnType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex) ||
+                currentClass.InnerChildElements.OfType<CodeMethod>().Any(x => x.Parameters.Any(y => y.Type.CollectionKind == CodeType.CodeTypeCollectionKind.Complex))
+                )) {
+                    var nUsing = new CodeUsing(currentClass) {
+                        Name = "java.util"
+                    };
+                    nUsing.Declaration = new CodeType(nUsing) { Name = "List" };
+                    currentClass.AddUsing(nUsing);
+                }
+            CrawlTree(currentElement, AddListImport);
         }
         private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
             new ("HttpCore", "com.microsoft.kiota"),
             new ("HttpMethod", "com.microsoft.kiota"),
             new ("RequestInfo", "com.microsoft.kiota"),
+            new ("ResponseHandler", "com.microsoft.kiota"),
             new ("QueryParametersBase", "com.microsoft.kiota"),
             new ("Map", "java.util"),
             new ("URI", "java.net"),
             new ("URISyntaxException", "java.net"),
-            new ("InputStream", "java.io"),
         };
         private void AddDefaultImports(CodeElement current) {
             if(current is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.RequestBuilder) {
@@ -42,8 +56,10 @@ namespace Kiota.Builder {
             CrawlTree(current, AddDefaultImports);
         }
         private void CorrectCoreType(CodeElement currentElement) {
-            if (currentElement is CodeProperty currentProperty && currentProperty.Type.Name.Equals("IHttpCore", StringComparison.InvariantCultureIgnoreCase))
+            if (currentElement is CodeProperty currentProperty && (currentProperty.Type.Name?.Equals("IHttpCore", StringComparison.InvariantCultureIgnoreCase) ?? false))
                 currentProperty.Type.Name = "HttpCore";
+            if (currentElement is CodeMethod currentMethod)
+                currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x => x.Type.Name = "ResponseHandler");
             CrawlTree(currentElement, CorrectCoreType);
         }
         private void AddRequireNonNullImports(CodeElement currentElement) {
@@ -67,13 +83,15 @@ namespace Kiota.Builder {
             if(currentElement is CodeClass currentClass && codeMethods.Any()) {
                 codeMethods
                     .SelectMany(x => x.Parameters)
-                    .Where(x => x.ParameterKind == CodeParameterKind.QueryParameter || x.ParameterKind == CodeParameterKind.Headers)
+                    .Where(x => x.ParameterKind == CodeParameterKind.QueryParameter || x.ParameterKind == CodeParameterKind.Headers || x.ParameterKind == CodeParameterKind.ResponseHandler)
                     .ToList()
                     .ForEach(x => x.Optional = false);
                 var methodsToAdd = codeMethods
                                     .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter))
                                     .Union(codeMethods
                                             .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers)))
+                                    .Union(codeMethods
+                                            .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers, CodeParameterKind.ResponseHandler)))
                                     .Where(x => x != null);
                 if(methodsToAdd.Any())
                     currentClass.AddMethod(methodsToAdd.ToArray());
@@ -95,13 +113,6 @@ namespace Kiota.Builder {
                 return cloneMethod;
             }
             else return null;
-        }
-        private void PatchResponseHandlerType(CodeElement current) {
-            if(current is CodeProperty currentProperty && currentProperty.PropertyKind == CodePropertyKind.ResponseHandler) {
-                currentProperty.Type.Name = "java.util.function.Function<InputStream,java.util.concurrent.CompletableFuture<Object>>";
-                currentProperty.DefaultValue = "x -> defaultResponseHandler(x)";
-            }
-            CrawlTree(current, PatchResponseHandlerType);
         }
     }
 }
