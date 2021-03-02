@@ -1,5 +1,5 @@
 import { RequestInfo } from "./requestInfo";
+import { ResponseHandler } from "./responseHandler";
 export interface HttpCore {
-    sendAsync(requestInfo: RequestInfo): Promise<ReadableStream>;
-    sendNativeAsync<NativeResponseType>(requestInfo: RequestInfo): Promise<NativeResponseType>;
+    sendAsync<ModelType>(requestInfo: RequestInfo, responseHandler: ResponseHandler | undefined): Promise<ModelType>;
 }
