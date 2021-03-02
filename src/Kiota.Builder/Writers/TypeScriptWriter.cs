@@ -53,7 +53,9 @@ namespace Kiota.Builder
             {//TODO we're probably missing a bunch of type mappings
                 case "integer": return "number";
                 case "array": return $"{TranslateType(schema.Items.Type, schema.Items)}[]";
-                default: return typeName ?? "object";
+                case "string": return "string"; // little casing hack
+                case "object": return "object";
+                default: return typeName.ToFirstCharacterUpperCase() ?? "object";
             } // string, boolean, object : same casing
         }
 
@@ -69,16 +71,23 @@ namespace Kiota.Builder
             foreach (var codeUsing in code.Usings
                                         .Where(x => (!x.Declaration?.IsExternal) ?? true)
                                         .Where(x => !x.Declaration.Name.Equals(code.Name, StringComparison.InvariantCultureIgnoreCase))
-                                        .OrderBy(x => x.Declaration.Name))
+                                        .Select(x => {
+                                            var relativeImportPath = GetRelativeImportPathForUsing(x, code.GetImmediateParentOfType<CodeNamespace>());
+                                            return new {
+                                                sourceSymbol = $"{relativeImportPath}{(string.IsNullOrEmpty(relativeImportPath) ? x.Name : x.Declaration.Name.ToFirstCharacterLowerCase())}",
+                                                importSymbol = $"{x.Declaration?.Name?.ToFirstCharacterUpperCase() ?? x.Name}",
+                                            };
+                                        })
+                                        .GroupBy(x => x.sourceSymbol)
+                                        .OrderBy(x => x.Key))
             {
-                var relativeImportPath = GetRelativeImportPathForUsing(codeUsing, code.GetImmediateParentOfType<CodeNamespace>());
                                                     
-                WriteLine($"import {{{codeUsing.Declaration?.Name ?? codeUsing.Name}}} from '{relativeImportPath}{(string.IsNullOrEmpty(relativeImportPath) ? codeUsing.Name : codeUsing.Declaration.Name.ToFirstCharacterLowerCase())}';");
+                WriteLine($"import {{{codeUsing.Select(x => x.importSymbol).Distinct().Aggregate((x,y) => x + ", " + y)}}} from '{codeUsing.Key}';");
             }
             WriteLine();
             var derivation = (code.Inherits == null ? string.Empty : $" extends {code.Inherits.Name}") +
                             (!code.Implements.Any() ? string.Empty : $" implements {code.Implements.Select(x => x.Name).Aggregate((x,y) => x + " ," + y)}");
-            WriteLine($"export class {code.Name}{derivation} {{");
+            WriteLine($"export class {code.Name.ToFirstCharacterUpperCase()}{derivation} {{");
             IncreaseIndent();
         }
         private string GetRelativeImportPathForUsing(CodeUsing codeUsing, CodeNamespace currentNamespace) {
@@ -159,7 +168,7 @@ namespace Kiota.Builder
         }
         public override void WriteMethod(CodeMethod code)
         {
-            WriteLine($"{GetAccessModifier(code.Access)} readonly {code.Name.ToFirstCharacterLowerCase()} = {(code.IsAsync ? "async ": string.Empty)}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.IsAsync ? ">": string.Empty)} => {{");
+            WriteLine($"{GetAccessModifier(code.Access)} readonly {code.Name.ToFirstCharacterLowerCase()} = {(code.IsAsync ? "async ": string.Empty)}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.ReturnType.IsNullable ? " | undefined" : string.Empty)}{(code.IsAsync ? ">": string.Empty)} => {{");
             IncreaseIndent();
             var returnType = GetTypeString(code.ReturnType);
             switch(code.MethodKind) {
@@ -177,9 +186,7 @@ namespace Kiota.Builder
                         WriteLine("queryParameters: q,");
                     DecreaseIndent();
                     WriteLines("} as RequestInfo;",
-                                "const resultStream = await this.httpCore?.sendAsync(requestInfo);",
-                                "const result = this.responseHandler && resultStream && await this.responseHandler(resultStream);",
-                                $"return result as {returnType};"); //TODO remove cast once response handlers properly type
+                                $"return await this.httpCore?.sendAsync<{returnType}>(requestInfo, responseHandler);");
                     break;
                 default:
                     WriteLine($"return {(code.IsAsync ? "Promise.resolve(" : string.Empty)}{(code.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{(code.IsAsync ? ")" : string.Empty)};");
