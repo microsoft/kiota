@@ -23,13 +23,16 @@ namespace Kiota.Builder
         public override string GetTypeString(CodeType code)
         {
             var typeName = TranslateType(code.Name, code.Schema);
+            var collectionPrefix = code.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? "List<" : string.Empty;
+            var collectionSuffix = code.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? ">" : 
+                                        (code.CollectionKind == CodeType.CodeTypeCollectionKind.Array ? "[]" : string.Empty);
             if (code.ActionOf)
             {
-                return $"java.util.function.Consumer<{typeName}>";
+                return $"java.util.function.Consumer<{collectionPrefix}{typeName}{collectionSuffix}>";
             }
             else
             {
-                return typeName;
+                return $"{collectionPrefix}{typeName}{collectionSuffix}";
             }
         }
 
@@ -42,7 +45,7 @@ namespace Kiota.Builder
                 case "string": return "String";
                 case "object": return "Object";
                 case "array": return $"{TranslateType(schema.Items.Type, schema.Items)}[]";
-                default: return typeName ?? "Object";
+                default: return typeName.ToFirstCharacterUpperCase() ?? "Object";
             }
         }
 
@@ -105,8 +108,10 @@ namespace Kiota.Builder
                                    "qParams.AddQueryParameters(requestInfo.queryParameters);");
                     if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.Headers))
                         WriteLine("h.accept(requestInfo.headers);");
-                    WriteLine("// return this.httpCore.sendAsync(requestInfo).thenCompose(this.responseHandler);"); //TODO uncomment when response handler is figured out
-                    WriteLine("return null;");
+                    if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.ResponseHandler))
+                        WriteLine("return this.httpCore.sendAsync(requestInfo, responseHandler);");
+                    else
+                        WriteLine("return this.httpCore.sendAsync(requestInfo, null);");
                     DecreaseIndent();
                     WriteLine("} catch (URISyntaxException ex) {");
                     IncreaseIndent();
