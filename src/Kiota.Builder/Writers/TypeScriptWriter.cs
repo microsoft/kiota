@@ -22,6 +22,7 @@ namespace Kiota.Builder
         public override string GetTypeString(CodeType code)
         {
             var typeName = TranslateType(code.Name, code.Schema);
+            var collectionSuffix = code.CollectionKind == CodeType.CodeTypeCollectionKind.None ? string.Empty : "[]";
             if (code.ActionOf)
             {
                 IncreaseIndent(4);
@@ -43,7 +44,7 @@ namespace Kiota.Builder
             }
             else
             {
-                return typeName;
+                return $"{typeName}{collectionSuffix}";
             }
         }
 
