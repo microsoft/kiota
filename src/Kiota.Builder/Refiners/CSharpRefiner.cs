@@ -11,7 +11,6 @@ namespace Kiota.Builder {
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddAsyncSuffix(generatedCode);
             AddInnerClasses(generatedCode);
-            MakeNativeResponseHandlers(generatedCode);
             CapitalizeNamespacesFirstLetters(generatedCode);
             AddCollectionImports(generatedCode);
         }
@@ -37,25 +36,6 @@ namespace Kiota.Builder {
             if(current is CodeNamespace currentNamespace)
                 currentNamespace.Name = currentNamespace.Name?.Split('.')?.Select(x => x.ToFirstCharacterUpperCase())?.Aggregate((x, y) => $"{x}.{y}");
             CrawlTree(current, CapitalizeNamespacesFirstLetters);
-        }
-        private void MakeNativeResponseHandlers(CodeElement currentElement)
-        {
-            if(currentElement is CodeClass currentClass) {
-                var responseHandlerProp = currentClass.InnerChildElements.OfType<CodeProperty>().Where(e => e.PropertyKind == CodePropertyKind.ResponseHandler)
-                                                                .FirstOrDefault();
-                if (responseHandlerProp != null)
-                {
-                    responseHandlerProp.Type.Name = responseHandlerType.Replace(responseHandlerProp.Type.Name, "<Stream,Task<$1>>"); // TODO: We should probably generic types properly 
-                }
-                var defaultResponseHandler = currentClass.InnerChildElements.OfType<CodeMethod>()
-                                                                    .Where(m=> m.MethodKind == CodeMethodKind.ResponseHandler)
-                                                                    .FirstOrDefault();
-                if (defaultResponseHandler != null)
-                {
-                    defaultResponseHandler.Parameters.FirstOrDefault().Type.Name = "Stream";
-                }
-            }
-            CrawlTree(currentElement, MakeNativeResponseHandlers);
         }
         private void AddAsyncSuffix(CodeElement currentElement) {
             if(currentElement is CodeMethod currentMethod)

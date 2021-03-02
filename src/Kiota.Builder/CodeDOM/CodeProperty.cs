@@ -5,8 +5,6 @@ namespace Kiota.Builder
     public enum CodePropertyKind
     {
         Custom,
-        [Obsolete]
-        ResponseHandler,
         RequestBuilder
     }
 

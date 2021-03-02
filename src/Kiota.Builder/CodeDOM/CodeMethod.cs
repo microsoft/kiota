@@ -7,7 +7,6 @@ namespace Kiota.Builder
     public enum CodeMethodKind
     {
         Custom,
-        ResponseHandler,
         IndexerBackwardCompatibility,
         RequestExecutor
     }
