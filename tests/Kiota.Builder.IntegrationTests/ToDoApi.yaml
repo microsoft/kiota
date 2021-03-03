@@ -5,6 +5,7 @@ info:
 paths:
   /todos: 
     get:
+      operationId: todos_ListTodos
       parameters:
           - name: active
             in: query
