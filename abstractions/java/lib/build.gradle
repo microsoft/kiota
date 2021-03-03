@@ -42,7 +42,7 @@ publishing {
     publications {
         gpr(MavenPublication) {
             artifactId 'kiota-abstractions'
-            version '1.0.3'
+            version '1.0.4'
             from(components.java)
         }
     }
