@@ -22,7 +22,7 @@ namespace Kiota.Builder {
             }
             CrawlTree(currentElement, AddCollectionImports);
         }
-        private static readonly string[] defaultNamespacesForClasses = new string[] {"System", "System.Threading.Tasks", "System.IO"};
+        private static readonly string[] defaultNamespacesForClasses = new string[] {"System", "System.Threading.Tasks"};
         private static readonly string[] defaultNamespacesForRequestBuilders = new string[] { "System.Collections.Generic", "Kiota.Abstractions"};
         private void AddDefaultImports(CodeElement current) {
             if(current is CodeClass currentClass) {
