@@ -29,7 +29,7 @@ namespace Kiota.Builder
             writer.Write(this);
         }
         protected void AddMissingParent(params CodeElement[] elements) {
-            foreach(var element in elements.Where(x => x.Parent == null))
+            foreach(var element in elements.Where(x => x.Parent == null || x.Parent != this))
                 element.Parent = this;
         }
         public T GetImmediateParentOfType<T>(CodeElement item = null) {
