@@ -8,6 +8,20 @@ namespace Kiota.Builder {
         public abstract void Refine(CodeNamespace generatedCode);
 
         private const string pathSegmentPropertyName = "pathSegment";
+        protected void MoveClassesWithNamespaceNamesUnderNamespace(CodeElement currentElement) {
+            if(currentElement is CodeClass currentClass && 
+                currentClass.Parent is CodeNamespace parentNamespace) {
+                var childNamespaceWithClassName = parentNamespace.InnerChildElements
+                                                                .OfType<CodeNamespace>()
+                                                                .FirstOrDefault(x => x.Name
+                                                                                    .EndsWith(currentClass.Name, StringComparison.InvariantCultureIgnoreCase));
+                if(childNamespaceWithClassName != null) {
+                    parentNamespace.InnerChildElements.Remove(currentClass);
+                    childNamespaceWithClassName.AddClass(currentClass);
+                }
+            }
+            CrawlTree(currentElement, MoveClassesWithNamespaceNamesUnderNamespace);
+        }
         protected void ReplaceIndexersByMethodsWithParameter(CodeElement currentElement, string methodNameSuffix = default) {
             if(currentElement is CodeIndexer currentIndexer) {
                 var currentParentClass = currentElement.Parent as CodeClass;

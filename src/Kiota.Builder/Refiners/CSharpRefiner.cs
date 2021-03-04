@@ -8,6 +8,7 @@ namespace Kiota.Builder {
         public override void Refine(CodeNamespace generatedCode)
         {
             AddDefaultImports(generatedCode);
+            MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddAsyncSuffix(generatedCode);
             AddInnerClasses(generatedCode);
