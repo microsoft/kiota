@@ -38,7 +38,8 @@ namespace Kiota.Builder
                 Name = Name.Clone() as string,
                 Schema = Schema,
                 TypeDefinition = TypeDefinition,
-                IsNullable = IsNullable
+                IsNullable = IsNullable,
+                IsExternal = IsExternal
             };
         }
     }

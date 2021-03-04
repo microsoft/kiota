@@ -54,8 +54,10 @@ namespace Kiota.Builder
             {//TODO we're probably missing a bunch of type mappings
                 case "integer": return "number";
                 case "array": return $"{TranslateType(schema.Items.Type, schema.Items)}[]";
-                case "string": return "string"; // little casing hack
-                case "object": return "object";
+                case "string": // little casing hack
+                case "object":
+                case "boolean":
+                    return typeName; 
                 default: return typeName.ToFirstCharacterUpperCase() ?? "object";
             } // string, boolean, object : same casing
         }
@@ -86,7 +88,7 @@ namespace Kiota.Builder
                 WriteLine($"import {{{codeUsing.Select(x => x.importSymbol).Distinct().Aggregate((x,y) => x + ", " + y)}}} from '{codeUsing.Key}';");
             }
             WriteLine();
-            var derivation = (code.Inherits == null ? string.Empty : $" extends {code.Inherits.Name}") +
+            var derivation = (code.Inherits == null ? string.Empty : $" extends {code.Inherits.Name.ToFirstCharacterUpperCase()}") +
                             (!code.Implements.Any() ? string.Empty : $" implements {code.Implements.Select(x => x.Name).Aggregate((x,y) => x + " ," + y)}");
             WriteLine($"export class {code.Name.ToFirstCharacterUpperCase()}{derivation} {{");
             IncreaseIndent();

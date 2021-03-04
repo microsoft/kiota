@@ -534,7 +534,7 @@ namespace Kiota.Builder
                 existingClass = new CodeClass(currentNamespace) { Name = className, ClassKind = CodeClassKind.Model };
                 if(inheritsFrom != null) {
                     var declaration = existingClass.StartBlock as CodeClass.Declaration;
-                    declaration.Inherits = new CodeType(declaration) { TypeDefinition = inheritsFrom };
+                    declaration.Inherits = new CodeType(declaration) { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
                 }
                 currentNamespace.AddClass(existingClass); //order is important to avoid stack overflow because of recursive add
                 CreatePropertiesForModelClass(rootNode, currentNode, schema, operation, currentNamespace, existingClass, parentElement);

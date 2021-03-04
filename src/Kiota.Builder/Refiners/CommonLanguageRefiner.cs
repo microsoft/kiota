@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using static Kiota.Builder.CodeClass;
 
@@ -109,6 +110,8 @@ namespace Kiota.Builder {
                                     .Union(methodsParametersTypes)
                                     .Union(methodsReturnTypes)
                                     .Union(indexerTypes)
+                                    .Union(new List<CodeType> { (currentClass.StartBlock as CodeClass.Declaration)?.Inherits })
+                                    .Where(x => x != null)
                                     .Select(x => new Tuple<CodeType, CodeNamespace>(x, x?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>()))
                                     .Where(x => x.Item2 != null && (includeCurrentNamespace || x.Item2 != currentClassNamespace))
                                     .Where(x => includeParentNamespaces || !currentClassNamespace.IsChildOf(x.Item2))
