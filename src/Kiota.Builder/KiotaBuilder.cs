@@ -532,6 +532,11 @@ namespace Kiota.Builder
             if(existingClass == null) // we can find it in the components
             {
                 existingClass = new CodeClass(currentNamespace) { Name = className, ClassKind = CodeClassKind.Model };
+                if(inheritsFrom == null && schema.AllOf.Count > 1) { //the last is always the current class, we want the one before the last as parent
+                    var parentSchema = schema.AllOf.Except(new OpenApiSchema[] {schema.AllOf.Last()}).FirstOrDefault();
+                    if(parentSchema != null)
+                        inheritsFrom = AddModelClassIfDoesntExit(rootNode, currentNode, parentSchema, operation, parentSchema.GetClassName(), currentNamespace, parentElement, null, true);
+                }
                 if(inheritsFrom != null) {
                     var declaration = existingClass.StartBlock as CodeClass.Declaration;
                     declaration.Inherits = new CodeType(declaration) { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
@@ -541,6 +546,7 @@ namespace Kiota.Builder
             }
             return existingClass;
         }
+        private const string OpenApiObjectType = "object";
         private void CreatePropertiesForModelClass(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeNamespace ns, CodeClass model, CodeElement parent) {
             if(schema?.Properties?.Any() ?? false)
                 model.AddProperty(schema
@@ -558,8 +564,8 @@ namespace Kiota.Builder
                                         return CreateProperty(x.Key, className ?? x.Value.Type, model, typeSchema: x.Value, typeDefinition: definition);
                                     })
                                     .ToArray());
-            else if(schema?.AllOf?.Any(x => x?.Type?.Equals("object") ?? false) ?? false)
-                CreatePropertiesForModelClass(rootNode, currentNode, schema.AllOf.Last(x => x.Type.Equals("object")), operation, ns, model, parent);
+            else if(schema?.AllOf?.Any(x => x?.Type?.Equals(OpenApiObjectType) ?? false) ?? false)
+                CreatePropertiesForModelClass(rootNode, currentNode, schema.AllOf.Last(x => x.Type.Equals(OpenApiObjectType)), operation, ns, model, parent);
         }
         private CodeClass CreateOperationParameter(OpenApiUrlSpaceNode node, KeyValuePair<OperationType, OpenApiOperation> operation, CodeClass parentClass)
         {
