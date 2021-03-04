@@ -494,7 +494,7 @@ namespace Kiota.Builder
                         if(shortestNamespace == null)
                             shortestNamespace = codeNamespace.AddNamespace(shortestNamespaceName);
                         className = isLastSchema ? currentNode.GetClassName(operation: operation) : currentSchema.GetClassName();
-                        codeClass = AddModelClassIfDoesntExit(rootNode, currentNode, currentSchema, operation, className, shortestNamespace, parentElement, codeClass, !isLastSchema);
+                        codeClass = AddModelClassIfDoesntExit(rootNode, currentNode, currentSchema, operation, className, shortestNamespace, parentElement, codeClass, true);
                     }
 
                     return new CodeType(parentElement) {
@@ -536,8 +536,8 @@ namespace Kiota.Builder
                     var declaration = existingClass.StartBlock as CodeClass.Declaration;
                     declaration.Inherits = new CodeType(declaration) { TypeDefinition = inheritsFrom };
                 }
+                currentNamespace.AddClass(existingClass); //order is important to avoid stack overflow because of recursive add
                 CreatePropertiesForModelClass(rootNode, currentNode, schema, operation, currentNamespace, existingClass, parentElement);
-                currentNamespace.AddClass(existingClass);
             }
             return existingClass;
         }
@@ -558,6 +558,8 @@ namespace Kiota.Builder
                                         return CreateProperty(x.Key, className ?? x.Value.Type, model, typeSchema: x.Value, typeDefinition: definition);
                                     })
                                     .ToArray());
+            else if(schema?.AllOf?.Any(x => x?.Type?.Equals("object") ?? false) ?? false)
+                CreatePropertiesForModelClass(rootNode, currentNode, schema.AllOf.Last(x => x.Type.Equals("object")), operation, ns, model, parent);
         }
         private CodeClass CreateOperationParameter(OpenApiUrlSpaceNode node, KeyValuePair<OperationType, OpenApiOperation> operation, CodeClass parentClass)
         {
