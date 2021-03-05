@@ -33,16 +33,17 @@ namespace Kiota.Builder {
                                     .FirstOrDefault(x => x.Name.Equals(pathSegmentPropertyName, StringComparison.InvariantCultureIgnoreCase))
                                     ?.DefaultValue;
                 if(!string.IsNullOrEmpty(pathSegment))
-                    AddIndexerMethod(currentElement.GetImmediateParentOfType<CodeNamespace>().GetRootNamespace(), 
-                                    currentParentClass,
-                                    currentIndexer.ReturnType.TypeDefinition,
-                                    pathSegment.Trim('\"').TrimStart('/'),
-                                    methodNameSuffix);
+                    foreach(var returnType in currentIndexer.ReturnType.AllTypes)
+                        AddIndexerMethod(currentElement.GetImmediateParentOfType<CodeNamespace>().GetRootNamespace(), 
+                                        currentParentClass,
+                                        returnType.TypeDefinition,
+                                        pathSegment.Trim('\"').TrimStart('/'),
+                                        methodNameSuffix);
             }
             CrawlTree(currentElement, c => ReplaceIndexersByMethodsWithParameter(c, methodNameSuffix));
         }
         protected void AddIndexerMethod(CodeElement currentElement, CodeClass targetClass, CodeClass indexerClass, string pathSegment, string methodNameSuffix) {
-            if(currentElement is CodeProperty currentProperty && currentProperty.Type.TypeDefinition == targetClass) {
+            if(currentElement is CodeProperty currentProperty && currentProperty.Type.AllTypes.Any(x => x.TypeDefinition == targetClass)) {
                 var parentClass = currentElement.Parent as CodeClass;
                 var method = new CodeMethod(parentClass) {
                     IsAsync = false,
@@ -73,10 +74,11 @@ namespace Kiota.Builder {
         }
         internal void AddInnerClasses(CodeElement current) {
             if(current is CodeClass currentClass) {
-                foreach(var parameter in current.GetChildElements().OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf && x.ParameterKind == CodeParameterKind.QueryParameter)) {
-                    currentClass.AddInnerClass(parameter.Type.TypeDefinition);
-                    (parameter.Type.TypeDefinition.StartBlock as Declaration).Inherits = new CodeType(parameter.Type.TypeDefinition) { Name = "QueryParametersBase", IsExternal = true };
-                }
+                foreach(var parameter in current.GetChildElements().OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf && x.ParameterKind == CodeParameterKind.QueryParameter)) 
+                    foreach(var returnType in parameter.Type.AllTypes) {
+                        currentClass.AddInnerClass(returnType.TypeDefinition);
+                        (returnType.TypeDefinition.StartBlock as Declaration).Inherits = new CodeType(returnType.TypeDefinition) { Name = "QueryParametersBase", IsExternal = true };
+                    }
             }
             CrawlTree(current, AddInnerClasses);
         }
@@ -112,7 +114,7 @@ namespace Kiota.Builder {
                                     .Union(indexerTypes)
                                     .Union(new List<CodeType> { (currentClass.StartBlock as CodeClass.Declaration)?.Inherits })
                                     .Where(x => x != null)
-                                    .Select(x => new Tuple<CodeType, CodeNamespace>(x, x?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>()))
+                                    .SelectMany(x => x?.AllTypes?.Select(y => new Tuple<CodeType, CodeNamespace>(y, y?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())))
                                     .Where(x => x.Item2 != null && (includeCurrentNamespace || x.Item2 != currentClassNamespace))
                                     .Where(x => includeParentNamespaces || !currentClassNamespace.IsChildOf(x.Item2))
                                     .Select(x => new CodeUsing(currentClass) { Name = x.Item2.Name, Declaration = x.Item1 })

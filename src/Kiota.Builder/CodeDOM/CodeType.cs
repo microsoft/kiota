@@ -3,16 +3,12 @@ using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder
 {
-    public class CodeType : CodeTerminal, ICloneable
+    public class CodeType : CodeTypeBase, ICloneable
     {
-        public enum CodeTypeCollectionKind {
-            None,
-            Array,
-            Complex
-        }
-        public CodeType(CodeElement parent): base(parent)
-        {
+        public CodeType(CodeElement parent): base(parent){
             
+        }
+        public CodeType(CodeTypeBase ancestor): base(ancestor) {
         }
         public override string Name
         {
@@ -23,22 +19,17 @@ namespace Kiota.Builder
             get;
             set;
         }
-
-        public bool ActionOf = false;
-        public bool IsNullable = true;
         public bool IsExternal = false;
-        public CodeTypeCollectionKind CollectionKind = CodeTypeCollectionKind.None;
 
+        [Obsolete]
         public OpenApiSchema Schema;
 
-        public object Clone()
+        public new object Clone()
         {
-            return new CodeType(Parent){
-                ActionOf = ActionOf,
+            return new CodeType(base.Clone() as CodeTypeBase){
                 Name = Name.Clone() as string,
                 Schema = Schema,
                 TypeDefinition = TypeDefinition,
-                IsNullable = IsNullable,
                 IsExternal = IsExternal
             };
         }

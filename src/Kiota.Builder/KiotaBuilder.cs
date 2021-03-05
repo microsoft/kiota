@@ -293,8 +293,12 @@ namespace Kiota.Builder
             foreach(var childElement in codeElement.GetChildElements())
                 MapTypeDefinitions(childElement);
         }
-        private void MapTypeDefinition(params CodeType[] currentTypes) {
-            foreach(var currentType in currentTypes.Where(x => x.TypeDefinition == null))
+        private void MapTypeDefinition(params CodeTypeBase[] currentTypes) {
+            foreach(var currentType in currentTypes.OfType<CodeType>()
+                                                    .Union(currentTypes
+                                                            .OfType<CodeUnionType>()
+                                                            .SelectMany(x => x.Types))
+                                                    .Where(x => x.TypeDefinition == null))
                 currentType.TypeDefinition = currentType
                         .GetImmediateParentOfType<CodeNamespace>()
                         .GetRootNamespace()

@@ -87,7 +87,7 @@ namespace Kiota.Builder
         }
 
         public abstract string GetParameterSignature(CodeParameter parameter);
-        public abstract string GetTypeString(CodeType code);
+        public abstract string GetTypeString(CodeTypeBase code);
         public abstract string TranslateType(string typeName, OpenApiSchema schema);
         public abstract void WriteProperty(CodeProperty code);
         public abstract void WriteIndexer(CodeIndexer code);

@@ -22,7 +22,7 @@ namespace Kiota.Builder
         }
         public bool ReadOnly = false;
         public AccessModifier Access = AccessModifier.Public;
-        public CodeType Type;
+        public CodeTypeBase Type;
         public string DefaultValue;
     }
 }

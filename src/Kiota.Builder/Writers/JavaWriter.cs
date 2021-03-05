@@ -20,20 +20,21 @@ namespace Kiota.Builder
             return $"@javax.annotation.{(parameter.Optional ? "Nullable" : "Nonnull")} final {GetTypeString(parameter.Type)} {parameter.Name}";
         }
 
-        public override string GetTypeString(CodeType code)
+        public override string GetTypeString(CodeTypeBase code)
         {
-            var typeName = TranslateType(code.Name, code.Schema);
-            var collectionPrefix = code.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? "List<" : string.Empty;
-            var collectionSuffix = code.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? ">" : 
-                                        (code.CollectionKind == CodeType.CodeTypeCollectionKind.Array ? "[]" : string.Empty);
-            if (code.ActionOf)
-            {
-                return $"java.util.function.Consumer<{collectionPrefix}{typeName}{collectionSuffix}>";
+            if(code is CodeUnionType) 
+                throw new InvalidOperationException($"Java does not support union types, the union type {code.Name} should have been filtered out by the refiner");
+            else if (code is CodeType currentType) {
+                var typeName = TranslateType(currentType.Name, currentType.Schema);
+                var collectionPrefix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? "List<" : string.Empty;
+                var collectionSuffix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? ">" : 
+                                            (currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Array ? "[]" : string.Empty);
+                if (currentType.ActionOf)
+                    return $"java.util.function.Consumer<{collectionPrefix}{typeName}{collectionSuffix}>";
+                else
+                    return $"{collectionPrefix}{typeName}{collectionSuffix}";
             }
-            else
-            {
-                return $"{collectionPrefix}{typeName}{collectionSuffix}";
-            }
+            else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
 
         public override string TranslateType(string typeName, OpenApiSchema schema)

@@ -19,33 +19,36 @@ namespace Kiota.Builder
             return $"{parameter.Name}{(parameter.Optional ? "?" : string.Empty)}: {GetTypeString(parameter.Type)}{(parameter.Optional ? " | undefined": string.Empty)}";
         }
 
-        public override string GetTypeString(CodeType code)
+        public override string GetTypeString(CodeTypeBase code)
         {
-            var typeName = TranslateType(code.Name, code.Schema);
             var collectionSuffix = code.CollectionKind == CodeType.CodeTypeCollectionKind.None ? string.Empty : "[]";
-            if (code.ActionOf)
-            {
-                IncreaseIndent(4);
-                var childElements = code?.TypeDefinition
-                                            ?.InnerChildElements
-                                            ?.OfType<CodeProperty>()
-                                            ?.Select(x => $"{x.Name}?: {GetTypeString(x.Type)}");
-                var innerDeclaration = childElements?.Any() ?? false ? 
-                                                NewLine +
-                                                GetIndent() +
-                                                childElements
-                                                .Aggregate((x, y) => $"{x};{NewLine}{GetIndent()}{y}")
-                                                .Replace(';', ',') +
-                                                NewLine +
-                                                GetIndent()
-                                            : string.Empty;
-                DecreaseIndent();
-                return $"{{{innerDeclaration}}}";
+            if(code is CodeUnionType currentUnion && currentUnion.Types.Any())
+                return currentUnion.Types.Select(x => GetTypeString(x)).Aggregate((x, y) => $"{x} | {y}") + collectionSuffix;
+            else if(code is CodeType currentType) {
+                var typeName = TranslateType(currentType.Name, currentType.Schema);
+                if (code.ActionOf)
+                {
+                    IncreaseIndent(4);
+                    var childElements = currentType?.TypeDefinition
+                                                ?.InnerChildElements
+                                                ?.OfType<CodeProperty>()
+                                                ?.Select(x => $"{x.Name}?: {GetTypeString(x.Type)}");
+                    var innerDeclaration = childElements?.Any() ?? false ? 
+                                                    NewLine +
+                                                    GetIndent() +
+                                                    childElements
+                                                    .Aggregate((x, y) => $"{x};{NewLine}{GetIndent()}{y}")
+                                                    .Replace(';', ',') +
+                                                    NewLine +
+                                                    GetIndent()
+                                                : string.Empty;
+                    DecreaseIndent();
+                    return $"{{{innerDeclaration}}}";
+                }
+                else
+                    return $"{typeName}{collectionSuffix}";
             }
-            else
-            {
-                return $"{typeName}{collectionSuffix}";
-            }
+            else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
 
         public override string TranslateType(string typeName, OpenApiSchema schema)
