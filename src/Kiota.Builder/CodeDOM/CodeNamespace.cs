@@ -17,7 +17,7 @@ namespace Kiota.Builder
             return new CodeNamespace(null);
         }
         private string name;
-        public new string Name
+        public override string Name
         {
             get { return name;
             }

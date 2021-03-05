@@ -27,7 +27,7 @@ namespace Kiota.Builder
         /// <summary>
         /// Name of Class
         /// </summary>
-        public new string Name
+        public override string Name
         {
             get => name;
             set
