@@ -21,12 +21,29 @@
             "group": "test",
             "args": [
                 "test",
-                "${workspaceFolder}/tests/Kiota.Builder.tests/Kiota.Builder.Tests.csproj",
+                "${workspaceFolder}/kiota.sln",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary",
-                "/p:CollectCoverage=true"
+                "--collect:\"XPlat Code Coverage\""
             ],
             "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "coverage:clean",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-command",
+                "Remove-Item -Recurse -Include TestResults -Path .\\tests\\",
+            ],
+            "linux": {
+                "command": "rm",
+                "args": [
+                    "-r",
+                    "./tests/Kiota.Builder.Tests/TestResults",
+                    "./tests/Kiota.Builder.IntegrationTests/TestResults",
+                ]
+            }
         },
         {
             "label": "coverage",
@@ -36,7 +53,12 @@
             "args": [
                 "-reports:**/coverage.cobertura.xml",
                 "-targetdir:./reports/coverage"
-            ]
+            ],
+            "dependsOn": [
+                "coverage:clean",
+                "test"
+            ],
+            "dependsOrder": "sequence"
         },
         {
             "label": "coverage:launch",
