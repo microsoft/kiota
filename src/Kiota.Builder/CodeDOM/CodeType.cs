@@ -17,7 +17,6 @@ namespace Kiota.Builder
         public override object Clone()
         {
             return new CodeType(this.Parent){
-                Name = Name.Clone() as string,
                 TypeDefinition = TypeDefinition,
                 IsExternal = IsExternal
             }.BaseClone<CodeType>(this);

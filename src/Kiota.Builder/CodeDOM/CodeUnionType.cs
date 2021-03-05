@@ -16,7 +16,6 @@ namespace Kiota.Builder
 
         public override object Clone() {
             return new CodeUnionType(this.Parent){
-                Name = Name.Clone() as string,
                 Types = new List<CodeType>(Types),
             }.BaseClone<CodeUnionType>(this);
         }
