@@ -1,5 +1,7 @@
 # To-do
 
+![Dotnet](https://github.com/microsoft/kiota/actions/workflows/abstractions-dotnet.yml/badge.svg)
+
 - [ ] coverage code
 - [ ] analyzers
 - [ ] unit test project

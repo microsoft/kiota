@@ -1,5 +1,7 @@
 # To-do
 
+![TypeScript](https://github.com/microsoft/kiota/actions/workflows/abstractions-typescript.yml/badge.svg)
+
 - [ ] browserlist configuration for compat
 - [ ] eslint configuration for linting
 - [ ] unit tests (chai + mocha + chai as promised + some coverage reporter)

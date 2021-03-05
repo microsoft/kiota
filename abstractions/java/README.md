@@ -1,5 +1,7 @@
 # To-do
 
+![Java](https://github.com/microsoft/kiota/actions/workflows/abstractions-java.yml/badge.svg)
+
 - [ ] checkstyles
 - [ ] spotbugs
 - [ ] android api level linting
