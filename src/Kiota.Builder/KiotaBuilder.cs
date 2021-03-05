@@ -501,7 +501,9 @@ namespace Kiota.Builder
                 };
             } else if((schema?.AnyOf?.Any() ?? false) || (schema?.OneOf?.Any() ?? false)) {
                 var schemas = schema.AnyOf.Union(schema.OneOf);
-                var unionType = new CodeUnionType(parentElement);
+                var unionType = new CodeUnionType(parentElement) {
+                    Name = currentNode.GetClassName(operation: operation, suffix: "Response"),
+                };
                 foreach(var currentSchema in schemas) {
                     var shortestNamespaceName = currentSchema.Reference == null ? GetNamespaceNameForModelByOperationId(operation.OperationId) : GetShortestNamespaceNameForModelByReferenceId(rootNode, currentSchema.Reference.Id);
                     var shortestNamespace = codeNamespace.GetRootNamespace().GetNamespace(shortestNamespaceName);

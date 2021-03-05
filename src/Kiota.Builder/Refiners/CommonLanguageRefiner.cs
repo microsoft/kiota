@@ -9,6 +9,40 @@ namespace Kiota.Builder {
         public abstract void Refine(CodeNamespace generatedCode);
 
         private const string pathSegmentPropertyName = "pathSegment";
+        protected void ConvertUnionTypesToWrapper(CodeElement currentElement) {
+            if(currentElement is CodeMethod currentMethod) {
+                if(currentMethod.ReturnType is CodeUnionType currentUnionType)
+                    currentMethod.ReturnType = ConvertUnionTypeToWrapper(currentMethod.Parent as CodeClass, currentUnionType);
+                else if(currentMethod.Parameters.Any(x => x.Type is CodeUnionType))
+                    foreach(var currentParameter in currentMethod.Parameters.Where(x => x.Type is CodeUnionType))
+                        currentParameter.Type = ConvertUnionTypeToWrapper(currentMethod.Parent as CodeClass, currentParameter.Type as CodeUnionType);
+            }
+            else if (currentElement is CodeIndexer currentIndexer && currentIndexer.ReturnType is CodeUnionType currentUnionType)
+                currentIndexer.ReturnType = ConvertUnionTypeToWrapper(currentIndexer.Parent as CodeClass, currentUnionType);
+
+            CrawlTree(currentElement, ConvertUnionTypesToWrapper);
+        }
+        private CodeTypeBase ConvertUnionTypeToWrapper(CodeClass codeClass, CodeUnionType codeUnionType)
+        {
+            if(codeClass == null) throw new ArgumentNullException(nameof(codeClass));
+            if(codeUnionType == null) throw new ArgumentNullException(nameof(codeUnionType));
+            var newClass = new CodeClass(codeClass) {
+                Name = codeUnionType.Name
+            };
+            newClass.AddProperty(codeUnionType
+                                    .Types
+                                    .Select(x => new CodeProperty(newClass) {
+                                        Name = x.Name,
+                                        Type = x
+                                    }).ToArray());
+            return new CodeType(codeClass) {
+                Name = newClass.Name,
+                TypeDefinition = newClass,
+                CollectionKind = codeUnionType.CollectionKind,
+                IsNullable = codeUnionType.IsNullable,
+                ActionOf = codeUnionType.ActionOf,
+            };
+        }
         protected void MoveClassesWithNamespaceNamesUnderNamespace(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && 
                 currentClass.Parent is CodeNamespace parentNamespace) {
