@@ -333,7 +333,6 @@ namespace Kiota.Builder
             };
             prop.Type = new CodeType(prop) {
                 Name = isCollection ? typeSchema?.Items?.Reference?.GetClassName() : childType,
-                Schema = typeSchema,
                 TypeDefinition = typeDefinition,
                 CollectionKind = isCollection ? CodeType.CodeTypeCollectionKind.Complex : default
             };
@@ -478,7 +477,6 @@ namespace Kiota.Builder
                 return new CodeType(parentElement) {
                     TypeDefinition = codeClass,
                     Name = className,
-                    Schema = schema
                 };
             } else if(schema?.AllOf?.Any() ?? false) {
                 var lastSchema = schema.AllOf.Last();
@@ -497,7 +495,6 @@ namespace Kiota.Builder
                 return new CodeType(parentElement) {
                     TypeDefinition = codeClass,
                     Name = className,
-                    Schema = lastSchema
                 };
             } else if((schema?.AnyOf?.Any() ?? false) || (schema?.OneOf?.Any() ?? false)) {
                 var schemas = schema.AnyOf.Union(schema.OneOf);
@@ -514,7 +511,6 @@ namespace Kiota.Builder
                     unionType.AddType(new CodeType(unionType) {
                         TypeDefinition = codeClass,
                         Name = className,
-                        Schema = schema
                     });
                 }
                 return unionType;
@@ -589,7 +585,6 @@ namespace Kiota.Builder
                     prop.Type = new CodeType(prop)
                     {
                         Name = parameter.Schema.Items?.Type ?? parameter.Schema.Type,
-                        Schema = parameter.Schema,
                         CollectionKind = parameter.Schema.Type.Equals("array", StringComparison.InvariantCultureIgnoreCase) ? CodeType.CodeTypeCollectionKind.Array : default
                     };
 

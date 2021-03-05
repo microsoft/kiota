@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder
 {
@@ -25,7 +24,7 @@ namespace Kiota.Builder
             if(code is CodeUnionType currentUnion && currentUnion.Types.Any())
                 return currentUnion.Types.Select(x => GetTypeString(x)).Aggregate((x, y) => $"{x} | {y}") + collectionSuffix;
             else if(code is CodeType currentType) {
-                var typeName = TranslateType(currentType.Name, currentType.Schema);
+                var typeName = TranslateType(currentType.Name);
                 if (code.ActionOf)
                 {
                     IncreaseIndent(4);
@@ -51,12 +50,11 @@ namespace Kiota.Builder
             else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
 
-        public override string TranslateType(string typeName, OpenApiSchema schema)
+        public override string TranslateType(string typeName)
         {
             switch (typeName)
             {//TODO we're probably missing a bunch of type mappings
                 case "integer": return "number";
-                case "array": return $"{TranslateType(schema.Items.Type, schema.Items)}[]";
                 case "string": // little casing hack
                 case "object":
                 case "boolean":

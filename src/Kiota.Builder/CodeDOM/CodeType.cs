@@ -1,5 +1,4 @@
 ﻿using System;
-using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder
 {
@@ -15,14 +14,10 @@ namespace Kiota.Builder
         }
         public bool IsExternal = false;
 
-        [Obsolete]
-        public OpenApiSchema Schema;
-
         public override object Clone()
         {
             return new CodeType(this.Parent){
                 Name = Name.Clone() as string,
-                Schema = Schema,
                 TypeDefinition = TypeDefinition,
                 IsExternal = IsExternal
             }.BaseClone<CodeType>(this);

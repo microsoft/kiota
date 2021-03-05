@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder
 {
@@ -139,7 +138,7 @@ namespace Kiota.Builder
             if(code is CodeUnionType) 
                 throw new InvalidOperationException($"CSharp does not support union types, the union type {code.Name} should have been filtered out by the refiner");
             else if (code is CodeType currentType) {
-                var typeName = TranslateType(currentType.Name, currentType.Schema);
+                var typeName = TranslateType(currentType.Name);
                 var collectionPrefix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? "List<" : string.Empty;
                 var collectionSuffix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? ">" : 
                                             (currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Array ? "[]" : string.Empty);
@@ -151,7 +150,7 @@ namespace Kiota.Builder
             else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
 
-        public override string TranslateType(string typeName, OpenApiSchema schema)
+        public override string TranslateType(string typeName)
         {
             switch (typeName)
             {
