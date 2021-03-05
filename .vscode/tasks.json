@@ -23,7 +23,53 @@
                 "test",
                 "${workspaceFolder}/tests/Kiota.Builder.tests/Kiota.Builder.Tests.csproj",
                 "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "/consoleloggerparameters:NoSummary",
+                "/p:CollectCoverage=true"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "coverage",
+            "type": "process",
+            "command": "reportgenerator",
+            "group": "test",
+            "args": [
+                "-reports:**/coverage.cobertura.xml",
+                "-targetdir:./reports/coverage"
+            ]
+        },
+        {
+            "label": "coverage:launch",
+            "type": "shell",
+            "command": "start",
+            "linux": {
+                "command": "xdg-open",
+                "args": [
+                    "./reports/coverage/index.html"
+                ]
+            },
+            "osx": {
+                "command": "open",
+                "args": [
+                    "./reports/coverage/index.html"
+
+                ]
+            },
+            "group": "test",
+            "args": [
+                "./reports/coverage/index.html"
+            ],
+            "dependsOn":[
+                "coverage"
+            ]
+        },
+        {
+            "label": "clean",
+            "command": "dotnet",
+            "type": "process",
+            "group": "build",
+            "args": [
+                "clean"
             ],
             "problemMatcher": "$msCompile"
         },
@@ -31,7 +77,7 @@
             "label": "publish",
             "command": "dotnet",
             "type": "process",
-            "group": "none",
+            "group": "build",
             "args": [
                 "publish",
                 "${workspaceFolder}/src/kiota/kiota.csproj",
