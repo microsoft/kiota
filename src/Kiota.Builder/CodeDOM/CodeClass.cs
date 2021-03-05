@@ -27,7 +27,7 @@ namespace Kiota.Builder
         /// <summary>
         /// Name of Class
         /// </summary>
-        public override string Name
+        public new string Name
         {
             get => name;
             set
@@ -76,13 +76,6 @@ namespace Kiota.Builder
             public Declaration(CodeElement parent):base(parent)
             {
                 
-            }
-            /// <summary>
-            /// Class name
-            /// </summary>
-            public override string Name
-            {
-                get; set;
             }
             public CodeType Inherits { get; set; }
             public List<CodeType> Implements { get; set; } = new List<CodeType>();

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Kiota.Builder {
-    public class CodeTypeBase: CodeTerminal, ICloneable {
+    public abstract class CodeTypeBase: CodeTerminal, ICloneable {
         public enum CodeTypeCollectionKind {
             None,
             Array,
@@ -12,20 +12,21 @@ namespace Kiota.Builder {
         public CodeTypeBase(CodeElement parent) : base(parent) {
             
         }
-        public CodeTypeBase(CodeTypeBase ancestor): base(ancestor.Parent)
-        {
-            ActionOf = ancestor.ActionOf;
-            IsNullable = ancestor.IsNullable;
-            CollectionKind = ancestor.CollectionKind;
-        }
         public bool ActionOf = false;
         public bool IsNullable = true;
         public CodeTypeCollectionKind CollectionKind = CodeTypeCollectionKind.None;
 
-        public object Clone()
+        public ChildType BaseClone<ChildType>(CodeTypeBase source) where ChildType : CodeTypeBase
         {
-            return new CodeTypeBase(this);
+            ActionOf = source.ActionOf;
+            IsNullable = source.IsNullable;
+            CollectionKind = source.CollectionKind;
+            Name = source.Name.Clone() as string;
+            return this as ChildType;
         }
+
+        public abstract object Clone();
+
         public IEnumerable<CodeType> AllTypes {
             get {
                 if(this is CodeType currentType)

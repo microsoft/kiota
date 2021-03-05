@@ -19,11 +19,6 @@ namespace Kiota.Builder
             EndBlock = new BlockEnd(this);
         }
 
-        public override string Name
-        {
-            get;set;
-        }
-
         public override IList<CodeElement> GetChildElements()
         {
             var elements = new List<CodeElement>(InnerChildElements);
@@ -55,7 +50,6 @@ namespace Kiota.Builder
         }
         public class BlockDeclaration : CodeTerminal
         {
-            public override string Name { get; set; }
             public List<CodeUsing> Usings = new List<CodeUsing>();
             public BlockDeclaration(CodeElement parent): base(parent)
             {

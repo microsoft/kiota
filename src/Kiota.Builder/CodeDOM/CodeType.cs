@@ -8,12 +8,6 @@ namespace Kiota.Builder
         public CodeType(CodeElement parent): base(parent){
             
         }
-        public CodeType(CodeTypeBase ancestor): base(ancestor) {
-        }
-        public override string Name
-        {
-            get; set;
-        }
         public CodeClass TypeDefinition
         {
             get;
@@ -24,14 +18,14 @@ namespace Kiota.Builder
         [Obsolete]
         public OpenApiSchema Schema;
 
-        public new object Clone()
+        public override object Clone()
         {
-            return new CodeType(base.Clone() as CodeTypeBase){
+            return new CodeType(this.Parent){
                 Name = Name.Clone() as string,
                 Schema = Schema,
                 TypeDefinition = TypeDefinition,
                 IsExternal = IsExternal
-            };
+            }.BaseClone<CodeType>(this);
         }
     }
 }

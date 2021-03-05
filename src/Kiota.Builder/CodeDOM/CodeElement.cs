@@ -19,7 +19,7 @@ namespace Kiota.Builder
         public CodeElement Parent { get; set; }
         public abstract IList<CodeElement> GetChildElements();
 
-        public abstract string Name
+        public string Name
         {
             get; set;
         }

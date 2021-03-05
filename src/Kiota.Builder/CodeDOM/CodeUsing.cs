@@ -8,10 +8,6 @@ namespace Kiota.Builder
         {
             
         }
-        public override string Name
-        {
-            get; set;
-        }
         public CodeType Declaration { get; set; }
 
         public override IList<CodeElement> GetChildElements()
