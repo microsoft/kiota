@@ -462,7 +462,7 @@ namespace Kiota.Builder
             } else 
                 throw new InvalidOperationException($"could not find a shortest namespace name for reference id {referenceId}");
         }
-        private CodeType CreateModelClasses(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement)
+        private CodeTypeBase CreateModelClasses(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement)
         {
             var originalReference = schema?.Reference;
             var originalReferenceId = originalReference?.Id;
@@ -480,47 +480,45 @@ namespace Kiota.Builder
                     Name = className,
                     Schema = schema
                 };
-            } else { // Reused schema from components
-                // object type
-                // array of object
-                // all of object
-                // one of object
-                // any of object
-
-                if(schema?.AllOf?.Any() ?? false) {
-                    var lastSchema = schema.AllOf.Last();
-                    CodeClass codeClass = null;
-                    string className = string.Empty;
-                    foreach(var currentSchema in schema.AllOf) {
-                        var isLastSchema = currentSchema == lastSchema;
-                        var shortestNamespaceName = currentSchema.Reference == null ? GetNamespaceNameForModelByOperationId(operation.OperationId) : GetShortestNamespaceNameForModelByReferenceId(rootNode, currentSchema.Reference.Id);
-                        var shortestNamespace = codeNamespace.GetRootNamespace().GetNamespace(shortestNamespaceName);
-                        if(shortestNamespace == null)
-                            shortestNamespace = codeNamespace.AddNamespace(shortestNamespaceName);
-                        className = isLastSchema ? currentNode.GetClassName(operation: operation) : currentSchema.GetClassName();
-                        codeClass = AddModelClassIfDoesntExit(rootNode, currentNode, currentSchema, operation, className, shortestNamespace, parentElement, codeClass, true);
-                    }
-
-                    return new CodeType(parentElement) {
-                        TypeDefinition = codeClass,
-                        Name = className,
-                        Schema = lastSchema
-                    };
-                } else {
-                    //TODO anyOf & oneOf
-                    var shortestNamespaceName = GetShortestNamespaceNameForModelByReferenceId(rootNode, originalReferenceId);
+            } else if(schema?.AllOf?.Any() ?? false) {
+                var lastSchema = schema.AllOf.Last();
+                CodeClass codeClass = null;
+                string className = string.Empty;
+                foreach(var currentSchema in schema.AllOf) {
+                    var isLastSchema = currentSchema == lastSchema;
+                    var shortestNamespaceName = currentSchema.Reference == null ? GetNamespaceNameForModelByOperationId(operation.OperationId) : GetShortestNamespaceNameForModelByReferenceId(rootNode, currentSchema.Reference.Id);
                     var shortestNamespace = codeNamespace.GetRootNamespace().GetNamespace(shortestNamespaceName);
                     if(shortestNamespace == null)
                         shortestNamespace = codeNamespace.AddNamespace(shortestNamespaceName);
-                    var className = currentNode.GetClassName(operation: operation);
-                    var codeClass = AddModelClassIfDoesntExit(rootNode, currentNode, schema, operation, className, shortestNamespace, parentElement);
-                    return new CodeType(parentElement) {
+                    className = isLastSchema ? currentNode.GetClassName(operation: operation) : currentSchema.GetClassName();
+                    codeClass = AddModelClassIfDoesntExit(rootNode, currentNode, currentSchema, operation, className, shortestNamespace, parentElement, codeClass, true);
+                }
+
+                return new CodeType(parentElement) {
+                    TypeDefinition = codeClass,
+                    Name = className,
+                    Schema = lastSchema
+                };
+            } else if((schema?.AnyOf?.Any() ?? false) || (schema?.OneOf?.Any() ?? false)) {
+                var schemas = schema.AnyOf.Union(schema.OneOf);
+                var unionType = new CodeUnionType(parentElement);
+                foreach(var currentSchema in schemas) {
+                    var shortestNamespaceName = currentSchema.Reference == null ? GetNamespaceNameForModelByOperationId(operation.OperationId) : GetShortestNamespaceNameForModelByReferenceId(rootNode, currentSchema.Reference.Id);
+                    var shortestNamespace = codeNamespace.GetRootNamespace().GetNamespace(shortestNamespaceName);
+                    if(shortestNamespace == null)
+                        shortestNamespace = codeNamespace.AddNamespace(shortestNamespaceName);
+                    var className = currentSchema.GetClassName();
+                    var codeClass = AddModelClassIfDoesntExit(rootNode, currentNode, currentSchema, operation, className, shortestNamespace, parentElement);
+                    unionType.AddType(new CodeType(unionType) {
                         TypeDefinition = codeClass,
                         Name = className,
                         Schema = schema
-                    };
+                    });
                 }
+                return unionType;
             }
+            else throw new InvalidOperationException("un handled case, might be object type or array type");
+            // object type array of object are technically already handled in properties but if we have a root with those we might be missing some cases here
         }
         private CodeClass AddModelClassIfDoesntExit(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, string className, CodeNamespace currentNamespace, CodeElement parentElement, CodeClass inheritsFrom = null, bool checkInAllNamespaces = false) {
             var existingClass = checkInAllNamespaces ? 
