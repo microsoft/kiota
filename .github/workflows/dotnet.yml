@@ -24,4 +24,12 @@ jobs:
     - name: Build
       run: dotnet build kiota.sln --no-restore
     - name: Test
-      run: dotnet test kiota.sln --no-build --verbosity normal
+      run: dotnet test kiota.sln --no-build --verbosity normal /p:CollectCoverage=true
+    - name: Install report generator
+      run: dotnet tool install --global dotnet-reportgenerator-globaltool
+    - name: Generate coverage report
+      run: reportgenerator -reports:**/coverage.cobertura.xml -targetdir:./reports/coverage
+    - uses: actions/upload-artifact@v2
+      with:
+        name: coverage
+        path: reports/coverage
