@@ -104,6 +104,8 @@ namespace Kiota.Builder
                     IncreaseIndent();
                     WriteLines($"HttpMethod = HttpMethod.{operationName.ToUpperInvariant()},",
                                $"URI = new Uri({currentPathPropertyName}),");
+                    if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.RequestBody))
+                        WriteLine("Content = body as object as Stream"); //TODO remove cast and call serialization once in place
                     DecreaseIndent();
                     WriteLine("};");
                     if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.QueryParameter)) {

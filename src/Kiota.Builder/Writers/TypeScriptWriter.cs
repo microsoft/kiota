@@ -186,6 +186,8 @@ namespace Kiota.Builder
                     WriteLines("URI: this.currentPath ? new URL(this.currentPath): null,",
                                 "headers: h,",
                                 $"httpMethod: HttpMethod.{code.Name.ToUpperInvariant()},");
+                    if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.RequestBody))
+                        WriteLine("content: body as unknown,"); //TODO remvoe cast when serialization is available
                     if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.QueryParameter))
                         WriteLine("queryParameters: q,");
                     DecreaseIndent();

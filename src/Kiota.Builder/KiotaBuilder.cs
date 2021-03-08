@@ -340,6 +340,7 @@ namespace Kiota.Builder
             return prop;
         }
 
+        private const string requestBodyContentType = "application/json"; //TODO: this is temporary, we should handle other content types like octet-stream
         private CodeMethod CreateOperationMethod(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parameterClass, CodeClass parentClass)
         {
             var schema = operation.GetResponseSchema();
@@ -356,14 +357,16 @@ namespace Kiota.Builder
 
             
 
-            if (operation.RequestBody != null)
+            if (operation.RequestBody?.Content?.ContainsKey(requestBodyContentType) ?? false)
             {
-                var requestBodyType = CreateRequestModelClasses(operation.RequestBody, operation);
-                // method.AddParameter(new CodeParameter {
-                //     Name = "body",
-                //     Type = requestBodyType,
-                //     Optional = false,
-                // });
+                var requestBodySchema = operation.RequestBody.Content[requestBodyContentType].Schema;
+                var requestBodyType = CreateModelClasses(rootNode, currentNode, requestBodySchema, operation, method);
+                method.AddParameter(new CodeParameter(method) {
+                    Name = "body",
+                    Type = requestBodyType,
+                    Optional = false,
+                    ParameterKind = CodeParameterKind.RequestBody
+                });
             }
             if(parameterClass != null) {
                 var qsParam = new CodeParameter(method)
@@ -391,22 +394,6 @@ namespace Kiota.Builder
             handlerParam.Type = new CodeType(handlerParam) { Name = "IResponseHandler" };
             method.AddParameter(handlerParam);
             return method;
-        }
-
-        private CodeType CreateRequestModelClasses(OpenApiRequestBody requestBody, OpenApiOperation operation)
-        {
-            //TODO:
-            //if has reference, go find the type with the same id
-            //else insert inner declaration
-            // if(requestBody.Reference == null) {
-            //     return new CodeType {
-            //       TypeDefinition = new CodeClass {
-
-            //       }  
-            //     };
-            // }
-            return null;
-            // use the type declaration /reference for the operation parameter declaration
         }
         private IEnumerable<string> GetAllNamespaceNamesForModelByReferenceId(OpenApiUrlSpaceNode currentNode, string referenceId) {
             if(string.IsNullOrEmpty(referenceId)) throw new ArgumentNullException(nameof(referenceId));

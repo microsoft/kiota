@@ -99,6 +99,8 @@ namespace Kiota.Builder
                     IncreaseIndent();
                     WriteLines("uri = new URI(currentPath);",
                                 $"httpMethod = HttpMethod.{code.Name.ToUpperInvariant()};");
+                    if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.RequestBody))
+                        WriteLine("content = (InputStream)(Object)body;"); //TODO remove cast when serialization is available
                     DecreaseIndent();
                     WriteLine("}};");
                     if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.QueryParameter))

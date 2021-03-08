@@ -42,6 +42,7 @@ namespace Kiota.Builder {
             new ("Map", "java.util"),
             new ("URI", "java.net"),
             new ("URISyntaxException", "java.net"),
+            new ("InputStream", "java.io"),
         };
         private void AddDefaultImports(CodeElement current) {
             if(current is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.RequestBuilder) {
