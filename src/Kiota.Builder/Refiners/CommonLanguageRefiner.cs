@@ -110,7 +110,9 @@ namespace Kiota.Builder {
             if(current is CodeClass currentClass) {
                 foreach(var parameter in current.GetChildElements().OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf && x.ParameterKind == CodeParameterKind.QueryParameter)) 
                     foreach(var returnType in parameter.Type.AllTypes) {
-                        currentClass.AddInnerClass(returnType.TypeDefinition);
+                        if(!currentClass.InnerChildElements.OfType<CodeClass>().Any(x => x.Name.Equals(returnType.TypeDefinition.Name))) {
+                            currentClass.AddInnerClass(returnType.TypeDefinition);
+                        }
                         (returnType.TypeDefinition.StartBlock as Declaration).Inherits = new CodeType(returnType.TypeDefinition) { Name = "QueryParametersBase", IsExternal = true };
                     }
             }
