@@ -78,7 +78,7 @@ jobs:
     - uses: LouisBrunner/checks-action@v1.1.1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        name: Coverage
+        name: "Coverage : ${{ env.COVERAGE }}"
         conclusion: success
         output: |
           {"summary": "coverage: ${{ env.COVERAGE }} "}
