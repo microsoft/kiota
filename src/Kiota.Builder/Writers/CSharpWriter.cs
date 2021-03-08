@@ -95,30 +95,47 @@ namespace Kiota.Builder
             var staticModifier = code.IsStatic ? "static " : string.Empty;
             var returnType = GetTypeString(code.ReturnType);
             // Task type should be moved into the refiner
-            WriteLine($"{GetAccessModifier(code.Access)} {staticModifier}async Task<{returnType}> {code.Name}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
+            WriteLine($"{GetAccessModifier(code.Access)} {staticModifier}{(code.IsAsync ? "async Task<": string.Empty)}{returnType}{( code.IsAsync ? ">": string.Empty)} {code.Name}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
             IncreaseIndent();
+            var requestBodyParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.RequestBody);
+            var queryStringParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.QueryParameter);
+            var headersParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.Headers);
             switch(code.MethodKind) {
-                case CodeMethodKind.RequestExecutor:
-                    var operationName = code.Name.Replace("Async", string.Empty);
+                case CodeMethodKind.RequestGenerator:
+                    var operationName = code.HttpMethod?.ToString();
                     WriteLine("var requestInfo = new RequestInfo {");
                     IncreaseIndent();
-                    WriteLines($"HttpMethod = HttpMethod.{operationName.ToUpperInvariant()},",
+                    WriteLines($"HttpMethod = HttpMethod.{operationName?.ToUpperInvariant()},",
                                $"URI = new Uri({currentPathPropertyName}),");
-                    if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.RequestBody))
-                        WriteLine("Content = body as object as Stream"); //TODO remove cast and call serialization once in place
+                    if(requestBodyParam != null)
+                        WriteLine($"Content = {requestBodyParam.Name} as object as Stream"); //TODO remove cast and call serialization once in place
                     DecreaseIndent();
                     WriteLine("};");
-                    if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.QueryParameter)) {
-                        WriteLine("if (q != null) {");
+                    if(queryStringParam != null) {
+                        WriteLine($"if ({queryStringParam.Name} != null) {{");
                         IncreaseIndent();
-                        WriteLines($"var qParams = new {operationName.ToFirstCharacterUpperCase()}QueryParameters();",
-                                    "q.Invoke(qParams);",
+                        WriteLines($"var qParams = new {operationName?.ToFirstCharacterUpperCase()}QueryParameters();",
+                                    $"{queryStringParam.Name}.Invoke(qParams);",
                                     "qParams.AddQueryParameters(requestInfo.QueryParameters);");
                         DecreaseIndent();
                         WriteLine("}");
                     }
-                    WriteLines("h?.Invoke(requestInfo.Headers);",
-                               $"return await HttpCore.SendAsync<{returnType}>(requestInfo, responseHandler);");
+                    if(headersParam != null)
+                    WriteLines($"{headersParam.Name}?.Invoke(requestInfo.Headers);",
+                                "return requestInfo;");
+                    break;
+                case CodeMethodKind.RequestExecutor:
+                    var generatorMethodName = (code.Parent as CodeClass)
+                                                .InnerChildElements
+                                                .OfType<CodeMethod>()
+                                                .FirstOrDefault(x => x.MethodKind == CodeMethodKind.RequestGenerator && x.HttpMethod == code.HttpMethod)
+                                                ?.Name;
+                    WriteLine($"var requestInfo = {generatorMethodName}(");
+                    IncreaseIndent();
+                    WriteLine(new List<string> { requestBodyParam?.Name, queryStringParam?.Name, headersParam?.Name }.Where(x => x != null).Aggregate((x,y) => $"{x}, {y}"));
+                    DecreaseIndent();
+                    WriteLines(");",
+                                $"return await HttpCore.SendAsync<{returnType}>(requestInfo, responseHandler);");
                 break;
                 default:
                     WriteLine("return null;");

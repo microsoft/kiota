@@ -222,9 +222,7 @@ namespace Kiota.Builder
                 {
                     var parameterClass = CreateOperationParameter(currentNode, operation, codeClass);
 
-                    var method = CreateOperationMethod(rootNode, currentNode, operation.Key, operation.Value, parameterClass, codeClass);
-                    logger.LogDebug("Creating method {name} of {type}", method.Name, method.ReturnType);
-                    codeClass.AddMethod(method);
+                    CreateOperationMethods(rootNode, currentNode, operation.Key, operation.Value, parameterClass, codeClass);
                 }
             }
             CreatePathManagement(codeClass, currentNode, isRootClientClass);
@@ -341,22 +339,47 @@ namespace Kiota.Builder
         }
 
         private const string requestBodyContentType = "application/json"; //TODO: this is temporary, we should handle other content types like octet-stream
-        private CodeMethod CreateOperationMethod(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parameterClass, CodeClass parentClass)
+        private void CreateOperationMethods(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parameterClass, CodeClass parentClass)
         {
             var schema = operation.GetResponseSchema();
-            var method = new CodeMethod(parentClass) {
+            var method = (HttpMethod)Enum.Parse(typeof(HttpMethod), operationType.ToString());
+            var executorMethod = new CodeMethod(parentClass) {
                 Name = operationType.ToString(),
                 MethodKind = CodeMethodKind.RequestExecutor,
+                HttpMethod = method
             };
+            parentClass.AddMethod(executorMethod);
             if (schema != null)
             {
-                var returnType = CreateModelClasses(rootNode, currentNode, schema, operation, method);
-                method.ReturnType = returnType ?? new CodeType(method) { Name = "object"}; //TODO remove this temporary default when the method above handles all cases
+                var returnType = CreateModelClasses(rootNode, currentNode, schema, operation, executorMethod);
+                executorMethod.ReturnType = returnType ?? new CodeType(executorMethod) { Name = "object"}; //TODO remove this temporary default when the method above handles all cases
             } else 
-                method.ReturnType = new CodeType(method) { Name = "object"};
+                executorMethod.ReturnType = new CodeType(executorMethod) { Name = "object"};
 
             
+            AddRequestBuilderMethodParameters(rootNode, currentNode, operation, parameterClass, executorMethod);
 
+            var handlerParam = new CodeParameter(executorMethod) {
+                Name = "responseHandler",
+                Optional = true,
+                ParameterKind = CodeParameterKind.ResponseHandler,
+            };
+            handlerParam.Type = new CodeType(handlerParam) { Name = "IResponseHandler" };
+            executorMethod.AddParameter(handlerParam);
+            logger.LogDebug("Creating method {name} of {type}", executorMethod.Name, executorMethod.ReturnType);
+
+            var generatorMethod = new CodeMethod(parentClass) {
+                Name = $"Create{operationType.ToString().ToFirstCharacterUpperCase()}RequestInfo",
+                MethodKind = CodeMethodKind.RequestGenerator,
+                IsAsync = false,
+                HttpMethod = method,
+            };
+            generatorMethod.ReturnType = new CodeType(generatorMethod) { Name = "RequestInfo"};
+            parentClass.AddMethod(generatorMethod);
+            AddRequestBuilderMethodParameters(rootNode, currentNode, operation, parameterClass, generatorMethod);
+            logger.LogDebug("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
+        }
+        private void AddRequestBuilderMethodParameters(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiOperation operation, CodeClass parameterClass, CodeMethod method) {
             if (operation.RequestBody?.Content?.ContainsKey(requestBodyContentType) ?? false)
             {
                 var requestBodySchema = operation.RequestBody.Content[requestBodyContentType].Schema;
@@ -385,15 +408,6 @@ namespace Kiota.Builder
             };
             headersParam.Type = new CodeType(headersParam) { Name = "IDictionary<string, string>", ActionOf = true };
             method.AddParameter(headersParam);
-
-            var handlerParam = new CodeParameter(method) {
-                Name = "responseHandler",
-                Optional = true,
-                ParameterKind = CodeParameterKind.ResponseHandler,
-            };
-            handlerParam.Type = new CodeType(handlerParam) { Name = "IResponseHandler" };
-            method.AddParameter(handlerParam);
-            return method;
         }
         private IEnumerable<string> GetAllNamespaceNamesForModelByReferenceId(OpenApiUrlSpaceNode currentNode, string referenceId) {
             if(string.IsNullOrEmpty(referenceId)) throw new ArgumentNullException(nameof(referenceId));
