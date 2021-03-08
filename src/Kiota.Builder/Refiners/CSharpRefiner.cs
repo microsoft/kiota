@@ -40,7 +40,7 @@ namespace Kiota.Builder {
             CrawlTree(current, CapitalizeNamespacesFirstLetters);
         }
         private void AddAsyncSuffix(CodeElement currentElement) {
-            if(currentElement is CodeMethod currentMethod)
+            if(currentElement is CodeMethod currentMethod && currentMethod.IsAsync)
                 currentMethod.Name += "Async";
             CrawlTree(currentElement, AddAsyncSuffix);
         }
