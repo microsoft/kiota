@@ -374,7 +374,7 @@ namespace Kiota.Builder
                 IsAsync = false,
                 HttpMethod = method,
             };
-            generatorMethod.ReturnType = new CodeType(generatorMethod) { Name = "RequestInfo"};
+            generatorMethod.ReturnType = new CodeType(generatorMethod) { Name = "RequestInfo", IsNullable = false};
             parentClass.AddMethod(generatorMethod);
             AddRequestBuilderMethodParameters(rootNode, currentNode, operation, parameterClass, generatorMethod);
             logger.LogDebug("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
