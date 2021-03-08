@@ -8,7 +8,19 @@ namespace Kiota.Builder
     {
         Custom,
         IndexerBackwardCompatibility,
-        RequestExecutor
+        RequestExecutor,
+        RequestGenerator
+    }
+    public enum HttpMethod {
+        Get,
+        Post,
+        Patch,
+        Put,
+        Delete,
+        Options,
+        Connect,
+        Head,
+        Trace
     }
 
     public class CodeMethod : CodeTerminal, ICloneable
@@ -17,6 +29,7 @@ namespace Kiota.Builder
         {
             
         }
+        public HttpMethod? HttpMethod;
         public CodeMethodKind MethodKind = CodeMethodKind.Custom;
         public AccessModifier Access = AccessModifier.Public;
         public CodeTypeBase ReturnType;
