@@ -175,24 +175,45 @@ namespace Kiota.Builder
             WriteLine($"{GetAccessModifier(code.Access)} readonly {code.Name.ToFirstCharacterLowerCase()} = {(code.IsAsync ? "async ": string.Empty)}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.ReturnType.IsNullable ? " | undefined" : string.Empty)}{(code.IsAsync ? ">": string.Empty)} => {{");
             IncreaseIndent();
             var returnType = GetTypeString(code.ReturnType);
+            var requestBodyParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.RequestBody);
+            var queryStringParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.QueryParameter);
+            var headersParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.Headers);
             switch(code.MethodKind) {
                 case CodeMethodKind.IndexerBackwardCompatibility:
                     var pathSegment = code.GenerationProperties.ContainsKey(pathSegmentPropertyName) ? code.GenerationProperties[pathSegmentPropertyName] as string : string.Empty;
                     AddRequestBuilderBody(returnType, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
                     break;
-                case CodeMethodKind.RequestExecutor:
+                case CodeMethodKind.RequestGenerator:
                     WriteLines("const requestInfo = {");
                     IncreaseIndent();
-                    WriteLines("URI: this.currentPath ? new URL(this.currentPath): null,",
-                                "headers: h,",
-                                $"httpMethod: HttpMethod.{code.Name.ToUpperInvariant()},");
-                    if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.RequestBody))
-                        WriteLine("content: body as unknown,"); //TODO remvoe cast when serialization is available
-                    if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.QueryParameter))
-                        WriteLine("queryParameters: q,");
+                    WriteLine("URI: this.currentPath ? new URL(this.currentPath): null,");
+                    if(headersParam != null)
+                        WriteLine($"headers: {headersParam.Name},");
+                    WriteLine($"httpMethod: HttpMethod.{code.HttpMethod.ToString().ToUpperInvariant()},");
+                    if(requestBodyParam != null)
+                        WriteLine($"content: {requestBodyParam.Name} as unknown,"); //TODO remvoe cast when serialization is available
+                    if(queryStringParam != null)
+                        WriteLine($"queryParameters: {queryStringParam.Name},");
                     DecreaseIndent();
                     WriteLines("} as RequestInfo;",
-                                $"return await this.httpCore?.sendAsync<{returnType}>(requestInfo, responseHandler);");
+                                "return requestInfo;");
+                break;
+                case CodeMethodKind.RequestExecutor:
+                    var generatorMethodName = (code.Parent as CodeClass)
+                                                .InnerChildElements
+                                                .OfType<CodeMethod>()
+                                                .FirstOrDefault(x => x.MethodKind == CodeMethodKind.RequestGenerator && x.HttpMethod == code.HttpMethod)
+                                                ?.Name
+                                                ?.ToFirstCharacterLowerCase();
+                    WriteLine($"const requestInfo = this.{generatorMethodName}(");
+                    var requestInfoParameters = new List<string> { requestBodyParam?.Name, queryStringParam?.Name, headersParam?.Name }.Where(x => x != null);
+                    if(requestInfoParameters.Any()) {
+                        IncreaseIndent();
+                        WriteLine(requestInfoParameters.Aggregate((x,y) => $"{x}, {y}"));
+                        DecreaseIndent();
+                    }
+                    WriteLine(");");
+                    WriteLine($"return await this.httpCore?.sendAsync<{returnType}>(requestInfo, responseHandler);");
                     break;
                 default:
                     WriteLine($"return {(code.IsAsync ? "Promise.resolve(" : string.Empty)}{(code.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{(code.IsAsync ? ")" : string.Empty)};");
