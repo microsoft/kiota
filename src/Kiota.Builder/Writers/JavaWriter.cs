@@ -80,9 +80,12 @@ namespace Kiota.Builder
         public override void WriteMethod(CodeMethod code)
         {
             //TODO javadoc
-            WriteLine(code.ReturnType.IsNullable ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
-            WriteLine($"{GetAccessModifier(code.Access)} {(code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty)}{GetTypeString(code.ReturnType).ToFirstCharacterUpperCase()}{(code.IsAsync ? ">" : string.Empty)} {code.Name.ToFirstCharacterLowerCase()}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
+            WriteLine(code.ReturnType.IsNullable && !code.IsAsync ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
+            WriteLine($"{GetAccessModifier(code.Access)} {(code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty)}{GetTypeString(code.ReturnType).ToFirstCharacterUpperCase()}{(code.IsAsync ? ">" : string.Empty)} {code.Name.ToFirstCharacterLowerCase()}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {(code.MethodKind == CodeMethodKind.RequestGenerator ? "throws URISyntaxException ": string.Empty)}{{");
             IncreaseIndent();
+            var requestBodyParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.RequestBody);
+            var queryStringParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.QueryParameter);
+            var headersParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.Headers);
             foreach(var parameter in code.Parameters.Where(x => !x.Optional)) {
                 WriteLine($"Objects.requireNonNull({parameter.Name});");
             }
@@ -92,23 +95,40 @@ namespace Kiota.Builder
                     var returnType = GetTypeString(code.ReturnType);
                     AddRequestBuilderBody(returnType, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
                 break;
-                case CodeMethodKind.RequestExecutor:
-                    WriteLine("try {");
-                    IncreaseIndent();
+                case CodeMethodKind.RequestGenerator:
                     WriteLine("final RequestInfo requestInfo = new RequestInfo() {{");
                     IncreaseIndent();
                     WriteLines("uri = new URI(currentPath);",
-                                $"httpMethod = HttpMethod.{code.Name.ToUpperInvariant()};");
-                    if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.RequestBody))
-                        WriteLine("content = (InputStream)(Object)body;"); //TODO remove cast when serialization is available
+                                $"httpMethod = HttpMethod.{code.HttpMethod?.ToString().ToUpperInvariant()};");
+                    if(requestBodyParam != null)
+                        WriteLine($"content = (InputStream)(Object){requestBodyParam.Name};"); //TODO remove cast when serialization is available
                     DecreaseIndent();
                     WriteLine("}};");
-                    if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.QueryParameter))
-                        WriteLines($"final {code.Name.ToFirstCharacterUpperCase()}QueryParameters qParams = new {code.Name.ToFirstCharacterUpperCase()}QueryParameters();",
-                                   "q.accept(qParams);",
+                    if(queryStringParam != null)
+                        WriteLines($"final {code.HttpMethod.ToString().ToFirstCharacterUpperCase()}QueryParameters qParams = new {code.HttpMethod?.ToString().ToFirstCharacterUpperCase()}QueryParameters();",
+                                   $"{queryStringParam.Name}.accept(qParams);",
                                    "qParams.AddQueryParameters(requestInfo.queryParameters);");
-                    if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.Headers))
-                        WriteLine("h.accept(requestInfo.headers);");
+                    if(headersParam != null)
+                        WriteLine($"{headersParam.Name}.accept(requestInfo.headers);");
+                    WriteLine("return requestInfo;");
+                break;
+                case CodeMethodKind.RequestExecutor:
+                    var generatorMethodName = (code.Parent as CodeClass)
+                                                .InnerChildElements
+                                                .OfType<CodeMethod>()
+                                                .FirstOrDefault(x => x.MethodKind == CodeMethodKind.RequestGenerator && x.HttpMethod == code.HttpMethod)
+                                                ?.Name
+                                                ?.ToFirstCharacterLowerCase();
+                    WriteLine("try {");
+                    IncreaseIndent();
+                    WriteLine($"final RequestInfo requestInfo = {generatorMethodName}(");
+                    var requestInfoParameters = new List<string> { requestBodyParam?.Name, queryStringParam?.Name, headersParam?.Name }.Where(x => x != null);
+                    if(requestInfoParameters.Any()) {
+                        IncreaseIndent();
+                        WriteLine(requestInfoParameters.Aggregate((x,y) => $"{x}, {y}"));
+                        DecreaseIndent();
+                    }
+                    WriteLine(");");
                     if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.ResponseHandler))
                         WriteLine("return this.httpCore.sendAsync(requestInfo, responseHandler);");
                     else
