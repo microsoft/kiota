@@ -45,6 +45,10 @@ namespace Kiota.Builder
                 Parameters = Parameters.Select(x => x.Clone() as CodeParameter).ToList(),
                 Name = Name.Clone() as string,
                 HttpMethod = HttpMethod,
+                IsAsync = IsAsync,
+                Access = Access,
+                IsStatic = IsStatic,
+                GenerationProperties = new (GenerationProperties),
             };
         }
 
