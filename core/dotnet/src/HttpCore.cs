@@ -29,9 +29,11 @@ namespace KiotaCore
             }
             
             using var message = GetRequestMessageFromRequestInfo(requestInfo);
-            using var response = await this.client.SendAsync(message);
-            if(responseHandler == null)
+            var response = await this.client.SendAsync(message);
+            if(responseHandler == null) {
+                response?.Dispose();
                 return default; //TODO call default response handler which will handle deserialization.
+            }
             else
                 return await responseHandler.HandleResponseAsync<HttpResponseMessage, ModelType>(response);
         }
