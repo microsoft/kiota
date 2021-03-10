@@ -186,7 +186,7 @@ namespace Kiota.Builder
                 case CodeMethodKind.RequestGenerator:
                     WriteLines("const requestInfo = {");
                     IncreaseIndent();
-                    WriteLine("URI: this.currentPath ? new URL(this.currentPath): null,");
+                    WriteLine($"URI: this.{currentPathPropertyName} ? new URL(this.{currentPathPropertyName} + this.{pathSegmentPropertyName}): null,");
                     if(headersParam != null)
                         WriteLine($"headers: {headersParam.Name},");
                     WriteLine($"httpMethod: HttpMethod.{code.HttpMethod.ToString().ToUpperInvariant()},");

@@ -98,7 +98,7 @@ namespace Kiota.Builder
                 case CodeMethodKind.RequestGenerator:
                     WriteLine("final RequestInfo requestInfo = new RequestInfo() {{");
                     IncreaseIndent();
-                    WriteLines("uri = new URI(currentPath);",
+                    WriteLines($"uri = new URI({currentPathPropertyName} + {pathSegmentPropertyName});",
                                 $"httpMethod = HttpMethod.{code.HttpMethod?.ToString().ToUpperInvariant()};");
                     if(requestBodyParam != null)
                         WriteLine($"content = (InputStream)(Object){requestBodyParam.Name};"); //TODO remove cast when serialization is available
