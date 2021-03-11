@@ -28,6 +28,9 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
     private final static String contentTypeHeaderKey = "Content-Type";
     private final OkHttpClient client;
     private final AuthenticationProvider authProvider;
+    public HttpCore(@Nonnull final AuthenticationProvider authenticationProvider){
+        this(authenticationProvider, null);
+    }
     public HttpCore(@Nonnull final AuthenticationProvider authenticationProvider, @Nullable final OkHttpClient client) {
         this.authProvider = Objects.requireNonNull(authenticationProvider, "parameter authenticationProvider cannot be null");
         if(client == null) {
