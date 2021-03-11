@@ -22,11 +22,10 @@ public class AzureIdentityAuthenticationProvider implements AuthenticationProvid
 
         if(scopes == null) {
             _scopes = new ArrayList<String>();
+        } else if(scopes.length == 0) {
+            _scopes = Arrays.asList(new String[] { "https://graph.microsoft.com/.default" });
         } else {
             _scopes = Arrays.asList(scopes);
-        }
-        if(scopes.length == 0) {
-            _scopes.add("https://graph.microsoft.com/.default");
         }
     }
 
