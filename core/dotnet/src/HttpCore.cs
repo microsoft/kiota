@@ -43,7 +43,7 @@ namespace KiotaCore
                 RequestUri = new Uri(requestInfo.URI + 
                                         ((requestInfo.QueryParameters?.Any() ?? false) ? 
                                             "?" + requestInfo.QueryParameters
-                                                        .Select(x => $"{x.Key}={x.Value}")
+                                                        .Select(x => $"{x.Key}{(x.Value == null ? string.Empty : "=")}{x.Value?.ToString() ?? string.Empty}")
                                                         .Aggregate((x, y) => $"{x}&{y}") :
                                             string.Empty)),
                 
