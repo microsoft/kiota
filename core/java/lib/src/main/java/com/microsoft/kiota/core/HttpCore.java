@@ -56,10 +56,19 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
         } else {
             tokenFuture = CompletableFuture.completedFuture(null);
         }
-
-
-        // TODO Auto-generated method stub
-        return null;
+        return tokenFuture.thenCompose(x -> {
+            final HttpCoreCallbackFutureWrapper wrapper = new HttpCoreCallbackFutureWrapper();
+            this.client.newCall(getRequestFromRequestInfo(requestInfo)).enqueue(wrapper);
+            return wrapper.future;
+        }).thenCompose(response -> {
+            if(responseHandler == null) {
+                final CompletableFuture<ModelType> result = CompletableFuture.completedFuture(null); //TODO replace by native deserializer when available
+                response.close();
+                return result;
+            } else {
+                return responseHandler.handleResponseAsync(response);
+            }
+        });
     }
     private Request getRequestFromRequestInfo(@Nonnull final RequestInfo requestInfo) {
         final StringBuilder urlBuilder = new StringBuilder(requestInfo.uri.toString());
