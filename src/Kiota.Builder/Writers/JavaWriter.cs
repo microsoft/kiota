@@ -149,11 +149,13 @@ namespace Kiota.Builder
         }
         private const string pathSegmentPropertyName = "pathSegment";
         private const string currentPathPropertyName = "currentPath";
+        private const string httpCorePropertyName = "httpCore";
         private void AddRequestBuilderBody(string returnType, string suffix = default) {
             // we're assigning this temp variable because java doesn't have a way to differentiate references with same names in properties initializers
             // and because if currentPath is null it'll add "null" to the string...
-            WriteLine($"final String parentPath = ({currentPathPropertyName} == null ? \"\" : {currentPathPropertyName}) + {pathSegmentPropertyName}{suffix};");
-            WriteLine($"return new {returnType}() {{{{ {currentPathPropertyName} = parentPath; }}}};");
+            WriteLines($"final String parentPath = ({currentPathPropertyName} == null ? \"\" : {currentPathPropertyName}) + {pathSegmentPropertyName}{suffix};",
+                        $"final HttpCore parentCore = {httpCorePropertyName};", //this variable naming is because Java can't tell the difference in terms of scopes priority in property initializers
+                        $"return new {returnType}() {{{{ {currentPathPropertyName} = parentPath; {httpCorePropertyName} = parentCore; }}}};");
         }
         public override void WriteProperty(CodeProperty code)
         {
