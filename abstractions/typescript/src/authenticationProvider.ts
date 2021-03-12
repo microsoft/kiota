@@ -1,3 +1,3 @@
 export interface AuthenticationProvider {
-    getAuthorizationToken: (requestUrl: URL) => Promise<string>;
+    getAuthorizationToken: (requestUrl: string) => Promise<string>;
 }
