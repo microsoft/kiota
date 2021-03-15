@@ -29,13 +29,12 @@
     "registry": "https://npm.pkg.github.com"
   },
   "devDependencies": {
-    "@types/isomorphic-fetch": "0.0.35",
     "@types/node": "^14.14.34",
     "typescript": "^4.2.3"
   },
   "dependencies": {
     "@azure/identity": "^1.2.4",
     "@microsoft/kiota-abstractions": "^1.0.3",
-    "isomorphic-fetch": "^3.0.0"
+    "cross-fetch": "^3.1.0"
   }
 }

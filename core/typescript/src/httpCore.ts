@@ -1,5 +1,6 @@
 import { AuthenticationProvider, HttpCore as IHttpCore, RequestInfo, ResponseHandler } from '@microsoft/kiota-abstractions';
-import fetch from 'isomorphic-fetch';
+import { fetch, Headers as FetchHeadersCtor } from 'cross-fetch';
+import { RequestInit as FetchRequestInit, Headers as FetchHeaders } from 'cross-fetch/lib.fetch';
 export class HttpCore implements IHttpCore {
     private static readonly authorizationHeaderKey = "Authorization";
     /**
@@ -35,13 +36,13 @@ export class HttpCore implements IHttpCore {
             return {} as ModelType; //TODO call default respone handler which will handle deserialization
         }
     }
-    private getRequestFromRequestInfo = (requestInfo: RequestInfo): object => {
+    private getRequestFromRequestInfo = (requestInfo: RequestInfo): FetchRequestInit => {
         const request = {
             method: requestInfo.httpMethod?.toString(),
-            headers: new Map<string, string>(),
+            headers: new FetchHeadersCtor(),
             body: requestInfo.content,
-        };
-        requestInfo.headers?.forEach((v, k) => request.headers.set(k, v));
+        } as FetchRequestInit;
+        requestInfo.headers?.forEach((v, k) => (request.headers as FetchHeaders).set(k, v));
         return request;
     }
     private getRequestUrl = (requestInfo: RequestInfo) : string => {
