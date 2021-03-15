@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.OpenApi.Models;
 
-namespace Kiota.Builder {
+namespace Kiota.Builder.Extensions {
     public static class OpenApiSchemaExtensions {
         public static IEnumerable<string> GetClassNames(this OpenApiSchema schema) {
             if(schema.Items != null)

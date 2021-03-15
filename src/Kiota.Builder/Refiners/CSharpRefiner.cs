@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Text.RegularExpressions;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder {
     public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
