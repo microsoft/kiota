@@ -3,9 +3,9 @@ name: Dotnet Core
 on:
   push:
     branches: [ main ]
-    paths: ['core/dotnet/**', '.github/workflows/**']
+    paths: ['core/dotnet/**', '.github/workflows/**', 'scripts']
   pull_request:
-    paths: ['core/dotnet/**', '.github/workflows/**']
+    paths: ['core/dotnet/**', '.github/workflows/**', 'scripts']
 
 jobs:
   build:
@@ -18,6 +18,7 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 5.0.x
+      - pwsh: ./scripts/updateNugetCredentials.ps1 -username "baywet" -apiToken "${{ secrets.PUBLISH_GH_TOKEN }}" -nugetFileAbsolutePath "./core/dotnet/nuget.config"
       - name: Restore dependencies
         run: dotnet restore KiotaCore.sln
         working-directory: ${{ env.relativePath }}
@@ -38,6 +39,8 @@ jobs:
           name: drop
           path: |
             ${{ env.relativePath }}/src/bin/Release/*.nupkg
+      - run: git checkout ./core/dotnet/nuget.config
+        if: always()
   deploy:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
