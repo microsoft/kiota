@@ -17,7 +17,12 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: '14'
+      - run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.PUBLISH_GH_TOKEN }}" > .npmrc
+        working-directory: ${{ env.relativePath }}
       - run: npm ci
+        working-directory: ${{ env.relativePath }}
+      - run: rm .npmrc
+        if: always()
         working-directory: ${{ env.relativePath }}
       - run: npm run build
         working-directory: ${{ env.relativePath }}
@@ -46,3 +51,4 @@ jobs:
       - run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.PUBLISH_GH_TOKEN }}" > .npmrc
       - run: npm publish
       - run: rm .npmrc
+        if: always()
