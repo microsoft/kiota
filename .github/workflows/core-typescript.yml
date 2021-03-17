@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: '14'
       - run: |
-          echo "@microsoft:registry=https://npm.pkg.github.com/microsoft" >> .npmrc
+          echo "@microsoft:registry=https://npm.pkg.github.com/" >> .npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.PUBLISH_GH_TOKEN }}" >> .npmrc
         working-directory: ${{ env.relativePath }}
       - run: npm ci
