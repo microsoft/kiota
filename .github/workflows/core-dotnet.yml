@@ -18,7 +18,8 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 5.0.x
-      - pwsh: ./scripts/updateNugetCredentials.ps1 -username "baywet" -apiToken "${{ secrets.PUBLISH_GH_TOKEN }}" -nugetFileAbsolutePath "./core/dotnet/nuget.config"
+      - run: ./scripts/updateNugetCredentials.ps1 -username "baywet" -apiToken "${{ secrets.PUBLISH_GH_TOKEN }}" -nugetFileAbsolutePath "./core/dotnet/nuget.config"
+        shell: pwsh
       - name: Restore dependencies
         run: dotnet restore KiotaCore.sln
         working-directory: ${{ env.relativePath }}
