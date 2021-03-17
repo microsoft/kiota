@@ -12,7 +12,7 @@
 1. Add a `.npmrc` file with the following content
 
     ```Config
-    @microsoft:registry=https://npm.pkg.github.com/microsoft
+    @microsoft:registry=https://npm.pkg.github.com/
     ```
 
 1. `npm login --scope=@microsoft --registry=https://npm.pkg.github.com` (use a token with package:read, repo and SSO enabled for the Microsoft organization as the password)
