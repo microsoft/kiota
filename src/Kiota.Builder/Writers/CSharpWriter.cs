@@ -79,11 +79,10 @@ namespace Kiota.Builder
                     foreach(var otherProp in parentClass
                                                     .InnerChildElements
                                                     .OfType<CodeProperty>()
-                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)
-                                                    .Where(x => x.Type.Name == "string")) { //TODO map other types
+                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
                         WriteLine("{");
                         IncreaseIndent();
-                        WriteLine($"\"{otherProp.Name.ToFirstCharacterLowerCase()}\", (o,n) => {{ o.{otherProp.Name.ToFirstCharacterUpperCase()} = n.GetStringValue(); }}");
+                        WriteLine($"\"{otherProp.Name.ToFirstCharacterLowerCase()}\", (o,n) => {{ o.{otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type)}(); }}");
                         DecreaseIndent();//TODO serialization
                         WriteLine("},");
                     }
@@ -93,6 +92,28 @@ namespace Kiota.Builder
                 default:
                     WriteLine($"{GetAccessModifier(code.Access)} {propertyType} {code.Name.ToFirstCharacterUpperCase()} {{ {simpleBody} }}{defaultValue}");
                 break;
+            }
+        }
+        private string GetDeserializationMethodName(CodeTypeBase propType) {
+            var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
+            var propertyType = TranslateType(propType.Name);
+            if(isCollection && propType is CodeType currentType) {
+                if(currentType.TypeDefinition == null)
+                    return $"GetCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterUpperCase()}>().ToList";
+                else
+                    return $"GetCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>().ToList";
+            }
+            switch(propertyType) {
+                case "string":
+                case "bool":
+                case "int":
+                case "float":
+                case "double":
+                case "Guid":
+                case "DateTimeOffset":
+                    return $"Get{propertyType.ToFirstCharacterUpperCase()}Value";
+                default:
+                    return $"GetObjectValue<{propertyType.ToFirstCharacterUpperCase()}>";
             }
         }
         private const string pathSegmentPropertyName = "PathSegment";

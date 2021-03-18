@@ -39,12 +39,7 @@ namespace KiotaCore
                 using var contentStream = await response.Content.ReadAsStreamAsync();
                 using var jsonDocument = JsonDocument.Parse(contentStream);
                 var rootNode = new JsonParseNode(jsonDocument.RootElement);
-                var result = new ModelType();
-                foreach(var field in result.DeserializeFields) {
-                    var fieldNode = rootNode.GetChildNode(field.Key);
-                    if(fieldNode != null)
-                        field.Value.Invoke(result, fieldNode);
-                }
+                var result = rootNode.GetObjectValue<ModelType>();
                 response.Dispose();
                 return result;
             }

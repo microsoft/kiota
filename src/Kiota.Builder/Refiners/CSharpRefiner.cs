@@ -31,7 +31,7 @@ namespace Kiota.Builder {
             }
             CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
         }
-        private static readonly string[] defaultNamespacesForClasses = new string[] {"System", "System.Collections.Generic"};
+        private static readonly string[] defaultNamespacesForClasses = new string[] {"System", "System.Collections.Generic", "System.Linq"};
         private static readonly string[] defaultNamespacesForRequestBuilders = new string[] { "System.Threading.Tasks", "System.IO", "Kiota.Abstractions"};
         private void AddDefaultImports(CodeElement current) {
             if(current is CodeClass currentClass) {
