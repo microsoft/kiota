@@ -5,7 +5,9 @@ namespace Kiota.Builder
     public enum CodePropertyKind
     {
         Custom,
-        RequestBuilder
+        RequestBuilder,
+        Serializer,
+        Deserializer
     }
 
     public class CodeProperty : CodeTerminal
