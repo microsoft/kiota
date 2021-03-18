@@ -14,8 +14,22 @@ namespace Kiota.Builder {
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddAsyncSuffix(generatedCode);
             AddInnerClasses(generatedCode);
+            AddParsableInheritanceForModelClasses(generatedCode);
             CapitalizeNamespacesFirstLetters(generatedCode);
             AddCollectionImports(generatedCode);
+        }
+        private void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
+            if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model) {
+                var declaration = currentClass.StartBlock as CodeClass.Declaration;
+                declaration.Implements.Add(new CodeType(currentClass) {
+                    IsExternal = true,
+                    Name = $"IParsable<{currentClass.Name.ToFirstCharacterUpperCase()}>",
+                });
+                declaration.Usings.Add(new CodeUsing(currentClass) {
+                    Name = "Kiota.Abstractions.Serialization"
+                });
+            }
+            CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
         }
         private void AddCollectionImports(CodeElement currentElement) {
             if(currentElement is CodeProperty currentProperty && currentProperty.Type.CollectionKind == CodeType.CodeTypeCollectionKind.Complex) {
