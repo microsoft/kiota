@@ -48,7 +48,7 @@ namespace Kiota.Builder
                 WriteLine("}");
             }
         }
-
+        private const string parseNodeInterfaceName = "IParseNode";
         public override void WriteProperty(CodeProperty code)
         {
             var simpleBody = "get;";
@@ -69,6 +69,26 @@ namespace Kiota.Builder
                     AddRequestBuilderBody(propertyType);
                     DecreaseIndent();
                     WriteLine("}");
+                break;
+                case CodePropertyKind.Serializer:
+                case CodePropertyKind.Deserializer:
+                    var parentClass = code.Parent as CodeClass;
+                    var hideParentMember = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
+                    WriteLine($"{GetAccessModifier(code.Access)} {(hideParentMember ? "new " : string.Empty)}{code.Type.Name} {code.Name.ToFirstCharacterUpperCase()} => new Dictionary<string, Action<{parentClass.Name.ToFirstCharacterUpperCase()}, {parseNodeInterfaceName}>> {{");
+                    IncreaseIndent();
+                    foreach(var otherProp in parentClass
+                                                    .InnerChildElements
+                                                    .OfType<CodeProperty>()
+                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)
+                                                    .Where(x => x.Type.Name == "string")) { //TODO map other types
+                        WriteLine("{");
+                        IncreaseIndent();
+                        WriteLine($"\"{otherProp.Name.ToFirstCharacterLowerCase()}\", (o,n) => {{ o.{otherProp.Name.ToFirstCharacterUpperCase()} = n.GetStringValue(); }}");
+                        DecreaseIndent();//TODO serialization
+                        WriteLine("},");
+                    }
+                    DecreaseIndent();
+                    WriteLine("};");
                 break;
                 default:
                     WriteLine($"{GetAccessModifier(code.Access)} {propertyType} {code.Name.ToFirstCharacterUpperCase()} {{ {simpleBody} }}{defaultValue}");
