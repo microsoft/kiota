@@ -8,9 +8,6 @@ namespace Kiota.Abstractions.Serialization {
             get;
         }
 
-        IDictionary<string, Action<T, IParseNode>> SerializeFields
-        {
-            get;
-        }
+        void Serialize(ISerializationWriter writer);
     }
 }

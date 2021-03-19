@@ -35,9 +35,9 @@ namespace KiotaCore.Serialization {
         private static Type guidType = typeof(Guid);
         private static Type dateTimeOffsetType = typeof(DateTimeOffset);
         public IEnumerable<T> GetCollectionOfPrimitiveValues<T>() {
+            var genericType = typeof(T);
             foreach(var collectionValue in _jsonNode.EnumerateArray()) {
                 var currentParseNode = new JsonParseNode(collectionValue);
-                var genericType = typeof(T);
                 if(genericType == booleanType)
                     yield return (T)(object)currentParseNode.GetBoolValue();
                 else if(genericType == stringType)
