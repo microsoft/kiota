@@ -41,6 +41,7 @@ namespace KiotaCore
                 var rootNode = new JsonParseNode(jsonDocument.RootElement);
                 var result = rootNode.GetObjectValue<ModelType>();
                 response.Dispose();
+                requestInfo.Content?.Dispose();
                 return result;
             }
             else
