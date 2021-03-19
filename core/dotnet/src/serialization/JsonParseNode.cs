@@ -1,6 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using Kiota.Abstractions.Serialization;
 
@@ -48,20 +51,40 @@ namespace KiotaCore.Serialization {
                     throw new InvalidOperationException($"unknown type for deserialization {genericType.FullName}");
             }
         }
+        private static Type objectType = typeof(object);
         public T GetObjectValue<T>() where T: class, IParsable<T>, new() {
             var item = new T();
-            foreach(var field in item.DeserializeFields) { //TODO walk parent types
-                Debug.WriteLine($"getting property {field.Key}");
-                try {
-                    var fieldValue = _jsonNode.GetProperty(field.Key);
-                    if(fieldValue.ValueKind != JsonValueKind.Null) {
-                        field.Value.Invoke(item, new JsonParseNode(fieldValue));
-                    }
-                } catch(KeyNotFoundException) {
-                    Debug.WriteLine($"couldn't find property {field.Key}");
+            var baseType = typeof(T).BaseType;
+            while(baseType != null && baseType != objectType) {
+                Debug.WriteLine($"setting property values for parent type {baseType.Name}");
+                var property = baseType.GetProperty(nameof(item.DeserializeFields), BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);
+                if(property == null)
+                    baseType = null;
+                else {
+                    var value = (IEnumerable)property.GetValue(item);
+                    AssignFieldValues(item, value);
+                    baseType = baseType.BaseType;
                 }
             }
+            AssignFieldValues(item, item.DeserializeFields);
             return item;
+        }
+        private void AssignFieldValues<T>(T item, IEnumerable fields) where T: class, IParsable<T>, new() { 
+            foreach(var field in fields) {
+                // we need that esotheric reflection + casting combination because covariance is not supported when trying to cast to IDictionary<string, Action<T or object, IParseNode>> above
+                var objectType = field.GetType();
+                var key = objectType.GetProperty("Key").GetValue(field) as string;
+                Debug.WriteLine($"getting property {key}");
+                try {
+                    var fieldValue = _jsonNode.GetProperty(key);
+                    if(fieldValue.ValueKind != JsonValueKind.Null) {
+                        var action = objectType.GetProperty("Value").GetValue(field) as Action<T, IParseNode>;
+                        action.Invoke(item, new JsonParseNode(fieldValue));
+                    }
+                } catch(KeyNotFoundException) {
+                    Debug.WriteLine($"couldn't find property {key}");
+                }
+            }
         }
         public IParseNode GetChildNode(string identifier) => new JsonParseNode(_jsonNode.GetProperty(identifier ?? throw new ArgumentNullException(nameof(identifier))));
     }
