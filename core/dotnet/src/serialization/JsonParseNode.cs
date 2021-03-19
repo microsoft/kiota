@@ -57,28 +57,28 @@ namespace KiotaCore.Serialization {
             var baseType = typeof(T).BaseType;
             while(baseType != null && baseType != objectType) {
                 Debug.WriteLine($"setting property values for parent type {baseType.Name}");
-                var property = baseType.GetProperty(nameof(item.DeserializeFields), BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);
-                if(property == null)
+                var baseTypeFieldsProperty = baseType.GetProperty(nameof(item.DeserializeFields), BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);
+                if(baseTypeFieldsProperty == null)
                     baseType = null;
                 else {
-                    var value = (IEnumerable)property.GetValue(item);
-                    AssignFieldValues(item, value);
+                    var baseTypeFields = (IEnumerable)baseTypeFieldsProperty.GetValue(item);
+                    AssignFieldValues(item, baseTypeFields);
                     baseType = baseType.BaseType;
                 }
             }
             AssignFieldValues(item, item.DeserializeFields);
             return item;
         }
-        private void AssignFieldValues<T>(T item, IEnumerable fields) where T: class, IParsable<T>, new() { 
-            foreach(var field in fields) {
+        private void AssignFieldValues<T>(T item, IEnumerable fieldDeserializers) where T: class, IParsable<T>, new() { 
+            foreach(var fieldDeserializer in fieldDeserializers) {
                 // we need that esotheric reflection + casting combination because covariance is not supported when trying to cast to IDictionary<string, Action<T or object, IParseNode>> above
-                var objectType = field.GetType();
-                var key = objectType.GetProperty("Key").GetValue(field) as string;
+                var objectType = fieldDeserializer.GetType();
+                var key = objectType.GetProperty("Key").GetValue(fieldDeserializer) as string;
                 Debug.WriteLine($"getting property {key}");
                 try {
                     var fieldValue = _jsonNode.GetProperty(key);
                     if(fieldValue.ValueKind != JsonValueKind.Null) {
-                        var action = objectType.GetProperty("Value").GetValue(field) as Action<T, IParseNode>;
+                        var action = objectType.GetProperty("Value").GetValue(fieldDeserializer) as Action<T, IParseNode>;
                         action.Invoke(item, new JsonParseNode(fieldValue));
                     }
                 } catch(KeyNotFoundException) {
