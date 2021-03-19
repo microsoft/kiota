@@ -269,6 +269,15 @@ namespace Kiota.Builder
                 IsExternal = true
             };
             currentClass.AddProperty(httpCoreProperty);
+
+            var serializerFactoryProperty = new CodeProperty(currentClass) {
+                Name = "serializerFactory"
+            };
+            serializerFactoryProperty.Type = new CodeType(serializerFactoryProperty) {
+                Name = "Func<string, ISerializationWriter>",
+                IsExternal = true
+            };
+            currentClass.AddProperty(serializerFactoryProperty);
         }
 
         /// <summary>
@@ -570,11 +579,11 @@ namespace Kiota.Builder
             }
             else if(schema?.AllOf?.Any(x => x?.Type?.Equals(OpenApiObjectType) ?? false) ?? false)
                 CreatePropertiesForModelClass(rootNode, currentNode, schema.AllOf.Last(x => x.Type.Equals(OpenApiObjectType)), operation, ns, model, parent);
-            AddSerializationFields(model);
+            AddSerializationMembers(model);
         }
         private const string deserializeFieldsPropName = "DeserializeFields";
-        private const string serializeFieldsPropName = "SerializeFields";
-        private void AddSerializationFields(CodeClass model) {
+        private const string serializeMethodName = "Serialize";
+        private void AddSerializationMembers(CodeClass model) {
             var serializationPropsType = $"IDictionary<string, Action<{model.Name.ToFirstCharacterUpperCase()}, IParseNode>>";
             if(!model.ContainsMember(deserializeFieldsPropName)) {
                 var deserializeProp = new CodeProperty(model) {
@@ -588,17 +597,20 @@ namespace Kiota.Builder
                 };
                 model.AddProperty(deserializeProp);
             }
-            if(!model.ContainsMember(serializeFieldsPropName)) {
-                var serializeProp = new CodeProperty(model) {
-                    Name = serializeFieldsPropName,
-                    PropertyKind = CodePropertyKind.Serializer,
-                    Access = AccessModifier.Public,
-                    ReadOnly = true,
+            if(!model.ContainsMember(serializeMethodName)) {
+                var serializeMethod = new CodeMethod(model) {
+                    Name = serializeMethodName,
+                    MethodKind = CodeMethodKind.Serializer,
+                    IsAsync = false,
                 };
-                serializeProp.Type = new CodeType(serializeProp) {
-                    Name = serializationPropsType
+                serializeMethod.ReturnType = new CodeType(serializeMethod) { Name = "void" };
+                var parameter = new CodeParameter(serializeMethod) {
+                    Name = "writer",
                 };
-                model.AddProperty(serializeProp);
+                parameter.Type = new CodeType(parameter) { Name = "ISerializationWriter" };
+                serializeMethod.AddParameter(parameter);
+                
+                model.AddMethod(serializeMethod);
             }
         }
         private CodeClass CreateOperationParameter(OpenApiUrlSpaceNode node, KeyValuePair<OperationType, OpenApiOperation> operation, CodeClass parentClass)

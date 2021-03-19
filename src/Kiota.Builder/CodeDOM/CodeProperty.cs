@@ -6,7 +6,6 @@ namespace Kiota.Builder
     {
         Custom,
         RequestBuilder,
-        Serializer,
         Deserializer
     }
 
