@@ -51,7 +51,7 @@ namespace KiotaCore.Serialization {
                 else if(genericType == guidType)
                     yield return (T)(object)currentParseNode.GetGuidValue();
                 else if(genericType == dateTimeOffsetType)
-                    yield return (T)(object)currentParseNode.GetGuidValue();
+                    yield return (T)(object)currentParseNode.GetDateTimeOffsetValue();
                 else
                     throw new InvalidOperationException($"unknown type for deserialization {genericType.FullName}");
             }
