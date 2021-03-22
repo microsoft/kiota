@@ -20,8 +20,10 @@ namespace KiotaCore.Serialization {
             return stream;
         }
         public void WriteStringValue(string key, string value) {
-            if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
-            writer.WriteStringValue(value);
+            if(value != null) { // we want to keep empty string because they are meaningfull
+                if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
+                writer.WriteStringValue(value);
+            }
         }
         public void WriteBoolValue(string key, bool value) {
             if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
@@ -48,9 +50,9 @@ namespace KiotaCore.Serialization {
             writer.WriteStringValue(value);
         }
         public void WriteCollectionOfPrimitiveValues<T>(string key, IEnumerable<T> values) {
-            if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
-            writer.WriteStartArray();
-            if(values?.Any() ?? false)
+            if(values != null) { //empty array is meaningful
+                if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
+                writer.WriteStartArray();
                 foreach(var collectionValue in values) {
                     switch(collectionValue) {
                         case bool v:
@@ -78,18 +80,20 @@ namespace KiotaCore.Serialization {
                             throw new InvalidOperationException($"unknown type for serialization {collectionValue.GetType().FullName}");
                     }
                 }
-            writer.WriteEndArray();
+                writer.WriteEndArray();
+            }
         }
         public void WriteCollectionOfObjectValues<T>(string key, IEnumerable<T> values) where T : class, IParsable<T>, new() {
-            if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
-            writer.WriteStartArray();
-            if(values?.Any() ?? false)
+            if(values != null) { //empty array is meaningful
+                if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
+                writer.WriteStartArray();
                 foreach(var item in values.Where(x => x != null)) {
                     writer.WriteStartObject();
                     item.Serialize(this);
                     writer.WriteEndObject();
                 }
-            writer.WriteEndArray();
+                writer.WriteEndArray();
+            }
         }
         public void WriteObjectValue<T>(string key, T value) where T : class, IParsable<T>, new() {
             if(value != null) {
