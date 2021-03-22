@@ -15,10 +15,12 @@ namespace Kiota.Abstractions
         public Stream Content { get; set; }
         private const string jsonContentType = "application/json";
         public async Task SetJsonContentFromParsable<T>(T item, Func<string, ISerializationWriter> writerFactory) where T : class, IParsable<T>, new() {
-            using var writer = writerFactory.Invoke(jsonContentType);
-            writer.WriteObjectValue(null, item);
-            Headers.Add("Content-Type", jsonContentType);
-            Content = await writer.GetSerializedContent();
+            if(writerFactory != null) {
+                using var writer = writerFactory.Invoke(jsonContentType);
+                writer.WriteObjectValue(null, item);
+                Headers.Add("Content-Type", jsonContentType);
+                Content = await writer.GetSerializedContent();
+            }
         }
     }
 }
