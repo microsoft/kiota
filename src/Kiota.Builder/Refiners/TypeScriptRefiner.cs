@@ -13,6 +13,7 @@ namespace Kiota.Builder {
             AddDefaultImports(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, "ById");
             CorrectCoreType(generatedCode);
+            FixReferencesToEntityType(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
             AddParsableInheritanceForModelClasses(generatedCode);
         }

@@ -43,7 +43,10 @@ namespace Kiota.Builder
                                                     GetIndent()
                                                 : string.Empty;
                     DecreaseIndent();
-                    return $"{{{innerDeclaration}}}";
+                    if(string.IsNullOrEmpty(innerDeclaration))
+                        return "object";
+                    else
+                        return $"{{{innerDeclaration}}}";
                 }
                 else
                     return $"{typeName}{collectionSuffix}";
@@ -170,21 +173,19 @@ namespace Kiota.Builder
             var propertyType = TranslateType(propType.Name);
             if(isCollection && propType is CodeType currentType) {
                 if(currentType.TypeDefinition == null)
-                    return $"GetCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>";
+                    return $"getCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>";
                 else
-                    return $"GetCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>";
+                    return $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>";
             }
             switch(propertyType) {
                 case "string":
-                case "bool":
-                case "int":
-                case "float":
-                case "double":
+                case "boolean":
+                case "number":
                 case "Guid":
                 case "DateTimeOffset":
-                    return $"Get{propertyType.ToFirstCharacterUpperCase()}Value";
+                    return $"get{propertyType.ToFirstCharacterUpperCase()}Value";
                 default:
-                    return $"GetObjectValue<{propertyType.ToFirstCharacterUpperCase()}>";
+                    return $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>";
             }
         }
         private string GetSerializationMethodName(CodeTypeBase propType) {
@@ -192,21 +193,19 @@ namespace Kiota.Builder
             var propertyType = TranslateType(propType.Name);
             if(isCollection && propType is CodeType currentType) {
                 if(currentType.TypeDefinition == null)
-                    return $"WriteCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>";
+                    return $"writeCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>";
                 else
-                    return $"WriteCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>";
+                    return $"writeCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>";
             }
             switch(propertyType) {
                 case "string":
-                case "bool":
-                case "int":
-                case "float":
-                case "double":
+                case "boolean":
+                case "number":
                 case "Guid":
                 case "DateTimeOffset":
-                    return $"Write{propertyType.ToFirstCharacterUpperCase()}Value";
+                    return $"write{propertyType.ToFirstCharacterUpperCase()}Value";
                 default:
-                    return $"WriteObjectValue<{propertyType.ToFirstCharacterUpperCase()}>";
+                    return $"writeObjectValue<{propertyType.ToFirstCharacterUpperCase()}>";
             }
         }
         private const string currentPathPropertyName = "currentPath";
@@ -246,19 +245,16 @@ namespace Kiota.Builder
                     }
                     break;
                 case CodeMethodKind.RequestGenerator:
-                    WriteLines("const requestInfo = {");
-                    IncreaseIndent();
-                    WriteLine($"URI: (this.{currentPathPropertyName} ?? '') + this.{pathSegmentPropertyName},");
+                    WriteLines("const requestInfo = new RequestInfo();",
+                                $"requestInfo.URI = (this.{currentPathPropertyName} ?? '') + this.{pathSegmentPropertyName},",
+                                $"requestInfo.httpMethod = HttpMethod.{code.HttpMethod.ToString().ToUpperInvariant()},");
                     if(headersParam != null)
-                        WriteLine($"headers: {headersParam.Name},");
-                    WriteLine($"httpMethod: HttpMethod.{code.HttpMethod.ToString().ToUpperInvariant()},");
-                    if(requestBodyParam != null)
-                        WriteLine($"content: {requestBodyParam.Name} as unknown,"); //TODO remvoe cast when serialization is available
+                        WriteLine($"{headersParam.Name} && requestInfo.setHeadersFromRawObject(h);");
                     if(queryStringParam != null)
-                        WriteLine($"queryParameters: {queryStringParam.Name},");
-                    DecreaseIndent();
-                    WriteLines("} as RequestInfo;",
-                                "return requestInfo;");
+                        WriteLines($"{queryStringParam.Name} && requestInfo.setQueryStringParametersFromRawObject(q);");
+                    if(requestBodyParam != null)
+                        WriteLine($"requestInfo.setJsonContentFromParsable({requestBodyParam.Name}, this.{SerializerFactoryPropertyName});"); //TODO we're making a big assumption here that everything will be json
+                    WriteLine("return requestInfo;");
                 break;
                 case CodeMethodKind.RequestExecutor:
                     var generatorMethodName = (code.Parent as CodeClass)

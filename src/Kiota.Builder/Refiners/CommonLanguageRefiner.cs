@@ -9,6 +9,21 @@ namespace Kiota.Builder {
         public abstract void Refine(CodeNamespace generatedCode);
 
         private const string pathSegmentPropertyName = "pathSegment";
+        // temporary patch of type to it resolves as the builder sets types we didn't generate to entity
+        protected void FixReferencesToEntityType(CodeElement currentElement, CodeClass entityClass = null){
+            if(entityClass == null)
+                entityClass = currentElement.GetImmediateParentOfType<CodeNamespace>()
+                            .GetRootNamespace()
+                            .GetChildElementOfType<CodeClass>(x => x.Name.Equals("entity", StringComparison.InvariantCultureIgnoreCase));
+
+            if(currentElement is CodeMethod currentMethod 
+                && currentMethod.ReturnType is CodeType currentReturnType
+                && currentReturnType.Name.Equals("entity", StringComparison.InvariantCultureIgnoreCase)
+                && currentReturnType.TypeDefinition == null)
+                currentReturnType.TypeDefinition = entityClass;
+
+            CrawlTree(currentElement, (c) => FixReferencesToEntityType(c, entityClass));
+        }
         protected void ConvertUnionTypesToWrapper(CodeElement currentElement) {
             if(currentElement is CodeMethod currentMethod) {
                 if(currentMethod.ReturnType is CodeUnionType currentUnionType)
