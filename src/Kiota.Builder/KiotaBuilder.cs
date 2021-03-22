@@ -593,7 +593,8 @@ namespace Kiota.Builder
                     ReadOnly = true,
                 };
                 deserializeProp.Type = new CodeType(deserializeProp) {
-                    Name = serializationPropsType
+                    Name = serializationPropsType,
+                    IsNullable = false,
                 };
                 model.AddProperty(deserializeProp);
             }
@@ -603,7 +604,7 @@ namespace Kiota.Builder
                     MethodKind = CodeMethodKind.Serializer,
                     IsAsync = false,
                 };
-                serializeMethod.ReturnType = new CodeType(serializeMethod) { Name = "void" };
+                serializeMethod.ReturnType = new CodeType(serializeMethod) { Name = "void", IsNullable = false };
                 var parameter = new CodeParameter(serializeMethod) {
                     Name = "writer",
                 };
