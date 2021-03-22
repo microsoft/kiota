@@ -5,3 +5,4 @@ export * from "./responseHandler";
 export * from "./authenticationProvider";
 export * from "./nativeResponseHandler";
 export * from "./nativeResponseWrapper";
+export * from './serialization';
