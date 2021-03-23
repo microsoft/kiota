@@ -40,8 +40,9 @@ export class JsonParseNode implements ParseNode {
         return result;
     }
     private assignFieldValues = <T extends Parsable<T>>(item: T) : void => {
+        const fields = item.deserializeFields();
         Object.entries(this._jsonNode as any).forEach(([k, v]) => {
-            const deserializer = item.deserializeFields.get(k);
+            const deserializer = fields.get(k);
             deserializer && deserializer(item, new JsonParseNode(v));
         });
     }

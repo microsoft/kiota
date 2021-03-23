@@ -173,9 +173,9 @@ namespace Kiota.Builder
             var propertyType = TranslateType(propType.Name);
             if(isCollection && propType is CodeType currentType) {
                 if(currentType.TypeDefinition == null)
-                    return $"getCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>";
+                    return $"getCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>()";
                 else
-                    return $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>";
+                    return $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
             }
             switch(propertyType) {
                 case "string":
@@ -183,9 +183,9 @@ namespace Kiota.Builder
                 case "number":
                 case "Guid":
                 case "DateTimeOffset":
-                    return $"get{propertyType.ToFirstCharacterUpperCase()}Value";
+                    return $"get{propertyType.ToFirstCharacterUpperCase()}Value()";
                 default:
-                    return $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>";
+                    return $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
             }
         }
         private string GetSerializationMethodName(CodeTypeBase propType) {
@@ -221,7 +221,7 @@ namespace Kiota.Builder
         }
         public override void WriteMethod(CodeMethod code)
         {
-            WriteLine($"{GetAccessModifier(code.Access)} readonly {code.Name.ToFirstCharacterLowerCase()} = {(code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? "async ": string.Empty)}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.ReturnType.IsNullable ? " | undefined" : string.Empty)}{(code.IsAsync ? ">": string.Empty)} => {{");
+            WriteLine($"{GetAccessModifier(code.Access)} {code.Name.ToFirstCharacterLowerCase()} {(code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? "async ": string.Empty)}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.ReturnType.IsNullable ? " | undefined" : string.Empty)}{(code.IsAsync ? ">": string.Empty)} {{");
             IncreaseIndent();
             var returnType = GetTypeString(code.ReturnType);
             var parentClass = code.Parent as CodeClass;
@@ -233,6 +233,19 @@ namespace Kiota.Builder
                 case CodeMethodKind.IndexerBackwardCompatibility:
                     var pathSegment = code.GenerationProperties.ContainsKey(pathSegmentPropertyName) ? code.GenerationProperties[pathSegmentPropertyName] as string : string.Empty;
                     AddRequestBuilderBody(returnType, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
+                    break;
+                case CodeMethodKind.DeserializerBackwardCompatibility:
+                    var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits == null;
+                    WriteLine($"return new Map<string, (item: {parentClass.Name.ToFirstCharacterUpperCase()}, node: ParseNode) => void>([{(inherits ? string.Empty : "...super.deserializeFields(),")}");
+                    IncreaseIndent();
+                    foreach(var otherProp in parentClass
+                                                    .InnerChildElements
+                                                    .OfType<CodeProperty>()
+                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
+                        WriteLine($"[\"{otherProp.Name.ToFirstCharacterLowerCase()}\", (o, n) => {{ o.{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type)}; }}],");
+                    }
+                    DecreaseIndent();
+                    WriteLine("]);");
                     break;
                 case CodeMethodKind.Serializer:
                     if(shouldHide)
@@ -285,37 +298,20 @@ namespace Kiota.Builder
         {
             var parentClass = code.Parent as CodeClass;
             var returnType = GetTypeString(code.Type);
-            if(code.PropertyKind == CodePropertyKind.RequestBuilder)
-                WriteLine($"{GetAccessModifier(code.Access)} get {code.Name.ToFirstCharacterLowerCase()}(): {returnType} {{");
-            else {
-                var defaultValue = string.IsNullOrEmpty(code.DefaultValue) ? string.Empty : $" = {code.DefaultValue}";
-                var singleLiner = code.PropertyKind == CodePropertyKind.Custom;
-                WriteLine($"{GetAccessModifier(code.Access)}{(code.ReadOnly ? " readonly ": " ")}{code.Name.ToFirstCharacterLowerCase()}{(code.Type.IsNullable ? "?" : string.Empty)}: {returnType}{(code.Type.IsNullable ? " | undefined" : string.Empty)}{defaultValue}{(singleLiner ? ";" : string.Empty)}");
-            }
             switch(code.PropertyKind) {
                 case CodePropertyKind.Deserializer:
-                    var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits == null;
-                    IncreaseIndent();
-                    WriteLine($"= new Map<string, (item: {parentClass.Name.ToFirstCharacterUpperCase()}, node: ParseNode) => void>([{(inherits ? string.Empty : "...super.deserializeFields,")}");
-                    IncreaseIndent();
-                    foreach(var otherProp in parentClass
-                                                    .InnerChildElements
-                                                    .OfType<CodeProperty>()
-                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
-                        WriteLine($"[\"{otherProp.Name.ToFirstCharacterLowerCase()}\", (o, n) => {{ o.{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type)}(); }}],");
-                    }
-                    DecreaseIndent();
-                    DecreaseIndent();
-                    WriteLine("]);");
-                break;
+                    throw new InvalidOperationException("typescript uses methods for the deserializers and this property should have been converted to a method");
                 case CodePropertyKind.RequestBuilder:
+                    WriteLine($"{GetAccessModifier(code.Access)} get {code.Name.ToFirstCharacterLowerCase()}(): {returnType} {{");
                     IncreaseIndent();
                     AddRequestBuilderBody(returnType);
                     DecreaseIndent();
                     WriteLine("}");
                 break;
                 default:
-                    //NOOP
+                    var defaultValue = string.IsNullOrEmpty(code.DefaultValue) ? string.Empty : $" = {code.DefaultValue}";
+                    var singleLiner = code.PropertyKind == CodePropertyKind.Custom;
+                    WriteLine($"{GetAccessModifier(code.Access)}{(code.ReadOnly ? " readonly ": " ")}{code.Name.ToFirstCharacterLowerCase()}{(code.Type.IsNullable ? "?" : string.Empty)}: {returnType}{(code.Type.IsNullable ? " | undefined" : string.Empty)}{defaultValue}{(singleLiner ? ";" : string.Empty)}");
                 break;
             }
         }

@@ -16,6 +16,7 @@ namespace Kiota.Builder {
             FixReferencesToEntityType(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
             AddParsableInheritanceForModelClasses(generatedCode);
+            ConvertDeserializerPropsToMethods(generatedCode);
         }
         private void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model) {
