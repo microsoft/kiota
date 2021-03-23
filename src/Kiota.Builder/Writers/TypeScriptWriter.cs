@@ -284,7 +284,7 @@ namespace Kiota.Builder
                         DecreaseIndent();
                     }
                     WriteLine(");");
-                    WriteLine($"return this.httpCore?.sendAsync<{returnType}>(requestInfo, responseHandler) ?? Promise.reject(new Error('http core is null'));");
+                    WriteLine($"return this.httpCore?.sendAsync<{returnType}>(requestInfo, {returnType}, responseHandler) ?? Promise.reject(new Error('http core is null'));");
                     break;
                 default:
                     WriteLine($"return {(code.IsAsync ? "Promise.resolve(" : string.Empty)}{(code.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{(code.IsAsync ? ")" : string.Empty)};");
