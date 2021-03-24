@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder {
     public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner

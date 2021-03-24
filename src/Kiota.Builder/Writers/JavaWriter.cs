@@ -74,7 +74,7 @@ namespace Kiota.Builder
         {
             throw new InvalidOperationException("indexers are not supported in Java, the refiner should have replaced those by methods");
         }
-
+        private const string serializerFactoryParamName = "serializerFactory";
         public override void WriteMethod(CodeMethod code)
         {
             //TODO javadoc
@@ -125,10 +125,10 @@ namespace Kiota.Builder
                     IncreaseIndent();
                     WriteLines($"uri = new URI({currentPathPropertyName} + {pathSegmentPropertyName});",
                                 $"httpMethod = HttpMethod.{code.HttpMethod?.ToString().ToUpperInvariant()};");
-                    if(requestBodyParam != null)
-                        WriteLine($"content = (InputStream)(Object){requestBodyParam.Name};"); //TODO remove cast when serialization is available
                     DecreaseIndent();
                     WriteLine("}};");
+                    if(requestBodyParam != null)
+                        WriteLine($"requestInfo.setJsonContentFromParsable({requestBodyParam.Name}, {serializerFactoryParamName});"); //TODO we're making a big assumption here that the request is json
                     if(queryStringParam != null)
                         WriteLines($"final {code.HttpMethod.ToString().ToFirstCharacterUpperCase()}QueryParameters qParams = new {code.HttpMethod?.ToString().ToFirstCharacterUpperCase()}QueryParameters();",
                                    $"{queryStringParam.Name}.accept(qParams);",
@@ -155,9 +155,9 @@ namespace Kiota.Builder
                     }
                     WriteLine(");");
                     if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.ResponseHandler))
-                        WriteLine("return this.httpCore.sendAsync(requestInfo, responseHandler);");
+                        WriteLine($"return this.httpCore.sendAsync(requestInfo, {GetTypeString(code.ReturnType)}.class, responseHandler);");
                     else
-                        WriteLine("return this.httpCore.sendAsync(requestInfo, null);");
+                        WriteLine($"return this.httpCore.sendAsync(requestInfo, {GetTypeString(code.ReturnType)}.class, null);");
                     DecreaseIndent();
                     WriteLine("} catch (URISyntaxException ex) {");
                     IncreaseIndent();
