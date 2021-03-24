@@ -150,23 +150,25 @@ public class JsonSerializationWriter implements SerializationWriter {
     }
     public <T extends Parsable> void writeObjectValue(final String key, final T value) {
         try {
-            if(key != null && !key.isEmpty()) {
-                writer.name(key);
+            if(value != null) {
+                if(key != null && !key.isEmpty()) {
+                    writer.name(key);
+                }
+                writer.beginObject();
+                value.serialize(this);
+                writer.endObject();
             }
-            writer.beginObject();
-            value.serialize(this);
-            writer.endObject();
         } catch (IOException ex) {
             throw new RuntimeException("could not serialize value", ex);
         }
     }
-    public CompletableFuture<InputStream> getSerializedContent() {
+    public InputStream getSerializedContent() {
         try {
             this.writer.flush();
-            return CompletableFuture.completedFuture(new ByteArrayInputStream(this.stream.toByteArray()));
+            return new ByteArrayInputStream(this.stream.toByteArray());
             //This copies the whole array in memory could result in memory pressure for large objects, we might want to replace by some kind of piping in the future
         } catch (IOException ex) {
-            return CompletableFuture.failedFuture(ex);
+            throw new RuntimeException(ex);
         }
     }
     public void close() throws IOException {
