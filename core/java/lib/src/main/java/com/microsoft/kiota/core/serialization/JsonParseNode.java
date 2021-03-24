@@ -38,13 +38,13 @@ public class JsonParseNode implements ParseNode {
     public Boolean getBooleanValue() {
         return currentNode.getAsBoolean();
     }
-    public Integer getIntValue() {
+    public Integer getIntegerValue() {
         return currentNode.getAsInt();
     }
     public Float getFloatValue() {
         return currentNode.getAsFloat();
     }
-    public Long getDoubleValue() {
+    public Long getLongValue() {
         return currentNode.getAsLong();
     }
     public UUID getGuidValue() {

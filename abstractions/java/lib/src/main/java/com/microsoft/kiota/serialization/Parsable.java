@@ -8,5 +8,5 @@ import javax.annotation.Nonnull;
 public interface Parsable<T> {
     @Nonnull
     Map<String, BiConsumer<T, ParseNode>> getDeserializeFields();
-    void Serialize(@Nonnull final SerializationWriter writer);
+    void serialize(@Nonnull final SerializationWriter writer);
 }

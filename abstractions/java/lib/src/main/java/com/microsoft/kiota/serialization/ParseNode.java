@@ -13,11 +13,11 @@ public interface ParseNode {
     @Nonnull
     Boolean getBooleanValue();
     @Nonnull
-    Integer getIntValue();
+    Integer getIntegerValue();
     @Nonnull
     Float getFloatValue();
     @Nonnull
-    Long getDoubleValue();
+    Long getLongValue();
     @Nonnull
     UUID getGuidValue();
     @Nonnull
