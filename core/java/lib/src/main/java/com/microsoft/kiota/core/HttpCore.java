@@ -16,11 +16,14 @@ import javax.annotation.Nullable;
 import com.microsoft.kiota.RequestInfo;
 import com.microsoft.kiota.ResponseHandler;
 import com.microsoft.kiota.AuthenticationProvider;
+import com.microsoft.kiota.core.serialization.JsonParseNode;
+import com.microsoft.kiota.serialization.Parsable;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
+import okhttp3.ResponseBody;
 import okio.BufferedSink;
 
 public class HttpCore implements com.microsoft.kiota.HttpCore {
@@ -41,7 +44,7 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
     }
     @Override
     @Nonnull
-    public <ModelType> CompletableFuture<ModelType> sendAsync(@Nonnull final RequestInfo requestInfo, @Nullable final ResponseHandler responseHandler) {
+    public <ModelType extends Parsable> CompletableFuture<ModelType> sendAsync(@Nonnull final RequestInfo requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
 
         CompletableFuture<Void> tokenFuture;
@@ -65,9 +68,17 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
             return wrapper.future;
         }).thenCompose(response -> {
             if(responseHandler == null) {
-                final CompletableFuture<ModelType> result = CompletableFuture.completedFuture(null); //TODO replace by native deserializer when available
-                response.close();
-                return result;
+                final ResponseBody body = response.body();
+                try {
+                    final String rawJson = body.string();
+                    final JsonParseNode rootNode = new JsonParseNode(rawJson);
+                    final ModelType result = rootNode.getObjectValue(targetClass);
+                    return CompletableFuture.completedStage(result);
+                } catch(IOException ex) {
+                    return CompletableFuture.failedFuture(new RuntimeException("failed to read the response body", ex));
+                } finally {
+                    response.close();
+                }
             } else {
                 return responseHandler.handleResponseAsync(response);
             }

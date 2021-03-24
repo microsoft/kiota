@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonParser;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -23,6 +24,10 @@ import javax.annotation.Nonnull;
 
 public class JsonParseNode implements ParseNode {
     private final JsonElement currentNode;
+    public JsonParseNode(@Nonnull final String rawJson) {
+        Objects.requireNonNull(rawJson, "parameter node cannot be null");
+        currentNode = JsonParser.parseString(rawJson);
+    }
     public JsonParseNode(@Nonnull final JsonElement node) {
         currentNode = Objects.requireNonNull(node, "parameter node cannot be null");
     }
@@ -126,6 +131,7 @@ public class JsonParseNode implements ParseNode {
             final Constructor<T> constructor = targetClass.getConstructor();
             final T item = constructor.newInstance();
             assignFieldValues(item, item.getDeserializeFields());
+            //TODO additional properties when the strucutre is available
             return item;
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException ex) {
             throw new RuntimeException("Error during deserialization", ex);
@@ -135,7 +141,11 @@ public class JsonParseNode implements ParseNode {
         if(currentNode.isJsonObject()) {
             for (final Map.Entry<String, JsonElement> fieldEntry : currentNode.getAsJsonObject().entrySet()) {
                 final BiConsumer<? super T, ParseNode> fieldDeserializer = fieldDeserializers.get(fieldEntry.getKey());
-                fieldDeserializer.accept(item, new JsonParseNode(fieldEntry.getValue()));
+                final JsonElement fieldValue = fieldEntry.getValue();
+                if(fieldDeserializer != null && !fieldValue.isJsonNull()) {
+                    System.out.println("deserializing field " + fieldEntry.getKey());
+                    fieldDeserializer.accept(item, new JsonParseNode(fieldValue));
+                }
             }
         }
     }
