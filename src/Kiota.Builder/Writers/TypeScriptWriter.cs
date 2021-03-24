@@ -235,8 +235,8 @@ namespace Kiota.Builder
                     AddRequestBuilderBody(returnType, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
                     break;
                 case CodeMethodKind.DeserializerBackwardCompatibility:
-                    var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits == null;
-                    WriteLine($"return new Map<string, (item: {parentClass.Name.ToFirstCharacterUpperCase()}, node: ParseNode) => void>([{(inherits ? string.Empty : "...super.deserializeFields(),")}");
+                    var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
+                    WriteLine($"return new Map<string, (item: {parentClass.Name.ToFirstCharacterUpperCase()}, node: ParseNode) => void>([{(inherits ? $"...super.{code.Name}()," : string.Empty)}");
                     IncreaseIndent();
                     foreach(var otherProp in parentClass
                                                     .InnerChildElements
