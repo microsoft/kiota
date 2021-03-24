@@ -18,8 +18,8 @@ public interface SerializationWriter extends Closeable {
     void writeUUIDValue(@Nullable final String key, @Nonnull final UUID value);
     void writeOffsetDateTimeValue(@Nullable final String key, @Nonnull final OffsetDateTime value);
     <T> void writeCollectionOfPrimitiveValues(@Nullable final String key, @Nonnull final Iterable<T> values);
-    <T extends Parsable<T>> void writeCollectionOfObjectValues(@Nullable final String key, @Nonnull final Iterable<T> values);
-    <T extends Parsable<T>> void writeObjectValue(@Nullable final String key, @Nonnull final T value);
+    <T extends Parsable> void writeCollectionOfObjectValues(@Nullable final String key, @Nonnull final Iterable<T> values);
+    <T extends Parsable> void writeObjectValue(@Nullable final String key, @Nonnull final T value);
     @Nonnull
     CompletableFuture<InputStream> getSerializedContent();
 }

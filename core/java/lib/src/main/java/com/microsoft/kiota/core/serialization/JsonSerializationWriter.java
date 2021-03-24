@@ -21,7 +21,7 @@ import javax.annotation.Nullable;
 
 import com.google.gson.stream.JsonWriter;
 
-public class JsonSerializationWriter implements SerializationWriter { //TODO implement closable
+public class JsonSerializationWriter implements SerializationWriter {
     private final ByteArrayOutputStream stream = new ByteArrayOutputStream();
     private final JsonWriter writer;
     public JsonSerializationWriter() {
@@ -130,7 +130,7 @@ public class JsonSerializationWriter implements SerializationWriter { //TODO imp
             throw new RuntimeException("could not serialize value", ex);
         }
     }
-    public <T extends Parsable<T>> void writeCollectionOfObjectValues(final String key, final Iterable<T> values) {
+    public <T extends Parsable> void writeCollectionOfObjectValues(final String key, final Iterable<T> values) {
         try {
             if(values != null) { //empty array is meaningful
                 if(key != null && !key.isEmpty()) {
@@ -148,7 +148,7 @@ public class JsonSerializationWriter implements SerializationWriter { //TODO imp
             throw new RuntimeException("could not serialize value", ex);
         }
     }
-    public <T extends Parsable<T>> void writeObjectValue(final String key, final T value) {
+    public <T extends Parsable> void writeObjectValue(final String key, final T value) {
         try {
             if(key != null && !key.isEmpty()) {
                 writer.name(key);

@@ -2,6 +2,7 @@ package com.microsoft.kiota.core.serialization;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
 
 import java.lang.reflect.Constructor;
@@ -47,18 +48,59 @@ public class JsonParseNode implements ParseNode {
     public Long getLongValue() {
         return currentNode.getAsLong();
     }
-    public UUID getGuidValue() {
+    public UUID getUUIDValue() {
         return UUID.fromString(currentNode.getAsString());
     }
     public OffsetDateTime getOffsetDateTimeValue() {
         return OffsetDateTime.parse(currentNode.getAsString());
     }
-    public <T extends Parsable<T>> Iterable<T> getCollectionOfObjectValues(final Class<T> targetClass) {
+    public <T> List<T> getCollectionOfPrimitiveValues(final Class<T> targetClass) {
         Objects.requireNonNull(targetClass, "parameter targetClass cannot be null");
         if(currentNode.isJsonArray()) {
             final JsonArray array = currentNode.getAsJsonArray();
             final Iterator<JsonElement> sourceIterator = array.iterator();
-            return new Iterable<T>() {
+            return Lists.newArrayList(new Iterable<T>() {
+                @Override
+                public Iterator<T> iterator() {
+                    return new Iterator<T>(){
+                        @Override
+                        public boolean hasNext() {
+                            return sourceIterator.hasNext();
+                        }
+                        @Override
+                        @SuppressWarnings("unchecked")
+                        public T next() {
+                            final JsonElement item = sourceIterator.next();
+                            final JsonParseNode itemNode = new JsonParseNode(item);
+                            if(targetClass == Boolean.class) {
+                                return (T)itemNode.getBooleanValue();
+                            } else if(targetClass == String.class) {
+                                return (T)itemNode.getStringValue();
+                            } else if(targetClass == Integer.class) {
+                                return (T)itemNode.getIntegerValue();
+                            } else if(targetClass == Float.class) {
+                                return (T)itemNode.getFloatValue();
+                            } else if(targetClass == Long.class) {
+                                return (T)itemNode.getLongValue();
+                            } else if(targetClass == UUID.class) {
+                                return (T)itemNode.getUUIDValue();
+                            } else if(targetClass == OffsetDateTime.class) {
+                                return (T)itemNode.getOffsetDateTimeValue();
+                            } else {
+                                throw new RuntimeException("unknown type to deserialize " + targetClass.getName());
+                            }
+                        }
+                    };
+                }
+            });
+        } else throw new RuntimeException("invalid state expected to have an array node");
+    }
+    public <T extends Parsable> List<T> getCollectionOfObjectValues(final Class<T> targetClass) {
+        Objects.requireNonNull(targetClass, "parameter targetClass cannot be null");
+        if(currentNode.isJsonArray()) {
+            final JsonArray array = currentNode.getAsJsonArray();
+            final Iterator<JsonElement> sourceIterator = array.iterator();
+            return Lists.newArrayList(new Iterable<T>() {
                 @Override
                 public Iterator<T> iterator() {
                     return new Iterator<T>(){
@@ -75,10 +117,10 @@ public class JsonParseNode implements ParseNode {
                     };
                 }
 
-            };
+            });
         } else throw new RuntimeException("invalid state expected to have an array node");
     }
-    public <T extends Parsable<T>> T getObjectValue(final Class<T> targetClass) {
+    public <T extends Parsable> T getObjectValue(final Class<T> targetClass) {
         Objects.requireNonNull(targetClass, "parameter targetClass cannot be null");
         try {
             final Constructor<T> constructor = targetClass.getConstructor();
@@ -89,7 +131,7 @@ public class JsonParseNode implements ParseNode {
             throw new RuntimeException("Error during deserialization", ex);
         }
     }
-    private <T extends Parsable<T>> void assignFieldValues(final T item, final Map<String, BiConsumer<T, ParseNode>> fieldDeserializers) {
+    private <T extends Parsable> void assignFieldValues(final T item, final Map<String, BiConsumer<T, ParseNode>> fieldDeserializers) {
         if(currentNode.isJsonObject()) {
             for (final Map.Entry<String, JsonElement> fieldEntry : currentNode.getAsJsonObject().entrySet()) {
                 final BiConsumer<? super T, ParseNode> fieldDeserializer = fieldDeserializers.get(fieldEntry.getKey());

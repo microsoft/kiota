@@ -1,6 +1,7 @@
 package com.microsoft.kiota.serialization;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import javax.annotation.Nonnull;
@@ -19,11 +20,13 @@ public interface ParseNode {
     @Nonnull
     Long getLongValue();
     @Nonnull
-    UUID getGuidValue();
+    UUID getUUIDValue();
     @Nonnull
     OffsetDateTime getOffsetDateTimeValue();
     @Nonnull
-    <T extends Parsable<T>> Iterable<T> getCollectionOfObjectValues(@Nonnull final Class<T> targetClass);
+    <T> List<T> getCollectionOfPrimitiveValues(@Nonnull final Class<T> targetClass);
     @Nonnull
-    <T extends Parsable<T>> T getObjectValue(@Nonnull final Class<T> targetClass);
+    <T extends Parsable> List<T> getCollectionOfObjectValues(@Nonnull final Class<T> targetClass);
+    @Nonnull
+    <T extends Parsable> T getObjectValue(@Nonnull final Class<T> targetClass);
 }
