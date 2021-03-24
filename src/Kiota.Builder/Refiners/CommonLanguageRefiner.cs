@@ -9,12 +9,12 @@ namespace Kiota.Builder {
         public abstract void Refine(CodeNamespace generatedCode);
 
         private const string pathSegmentPropertyName = "pathSegment";
-        protected void ConvertDeserializerPropsToMethods(CodeElement currentElement) {
+        protected void ConvertDeserializerPropsToMethods(CodeElement currentElement, string prefix = null) {
             if(currentElement is CodeClass currentClass) {
                 var deserializerProp = currentClass.InnerChildElements.OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.Deserializer);
                 if(deserializerProp != null) {
                     currentClass.AddMethod(new CodeMethod(currentClass) {
-                        Name = deserializerProp.Name,
+                        Name = $"{prefix}{deserializerProp.Name}",
                         MethodKind = CodeMethodKind.DeserializerBackwardCompatibility,
                         IsAsync = false,
                         IsStatic = false,
@@ -24,7 +24,7 @@ namespace Kiota.Builder {
                     currentClass.InnerChildElements.Remove(deserializerProp);
                 }
             }
-            CrawlTree(currentElement, ConvertDeserializerPropsToMethods);
+            CrawlTree(currentElement, c => ConvertDeserializerPropsToMethods(c, prefix));
         }
         // temporary patch of type to it resolves as the builder sets types we didn't generate to entity
         protected void FixReferencesToEntityType(CodeElement currentElement, CodeClass entityClass = null){
