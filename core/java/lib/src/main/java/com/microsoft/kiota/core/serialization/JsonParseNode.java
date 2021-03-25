@@ -143,7 +143,6 @@ public class JsonParseNode implements ParseNode {
                 final BiConsumer<? super T, ParseNode> fieldDeserializer = fieldDeserializers.get(fieldEntry.getKey());
                 final JsonElement fieldValue = fieldEntry.getValue();
                 if(fieldDeserializer != null && !fieldValue.isJsonNull()) {
-                    System.out.println("deserializing field " + fieldEntry.getKey());
                     fieldDeserializer.accept(item, new JsonParseNode(fieldValue));
                 }
             }
