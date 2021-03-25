@@ -9,7 +9,7 @@ namespace Kiota.Builder {
         public override void Refine(CodeNamespace generatedCode)
         {
             AddInnerClasses(generatedCode);
-            MakeQueryStringParametersNonOptionalAndInsertOverrideMethod(generatedCode);
+            AndInsertOverrideMethodForRequestExecutorsAndBuilders(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode);
             AddRequireNonNullImports(generatedCode);
@@ -122,16 +122,11 @@ namespace Kiota.Builder {
             }
             CrawlTree(currentElement, AddRequireNonNullImports);
         }
-        private void MakeQueryStringParametersNonOptionalAndInsertOverrideMethod(CodeElement currentElement) {
+        private void AndInsertOverrideMethodForRequestExecutorsAndBuilders(CodeElement currentElement) {
             var codeMethods = currentElement
                                     .GetChildElements()
                                     .OfType<CodeMethod>();
             if(currentElement is CodeClass currentClass && codeMethods.Any()) {
-                codeMethods
-                    .SelectMany(x => x.Parameters)
-                    .Where(x => x.ParameterKind == CodeParameterKind.QueryParameter || x.ParameterKind == CodeParameterKind.Headers || x.ParameterKind == CodeParameterKind.ResponseHandler)
-                    .ToList()
-                    .ForEach(x => x.Optional = false);
                 var originalExecutorMethods = codeMethods.Where(x => x.MethodKind == CodeMethodKind.RequestExecutor);
                 var executorMethodsToAdd = originalExecutorMethods
                                     .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter))
@@ -151,7 +146,7 @@ namespace Kiota.Builder {
                     currentClass.AddMethod(executorMethodsToAdd.Union(generatorMethodsToAdd).ToArray());
             }
             
-            CrawlTree(currentElement, MakeQueryStringParametersNonOptionalAndInsertOverrideMethod);
+            CrawlTree(currentElement, AndInsertOverrideMethodForRequestExecutorsAndBuilders);
         }
         private void PatchHeaderParametersType(CodeElement currentElement) {
             if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => x.ParameterKind == CodeParameterKind.Headers))

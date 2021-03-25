@@ -129,12 +129,23 @@ namespace Kiota.Builder
                     WriteLine("}};");
                     if(requestBodyParam != null)
                         WriteLine($"requestInfo.setJsonContentFromParsable({requestBodyParam.Name}, {serializerFactoryParamName});"); //TODO we're making a big assumption here that the request is json
-                    if(queryStringParam != null)
-                        WriteLines($"final {code.HttpMethod.ToString().ToFirstCharacterUpperCase()}QueryParameters qParams = new {code.HttpMethod?.ToString().ToFirstCharacterUpperCase()}QueryParameters();",
-                                   $"{queryStringParam.Name}.accept(qParams);",
-                                   "qParams.AddQueryParameters(requestInfo.queryParameters);");
-                    if(headersParam != null)
+                    if(queryStringParam != null) {
+                        var httpMethodPrefix = code.HttpMethod.ToString().ToFirstCharacterUpperCase();
+                        WriteLine($"if ({queryStringParam.Name} != null) {{");
+                        IncreaseIndent();
+                        WriteLines($"final {httpMethodPrefix}QueryParameters qParams = new {httpMethodPrefix}QueryParameters();",
+                                    $"{queryStringParam.Name}.accept(qParams);",
+                                    "qParams.AddQueryParameters(requestInfo.queryParameters);");
+                        DecreaseIndent();
+                        WriteLine("}");
+                    }
+                    if(headersParam != null) {
+                        WriteLine($"if ({headersParam.Name} != null) {{");
+                        IncreaseIndent();
                         WriteLine($"{headersParam.Name}.accept(requestInfo.headers);");
+                        DecreaseIndent();
+                        WriteLine("}");
+                    }
                     WriteLine("return requestInfo;");
                 break;
                 case CodeMethodKind.RequestExecutor:
