@@ -98,9 +98,9 @@ namespace Kiota.Builder
             var propertyType = TranslateType(propType.Name);
             if(isCollection && propType is CodeType currentType) {
                 if(currentType.TypeDefinition == null)
-                    return $"GetCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterUpperCase()}>().ToList";
+                    return $"GetCollectionOfPrimitiveValues<{propertyType}>().ToList";
                 else
-                    return $"GetCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>().ToList";
+                    return $"GetCollectionOfObjectValues<{propertyType}>().ToList";
             }
             switch(propertyType) {
                 case "string":
@@ -120,9 +120,9 @@ namespace Kiota.Builder
             var propertyType = TranslateType(propType.Name);
             if(isCollection && propType is CodeType currentType) {
                 if(currentType.TypeDefinition == null)
-                    return $"WriteCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterUpperCase()}>";
+                    return $"WriteCollectionOfPrimitiveValues<{propertyType}>";
                 else
-                    return $"WriteCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>";
+                    return $"WriteCollectionOfObjectValues<{propertyType}>";
             }
             switch(propertyType) {
                 case "string":

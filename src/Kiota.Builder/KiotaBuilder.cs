@@ -340,7 +340,7 @@ namespace Kiota.Builder
                 PropertyKind = kind,
             };
             prop.Type = new CodeType(prop) {
-                Name = isCollection ? typeSchema?.Items?.Reference?.GetClassName() : childType,
+                Name = isCollection ? (typeSchema?.Items?.Reference?.GetClassName() ?? typeSchema?.Items?.Type) : childType,
                 TypeDefinition = typeDefinition,
                 CollectionKind = isCollection ? CodeType.CodeTypeCollectionKind.Complex : default
             };
