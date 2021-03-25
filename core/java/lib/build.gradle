@@ -35,8 +35,10 @@ dependencies {
     implementation 'com.google.guava:guava:29.0-jre'
 
     api 'com.squareup.okhttp3:okhttp:4.9.1'
-    api 'com.microsoft.kiota:kiota-abstractions:1.0.1'
-    api 'com.azure:azure-identity:1.2.3'
+    api 'com.azure:azure-identity:1.2.4'
+    api 'com.google.code.gson:gson:2.8.6'
+
+    api 'com.microsoft.kiota:kiota-abstractions:1.0.6'
 }
 
 publishing {

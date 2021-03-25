@@ -2,7 +2,7 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Identity" Version="1.3.0" />
-    <PackageReference Include="KiotaAbstractions" Version="1.0.3" />
+    <PackageReference Include="KiotaAbstractions" Version="1.0.6" />
     <PackageReference Include="System.Text.Json" Version="5.0.1" />
   </ItemGroup>
 
@@ -10,7 +10,7 @@
     <TargetFramework>net5.0</TargetFramework>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryUrl>https://github.com/microsoft/kiota</RepositoryUrl>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
 </Project>
