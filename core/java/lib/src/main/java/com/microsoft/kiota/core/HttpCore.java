@@ -5,9 +5,11 @@ package com.microsoft.kiota.core;
 
 import java.io.IOException;
 import java.lang.UnsupportedOperationException;
+import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import javax.annotation.Nonnull;
@@ -42,27 +44,11 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
             this.client = client;
         }
     }
-    @Override
     @Nonnull
     public <ModelType extends Parsable> CompletableFuture<ModelType> sendAsync(@Nonnull final RequestInfo requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
 
-        CompletableFuture<Void> tokenFuture;
-
-        if(!requestInfo.headers.keySet().contains(authorizationHeaderKey)) {
-            tokenFuture = this.authProvider
-                .getAuthorizationToken(requestInfo.uri)
-                .thenApply(token -> {
-                    if(token == null || token.isEmpty()) {
-                        throw new UnsupportedOperationException("Could not get an authorization token", null);
-                    }
-                    requestInfo.headers.put(authorizationHeaderKey, "Bearer " + token);
-                    return null;
-                });
-        } else {
-            tokenFuture = CompletableFuture.completedFuture(null);
-        }
-        return tokenFuture.thenCompose(x -> {
+        return addBearerIfNotPresent(requestInfo).thenCompose(x -> {
             final HttpCoreCallbackFutureWrapper wrapper = new HttpCoreCallbackFutureWrapper();
             this.client.newCall(getRequestFromRequestInfo(requestInfo)).enqueue(wrapper);
             return wrapper.future;
@@ -83,6 +69,64 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
                 return responseHandler.handleResponseAsync(response);
             }
         });
+    }
+    @Nonnull
+    public <ModelType> CompletableFuture<ModelType> sendPrimitiveAsync(@Nonnull final RequestInfo requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
+        return addBearerIfNotPresent(requestInfo).thenCompose(x -> {
+            final HttpCoreCallbackFutureWrapper wrapper = new HttpCoreCallbackFutureWrapper();
+            this.client.newCall(getRequestFromRequestInfo(requestInfo)).enqueue(wrapper);
+            return wrapper.future;
+        }).thenCompose(response -> {
+            if(responseHandler == null) {
+                final ResponseBody body = response.body();
+                try {
+                    if(targetClass == Void.class) {
+                        return CompletableFuture.completedStage(null);
+                    } else {
+                        final String rawJson = body.string();
+                        final JsonParseNode rootNode = new JsonParseNode(rawJson);
+                        if(targetClass == Boolean.class) {
+                            return CompletableFuture.completedStage((ModelType)rootNode.getBooleanValue());
+                        } else if(targetClass == String.class) {
+                            return CompletableFuture.completedStage((ModelType)rootNode.getStringValue());
+                        } else if(targetClass == Integer.class) {
+                            return CompletableFuture.completedStage((ModelType)rootNode.getIntegerValue());
+                        } else if(targetClass == Float.class) {
+                            return CompletableFuture.completedStage((ModelType)rootNode.getFloatValue());
+                        } else if(targetClass == Long.class) {
+                            return CompletableFuture.completedStage((ModelType)rootNode.getLongValue());
+                        } else if(targetClass == UUID.class) {
+                            return CompletableFuture.completedStage((ModelType)rootNode.getUUIDValue());
+                        } else if(targetClass == OffsetDateTime.class) {
+                            return CompletableFuture.completedStage((ModelType)rootNode.getOffsetDateTimeValue());
+                        } else {
+                            throw new RuntimeException("unexpected payload type " + targetClass.getName());
+                        }
+                    }
+                } catch(IOException ex) {
+                    return CompletableFuture.failedFuture(new RuntimeException("failed to read the response body", ex));
+                } finally {
+                    response.close();
+                }
+            } else {
+                return responseHandler.handleResponseAsync(response);
+            }
+        });
+    }
+    private CompletableFuture<Void> addBearerIfNotPresent(final RequestInfo requestInfo) {
+        if(!requestInfo.headers.keySet().contains(authorizationHeaderKey)) {
+            return this.authProvider
+                .getAuthorizationToken(requestInfo.uri)
+                .thenApply(token -> {
+                    if(token == null || token.isEmpty()) {
+                        throw new UnsupportedOperationException("Could not get an authorization token", null);
+                    }
+                    requestInfo.headers.put(authorizationHeaderKey, "Bearer " + token);
+                    return null;
+                });
+        } else {
+            return CompletableFuture.completedFuture(null);
+        }
     }
     private Request getRequestFromRequestInfo(@Nonnull final RequestInfo requestInfo) {
         final StringBuilder urlBuilder = new StringBuilder(requestInfo.uri.toString());
