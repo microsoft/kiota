@@ -161,8 +161,10 @@ namespace Kiota.Builder
             var parentClass = code.Parent as CodeClass;
             var shouldHide = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null && code.MethodKind == CodeMethodKind.Serializer;
             var hideModifier = shouldHide ? "new " : string.Empty;
+            var isVoid = "void".Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
+            var completeReturnType = $"{(code.IsAsync ? "async Task" +(isVoid ? string.Empty : "<"): string.Empty)}{(code.IsAsync && isVoid ? string.Empty : returnType)}{( code.IsAsync && !isVoid ? ">": string.Empty)}";
             // Task type should be moved into the refiner
-            WriteLine($"{GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{(code.IsAsync ? "async Task<": string.Empty)}{returnType}{( code.IsAsync ? ">": string.Empty)} {code.Name}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
+            WriteLine($"{GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType} {code.Name}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
             IncreaseIndent();
             var requestBodyParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.RequestBody);
             var queryStringParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.QueryParameter);
@@ -212,8 +214,9 @@ namespace Kiota.Builder
                     IncreaseIndent();
                     WriteLine(new List<string> { requestBodyParam?.Name, queryStringParam?.Name, headersParam?.Name }.Where(x => x != null).Aggregate((x,y) => $"{x}, {y}"));
                     DecreaseIndent();
+                    var genericTypeForSendMethod = isVoid ? string.Empty : $"<{returnType}>";
                     WriteLines(");",
-                                $"return await HttpCore.SendAsync<{returnType}>(requestInfo, responseHandler);");
+                                $"{(isVoid ? string.Empty : "return ")}await HttpCore.SendAsync{genericTypeForSendMethod}(requestInfo, responseHandler);");
                 break;
                 default:
                     WriteLine("return null;");

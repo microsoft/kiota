@@ -24,12 +24,7 @@ namespace KiotaCore
             if(requestInfo == null)
                 throw new ArgumentNullException(nameof(requestInfo));
 
-            if(!requestInfo.Headers.ContainsKey(authorizationHeaderKey)) {
-                var token = await authProvider.getAuthorizationToken(requestInfo.URI);
-                if(string.IsNullOrEmpty(token))
-                    throw new InvalidOperationException("Could not get an authorization token");
-                requestInfo.Headers.Add(authorizationHeaderKey, $"Bearer {token}");
-            }
+            await AddBearerIfNotPresent(requestInfo);
             
             using var message = GetRequestMessageFromRequestInfo(requestInfo);
             var response = await this.client.SendAsync(message);
@@ -46,6 +41,28 @@ namespace KiotaCore
             }
             else
                 return await responseHandler.HandleResponseAsync<HttpResponseMessage, ModelType>(response);
+        }
+        private async Task AddBearerIfNotPresent(RequestInfo requestInfo) {
+            if(!requestInfo.Headers.ContainsKey(authorizationHeaderKey)) {
+                var token = await authProvider.getAuthorizationToken(requestInfo.URI);
+                if(string.IsNullOrEmpty(token))
+                    throw new InvalidOperationException("Could not get an authorization token");
+                requestInfo.Headers.Add(authorizationHeaderKey, $"Bearer {token}");
+            }
+        }
+        public async Task SendAsync(RequestInfo requestInfo, IResponseHandler responseHandler = null)
+        {
+            if(requestInfo == null)
+                throw new ArgumentNullException(nameof(requestInfo));
+            
+            await AddBearerIfNotPresent(requestInfo);
+            
+            using var message = GetRequestMessageFromRequestInfo(requestInfo);
+            var response = await this.client.SendAsync(message);
+            if(response == null)
+                throw new InvalidOperationException("Could not get a response after calling the service");
+            if(responseHandler != null) 
+                await responseHandler.HandleResponseAsync<HttpResponseMessage, object>(response);
         }
         private HttpRequestMessage GetRequestMessageFromRequestInfo(RequestInfo requestInfo) {
             var message = new HttpRequestMessage {

@@ -363,8 +363,12 @@ namespace Kiota.Builder
             {
                 var returnType = CreateModelClasses(rootNode, currentNode, schema, operation, executorMethod);
                 executorMethod.ReturnType = returnType ?? throw new InvalidOperationException("Could not resolve return type for operation");
-            } else 
-                executorMethod.ReturnType = new CodeType(executorMethod) { Name = "Entity"}; //TODO remove this temporary default when the method above handles all cases
+            } else {
+                var returnType = "Entity";//TODO remove this temporary default when the method above handles all cases
+                if(operation.Responses.Any(x => x.Key == "204"))
+                    returnType = "void";
+                executorMethod.ReturnType = new CodeType(executorMethod) { Name = returnType };
+            }
 
             
             AddRequestBuilderMethodParameters(rootNode, currentNode, operation, parameterClass, executorMethod);
