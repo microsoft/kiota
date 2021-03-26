@@ -221,9 +221,10 @@ namespace Kiota.Builder
         }
         public override void WriteMethod(CodeMethod code)
         {
-            WriteLine($"{GetAccessModifier(code.Access)} {code.Name.ToFirstCharacterLowerCase()} {(code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? "async ": string.Empty)}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.ReturnType.IsNullable ? " | undefined" : string.Empty)}{(code.IsAsync ? ">": string.Empty)} {{");
-            IncreaseIndent();
             var returnType = GetTypeString(code.ReturnType);
+            var isVoid = "void".Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
+            WriteLine($"{GetAccessModifier(code.Access)} {code.Name.ToFirstCharacterLowerCase()} {(code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? "async ": string.Empty)}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.ReturnType.IsNullable && !isVoid ? " | undefined" : string.Empty)}{(code.IsAsync ? ">": string.Empty)} {{");
+            IncreaseIndent();
             var parentClass = code.Parent as CodeClass;
             var shouldHide = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null && code.MethodKind == CodeMethodKind.Serializer;
             var requestBodyParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.RequestBody);
@@ -236,7 +237,7 @@ namespace Kiota.Builder
                     break;
                 case CodeMethodKind.DeserializerBackwardCompatibility:
                     var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
-                    WriteLine($"return new Map<string, (item: {parentClass.Name.ToFirstCharacterUpperCase()}, node: ParseNode) => void>([{(inherits ? $"...super.{code.Name}()," : string.Empty)}");
+                    WriteLine($"return new Map<string, (item: {parentClass.Name.ToFirstCharacterUpperCase()}, node: ParseNode) => void>([{(inherits ? $"...super.{code.Name.ToFirstCharacterLowerCase()}()," : string.Empty)}");
                     IncreaseIndent();
                     foreach(var otherProp in parentClass
                                                     .InnerChildElements
@@ -284,7 +285,9 @@ namespace Kiota.Builder
                         DecreaseIndent();
                     }
                     WriteLine(");");
-                    WriteLine($"return this.httpCore?.sendAsync<{returnType}>(requestInfo, {returnType}, responseHandler) ?? Promise.reject(new Error('http core is null'));");
+                    var genericTypeForSendMethod = isVoid ? "sendNoResponseContentAsync" : $"sendAsync<{returnType}>";
+                    var newFactoryParameter = isVoid ? string.Empty : $" {returnType},";
+                    WriteLine($"return this.httpCore?.{genericTypeForSendMethod}(requestInfo,{newFactoryParameter} responseHandler) ?? Promise.reject(new Error('http core is null'));");
                     break;
                 default:
                     WriteLine($"return {(code.IsAsync ? "Promise.resolve(" : string.Empty)}{(code.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{(code.IsAsync ? ")" : string.Empty)};");

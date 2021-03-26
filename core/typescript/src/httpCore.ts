@@ -16,6 +16,32 @@ export class HttpCore implements IHttpCore {
         if(!requestInfo) {
             throw new Error('requestInfo cannot be null');
         }
+        await this.addBearerIfNotPresent(requestInfo);
+        
+        const request = this.getRequestFromRequestInfo(requestInfo);
+        const response = await fetch(this.getRequestUrl(requestInfo), request);
+        if(responseHandler) {
+            return await responseHandler.handleResponseAsync(response);
+        } else {
+            const payload = await response.json();
+            const rootNode = new JsonParseNode(payload);
+            const result = rootNode.getObjectValue(type);
+            return result as unknown as ModelType;
+        }
+    }
+    public sendNoResponseContentAsync = async (requestInfo: RequestInfo, responseHandler: ResponseHandler | undefined): Promise<void> => {
+        if(!requestInfo) {
+            throw new Error('requestInfo cannot be null');
+        }
+        await this.addBearerIfNotPresent(requestInfo);
+        
+        const request = this.getRequestFromRequestInfo(requestInfo);
+        const response = await fetch(this.getRequestUrl(requestInfo), request);
+        if(responseHandler) {
+            return await responseHandler.handleResponseAsync(response);
+        }
+    }
+    private addBearerIfNotPresent = async (requestInfo: RequestInfo): Promise<void> => {
         if(!requestInfo.URI) {
             throw new Error('uri cannot be null');
         }
@@ -28,16 +54,6 @@ export class HttpCore implements IHttpCore {
                 requestInfo.headers = new Map<string, string>();
             }
             requestInfo.headers?.set(HttpCore.authorizationHeaderKey, `Bearer ${token}`);
-        }
-        const request = this.getRequestFromRequestInfo(requestInfo);
-        const response = await fetch(this.getRequestUrl(requestInfo), request);
-        if(responseHandler) {
-            return await responseHandler.handleResponseAsync(response);
-        } else {
-            const payload = await response.json();
-            const rootNode = new JsonParseNode(payload);
-            const result = rootNode.getObjectValue(type);
-            return result as unknown as ModelType;
         }
     }
     private getRequestFromRequestInfo = (requestInfo: RequestInfo): FetchRequestInit => {
