@@ -10,5 +10,5 @@ export interface SerializationWriter {
     writeCollectionOfPrimitiveValues<T>(key?: string | undefined, values?: T[] | undefined): void;
     writeCollectionOfObjectValues<T extends Parsable<T>>(key?: string | undefined, values?: T[]): void;
     writeObjectValue<T extends Parsable<T>>(key?: string | undefined, value?: T | undefined): void;
-    getSerializedContent(): Promise<ReadableStream>;
+    getSerializedContent(): ReadableStream;
 }

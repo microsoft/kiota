@@ -9,12 +9,12 @@ export class RequestInfo {
     public queryParameters: Map<string, object> = new Map<string, object>();
     public headers: Map<string, string> = new Map<string, string>();
     private static jsonContentType = "application/json";
-    public async setJsonContentFromParsable<T extends Parsable<T>>(value?: T | undefined, serializerFactory?: ((mediaType: string) => SerializationWriter) | undefined): Promise<void> {
+    public setJsonContentFromParsable<T extends Parsable<T>>(value?: T | undefined, serializerFactory?: ((mediaType: string) => SerializationWriter) | undefined): void {
         if(serializerFactory) {
             const writer = serializerFactory(RequestInfo.jsonContentType);
             this.headers.set("Content-Type", RequestInfo.jsonContentType);
             writer.writeObjectValue(undefined, value);
-            this.content = await writer.getSerializedContent();
+            this.content = writer.getSerializedContent();
         }
     }
     public setHeadersFromRawObject = (h: object) : void => {
