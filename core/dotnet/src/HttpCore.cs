@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -42,6 +43,47 @@ namespace KiotaCore
             else
                 return await responseHandler.HandleResponseAsync<HttpResponseMessage, ModelType>(response);
         }
+        public async Task<ModelType> SendPrimitiveAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = default) {
+            if(requestInfo == null)
+                throw new ArgumentNullException(nameof(requestInfo));
+
+            await AddBearerIfNotPresent(requestInfo);
+            
+            using var message = GetRequestMessageFromRequestInfo(requestInfo);
+            var response = await this.client.SendAsync(message);
+            if(response == null)
+                throw new InvalidOperationException("Could not get a response after calling the service");
+            if(responseHandler == null) {
+                using var contentStream = await response.Content.ReadAsStreamAsync();
+                var modelType = typeof(ModelType);
+                if(modelType == typeof(Stream)) {
+                    return (ModelType)(contentStream as object);
+                } else {
+                    using var jsonDocument = JsonDocument.Parse(contentStream);
+                    var rootNode = new JsonParseNode(jsonDocument.RootElement);
+                    response.Dispose();
+                    requestInfo.Content?.Dispose();
+                    if(modelType == typeof(bool)) {
+                        return (ModelType)(rootNode.GetBoolValue() as object);
+                    } else if(modelType == typeof(string)) {
+                        return (ModelType)(rootNode.GetStringValue() as object);
+                    } else if(modelType == typeof(int)) {
+                        return (ModelType)(rootNode.GetIntValue() as object);
+                    } else if(modelType == typeof(float)) {
+                        return (ModelType)(rootNode.GetFloatValue() as object);
+                    } else if(modelType == typeof(double)) {
+                        return (ModelType)(rootNode.GetDoubleValue() as object);
+                    } else if(modelType == typeof(Guid)) {
+                        return (ModelType)(rootNode.GetGuidValue() as object);
+                    } else if(modelType == typeof(DateTimeOffset)) {
+                        return (ModelType)(rootNode.GetDateTimeOffsetValue() as object);
+                    } else throw new InvalidOperationException("error handling the response, unexpected type");
+                }
+            }
+            else
+                return await responseHandler.HandleResponseAsync<HttpResponseMessage, ModelType>(response);
+        }
+
         private async Task AddBearerIfNotPresent(RequestInfo requestInfo) {
             if(!requestInfo.Headers.ContainsKey(authorizationHeaderKey)) {
                 var token = await authProvider.getAuthorizationToken(requestInfo.URI);
@@ -50,7 +92,7 @@ namespace KiotaCore
                 requestInfo.Headers.Add(authorizationHeaderKey, $"Bearer {token}");
             }
         }
-        public async Task SendAsync(RequestInfo requestInfo, IResponseHandler responseHandler = null)
+        public async Task SendNoContentAsync(RequestInfo requestInfo, IResponseHandler responseHandler = null)
         {
             if(requestInfo == null)
                 throw new ArgumentNullException(nameof(requestInfo));

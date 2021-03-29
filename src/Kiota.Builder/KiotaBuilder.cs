@@ -220,11 +220,7 @@ namespace Kiota.Builder
             if (currentNode.HasOperations())
             {
                 foreach(var operation in currentNode.PathItem.Operations)
-                {
-                    var parameterClass = CreateOperationParameter(currentNode, operation, codeClass);
-
-                    CreateOperationMethods(rootNode, currentNode, operation.Key, operation.Value, parameterClass, codeClass);
-                }
+                    CreateOperationMethods(rootNode, currentNode, operation.Key, operation.Value, codeClass);
             }
             CreatePathManagement(codeClass, currentNode, isRootClientClass);
            
@@ -348,9 +344,12 @@ namespace Kiota.Builder
             return prop;
         }
 
-        private const string requestBodyContentType = "application/json"; //TODO: this is temporary, we should handle other content types like octet-stream
-        private void CreateOperationMethods(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parameterClass, CodeClass parentClass)
+        private const string requestBodyJsonContentType = "application/json"; //TODO: this is temporary, we should handle other content types like yaml, grpc, xml...
+        private const string requestBodyBinaryContentType = "application/octet-stream";
+        private void CreateOperationMethods(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
         {
+            var parameterClass = CreateOperationParameter(currentNode, operationType, operation, parentClass);
+
             var schema = operation.GetResponseSchema();
             var method = (HttpMethod)Enum.Parse(typeof(HttpMethod), operationType.ToString());
             var executorMethod = new CodeMethod(parentClass) {
@@ -367,6 +366,8 @@ namespace Kiota.Builder
                 var returnType = "Entity";//TODO remove this temporary default when the method above handles all cases
                 if(operation.Responses.Any(x => x.Key == "204"))
                     returnType = "void";
+                else if(operation.Responses.Any(x => x.Value.Content.Keys.Contains(requestBodyBinaryContentType)))
+                    returnType = "binary";
                 executorMethod.ReturnType = new CodeType(executorMethod) { Name = returnType };
             }
 
@@ -394,9 +395,9 @@ namespace Kiota.Builder
             logger.LogDebug("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
         }
         private void AddRequestBuilderMethodParameters(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiOperation operation, CodeClass parameterClass, CodeMethod method) {
-            if (operation.RequestBody?.Content?.ContainsKey(requestBodyContentType) ?? false)
+            if (operation.RequestBody?.Content?.ContainsKey(requestBodyJsonContentType) ?? false)
             {
-                var requestBodySchema = operation.RequestBody.Content[requestBodyContentType].Schema;
+                var requestBodySchema = operation.RequestBody.Content[requestBodyJsonContentType].Schema;
                 var requestBodyType = CreateModelClasses(rootNode, currentNode, requestBodySchema, operation, method);
                 method.AddParameter(new CodeParameter(method) {
                     Name = "body",
@@ -404,6 +405,16 @@ namespace Kiota.Builder
                     Optional = false,
                     ParameterKind = CodeParameterKind.RequestBody
                 });
+            } else if (operation.RequestBody?.Content?.ContainsKey(requestBodyBinaryContentType) ?? false) {
+                var nParam = new CodeParameter(method) {
+                    Name = "body",
+                    Optional = false,
+                    ParameterKind = CodeParameterKind.RequestBody
+                };
+                nParam.Type = new CodeType(nParam) {
+                    Name = "binary"
+                };
+                method.AddParameter(nParam);
             }
             if(parameterClass != null) {
                 var qsParam = new CodeParameter(method)
@@ -618,13 +629,13 @@ namespace Kiota.Builder
                 model.AddMethod(serializeMethod);
             }
         }
-        private CodeClass CreateOperationParameter(OpenApiUrlSpaceNode node, KeyValuePair<OperationType, OpenApiOperation> operation, CodeClass parentClass)
+        private CodeClass CreateOperationParameter(OpenApiUrlSpaceNode node, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
         {
-            var parameters = node.PathItem.Parameters.Union(operation.Value.Parameters).Where(p => p.In == ParameterLocation.Query);
+            var parameters = node.PathItem.Parameters.Union(operation.Parameters).Where(p => p.In == ParameterLocation.Query);
             if(parameters.Any()) {
                 var parameterClass = new CodeClass(parentClass)
                 {
-                    Name = operation.Key.ToString() + "QueryParameters",
+                    Name = operationType.ToString() + "QueryParameters",
                     ClassKind = CodeClassKind.QueryParameters,
                 };
                 foreach (var parameter in parameters)

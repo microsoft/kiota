@@ -13,11 +13,17 @@ namespace Kiota.Abstractions
         public IDictionary<string, string> Headers { get; set; } = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
         public Stream Content { get; set; }
         private const string jsonContentType = "application/json";
+        private const string binaryContentType = "application/octet-stream";
+        private const string contentTypeHeader = "Content-Type";
+        public void SetStreamContent(Stream content) {
+            Content = content;
+            Headers.Add(contentTypeHeader, binaryContentType);
+        }
         public void SetJsonContentFromParsable<T>(T item, Func<string, ISerializationWriter> writerFactory) where T : class, IParsable<T>, new() {
             if(writerFactory != null) {
                 using var writer = writerFactory.Invoke(jsonContentType);
                 writer.WriteObjectValue(null, item);
-                Headers.Add("Content-Type", jsonContentType);
+                Headers.Add(contentTypeHeader, jsonContentType);
                 Content = writer.GetSerializedContent();
             }
         }

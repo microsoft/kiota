@@ -153,6 +153,7 @@ namespace Kiota.Builder
             WriteLine("} }");
         }
         private const string SerializerFactoryPropertyName = "SerializerFactory";
+        private const string StreamTypeName = "stream";
 
         public override void WriteMethod(CodeMethod code)
         {
@@ -162,6 +163,7 @@ namespace Kiota.Builder
             var shouldHide = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null && code.MethodKind == CodeMethodKind.Serializer;
             var hideModifier = shouldHide ? "new " : string.Empty;
             var isVoid = "void".Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
+            var isStream = StreamTypeName.Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
             var completeReturnType = $"{(code.IsAsync ? "async Task" +(isVoid ? string.Empty : "<"): string.Empty)}{(code.IsAsync && isVoid ? string.Empty : returnType)}{( code.IsAsync && !isVoid ? ">": string.Empty)}";
             // Task type should be moved into the refiner
             WriteLine($"{GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType} {code.Name}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
@@ -189,7 +191,10 @@ namespace Kiota.Builder
                     DecreaseIndent();
                     WriteLine("};");
                     if(requestBodyParam != null) {
-                        WriteLine($"requestInfo.SetJsonContentFromParsable({requestBodyParam.Name}, {SerializerFactoryPropertyName});"); //TODO we're making a big assumption here that everything will be json
+                        if(requestBodyParam.Type.Name.Equals(StreamTypeName, StringComparison.InvariantCultureIgnoreCase))
+                            WriteLine($"requestInfo.SetStreamContent({requestBodyParam.Name});");
+                        else
+                            WriteLine($"requestInfo.SetJsonContentFromParsable({requestBodyParam.Name}, {SerializerFactoryPropertyName});"); //TODO we're making a big assumption here that everything will be json
                     }
                     if(queryStringParam != null) {
                         WriteLine($"if ({queryStringParam.Name} != null) {{");
@@ -214,9 +219,10 @@ namespace Kiota.Builder
                     IncreaseIndent();
                     WriteLine(new List<string> { requestBodyParam?.Name, queryStringParam?.Name, headersParam?.Name }.Where(x => x != null).Aggregate((x,y) => $"{x}, {y}"));
                     DecreaseIndent();
-                    var genericTypeForSendMethod = isVoid ? string.Empty : $"<{returnType}>";
+                    var sendMethodName = isVoid ? "SendNoContentAsync" : 
+                                        (isStream ? $"SendPrimitiveAsync<{returnType}>": $"SendAsync<{returnType}>");
                     WriteLines(");",
-                                $"{(isVoid ? string.Empty : "return ")}await HttpCore.SendAsync{genericTypeForSendMethod}(requestInfo, responseHandler);");
+                                $"{(isVoid ? string.Empty : "return ")}await HttpCore.{sendMethodName}(requestInfo, responseHandler);");
                 break;
                 default:
                     WriteLine("return null;");
