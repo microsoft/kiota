@@ -75,7 +75,7 @@ namespace Kiota.Builder
                                         .GroupBy(x => x.Declaration?.Name)
                                         .OrderBy(x => x.Key))
             {
-                WriteLine($"import {{{codeUsing.Select(x => x.Name).Aggregate((x,y) => x + ", " + y)}}} from '{codeUsing.Key}';");
+                WriteLine($"import {{{codeUsing.Select(x => x.Name).Distinct().Aggregate((x,y) => x + ", " + y)}}} from '{codeUsing.Key}';");
             }
             foreach (var codeUsing in code.Usings
                                         .Where(x => (!x.Declaration?.IsExternal) ?? true)
@@ -219,6 +219,7 @@ namespace Kiota.Builder
                     $"builder.{SerializerFactoryPropertyName} = this.{SerializerFactoryPropertyName};",
                     "return builder;");
         }
+        private const string StreamType = "ReadableStream";
         public override void WriteMethod(CodeMethod code)
         {
             var returnType = GetTypeString(code.ReturnType);
@@ -266,8 +267,12 @@ namespace Kiota.Builder
                         WriteLine($"{headersParam.Name} && requestInfo.setHeadersFromRawObject(h);");
                     if(queryStringParam != null)
                         WriteLines($"{queryStringParam.Name} && requestInfo.setQueryStringParametersFromRawObject(q);");
-                    if(requestBodyParam != null)
-                        WriteLine($"requestInfo.setJsonContentFromParsable({requestBodyParam.Name}, this.{SerializerFactoryPropertyName});"); //TODO we're making a big assumption here that everything will be json
+                    if(requestBodyParam != null) {
+                        if(requestBodyParam.Type.Name.Equals(StreamType, StringComparison.InvariantCultureIgnoreCase))
+                            WriteLine($"requestInfo.setStreamContent({requestBodyParam.Name});");
+                        else
+                            WriteLine($"requestInfo.setJsonContentFromParsable({requestBodyParam.Name}, this.{SerializerFactoryPropertyName});"); //TODO we're making a big assumption here that everything will be json
+                    }
                     WriteLine("return requestInfo;");
                 break;
                 case CodeMethodKind.RequestExecutor:
@@ -285,8 +290,11 @@ namespace Kiota.Builder
                         DecreaseIndent();
                     }
                     WriteLine(");");
-                    var genericTypeForSendMethod = isVoid ? "sendNoResponseContentAsync" : $"sendAsync<{returnType}>";
-                    var newFactoryParameter = isVoid ? string.Empty : $" {returnType},";
+                    var isStream = StreamType.Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
+                    var genericTypeForSendMethod = isVoid ? "sendNoResponseContentAsync" : 
+                                                    (isStream ? $"sendPrimitiveAsync<{returnType}>" : $"sendAsync<{returnType}>");
+                    var newFactoryParameter = isVoid ? string.Empty : 
+                                                    (isStream ? $" \"{returnType}\"," : $" {returnType},");
                     WriteLine($"return this.httpCore?.{genericTypeForSendMethod}(requestInfo,{newFactoryParameter} responseHandler) ?? Promise.reject(new Error('http core is null'));");
                     break;
                 default:

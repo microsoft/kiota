@@ -1,6 +1,7 @@
 import { AuthenticationProvider, HttpCore as IHttpCore, Parsable, RequestInfo, ResponseHandler } from '@microsoft/kiota-abstractions';
 import { fetch, Headers as FetchHeadersCtor } from 'cross-fetch';
 import { RequestInit as FetchRequestInit, Headers as FetchHeaders } from 'cross-fetch/lib.fetch';
+import { ReadableStream } from 'web-streams-polyfill';
 import { JsonParseNode } from './serialization';
 export class HttpCore implements IHttpCore {
     private static readonly authorizationHeaderKey = "Authorization";
@@ -27,6 +28,50 @@ export class HttpCore implements IHttpCore {
             const rootNode = new JsonParseNode(payload);
             const result = rootNode.getObjectValue(type);
             return result as unknown as ModelType;
+        }
+    }
+    public sendPrimitiveAsync = async <ResponseType>(requestInfo: RequestInfo, responseType: "string" | "number" | "boolean" | "Date" | "ReadableStream", responseHandler: ResponseHandler | undefined): Promise<ResponseType> => {
+        if(!requestInfo) {
+            throw new Error('requestInfo cannot be null');
+        }
+        await this.addBearerIfNotPresent(requestInfo);
+        
+        const request = this.getRequestFromRequestInfo(requestInfo);
+        const response = await fetch(this.getRequestUrl(requestInfo), request);
+        if(responseHandler) {
+            return await responseHandler.handleResponseAsync(response);
+        } else {
+            switch(responseType) {
+                case "ReadableStream":
+                    const buffer =  await response.arrayBuffer();
+                    let bufferPulled = false;
+                    const stream = new ReadableStream({
+                        pull: (controller) => {
+                            if(!bufferPulled) {
+                                controller.enqueue(buffer.slice(0))
+                                bufferPulled = true;
+                            }
+                        },
+                    });
+                    return stream as unknown as ResponseType;
+                case 'string':
+                case 'number':
+                case 'boolean':
+                case 'Date':
+                    const payload = await response.json();
+                    const rootNode = new JsonParseNode(payload);
+                    if(responseType === 'string') {
+                        return rootNode.getStringValue() as unknown as ResponseType;
+                    } else if (responseType === 'number') {
+                        return rootNode.getNumberValue() as unknown as ResponseType;
+                    } else if(responseType === 'boolean') {
+                        return rootNode.getBooleanValue() as unknown as ResponseType;
+                    } else if (responseType === 'Date') {
+                        return rootNode.getDateValue() as unknown as ResponseType;
+                    } else {
+                        throw new Error("unexpected type to deserialize");
+                    }
+            }
         }
     }
     public sendNoResponseContentAsync = async (requestInfo: RequestInfo, responseHandler: ResponseHandler | undefined): Promise<void> => {

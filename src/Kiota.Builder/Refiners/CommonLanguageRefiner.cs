@@ -24,11 +24,12 @@ namespace Kiota.Builder {
                 }
                 if(shouldInsertUsing) {
                     var newUsing = new CodeUsing(parentClass) {
-                        Name = ns,
+                        Name = addDeclaration ? symbol : ns,
                     };
                     if(addDeclaration)
                         newUsing.Declaration = new CodeType(newUsing) {
-                            Name = symbol,
+                            Name = ns,
+                            IsExternal = true,
                         };
                     parentClass.AddUsing(newUsing);
                 }
