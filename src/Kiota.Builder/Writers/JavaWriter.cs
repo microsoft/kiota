@@ -52,8 +52,11 @@ namespace Kiota.Builder
                 WriteLine($"package {ns.Name};");
                 WriteLine();
                 code.Usings
-                    .Select(x => $"import {x.Name}.{x.Declaration.Name.ToFirstCharacterUpperCase()};")
+                    .Select(x => x.Declaration.IsExternal ?
+                                     $"import {x.Declaration.Name}.{x.Name.ToFirstCharacterUpperCase()};" :
+                                     $"import {x.Name}.{x.Declaration.Name.ToFirstCharacterUpperCase()};")
                     .Distinct()
+                    .OrderBy(x => x)
                     .ToList()
                     .ForEach(x => WriteLine(x));
             }
@@ -75,6 +78,7 @@ namespace Kiota.Builder
             throw new InvalidOperationException("indexers are not supported in Java, the refiner should have replaced those by methods");
         }
         private const string serializerFactoryParamName = "serializerFactory";
+        private const string streamType = "InputStream";
         public override void WriteMethod(CodeMethod code)
         {
             //TODO javadoc
@@ -132,7 +136,10 @@ namespace Kiota.Builder
                     DecreaseIndent();
                     WriteLine("}};");
                     if(requestBodyParam != null)
-                        WriteLine($"requestInfo.setJsonContentFromParsable({requestBodyParam.Name}, {serializerFactoryParamName});"); //TODO we're making a big assumption here that the request is json
+                        if(requestBodyParam.Type.Name.Equals(streamType, StringComparison.InvariantCultureIgnoreCase))
+                            WriteLine($"requestInfo.setStreamContent({requestBodyParam.Name});");
+                        else
+                            WriteLine($"requestInfo.setJsonContentFromParsable({requestBodyParam.Name}, {serializerFactoryParamName});"); //TODO we're making a big assumption here that the request is json
                     if(queryStringParam != null) {
                         var httpMethodPrefix = code.HttpMethod.ToString().ToFirstCharacterUpperCase();
                         WriteLine($"if ({queryStringParam.Name} != null) {{");
@@ -188,7 +195,7 @@ namespace Kiota.Builder
             DecreaseIndent();
             WriteLine("}");
         }
-        private static HashSet<string> primitiveTypes = new() {"String", "Boolean", "Integer", "Float", "Long", "Guid", "OffsetDateTime", "Void" };
+        private static HashSet<string> primitiveTypes = new() {"String", "Boolean", "Integer", "Float", "Long", "Guid", "OffsetDateTime", "Void", streamType };
         private string GetDeserializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
             var propertyType = TranslateType(propType.Name);

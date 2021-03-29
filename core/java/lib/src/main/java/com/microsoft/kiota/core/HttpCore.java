@@ -4,6 +4,7 @@
 package com.microsoft.kiota.core;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.UnsupportedOperationException;
 import java.time.OffsetDateTime;
 import java.util.Map;
@@ -83,6 +84,9 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
                     if(targetClass == Void.class) {
                         return CompletableFuture.completedStage(null);
                     } else {
+                        if(targetClass == InputStream.class) {
+                            return CompletableFuture.completedStage((ModelType)body.byteStream());
+                        }
                         final String rawJson = body.string();
                         final JsonParseNode rootNode = new JsonParseNode(rawJson);
                         if(targetClass == Boolean.class) {
