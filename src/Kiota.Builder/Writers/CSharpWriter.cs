@@ -282,5 +282,23 @@ namespace Kiota.Builder
         {
             return (access == AccessModifier.Public ? "public" : (access == AccessModifier.Protected ? "protected" : "private"));
         }
+
+        public override void WriteEnum(CodeEnum code)
+        {
+            var codeNamespace = code?.Parent as CodeNamespace;
+            if(codeNamespace != null) {
+                WriteLine($"namespace {codeNamespace.Name} {{");
+                IncreaseIndent();
+            }
+            WriteLine($"public enum {code.Name.ToFirstCharacterUpperCase()} {{"); //TODO docs
+            IncreaseIndent();
+            WriteLines(code.Options.Select(x => x.ToFirstCharacterUpperCase()).Select(x => $"{x},").ToArray());
+            DecreaseIndent();
+            WriteLine("}");
+            if(codeNamespace != null) {
+                DecreaseIndent();
+                WriteLine("}");
+            }
+        }
     }
 }

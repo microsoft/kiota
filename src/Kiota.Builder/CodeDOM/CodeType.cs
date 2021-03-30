@@ -7,7 +7,7 @@ namespace Kiota.Builder
         public CodeType(CodeElement parent): base(parent){
             
         }
-        public CodeClass TypeDefinition
+        public CodeElement TypeDefinition
         {
             get;
             set;

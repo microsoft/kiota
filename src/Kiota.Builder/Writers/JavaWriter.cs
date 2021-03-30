@@ -281,5 +281,10 @@ namespace Kiota.Builder
         {
             return (access == AccessModifier.Public ? "public" : (access == AccessModifier.Protected ? "protected" : "private"));
         }
+
+        public override void WriteEnum(CodeEnum code)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

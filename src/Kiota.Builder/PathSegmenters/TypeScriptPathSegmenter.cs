@@ -15,7 +15,7 @@ namespace Kiota.Builder {
         private string RootPath;
 
         public string FileSuffix => ".ts";
-        public string GetPath(CodeNamespace currentNamespace, CodeClass currentClass)
+        public string GetPath(CodeNamespace currentNamespace, CodeElement currentElement)
         {
             var targetPath = Path.Combine(RootPath, 
                                             currentNamespace.Name
@@ -24,7 +24,7 @@ namespace Kiota.Builder {
                                             .Split('.')
                                             .Select(x => x.ToFirstCharacterLowerCase())
                                             .Aggregate((x, y) => $"{x}{Path.DirectorySeparatorChar}{y}"),
-                                            currentClass.Name.ToFirstCharacterLowerCase() + FileSuffix);
+                                            currentElement.Name.ToFirstCharacterLowerCase() + FileSuffix);
             var directoryPath = Path.GetDirectoryName(targetPath);
             if(!Directory.Exists(directoryPath))
                 Directory.CreateDirectory(directoryPath);

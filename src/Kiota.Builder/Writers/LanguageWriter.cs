@@ -77,6 +77,7 @@ namespace Kiota.Builder
                 case CodeIndexer c: WriteIndexer(c); break;
                 case CodeMethod c: WriteMethod(c); break;
                 case CodeType c: WriteType(c); break;
+                case CodeEnum e: WriteEnum(e); break;
                 case CodeNamespace: break;
                 case CodeClass: break;
                 default:
@@ -84,7 +85,7 @@ namespace Kiota.Builder
             }
 
         }
-
+        public abstract void WriteEnum(CodeEnum code);
         public abstract string GetParameterSignature(CodeParameter parameter);
         public abstract string GetTypeString(CodeTypeBase code);
         public abstract string TranslateType(string typeName);

@@ -130,7 +130,7 @@ namespace Kiota.Builder {
                     foreach(var returnType in currentIndexer.ReturnType.AllTypes)
                         AddIndexerMethod(currentElement.GetImmediateParentOfType<CodeNamespace>().GetRootNamespace(), 
                                         currentParentClass,
-                                        returnType.TypeDefinition,
+                                        returnType.TypeDefinition as CodeClass,
                                         pathSegment.Trim('\"').TrimStart('/'),
                                         methodNameSuffix);
             }
@@ -170,10 +170,14 @@ namespace Kiota.Builder {
             if(current is CodeClass currentClass) {
                 foreach(var parameter in current.GetChildElements().OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf && x.ParameterKind == CodeParameterKind.QueryParameter)) 
                     foreach(var returnType in parameter.Type.AllTypes) {
+                        var innerClass = returnType.TypeDefinition as CodeClass;
+                        if(innerClass == null)
+                            continue;
+                            
                         if(!currentClass.InnerChildElements.OfType<CodeClass>().Any(x => x.Name.Equals(returnType.TypeDefinition.Name))) {
-                            currentClass.AddInnerClass(returnType.TypeDefinition);
+                            currentClass.AddInnerClass(innerClass);
                         }
-                        (returnType.TypeDefinition.StartBlock as Declaration).Inherits = new CodeType(returnType.TypeDefinition) { Name = "QueryParametersBase", IsExternal = true };
+                        (innerClass.StartBlock as Declaration).Inherits = new CodeType(returnType.TypeDefinition) { Name = "QueryParametersBase", IsExternal = true };
                     }
             }
             CrawlTree(current, AddInnerClasses);

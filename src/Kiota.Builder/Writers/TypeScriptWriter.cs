@@ -29,7 +29,7 @@ namespace Kiota.Builder
                 if (code.ActionOf)
                 {
                     IncreaseIndent(4);
-                    var childElements = currentType?.TypeDefinition
+                    var childElements = (currentType?.TypeDefinition as CodeClass)
                                                 ?.InnerChildElements
                                                 ?.OfType<CodeProperty>()
                                                 ?.Select(x => $"{x.Name}?: {GetTypeString(x.Type)}");
@@ -334,6 +334,11 @@ namespace Kiota.Builder
         public override string GetAccessModifier(AccessModifier access)
         {
             return (access == AccessModifier.Public ? "public" : (access == AccessModifier.Protected ? "protected" : "private"));
+        }
+
+        public override void WriteEnum(CodeEnum code)
+        {
+            throw new NotImplementedException();
         }
     }
 }
