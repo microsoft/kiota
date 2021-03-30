@@ -14,12 +14,12 @@ namespace KiotaCore.Serialization {
             _jsonNode = node;
         }
         public string GetStringValue() => _jsonNode.GetString();
-        public bool GetBoolValue() => _jsonNode.GetBoolean();
-        public int GetIntValue() => _jsonNode.GetInt32();
-        public decimal GetFloatValue() => _jsonNode.GetDecimal();
-        public double GetDoubleValue() => _jsonNode.GetDouble();
-        public Guid GetGuidValue() => _jsonNode.GetGuid();
-        public DateTimeOffset GetDateTimeOffsetValue() => _jsonNode.GetDateTimeOffset();
+        public bool? GetBoolValue() => _jsonNode.GetBoolean();
+        public int? GetIntValue() => _jsonNode.GetInt32();
+        public decimal? GetFloatValue() => _jsonNode.GetDecimal();
+        public double? GetDoubleValue() => _jsonNode.GetDouble();
+        public Guid? GetGuidValue() => _jsonNode.GetGuid();
+        public DateTimeOffset? GetDateTimeOffsetValue() => _jsonNode.GetDateTimeOffset();
         public IEnumerable<T> GetCollectionOfObjectValues<T>() where T: class, IParsable<T>, new() {
             var enumerator = _jsonNode.EnumerateArray();
             while(enumerator.MoveNext()) {
@@ -27,13 +27,13 @@ namespace KiotaCore.Serialization {
                 yield return currentParseNode.GetObjectValue<T>();
             }
         }
-        private static Type booleanType = typeof(bool);
+        private static Type booleanType = typeof(bool?);
         private static Type stringType = typeof(string);
-        private static Type intType = typeof(int);
-        private static Type floatType = typeof(float);
-        private static Type doubleType = typeof(double);
-        private static Type guidType = typeof(Guid);
-        private static Type dateTimeOffsetType = typeof(DateTimeOffset);
+        private static Type intType = typeof(int?);
+        private static Type floatType = typeof(float?);
+        private static Type doubleType = typeof(double?);
+        private static Type guidType = typeof(Guid?);
+        private static Type dateTimeOffsetType = typeof(DateTimeOffset?);
         public IEnumerable<T> GetCollectionOfPrimitiveValues<T>() {
             var genericType = typeof(T);
             foreach(var collectionValue in _jsonNode.EnumerateArray()) {

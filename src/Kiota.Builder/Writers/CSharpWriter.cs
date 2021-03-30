@@ -118,11 +118,12 @@ namespace Kiota.Builder
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
             var propertyType = TranslateType(propType.Name);
+            var nullableSuffix = propType.IsNullable && nullableTypes.Contains(propertyType) ? "?" : string.Empty;
             if(isCollection && propType is CodeType currentType) {
                 if(currentType.TypeDefinition == null)
-                    return $"WriteCollectionOfPrimitiveValues<{propertyType}>";
+                    return $"WriteCollectionOfPrimitiveValues<{propertyType}{nullableSuffix}>";
                 else
-                    return $"WriteCollectionOfObjectValues<{propertyType}>";
+                    return $"WriteCollectionOfObjectValues<{propertyType}{nullableSuffix}>";
             }
             switch(propertyType) {
                 case "string":
@@ -154,6 +155,7 @@ namespace Kiota.Builder
         }
         private const string SerializerFactoryPropertyName = "SerializerFactory";
         private const string StreamTypeName = "stream";
+        private const string VoidTypeName = "void";
 
         public override void WriteMethod(CodeMethod code)
         {
@@ -162,7 +164,7 @@ namespace Kiota.Builder
             var parentClass = code.Parent as CodeClass;
             var shouldHide = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null && code.MethodKind == CodeMethodKind.Serializer;
             var hideModifier = shouldHide ? "new " : string.Empty;
-            var isVoid = "void".Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
+            var isVoid = VoidTypeName.Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
             var isStream = StreamTypeName.Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
             var completeReturnType = $"{(code.IsAsync ? "async Task" +(isVoid ? string.Empty : "<"): string.Empty)}{(code.IsAsync && isVoid ? string.Empty : returnType)}{( code.IsAsync && !isVoid ? ">": string.Empty)}";
             // Task type should be moved into the refiner
@@ -238,20 +240,21 @@ namespace Kiota.Builder
             Write(GetTypeString(code), includeIndent: false);
 
         }
-
+        private static string[] nullableTypes = { "int", "bool", "float", "double", "decimal", "Guid", "DateTimeOffset" };
         public override string GetTypeString(CodeTypeBase code)
         {
             if(code is CodeUnionType) 
                 throw new InvalidOperationException($"CSharp does not support union types, the union type {code.Name} should have been filtered out by the refiner");
             else if (code is CodeType currentType) {
                 var typeName = TranslateType(currentType.Name);
+                var nullableSuffix = code.IsNullable && nullableTypes.Contains(typeName) ? "?" : string.Empty;
                 var collectionPrefix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? "List<" : string.Empty;
                 var collectionSuffix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? ">" : 
                                             (currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Array ? "[]" : string.Empty);
                 if (currentType.ActionOf)
-                    return $"Action<{collectionPrefix}{typeName}{collectionSuffix}>";
+                    return $"Action<{collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}>";
                 else
-                    return $"{collectionPrefix}{typeName}{collectionSuffix}";
+                    return $"{collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}";
             }
             else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
