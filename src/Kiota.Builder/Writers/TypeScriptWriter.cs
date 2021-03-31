@@ -171,11 +171,14 @@ namespace Kiota.Builder
         private string GetDeserializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
             var propertyType = TranslateType(propType.Name);
-            if(isCollection && propType is CodeType currentType) {
-                if(currentType.TypeDefinition == null)
-                    return $"getCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>()";
-                else
-                    return $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
+            if(propType is CodeType currentType) {
+                if(isCollection)
+                    if(currentType.TypeDefinition == null)
+                        return $"getCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>()";
+                    else
+                        return $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
+                else if(currentType.TypeDefinition is CodeEnum currentEnum)
+                    return $"getEnumValue{(currentEnum.Flags ? "s" : string.Empty)}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
             }
             switch(propertyType) {
                 case "string":
@@ -191,11 +194,14 @@ namespace Kiota.Builder
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
             var propertyType = TranslateType(propType.Name);
-            if(isCollection && propType is CodeType currentType) {
-                if(currentType.TypeDefinition == null)
-                    return $"writeCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>";
-                else
-                    return $"writeCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>";
+            if(propType is CodeType currentType) {
+                if(isCollection)
+                    if(currentType.TypeDefinition == null)
+                        return $"writeCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>";
+                    else
+                        return $"writeCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>";
+                else if(currentType.TypeDefinition is CodeEnum currentEnum)
+                    return $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}>";
             }
             switch(propertyType) {
                 case "string":
@@ -309,6 +315,7 @@ namespace Kiota.Builder
         {
             var parentClass = code.Parent as CodeClass;
             var returnType = GetTypeString(code.Type);
+            var isFlagEnum = code.Type is CodeType currentType && currentType.TypeDefinition is CodeEnum currentEnum && currentEnum.Flags;
             switch(code.PropertyKind) {
                 case CodePropertyKind.Deserializer:
                     throw new InvalidOperationException("typescript uses methods for the deserializers and this property should have been converted to a method");
@@ -322,7 +329,7 @@ namespace Kiota.Builder
                 default:
                     var defaultValue = string.IsNullOrEmpty(code.DefaultValue) ? string.Empty : $" = {code.DefaultValue}";
                     var singleLiner = code.PropertyKind == CodePropertyKind.Custom;
-                    WriteLine($"{GetAccessModifier(code.Access)}{(code.ReadOnly ? " readonly ": " ")}{code.Name.ToFirstCharacterLowerCase()}{(code.Type.IsNullable ? "?" : string.Empty)}: {returnType}{(code.Type.IsNullable ? " | undefined" : string.Empty)}{defaultValue}{(singleLiner ? ";" : string.Empty)}");
+                    WriteLine($"{GetAccessModifier(code.Access)}{(code.ReadOnly ? " readonly ": " ")}{code.Name.ToFirstCharacterLowerCase()}{(code.Type.IsNullable ? "?" : string.Empty)}: {returnType}{(isFlagEnum ? "[]" : string.Empty)}{(code.Type.IsNullable ? " | undefined" : string.Empty)}{defaultValue}{(singleLiner ? ";" : string.Empty)}");
                 break;
             }
         }
@@ -338,7 +345,11 @@ namespace Kiota.Builder
 
         public override void WriteEnum(CodeEnum code)
         {
-            throw new NotImplementedException();
+            WriteLine($"export enum {code.Name.ToFirstCharacterUpperCase()} {{");
+            IncreaseIndent();
+            code.Options.ForEach(x => WriteLine($"{x.ToFirstCharacterUpperCase()} = \"{x}\","));
+            DecreaseIndent();
+            WriteLine("}");
         }
     }
 }

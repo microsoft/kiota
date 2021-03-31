@@ -81,6 +81,14 @@ export class JsonSerializationWriter implements SerializationWriter {
             this.writer.push(`}`);
         }
     }
+    public writeEnumValue = <T>(key?: string | undefined, ...values: (T | undefined)[]): void => {
+        if(values.length > 0) {
+            const rawValues = values.filter(x => x !== undefined).map(x => `${x}`);
+            if(rawValues.length > 0) {
+                this.writeStringValue(key, rawValues.reduce((x, y) => `${x}, ${y}`));
+            }
+        }
+    }
     public getSerializedContent = (): ReadableStream => {
         const encoded = new TextEncoder().encode(this.writer.join(""));
         return new ReadableStream<Uint8Array>({
