@@ -14,5 +14,6 @@ namespace Kiota.Builder
             return Enumerable.Empty<CodeElement>().ToList();
         }
         public List<string> Options { get; set; } = new List<string>();
+        public bool Flags { get; set; }
     }
 }

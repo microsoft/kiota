@@ -5,6 +5,8 @@ using System.Text.Json;
 using Kiota.Abstractions.Serialization;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Reflection;
+using KiotaCore.Extensions;
 
 namespace KiotaCore.Serialization {
     public class JsonSerializationWriter : ISerializationWriter, IDisposable {
@@ -48,6 +50,18 @@ namespace KiotaCore.Serialization {
         public void WriteDateTimeOffsetValue(string key, DateTimeOffset? value) {
             if(!string.IsNullOrEmpty(key) && value.HasValue) writer.WritePropertyName(key);
             if(value.HasValue) writer.WriteStringValue(value.Value);
+        }
+        public void WriteEnumValue<T>(string key, T? value) where T : struct, Enum {
+            if(!string.IsNullOrEmpty(key) && value.HasValue) writer.WritePropertyName(key);
+            if(value.HasValue) {
+                if(typeof(T).GetCustomAttributes<FlagsAttribute>().Any())
+                    writer.WriteStringValue(Enum.GetValues<T>()
+                                            .Where(x => value.Value.HasFlag(x))
+                                            .Select(x => Enum.GetName<T>(x))
+                                            .Select(x => x.ToFirstCharacterLowerCase())
+                                            .Aggregate((x, y) => $"{x},{y}"));
+                else writer.WriteStringValue(value.Value.ToString().ToFirstCharacterLowerCase());
+            }
         }
         public void WriteCollectionOfPrimitiveValues<T>(string key, IEnumerable<T> values) {
             if(values != null) { //empty array is meaningful

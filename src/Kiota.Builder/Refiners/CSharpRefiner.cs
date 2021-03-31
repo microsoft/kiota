@@ -18,6 +18,16 @@ namespace Kiota.Builder {
             AddParsableInheritanceForModelClasses(generatedCode);
             CapitalizeNamespacesFirstLetters(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");
+            MakeEnumPropertiesNullable(generatedCode);
+        }
+        private void MakeEnumPropertiesNullable(CodeElement currentElement) {
+            if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model)
+                currentClass.InnerChildElements
+                            .OfType<CodeProperty>()
+                            .Where(x => x.Type is CodeType propType && propType.TypeDefinition is CodeEnum)
+                            .ToList()
+                            .ForEach(x => x.Type.IsNullable = true);
+            CrawlTree(currentElement, MakeEnumPropertiesNullable);
         }
         private void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model) {

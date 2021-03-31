@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using Kiota.Abstractions.Serialization;
@@ -20,6 +21,18 @@ namespace KiotaCore.Serialization {
         public double? GetDoubleValue() => _jsonNode.GetDouble();
         public Guid? GetGuidValue() => _jsonNode.GetGuid();
         public DateTimeOffset? GetDateTimeOffsetValue() => _jsonNode.GetDateTimeOffset();
+        public T? GetEnumValue<T>() where T: struct, Enum {
+            var rawValue = _jsonNode.GetString();
+            if(string.IsNullOrEmpty(rawValue)) return default;
+            if(typeof(T).GetCustomAttributes<FlagsAttribute>().Any()) {
+                return (T)(object)rawValue
+                    .Split(',')
+                    .Select(x => Enum.Parse<T>(x, true))
+                    .Select(x => (int)(object)x)
+                    .Sum();
+            } else
+                return Enum.Parse<T>(rawValue, true);
+        }
         public IEnumerable<T> GetCollectionOfObjectValues<T>() where T: class, IParsable<T>, new() {
             var enumerator = _jsonNode.EnumerateArray();
             while(enumerator.MoveNext()) {

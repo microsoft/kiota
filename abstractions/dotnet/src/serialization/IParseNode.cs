@@ -13,6 +13,7 @@ namespace Kiota.Abstractions.Serialization {
         DateTimeOffset? GetDateTimeOffsetValue();
         IEnumerable<T> GetCollectionOfPrimitiveValues<T>();
         IEnumerable<T> GetCollectionOfObjectValues<T>() where T: class, IParsable<T>, new();
+        T? GetEnumValue<T>() where T: struct, Enum;
         T GetObjectValue<T>() where T: class, IParsable<T>, new();
     }
 }

@@ -325,7 +325,7 @@ namespace Kiota.Builder
             return prop;
         }
 
-        private CodeProperty CreateProperty(string childIdentifier, string childType, CodeClass codeClass, string defaultValue = null, OpenApiSchema typeSchema = null, CodeClass typeDefinition = null, CodePropertyKind kind = CodePropertyKind.Custom)
+        private CodeProperty CreateProperty(string childIdentifier, string childType, CodeClass codeClass, string defaultValue = null, OpenApiSchema typeSchema = null, CodeElement typeDefinition = null, CodePropertyKind kind = CodePropertyKind.Custom)
         {
             var isCollection = typeSchema?.Type?.Equals("array", StringComparison.CurrentCultureIgnoreCase) ?? false;
             var propertyName = childIdentifier;
@@ -339,7 +339,7 @@ namespace Kiota.Builder
             prop.Type = new CodeType(prop) {
                 Name = isCollection ? (typeSchema?.Items?.Reference?.GetClassName() ?? typeSchema?.Items?.Type) : childType,
                 TypeDefinition = typeDefinition,
-                CollectionKind = isCollection ? CodeType.CodeTypeCollectionKind.Complex : default
+                CollectionKind = isCollection ? CodeType.CodeTypeCollectionKind.Complex : default,
             };
             logger.LogDebug("Creating property {name} of {type}", prop.Name, prop.Type.Name);
             return prop;
@@ -534,9 +534,9 @@ namespace Kiota.Builder
                     if(shortestNamespace == null)
                         shortestNamespace = codeNamespace.AddNamespace(shortestNamespaceName);
                     var className = currentSchema.GetClassName();
-                    var codeClass = AddModelDeclarationIfDoesntExit(rootNode, currentNode, currentSchema, operation, className, shortestNamespace, parentElement);
+                    var codeDeclaration = AddModelDeclarationIfDoesntExit(rootNode, currentNode, currentSchema, operation, className, shortestNamespace, parentElement);
                     unionType.AddType(new CodeType(unionType) {
-                        TypeDefinition = codeClass,
+                        TypeDefinition = codeDeclaration,
                         Name = className,
                     });
                 }
@@ -568,7 +568,8 @@ namespace Kiota.Builder
                 if(schema.Enum.Any()) {
                     var newEnum = new CodeEnum(currentNamespace) { 
                         Name = declarationName,
-                        Options = schema.Enum.OfType<OpenApiString>().Select(x => x.Value).ToList() };
+                        Options = schema.Enum.OfType<OpenApiString>().Select(x => x.Value).Where(x => !"null".Equals(x)).ToList(),//TODO set the flag property
+                    };
                     currentNamespace.AddEnum(newEnum);
                     return newEnum;
                 } else {
@@ -598,12 +599,12 @@ namespace Kiota.Builder
                                     .Select(x => {
                                         var propertyDefinitionSchema = x.Value.Items ?? x.Value;
                                         var className = x.Value.GetClassName();
-                                        CodeClass definition = default;
+                                        CodeElement definition = default;
                                         if(!string.IsNullOrEmpty(className)) {
                                             var shortestNamespaceName = GetShortestNamespaceNameForModelByReferenceId(rootNode, propertyDefinitionSchema.Reference.Id);
                                             var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns : 
                                                                     (ns.GetRootNamespace().GetNamespace(shortestNamespaceName) ?? ns.GetRootNamespace().AddNamespace(shortestNamespaceName));
-                                            definition = AddModelDeclarationIfDoesntExit(rootNode, currentNode, propertyDefinitionSchema, operation, className, targetNamespace, parent, null, true) as CodeClass;
+                                            definition = AddModelDeclarationIfDoesntExit(rootNode, currentNode, propertyDefinitionSchema, operation, className, targetNamespace, parent, null, true);
                                         }
                                         return CreateProperty(x.Key, className ?? x.Value.Type, model, typeSchema: x.Value, typeDefinition: definition);
                                     })

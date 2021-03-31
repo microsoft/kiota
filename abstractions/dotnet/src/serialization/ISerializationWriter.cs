@@ -14,6 +14,7 @@ namespace Kiota.Abstractions.Serialization {
         void WriteCollectionOfPrimitiveValues<T>(string key, IEnumerable<T> values);
         void WriteCollectionOfObjectValues<T>(string key, IEnumerable<T> values) where T : class, IParsable<T>, new();
         void WriteObjectValue<T>(string key, T value) where T : class, IParsable<T>, new();
+        void WriteEnumValue<T>(string key, T? value) where T : struct, Enum;
         Stream GetSerializedContent();
     }
 }
