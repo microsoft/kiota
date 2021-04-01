@@ -3,8 +3,10 @@ on:
   push:
     branches:
       - main
+    path-ignore: ['abstractions/**', 'core/**', '**.md', '.vscode/**', '**.svg']
   pull_request:
     types: [opened, synchronize, reopened]
+    path-ignore: ['abstractions/**', 'core/**', '**.md', '.vscode/**', '**.svg']
 jobs:
   build:
     name: Build
