@@ -4,6 +4,8 @@ import java.io.Closeable;
 import java.io.InputStream;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import java.util.EnumSet;
+import java.lang.Enum;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -21,4 +23,6 @@ public interface SerializationWriter extends Closeable {
     <T extends Parsable> void writeObjectValue(@Nullable final String key, @Nonnull final T value);
     @Nonnull
     InputStream getSerializedContent();
+    <T extends Enum<T>> void writeEnumSetValue(@Nullable final String key, @Nullable final EnumSet<T> values);
+    <T extends Enum<T>> void writeEnumValue(@Nullable final String key, @Nullable final T value);
 }

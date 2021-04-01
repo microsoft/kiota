@@ -9,6 +9,7 @@ import com.google.gson.JsonParser;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.time.OffsetDateTime;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,7 @@ import com.microsoft.kiota.serialization.ParseNode;
 import com.microsoft.kiota.serialization.Parsable;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class JsonParseNode implements ParseNode {
     private final JsonElement currentNode;
@@ -136,6 +138,38 @@ public class JsonParseNode implements ParseNode {
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException ex) {
             throw new RuntimeException("Error during deserialization", ex);
         }
+    }
+    @Nullable
+    public <T extends Enum<T>> T getEnumValue(@Nonnull final Class<T> targetEnum) {
+        final String rawValue = this.getStringValue();
+        if(rawValue == null || rawValue.isEmpty()) {
+            return null;
+        }
+        return getEnumValueInt(rawValue, targetEnum);
+    }
+    @SuppressWarnings("unchecked")
+    private <T extends Enum<T>> T getEnumValueInt(@Nonnull final String rawValue, @Nonnull final Class<T> targetEnum) {
+        try {
+            return (T)targetEnum.getMethod("forValue", String.class).invoke(null, rawValue);
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+    @Nullable
+    public <T extends Enum<T>> EnumSet<T> getEnumSetValue(@Nonnull final Class<T> targetEnum) {
+        final String rawValue = this.getStringValue();
+        if(rawValue == null || rawValue.isEmpty()) {
+            return null;
+        }
+        final EnumSet<T> result = EnumSet.noneOf(targetEnum);
+        final String[] rawValues = rawValue.split(",");
+        for (final String rawValueItem : rawValues) {
+            final T value = getEnumValueInt(rawValueItem, targetEnum);
+            if(value != null) {
+                result.add(value);
+            }
+        }
+        return result;
     }
     private <T extends Parsable> void assignFieldValues(final T item, final Map<String, BiConsumer<T, ParseNode>> fieldDeserializers) {
         if(currentNode.isJsonObject()) {

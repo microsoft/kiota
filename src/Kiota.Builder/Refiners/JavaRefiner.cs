@@ -22,6 +22,19 @@ namespace Kiota.Builder {
             AddParsableInheritanceForModelClasses(generatedCode);
             ConvertDeserializerPropsToMethods(generatedCode, "get");
             ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
+            AddEnumSetImport(generatedCode);
+        }
+        private void AddEnumSetImport(CodeElement currentElement) {
+            if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model &&
+                currentClass.InnerChildElements.OfType<CodeProperty>().Any(x => x.Type is CodeType xType && xType.TypeDefinition is CodeEnum xEnumType && xEnumType.Flags)) {
+                    var nUsing = new CodeUsing(currentClass) {
+                        Name = "EnumSet",
+                    };
+                    nUsing.Declaration = new CodeType(nUsing) { Name = "java.util", IsExternal = true };
+                    currentClass.AddUsing(nUsing);
+                }
+
+            CrawlTree(currentElement, AddEnumSetImport);
         }
         private void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model) {

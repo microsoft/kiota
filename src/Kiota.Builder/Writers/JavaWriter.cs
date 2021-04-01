@@ -199,11 +199,14 @@ namespace Kiota.Builder
         private string GetDeserializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
             var propertyType = TranslateType(propType.Name);
-            if(isCollection && propType is CodeType currentType) {
-                if(currentType.TypeDefinition == null)
-                    return $"n.getCollectionOfPrimitiveValues({propertyType.ToFirstCharacterUpperCase()}.class)";
-                else
-                    return $"n.getCollectionOfObjectValues({propertyType.ToFirstCharacterUpperCase()}.class)";
+            if(propType is CodeType currentType) {
+                if(isCollection)
+                    if(currentType.TypeDefinition == null)
+                        return $"n.getCollectionOfPrimitiveValues({propertyType.ToFirstCharacterUpperCase()}.class)";
+                    else
+                        return $"n.getCollectionOfObjectValues({propertyType.ToFirstCharacterUpperCase()}.class)";
+                else if (currentType.TypeDefinition is CodeEnum currentEnum)
+                    return $"n.getEnum{(currentEnum.Flags ? "Set" : string.Empty)}Value({propertyType.ToFirstCharacterUpperCase()}.class)";
             }
             switch(propertyType) {
                 case "String":
@@ -221,11 +224,14 @@ namespace Kiota.Builder
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
             var propertyType = TranslateType(propType.Name);
-            if(isCollection && propType is CodeType currentType) {
-                if(currentType.TypeDefinition == null)
-                    return $"writeCollectionOfPrimitiveValues";
-                else
-                    return $"writeCollectionOfObjectValues";
+            if(propType is CodeType currentType) {
+                if(isCollection)
+                    if(currentType.TypeDefinition == null)
+                        return $"writeCollectionOfPrimitiveValues";
+                    else
+                        return $"writeCollectionOfObjectValues";
+                else if (currentType.TypeDefinition is CodeEnum currentEnum)
+                    return $"writeEnum{(currentEnum.Flags ? "Set" : string.Empty)}Value";
             }
             switch(propertyType) {
                 case "String":
@@ -267,6 +273,8 @@ namespace Kiota.Builder
                     throw new InvalidOperationException("java uses methods for the deserializer and this property should have been converted by the refiner");
                 default:
                     var defaultValue = string.IsNullOrEmpty(code.DefaultValue) ? string.Empty : $" = {code.DefaultValue}";
+                    if(code.Type is CodeType currentType && currentType.TypeDefinition is CodeEnum enumType && enumType.Flags)
+                        returnType = $"EnumSet<{returnType}>";
                     WriteLine(code.Type.IsNullable ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
                     WriteLine($"{GetAccessModifier(code.Access)}{(code.ReadOnly ? " final " : " ")}{returnType} {code.Name.ToFirstCharacterLowerCase()}{defaultValue};");
                 break;
@@ -284,7 +292,41 @@ namespace Kiota.Builder
 
         public override void WriteEnum(CodeEnum code)
         {
-            throw new NotImplementedException();
+            if(!code.Options.Any())
+                return;
+            var enumName = code.Name.ToFirstCharacterUpperCase();
+            WriteLines($"package {(code.Parent as CodeNamespace)?.Name};",
+                string.Empty,
+                "import com.microsoft.kiota.serialization.ValuedEnum;",
+                string.Empty,
+                $"public enum {enumName} implements ValuedEnum {{");
+            IncreaseIndent();
+            Write(code.Options
+                        .Select(x => $"{x.ToFirstCharacterUpperCase()}(\"{x}\")")
+                        .Aggregate((x, y) => $"{x},{NewLine}{GetIndent()}{y}") + ";" + NewLine);
+            WriteLines("public final String value;",
+                $"{enumName}(final String value) {{");
+            IncreaseIndent();
+            WriteLine("this.value = value;");
+            DecreaseIndent();
+            WriteLines("}",
+                        "@javax.annotation.Nonnull",
+                        "public String getValue() { return this.value; }",
+                        "@javax.annotation.Nullable",
+                        $"public static {enumName} forValue(@javax.annotation.Nonnull final String searchValue) {{");
+            IncreaseIndent();
+            WriteLine("switch(searchValue) {");
+            IncreaseIndent();
+            Write(code.Options
+                        .Select(x => $"case \"{x}\": return {x.ToFirstCharacterUpperCase()};")
+                        .Aggregate((x, y) => $"{x}{NewLine}{GetIndent()}{y}") + NewLine);
+            WriteLine("default: return null;");
+            DecreaseIndent();
+            WriteLine("}");
+            DecreaseIndent();
+            WriteLine("}");
+            DecreaseIndent();
+            WriteLine("}");
         }
     }
 }
