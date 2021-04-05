@@ -21,7 +21,7 @@
             "group": "test",
             "args": [
                 "test",
-                "${workspaceFolder}/tests/kiota.core.tests/kiota.core.tests.csproj",
+                "${workspaceFolder}/tests/Kiota.Builder.tests/Kiota.Builder.Tests.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
