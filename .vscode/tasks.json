@@ -21,9 +21,77 @@
             "group": "test",
             "args": [
                 "test",
-                "${workspaceFolder}/tests/Kiota.Builder.tests/Kiota.Builder.Tests.csproj",
+                "${workspaceFolder}/kiota.sln",
                 "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "/consoleloggerparameters:NoSummary",
+                "--collect:\"XPlat Code Coverage\""
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "coverage:clean",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-command",
+                "Remove-Item -Recurse -Include TestResults -Path tests",
+            ],
+            "linux": {
+                "command": "rm",
+                "args": [
+                    "-r",
+                    "./tests/Kiota.Builder.Tests/TestResults",
+                    "./tests/Kiota.Builder.IntegrationTests/TestResults",
+                ]
+            }
+        },
+        {
+            "label": "coverage",
+            "type": "process",
+            "command": "reportgenerator",
+            "group": "test",
+            "args": [
+                "-reports:**/coverage.cobertura.xml",
+                "-targetdir:./reports/coverage"
+            ],
+            "dependsOn": [
+                "coverage:clean",
+                "test"
+            ],
+            "dependsOrder": "sequence"
+        },
+        {
+            "label": "coverage:launch",
+            "type": "shell",
+            "command": "start",
+            "linux": {
+                "command": "xdg-open",
+                "args": [
+                    "./reports/coverage/index.html"
+                ]
+            },
+            "osx": {
+                "command": "open",
+                "args": [
+                    "./reports/coverage/index.html"
+
+                ]
+            },
+            "group": "test",
+            "args": [
+                "./reports/coverage/index.html"
+            ],
+            "dependsOn":[
+                "coverage"
+            ]
+        },
+        {
+            "label": "clean",
+            "command": "dotnet",
+            "type": "process",
+            "group": "build",
+            "args": [
+                "clean"
             ],
             "problemMatcher": "$msCompile"
         },
@@ -31,7 +99,7 @@
             "label": "publish",
             "command": "dotnet",
             "type": "process",
-            "group": "none",
+            "group": "build",
             "args": [
                 "publish",
                 "${workspaceFolder}/src/kiota/kiota.csproj",
