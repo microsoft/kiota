@@ -9,6 +9,7 @@ namespace Kiota.Builder {
         {
             AddDefaultImports(generatedCode);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
+            ConvertUnionTypesToWrapper(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddAsyncSuffix(generatedCode);
             AddInnerClasses(generatedCode);

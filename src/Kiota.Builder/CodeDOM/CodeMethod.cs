@@ -19,7 +19,7 @@ namespace Kiota.Builder
         }
         public CodeMethodKind MethodKind = CodeMethodKind.Custom;
         public AccessModifier Access = AccessModifier.Public;
-        public CodeType ReturnType;
+        public CodeTypeBase ReturnType;
         public List<CodeParameter> Parameters = new List<CodeParameter>();
         public bool IsStatic = false;
         public bool IsAsync = true;
@@ -28,7 +28,7 @@ namespace Kiota.Builder
         {
             return new CodeMethod(Parent) {
                 MethodKind = MethodKind,
-                ReturnType = ReturnType.Clone() as CodeType,
+                ReturnType = ReturnType.Clone() as CodeTypeBase,
                 Parameters = Parameters.Select(x => x.Clone() as CodeParameter).ToList(),
                 Name = Name.Clone() as string,
             };

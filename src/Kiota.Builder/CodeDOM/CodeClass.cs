@@ -77,13 +77,6 @@ namespace Kiota.Builder
             {
                 
             }
-            /// <summary>
-            /// Class name
-            /// </summary>
-            public override string Name
-            {
-                get; set;
-            }
             public CodeType Inherits { get; set; }
             public List<CodeType> Implements { get; set; } = new List<CodeType>();
         }

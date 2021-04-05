@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder
 {
@@ -87,8 +86,8 @@ namespace Kiota.Builder
         }
 
         public abstract string GetParameterSignature(CodeParameter parameter);
-        public abstract string GetTypeString(CodeType code);
-        public abstract string TranslateType(string typeName, OpenApiSchema schema);
+        public abstract string GetTypeString(CodeTypeBase code);
+        public abstract string TranslateType(string typeName);
         public abstract void WriteProperty(CodeProperty code);
         public abstract void WriteIndexer(CodeIndexer code);
         public abstract void WriteMethod(CodeMethod code);

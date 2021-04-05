@@ -11,6 +11,7 @@ namespace Kiota.Builder {
             AddInnerClasses(generatedCode);
             MakeQueryStringParametersNonOptionalAndInsertOverrideMethod(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode);
+            ConvertUnionTypesToWrapper(generatedCode);
             AddRequireNonNullImports(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             AddDefaultImports(generatedCode);

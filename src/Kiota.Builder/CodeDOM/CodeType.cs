@@ -1,46 +1,25 @@
 ﻿using System;
-using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder
 {
-    public class CodeType : CodeTerminal, ICloneable
+    public class CodeType : CodeTypeBase, ICloneable
     {
-        public enum CodeTypeCollectionKind {
-            None,
-            Array,
-            Complex
-        }
-        public CodeType(CodeElement parent): base(parent)
-        {
+        public CodeType(CodeElement parent): base(parent){
             
-        }
-        public override string Name
-        {
-            get; set;
         }
         public CodeClass TypeDefinition
         {
             get;
             set;
         }
-
-        public bool ActionOf = false;
-        public bool IsNullable = true;
         public bool IsExternal = false;
-        public CodeTypeCollectionKind CollectionKind = CodeTypeCollectionKind.None;
 
-        public OpenApiSchema Schema;
-
-        public object Clone()
+        public override object Clone()
         {
-            return new CodeType(Parent){
-                ActionOf = ActionOf,
-                Name = Name.Clone() as string,
-                Schema = Schema,
+            return new CodeType(this.Parent){
                 TypeDefinition = TypeDefinition,
-                IsNullable = IsNullable,
                 IsExternal = IsExternal
-            };
+            }.BaseClone<CodeType>(this);
         }
     }
 }

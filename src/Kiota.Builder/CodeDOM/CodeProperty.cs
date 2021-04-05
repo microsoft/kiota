@@ -15,14 +15,9 @@ namespace Kiota.Builder
             
         }
         public CodePropertyKind PropertyKind = CodePropertyKind.Custom;
-
-        public override string Name
-        {
-            get; set;
-        }
         public bool ReadOnly = false;
         public AccessModifier Access = AccessModifier.Public;
-        public CodeType Type;
+        public CodeTypeBase Type;
         public string DefaultValue;
     }
 }
