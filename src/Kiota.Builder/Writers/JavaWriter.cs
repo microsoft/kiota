@@ -60,7 +60,7 @@ namespace Kiota.Builder
                     .ToList()
                     .ForEach(x => WriteLine(x));
             }
-            var derivation = (code.Inherits == null ? string.Empty : $" extends {code.Inherits.Name}") +
+            var derivation = (code.Inherits == null ? string.Empty : $" extends {code.Inherits.Name.ToFirstCharacterUpperCase()}") +
                             (!code.Implements.Any() ? string.Empty : $" implements {code.Implements.Select(x => x.Name).Aggregate((x,y) => x + " ," + y)}");
             //TODO: missing javadoc
             WriteLine($"public class {code.Name.ToFirstCharacterUpperCase()}{derivation} {{");

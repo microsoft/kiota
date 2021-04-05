@@ -423,14 +423,16 @@ namespace Kiota.Builder
                         .Union(currentNode.Children.Values.SelectMany(x => GetAllNamespaceNamesForModelByReferenceId(x, referenceId)));
             else return currentNodePath;
         }
-        private bool DoesSchemaContainReferenceId(string referenceId, OpenApiSchema schema) {
-            if (string.IsNullOrEmpty(referenceId)) return false;
+        private bool DoesSchemaContainReferenceId(string referenceId, OpenApiSchema schema, int maxDepth = 10) {
+            maxDepth--;
+            if (string.IsNullOrEmpty(referenceId) || schema == null || maxDepth <= 0) return false;
             else if (referenceId.Equals(schema.Reference?.Id)) return true;
             else return 
-                (schema.Properties?.Any(x => DoesSchemaContainReferenceId(referenceId, x.Value)) ?? false) ||
-                (schema.AnyOf?.Any(x => DoesSchemaContainReferenceId(referenceId, x)) ?? false) ||
-                (schema.AllOf?.Any(x => DoesSchemaContainReferenceId(referenceId, x)) ?? false) ||
-                (schema.OneOf?.Any(x => DoesSchemaContainReferenceId(referenceId, x)) ?? false);
+                (schema.Properties?.Any(x => DoesSchemaContainReferenceId(referenceId, x.Value, maxDepth)) ?? false) ||
+                (schema.AnyOf?.Any(x => DoesSchemaContainReferenceId(referenceId, x, maxDepth)) ?? false) ||
+                (schema.AllOf?.Any(x => DoesSchemaContainReferenceId(referenceId, x, maxDepth)) ?? false) ||
+                (schema.OneOf?.Any(x => DoesSchemaContainReferenceId(referenceId, x, maxDepth)) ?? false) ||
+                DoesSchemaContainReferenceId(referenceId, schema.Items, maxDepth);
         }
         private string GetNamespaceNameForModelByOperationId(string operationId) {
             if(string.IsNullOrEmpty(operationId)) throw new ArgumentNullException(nameof(operationId));
@@ -438,26 +440,31 @@ namespace Kiota.Builder
             return $"{this.config.ClientNamespaceName}.{cleanOperationId}";
         }
         private string GetShortestNamespaceNameForModelByReferenceId(OpenApiUrlSpaceNode rootNode, string referenceId) {
-            return GetAllNamespaceNamesForModelByReferenceId(rootNode, referenceId)
-                    .OrderBy(x => x.Count(y => y == '.'))
-                    .FirstOrDefault();
+            if(string.IsNullOrEmpty(referenceId))
+                throw new ArgumentNullException(nameof(referenceId));
+            
+            var potentialNamespaceNamesWithDepth = GetAllNamespaceNamesForModelByReferenceId(rootNode, referenceId)
+                                .Select(x => new Tuple<string, int>(x, x.Count(y => y == '.')))
+                                .OrderBy(x => x.Item2);
+            var currentShortestCandidate = potentialNamespaceNamesWithDepth.FirstOrDefault();
+            if(currentShortestCandidate == null)
+                return null;
+
+            var countOfNamespaceNamesMeetingCutoff = potentialNamespaceNamesWithDepth.Count(x => x.Item2 == currentShortestCandidate.Item2);
+            if (countOfNamespaceNamesMeetingCutoff == 1)
+                return currentShortestCandidate.Item1;
+            else if(countOfNamespaceNamesMeetingCutoff > 1) {
+                return currentShortestCandidate.Item1.Substring(0, currentShortestCandidate.Item1.LastIndexOf('.'));
+            } else 
+                throw new InvalidOperationException($"could not find a shortest namespace name for reference id {referenceId}");
         }
         private CodeType CreateModelClasses(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement)
         {
             var originalReference = schema?.Reference;
             var originalReferenceId = originalReference?.Id;
             var codeNamespace = parentElement.GetImmediateParentOfType<CodeNamespace>();
-            if(schema?.AllOf?.Any() ?? false)
-                schema = schema.AllOf.Last();
-            // object type
-            // array of object
-            // all of object
-            // one of object
-            // any of object
-
             
-            if (originalReference == null)  // Inline schema, i.e. specific to the Operation
-            {
+            if (originalReference == null) { // Inline schema, i.e. specific to the Operation
                 var namespaceName = GetNamespaceNameForModelByOperationId(operation.OperationId);
                 var ns = codeNamespace.GetRootNamespace().GetNamespace(namespaceName);
                 if(ns == null)
@@ -469,22 +476,49 @@ namespace Kiota.Builder
                     Name = className,
                     Schema = schema
                 };
-            } else  // Reused schema from components
-            {
-                var className = currentNode.GetClassName(operation: operation);
-                var shortestNamespaceName = GetShortestNamespaceNameForModelByReferenceId(rootNode, originalReferenceId);
-                var shortestNamespace = codeNamespace.GetRootNamespace().GetNamespace(shortestNamespaceName);
-                if(shortestNamespace == null)
-                    shortestNamespace = codeNamespace.AddNamespace(shortestNamespaceName);
-                var codeClass = AddModelClassIfDoesntExit(rootNode, currentNode, schema, operation, className, shortestNamespace, parentElement);
-                return new CodeType(parentElement) {
-                    TypeDefinition = codeClass,
-                    Name = className,
-                    Schema = schema
-                };
+            } else { // Reused schema from components
+                // object type
+                // array of object
+                // all of object
+                // one of object
+                // any of object
+
+                if(schema?.AllOf?.Any() ?? false) {
+                    var lastSchema = schema.AllOf.Last();
+                    CodeClass codeClass = null;
+                    string className = string.Empty;
+                    foreach(var currentSchema in schema.AllOf) {
+                        var isLastSchema = currentSchema == lastSchema;
+                        var shortestNamespaceName = currentSchema.Reference == null ? GetNamespaceNameForModelByOperationId(operation.OperationId) : GetShortestNamespaceNameForModelByReferenceId(rootNode, currentSchema.Reference.Id);
+                        var shortestNamespace = codeNamespace.GetRootNamespace().GetNamespace(shortestNamespaceName);
+                        if(shortestNamespace == null)
+                            shortestNamespace = codeNamespace.AddNamespace(shortestNamespaceName);
+                        className = isLastSchema ? currentNode.GetClassName(operation: operation) : currentSchema.GetClassName();
+                        codeClass = AddModelClassIfDoesntExit(rootNode, currentNode, currentSchema, operation, className, shortestNamespace, parentElement, codeClass, true);
+                    }
+
+                    return new CodeType(parentElement) {
+                        TypeDefinition = codeClass,
+                        Name = className,
+                        Schema = lastSchema
+                    };
+                } else {
+                    //TODO anyOf & oneOf
+                    var shortestNamespaceName = GetShortestNamespaceNameForModelByReferenceId(rootNode, originalReferenceId);
+                    var shortestNamespace = codeNamespace.GetRootNamespace().GetNamespace(shortestNamespaceName);
+                    if(shortestNamespace == null)
+                        shortestNamespace = codeNamespace.AddNamespace(shortestNamespaceName);
+                    var className = currentNode.GetClassName(operation: operation);
+                    var codeClass = AddModelClassIfDoesntExit(rootNode, currentNode, schema, operation, className, shortestNamespace, parentElement);
+                    return new CodeType(parentElement) {
+                        TypeDefinition = codeClass,
+                        Name = className,
+                        Schema = schema
+                    };
+                }
             }
         }
-        private CodeClass AddModelClassIfDoesntExit(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, string className, CodeNamespace currentNamespace, CodeElement parentElement, bool checkInAllNamespaces = false) {
+        private CodeClass AddModelClassIfDoesntExit(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, string className, CodeNamespace currentNamespace, CodeElement parentElement, CodeClass inheritsFrom = null, bool checkInAllNamespaces = false) {
             var existingClass = checkInAllNamespaces ? 
                     currentNamespace
                         .GetRootNamespace()
@@ -498,11 +532,21 @@ namespace Kiota.Builder
             if(existingClass == null) // we can find it in the components
             {
                 existingClass = new CodeClass(currentNamespace) { Name = className, ClassKind = CodeClassKind.Model };
+                if(inheritsFrom == null && schema.AllOf.Count > 1) { //the last is always the current class, we want the one before the last as parent
+                    var parentSchema = schema.AllOf.Except(new OpenApiSchema[] {schema.AllOf.Last()}).FirstOrDefault();
+                    if(parentSchema != null)
+                        inheritsFrom = AddModelClassIfDoesntExit(rootNode, currentNode, parentSchema, operation, parentSchema.GetClassName(), currentNamespace, parentElement, null, true);
+                }
+                if(inheritsFrom != null) {
+                    var declaration = existingClass.StartBlock as CodeClass.Declaration;
+                    declaration.Inherits = new CodeType(declaration) { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
+                }
+                currentNamespace.AddClass(existingClass); //order is important to avoid stack overflow because of recursive add
                 CreatePropertiesForModelClass(rootNode, currentNode, schema, operation, currentNamespace, existingClass, parentElement);
-                currentNamespace.AddClass(existingClass);
             }
             return existingClass;
         }
+        private const string OpenApiObjectType = "object";
         private void CreatePropertiesForModelClass(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeNamespace ns, CodeClass model, CodeElement parent) {
             if(schema?.Properties?.Any() ?? false)
                 model.AddProperty(schema
@@ -515,11 +559,13 @@ namespace Kiota.Builder
                                             var shortestNamespaceName = GetShortestNamespaceNameForModelByReferenceId(rootNode, propertyDefinitionSchema.Reference.Id);
                                             var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns : 
                                                                     (ns.GetRootNamespace().GetNamespace(shortestNamespaceName) ?? ns.GetRootNamespace().AddNamespace(shortestNamespaceName));
-                                            definition = AddModelClassIfDoesntExit(rootNode, currentNode, propertyDefinitionSchema, operation, className, targetNamespace, parent, true);
+                                            definition = AddModelClassIfDoesntExit(rootNode, currentNode, propertyDefinitionSchema, operation, className, targetNamespace, parent, null, true);
                                         }
                                         return CreateProperty(x.Key, className ?? x.Value.Type, model, typeSchema: x.Value, typeDefinition: definition);
                                     })
                                     .ToArray());
+            else if(schema?.AllOf?.Any(x => x?.Type?.Equals(OpenApiObjectType) ?? false) ?? false)
+                CreatePropertiesForModelClass(rootNode, currentNode, schema.AllOf.Last(x => x.Type.Equals(OpenApiObjectType)), operation, ns, model, parent);
         }
         private CodeClass CreateOperationParameter(OpenApiUrlSpaceNode node, KeyValuePair<OperationType, OpenApiOperation> operation, CodeClass parentClass)
         {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using static Kiota.Builder.CodeClass;
 
@@ -8,6 +9,20 @@ namespace Kiota.Builder {
         public abstract void Refine(CodeNamespace generatedCode);
 
         private const string pathSegmentPropertyName = "pathSegment";
+        protected void MoveClassesWithNamespaceNamesUnderNamespace(CodeElement currentElement) {
+            if(currentElement is CodeClass currentClass && 
+                currentClass.Parent is CodeNamespace parentNamespace) {
+                var childNamespaceWithClassName = parentNamespace.InnerChildElements
+                                                                .OfType<CodeNamespace>()
+                                                                .FirstOrDefault(x => x.Name
+                                                                                    .EndsWith(currentClass.Name, StringComparison.InvariantCultureIgnoreCase));
+                if(childNamespaceWithClassName != null) {
+                    parentNamespace.InnerChildElements.Remove(currentClass);
+                    childNamespaceWithClassName.AddClass(currentClass);
+                }
+            }
+            CrawlTree(currentElement, MoveClassesWithNamespaceNamesUnderNamespace);
+        }
         protected void ReplaceIndexersByMethodsWithParameter(CodeElement currentElement, string methodNameSuffix = default) {
             if(currentElement is CodeIndexer currentIndexer) {
                 var currentParentClass = currentElement.Parent as CodeClass;
@@ -95,6 +110,8 @@ namespace Kiota.Builder {
                                     .Union(methodsParametersTypes)
                                     .Union(methodsReturnTypes)
                                     .Union(indexerTypes)
+                                    .Union(new List<CodeType> { (currentClass.StartBlock as CodeClass.Declaration)?.Inherits })
+                                    .Where(x => x != null)
                                     .Select(x => new Tuple<CodeType, CodeNamespace>(x, x?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>()))
                                     .Where(x => x.Item2 != null && (includeCurrentNamespace || x.Item2 != currentClassNamespace))
                                     .Where(x => includeParentNamespaces || !currentClassNamespace.IsChildOf(x.Item2))

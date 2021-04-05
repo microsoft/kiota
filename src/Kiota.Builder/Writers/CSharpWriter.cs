@@ -33,9 +33,7 @@ namespace Kiota.Builder
             var derivedTypes = code.Implements.Select(x => x.Name)
                                             .Union(new List<string>{code.Inherits?.Name})
                                             .Where(x => x != null);
-            var derivation = derivedTypes.Any() ? derivedTypes.Aggregate((x, y) => $"{x}, {y}") : string.Empty;
-            if(!string.IsNullOrEmpty(derivation))
-                derivation = ": " + derivation + " ";
+            var derivation = derivedTypes.Any() ? ": " +  derivedTypes.Select(x => x.ToFirstCharacterUpperCase()).Aggregate((x, y) => $"{x}, {y}") + " " : string.Empty;
             WriteLine($"public class {code.Name.ToFirstCharacterUpperCase()} {derivation}{{");
             IncreaseIndent();
         }
