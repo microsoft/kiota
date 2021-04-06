@@ -66,7 +66,7 @@ jobs:
         echo "COVERAGE=${cov}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
       shell: pwsh
     - name: push
-      uses: github-actions-x/commit@v2.7
+      uses: github-actions-x/commit@v2.8
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         push-branch: ${{ env.CURRENT_BRANCH }}
