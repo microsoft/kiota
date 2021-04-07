@@ -48,4 +48,4 @@ jobs:
           ./.sonar/scanner/dotnet-sonarscanner begin /k:"microsoft_kiota" /o:"microsoft" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
           dotnet build
           dotnet test kiota.sln --no-build --verbosity normal --collect:"XPlat Code Coverage"
-          ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+          ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.cs.cobertura.reportsPaths="./tests/**/*.cobertura.xml"
