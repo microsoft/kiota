@@ -437,6 +437,7 @@ namespace Kiota.Builder
                 (schema.OneOf?.Any(x => DoesSchemaContainReferenceId(referenceId, x, maxDepth)) ?? false) ||
                 DoesSchemaContainReferenceId(referenceId, schema.Items, maxDepth);
         }
+        [Obsolete("use path instead")]
         private string GetNamespaceNameForModelByOperationId(string operationId) {
             if(string.IsNullOrEmpty(operationId)) throw new ArgumentNullException(nameof(operationId));
             var cleanOperationId = operationId.Split('_').First();
