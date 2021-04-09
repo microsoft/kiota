@@ -174,7 +174,9 @@ namespace Kiota.Builder
             var hideModifier = shouldHide ? "new " : string.Empty;
             var isVoid = VoidTypeName.Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
             var isStream = StreamTypeName.Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
-            var completeReturnType = $"{(code.IsAsync ? "async Task" +(isVoid ? string.Empty : "<"): string.Empty)}{(code.IsAsync && isVoid ? string.Empty : returnType)}{( code.IsAsync && !isVoid ? ">": string.Empty)}";
+            var genericTypePrefix = isVoid ? string.Empty : "<";
+            var genricTypeSuffix = code.IsAsync && !isVoid ? ">": string.Empty;
+            var completeReturnType = $"{(code.IsAsync ? "async Task" + genericTypePrefix : string.Empty)}{(code.IsAsync && isVoid ? string.Empty : returnType)}{genricTypeSuffix}";
             // Task type should be moved into the refiner
             WriteLine($"{GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType} {code.Name}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
             IncreaseIndent();
@@ -215,9 +217,10 @@ namespace Kiota.Builder
                         DecreaseIndent();
                         WriteLine("}");
                     }
-                    if(headersParam != null)
-                    WriteLines($"{headersParam.Name}?.Invoke(requestInfo.Headers);",
+                    if(headersParam != null) {
+                        WriteLines($"{headersParam.Name}?.Invoke(requestInfo.Headers);",
                                 "return requestInfo;");
+                    }
                     break;
                 case CodeMethodKind.RequestExecutor:
                     var generatorMethodName = (code.Parent as CodeClass)
@@ -229,10 +232,8 @@ namespace Kiota.Builder
                     IncreaseIndent();
                     WriteLine(new List<string> { requestBodyParam?.Name, queryStringParam?.Name, headersParam?.Name }.Where(x => x != null).Aggregate((x,y) => $"{x}, {y}"));
                     DecreaseIndent();
-                    var sendMethodName = isVoid ? "SendNoContentAsync" : 
-                                        (isStream ? $"SendPrimitiveAsync<{returnType}>": $"SendAsync<{returnType}>");
                     WriteLines(");",
-                                $"{(isVoid ? string.Empty : "return ")}await HttpCore.{sendMethodName}(requestInfo, responseHandler);");
+                                $"{(isVoid ? string.Empty : "return ")}await HttpCore.{GetSendRequestMethodName(isVoid, isStream, returnType)}(requestInfo, responseHandler);");
                 break;
                 default:
                     WriteLine("return null;");
@@ -241,6 +242,11 @@ namespace Kiota.Builder
             DecreaseIndent();
             WriteLine("}");
 
+        }
+        private static string GetSendRequestMethodName(bool isVoid, bool isStream, string returnType) {
+            if(isVoid) return "SendNoContentAsync";
+            else if(isStream) return $"SendPrimitiveAsync<{returnType}>";
+            else return $"SendAsync<{returnType}>";
         }
 
         public override void WriteType(CodeType code)

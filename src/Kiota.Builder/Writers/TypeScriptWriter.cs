@@ -297,10 +297,8 @@ namespace Kiota.Builder
                     }
                     WriteLine(");");
                     var isStream = StreamType.Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
-                    var genericTypeForSendMethod = isVoid ? "sendNoResponseContentAsync" : 
-                                                    (isStream ? $"sendPrimitiveAsync<{returnType}>" : $"sendAsync<{returnType}>");
-                    var newFactoryParameter = isVoid ? string.Empty : 
-                                                    (isStream ? $" \"{returnType}\"," : $" {returnType},");
+                    var genericTypeForSendMethod = GetSendRequestMethodName(isVoid, isStream, returnType);
+                    var newFactoryParameter = GetTypeFactory(isVoid, isStream, returnType);
                     WriteLine($"return this.httpCore?.{genericTypeForSendMethod}(requestInfo,{newFactoryParameter} responseHandler) ?? Promise.reject(new Error('http core is null'));");
                     break;
                 default:
@@ -310,10 +308,18 @@ namespace Kiota.Builder
             DecreaseIndent();
             WriteLine("};");
         }
-
+        private static string GetTypeFactory(bool isVoid, bool isStream, string returnType) {
+            if(isVoid) return string.Empty;
+            else if(isStream) return $" \"{returnType}\",";
+            else return $" {returnType},";
+        }
+        private static string GetSendRequestMethodName(bool isVoid, bool isStream, string returnType) {
+            if(isVoid) return "sendNoResponseContentAsync";
+            else if(isStream) return $"sendPrimitiveAsync<{returnType}>";
+            else return $"sendAsync<{returnType}>";
+        }
         public override void WriteProperty(CodeProperty code)
         {
-            var parentClass = code.Parent as CodeClass;
             var returnType = GetTypeString(code.Type);
             var isFlagEnum = code.Type is CodeType currentType && currentType.TypeDefinition is CodeEnum currentEnum && currentEnum.Flags;
             switch(code.PropertyKind) {
