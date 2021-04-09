@@ -118,7 +118,7 @@ namespace Kiota.Builder
                     return $"GetObjectValue<{propertyType.ToFirstCharacterUpperCase()}>";
             }
         }
-        private Func<CodeTypeBase, string, bool> shouldTypeHaveNullableMarker = (propType, propTypeName) => propType.IsNullable && (nullableTypes.Contains(propTypeName) || (propType is CodeType codeType && codeType.TypeDefinition is CodeEnum));
+        private readonly Func<CodeTypeBase, string, bool> shouldTypeHaveNullableMarker = (propType, propTypeName) => propType.IsNullable && (nullableTypes.Contains(propTypeName) || (propType is CodeType codeType && codeType.TypeDefinition is CodeEnum));
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
             var propertyType = TranslateType(propType.Name);
@@ -298,6 +298,7 @@ namespace Kiota.Builder
             return (access == AccessModifier.Public ? "public" : (access == AccessModifier.Protected ? "protected" : "private"));
         }
 
+        private readonly Func<int, string> GetEnumIndex = (idx) => (idx == 0 ? 0 : 2^(idx -1)).ToString();
         public override void WriteEnum(CodeEnum code)
         {
             var codeNamespace = code?.Parent as CodeNamespace;
@@ -311,7 +312,7 @@ namespace Kiota.Builder
             IncreaseIndent();
             WriteLines(code.Options
                             .Select(x => x.ToFirstCharacterUpperCase())
-                            .Select((x, idx) => $"{x}{(code.Flags ? " = " + (idx == 0 ? 0 : 2^(idx -1)): string.Empty)},")
+                            .Select((x, idx) => $"{x}{(code.Flags ? " = " + GetEnumIndex(idx) : string.Empty)},")
                             .ToArray());
             DecreaseIndent();
             WriteLine("}");

@@ -546,11 +546,9 @@ namespace Kiota.Builder
             else throw new InvalidOperationException("un handled case, might be object type or array type");
             // object type array of object are technically already handled in properties but if we have a root with those we might be missing some cases here
         }
-        private CodeElement GetExistingDeclaration(bool checkInAllNamespaces, CodeNamespace currentNamespace, OpenApiUrlSpaceNode currentNode, string declarationName) {
+        private static CodeElement GetExistingDeclaration(bool checkInAllNamespaces, CodeNamespace currentNamespace, OpenApiUrlSpaceNode currentNode, string declarationName) {
             Func<CodeElement, bool> query = x => x.Name?.Equals(declarationName, StringComparison.InvariantCultureIgnoreCase) ?? false;
-            var searchNameSpace = checkInAllNamespaces ? 
-                                    currentNamespace.GetRootNamespace() : 
-                                    (currentNode.DoesNodeBelongToItemSubnamespace() ? currentNamespace.EnsureItemNamespace() : currentNamespace );
+            var searchNameSpace = GetSearchNamespace(checkInAllNamespaces, currentNode, currentNamespace);
             return checkInAllNamespaces ? 
                     (searchNameSpace.GetChildElementOfType<CodeClass>(query) as CodeElement ?? searchNameSpace.GetChildElementOfType<CodeEnum>(query)) :
                     (searchNameSpace
@@ -561,6 +559,11 @@ namespace Kiota.Builder
                         .InnerChildElements
                         ?.OfType<CodeEnum>()
                         ?.FirstOrDefault(query));
+        }
+        private static CodeNamespace GetSearchNamespace(bool checkInAllNamespaces, OpenApiUrlSpaceNode currentNode, CodeNamespace currentNamespace) {
+            if(checkInAllNamespaces) return currentNamespace.GetRootNamespace();
+            else if (currentNode.DoesNodeBelongToItemSubnamespace()) return currentNamespace.EnsureItemNamespace();
+            else return currentNamespace;
         }
         private CodeElement AddModelDeclarationIfDoesntExit(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, string declarationName, CodeNamespace currentNamespace, CodeElement parentElement, CodeClass inheritsFrom = null, bool checkInAllNamespaces = false) {
             var existingDeclaration = GetExistingDeclaration(checkInAllNamespaces, currentNamespace, currentNode, declarationName);
