@@ -94,7 +94,7 @@ namespace Kiota.Builder
             WriteLine($"export class {code.Name.ToFirstCharacterUpperCase()}{derivation} {{");
             IncreaseIndent();
         }
-        private string GetRelativeImportPathForUsing(CodeUsing codeUsing, CodeNamespace currentNamespace) {
+        private static string GetRelativeImportPathForUsing(CodeUsing codeUsing, CodeNamespace currentNamespace) {
             if(codeUsing.Declaration == null)
                 return string.Empty;//it's an external import, add nothing
             var typeDef = codeUsing.Declaration.TypeDefinition;
@@ -112,7 +112,7 @@ namespace Kiota.Builder
                                                         typeDef.GetImmediateParentOfType<CodeNamespace>());
         }
         private static char namespaceNameSeparator = '.';
-        private string GetImportRelativePathFromNamespaces(CodeNamespace currentNamespace, CodeNamespace importNamespace) {
+        private static string GetImportRelativePathFromNamespaces(CodeNamespace currentNamespace, CodeNamespace importNamespace) {
             if(currentNamespace == null)
                 throw new ArgumentNullException(nameof(currentNamespace));
             else if (importNamespace == null)
