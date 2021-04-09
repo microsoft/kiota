@@ -31,6 +31,8 @@ jobs:
             ${{ env.relativePath }}/build/libs/lib.jar
   deploy:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    environment:
+      name: staging_feeds
     runs-on: ubuntu-latest
     env:
       relativePath: ./abstractions/java

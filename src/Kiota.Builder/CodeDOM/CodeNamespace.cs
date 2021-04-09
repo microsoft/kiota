@@ -50,7 +50,7 @@ namespace Kiota.Builder
             var namespaceNameSegements = namespaceName.Split(namespaceNameSeparator, StringSplitOptions.RemoveEmptyEntries);
             var lastPresentSegmentIndex = default(int);
             CodeNamespace lastPresentSegmentNamespace = rootNamespace;
-            while(lastPresentSegmentIndex < namespaceNameSegements.Count()) {
+            while(lastPresentSegmentIndex < namespaceNameSegements.Length) {
                 var segmentNameSpace = rootNamespace.GetNamespace(namespaceNameSegements.Take(lastPresentSegmentIndex + 1).Aggregate((x, y) => $"{x}.{y}"));
                 if(segmentNameSpace == null)
                     break;

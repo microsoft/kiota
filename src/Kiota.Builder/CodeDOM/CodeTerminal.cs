@@ -4,7 +4,7 @@ namespace Kiota.Builder
 {
     public abstract class CodeTerminal : CodeElement
     {
-        public CodeTerminal(CodeElement parent): base(parent)
+        protected CodeTerminal(CodeElement parent): base(parent)
         {
             
         }

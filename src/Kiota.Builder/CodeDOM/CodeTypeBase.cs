@@ -9,12 +9,12 @@ namespace Kiota.Builder {
             Array,
             Complex
         }
-        public CodeTypeBase(CodeElement parent) : base(parent) {
+        protected CodeTypeBase(CodeElement parent) : base(parent) {
             
         }
-        public bool ActionOf = false;
-        public bool IsNullable = true;
-        public CodeTypeCollectionKind CollectionKind = CodeTypeCollectionKind.None;
+        public bool ActionOf {get;set;} = false;
+        public bool IsNullable {get;set;} = true;
+        public CodeTypeCollectionKind CollectionKind {get;set;} = CodeTypeCollectionKind.None;
 
         public ChildType BaseClone<ChildType>(CodeTypeBase source) where ChildType : CodeTypeBase
         {

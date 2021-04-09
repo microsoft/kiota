@@ -5,7 +5,7 @@
         public CodeIndexer(CodeElement parent): base(parent) {
             
         }
-        public CodeTypeBase IndexType;
-        public CodeTypeBase ReturnType;
+        public CodeTypeBase IndexType {get; set;}
+        public CodeTypeBase ReturnType {get; set;}
     }
 }
