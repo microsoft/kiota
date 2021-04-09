@@ -35,8 +35,14 @@ namespace Kiota.Builder
                                             .Union(code.Implements.Select(x => x.Name))
                                             .Where(x => x != null);
             var derivation = derivedTypes.Any() ? ": " +  derivedTypes.Select(x => x.ToFirstCharacterUpperCase()).Aggregate((x, y) => $"{x}, {y}") + " " : string.Empty;
+            if(code.Parent is CodeClass parentClass)
+                WriteShortDescription(parentClass.Description);
             WriteLine($"public class {code.Name.ToFirstCharacterUpperCase()} {derivation}{{");
             IncreaseIndent();
+        }
+        private void WriteShortDescription(string description) {
+            if(!string.IsNullOrEmpty(description))
+                WriteLine($"{docCommentPrefix}<summary>{description}</summary>");
         }
 
         public override void WriteCodeClassEnd(CodeClass.End code)
@@ -62,6 +68,7 @@ namespace Kiota.Builder
                 defaultValue = " = " + code.DefaultValue + ";";
             }
             var propertyType = GetTypeString(code.Type);
+            WriteShortDescription(code.Description);
             switch(code.PropertyKind) {
                 case CodePropertyKind.RequestBuilder:
                     WriteLine($"{GetAccessModifier(code.Access)} {propertyType} {code.Name.ToFirstCharacterUpperCase()} {{ get =>");
@@ -155,6 +162,7 @@ namespace Kiota.Builder
         public override void WriteIndexer(CodeIndexer code)
         {
             var returnType = GetTypeString(code.ReturnType);
+            WriteShortDescription(code.Description);
             WriteLine($"public {returnType} this[{GetTypeString(code.IndexType)} position] {{ get {{");
             IncreaseIndent();
             AddRequestBuilderBody(returnType, " + \"/\" + position", "return ");
@@ -164,6 +172,7 @@ namespace Kiota.Builder
         private const string SerializerFactoryPropertyName = "SerializerFactory";
         private const string StreamTypeName = "stream";
         private const string VoidTypeName = "void";
+        private const string docCommentPrefix = "/// ";
 
         public override void WriteMethod(CodeMethod code)
         {
@@ -177,6 +186,16 @@ namespace Kiota.Builder
             var genericTypePrefix = isVoid ? string.Empty : "<";
             var genricTypeSuffix = code.IsAsync && !isVoid ? ">": string.Empty;
             var completeReturnType = $"{(code.IsAsync ? "async Task" + genericTypePrefix : string.Empty)}{(code.IsAsync && isVoid ? string.Empty : returnType)}{genricTypeSuffix}";
+            var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);
+            var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Description));
+            if (isDescriptionPresent || parametersWithDescription.Any()) {
+                WriteLine($"{docCommentPrefix}<summary>");
+                if(isDescriptionPresent)
+                    WriteLine($"{docCommentPrefix}{code.Description}");
+                foreach(var paramWithDescription in parametersWithDescription)
+                    WriteLine($"{docCommentPrefix}<param name=\"{paramWithDescription.Name}\">{paramWithDescription.Description}</param>");
+                WriteLine($"{docCommentPrefix}</summary>");
+            }
             // Task type should be moved into the refiner
             WriteLine($"{GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType} {code.Name}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
             IncreaseIndent();
@@ -312,6 +331,7 @@ namespace Kiota.Builder
             }
             if(code.Flags)
                 WriteLine("[Flags]");
+            WriteShortDescription(code.Description);
             WriteLine($"public enum {code.Name.ToFirstCharacterUpperCase()} {{"); //TODO docs
             IncreaseIndent();
             WriteLines(code.Options
