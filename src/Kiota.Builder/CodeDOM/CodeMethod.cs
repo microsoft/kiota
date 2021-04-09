@@ -29,7 +29,7 @@ namespace Kiota.Builder
         {
             
         }
-        public HttpMethod? HttpMethod;
+        public HttpMethod? HttpMethod {get ; set; }
         public CodeMethodKind MethodKind = CodeMethodKind.Custom;
         public AccessModifier Access = AccessModifier.Public;
         public CodeTypeBase ReturnType;
