@@ -9,11 +9,11 @@ namespace Kiota.Builder
     public class OpenApiUrlSpaceNode
     {
         public IDictionary<string, OpenApiUrlSpaceNode> Children { get; set; } = new Dictionary<string, OpenApiUrlSpaceNode>();
-        public string Segment;
-        public string Layer;
+        public string Segment {get;set;}
+        public string Layer {get;set;}
 
-        public OpenApiPathItem PathItem;
-        public String Path = "";
+        public OpenApiPathItem PathItem {get;set;}
+        public String Path {get;set;} = "";
 
         public OpenApiUrlSpaceNode(string segment)
         {
@@ -52,10 +52,7 @@ namespace Kiota.Builder
             }
         }
 
-        internal bool HasOperations()
-        {
-            return PathItem != null && PathItem.Operations != null && PathItem.Operations.Count() > 0;
-        }
+        internal bool HasOperations() => PathItem?.Operations?.Any() ?? false;
 
         public static OpenApiUrlSpaceNode Create(OpenApiDocument doc, string layer = "")
         {
@@ -114,14 +111,14 @@ namespace Kiota.Builder
             // If the child segment has already been defined, then insert into it
             if (Children.ContainsKey(segment))
             {
-                return Children[segment].Attach(segments.Skip(1), pathItem, layer, currentPath + "\\" + segment );
+                return Children[segment].Attach(segments.Skip(1), pathItem, layer, currentPath + pathNameSeparator + segment );
             }
             else
             {
                 var node = new OpenApiUrlSpaceNode(segment);
-                node.Path = currentPath + "\\" + segment;
+                node.Path = currentPath + pathNameSeparator + segment;
                 Children[segment] = node;
-                return node.Attach(segments.Skip(1), pathItem, layer, currentPath + "\\" + segment);
+                return node.Attach(segments.Skip(1), pathItem, layer, currentPath + pathNameSeparator + segment);
             }
         }
         public bool DoesNodeBelongToItemSubnamespace() =>

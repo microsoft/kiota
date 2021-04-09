@@ -14,10 +14,10 @@ namespace Kiota.Builder
         {
             
         }
-        public CodePropertyKind PropertyKind = CodePropertyKind.Custom;
-        public bool ReadOnly = false;
-        public AccessModifier Access = AccessModifier.Public;
-        public CodeTypeBase Type;
-        public string DefaultValue;
+        public CodePropertyKind PropertyKind {get;set;} = CodePropertyKind.Custom;
+        public bool ReadOnly {get;set;} = false;
+        public AccessModifier Access {get;set;} = AccessModifier.Public;
+        public CodeTypeBase Type {get;set;}
+        public string DefaultValue {get;set;}
     }
 }

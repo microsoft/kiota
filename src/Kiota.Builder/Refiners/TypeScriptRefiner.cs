@@ -5,7 +5,6 @@ using System;
 namespace Kiota.Builder {
     public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
-        private readonly HashSet<string> defaultTypes = new HashSet<string> {"string", "integer", "boolean", "array", "object", "(input: ReadableStream) => object"};
         public override void Refine(CodeNamespace generatedCode)
         {
             PatchResponseHandlerType(generatedCode);

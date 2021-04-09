@@ -160,7 +160,11 @@ namespace Kiota.Builder
         }
         public override string GetAccessModifier(AccessModifier access)
         {
-            return (access == AccessModifier.Public ? "public" : (access == AccessModifier.Protected ? "protected" : "private"));
+            switch(access) {
+                case AccessModifier.Public: return "public";
+                case AccessModifier.Protected: return "protected";
+                default: return "private";
+            }
         }
     }
 }
