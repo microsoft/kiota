@@ -40,6 +40,8 @@ jobs:
             ${{ env.relativePath }}/src/bin/Release/*.nupkg
   deploy:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    environment:
+      name: staging_feeds
     runs-on: ubuntu-latest
     needs: [build]
     steps:
