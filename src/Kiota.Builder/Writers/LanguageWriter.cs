@@ -25,7 +25,7 @@ namespace Kiota.Builder
         }
         public abstract IPathSegmenter PathSegmenter { get; }
 
-        private Stack<int> factorStack = new Stack<int>();
+        private readonly Stack<int> factorStack = new Stack<int>();
         public void IncreaseIndent(int factor = 1)
         {
             factorStack.Push(factor);
@@ -42,7 +42,7 @@ namespace Kiota.Builder
         {
             return indentString.Substring(0, currentIndent);
         }
-        public string NewLine { get => Environment.NewLine;}
+        public static string NewLine { get => Environment.NewLine;}
         /// <summary>
         /// Adds an empty line
         /// </summary>

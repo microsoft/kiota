@@ -10,7 +10,7 @@ namespace Kiota.Builder
     public abstract class CodeElement
     {
         public Dictionary<string, object> GenerationProperties { get; set; } = new Dictionary<string, object>();
-        public CodeElement(CodeElement parent)
+        protected CodeElement(CodeElement parent)
         {
             if(parent == null && !(this is CodeNamespace))
                 throw new ArgumentNullException(nameof(parent));

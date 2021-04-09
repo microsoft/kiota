@@ -12,7 +12,7 @@ namespace Kiota.Builder
             get;
             set;
         }
-        public bool IsExternal = false;
+        public bool IsExternal {get;set;} = false;
 
         public override object Clone()
         {
