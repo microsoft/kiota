@@ -10,7 +10,7 @@ namespace Kiota.Builder {
         public override void Refine(CodeNamespace generatedCode)
         {
             PatchResponseHandlerType(generatedCode);
-            AddDefaultImports(generatedCode);
+            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
             ReplaceIndexersByMethodsWithParameter(generatedCode, "ById");
             CorrectCoreType(generatedCode);
             FixReferencesToEntityType(generatedCode);
@@ -42,25 +42,6 @@ namespace Kiota.Builder {
             new ("ParseNode", "@microsoft/kiota-abstractions"),
             new ("Parsable", "@microsoft/kiota-abstractions"),
         };
-        private void AddDefaultImports(CodeElement current) {
-            if(current is CodeClass currentClass) {
-                if(currentClass.ClassKind == CodeClassKind.Model)
-                    currentClass.AddUsing(defaultNamespaces.Union(defaultNamespacesForModels)
-                                            .Select(x => {
-                                                var nUsing = new CodeUsing(currentClass) { Name = x.Item1 };
-                                                nUsing.Declaration = new CodeType(nUsing) { Name = x.Item2, IsExternal = true };
-                                                return nUsing;
-                                                }).ToArray());
-                if(currentClass.ClassKind == CodeClassKind.RequestBuilder)
-                    currentClass.AddUsing(defaultNamespaces.Union(defaultNamespacesForRequestBuilders)
-                                            .Select(x => {
-                                                var nUsing = new CodeUsing(currentClass) { Name = x.Item1 };
-                                                nUsing.Declaration = new CodeType(nUsing) { Name = x.Item2, IsExternal = true };
-                                                return nUsing;
-                                                }).ToArray());
-            }
-            CrawlTree(current, AddDefaultImports);
-        }
         private void CorrectCoreType(CodeElement currentElement) {
             if (currentElement is CodeProperty currentProperty) {
                 if (currentProperty.Type.Name?.Equals("IHttpCore", StringComparison.InvariantCultureIgnoreCase) ?? false)

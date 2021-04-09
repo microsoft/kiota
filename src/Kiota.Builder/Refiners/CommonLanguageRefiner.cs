@@ -8,6 +8,29 @@ namespace Kiota.Builder {
     {
         public abstract void Refine(CodeNamespace generatedCode);
 
+        protected void AddDefaultImports(CodeElement current, Tuple<string, string>[] defaultNamespaces, Tuple<string, string>[] defaultNamespacesForModels, Tuple<string, string>[] defaultNamespacesForRequestBuilders) {
+            if(current is CodeClass currentClass) {
+                if(currentClass.ClassKind == CodeClassKind.Model)
+                    currentClass.AddUsing(defaultNamespaces.Union(defaultNamespacesForModels)
+                                            .Select(x => {
+                                                            var nUsing = new CodeUsing(currentClass) { 
+                                                                Name = x.Item1,
+                                                            };
+                                                            nUsing.Declaration = new CodeType(nUsing) { Name = x.Item2, IsExternal = true };
+                                                            return nUsing;
+                                                        }).ToArray());
+                if(currentClass.ClassKind == CodeClassKind.RequestBuilder)
+                    currentClass.AddUsing(defaultNamespaces.Union(defaultNamespacesForRequestBuilders)
+                                            .Select(x => {
+                                                            var nUsing = new CodeUsing(currentClass) { 
+                                                                Name = x.Item1,
+                                                            };
+                                                            nUsing.Declaration = new CodeType(nUsing) { Name = x.Item2, IsExternal = true };
+                                                            return nUsing;
+                                                        }).ToArray());
+            }
+            CrawlTree(current, c => AddDefaultImports(c, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders));
+        }
         private const string binaryType = "binary";
         protected void ReplaceBinaryByNativeType(CodeElement currentElement, string symbol, string ns, bool addDeclaration = false) {
             if(currentElement is CodeMethod currentMethod) {
