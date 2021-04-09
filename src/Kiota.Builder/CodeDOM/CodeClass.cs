@@ -13,7 +13,7 @@ namespace Kiota.Builder
     /// <summary>
     /// CodeClass represents an instance of a Class to be generated in source code
     /// </summary>
-    public class CodeClass : CodeBlock
+    public class CodeClass : CodeBlock, IDocumentedElement
     {
         private string name;
 
@@ -24,6 +24,7 @@ namespace Kiota.Builder
         }
         public CodeClassKind ClassKind { get; set; } = CodeClassKind.Custom;
 
+        public string Description {get; set;}
         /// <summary>
         /// Name of Class
         /// </summary>

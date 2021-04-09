@@ -25,7 +25,7 @@ namespace Kiota.Builder
         Trace
     }
 
-    public class CodeMethod : CodeTerminal, ICloneable
+    public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
     {
         public CodeMethod(CodeElement parent): base(parent)
         {
@@ -38,6 +38,8 @@ namespace Kiota.Builder
         public List<CodeParameter> Parameters {get;set;} = new List<CodeParameter>();
         public bool IsStatic {get;set;} = false;
         public bool IsAsync {get;set;} = true;
+        public string Description {get; set;}
+
 
         public object Clone()
         {
@@ -50,6 +52,7 @@ namespace Kiota.Builder
                 IsAsync = IsAsync,
                 Access = Access,
                 IsStatic = IsStatic,
+                Description = Description.Clone() as string,
                 GenerationProperties = new (GenerationProperties),
             };
         }

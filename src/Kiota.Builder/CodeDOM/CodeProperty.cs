@@ -9,7 +9,7 @@ namespace Kiota.Builder
         Deserializer
     }
 
-    public class CodeProperty : CodeTerminal
+    public class CodeProperty : CodeTerminal, IDocumentedElement
     {
         public CodeProperty(CodeElement parent): base(parent)
         {
@@ -20,5 +20,6 @@ namespace Kiota.Builder
         public AccessModifier Access {get;set;} = AccessModifier.Public;
         public CodeTypeBase Type {get;set;}
         public string DefaultValue {get;set;}
+        public string Description {get; set;}
     }
 }

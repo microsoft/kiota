@@ -71,6 +71,7 @@ namespace Kiota.Builder {
                         IsStatic = false,
                         ReturnType = deserializerProp.Type,
                         Access = AccessModifier.Public,
+                        Description = deserializerProp.Description
                     });
                     currentClass.InnerChildElements.Remove(deserializerProp);
                 }
@@ -110,13 +111,15 @@ namespace Kiota.Builder {
             if(codeClass == null) throw new ArgumentNullException(nameof(codeClass));
             if(codeUnionType == null) throw new ArgumentNullException(nameof(codeUnionType));
             var newClass = new CodeClass(codeClass) {
-                Name = codeUnionType.Name
+                Name = codeUnionType.Name,
+                Description = $"Union type wrapper for classes {codeUnionType.Types.Select(x => x.Name).Aggregate((x, y) => x + ", " + y)}"
             };
             newClass.AddProperty(codeUnionType
                                     .Types
                                     .Select(x => new CodeProperty(newClass) {
                                         Name = x.Name,
-                                        Type = x
+                                        Type = x,
+                                        Description = $"Union type representation for type {x.Name}"
                                     }).ToArray());
             return new CodeType(codeClass) {
                 Name = newClass.Name,
@@ -155,11 +158,12 @@ namespace Kiota.Builder {
                                         currentParentClass,
                                         returnType.TypeDefinition as CodeClass,
                                         pathSegment.Trim('\"').TrimStart('/'),
-                                        methodNameSuffix);
+                                        methodNameSuffix,
+                                        currentIndexer.Description);
             }
             CrawlTree(currentElement, c => ReplaceIndexersByMethodsWithParameter(c, methodNameSuffix));
         }
-        protected void AddIndexerMethod(CodeElement currentElement, CodeClass targetClass, CodeClass indexerClass, string pathSegment, string methodNameSuffix) {
+        protected void AddIndexerMethod(CodeElement currentElement, CodeClass targetClass, CodeClass indexerClass, string pathSegment, string methodNameSuffix, string description) {
             if(currentElement is CodeProperty currentProperty && currentProperty.Type.AllTypes.Any(x => x.TypeDefinition == targetClass)) {
                 var parentClass = currentElement.Parent as CodeClass;
                 var method = new CodeMethod(parentClass) {
@@ -168,6 +172,7 @@ namespace Kiota.Builder {
                     Access = AccessModifier.Public,
                     MethodKind = CodeMethodKind.IndexerBackwardCompatibility,
                     Name = pathSegment + methodNameSuffix,
+                    Description = description,
                 };
                 method.ReturnType = new CodeType(method) {
                     IsNullable = false,
@@ -178,7 +183,8 @@ namespace Kiota.Builder {
                 var parameter = new CodeParameter(method) {
                     Name = "id",
                     Optional = false,
-                    ParameterKind = CodeParameterKind.Custom
+                    ParameterKind = CodeParameterKind.Custom,
+                    Description = "Unique identifier of the item"
                 };
                 parameter.Type = new CodeType(parameter) {
                     Name = "String",
@@ -187,7 +193,7 @@ namespace Kiota.Builder {
                 method.Parameters.Add(parameter);
                 parentClass.AddMethod(method);
             }
-            CrawlTree(currentElement, c => AddIndexerMethod(c, targetClass, indexerClass, pathSegment, methodNameSuffix));
+            CrawlTree(currentElement, c => AddIndexerMethod(c, targetClass, indexerClass, pathSegment, methodNameSuffix, description));
         }
         internal void AddInnerClasses(CodeElement current) {
             if(current is CodeClass currentClass) {
