@@ -13,8 +13,8 @@ namespace Kiota.Builder
 {
     public class KiotaBuilder
     {
-        private ILogger<KiotaBuilder> logger;
-        private GenerationConfiguration config;
+        private readonly ILogger<KiotaBuilder> logger;
+        private readonly GenerationConfiguration config;
 
         public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config)
         {

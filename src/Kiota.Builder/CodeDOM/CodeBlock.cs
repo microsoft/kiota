@@ -10,9 +10,9 @@ namespace Kiota.Builder
     /// </summary>
     public class CodeBlock : CodeElement
     {
-        public BlockDeclaration StartBlock;
-        public List<CodeElement> InnerChildElements = new List<CodeElement>();
-        public BlockEnd EndBlock;
+        public BlockDeclaration StartBlock {get; set;}
+        public List<CodeElement> InnerChildElements {get; set;} = new List<CodeElement>();
+        public BlockEnd EndBlock {get; set;}
         public CodeBlock(CodeElement parent):base(parent)
         {
             StartBlock = new BlockDeclaration(this);
@@ -50,7 +50,7 @@ namespace Kiota.Builder
         }
         public class BlockDeclaration : CodeTerminal
         {
-            public List<CodeUsing> Usings = new List<CodeUsing>();
+            public List<CodeUsing> Usings {get; set;} = new List<CodeUsing>();
             public BlockDeclaration(CodeElement parent): base(parent)
             {
                 

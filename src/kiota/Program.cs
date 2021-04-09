@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace kiota
 {
-    class Program
+    static class Program
     {
         static async Task<int> Main(string[] args)
         {
