@@ -31,7 +31,7 @@ namespace Kiota.Builder {
             if(entityClass == null)
                 entityClass = currentElement.GetImmediateParentOfType<CodeNamespace>()
                             .GetRootNamespace()
-                            .GetChildElementOfType<CodeClass>(x => x.Name.Equals("entity", StringComparison.InvariantCultureIgnoreCase));
+                            .GetChildElementOfType<CodeClass>(x => x?.Name?.Equals("entity", StringComparison.InvariantCultureIgnoreCase) ?? false);
 
             if(currentElement is CodeMethod currentMethod 
                 && currentMethod.ReturnType is CodeType currentReturnType
