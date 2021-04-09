@@ -584,7 +584,7 @@ namespace Kiota.Builder
         }
         private const string deserializeFieldsPropName = "DeserializeFields";
         private const string serializeMethodName = "Serialize";
-        private void AddSerializationMembers(CodeClass model) {
+        private static void AddSerializationMembers(CodeClass model) {
             var serializationPropsType = $"IDictionary<string, Action<{model.Name.ToFirstCharacterUpperCase()}, IParseNode>>";
             if(!model.ContainsMember(deserializeFieldsPropName)) {
                 var deserializeProp = new CodeProperty(model) {
