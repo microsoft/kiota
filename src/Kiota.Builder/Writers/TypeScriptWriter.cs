@@ -307,7 +307,6 @@ namespace Kiota.Builder
 
         public override void WriteProperty(CodeProperty code)
         {
-            var parentClass = code.Parent as CodeClass;
             var returnType = GetTypeString(code.Type);
             switch(code.PropertyKind) {
                 case CodePropertyKind.Deserializer:

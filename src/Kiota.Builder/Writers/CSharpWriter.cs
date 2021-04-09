@@ -205,9 +205,10 @@ namespace Kiota.Builder
                         DecreaseIndent();
                         WriteLine("}");
                     }
-                    if(headersParam != null)
-                    WriteLines($"{headersParam.Name}?.Invoke(requestInfo.Headers);",
+                    if(headersParam != null) {
+                        WriteLines($"{headersParam.Name}?.Invoke(requestInfo.Headers);",
                                 "return requestInfo;");
+                    }
                     break;
                 case CodeMethodKind.RequestExecutor:
                     var generatorMethodName = (code.Parent as CodeClass)
