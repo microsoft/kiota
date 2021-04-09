@@ -16,9 +16,9 @@ namespace Kiota.Builder
         {
             
         }
-        public CodeParameterKind ParameterKind = CodeParameterKind.Custom;
-        public CodeTypeBase Type;
-        public bool Optional = false;
+        public CodeParameterKind ParameterKind {get;set;}= CodeParameterKind.Custom;
+        public CodeTypeBase Type {get;set;}
+        public bool Optional {get;set;}= false;
 
         public object Clone()
         {

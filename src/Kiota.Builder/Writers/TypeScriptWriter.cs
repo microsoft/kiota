@@ -126,8 +126,8 @@ namespace Kiota.Builder
                 var importNamespaceSegments = importNamespace
                                     .Name
                                     .Split(namespaceNameSeparator, StringSplitOptions.RemoveEmptyEntries);
-                var importNamespaceSegmentsCount = importNamespaceSegments.Count();
-                var currentNamespaceSegementsCount = currentNamespaceSegements.Count();
+                var importNamespaceSegmentsCount = importNamespaceSegments.Length;
+                var currentNamespaceSegementsCount = currentNamespaceSegements.Length;
                 var deeperMostSegmentIndex = 0;
                 while(deeperMostSegmentIndex < Math.Min(importNamespaceSegmentsCount, currentNamespaceSegementsCount)) {
                     if(currentNamespaceSegements.ElementAt(deeperMostSegmentIndex).Equals(importNamespaceSegments.ElementAt(deeperMostSegmentIndex), StringComparison.InvariantCultureIgnoreCase))
@@ -146,7 +146,7 @@ namespace Kiota.Builder
                 }
             }
         }
-        private string GetRemainingImportPath(IEnumerable<string> remainingSegments) {
+        private static string GetRemainingImportPath(IEnumerable<string> remainingSegments) {
             if(remainingSegments.Any())
                 return remainingSegments.Select(x => x.ToFirstCharacterLowerCase()).Aggregate((x, y) => $"{x}/{y}") + '/';
             else
@@ -224,7 +224,11 @@ namespace Kiota.Builder
         }
         public override string GetAccessModifier(AccessModifier access)
         {
-            return (access == AccessModifier.Public ? "public" : (access == AccessModifier.Protected ? "protected" : "private"));
+            switch(access) {
+                case AccessModifier.Public: return "public";
+                case AccessModifier.Protected: return "protected";
+                default: return "private";
+            }
         }
     }
 }

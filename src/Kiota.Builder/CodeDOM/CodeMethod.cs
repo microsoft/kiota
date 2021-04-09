@@ -17,12 +17,12 @@ namespace Kiota.Builder
         {
             
         }
-        public CodeMethodKind MethodKind = CodeMethodKind.Custom;
-        public AccessModifier Access = AccessModifier.Public;
-        public CodeTypeBase ReturnType;
-        public List<CodeParameter> Parameters = new List<CodeParameter>();
-        public bool IsStatic = false;
-        public bool IsAsync = true;
+        public CodeMethodKind MethodKind {get;set;} = CodeMethodKind.Custom;
+        public AccessModifier Access {get;set;} = AccessModifier.Public;
+        public CodeTypeBase ReturnType {get;set;}
+        public List<CodeParameter> Parameters {get;set;} = new List<CodeParameter>();
+        public bool IsStatic {get;set;} = false;
+        public bool IsAsync {get;set;} = true;
 
         public object Clone()
         {
