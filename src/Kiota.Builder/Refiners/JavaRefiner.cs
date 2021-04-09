@@ -5,7 +5,6 @@ using System.Linq;
 namespace Kiota.Builder {
     public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
-        private readonly HashSet<string> defaultTypes = new HashSet<string> {"string", "integer", "boolean", "array", "object"};
         public override void Refine(CodeNamespace generatedCode)
         {
             AddInnerClasses(generatedCode);
@@ -156,7 +155,7 @@ namespace Kiota.Builder {
                                         .ForEach(x => x.Type.Name = "Map<String, String>");
             CrawlTree(currentElement, PatchHeaderParametersType);
         }
-        private CodeMethod GetMethodClone(CodeMethod currentMethod, params CodeParameterKind[] parameterTypesToExclude) {
+        private static CodeMethod GetMethodClone(CodeMethod currentMethod, params CodeParameterKind[] parameterTypesToExclude) {
             if(currentMethod.Parameters.Any(x => parameterTypesToExclude.Contains(x.ParameterKind))) {
                 var cloneMethod = currentMethod.Clone() as CodeMethod;
                 cloneMethod.Parameters.RemoveAll(x => parameterTypesToExclude.Contains(x.ParameterKind));
