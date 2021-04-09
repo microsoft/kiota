@@ -54,7 +54,7 @@ namespace Kiota.Builder {
 
             CrawlTree(currentElement, ConvertUnionTypesToWrapper);
         }
-        private CodeTypeBase ConvertUnionTypeToWrapper(CodeClass codeClass, CodeUnionType codeUnionType)
+        private static CodeTypeBase ConvertUnionTypeToWrapper(CodeClass codeClass, CodeUnionType codeUnionType)
         {
             if(codeClass == null) throw new ArgumentNullException(nameof(codeClass));
             if(codeUnionType == null) throw new ArgumentNullException(nameof(codeUnionType));
@@ -193,7 +193,7 @@ namespace Kiota.Builder {
             }
             CrawlTree(current, (x) => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration));
         }
-        protected void CrawlTree(CodeElement currentElement, Action<CodeElement> function) {
+        protected static void CrawlTree(CodeElement currentElement, Action<CodeElement> function) {
             foreach(var childElement in currentElement.GetChildElements())
                 function.Invoke(childElement);
         }
