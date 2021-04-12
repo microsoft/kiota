@@ -96,6 +96,7 @@ namespace Kiota.Builder
             WriteLine();
             var derivation = (code.Inherits == null ? string.Empty : $" extends {code.Inherits.Name.ToFirstCharacterUpperCase()}") +
                             (!code.Implements.Any() ? string.Empty : $" implements {code.Implements.Select(x => x.Name).Aggregate((x,y) => x + " ," + y)}");
+            WriteShortDescription((code.Parent as CodeClass).Description);
             WriteLine($"export class {code.Name.ToFirstCharacterUpperCase()}{derivation} {{");
             IncreaseIndent();
         }
@@ -226,10 +227,36 @@ namespace Kiota.Builder
                     "return builder;");
         }
         private const string StreamType = "ReadableStream";
+        private const string docCommentStart = "/**";
+        private const string docCommentPrefix = " * ";
+        private const string docCommentEnd = " */";
+        private void WriteMethodDocumentation(CodeMethod code) {
+            var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);
+            var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Description));
+            if (isDescriptionPresent || parametersWithDescription.Any()) {
+                WriteLine(docCommentStart);
+                if(isDescriptionPresent)
+                    WriteLine($"{docCommentPrefix}{RemoveInvalidDescriptionCharacters(code.Description)}");
+                foreach(var paramWithDescription in parametersWithDescription)
+                    WriteLine($"{docCommentPrefix}@param {paramWithDescription.Name} {RemoveInvalidDescriptionCharacters(paramWithDescription.Description)}");
+                
+                if(code.IsAsync)
+                    WriteLine($"{docCommentPrefix}@returns a Promise of {code.ReturnType.Name}");
+                else
+                    WriteLine($"{docCommentPrefix}@returns a {code.ReturnType.Name}");
+                WriteLine(docCommentEnd);
+            }
+        }
+        private string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
+        private void WriteShortDescription(string description) {
+            if(!string.IsNullOrEmpty(description))
+                WriteLine($"{docCommentStart} {RemoveInvalidDescriptionCharacters(description)} {docCommentEnd}");
+        }
         public override void WriteMethod(CodeMethod code)
         {
             var returnType = GetTypeString(code.ReturnType);
             var isVoid = "void".Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
+            WriteMethodDocumentation(code);
             WriteLine($"{GetAccessModifier(code.Access)} {code.Name.ToFirstCharacterLowerCase()} {(code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? "async ": string.Empty)}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.ReturnType.IsNullable && !isVoid ? " | undefined" : string.Empty)}{(code.IsAsync ? ">": string.Empty)} {{");
             IncreaseIndent();
             var parentClass = code.Parent as CodeClass;
@@ -322,6 +349,7 @@ namespace Kiota.Builder
         {
             var returnType = GetTypeString(code.Type);
             var isFlagEnum = code.Type is CodeType currentType && currentType.TypeDefinition is CodeEnum currentEnum && currentEnum.Flags;
+            WriteShortDescription(code.Description);
             switch(code.PropertyKind) {
                 case CodePropertyKind.Deserializer:
                     throw new InvalidOperationException("typescript uses methods for the deserializers and this property should have been converted to a method");
@@ -355,6 +383,7 @@ namespace Kiota.Builder
 
         public override void WriteEnum(CodeEnum code)
         {
+            WriteShortDescription(code.Description);
             WriteLine($"export enum {code.Name.ToFirstCharacterUpperCase()} {{");
             IncreaseIndent();
             code.Options.ForEach(x => WriteLine($"{x.ToFirstCharacterUpperCase()} = \"{x}\","));
