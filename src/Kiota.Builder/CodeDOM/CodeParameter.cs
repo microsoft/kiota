@@ -28,7 +28,7 @@ namespace Kiota.Builder
                 ParameterKind = ParameterKind,
                 Name = Name.Clone() as string,
                 Type = Type.Clone() as CodeTypeBase,
-                Description = Description.Clone() as string,
+                Description = Description?.Clone() as string,
             };
         }
     }

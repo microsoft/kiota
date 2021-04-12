@@ -173,7 +173,18 @@ namespace Kiota.Builder
         private const string StreamTypeName = "stream";
         private const string VoidTypeName = "void";
         private const string docCommentPrefix = "/// ";
-
+        private void WriteMethodDocumentation(CodeMethod code) {
+            var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);
+            var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Description));
+            if (isDescriptionPresent || parametersWithDescription.Any()) {
+                WriteLine($"{docCommentPrefix}<summary>");
+                if(isDescriptionPresent)
+                    WriteLine($"{docCommentPrefix}{code.Description}");
+                foreach(var paramWithDescription in parametersWithDescription)
+                    WriteLine($"{docCommentPrefix}<param name=\"{paramWithDescription.Name}\">{paramWithDescription.Description}</param>");
+                WriteLine($"{docCommentPrefix}</summary>");
+            }
+        }
         public override void WriteMethod(CodeMethod code)
         {
             var staticModifier = code.IsStatic ? "static " : string.Empty;
@@ -186,16 +197,7 @@ namespace Kiota.Builder
             var genericTypePrefix = isVoid ? string.Empty : "<";
             var genricTypeSuffix = code.IsAsync && !isVoid ? ">": string.Empty;
             var completeReturnType = $"{(code.IsAsync ? "async Task" + genericTypePrefix : string.Empty)}{(code.IsAsync && isVoid ? string.Empty : returnType)}{genricTypeSuffix}";
-            var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);
-            var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Description));
-            if (isDescriptionPresent || parametersWithDescription.Any()) {
-                WriteLine($"{docCommentPrefix}<summary>");
-                if(isDescriptionPresent)
-                    WriteLine($"{docCommentPrefix}{code.Description}");
-                foreach(var paramWithDescription in parametersWithDescription)
-                    WriteLine($"{docCommentPrefix}<param name=\"{paramWithDescription.Name}\">{paramWithDescription.Description}</param>");
-                WriteLine($"{docCommentPrefix}</summary>");
-            }
+            WriteMethodDocumentation(code);
             // Task type should be moved into the refiner
             WriteLine($"{GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType} {code.Name}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
             IncreaseIndent();
