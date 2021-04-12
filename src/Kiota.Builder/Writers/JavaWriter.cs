@@ -99,7 +99,7 @@ namespace Kiota.Builder
                 WriteLine(docCommentEnd);
             }
         }
-        private string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
+        private static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
         private void WriteShortDescription(string description) {
             if(!string.IsNullOrEmpty(description))
                 WriteLine($"{docCommentStart} {RemoveInvalidDescriptionCharacters(description)} {docCommentEnd}");

@@ -52,7 +52,7 @@ namespace Kiota.Builder
                 IsAsync = IsAsync,
                 Access = Access,
                 IsStatic = IsStatic,
-                Description = Description.Clone() as string,
+                Description = Description?.Clone() as string,
                 GenerationProperties = new (GenerationProperties),
             };
         }
