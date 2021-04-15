@@ -65,6 +65,7 @@ namespace Kiota.Builder {
             new ("RequestInfo", "com.microsoft.kiota"),
             new ("ResponseHandler", "com.microsoft.kiota"),
             new ("QueryParametersBase", "com.microsoft.kiota"),
+            new ("SerializationWriterFactory", "com.microsoft.kiota.serialization"),
             new ("Map", "java.util"),
             new ("URI", "java.net"),
             new ("URISyntaxException", "java.net"),
@@ -86,7 +87,7 @@ namespace Kiota.Builder {
                 if(currentProperty.Type.Name?.Equals("IHttpCore", StringComparison.InvariantCultureIgnoreCase) ?? false)
                     currentProperty.Type.Name = "HttpCore";
                 else if(currentProperty.Name.Equals("serializerFactory", StringComparison.InvariantCultureIgnoreCase))
-                    currentProperty.Type.Name = "Function<String, SerializationWriter>";
+                    currentProperty.Type.Name = "SerializationWriterFactory";
                 else if(currentProperty.Name.Equals("deserializeFields", StringComparison.InvariantCultureIgnoreCase))
                     currentProperty.Type.Name = $"Map<String, BiConsumer<T, ParseNode>>";
             }

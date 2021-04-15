@@ -12,6 +12,7 @@ import javax.annotation.Nullable;
 
 import com.microsoft.kiota.serialization.Parsable;
 import com.microsoft.kiota.serialization.SerializationWriter;
+import com.microsoft.kiota.serialization.SerializationWriterFactory;
 
 public class RequestInfo {
     @Nullable
@@ -32,10 +33,10 @@ public class RequestInfo {
         this.content = value;
         headers.put(contentTypeHeader, binaryContentType);
     }
-    public <T extends Parsable> void setJsonContentFromParsable(@Nonnull final T value, @Nonnull final Function<String, SerializationWriter> serializerFactory) {
+    public <T extends Parsable> void setJsonContentFromParsable(@Nonnull final T value, @Nonnull final SerializationWriterFactory serializerFactory) {
         Objects.requireNonNull(serializerFactory);
         Objects.requireNonNull(value);
-        try(final SerializationWriter writer = serializerFactory.apply(jsonContentType)) {
+        try(final SerializationWriter writer = serializerFactory.getSerializationWriter(jsonContentType)) {
             headers.put(contentTypeHeader, jsonContentType);
             writer.writeObjectValue(null, value);
             this.content = writer.getSerializedContent();

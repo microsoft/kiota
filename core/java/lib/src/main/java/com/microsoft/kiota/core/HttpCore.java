@@ -19,8 +19,11 @@ import javax.annotation.Nullable;
 import com.microsoft.kiota.RequestInfo;
 import com.microsoft.kiota.ResponseHandler;
 import com.microsoft.kiota.AuthenticationProvider;
-import com.microsoft.kiota.core.serialization.JsonParseNode;
+import com.microsoft.kiota.core.serialization.JsonParseNodeFactory;
+import com.microsoft.kiota.core.serialization.ParseNodeFactoryRegistry;
 import com.microsoft.kiota.serialization.Parsable;
+import com.microsoft.kiota.serialization.ParseNode;
+import com.microsoft.kiota.serialization.ParseNodeFactory;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -34,16 +37,29 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
     private final static String contentTypeHeaderKey = "Content-Type";
     private final OkHttpClient client;
     private final AuthenticationProvider authProvider;
+    private final ParseNodeFactory pNodeFactory;
     public HttpCore(@Nonnull final AuthenticationProvider authenticationProvider){
-        this(authenticationProvider, null);
+        this(authenticationProvider, null, null);
     }
-    public HttpCore(@Nonnull final AuthenticationProvider authenticationProvider, @Nullable final OkHttpClient client) {
+    public HttpCore(@Nonnull final AuthenticationProvider authenticationProvider, @Nonnull final ParseNodeFactory parseNodeFactory) {
+        this(authenticationProvider, parseNodeFactory, null);
+        Objects.requireNonNull(parseNodeFactory, "parameter parseNodeFactory cannot be null");
+    }
+    public HttpCore(@Nonnull final AuthenticationProvider authenticationProvider, @Nullable final ParseNodeFactory parseNodeFactory, @Nullable final OkHttpClient client) {
         this.authProvider = Objects.requireNonNull(authenticationProvider, "parameter authenticationProvider cannot be null");
         if(client == null) {
             this.client = new OkHttpClient.Builder().build();
         } else {
             this.client = client;
         }
+        if(parseNodeFactory == null) {
+            final ParseNodeFactoryRegistry registry = new ParseNodeFactoryRegistry();
+            registry.contentTypeAssociatedFactories.put("application/json", new JsonParseNodeFactory());
+            pNodeFactory = registry;
+        } else {
+            pNodeFactory = parseNodeFactory;
+        }
+
     }
     @Nonnull
     public <ModelType extends Parsable> CompletableFuture<ModelType> sendAsync(@Nonnull final RequestInfo requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
@@ -57,10 +73,11 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
             if(responseHandler == null) {
                 final ResponseBody body = response.body();
                 try {
-                    final String rawJson = body.string();
-                    final JsonParseNode rootNode = new JsonParseNode(rawJson);
-                    final ModelType result = rootNode.getObjectValue(targetClass);
-                    return CompletableFuture.completedStage(result);
+                    try (final InputStream rawInputStream = body.byteStream()) {
+                        final ParseNode rootNode = pNodeFactory.getParseNode(getMediaTypeAndSubType(body.contentType()), rawInputStream);
+                        final ModelType result = rootNode.getObjectValue(targetClass);
+                        return CompletableFuture.completedStage(result);
+                    }
                 } catch(IOException ex) {
                     return CompletableFuture.failedFuture(new RuntimeException("failed to read the response body", ex));
                 } finally {
@@ -70,6 +87,9 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
                 return responseHandler.handleResponseAsync(response);
             }
         });
+    }
+    private String getMediaTypeAndSubType(final MediaType mediaType) {
+        return mediaType.type() + "/" + mediaType.subtype();
     }
     @Nonnull
     public <ModelType> CompletableFuture<ModelType> sendPrimitiveAsync(@Nonnull final RequestInfo requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
@@ -84,11 +104,12 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
                     if(targetClass == Void.class) {
                         return CompletableFuture.completedStage(null);
                     } else {
+                        final InputStream rawInputStream = body.byteStream();
                         if(targetClass == InputStream.class) {
-                            return CompletableFuture.completedStage((ModelType)body.byteStream());
+                            return CompletableFuture.completedStage((ModelType)rawInputStream);
                         }
-                        final String rawJson = body.string();
-                        final JsonParseNode rootNode = new JsonParseNode(rawJson);
+                        final ParseNode rootNode = pNodeFactory.getParseNode(getMediaTypeAndSubType(body.contentType()), rawInputStream);
+                        rawInputStream.close();
                         if(targetClass == Boolean.class) {
                             return CompletableFuture.completedStage((ModelType)rootNode.getBooleanValue());
                         } else if(targetClass == String.class) {
