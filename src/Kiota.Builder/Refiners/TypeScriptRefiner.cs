@@ -33,12 +33,12 @@ namespace Kiota.Builder {
             new ("HttpMethod", "@microsoft/kiota-abstractions"),
             new ("RequestInfo", "@microsoft/kiota-abstractions"),
             new ("ResponseHandler", "@microsoft/kiota-abstractions"),
-        };
-        private static readonly Tuple<string, string>[] defaultNamespaces = new Tuple<string, string>[] { 
-            new ("SerializationWriter", "@microsoft/kiota-abstractions"),
             new ("SerializationWriterFactory", "@microsoft/kiota-abstractions"),
         };
+        private static readonly Tuple<string, string>[] defaultNamespaces = new Tuple<string, string>[] { 
+        };
         private static readonly Tuple<string, string>[] defaultNamespacesForModels = new Tuple<string, string>[] { 
+            new ("SerializationWriter", "@microsoft/kiota-abstractions"),
             new ("ParseNode", "@microsoft/kiota-abstractions"),
             new ("Parsable", "@microsoft/kiota-abstractions"),
         };
