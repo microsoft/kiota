@@ -12,6 +12,8 @@ plugins {
     id 'maven-publish'
 }
 
+archivesBaseName = 'kiota-abstractions'
+
 repositories {
     // Use JCenter for resolving dependencies.
     mavenCentral()
