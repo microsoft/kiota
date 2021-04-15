@@ -89,23 +89,25 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
                         }
                         final String rawJson = body.string();
                         final JsonParseNode rootNode = new JsonParseNode(rawJson);
+                        Object result;
                         if(targetClass == Boolean.class) {
-                            return CompletableFuture.completedStage((ModelType)rootNode.getBooleanValue());
+                            result = rootNode.getBooleanValue();
                         } else if(targetClass == String.class) {
-                            return CompletableFuture.completedStage((ModelType)rootNode.getStringValue());
+                            result = rootNode.getStringValue();
                         } else if(targetClass == Integer.class) {
-                            return CompletableFuture.completedStage((ModelType)rootNode.getIntegerValue());
+                            result = rootNode.getIntegerValue();
                         } else if(targetClass == Float.class) {
-                            return CompletableFuture.completedStage((ModelType)rootNode.getFloatValue());
+                            result = rootNode.getFloatValue();
                         } else if(targetClass == Long.class) {
-                            return CompletableFuture.completedStage((ModelType)rootNode.getLongValue());
+                            result = rootNode.getLongValue();
                         } else if(targetClass == UUID.class) {
-                            return CompletableFuture.completedStage((ModelType)rootNode.getUUIDValue());
+                            result = rootNode.getUUIDValue();
                         } else if(targetClass == OffsetDateTime.class) {
-                            return CompletableFuture.completedStage((ModelType)rootNode.getOffsetDateTimeValue());
+                            result = rootNode.getOffsetDateTimeValue();
                         } else {
                             throw new RuntimeException("unexpected payload type " + targetClass.getName());
                         }
+                        return CompletableFuture.completedStage((ModelType)result);
                     }
                 } catch(IOException ex) {
                     return CompletableFuture.failedFuture(new RuntimeException("failed to read the response body", ex));
