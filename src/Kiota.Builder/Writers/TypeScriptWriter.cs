@@ -175,9 +175,9 @@ namespace Kiota.Builder
             WriteLine($"{GetAccessModifier(code.Access)} readonly {code.Name.ToFirstCharacterLowerCase()} = {(code.IsAsync ? "async ": string.Empty)}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.ReturnType.IsNullable ? " | undefined" : string.Empty)}{(code.IsAsync ? ">": string.Empty)} => {{");
             IncreaseIndent();
             var returnType = GetTypeString(code.ReturnType);
-            var requestBodyParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.RequestBody);
-            var queryStringParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.QueryParameter);
-            var headersParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.Headers);
+            var requestBodyParam = code.Parameters.OfKind(CodeParameterKind.RequestBody);
+            var queryStringParam = code.Parameters.OfKind(CodeParameterKind.QueryParameter);
+            var headersParam = code.Parameters.OfKind(CodeParameterKind.Headers);
             switch(code.MethodKind) {
                 case CodeMethodKind.IndexerBackwardCompatibility:
                     var pathSegment = code.GenerationProperties.ContainsKey(pathSegmentPropertyName) ? code.GenerationProperties[pathSegmentPropertyName] as string : string.Empty;
