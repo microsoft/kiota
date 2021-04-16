@@ -7,6 +7,10 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     path-ignore: ['abstractions/**', 'core/**', '**.md', '.vscode/**', '**.svg']
+
+env:
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
 jobs:
   checksecret:
     name: check if SONAR_TOKEN is set in github secrets
@@ -16,8 +20,6 @@ jobs:
     steps:
       - name: Check whether unity activation requests should be done
         id: checksecret_job
-        env:
-            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
             echo "is_SONAR_TOKEN_set: ${{ env.SONAR_TOKEN != '' }}"
             echo "::set-output name=is_SONAR_TOKEN_set::${{ env.SONAR_TOKEN != '' }}"
@@ -57,7 +59,6 @@ jobs:
       - name: Build and analyze
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         shell: pwsh
         run: |
           ./.sonar/scanner/dotnet-sonarscanner begin /k:"microsoft_kiota" /o:"microsoft" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.opencover.reportsPaths="tests/**/coverage.opencover.xml"
