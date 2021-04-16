@@ -73,21 +73,23 @@ namespace KiotaCore
                     var rootNode = pNodeFactory.GetRootParseNode(responseContentType, contentStream);
                     response.Dispose();
                     requestInfo.Content?.Dispose();
+                    object result;
                     if(modelType == typeof(bool)) {
-                        return (ModelType)(rootNode.GetBoolValue() as object);
+                        result = rootNode.GetBoolValue();
                     } else if(modelType == typeof(string)) {
-                        return (ModelType)(rootNode.GetStringValue() as object);
+                        result = rootNode.GetStringValue();
                     } else if(modelType == typeof(int)) {
-                        return (ModelType)(rootNode.GetIntValue() as object);
+                        result = rootNode.GetIntValue();
                     } else if(modelType == typeof(float)) {
-                        return (ModelType)(rootNode.GetFloatValue() as object);
+                        result = rootNode.GetFloatValue();
                     } else if(modelType == typeof(double)) {
-                        return (ModelType)(rootNode.GetDoubleValue() as object);
+                        result = rootNode.GetDoubleValue();
                     } else if(modelType == typeof(Guid)) {
-                        return (ModelType)(rootNode.GetGuidValue() as object);
+                        result = rootNode.GetGuidValue();
                     } else if(modelType == typeof(DateTimeOffset)) {
-                        return (ModelType)(rootNode.GetDateTimeOffsetValue() as object);
+                        result = rootNode.GetDateTimeOffsetValue();
                     } else throw new InvalidOperationException("error handling the response, unexpected type");
+                    return (ModelType)result;
                 }
             }
             else
