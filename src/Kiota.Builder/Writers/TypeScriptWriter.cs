@@ -252,12 +252,22 @@ namespace Kiota.Builder
             if(!string.IsNullOrEmpty(description))
                 WriteLine($"{docCommentStart} {RemoveInvalidDescriptionCharacters(description)} {docCommentEnd}");
         }
+        private void WriteMethodPrototype(CodeMethod code, string returnType, bool isVoid) {
+            var accessModifier = GetAccessModifier(code.Access);
+            var methodName = code.Name.ToFirstCharacterLowerCase();
+            var asyncPrefix = code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? "async ": string.Empty;
+            var parameters = string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList());
+            var asyncReturnTypePrefix = code.IsAsync ? "Promise<": string.Empty;
+            var asyncReturnTypeSuffix = code.IsAsync ? ">": string.Empty;
+            var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? " | undefined" : string.Empty;
+            WriteLine($"{accessModifier} {methodName} {asyncPrefix}({parameters}) : {asyncReturnTypePrefix}{GetTypeString(code.ReturnType)}{nullableSuffix}{asyncReturnTypeSuffix} {{");
+        }
         public override void WriteMethod(CodeMethod code)
         {
             var returnType = GetTypeString(code.ReturnType);
             var isVoid = "void".Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
             WriteMethodDocumentation(code);
-            WriteLine($"{GetAccessModifier(code.Access)} {code.Name.ToFirstCharacterLowerCase()} {(code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? "async ": string.Empty)}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.ReturnType.IsNullable && !isVoid ? " | undefined" : string.Empty)}{(code.IsAsync ? ">": string.Empty)} {{");
+            WriteMethodPrototype(code, returnType, isVoid);
             IncreaseIndent();
             var parentClass = code.Parent as CodeClass;
             var shouldHide = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null && code.MethodKind == CodeMethodKind.Serializer;
