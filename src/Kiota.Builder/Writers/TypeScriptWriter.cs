@@ -260,7 +260,7 @@ namespace Kiota.Builder
             var asyncReturnTypePrefix = code.IsAsync ? "Promise<": string.Empty;
             var asyncReturnTypeSuffix = code.IsAsync ? ">": string.Empty;
             var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? " | undefined" : string.Empty;
-            WriteLine($"{accessModifier} {methodName} {asyncPrefix}({parameters}) : {asyncReturnTypePrefix}{GetTypeString(code.ReturnType)}{nullableSuffix}{asyncReturnTypeSuffix} {{");
+            WriteLine($"{accessModifier} {methodName} {asyncPrefix}({parameters}) : {asyncReturnTypePrefix}{returnType}{nullableSuffix}{asyncReturnTypeSuffix} {{");
         }
         public override void WriteMethod(CodeMethod code)
         {
