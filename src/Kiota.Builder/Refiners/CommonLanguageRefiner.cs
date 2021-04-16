@@ -128,6 +128,7 @@ namespace Kiota.Builder {
         }
         protected void MoveClassesWithNamespaceNamesUnderNamespace(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && 
+                !string.IsNullOrEmpty(currentClass.Name) &&
                 currentClass.Parent is CodeNamespace parentNamespace) {
                 var childNamespaceWithClassName = parentNamespace.InnerChildElements
                                                                 .OfType<CodeNamespace>()
