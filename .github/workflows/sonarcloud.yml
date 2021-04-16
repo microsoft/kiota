@@ -9,6 +9,7 @@ on:
     path-ignore: ['abstractions/**', 'core/**', '**.md', '.vscode/**', '**.svg']
 jobs:
   build:
+    if: ${{ secrets.SONAR_TOKEN != null }}
     name: Build
     runs-on: ubuntu-latest
     steps:
