@@ -24,8 +24,7 @@ namespace Kiota.Builder {
                                             .Aggregate((x, y) => $"{x}{Path.DirectorySeparatorChar}{y}"),
                                             NormalizeFileName(currentElement.Name) + FileSuffix);
             var directoryPath = Path.GetDirectoryName(targetPath);
-            if(!Directory.Exists(directoryPath))
-                Directory.CreateDirectory(directoryPath);
+            Directory.CreateDirectory(directoryPath);
             return targetPath;
         }
     }
