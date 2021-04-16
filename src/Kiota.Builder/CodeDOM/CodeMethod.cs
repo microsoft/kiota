@@ -8,7 +8,19 @@ namespace Kiota.Builder
     {
         Custom,
         IndexerBackwardCompatibility,
-        RequestExecutor
+        RequestExecutor,
+        RequestGenerator
+    }
+    public enum HttpMethod {
+        Get,
+        Post,
+        Patch,
+        Put,
+        Delete,
+        Options,
+        Connect,
+        Head,
+        Trace
     }
 
     public class CodeMethod : CodeTerminal, ICloneable
@@ -17,6 +29,7 @@ namespace Kiota.Builder
         {
             
         }
+        public HttpMethod? HttpMethod {get;set;}
         public CodeMethodKind MethodKind {get;set;} = CodeMethodKind.Custom;
         public AccessModifier Access {get;set;} = AccessModifier.Public;
         public CodeTypeBase ReturnType {get;set;}
@@ -31,6 +44,11 @@ namespace Kiota.Builder
                 ReturnType = ReturnType.Clone() as CodeTypeBase,
                 Parameters = Parameters.Select(x => x.Clone() as CodeParameter).ToList(),
                 Name = Name.Clone() as string,
+                HttpMethod = HttpMethod,
+                IsAsync = IsAsync,
+                Access = Access,
+                IsStatic = IsStatic,
+                GenerationProperties = new (GenerationProperties),
             };
         }
 

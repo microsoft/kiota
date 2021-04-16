@@ -24,7 +24,7 @@ namespace Kiota.Builder {
             CrawlTree(currentElement, AddCollectionImports);
         }
         private static readonly string[] defaultNamespacesForClasses = new string[] {"System", "System.Threading.Tasks"};
-        private static readonly string[] defaultNamespacesForRequestBuilders = new string[] { "System.Collections.Generic", "Kiota.Abstractions"};
+        private static readonly string[] defaultNamespacesForRequestBuilders = new string[] { "System.Collections.Generic", "System.IO", "Kiota.Abstractions"};
         private void AddDefaultImports(CodeElement current) {
             if(current is CodeClass currentClass) {
                 currentClass.AddUsing(defaultNamespacesForClasses.Select(x => new CodeUsing(currentClass) { Name = x }).ToArray());
@@ -39,7 +39,7 @@ namespace Kiota.Builder {
             CrawlTree(current, CapitalizeNamespacesFirstLetters);
         }
         private void AddAsyncSuffix(CodeElement currentElement) {
-            if(currentElement is CodeMethod currentMethod)
+            if(currentElement is CodeMethod currentMethod && currentMethod.IsAsync)
                 currentMethod.Name += "Async";
             CrawlTree(currentElement, AddAsyncSuffix);
         }

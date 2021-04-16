@@ -17,5 +17,5 @@ public class RequestInfo {
     @Nonnull
     public HashMap<String, String> headers = new HashMap<>(); // TODO case insensitive
     @Nullable
-    public InputStream Content;
+    public InputStream content;
 }

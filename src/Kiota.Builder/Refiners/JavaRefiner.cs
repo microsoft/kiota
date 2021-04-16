@@ -41,6 +41,7 @@ namespace Kiota.Builder {
             new ("Map", "java.util"),
             new ("URI", "java.net"),
             new ("URISyntaxException", "java.net"),
+            new ("InputStream", "java.io"),
         };
         private void AddDefaultImports(CodeElement current) {
             if(current is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.RequestBuilder) {
@@ -86,15 +87,22 @@ namespace Kiota.Builder {
                     .Where(x => x.ParameterKind == CodeParameterKind.QueryParameter || x.ParameterKind == CodeParameterKind.Headers || x.ParameterKind == CodeParameterKind.ResponseHandler)
                     .ToList()
                     .ForEach(x => x.Optional = false);
-                var methodsToAdd = codeMethods
+                var originalExecutorMethods = codeMethods.Where(x => x.MethodKind == CodeMethodKind.RequestExecutor);
+                var executorMethodsToAdd = originalExecutorMethods
                                     .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter))
-                                    .Union(codeMethods
+                                    .Union(originalExecutorMethods
                                             .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers)))
-                                    .Union(codeMethods
+                                    .Union(originalExecutorMethods
                                             .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers, CodeParameterKind.ResponseHandler)))
                                     .Where(x => x != null);
-                if(methodsToAdd.Any())
-                    currentClass.AddMethod(methodsToAdd.ToArray());
+                var originalGeneratorMethods = codeMethods.Where(x => x.MethodKind == CodeMethodKind.RequestGenerator);
+                var generatorMethodsToAdd = originalGeneratorMethods
+                                    .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter))
+                                    .Union(originalGeneratorMethods
+                                            .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers)))
+                                    .Where(x => x != null);
+                if(executorMethodsToAdd.Any() || generatorMethodsToAdd.Any())
+                    currentClass.AddMethod(executorMethodsToAdd.Union(generatorMethodsToAdd).ToArray());
             }
             
             CrawlTree(currentElement, MakeQueryStringParametersNonOptionalAndInsertOverrideMethod);
