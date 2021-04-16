@@ -9,7 +9,6 @@ on:
     path-ignore: ['abstractions/**', 'core/**', '**.md', '.vscode/**', '**.svg']
 jobs:
   build:
-    if: ${{ secrets.SONAR_TOKEN != null }}
     name: Build
     runs-on: ubuntu-latest
     steps:
@@ -41,6 +40,7 @@ jobs:
           New-Item -Path ./.sonar/scanner -ItemType Directory
           dotnet tool update dotnet-sonarscanner --tool-path ./.sonar/scanner
       - name: Build and analyze
+        if: ${{ secrets.SONAR_TOKEN != null }} # the condition is here and not on the job because conditions on secrets on jobs are not supported
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
