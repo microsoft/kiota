@@ -20,6 +20,7 @@ namespace Kiota.Builder {
             AddListImport(generatedCode);
             AddParsableInheritanceForModelClasses(generatedCode);
             ConvertDeserializerPropsToMethods(generatedCode, "get");
+            ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
         }
         private void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model) {
@@ -38,9 +39,9 @@ namespace Kiota.Builder {
                 currentClass.InnerChildElements.OfType<CodeMethod>().Any(x => x.Parameters.Any(y => y.Type.CollectionKind == CodeType.CodeTypeCollectionKind.Complex))
                 )) {
                     var nUsing = new CodeUsing(currentClass) {
-                        Name = "java.util"
+                        Name = "List"
                     };
-                    nUsing.Declaration = new CodeType(nUsing) { Name = "List" };
+                    nUsing.Declaration = new CodeType(nUsing) { Name = "java.util", IsExternal = true };
                     currentClass.AddUsing(nUsing);
                 }
             CrawlTree(currentElement, AddListImport);
@@ -73,18 +74,18 @@ namespace Kiota.Builder {
                     currentClass.AddUsing(defaultNamespaces.Union(defaultNamespacesForModels)
                                             .Select(x => {
                                                             var nUsing = new CodeUsing(currentClass) { 
-                                                                Name = x.Item2,
+                                                                Name = x.Item1,
                                                             };
-                                                            nUsing.Declaration = new CodeType(nUsing) { Name = x.Item1, IsExternal = true };
+                                                            nUsing.Declaration = new CodeType(nUsing) { Name = x.Item2, IsExternal = true };
                                                             return nUsing;
                                                         }).ToArray());
                 if(currentClass.ClassKind == CodeClassKind.RequestBuilder)
                     currentClass.AddUsing(defaultNamespaces.Union(defaultNamespacesForRequestBuilders)
                                             .Select(x => {
                                                             var nUsing = new CodeUsing(currentClass) { 
-                                                                Name = x.Item2,
+                                                                Name = x.Item1,
                                                             };
-                                                            nUsing.Declaration = new CodeType(nUsing) { Name = x.Item1, IsExternal = true };
+                                                            nUsing.Declaration = new CodeType(nUsing) { Name = x.Item2, IsExternal = true };
                                                             return nUsing;
                                                         }).ToArray());
             }
@@ -111,10 +112,10 @@ namespace Kiota.Builder {
             if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => !x.Optional)) {
                 var parentClass = currentMethod.Parent as CodeClass;
                 var newUsing = new CodeUsing(parentClass) {
-                    Name = "java.util",
+                    Name = "Objects",
                 };
                 newUsing.Declaration = new CodeType(newUsing) {
-                    Name = "Objects",
+                    Name = "java.util",
                     IsExternal = true,
                 };
                 parentClass?.AddUsing(newUsing);

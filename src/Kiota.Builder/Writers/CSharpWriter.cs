@@ -98,9 +98,9 @@ namespace Kiota.Builder
             var propertyType = TranslateType(propType.Name);
             if(isCollection && propType is CodeType currentType) {
                 if(currentType.TypeDefinition == null)
-                    return $"GetCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterUpperCase()}>().ToList";
+                    return $"GetCollectionOfPrimitiveValues<{propertyType}>().ToList";
                 else
-                    return $"GetCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>().ToList";
+                    return $"GetCollectionOfObjectValues<{propertyType}>().ToList";
             }
             switch(propertyType) {
                 case "string":
@@ -120,9 +120,9 @@ namespace Kiota.Builder
             var propertyType = TranslateType(propType.Name);
             if(isCollection && propType is CodeType currentType) {
                 if(currentType.TypeDefinition == null)
-                    return $"WriteCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterUpperCase()}>";
+                    return $"WriteCollectionOfPrimitiveValues<{propertyType}>";
                 else
-                    return $"WriteCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>";
+                    return $"WriteCollectionOfObjectValues<{propertyType}>";
             }
             switch(propertyType) {
                 case "string":
@@ -153,6 +153,7 @@ namespace Kiota.Builder
             WriteLine("} }");
         }
         private const string SerializerFactoryPropertyName = "SerializerFactory";
+        private const string StreamTypeName = "stream";
 
         public override void WriteMethod(CodeMethod code)
         {
@@ -161,8 +162,13 @@ namespace Kiota.Builder
             var parentClass = code.Parent as CodeClass;
             var shouldHide = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null && code.MethodKind == CodeMethodKind.Serializer;
             var hideModifier = shouldHide ? "new " : string.Empty;
+            var isVoid = "void".Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
+            var isStream = StreamTypeName.Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
+            var genericTypePrefix = isVoid ? string.Empty : "<";
+            var genricTypeSuffix = code.IsAsync && !isVoid ? ">": string.Empty;
+            var completeReturnType = $"{(code.IsAsync ? "async Task" + genericTypePrefix : string.Empty)}{(code.IsAsync && isVoid ? string.Empty : returnType)}{genricTypeSuffix}";
             // Task type should be moved into the refiner
-            WriteLine($"{GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{(code.IsAsync ? "async Task<": string.Empty)}{returnType}{( code.IsAsync ? ">": string.Empty)} {code.Name}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
+            WriteLine($"{GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType} {code.Name}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
             IncreaseIndent();
             var requestBodyParam = code.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = code.Parameters.OfKind(CodeParameterKind.QueryParameter);
@@ -187,7 +193,10 @@ namespace Kiota.Builder
                     DecreaseIndent();
                     WriteLine("};");
                     if(requestBodyParam != null) {
-                        WriteLine($"requestInfo.SetJsonContentFromParsable({requestBodyParam.Name}, {SerializerFactoryPropertyName});"); //TODO we're making a big assumption here that everything will be json
+                        if(requestBodyParam.Type.Name.Equals(StreamTypeName, StringComparison.InvariantCultureIgnoreCase))
+                            WriteLine($"requestInfo.SetStreamContent({requestBodyParam.Name});");
+                        else
+                            WriteLine($"requestInfo.SetJsonContentFromParsable({requestBodyParam.Name}, {SerializerFactoryPropertyName});"); //TODO we're making a big assumption here that everything will be json
                     }
                     if(queryStringParam != null) {
                         WriteLine($"if ({queryStringParam.Name} != null) {{");
@@ -214,7 +223,7 @@ namespace Kiota.Builder
                     WriteLine(new List<string> { requestBodyParam?.Name, queryStringParam?.Name, headersParam?.Name }.Where(x => x != null).Aggregate((x,y) => $"{x}, {y}"));
                     DecreaseIndent();
                     WriteLines(");",
-                                $"return await HttpCore.SendAsync<{returnType}>(requestInfo, responseHandler);");
+                                $"{(isVoid ? string.Empty : "return ")}await HttpCore.{GetSendRequestMethodName(isVoid, isStream, returnType)}(requestInfo, responseHandler);");
                 break;
                 default:
                     WriteLine("return null;");
@@ -223,6 +232,11 @@ namespace Kiota.Builder
             DecreaseIndent();
             WriteLine("}");
 
+        }
+        private static string GetSendRequestMethodName(bool isVoid, bool isStream, string returnType) {
+            if(isVoid) return "SendNoContentAsync";
+            else if(isStream) return $"SendPrimitiveAsync<{returnType}>";
+            else return $"SendAsync<{returnType}>";
         }
 
         public override void WriteType(CodeType code)

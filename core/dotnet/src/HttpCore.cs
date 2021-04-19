@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -24,12 +25,7 @@ namespace KiotaCore
             if(requestInfo == null)
                 throw new ArgumentNullException(nameof(requestInfo));
 
-            if(!requestInfo.Headers.ContainsKey(authorizationHeaderKey)) {
-                var token = await authProvider.GetAuthorizationToken(requestInfo.URI);
-                if(string.IsNullOrEmpty(token))
-                    throw new InvalidOperationException("Could not get an authorization token");
-                requestInfo.Headers.Add(authorizationHeaderKey, $"Bearer {token}");
-            }
+            await AddBearerIfNotPresent(requestInfo);
             
             using var message = GetRequestMessageFromRequestInfo(requestInfo);
             var response = await this.client.SendAsync(message);
@@ -46,6 +42,71 @@ namespace KiotaCore
             }
             else
                 return await responseHandler.HandleResponseAsync<HttpResponseMessage, ModelType>(response);
+        }
+        public async Task<ModelType> SendPrimitiveAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = default) {
+            if(requestInfo == null)
+                throw new ArgumentNullException(nameof(requestInfo));
+
+            await AddBearerIfNotPresent(requestInfo);
+            
+            using var message = GetRequestMessageFromRequestInfo(requestInfo);
+            var response = await this.client.SendAsync(message);
+            if(response == null)
+                throw new InvalidOperationException("Could not get a response after calling the service");
+            if(responseHandler == null) {
+                using var contentStream = await response.Content.ReadAsStreamAsync();
+                var modelType = typeof(ModelType);
+                if(modelType == typeof(Stream)) {
+                    return (ModelType)(contentStream as object);
+                } else {
+                    using var jsonDocument = JsonDocument.Parse(contentStream);
+                    var rootNode = new JsonParseNode(jsonDocument.RootElement);
+                    response.Dispose();
+                    requestInfo.Content?.Dispose();
+                    object result;
+                    if(modelType == typeof(bool)) {
+                        result = rootNode.GetBoolValue();
+                    } else if(modelType == typeof(string)) {
+                        result = rootNode.GetStringValue();
+                    } else if(modelType == typeof(int)) {
+                        result = rootNode.GetIntValue();
+                    } else if(modelType == typeof(float)) {
+                        result = rootNode.GetFloatValue();
+                    } else if(modelType == typeof(double)) {
+                        result = rootNode.GetDoubleValue();
+                    } else if(modelType == typeof(Guid)) {
+                        result = rootNode.GetGuidValue();
+                    } else if(modelType == typeof(DateTimeOffset)) {
+                        result = rootNode.GetDateTimeOffsetValue();
+                    } else throw new InvalidOperationException("error handling the response, unexpected type");
+                    return (ModelType)result;
+                }
+            }
+            else
+                return await responseHandler.HandleResponseAsync<HttpResponseMessage, ModelType>(response);
+        }
+
+        private async Task AddBearerIfNotPresent(RequestInfo requestInfo) {
+            if(!requestInfo.Headers.ContainsKey(authorizationHeaderKey)) {
+                var token = await authProvider.GetAuthorizationToken(requestInfo.URI);
+                if(string.IsNullOrEmpty(token))
+                    throw new InvalidOperationException("Could not get an authorization token");
+                requestInfo.Headers.Add(authorizationHeaderKey, $"Bearer {token}");
+            }
+        }
+        public async Task SendNoContentAsync(RequestInfo requestInfo, IResponseHandler responseHandler = null)
+        {
+            if(requestInfo == null)
+                throw new ArgumentNullException(nameof(requestInfo));
+            
+            await AddBearerIfNotPresent(requestInfo);
+            
+            using var message = GetRequestMessageFromRequestInfo(requestInfo);
+            var response = await this.client.SendAsync(message);
+            if(response == null)
+                throw new InvalidOperationException("Could not get a response after calling the service");
+            if(responseHandler != null) 
+                await responseHandler.HandleResponseAsync<HttpResponseMessage, object>(response);
         }
         private HttpRequestMessage GetRequestMessageFromRequestInfo(RequestInfo requestInfo) {
             var message = new HttpRequestMessage {

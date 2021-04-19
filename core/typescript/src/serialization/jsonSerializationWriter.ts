@@ -81,7 +81,7 @@ export class JsonSerializationWriter implements SerializationWriter {
             this.writer.push(`}`);
         }
     }
-    public getSerializedContent = async (): Promise<ReadableStream> => {
+    public getSerializedContent = (): ReadableStream => {
         const encoded = new TextEncoder().encode(this.writer.join(""));
         return new ReadableStream<Uint8Array>({
             start: (controller) => {

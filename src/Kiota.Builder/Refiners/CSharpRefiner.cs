@@ -16,6 +16,7 @@ namespace Kiota.Builder {
             AddInnerClasses(generatedCode);
             AddParsableInheritanceForModelClasses(generatedCode);
             CapitalizeNamespacesFirstLetters(generatedCode);
+            ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");
         }
         private void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model) {

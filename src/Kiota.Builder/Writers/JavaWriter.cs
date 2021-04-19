@@ -52,8 +52,11 @@ namespace Kiota.Builder
                 WriteLine($"package {ns.Name};");
                 WriteLine();
                 code.Usings
-                    .Select(x => $"import {x.Name}.{x.Declaration.Name.ToFirstCharacterUpperCase()};")
+                    .Select(x => x.Declaration.IsExternal ?
+                                     $"import {x.Declaration.Name}.{x.Name.ToFirstCharacterUpperCase()};" :
+                                     $"import {x.Name}.{x.Declaration.Name.ToFirstCharacterUpperCase()};")
                     .Distinct()
+                    .OrderBy(x => x)
                     .ToList()
                     .ForEach(x => WriteLine(x));
             }
@@ -75,12 +78,17 @@ namespace Kiota.Builder
             throw new InvalidOperationException("indexers are not supported in Java, the refiner should have replaced those by methods");
         }
         private const string serializerFactoryParamName = "serializerFactory";
+        private const string streamType = "InputStream";
         public override void WriteMethod(CodeMethod code)
         {
             //TODO javadoc
             var returnType = GetTypeString(code.ReturnType);
             var parentClass = code.Parent as CodeClass;
-            if(!returnType.Equals("void", StringComparison.InvariantCultureIgnoreCase))
+            if(returnType.Equals("void", StringComparison.InvariantCultureIgnoreCase))
+            {
+                if(code.MethodKind == CodeMethodKind.RequestExecutor)
+                    returnType = "Void"; //generic type for the future
+            } else if(!code.IsAsync)
                 WriteLine(code.ReturnType.IsNullable && !code.IsAsync ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
             WriteLine($"{GetAccessModifier(code.Access)} {(code.MethodKind == CodeMethodKind.DeserializerBackwardCompatibility ? "<T> ": string.Empty)}{(code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty)}{returnType}{(code.IsAsync ? ">" : string.Empty)} {code.Name.ToFirstCharacterLowerCase()}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {(code.MethodKind == CodeMethodKind.RequestGenerator ? "throws URISyntaxException ": string.Empty)}{{");
             IncreaseIndent();
@@ -128,7 +136,10 @@ namespace Kiota.Builder
                     DecreaseIndent();
                     WriteLine("}};");
                     if(requestBodyParam != null)
-                        WriteLine($"requestInfo.setJsonContentFromParsable({requestBodyParam.Name}, {serializerFactoryParamName});"); //TODO we're making a big assumption here that the request is json
+                        if(requestBodyParam.Type.Name.Equals(streamType, StringComparison.InvariantCultureIgnoreCase))
+                            WriteLine($"requestInfo.setStreamContent({requestBodyParam.Name});");
+                        else
+                            WriteLine($"requestInfo.setJsonContentFromParsable({requestBodyParam.Name}, {serializerFactoryParamName});"); //TODO we're making a big assumption here that the request is json
                     if(queryStringParam != null) {
                         var httpMethodPrefix = code.HttpMethod.ToString().ToFirstCharacterUpperCase();
                         WriteLine($"if ({queryStringParam.Name} != null) {{");
@@ -165,10 +176,11 @@ namespace Kiota.Builder
                         DecreaseIndent();
                     }
                     WriteLine(");");
+                    var sendMethodName = primitiveTypes.Contains(returnType) ? "sendPrimitiveAsync" : "sendAsync";
                     if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.ResponseHandler))
-                        WriteLine($"return this.httpCore.sendAsync(requestInfo, {GetTypeString(code.ReturnType)}.class, responseHandler);");
+                        WriteLine($"return this.httpCore.{sendMethodName}(requestInfo, {returnType}.class, responseHandler);");
                     else
-                        WriteLine($"return this.httpCore.sendAsync(requestInfo, {GetTypeString(code.ReturnType)}.class, null);");
+                        WriteLine($"return this.httpCore.{sendMethodName}(requestInfo, {returnType}.class, null);");
                     DecreaseIndent();
                     WriteLine("} catch (URISyntaxException ex) {");
                     IncreaseIndent();
@@ -183,6 +195,7 @@ namespace Kiota.Builder
             DecreaseIndent();
             WriteLine("}");
         }
+        private static HashSet<string> primitiveTypes = new() {"String", "Boolean", "Integer", "Float", "Long", "Guid", "OffsetDateTime", "Void", streamType };
         private string GetDeserializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
             var propertyType = TranslateType(propType.Name);

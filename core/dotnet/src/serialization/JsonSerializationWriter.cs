@@ -7,15 +7,15 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace KiotaCore.Serialization {
-    public class JsonSerializationWriter : ISerializationWriter, IDisposable, IAsyncDisposable {
+    public class JsonSerializationWriter : ISerializationWriter, IDisposable {
         private readonly MemoryStream stream = new MemoryStream();
         public readonly Utf8JsonWriter writer;
         public JsonSerializationWriter()
         {
             writer = new Utf8JsonWriter(stream);
         }
-        public async Task<Stream> GetSerializedContent() {
-            await writer.FlushAsync();
+        public Stream GetSerializedContent() {
+            writer.Flush();
             stream.Position = 0;
             return stream;
         }
@@ -106,10 +106,6 @@ namespace KiotaCore.Serialization {
         public void Dispose()
         {
             writer.Dispose();
-        }
-        public ValueTask DisposeAsync()
-        {
-            return writer.DisposeAsync();
         }
     }
 }

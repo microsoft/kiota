@@ -9,13 +9,19 @@ export class RequestInfo {
     public queryParameters: Map<string, object> = new Map<string, object>();
     public headers: Map<string, string> = new Map<string, string>();
     private static jsonContentType = "application/json";
-    public async setJsonContentFromParsable<T extends Parsable<T>>(value?: T | undefined, serializerFactory?: ((mediaType: string) => SerializationWriter) | undefined): Promise<void> {
+    private static binaryContentType = "application/octet-stream";
+    private static contentTypeHeader = "Content-Type";
+    public setJsonContentFromParsable = <T extends Parsable<T>>(value?: T | undefined, serializerFactory?: ((mediaType: string) => SerializationWriter) | undefined): void => {
         if(serializerFactory) {
             const writer = serializerFactory(RequestInfo.jsonContentType);
-            this.headers.set("Content-Type", RequestInfo.jsonContentType);
+            this.headers.set(RequestInfo.contentTypeHeader, RequestInfo.jsonContentType);
             writer.writeObjectValue(undefined, value);
-            this.content = await writer.getSerializedContent();
+            this.content = writer.getSerializedContent();
         }
+    }
+    public setStreamContent = (value: ReadableStream): void => {
+        this.headers.set(RequestInfo.contentTypeHeader, RequestInfo.binaryContentType);
+        this.content = value;
     }
     public setHeadersFromRawObject = (h: object) : void => {
         Object.entries(h).forEach(([k, v]) => {

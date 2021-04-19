@@ -75,7 +75,7 @@ namespace Kiota.Builder
                                         .GroupBy(x => x.Declaration?.Name)
                                         .OrderBy(x => x.Key))
             {
-                WriteLine($"import {{{codeUsing.Select(x => x.Name).Aggregate((x,y) => x + ", " + y)}}} from '{codeUsing.Key}';");
+                WriteLine($"import {{{codeUsing.Select(x => x.Name).Distinct().Aggregate((x,y) => x + ", " + y)}}} from '{codeUsing.Key}';");
             }
             foreach (var codeUsing in code.Usings
                                         .Where(x => (!x.Declaration?.IsExternal) ?? true)
@@ -219,11 +219,13 @@ namespace Kiota.Builder
                     $"builder.{SerializerFactoryPropertyName} = this.{SerializerFactoryPropertyName};",
                     "return builder;");
         }
+        private const string StreamType = "ReadableStream";
         public override void WriteMethod(CodeMethod code)
         {
-            WriteLine($"{GetAccessModifier(code.Access)} {code.Name.ToFirstCharacterLowerCase()} {(code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? "async ": string.Empty)}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.ReturnType.IsNullable ? " | undefined" : string.Empty)}{(code.IsAsync ? ">": string.Empty)} {{");
-            IncreaseIndent();
             var returnType = GetTypeString(code.ReturnType);
+            var isVoid = "void".Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
+            WriteLine($"{GetAccessModifier(code.Access)} {code.Name.ToFirstCharacterLowerCase()} {(code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? "async ": string.Empty)}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.ReturnType.IsNullable && !isVoid ? " | undefined" : string.Empty)}{(code.IsAsync ? ">": string.Empty)} {{");
+            IncreaseIndent();
             var parentClass = code.Parent as CodeClass;
             var shouldHide = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null && code.MethodKind == CodeMethodKind.Serializer;
             var requestBodyParam = code.Parameters.OfKind(CodeParameterKind.RequestBody);
@@ -236,7 +238,7 @@ namespace Kiota.Builder
                     break;
                 case CodeMethodKind.DeserializerBackwardCompatibility:
                     var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
-                    WriteLine($"return new Map<string, (item: {parentClass.Name.ToFirstCharacterUpperCase()}, node: ParseNode) => void>([{(inherits ? $"...super.{code.Name}()," : string.Empty)}");
+                    WriteLine($"return new Map<string, (item: {parentClass.Name.ToFirstCharacterUpperCase()}, node: ParseNode) => void>([{(inherits ? $"...super.{code.Name.ToFirstCharacterLowerCase()}()," : string.Empty)}");
                     IncreaseIndent();
                     foreach(var otherProp in parentClass
                                                     .InnerChildElements
@@ -265,8 +267,12 @@ namespace Kiota.Builder
                         WriteLine($"{headersParam.Name} && requestInfo.setHeadersFromRawObject(h);");
                     if(queryStringParam != null)
                         WriteLines($"{queryStringParam.Name} && requestInfo.setQueryStringParametersFromRawObject(q);");
-                    if(requestBodyParam != null)
-                        WriteLine($"requestInfo.setJsonContentFromParsable({requestBodyParam.Name}, this.{SerializerFactoryPropertyName});"); //TODO we're making a big assumption here that everything will be json
+                    if(requestBodyParam != null) {
+                        if(requestBodyParam.Type.Name.Equals(StreamType, StringComparison.InvariantCultureIgnoreCase))
+                            WriteLine($"requestInfo.setStreamContent({requestBodyParam.Name});");
+                        else
+                            WriteLine($"requestInfo.setJsonContentFromParsable({requestBodyParam.Name}, this.{SerializerFactoryPropertyName});"); //TODO we're making a big assumption here that everything will be json
+                    }
                     WriteLine("return requestInfo;");
                 break;
                 case CodeMethodKind.RequestExecutor:
@@ -284,7 +290,10 @@ namespace Kiota.Builder
                         DecreaseIndent();
                     }
                     WriteLine(");");
-                    WriteLine($"return this.httpCore?.sendAsync<{returnType}>(requestInfo, {returnType}, responseHandler) ?? Promise.reject(new Error('http core is null'));");
+                    var isStream = StreamType.Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
+                    var genericTypeForSendMethod = GetSendRequestMethodName(isVoid, isStream, returnType);
+                    var newFactoryParameter = GetTypeFactory(isVoid, isStream, returnType);
+                    WriteLine($"return this.httpCore?.{genericTypeForSendMethod}(requestInfo,{newFactoryParameter} responseHandler) ?? Promise.reject(new Error('http core is null'));");
                     break;
                 default:
                     WriteLine($"return {(code.IsAsync ? "Promise.resolve(" : string.Empty)}{(code.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{(code.IsAsync ? ")" : string.Empty)};");
@@ -293,7 +302,16 @@ namespace Kiota.Builder
             DecreaseIndent();
             WriteLine("};");
         }
-
+        private static string GetTypeFactory(bool isVoid, bool isStream, string returnType) {
+            if(isVoid) return string.Empty;
+            else if(isStream) return $" \"{returnType}\",";
+            else return $" {returnType},";
+        }
+        private static string GetSendRequestMethodName(bool isVoid, bool isStream, string returnType) {
+            if(isVoid) return "sendNoResponseContentAsync";
+            else if(isStream) return $"sendPrimitiveAsync<{returnType}>";
+            else return $"sendAsync<{returnType}>";
+        }
         public override void WriteProperty(CodeProperty code)
         {
             var returnType = GetTypeString(code.Type);

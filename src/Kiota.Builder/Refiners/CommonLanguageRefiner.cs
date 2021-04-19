@@ -8,6 +8,34 @@ namespace Kiota.Builder {
     {
         public abstract void Refine(CodeNamespace generatedCode);
 
+        private const string binaryType = "binary";
+        protected void ReplaceBinaryByNativeType(CodeElement currentElement, string symbol, string ns, bool addDeclaration = false) {
+            if(currentElement is CodeMethod currentMethod) {
+                var parentClass = currentMethod.Parent as CodeClass;
+                var shouldInsertUsing = false;
+                if(currentMethod.ReturnType.Name == binaryType) {
+                    currentMethod.ReturnType.Name = symbol;
+                    shouldInsertUsing = true;
+                }
+                var binaryParameter = currentMethod.Parameters.FirstOrDefault(x => x.Type.Name.Equals(binaryType));
+                if(binaryParameter != null) {
+                    binaryParameter.Type.Name = symbol;
+                    shouldInsertUsing = true;
+                }
+                if(shouldInsertUsing) {
+                    var newUsing = new CodeUsing(parentClass) {
+                        Name = addDeclaration ? symbol : ns,
+                    };
+                    if(addDeclaration)
+                        newUsing.Declaration = new CodeType(newUsing) {
+                            Name = ns,
+                            IsExternal = true,
+                        };
+                    parentClass.AddUsing(newUsing);
+                }
+            }
+            CrawlTree(currentElement, c => ReplaceBinaryByNativeType(c, symbol, ns, addDeclaration));
+        }
         private const string pathSegmentPropertyName = "pathSegment";
         protected void ConvertDeserializerPropsToMethods(CodeElement currentElement, string prefix = null) {
             if(currentElement is CodeClass currentClass) {
