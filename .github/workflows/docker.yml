@@ -1,0 +1,21 @@
+name: Publish Docker image
+on:
+  push:
+    branches: [main, feature/dockerize]
+    paths: ['src/**', '.github/workflows/**']
+jobs:
+  push_to_registry:
+    environment:
+      name: staging_feeds
+    name: Push Docker image to GitHub Packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Push to GitHub Packages
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: docker.pkg.github.com
+          repository: microsoft/kiota/kiota
