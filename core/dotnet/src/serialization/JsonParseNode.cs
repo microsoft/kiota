@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -74,20 +75,18 @@ namespace KiotaCore.Serialization {
                 if(baseTypeFieldsProperty == null)
                     baseType = null;
                 else {
-                    var baseTypeFieldDeserializers = baseTypeFieldsProperty.GetValue(item) as IEnumerable;
+                    var baseTypeFieldDeserializers = baseTypeFieldsProperty.GetValue(item) as IEnumerable<object>;
                     // cannot be cast to IDictionary<string, Action<T, IParseNode>> as action generic types are contra variant
-                    Type baseFieldDeserializerType  = null;
-                    PropertyInfo keyProperty = null;
-                    PropertyInfo valuePropery = null;
-                    foreach(var baseTypeFieldDeserializer in baseTypeFieldDeserializers) {
-                        // cheap lazy loading to avoid running reflection on every object of the collection when we know they are the same type
-                        if(baseFieldDeserializerType == null) baseFieldDeserializerType = baseTypeFieldDeserializer.GetType();
-                        if(keyProperty == null) keyProperty = baseFieldDeserializerType.GetProperty("Key");
-                        if(valuePropery == null) valuePropery = baseFieldDeserializerType.GetProperty("Value");
-
-                        var key = keyProperty.GetValue(baseTypeFieldDeserializer) as string;
-                        var action = valuePropery.GetValue(baseTypeFieldDeserializer) as Action<T, IParseNode>;
-                        fieldDeserializers.Add(key, action);
+                    // cheap lazy loading to avoid running reflection on every object of the collection when we know they are the same type
+                    if(baseTypeFieldDeserializers?.Any() ?? false) {
+                        Type baseFieldDeserializerType  = baseTypeFieldDeserializers.First().GetType();
+                        PropertyInfo keyProperty = baseFieldDeserializerType.GetProperty("Key");
+                        PropertyInfo valuePropery = baseFieldDeserializerType.GetProperty("Value");
+                        foreach(var baseTypeFieldDeserializer in baseTypeFieldDeserializers) {
+                            var key = keyProperty.GetValue(baseTypeFieldDeserializer) as string;
+                            var action = valuePropery.GetValue(baseTypeFieldDeserializer) as Action<T, IParseNode>;
+                            fieldDeserializers.Add(key, action);
+                        }
                     }
                     baseType = baseType.BaseType;
                 }
