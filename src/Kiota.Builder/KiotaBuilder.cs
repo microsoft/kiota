@@ -464,12 +464,6 @@ namespace Kiota.Builder
                 (schema.OneOf?.Any(x => DoesSchemaContainReferenceId(referenceId, x, maxDepth)) ?? false) ||
                 DoesSchemaContainReferenceId(referenceId, schema.Items, maxDepth);
         }
-        [Obsolete("use path instead")]
-        private string GetNamespaceNameForModelByOperationId(string operationId) {
-            if(string.IsNullOrEmpty(operationId)) throw new ArgumentNullException(nameof(operationId));
-            var cleanOperationId = operationId.Split('_').First();
-            return $"{this.config.ClientNamespaceName}.{cleanOperationId}";
-        }
         private string GetShortestNamespaceNameForModelByReferenceId(OpenApiUrlSpaceNode rootNode, string referenceId) {
             if(string.IsNullOrEmpty(referenceId))
                 throw new ArgumentNullException(nameof(referenceId));
@@ -496,7 +490,7 @@ namespace Kiota.Builder
             var codeNamespace = parentElement.GetImmediateParentOfType<CodeNamespace>();
             
             if (originalReference == null) { // Inline schema, i.e. specific to the Operation
-                var namespaceName = GetNamespaceNameForModelByOperationId(operation.OperationId);
+                var namespaceName = currentNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName);
                 var ns = codeNamespace.GetRootNamespace().GetNamespace(namespaceName);
                 if(ns == null)
                     ns = codeNamespace.AddNamespace(namespaceName);
@@ -512,7 +506,7 @@ namespace Kiota.Builder
                 string className = string.Empty;
                 foreach(var currentSchema in schema.AllOf) {
                     var isLastSchema = currentSchema == lastSchema;
-                    var shortestNamespaceName = currentSchema.Reference == null ? GetNamespaceNameForModelByOperationId(operation.OperationId) : GetShortestNamespaceNameForModelByReferenceId(rootNode, currentSchema.Reference.Id);
+                    var shortestNamespaceName = currentSchema.Reference == null ? currentNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName) : GetShortestNamespaceNameForModelByReferenceId(rootNode, currentSchema.Reference.Id);
                     var shortestNamespace = codeNamespace.GetRootNamespace().GetNamespace(shortestNamespaceName);
                     if(shortestNamespace == null)
                         shortestNamespace = codeNamespace.AddNamespace(shortestNamespaceName);
@@ -530,7 +524,7 @@ namespace Kiota.Builder
                     Name = currentNode.GetClassName(operation: operation, suffix: "Response"),
                 };
                 foreach(var currentSchema in schemas) {
-                    var shortestNamespaceName = currentSchema.Reference == null ? GetNamespaceNameForModelByOperationId(operation.OperationId) : GetShortestNamespaceNameForModelByReferenceId(rootNode, currentSchema.Reference.Id);
+                    var shortestNamespaceName = currentSchema.Reference == null ? currentNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName) : GetShortestNamespaceNameForModelByReferenceId(rootNode, currentSchema.Reference.Id);
                     var shortestNamespace = codeNamespace.GetRootNamespace().GetNamespace(shortestNamespaceName);
                     if(shortestNamespace == null)
                         shortestNamespace = codeNamespace.AddNamespace(shortestNamespaceName);
