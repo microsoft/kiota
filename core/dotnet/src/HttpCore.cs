@@ -98,7 +98,7 @@ namespace KiotaCore
 
         private async Task AddBearerIfNotPresent(RequestInfo requestInfo) {
             if(!requestInfo.Headers.ContainsKey(authorizationHeaderKey)) {
-                var token = await authProvider.getAuthorizationToken(requestInfo.URI);
+                var token = await authProvider.GetAuthorizationToken(requestInfo.URI);
                 if(string.IsNullOrEmpty(token))
                     throw new InvalidOperationException("Could not get an authorization token");
                 requestInfo.Headers.Add(authorizationHeaderKey, $"Bearer {token}");

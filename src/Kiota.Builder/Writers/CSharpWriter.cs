@@ -205,9 +205,9 @@ namespace Kiota.Builder
             WriteMethodDocumentation(code);
             WriteMethodPrototype(code, returnType, shouldHide, isVoid);
             IncreaseIndent();
-            var requestBodyParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.RequestBody);
-            var queryStringParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.QueryParameter);
-            var headersParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.Headers);
+            var requestBodyParam = code.Parameters.OfKind(CodeParameterKind.RequestBody);
+            var queryStringParam = code.Parameters.OfKind(CodeParameterKind.QueryParameter);
+            var headersParam = code.Parameters.OfKind(CodeParameterKind.Headers);
             switch(code.MethodKind) {
                 case CodeMethodKind.Serializer:
                     if(shouldHide)
