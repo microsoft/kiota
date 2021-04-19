@@ -1,29 +1,27 @@
 import { NativeResponseHandler } from "./nativeResponseHandler";
 import { ResponseHandler } from "./responseHandler";
 
-type headersCallBackType = (h: Map<string, string>) => void;
-type queryParamsCallbackType<QueryParametersType> = (q: QueryParametersType) => void;
-type originalCallType<ModelType, QueryParametersType> = (q?: queryParamsCallbackType<QueryParametersType>, h?: headersCallBackType, responseHandler?: ResponseHandler) => Promise<ModelType>;
-type originalCallWithBodyType<ModelType, QueryParametersType, RequestBodyType> = (requestBody: RequestBodyType, q?: queryParamsCallbackType<QueryParametersType>, h?: headersCallBackType, responseHandler?: ResponseHandler) => Promise<ModelType>;
+type originalCallType<modelType, queryParametersType, headersType> = (q?: queryParametersType, h?: headersType, responseHandler?: ResponseHandler) => Promise<modelType>;
+type originalCallWithBodyType<modelType, queryParametersType, headersType, requestBodyType> = (requestBody: requestBodyType, q?: queryParametersType, h?: headersType, responseHandler?: ResponseHandler) => Promise<modelType>;
 
 export class NativeResponseWrapper {
-    public static CallAndGetNative = async <ModelType, NativeResponseType, QueryParametersType>(
-        originalCall: originalCallType<ModelType, QueryParametersType>,
-        q?: queryParamsCallbackType<QueryParametersType>,
-        h?: headersCallBackType
-    ) : Promise<NativeResponseType> => {
+    public static CallAndGetNative = async <modelType, nativeResponseType, queryParametersType, headersType>(
+        originalCall: originalCallType<modelType, queryParametersType, headersType>,
+        q?: queryParametersType,
+        h?: headersType
+    ) : Promise<nativeResponseType> => {
         const responseHandler = new NativeResponseHandler();
         await originalCall(q, h, responseHandler);
-        return responseHandler.value as NativeResponseType;
+        return responseHandler.value as nativeResponseType;
     }
-    public static CallAndGetNativeWithBody = async <ModelType, NativeResponseType, QueryParametersType, RequestBodyType>(
-        originalCall: originalCallWithBodyType<ModelType, QueryParametersType, RequestBodyType>,
-        requestBody: RequestBodyType,
-        q?: queryParamsCallbackType<QueryParametersType>,
-        h?: headersCallBackType
-    ) : Promise<NativeResponseType> => {
+    public static CallAndGetNativeWithBody = async <modelType, nativeResponseType, queryParametersType, headersType, requestBodyType>(
+        originalCall: originalCallWithBodyType<modelType, queryParametersType, headersType, requestBodyType>,
+        requestBody: requestBodyType,
+        q?: queryParametersType,
+        h?: headersType
+    ) : Promise<nativeResponseType> => {
         const responseHandler = new NativeResponseHandler();
         await originalCall(requestBody, q, h, responseHandler);
-        return responseHandler.value as NativeResponseType;
+        return responseHandler.value as nativeResponseType;
     }
 }

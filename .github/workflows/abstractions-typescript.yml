@@ -48,3 +48,4 @@ jobs:
       - run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.PUBLISH_GH_TOKEN }}" > .npmrc
       - run: npm publish
       - run: rm .npmrc
+        if: always()

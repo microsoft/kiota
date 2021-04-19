@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder
 {
@@ -165,14 +166,16 @@ namespace Kiota.Builder
         }
         private const string currentPathPropertyName = "currentPath";
         private const string pathSegmentPropertyName = "pathSegment";
+        private const string httpCorePropertyName = "httpCore";
         private void AddRequestBuilderBody(string returnType, string suffix = default) {
-            WriteLine($"const builder = new {returnType}();");
-            WriteLine($"builder.{currentPathPropertyName} = (this.{currentPathPropertyName} && this.{currentPathPropertyName}) + this.{pathSegmentPropertyName}{suffix};");
-            WriteLine("return builder;");
+            WriteLines($"const builder = new {returnType}();",
+                    $"builder.{currentPathPropertyName} = (this.{currentPathPropertyName} ?? '') + this.{pathSegmentPropertyName}{suffix};",
+                    $"builder.{httpCorePropertyName} = this.{httpCorePropertyName};",
+                    "return builder;");
         }
         public override void WriteMethod(CodeMethod code)
         {
-            WriteLine($"{GetAccessModifier(code.Access)} readonly {code.Name.ToFirstCharacterLowerCase()} = {(code.IsAsync ? "async ": string.Empty)}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.ReturnType.IsNullable ? " | undefined" : string.Empty)}{(code.IsAsync ? ">": string.Empty)} => {{");
+            WriteLine($"{GetAccessModifier(code.Access)} readonly {code.Name.ToFirstCharacterLowerCase()} = {(code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? "async ": string.Empty)}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.ReturnType.IsNullable ? " | undefined" : string.Empty)}{(code.IsAsync ? ">": string.Empty)} => {{");
             IncreaseIndent();
             var returnType = GetTypeString(code.ReturnType);
             var requestBodyParam = code.Parameters.OfKind(CodeParameterKind.RequestBody);
@@ -186,7 +189,7 @@ namespace Kiota.Builder
                 case CodeMethodKind.RequestGenerator:
                     WriteLines("const requestInfo = {");
                     IncreaseIndent();
-                    WriteLine("URI: this.currentPath ? new URL(this.currentPath): null,");
+                    WriteLine($"URI: (this.{currentPathPropertyName} ?? '') + this.{pathSegmentPropertyName},");
                     if(headersParam != null)
                         WriteLine($"headers: {headersParam.Name},");
                     WriteLine($"httpMethod: HttpMethod.{code.HttpMethod.ToString().ToUpperInvariant()},");
@@ -213,14 +216,14 @@ namespace Kiota.Builder
                         DecreaseIndent();
                     }
                     WriteLine(");");
-                    WriteLine($"return await this.httpCore?.sendAsync<{returnType}>(requestInfo, responseHandler);");
+                    WriteLine($"return this.httpCore?.sendAsync<{returnType}>(requestInfo, responseHandler) ?? Promise.reject(new Error('http core is null'));");
                     break;
                 default:
                     WriteLine($"return {(code.IsAsync ? "Promise.resolve(" : string.Empty)}{(code.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{(code.IsAsync ? ")" : string.Empty)};");
                     break;
             }
             DecreaseIndent();
-            WriteLine("}");
+            WriteLine("};");
         }
 
         public override void WriteProperty(CodeProperty code)

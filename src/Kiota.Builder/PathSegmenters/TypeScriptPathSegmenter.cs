@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder {
     public class TypeScriptPathSegmenter : IPathSegmenter

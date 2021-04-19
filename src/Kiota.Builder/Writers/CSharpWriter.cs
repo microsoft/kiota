@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder
 {
@@ -106,7 +107,7 @@ namespace Kiota.Builder
                     WriteLine("var requestInfo = new RequestInfo {");
                     IncreaseIndent();
                     WriteLines($"HttpMethod = HttpMethod.{operationName?.ToUpperInvariant()},",
-                               $"URI = new Uri({currentPathPropertyName}),");
+                               $"URI = new Uri({currentPathPropertyName} + {pathSegmentPropertyName}),");
                     if(requestBodyParam != null)
                         WriteLine($"Content = {requestBodyParam.Name} as object as Stream"); //TODO remove cast and call serialization once in place
                     DecreaseIndent();

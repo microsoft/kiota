@@ -6,5 +6,5 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public interface HttpCore {
-    <NativeResponseType, ModelType> CompletableFuture<ModelType> sendAsync(@Nonnull final RequestInfo requestInfo, @Nullable final ResponseHandler responseHandler);
+    <ModelType> CompletableFuture<ModelType> sendAsync(@Nonnull final RequestInfo requestInfo, @Nullable final ResponseHandler responseHandler);
 }

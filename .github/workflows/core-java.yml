@@ -1,0 +1,55 @@
+name: Java Core
+
+on:
+  push:
+    branches: [ main ]
+    paths: ['core/java/**', '.github/workflows/**']
+  pull_request:
+    paths: ['core/java/**', '.github/workflows/**']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      relativePath: ./core/java
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 15
+      - name: Add execution right to the script
+        run: chmod +x gradlew
+        working-directory: ${{ env.relativePath }}
+      - name: Build SDK project
+        run: ./gradlew --no-daemon build
+        working-directory: ${{ env.relativePath }}
+        env:
+          USERNAME: ${{ secrets.PUBLISH_GH_USERNAME }}
+          TOKEN: ${{ secrets.PUBLISH_GH_TOKEN }}
+      - uses: actions/upload-artifact@v2
+        with:
+          name: drop
+          path: |
+            ${{ env.relativePath }}/build/libs/lib.jar
+  deploy:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    environment:
+      name: staging_feeds
+    runs-on: ubuntu-latest
+    env:
+      relativePath: ./core/java
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 15
+      - name: Add execution right to the script
+        run: chmod +x gradlew
+        working-directory: ${{ env.relativePath }}
+      - name: Publish SDK project
+        run: ./gradlew --no-daemon publish
+        working-directory: ${{ env.relativePath }}
+        env:
+          USERNAME: ${{ secrets.PUBLISH_GH_USERNAME }}
+          TOKEN: ${{ secrets.PUBLISH_GH_TOKEN }}

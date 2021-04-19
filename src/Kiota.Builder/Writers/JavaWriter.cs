@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder
 {
@@ -98,7 +99,7 @@ namespace Kiota.Builder
                 case CodeMethodKind.RequestGenerator:
                     WriteLine("final RequestInfo requestInfo = new RequestInfo() {{");
                     IncreaseIndent();
-                    WriteLines("uri = new URI(currentPath);",
+                    WriteLines($"uri = new URI({currentPathPropertyName} + {pathSegmentPropertyName});",
                                 $"httpMethod = HttpMethod.{code.HttpMethod?.ToString().ToUpperInvariant()};");
                     if(requestBodyParam != null)
                         WriteLine($"content = (InputStream)(Object){requestBodyParam.Name};"); //TODO remove cast when serialization is available
@@ -149,11 +150,13 @@ namespace Kiota.Builder
         }
         private const string pathSegmentPropertyName = "pathSegment";
         private const string currentPathPropertyName = "currentPath";
+        private const string httpCorePropertyName = "httpCore";
         private void AddRequestBuilderBody(string returnType, string suffix = default) {
             // we're assigning this temp variable because java doesn't have a way to differentiate references with same names in properties initializers
             // and because if currentPath is null it'll add "null" to the string...
-            WriteLine($"final String parentPath = ({currentPathPropertyName} == null ? \"\" : {currentPathPropertyName}) + {pathSegmentPropertyName}{suffix};");
-            WriteLine($"return new {returnType}() {{{{ {currentPathPropertyName} = parentPath; }}}};");
+            WriteLines($"final String parentPath = ({currentPathPropertyName} == null ? \"\" : {currentPathPropertyName}) + {pathSegmentPropertyName}{suffix};",
+                        $"final HttpCore parentCore = {httpCorePropertyName};", //this variable naming is because Java can't tell the difference in terms of scopes priority in property initializers
+                        $"return new {returnType}() {{{{ {currentPathPropertyName} = parentPath; {httpCorePropertyName} = parentCore; }}}};");
         }
         public override void WriteProperty(CodeProperty code)
         {
