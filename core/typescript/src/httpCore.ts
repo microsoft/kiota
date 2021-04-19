@@ -1,6 +1,7 @@
-import { AuthenticationProvider, HttpCore as IHttpCore, RequestInfo, ResponseHandler } from '@microsoft/kiota-abstractions';
+import { AuthenticationProvider, HttpCore as IHttpCore, Parsable, RequestInfo, ResponseHandler } from '@microsoft/kiota-abstractions';
 import { fetch, Headers as FetchHeadersCtor } from 'cross-fetch';
 import { RequestInit as FetchRequestInit, Headers as FetchHeaders } from 'cross-fetch/lib.fetch';
+import { JsonParseNode } from './serialization';
 import { URLSearchParams } from 'url';
 export class HttpCore implements IHttpCore {
     private static readonly authorizationHeaderKey = "Authorization";
@@ -12,7 +13,7 @@ export class HttpCore implements IHttpCore {
             throw new Error('authentication provider cannot be null');
         }
     }
-    public sendAsync = async <ModelType>(requestInfo: RequestInfo, responseHandler: ResponseHandler | undefined): Promise<ModelType> => {
+    public sendAsync = async <ModelType extends Parsable<ModelType>>(requestInfo: RequestInfo, type: new() => ModelType, responseHandler: ResponseHandler | undefined): Promise<ModelType> => {
         if(!requestInfo) {
             throw new Error('requestInfo cannot be null');
         }
@@ -34,7 +35,10 @@ export class HttpCore implements IHttpCore {
         if(responseHandler) {
             return await responseHandler.handleResponseAsync(response);
         } else {
-            return {} as ModelType; //TODO call default respone handler which will handle deserialization
+            const payload = await response.json();
+            const rootNode = new JsonParseNode(payload);
+            const result = rootNode.getObjectValue(type);
+            return result as unknown as ModelType;
         }
     }
     private getRequestFromRequestInfo = (requestInfo: RequestInfo): FetchRequestInit => {

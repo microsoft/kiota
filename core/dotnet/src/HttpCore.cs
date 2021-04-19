@@ -2,7 +2,10 @@
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Text.Json;
 using Kiota.Abstractions;
+using Kiota.Abstractions.Serialization;
+using KiotaCore.Serialization;
 
 namespace KiotaCore
 {
@@ -16,7 +19,7 @@ namespace KiotaCore
             authProvider = authenticationProvider ?? throw new ArgumentNullException(nameof(authenticationProvider));
             client = httpClient ?? new HttpClient();
         }
-        public async Task<ModelType> SendAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = null)
+        public async Task<ModelType> SendAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = null) where ModelType : class, IParsable<ModelType>, new()
         {
             if(requestInfo == null)
                 throw new ArgumentNullException(nameof(requestInfo));
@@ -30,9 +33,16 @@ namespace KiotaCore
             
             using var message = GetRequestMessageFromRequestInfo(requestInfo);
             var response = await this.client.SendAsync(message);
+            if(response == null)
+                throw new InvalidOperationException("Could not get a response after calling the service");
             if(responseHandler == null) {
-                response?.Dispose();
-                return default; //TODO call default response handler which will handle deserialization.
+                using var contentStream = await response.Content.ReadAsStreamAsync();
+                using var jsonDocument = JsonDocument.Parse(contentStream);
+                var rootNode = new JsonParseNode(jsonDocument.RootElement);
+                var result = rootNode.GetObjectValue<ModelType>();
+                response.Dispose();
+                requestInfo.Content?.Dispose();
+                return result;
             }
             else
                 return await responseHandler.HandleResponseAsync<HttpResponseMessage, ModelType>(response);

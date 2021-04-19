@@ -269,6 +269,15 @@ namespace Kiota.Builder
                 IsExternal = true
             };
             currentClass.AddProperty(httpCoreProperty);
+
+            var serializerFactoryProperty = new CodeProperty(currentClass) {
+                Name = "serializerFactory"
+            };
+            serializerFactoryProperty.Type = new CodeType(serializerFactoryProperty) {
+                Name = "Func<string, ISerializationWriter>",
+                IsExternal = true
+            };
+            currentClass.AddProperty(serializerFactoryProperty);
         }
 
         /// <summary>
@@ -353,9 +362,9 @@ namespace Kiota.Builder
             if (schema != null)
             {
                 var returnType = CreateModelClasses(rootNode, currentNode, schema, operation, executorMethod);
-                executorMethod.ReturnType = returnType ?? new CodeType(executorMethod) { Name = "object"}; //TODO remove this temporary default when the method above handles all cases
+                executorMethod.ReturnType = returnType ?? throw new InvalidOperationException("Could not resolve return type for operation");
             } else 
-                executorMethod.ReturnType = new CodeType(executorMethod) { Name = "object"};
+                executorMethod.ReturnType = new CodeType(executorMethod) { Name = "Entity"}; //TODO remove this temporary default when the method above handles all cases
 
             
             AddRequestBuilderMethodParameters(rootNode, currentNode, operation, parameterClass, executorMethod);
@@ -552,6 +561,7 @@ namespace Kiota.Builder
         private const string OpenApiObjectType = "object";
         private void CreatePropertiesForModelClass(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeNamespace ns, CodeClass model, CodeElement parent) {
             if(schema?.Properties?.Any() ?? false)
+            {
                 model.AddProperty(schema
                                     .Properties
                                     .Select(x => {
@@ -567,8 +577,43 @@ namespace Kiota.Builder
                                         return CreateProperty(x.Key, className ?? x.Value.Type, model, typeSchema: x.Value, typeDefinition: definition);
                                     })
                                     .ToArray());
+            }
             else if(schema?.AllOf?.Any(x => x?.Type?.Equals(OpenApiObjectType) ?? false) ?? false)
                 CreatePropertiesForModelClass(rootNode, currentNode, schema.AllOf.Last(x => x.Type.Equals(OpenApiObjectType)), operation, ns, model, parent);
+            AddSerializationMembers(model);
+        }
+        private const string deserializeFieldsPropName = "DeserializeFields";
+        private const string serializeMethodName = "Serialize";
+        private static void AddSerializationMembers(CodeClass model) {
+            var serializationPropsType = $"IDictionary<string, Action<{model.Name.ToFirstCharacterUpperCase()}, IParseNode>>";
+            if(!model.ContainsMember(deserializeFieldsPropName)) {
+                var deserializeProp = new CodeProperty(model) {
+                    Name = deserializeFieldsPropName,
+                    PropertyKind = CodePropertyKind.Deserializer,
+                    Access = AccessModifier.Public,
+                    ReadOnly = true,
+                };
+                deserializeProp.Type = new CodeType(deserializeProp) {
+                    Name = serializationPropsType,
+                    IsNullable = false,
+                };
+                model.AddProperty(deserializeProp);
+            }
+            if(!model.ContainsMember(serializeMethodName)) {
+                var serializeMethod = new CodeMethod(model) {
+                    Name = serializeMethodName,
+                    MethodKind = CodeMethodKind.Serializer,
+                    IsAsync = false,
+                };
+                serializeMethod.ReturnType = new CodeType(serializeMethod) { Name = "void", IsNullable = false };
+                var parameter = new CodeParameter(serializeMethod) {
+                    Name = "writer",
+                };
+                parameter.Type = new CodeType(parameter) { Name = "ISerializationWriter" };
+                serializeMethod.AddParameter(parameter);
+                
+                model.AddMethod(serializeMethod);
+            }
         }
         private CodeClass CreateOperationParameter(OpenApiUrlSpaceNode node, KeyValuePair<OperationType, OpenApiOperation> operation, CodeClass parentClass)
         {

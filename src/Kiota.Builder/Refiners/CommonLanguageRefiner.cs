@@ -9,6 +9,38 @@ namespace Kiota.Builder {
         public abstract void Refine(CodeNamespace generatedCode);
 
         private const string pathSegmentPropertyName = "pathSegment";
+        protected void ConvertDeserializerPropsToMethods(CodeElement currentElement, string prefix = null) {
+            if(currentElement is CodeClass currentClass) {
+                var deserializerProp = currentClass.InnerChildElements.OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.Deserializer);
+                if(deserializerProp != null) {
+                    currentClass.AddMethod(new CodeMethod(currentClass) {
+                        Name = $"{prefix}{deserializerProp.Name}",
+                        MethodKind = CodeMethodKind.DeserializerBackwardCompatibility,
+                        IsAsync = false,
+                        IsStatic = false,
+                        ReturnType = deserializerProp.Type,
+                        Access = AccessModifier.Public,
+                    });
+                    currentClass.InnerChildElements.Remove(deserializerProp);
+                }
+            }
+            CrawlTree(currentElement, c => ConvertDeserializerPropsToMethods(c, prefix));
+        }
+        // temporary patch of type to it resolves as the builder sets types we didn't generate to entity
+        protected void FixReferencesToEntityType(CodeElement currentElement, CodeClass entityClass = null){
+            if(entityClass == null)
+                entityClass = currentElement.GetImmediateParentOfType<CodeNamespace>()
+                            .GetRootNamespace()
+                            .GetChildElementOfType<CodeClass>(x => x?.Name?.Equals("entity", StringComparison.InvariantCultureIgnoreCase) ?? false);
+
+            if(currentElement is CodeMethod currentMethod 
+                && currentMethod.ReturnType is CodeType currentReturnType
+                && currentReturnType.Name.Equals("entity", StringComparison.InvariantCultureIgnoreCase)
+                && currentReturnType.TypeDefinition == null)
+                currentReturnType.TypeDefinition = entityClass;
+
+            CrawlTree(currentElement, (c) => FixReferencesToEntityType(c, entityClass));
+        }
         protected void ConvertUnionTypesToWrapper(CodeElement currentElement) {
             if(currentElement is CodeMethod currentMethod) {
                 if(currentMethod.ReturnType is CodeUnionType currentUnionType)

@@ -41,10 +41,7 @@ namespace Kiota.Builder
         {
             switch (typeName)
             {//TODO we're probably missing a bunch of type mappings
-                case "integer": return "Integer";
-                case "boolean": return "Boolean";
-                case "string": return "String";
-                case "object": return "Object";
+                case "void": return typeName.ToFirstCharacterLowerCase(); //little casing hack
                 default: return typeName.ToFirstCharacterUpperCase() ?? "Object";
             }
         }
@@ -77,12 +74,15 @@ namespace Kiota.Builder
         {
             throw new InvalidOperationException("indexers are not supported in Java, the refiner should have replaced those by methods");
         }
-
+        private const string serializerFactoryParamName = "serializerFactory";
         public override void WriteMethod(CodeMethod code)
         {
             //TODO javadoc
-            WriteLine(code.ReturnType.IsNullable && !code.IsAsync ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
-            WriteLine($"{GetAccessModifier(code.Access)} {(code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty)}{GetTypeString(code.ReturnType).ToFirstCharacterUpperCase()}{(code.IsAsync ? ">" : string.Empty)} {code.Name.ToFirstCharacterLowerCase()}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {(code.MethodKind == CodeMethodKind.RequestGenerator ? "throws URISyntaxException ": string.Empty)}{{");
+            var returnType = GetTypeString(code.ReturnType);
+            var parentClass = code.Parent as CodeClass;
+            if(!returnType.Equals("void", StringComparison.InvariantCultureIgnoreCase))
+                WriteLine(code.ReturnType.IsNullable && !code.IsAsync ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
+            WriteLine($"{GetAccessModifier(code.Access)} {(code.MethodKind == CodeMethodKind.DeserializerBackwardCompatibility ? "<T> ": string.Empty)}{(code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty)}{returnType}{(code.IsAsync ? ">" : string.Empty)} {code.Name.ToFirstCharacterLowerCase()}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {(code.MethodKind == CodeMethodKind.RequestGenerator ? "throws URISyntaxException ": string.Empty)}{{");
             IncreaseIndent();
             var requestBodyParam = code.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = code.Parameters.OfKind(CodeParameterKind.QueryParameter);
@@ -91,9 +91,33 @@ namespace Kiota.Builder
                 WriteLine($"Objects.requireNonNull({parameter.Name});");
             }
             switch(code.MethodKind) {
+                case CodeMethodKind.Serializer:
+                    if((parentClass.StartBlock as CodeClass.Declaration).Inherits != null)
+                        WriteLine("super.serialize(writer);");
+                    foreach(var otherProp in parentClass
+                                                    .InnerChildElements
+                                                    .OfType<CodeProperty>()
+                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
+                        WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterLowerCase()});");
+                    }
+                break;
+                case CodeMethodKind.DeserializerBackwardCompatibility:
+                    var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
+                    var fieldToSerialize = parentClass
+                            .InnerChildElements
+                            .OfType<CodeProperty>()
+                            .Where(x => x.PropertyKind == CodePropertyKind.Custom);
+                    WriteLine($"final Map<String, BiConsumer<T, ParseNode>> fields = new HashMap<>({(inherits ? "super." + code.Name+ "()" : fieldToSerialize.Count())});");
+                    if(fieldToSerialize.Any())
+                        fieldToSerialize
+                                .Select(x => 
+                                    $"fields.put(\"{x.Name.ToFirstCharacterLowerCase()}\", (o, n) -> {{ (({parentClass.Name.ToFirstCharacterUpperCase()})o).{x.Name.ToFirstCharacterLowerCase()} = {GetDeserializationMethodName(x.Type)}; }});")
+                                .ToList()
+                                .ForEach(x => WriteLine(x));
+                    WriteLine("return fields;");
+                    break;
                 case CodeMethodKind.IndexerBackwardCompatibility:
                     var pathSegment = code.GenerationProperties.ContainsKey(pathSegmentPropertyName) ? code.GenerationProperties[pathSegmentPropertyName] as string : string.Empty;
-                    var returnType = GetTypeString(code.ReturnType);
                     AddRequestBuilderBody(returnType, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
                 break;
                 case CodeMethodKind.RequestGenerator:
@@ -101,16 +125,27 @@ namespace Kiota.Builder
                     IncreaseIndent();
                     WriteLines($"uri = new URI({currentPathPropertyName} + {pathSegmentPropertyName});",
                                 $"httpMethod = HttpMethod.{code.HttpMethod?.ToString().ToUpperInvariant()};");
-                    if(requestBodyParam != null)
-                        WriteLine($"content = (InputStream)(Object){requestBodyParam.Name};"); //TODO remove cast when serialization is available
                     DecreaseIndent();
                     WriteLine("}};");
-                    if(queryStringParam != null)
-                        WriteLines($"final {code.HttpMethod.ToString().ToFirstCharacterUpperCase()}QueryParameters qParams = new {code.HttpMethod?.ToString().ToFirstCharacterUpperCase()}QueryParameters();",
-                                   $"{queryStringParam.Name}.accept(qParams);",
-                                   "qParams.AddQueryParameters(requestInfo.queryParameters);");
-                    if(headersParam != null)
+                    if(requestBodyParam != null)
+                        WriteLine($"requestInfo.setJsonContentFromParsable({requestBodyParam.Name}, {serializerFactoryParamName});"); //TODO we're making a big assumption here that the request is json
+                    if(queryStringParam != null) {
+                        var httpMethodPrefix = code.HttpMethod.ToString().ToFirstCharacterUpperCase();
+                        WriteLine($"if ({queryStringParam.Name} != null) {{");
+                        IncreaseIndent();
+                        WriteLines($"final {httpMethodPrefix}QueryParameters qParams = new {httpMethodPrefix}QueryParameters();",
+                                    $"{queryStringParam.Name}.accept(qParams);",
+                                    "qParams.AddQueryParameters(requestInfo.queryParameters);");
+                        DecreaseIndent();
+                        WriteLine("}");
+                    }
+                    if(headersParam != null) {
+                        WriteLine($"if ({headersParam.Name} != null) {{");
+                        IncreaseIndent();
                         WriteLine($"{headersParam.Name}.accept(requestInfo.headers);");
+                        DecreaseIndent();
+                        WriteLine("}");
+                    }
                     WriteLine("return requestInfo;");
                 break;
                 case CodeMethodKind.RequestExecutor:
@@ -131,9 +166,9 @@ namespace Kiota.Builder
                     }
                     WriteLine(");");
                     if(code.Parameters.Any(x => x.ParameterKind == CodeParameterKind.ResponseHandler))
-                        WriteLine("return this.httpCore.sendAsync(requestInfo, responseHandler);");
+                        WriteLine($"return this.httpCore.sendAsync(requestInfo, {GetTypeString(code.ReturnType)}.class, responseHandler);");
                     else
-                        WriteLine("return this.httpCore.sendAsync(requestInfo, null);");
+                        WriteLine($"return this.httpCore.sendAsync(requestInfo, {GetTypeString(code.ReturnType)}.class, null);");
                     DecreaseIndent();
                     WriteLine("} catch (URISyntaxException ex) {");
                     IncreaseIndent();
@@ -147,6 +182,50 @@ namespace Kiota.Builder
             }
             DecreaseIndent();
             WriteLine("}");
+        }
+        private string GetDeserializationMethodName(CodeTypeBase propType) {
+            var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
+            var propertyType = TranslateType(propType.Name);
+            if(isCollection && propType is CodeType currentType) {
+                if(currentType.TypeDefinition == null)
+                    return $"n.getCollectionOfPrimitiveValues({propertyType.ToFirstCharacterUpperCase()}.class)";
+                else
+                    return $"n.getCollectionOfObjectValues({propertyType.ToFirstCharacterUpperCase()}.class)";
+            }
+            switch(propertyType) {
+                case "String":
+                case "Boolean":
+                case "Integer":
+                case "Float":
+                case "Long":
+                case "Guid":
+                case "OffsetDateTime":
+                    return $"n.get{propertyType.ToFirstCharacterUpperCase()}Value()";
+                default:
+                    return $"n.getObjectValue({propertyType.ToFirstCharacterUpperCase()}.class)";
+            }
+        }
+        private string GetSerializationMethodName(CodeTypeBase propType) {
+            var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
+            var propertyType = TranslateType(propType.Name);
+            if(isCollection && propType is CodeType currentType) {
+                if(currentType.TypeDefinition == null)
+                    return $"writeCollectionOfPrimitiveValues";
+                else
+                    return $"writeCollectionOfObjectValues";
+            }
+            switch(propertyType) {
+                case "String":
+                case "Boolean":
+                case "Integer":
+                case "Float":
+                case "Long":
+                case "Guid":
+                case "OffsetDateTime":
+                    return $"write{propertyType}Value";
+                default:
+                    return $"writeObjectValue";
+            }
         }
         private const string pathSegmentPropertyName = "pathSegment";
         private const string currentPathPropertyName = "currentPath";
@@ -171,6 +250,8 @@ namespace Kiota.Builder
                     DecreaseIndent();
                     WriteLine("}");
                 break;
+                case CodePropertyKind.Deserializer:
+                    throw new InvalidOperationException("java uses methods for the deserializer and this property should have been converted by the refiner");
                 default:
                     var defaultValue = string.IsNullOrEmpty(code.DefaultValue) ? string.Empty : $" = {code.DefaultValue}";
                     WriteLine(code.Type.IsNullable ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");

@@ -31,8 +31,8 @@ namespace Kiota.Builder
                 IncreaseIndent();
             }
 
-            var derivedTypes = code.Implements.Select(x => x.Name)
-                                            .Union(new List<string>{code.Inherits?.Name})
+            var derivedTypes = new List<string>{code.Inherits?.Name}
+                                            .Union(code.Implements.Select(x => x.Name))
                                             .Where(x => x != null);
             var derivation = derivedTypes.Any() ? ": " +  derivedTypes.Select(x => x.ToFirstCharacterUpperCase()).Aggregate((x, y) => $"{x}, {y}") + " " : string.Empty;
             WriteLine($"public class {code.Name.ToFirstCharacterUpperCase()} {derivation}{{");
@@ -48,7 +48,7 @@ namespace Kiota.Builder
                 WriteLine("}");
             }
         }
-
+        private const string parseNodeInterfaceName = "IParseNode";
         public override void WriteProperty(CodeProperty code)
         {
             var simpleBody = "get;";
@@ -70,16 +70,78 @@ namespace Kiota.Builder
                     DecreaseIndent();
                     WriteLine("}");
                 break;
+                case CodePropertyKind.Deserializer:
+                    var parentClass = code.Parent as CodeClass;
+                    var hideParentMember = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
+                    WriteLine($"{GetAccessModifier(code.Access)} {(hideParentMember ? "new " : string.Empty)}{code.Type.Name} {code.Name.ToFirstCharacterUpperCase()} => new Dictionary<string, Action<{parentClass.Name.ToFirstCharacterUpperCase()}, {parseNodeInterfaceName}>> {{");
+                    IncreaseIndent();
+                    foreach(var otherProp in parentClass
+                                                    .InnerChildElements
+                                                    .OfType<CodeProperty>()
+                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
+                        WriteLine("{");
+                        IncreaseIndent();
+                        WriteLine($"\"{otherProp.Name.ToFirstCharacterLowerCase()}\", (o,n) => {{ o.{otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type)}(); }}");
+                        DecreaseIndent();
+                        WriteLine("},");
+                    }
+                    DecreaseIndent();
+                    WriteLine("};");
+                break;
                 default:
                     WriteLine($"{GetAccessModifier(code.Access)} {propertyType} {code.Name.ToFirstCharacterUpperCase()} {{ {simpleBody} }}{defaultValue}");
                 break;
+            }
+        }
+        private string GetDeserializationMethodName(CodeTypeBase propType) {
+            var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
+            var propertyType = TranslateType(propType.Name);
+            if(isCollection && propType is CodeType currentType) {
+                if(currentType.TypeDefinition == null)
+                    return $"GetCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterUpperCase()}>().ToList";
+                else
+                    return $"GetCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>().ToList";
+            }
+            switch(propertyType) {
+                case "string":
+                case "bool":
+                case "int":
+                case "float":
+                case "double":
+                case "Guid":
+                case "DateTimeOffset":
+                    return $"Get{propertyType.ToFirstCharacterUpperCase()}Value";
+                default:
+                    return $"GetObjectValue<{propertyType.ToFirstCharacterUpperCase()}>";
+            }
+        }
+        private string GetSerializationMethodName(CodeTypeBase propType) {
+            var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
+            var propertyType = TranslateType(propType.Name);
+            if(isCollection && propType is CodeType currentType) {
+                if(currentType.TypeDefinition == null)
+                    return $"WriteCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterUpperCase()}>";
+                else
+                    return $"WriteCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>";
+            }
+            switch(propertyType) {
+                case "string":
+                case "bool":
+                case "int":
+                case "float":
+                case "double":
+                case "Guid":
+                case "DateTimeOffset":
+                    return $"Write{propertyType.ToFirstCharacterUpperCase()}Value";
+                default:
+                    return $"WriteObjectValue<{propertyType.ToFirstCharacterUpperCase()}>";
             }
         }
         private const string pathSegmentPropertyName = "PathSegment";
         private const string currentPathPropertyName = "CurrentPath";
         private const string httpCorePropertyName = "HttpCore";
         private void AddRequestBuilderBody(string returnType, string suffix = default, string prefix = default) {
-            WriteLine($"{prefix}new {returnType} {{ {httpCorePropertyName} = {httpCorePropertyName}, {currentPathPropertyName} = {currentPathPropertyName} + {pathSegmentPropertyName} {suffix}}};");
+            WriteLine($"{prefix}new {returnType} {{ {httpCorePropertyName} = {httpCorePropertyName}, {SerializerFactoryPropertyName} = {SerializerFactoryPropertyName}, {currentPathPropertyName} = {currentPathPropertyName} + {pathSegmentPropertyName} {suffix}}};");
         }
         public override void WriteIndexer(CodeIndexer code)
         {
@@ -90,28 +152,43 @@ namespace Kiota.Builder
             DecreaseIndent();
             WriteLine("} }");
         }
+        private const string SerializerFactoryPropertyName = "SerializerFactory";
 
         public override void WriteMethod(CodeMethod code)
         {
             var staticModifier = code.IsStatic ? "static " : string.Empty;
             var returnType = GetTypeString(code.ReturnType);
+            var parentClass = code.Parent as CodeClass;
+            var shouldHide = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null && code.MethodKind == CodeMethodKind.Serializer;
+            var hideModifier = shouldHide ? "new " : string.Empty;
             // Task type should be moved into the refiner
-            WriteLine($"{GetAccessModifier(code.Access)} {staticModifier}{(code.IsAsync ? "async Task<": string.Empty)}{returnType}{( code.IsAsync ? ">": string.Empty)} {code.Name}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
+            WriteLine($"{GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{(code.IsAsync ? "async Task<": string.Empty)}{returnType}{( code.IsAsync ? ">": string.Empty)} {code.Name}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
             IncreaseIndent();
             var requestBodyParam = code.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = code.Parameters.OfKind(CodeParameterKind.QueryParameter);
             var headersParam = code.Parameters.OfKind(CodeParameterKind.Headers);
             switch(code.MethodKind) {
+                case CodeMethodKind.Serializer:
+                    if(shouldHide)
+                        WriteLine("base.Serialize(writer);");
+                    foreach(var otherProp in parentClass
+                                                    .InnerChildElements
+                                                    .OfType<CodeProperty>()
+                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
+                        WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
+                    }
+                break;
                 case CodeMethodKind.RequestGenerator:
                     var operationName = code.HttpMethod?.ToString();
                     WriteLine("var requestInfo = new RequestInfo {");
                     IncreaseIndent();
                     WriteLines($"HttpMethod = HttpMethod.{operationName?.ToUpperInvariant()},",
                                $"URI = new Uri({currentPathPropertyName} + {pathSegmentPropertyName}),");
-                    if(requestBodyParam != null)
-                        WriteLine($"Content = {requestBodyParam.Name} as object as Stream"); //TODO remove cast and call serialization once in place
                     DecreaseIndent();
                     WriteLine("};");
+                    if(requestBodyParam != null) {
+                        WriteLine($"requestInfo.SetJsonContentFromParsable({requestBodyParam.Name}, {SerializerFactoryPropertyName});"); //TODO we're making a big assumption here that everything will be json
+                    }
                     if(queryStringParam != null) {
                         WriteLine($"if ({queryStringParam.Name} != null) {{");
                         IncreaseIndent();
@@ -179,6 +256,7 @@ namespace Kiota.Builder
                 case "boolean": return "bool";
                 case "string": return "string"; // little casing hack
                 case "object": return "object";
+                case "void": return "void";
                 default: return typeName?.ToFirstCharacterUpperCase() ?? "object";
             }
         }

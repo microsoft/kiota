@@ -43,7 +43,10 @@ namespace Kiota.Builder
                                                     GetIndent()
                                                 : string.Empty;
                     DecreaseIndent();
-                    return $"{{{innerDeclaration}}}";
+                    if(string.IsNullOrEmpty(innerDeclaration))
+                        return "object";
+                    else
+                        return $"{{{innerDeclaration}}}";
                 }
                 else
                     return $"{typeName}{collectionSuffix}";
@@ -59,6 +62,7 @@ namespace Kiota.Builder
                 case "string": // little casing hack
                 case "object":
                 case "boolean":
+                case "void":
                     return typeName; 
                 default: return typeName.ToFirstCharacterUpperCase() ?? "object";
             } // string, boolean, object : same casing
@@ -164,20 +168,64 @@ namespace Kiota.Builder
         {
             throw new InvalidOperationException("indexers are not supported in TypeScript, the refiner should have removes those");
         }
+        private string GetDeserializationMethodName(CodeTypeBase propType) {
+            var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
+            var propertyType = TranslateType(propType.Name);
+            if(isCollection && propType is CodeType currentType) {
+                if(currentType.TypeDefinition == null)
+                    return $"getCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>()";
+                else
+                    return $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
+            }
+            switch(propertyType) {
+                case "string":
+                case "boolean":
+                case "number":
+                case "Guid":
+                case "DateTimeOffset":
+                    return $"get{propertyType.ToFirstCharacterUpperCase()}Value()";
+                default:
+                    return $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
+            }
+        }
+        private string GetSerializationMethodName(CodeTypeBase propType) {
+            var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
+            var propertyType = TranslateType(propType.Name);
+            if(isCollection && propType is CodeType currentType) {
+                if(currentType.TypeDefinition == null)
+                    return $"writeCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>";
+                else
+                    return $"writeCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>";
+            }
+            switch(propertyType) {
+                case "string":
+                case "boolean":
+                case "number":
+                case "Guid":
+                case "DateTimeOffset":
+                    return $"write{propertyType.ToFirstCharacterUpperCase()}Value";
+                default:
+                    return $"writeObjectValue<{propertyType.ToFirstCharacterUpperCase()}>";
+            }
+        }
         private const string currentPathPropertyName = "currentPath";
         private const string pathSegmentPropertyName = "pathSegment";
         private const string httpCorePropertyName = "httpCore";
+        private const string SerializerFactoryPropertyName = "serializerFactory";
         private void AddRequestBuilderBody(string returnType, string suffix = default) {
             WriteLines($"const builder = new {returnType}();",
                     $"builder.{currentPathPropertyName} = (this.{currentPathPropertyName} ?? '') + this.{pathSegmentPropertyName}{suffix};",
                     $"builder.{httpCorePropertyName} = this.{httpCorePropertyName};",
+                    $"builder.{SerializerFactoryPropertyName} = this.{SerializerFactoryPropertyName};",
                     "return builder;");
         }
         public override void WriteMethod(CodeMethod code)
         {
-            WriteLine($"{GetAccessModifier(code.Access)} readonly {code.Name.ToFirstCharacterLowerCase()} = {(code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? "async ": string.Empty)}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.ReturnType.IsNullable ? " | undefined" : string.Empty)}{(code.IsAsync ? ">": string.Empty)} => {{");
+            WriteLine($"{GetAccessModifier(code.Access)} {code.Name.ToFirstCharacterLowerCase()} {(code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? "async ": string.Empty)}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) : {(code.IsAsync ? "Promise<": string.Empty)}{GetTypeString(code.ReturnType)}{(code.ReturnType.IsNullable ? " | undefined" : string.Empty)}{(code.IsAsync ? ">": string.Empty)} {{");
             IncreaseIndent();
             var returnType = GetTypeString(code.ReturnType);
+            var parentClass = code.Parent as CodeClass;
+            var shouldHide = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null && code.MethodKind == CodeMethodKind.Serializer;
             var requestBodyParam = code.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = code.Parameters.OfKind(CodeParameterKind.QueryParameter);
             var headersParam = code.Parameters.OfKind(CodeParameterKind.Headers);
@@ -186,20 +234,40 @@ namespace Kiota.Builder
                     var pathSegment = code.GenerationProperties.ContainsKey(pathSegmentPropertyName) ? code.GenerationProperties[pathSegmentPropertyName] as string : string.Empty;
                     AddRequestBuilderBody(returnType, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
                     break;
-                case CodeMethodKind.RequestGenerator:
-                    WriteLines("const requestInfo = {");
+                case CodeMethodKind.DeserializerBackwardCompatibility:
+                    var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
+                    WriteLine($"return new Map<string, (item: {parentClass.Name.ToFirstCharacterUpperCase()}, node: ParseNode) => void>([{(inherits ? $"...super.{code.Name}()," : string.Empty)}");
                     IncreaseIndent();
-                    WriteLine($"URI: (this.{currentPathPropertyName} ?? '') + this.{pathSegmentPropertyName},");
-                    if(headersParam != null)
-                        WriteLine($"headers: {headersParam.Name},");
-                    WriteLine($"httpMethod: HttpMethod.{code.HttpMethod.ToString().ToUpperInvariant()},");
-                    if(requestBodyParam != null)
-                        WriteLine($"content: {requestBodyParam.Name} as unknown,"); //TODO remvoe cast when serialization is available
-                    if(queryStringParam != null)
-                        WriteLine($"queryParameters: {queryStringParam.Name},");
+                    foreach(var otherProp in parentClass
+                                                    .InnerChildElements
+                                                    .OfType<CodeProperty>()
+                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
+                        WriteLine($"[\"{otherProp.Name.ToFirstCharacterLowerCase()}\", (o, n) => {{ o.{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type)}; }}],");
+                    }
                     DecreaseIndent();
-                    WriteLines("} as RequestInfo;",
-                                "return requestInfo;");
+                    WriteLine("]);");
+                    break;
+                case CodeMethodKind.Serializer:
+                    if(shouldHide)
+                        WriteLine("super.serialize(writer);");
+                    foreach(var otherProp in parentClass
+                                                    .InnerChildElements
+                                                    .OfType<CodeProperty>()
+                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
+                        WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.Name.ToFirstCharacterLowerCase()}\", this.{otherProp.Name.ToFirstCharacterLowerCase()});");
+                    }
+                    break;
+                case CodeMethodKind.RequestGenerator:
+                    WriteLines("const requestInfo = new RequestInfo();",
+                                $"requestInfo.URI = (this.{currentPathPropertyName} ?? '') + this.{pathSegmentPropertyName},",
+                                $"requestInfo.httpMethod = HttpMethod.{code.HttpMethod.ToString().ToUpperInvariant()},");
+                    if(headersParam != null)
+                        WriteLine($"{headersParam.Name} && requestInfo.setHeadersFromRawObject(h);");
+                    if(queryStringParam != null)
+                        WriteLines($"{queryStringParam.Name} && requestInfo.setQueryStringParametersFromRawObject(q);");
+                    if(requestBodyParam != null)
+                        WriteLine($"requestInfo.setJsonContentFromParsable({requestBodyParam.Name}, this.{SerializerFactoryPropertyName});"); //TODO we're making a big assumption here that everything will be json
+                    WriteLine("return requestInfo;");
                 break;
                 case CodeMethodKind.RequestExecutor:
                     var generatorMethodName = (code.Parent as CodeClass)
@@ -216,7 +284,7 @@ namespace Kiota.Builder
                         DecreaseIndent();
                     }
                     WriteLine(");");
-                    WriteLine($"return this.httpCore?.sendAsync<{returnType}>(requestInfo, responseHandler) ?? Promise.reject(new Error('http core is null'));");
+                    WriteLine($"return this.httpCore?.sendAsync<{returnType}>(requestInfo, {returnType}, responseHandler) ?? Promise.reject(new Error('http core is null'));");
                     break;
                 default:
                     WriteLine($"return {(code.IsAsync ? "Promise.resolve(" : string.Empty)}{(code.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{(code.IsAsync ? ")" : string.Empty)};");
@@ -230,6 +298,8 @@ namespace Kiota.Builder
         {
             var returnType = GetTypeString(code.Type);
             switch(code.PropertyKind) {
+                case CodePropertyKind.Deserializer:
+                    throw new InvalidOperationException("typescript uses methods for the deserializers and this property should have been converted to a method");
                 case CodePropertyKind.RequestBuilder:
                     WriteLine($"{GetAccessModifier(code.Access)} get {code.Name.ToFirstCharacterLowerCase()}(): {returnType} {{");
                     IncreaseIndent();
@@ -239,7 +309,8 @@ namespace Kiota.Builder
                 break;
                 default:
                     var defaultValue = string.IsNullOrEmpty(code.DefaultValue) ? string.Empty : $" = {code.DefaultValue}";
-                    WriteLine($"{GetAccessModifier(code.Access)}{(code.ReadOnly ? " readonly ": " ")}{code.Name.ToFirstCharacterLowerCase()}{(code.Type.IsNullable ? "?" : string.Empty)}: {returnType}{(code.Type.IsNullable ? " | undefined" : string.Empty)}{defaultValue};");
+                    var singleLiner = code.PropertyKind == CodePropertyKind.Custom;
+                    WriteLine($"{GetAccessModifier(code.Access)}{(code.ReadOnly ? " readonly ": " ")}{code.Name.ToFirstCharacterLowerCase()}{(code.Type.IsNullable ? "?" : string.Empty)}: {returnType}{(code.Type.IsNullable ? " | undefined" : string.Empty)}{defaultValue}{(singleLiner ? ";" : string.Empty)}");
                 break;
             }
         }
