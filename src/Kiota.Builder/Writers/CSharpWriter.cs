@@ -164,9 +164,9 @@ namespace Kiota.Builder
             // Task type should be moved into the refiner
             WriteLine($"{GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{(code.IsAsync ? "async Task<": string.Empty)}{returnType}{( code.IsAsync ? ">": string.Empty)} {code.Name}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
             IncreaseIndent();
-            var requestBodyParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.RequestBody);
-            var queryStringParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.QueryParameter);
-            var headersParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.Headers);
+            var requestBodyParam = code.Parameters.OfKind(CodeParameterKind.RequestBody);
+            var queryStringParam = code.Parameters.OfKind(CodeParameterKind.QueryParameter);
+            var headersParam = code.Parameters.OfKind(CodeParameterKind.Headers);
             switch(code.MethodKind) {
                 case CodeMethodKind.Serializer:
                     if(shouldHide)
