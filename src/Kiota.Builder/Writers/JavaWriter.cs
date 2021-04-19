@@ -62,7 +62,7 @@ namespace Kiota.Builder
             }
             var derivation = (code.Inherits == null ? string.Empty : $" extends {code.Inherits.Name.ToFirstCharacterUpperCase()}") +
                             (!code.Implements.Any() ? string.Empty : $" implements {code.Implements.Select(x => x.Name).Aggregate((x,y) => x + " ," + y)}");
-            //TODO: missing javadoc
+            WriteShortDescription((code.Parent as CodeClass)?.Description);
             WriteLine($"public class {code.Name.ToFirstCharacterUpperCase()}{derivation} {{");
             IncreaseIndent();
         }
@@ -79,11 +79,36 @@ namespace Kiota.Builder
         }
         private const string serializerFactoryParamName = "serializerFactory";
         private const string streamType = "InputStream";
+        private const string docCommentStart = "/**";
+        private const string docCommentPrefix = " * ";
+        private const string docCommentEnd = " */";
+        private void WriteMethodDocumentation(CodeMethod code) {
+            var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);
+            var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Description));
+            if (isDescriptionPresent || parametersWithDescription.Any()) {
+                WriteLine(docCommentStart);
+                if(isDescriptionPresent)
+                    WriteLine($"{docCommentPrefix}{RemoveInvalidDescriptionCharacters(code.Description)}");
+                foreach(var paramWithDescription in parametersWithDescription)
+                    WriteLine($"{docCommentPrefix}@param {paramWithDescription.Name} {RemoveInvalidDescriptionCharacters(paramWithDescription.Description)}");
+                
+                if(code.IsAsync)
+                    WriteLine($"{docCommentPrefix}@return a CompletableFuture of {code.ReturnType.Name}");
+                else
+                    WriteLine($"{docCommentPrefix}@return a {code.ReturnType.Name}");
+                WriteLine(docCommentEnd);
+            }
+        }
+        private static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
+        private void WriteShortDescription(string description) {
+            if(!string.IsNullOrEmpty(description))
+                WriteLine($"{docCommentStart} {RemoveInvalidDescriptionCharacters(description)} {docCommentEnd}");
+        }
         public override void WriteMethod(CodeMethod code)
         {
-            //TODO javadoc
             var returnType = GetTypeString(code.ReturnType);
             var parentClass = code.Parent as CodeClass;
+            WriteMethodDocumentation(code);
             if(returnType.Equals("void", StringComparison.InvariantCultureIgnoreCase))
             {
                 if(code.MethodKind == CodeMethodKind.RequestExecutor)
@@ -258,7 +283,7 @@ namespace Kiota.Builder
         }
         public override void WriteProperty(CodeProperty code)
         {
-            //TODO: missing javadoc
+            WriteShortDescription(code.Description);
             var returnType = GetTypeString(code.Type);
             switch(code.PropertyKind) {
                 case CodePropertyKind.RequestBuilder:
@@ -302,8 +327,9 @@ namespace Kiota.Builder
             WriteLines($"package {(code.Parent as CodeNamespace)?.Name};",
                 string.Empty,
                 "import com.microsoft.kiota.serialization.ValuedEnum;",
-                string.Empty,
-                $"public enum {enumName} implements ValuedEnum {{");
+                string.Empty);
+            WriteShortDescription(code.Description);
+            WriteLine($"public enum {enumName} implements ValuedEnum {{");
             IncreaseIndent();
             Write(code.Options
                         .Select(x => $"{x.ToFirstCharacterUpperCase()}(\"{x}\")")

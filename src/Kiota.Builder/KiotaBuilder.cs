@@ -183,14 +183,19 @@ namespace Kiota.Builder
             var isRootClientClass = String.IsNullOrEmpty(currentNode.Identifier);
             if (isRootClientClass)
             {
-                codeClass = new CodeClass(codeNamespace) { Name = this.config.ClientClassName, ClassKind = CodeClassKind.RequestBuilder };
+                codeClass = new CodeClass(codeNamespace) { 
+                    Name = this.config.ClientClassName,
+                    ClassKind = CodeClassKind.RequestBuilder,
+                    Description = "The main entry point of the SDK, exposes the configuration and the fluent API."
+                };
             }
             else
             {
                 var className = currentNode.GetClassName(requestBuilderSuffix);
                 codeClass = new CodeClass((currentNode.DoesNodeBelongToItemSubnamespace() ? codeNamespace.EnsureItemNamespace() : codeNamespace)) {
                     Name = className, 
-                    ClassKind = CodeClassKind.RequestBuilder
+                    ClassKind = CodeClassKind.RequestBuilder,
+                    Description = currentNode.PathItem?.Description ?? currentNode.PathItem?.Summary ?? $"Builds and executes requests for operations under {currentNode.Path}",
                 };
             }
 
@@ -203,7 +208,7 @@ namespace Kiota.Builder
                 var propType = propIdentifier + requestBuilderSuffix;
                 if (child.Value.IsParameter())
                 {
-                    var prop = CreateIndexer(propIdentifier, propType, codeClass);
+                    var prop = CreateIndexer(propIdentifier, propType, codeClass, child.Value);
                     codeClass.SetIndexer(prop);
                 }
                 else if (child.Value.IsFunction())
@@ -243,6 +248,7 @@ namespace Kiota.Builder
                 Name = "pathSegment",
                 DefaultValue = isRootClientClass ? $"\"{this.config.ApiRootUrl}\"" : (currentNode.IsParameter() ? "\"\"" : $"\"/{currentNode.Segment}\""),
                 ReadOnly = true,
+                Description = "Path segment to use to build the URL for the current request builder"
             };
             pathProperty.Type = new CodeType(pathProperty) {
                 Name = "string",
@@ -251,7 +257,8 @@ namespace Kiota.Builder
             currentClass.AddProperty(pathProperty);
 
             var currentPathProperty = new CodeProperty(currentClass) {
-                Name = "currentPath"
+                Name = "currentPath",
+                Description = "Current path for the request"
             };
             currentPathProperty.Type = new CodeType(currentPathProperty) {
                 Name = "string"
@@ -259,7 +266,8 @@ namespace Kiota.Builder
             currentClass.AddProperty(currentPathProperty);
 
             var httpCoreProperty = new CodeProperty(currentClass) {
-                Name = "httpCore"
+                Name = "httpCore",
+                Description = "Core service to use to execute the requests"
             };
             httpCoreProperty.Type = new CodeType(httpCoreProperty) {
                 Name = "IHttpCore",
@@ -268,7 +276,8 @@ namespace Kiota.Builder
             currentClass.AddProperty(httpCoreProperty);
 
             var serializerFactoryProperty = new CodeProperty(currentClass) {
-                Name = "serializerFactory"
+                Name = "serializerFactory",
+                Description = "Factory to use to get a serializer for payload serialization"
             };
             serializerFactoryProperty.Type = new CodeType(serializerFactoryProperty) {
                 Name = "Func<string, ISerializationWriter>",
@@ -310,11 +319,12 @@ namespace Kiota.Builder
                         .GetChildElementOfType<CodeClass>(x => x.Name == currentType.Name);
         }
 
-        private CodeIndexer CreateIndexer(string childIdentifier, string childType, CodeClass codeClass)
+        private CodeIndexer CreateIndexer(string childIdentifier, string childType, CodeClass codeClass, OpenApiUrlSpaceNode currentNode)
         {
             var prop = new CodeIndexer(codeClass)
             {
                 Name = childIdentifier,
+                Description = $"Gets an item from the {currentNode.GetNodeNamespaceFromPath().Substring(1)} collection",
             };
             prop.IndexType = new CodeType(prop) { Name = "string" };
             prop.ReturnType = new CodeType(prop)
@@ -335,6 +345,7 @@ namespace Kiota.Builder
                 Name = propertyName,
                 DefaultValue = defaultValue,
                 PropertyKind = kind,
+                Description = typeSchema?.Description,
             };
             prop.Type = new CodeType(prop) {
                 Name = isCollection ? (typeSchema?.Items?.Reference?.GetClassName() ?? typeSchema?.Items?.Type) : childType,
@@ -356,7 +367,8 @@ namespace Kiota.Builder
             var executorMethod = new CodeMethod(parentClass) {
                 Name = operationType.ToString(),
                 MethodKind = CodeMethodKind.RequestExecutor,
-                HttpMethod = method
+                HttpMethod = method,
+                Description = operation.Description ?? operation.Summary,
             };
             parentClass.AddMethod(executorMethod);
             if (schema != null)
@@ -379,6 +391,7 @@ namespace Kiota.Builder
                 Name = "responseHandler",
                 Optional = true,
                 ParameterKind = CodeParameterKind.ResponseHandler,
+                Description = "Response handler to use in place of the default response handling provided by the core service"
             };
             handlerParam.Type = new CodeType(handlerParam) { Name = "IResponseHandler" };
             executorMethod.AddParameter(handlerParam);
@@ -389,6 +402,7 @@ namespace Kiota.Builder
                 MethodKind = CodeMethodKind.RequestGenerator,
                 IsAsync = false,
                 HttpMethod = method,
+                Description = operation.Description ?? operation.Summary,
             };
             generatorMethod.ReturnType = new CodeType(generatorMethod) { Name = "RequestInfo", IsNullable = false};
             parentClass.AddMethod(generatorMethod);
@@ -404,13 +418,15 @@ namespace Kiota.Builder
                     Name = "body",
                     Type = requestBodyType,
                     Optional = false,
-                    ParameterKind = CodeParameterKind.RequestBody
+                    ParameterKind = CodeParameterKind.RequestBody,
+                    Description = requestBodySchema.Description
                 });
             } else if (operation.RequestBody?.Content?.ContainsKey(requestBodyBinaryContentType) ?? false) {
                 var nParam = new CodeParameter(method) {
                     Name = "body",
                     Optional = false,
-                    ParameterKind = CodeParameterKind.RequestBody
+                    ParameterKind = CodeParameterKind.RequestBody,
+                    Description = $"Binary request body"
                 };
                 nParam.Type = new CodeType(nParam) {
                     Name = "binary"
@@ -422,7 +438,8 @@ namespace Kiota.Builder
                 {
                     Name = "q",
                     Optional = true,
-                    ParameterKind = CodeParameterKind.QueryParameter
+                    ParameterKind = CodeParameterKind.QueryParameter,
+                    Description = "Request query parameters"
                 };
                 qsParam.Type = new CodeType(qsParam) { Name = parameterClass.Name, ActionOf = true, TypeDefinition = parameterClass };
                 method.AddParameter(qsParam);
@@ -431,6 +448,7 @@ namespace Kiota.Builder
                 Name = "h",
                 Optional = true,
                 ParameterKind = CodeParameterKind.Headers,
+                Description = "Request headers"
             };
             headersParam.Type = new CodeType(headersParam) { Name = "IDictionary<string, string>", ActionOf = true };
             method.AddParameter(headersParam);
@@ -567,11 +585,16 @@ namespace Kiota.Builder
                     var newEnum = new CodeEnum(currentNamespace) { 
                         Name = declarationName,
                         Options = schema.Enum.OfType<OpenApiString>().Select(x => x.Value).Where(x => !"null".Equals(x)).ToList(),//TODO set the flag property
+                        Description = currentNode.PathItem.Description ?? currentNode.PathItem.Summary,
                     };
                     currentNamespace.AddEnum(newEnum);
                     return newEnum;
                 } else {
-                    var newClass = new CodeClass(currentNamespace) { Name = declarationName, ClassKind = CodeClassKind.Model };
+                    var newClass = new CodeClass(currentNamespace) { 
+                        Name = declarationName,
+                        ClassKind = CodeClassKind.Model,
+                        Description = currentNode.PathItem.Description ?? currentNode.PathItem.Summary
+                    };
                     if(inheritsFrom == null && schema.AllOf.Count > 1) { //the last is always the current class, we want the one before the last as parent
                         var parentSchema = schema.AllOf.Except(new OpenApiSchema[] {schema.AllOf.Last()}).FirstOrDefault();
                         if(parentSchema != null)
@@ -622,6 +645,7 @@ namespace Kiota.Builder
                     PropertyKind = CodePropertyKind.Deserializer,
                     Access = AccessModifier.Public,
                     ReadOnly = true,
+                    Description = "The serialization information for the current model"
                 };
                 deserializeProp.Type = new CodeType(deserializeProp) {
                     Name = serializationPropsType,
@@ -634,10 +658,12 @@ namespace Kiota.Builder
                     Name = serializeMethodName,
                     MethodKind = CodeMethodKind.Serializer,
                     IsAsync = false,
+                    Description = $"Serialiazes information the current object",
                 };
                 serializeMethod.ReturnType = new CodeType(serializeMethod) { Name = "void", IsNullable = false };
                 var parameter = new CodeParameter(serializeMethod) {
                     Name = "writer",
+                    Description = "Serialization writer to use to serialize this model"
                 };
                 parameter.Type = new CodeType(parameter) { Name = "ISerializationWriter" };
                 serializeMethod.AddParameter(parameter);
@@ -653,12 +679,14 @@ namespace Kiota.Builder
                 {
                     Name = operationType.ToString() + "QueryParameters",
                     ClassKind = CodeClassKind.QueryParameters,
+                    Description = operation.Description ?? operation.Summary
                 };
                 foreach (var parameter in parameters)
                 {
                     var prop = new CodeProperty(parameterClass)
                     {
                         Name = FixQueryParameterIdentifier(parameter),
+                        Description = parameter.Description,
                     };
                     prop.Type = new CodeType(prop)
                     {
