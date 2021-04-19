@@ -32,7 +32,32 @@ No additional tools are required for dotnet projects.
 
 ### Generating SDKs
 
-Installing the tools and cloning this repository, you will need to build Kiota. You can either use Visual Studio Code or Visual Studio or execute the following commands:
+Installing the tools and cloning this repository, you will you can either build Kiota or use it with docker.
+
+#### Running Kiota with Docker
+
+1. Navigate to [New personnal access token](https://github.com/settings/tokens/new) and generat a new token. (permissions: read:package).
+1. Copy the token, you will need it later.
+1. Enable the SSO on the token if you are a Microsoft employee.
+1. Execute the following command to login to the registry.
+
+    ```Shell
+    echo "<the personal access token>" | docker login https://docker.pkg.github.com/microsoft/kiota/generator -u baywet --password-stdin
+    ```
+
+1. Execute the following command to start generating SDKs
+
+    ```Shell
+    docker run -v /some/output/path:/app/output -v /some/input/description.yml:/app/openapi.yml docker.pkg.github.com/microsoft/kiota/generator --language csharp -n samespaceprefix
+    ```
+
+    > Note: you can alternatively use the --openapi parameter with a URI instead of volume mapping.
+
+> Note: steps 1-4 only need to be done once per machine.
+
+#### Building Kiota
+
+First, clone the current repository. You can either use Visual Studio Code or Visual Studio or execute the following commands:
 
 ```Shell
 dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -r win-x64
@@ -41,6 +66,8 @@ dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -r 
 > Note: refer to [.NET runtime identifier catalog](https://docs.microsoft.com/en-us/dotnet/core/rid-catalog) so select the appropriate runtime for your platform.
 
 Navigate to the output directory (usually under `src/kiota/bin/Release/net5.0`) and start generating SDKs by running Kiota.
+
+#### Running Kiota from binaries
 
 ```Shell
 kiota.exe --openapi ../msgraph-sdk-powershell/openApiDocs/v1.0/mail.yml --language csharp -o ../somepath -n samespaceprefix
