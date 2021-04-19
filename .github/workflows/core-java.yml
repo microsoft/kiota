@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-java@v2
         with:
           distribution: 'adopt'
-          java-version: 15
+          java-version: 16
       - name: Add execution right to the script
         run: chmod +x gradlew
         working-directory: ${{ env.relativePath }}
@@ -45,7 +45,7 @@ jobs:
       - uses: actions/setup-java@v2
         with:
           distribution: 'adopt'
-          java-version: 15
+          java-version: 16
       - name: Add execution right to the script
         run: chmod +x gradlew
         working-directory: ${{ env.relativePath }}
