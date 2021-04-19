@@ -13,16 +13,16 @@ namespace KiotaCore {
         public AzureIdentityAuthenticationProvider(TokenCredential credentials, params string[] scopes)
         {
             creds = credentials ?? throw new ArgumentNullException(nameof(credentials));
-            if(_scopes == null)
+            if(scopes == null)
                 _scopes = new();
             else
                 _scopes = scopes.ToList();
 
             if(!_scopes.Any())
-                _scopes.Add("https://graph.microsoft.com/.default");
+                _scopes.Add("https://graph.microsoft.com/.default"); //TODO: init from the request hostname instead so it doesn't block national clouds?
                 
         }
-        public async Task<string> getAuthorizationToken(Uri requestUri)
+        public async Task<string> GetAuthorizationToken(Uri requestUri)
         {
             var result = await this.creds.GetTokenAsync(new TokenRequestContext(_scopes.ToArray()), default); //TODO: we might have to bubble that up for native apps or backend web apps to avoid blocking the UI/getting an exception
             return result.Token;

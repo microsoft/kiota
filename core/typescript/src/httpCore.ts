@@ -3,6 +3,7 @@ import { fetch, Headers as FetchHeadersCtor } from 'cross-fetch';
 import { RequestInit as FetchRequestInit, Headers as FetchHeaders } from 'cross-fetch/lib.fetch';
 import { ReadableStream } from 'web-streams-polyfill';
 import { JsonParseNode } from './serialization';
+import { URLSearchParams } from 'url';
 export class HttpCore implements IHttpCore {
     private static readonly authorizationHeaderKey = "Authorization";
     /**
@@ -113,15 +114,11 @@ export class HttpCore implements IHttpCore {
     private getRequestUrl = (requestInfo: RequestInfo) : string => {
         let url = requestInfo.URI ?? '';
         if(requestInfo.queryParameters?.size ?? -1 > 0) {
-            url+= '?';
+            const queryParametersBuilder = new URLSearchParams();
             requestInfo.queryParameters?.forEach((v, k) => {
-                url += k;
-                if(v) {
-                    url += `=${v}`;
-                }
-                url+='&';
+                queryParametersBuilder.append(k, `${v}`);
             });
-            url = url.substring(0, url.length -1); // removing the last &
+            url = url + '?' + queryParametersBuilder.toString();
         }
         return url;
     }
