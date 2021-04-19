@@ -97,7 +97,6 @@ namespace Kiota.Builder {
                                     .Where(x => x != null);
                 var originalGeneratorMethods = codeMethods.Where(x => x.MethodKind == CodeMethodKind.RequestGenerator);
                 var generatorMethodsToAdd = originalGeneratorMethods
-                                    .Where(x => x.MethodKind == CodeMethodKind.RequestGenerator)
                                     .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter))
                                     .Union(originalGeneratorMethods
                                             .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers)))

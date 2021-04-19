@@ -84,9 +84,9 @@ namespace Kiota.Builder
             WriteLine(code.ReturnType.IsNullable && !code.IsAsync ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
             WriteLine($"{GetAccessModifier(code.Access)} {(code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty)}{GetTypeString(code.ReturnType).ToFirstCharacterUpperCase()}{(code.IsAsync ? ">" : string.Empty)} {code.Name.ToFirstCharacterLowerCase()}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {(code.MethodKind == CodeMethodKind.RequestGenerator ? "throws URISyntaxException ": string.Empty)}{{");
             IncreaseIndent();
-            var requestBodyParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.RequestBody);
-            var queryStringParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.QueryParameter);
-            var headersParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.Headers);
+            var requestBodyParam = code.Parameters.OfKind(CodeParameterKind.RequestBody);
+            var queryStringParam = code.Parameters.OfKind(CodeParameterKind.QueryParameter);
+            var headersParam = code.Parameters.OfKind(CodeParameterKind.Headers);
             foreach(var parameter in code.Parameters.Where(x => !x.Optional)) {
                 WriteLine($"Objects.requireNonNull({parameter.Name});");
             }
