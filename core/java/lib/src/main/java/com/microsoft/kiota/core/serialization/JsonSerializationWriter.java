@@ -1,8 +1,10 @@
 package com.microsoft.kiota.core.serialization;
 
 import com.microsoft.kiota.serialization.SerializationWriter;
+import com.microsoft.kiota.serialization.ValuedEnum;
 import com.microsoft.kiota.serialization.Parsable;
 
+import java.lang.Enum;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -12,7 +14,9 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -161,6 +165,25 @@ public class JsonSerializationWriter implements SerializationWriter {
         } catch (IOException ex) {
             throw new RuntimeException("could not serialize value", ex);
         }
+    }
+    public <T extends Enum<T>> void writeEnumSetValue(@Nullable final String key, @Nullable final EnumSet<T> values) {
+        if(values != null && !values.isEmpty()) {
+            final Optional<String> concatenatedValue = values.stream().map(v -> this.getStringValueFromValuedEnum(v)).reduce((x, y) -> { return x + "," + y; });
+            if(concatenatedValue.isPresent()) {
+                this.writeStringValue(key, concatenatedValue.get());
+            }
+        }
+    }
+    public <T extends Enum<T>> void writeEnumValue(@Nullable final String key, @Nullable final T value) {
+        if(value != null) {
+            this.writeStringValue(key, getStringValueFromValuedEnum(value));
+        }
+    }
+    private <T extends Enum<T>> String getStringValueFromValuedEnum(final T value) {
+        if(value instanceof ValuedEnum) {
+            final ValuedEnum valued = (ValuedEnum)value;
+            return valued.getValue();
+        } else return null;
     }
     public InputStream getSerializedContent() {
         try {

@@ -14,13 +14,26 @@ namespace Kiota.Builder {
             AddRequireNonNullImports(generatedCode);
             FixReferencesToEntityType(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
-            AddDefaultImports(generatedCode);
+            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
             CorrectCoreType(generatedCode);
             PatchHeaderParametersType(generatedCode);
             AddListImport(generatedCode);
             AddParsableInheritanceForModelClasses(generatedCode);
             ConvertDeserializerPropsToMethods(generatedCode, "get");
             ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
+            AddEnumSetImport(generatedCode);
+        }
+        private void AddEnumSetImport(CodeElement currentElement) {
+            if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model &&
+                currentClass.InnerChildElements.OfType<CodeProperty>().Any(x => x.Type is CodeType xType && xType.TypeDefinition is CodeEnum xEnumType && xEnumType.Flags)) {
+                    var nUsing = new CodeUsing(currentClass) {
+                        Name = "EnumSet",
+                    };
+                    nUsing.Declaration = new CodeType(nUsing) { Name = "java.util", IsExternal = true };
+                    currentClass.AddUsing(nUsing);
+                }
+
+            CrawlTree(currentElement, AddEnumSetImport);
         }
         private void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model) {
@@ -68,29 +81,6 @@ namespace Kiota.Builder {
             new ("Map", "java.util"),
             new ("HashMap", "java.util"),
         };
-        private void AddDefaultImports(CodeElement current) {
-            if(current is CodeClass currentClass) {
-                if(currentClass.ClassKind == CodeClassKind.Model)
-                    currentClass.AddUsing(defaultNamespaces.Union(defaultNamespacesForModels)
-                                            .Select(x => {
-                                                            var nUsing = new CodeUsing(currentClass) { 
-                                                                Name = x.Item1,
-                                                            };
-                                                            nUsing.Declaration = new CodeType(nUsing) { Name = x.Item2, IsExternal = true };
-                                                            return nUsing;
-                                                        }).ToArray());
-                if(currentClass.ClassKind == CodeClassKind.RequestBuilder)
-                    currentClass.AddUsing(defaultNamespaces.Union(defaultNamespacesForRequestBuilders)
-                                            .Select(x => {
-                                                            var nUsing = new CodeUsing(currentClass) { 
-                                                                Name = x.Item1,
-                                                            };
-                                                            nUsing.Declaration = new CodeType(nUsing) { Name = x.Item2, IsExternal = true };
-                                                            return nUsing;
-                                                        }).ToArray());
-            }
-            CrawlTree(current, AddDefaultImports);
-        }
         private void CorrectCoreType(CodeElement currentElement) {
             if (currentElement is CodeProperty currentProperty) {
                 if(currentProperty.Type.Name?.Equals("IHttpCore", StringComparison.InvariantCultureIgnoreCase) ?? false)

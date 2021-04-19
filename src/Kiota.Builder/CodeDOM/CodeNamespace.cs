@@ -97,5 +97,13 @@ namespace Kiota.Builder
             else
                 throw new InvalidOperationException($"Found a namespace {ns.name} with a parent that's not a namespace {ns.Parent.Name} {ns.Parent.GetType()}");
         }
+
+        public void AddEnum(params CodeEnum[] enumDeclarations)
+        {
+            if(!enumDeclarations.Any() || enumDeclarations.Any( x=> x == null))
+                throw new ArgumentOutOfRangeException(nameof(enumDeclarations));
+            AddMissingParent(enumDeclarations);
+            this.InnerChildElements.AddRange(enumDeclarations);
+        }
     }
 }

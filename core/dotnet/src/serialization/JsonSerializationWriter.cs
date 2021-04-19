@@ -5,6 +5,8 @@ using System.Text.Json;
 using Kiota.Abstractions.Serialization;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Reflection;
+using KiotaCore.Extensions;
 
 namespace KiotaCore.Serialization {
     public class JsonSerializationWriter : ISerializationWriter, IDisposable {
@@ -25,29 +27,41 @@ namespace KiotaCore.Serialization {
                 writer.WriteStringValue(value);
             }
         }
-        public void WriteBoolValue(string key, bool value) {
-            if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
-            writer.WriteBooleanValue(value);
+        public void WriteBoolValue(string key, bool? value) {
+            if(!string.IsNullOrEmpty(key) && value.HasValue) writer.WritePropertyName(key);
+            if(value.HasValue) writer.WriteBooleanValue(value.Value);
         }
-        public void WriteIntValue(string key, int value) {
-            if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
-            writer.WriteNumberValue(value);
+        public void WriteIntValue(string key, int? value) {
+            if(!string.IsNullOrEmpty(key) && value.HasValue) writer.WritePropertyName(key);
+            if(value.HasValue) writer.WriteNumberValue(value.Value);
         }
-        public void WriteFloatValue(string key, float value) {
-            if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
-            writer.WriteNumberValue(value);
+        public void WriteFloatValue(string key, float? value) {
+            if(!string.IsNullOrEmpty(key) && value.HasValue) writer.WritePropertyName(key);
+            if(value.HasValue) writer.WriteNumberValue(value.Value);
         }
-        public void WriteDoubleValue(string key, double value) {
-            if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
-            writer.WriteNumberValue(value);
+        public void WriteDoubleValue(string key, double? value) {
+            if(!string.IsNullOrEmpty(key) && value.HasValue) writer.WritePropertyName(key);
+            if(value.HasValue) writer.WriteNumberValue(value.Value);
         }
-        public void WriteGuidValue(string key, Guid value) {
-            if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
-            writer.WriteStringValue(value);
+        public void WriteGuidValue(string key, Guid? value) {
+            if(!string.IsNullOrEmpty(key) && value.HasValue) writer.WritePropertyName(key);
+            if(value.HasValue) writer.WriteStringValue(value.Value);
         }
-        public void WriteDateTimeOffsetValue(string key, DateTimeOffset value) {
-            if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
-            writer.WriteStringValue(value);
+        public void WriteDateTimeOffsetValue(string key, DateTimeOffset? value) {
+            if(!string.IsNullOrEmpty(key) && value.HasValue) writer.WritePropertyName(key);
+            if(value.HasValue) writer.WriteStringValue(value.Value);
+        }
+        public void WriteEnumValue<T>(string key, T? value) where T : struct, Enum {
+            if(!string.IsNullOrEmpty(key) && value.HasValue) writer.WritePropertyName(key);
+            if(value.HasValue) {
+                if(typeof(T).GetCustomAttributes<FlagsAttribute>().Any())
+                    writer.WriteStringValue(Enum.GetValues<T>()
+                                            .Where(x => value.Value.HasFlag(x))
+                                            .Select(x => Enum.GetName<T>(x))
+                                            .Select(x => x.ToFirstCharacterLowerCase())
+                                            .Aggregate((x, y) => $"{x},{y}"));
+                else writer.WriteStringValue(value.Value.ToString().ToFirstCharacterLowerCase());
+            }
         }
         public void WriteCollectionOfPrimitiveValues<T>(string key, IEnumerable<T> values) {
             if(values != null) { //empty array is meaningful

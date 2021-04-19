@@ -1,4 +1,5 @@
 import { Parsable, ParseNode } from "@microsoft/kiota-abstractions";
+import { toFirstCharacterUpper } from "../utils/stringUtils";
 
 export class JsonParseNode implements ParseNode {
     /**
@@ -38,6 +39,21 @@ export class JsonParseNode implements ParseNode {
         const result = new type();
         this.assignFieldValues(result);
         return result;
+    }
+    public getEnumValues = <T>(type: any): T[] => {
+        const rawValues = this.getStringValue();
+        if(!rawValues) {
+            return [];
+        }
+        return rawValues.split(',').map(x => type[toFirstCharacterUpper(x)] as T);
+    }
+    public getEnumValue = <T>(type: any): T | undefined => {
+        const values = this.getEnumValues(type);
+        if(values.length > 0) {
+            return values[0] as T;
+        } else {
+            return undefined;
+        }
     }
     private assignFieldValues = <T extends Parsable<T>>(item: T) : void => {
         const fields = item.deserializeFields();

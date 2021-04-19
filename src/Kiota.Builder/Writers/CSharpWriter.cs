@@ -96,11 +96,14 @@ namespace Kiota.Builder
         private string GetDeserializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
             var propertyType = TranslateType(propType.Name);
-            if(isCollection && propType is CodeType currentType) {
-                if(currentType.TypeDefinition == null)
-                    return $"GetCollectionOfPrimitiveValues<{propertyType}>().ToList";
-                else
-                    return $"GetCollectionOfObjectValues<{propertyType}>().ToList";
+            if(propType is CodeType currentType) {
+                if(isCollection)
+                    if(currentType.TypeDefinition == null)
+                        return $"GetCollectionOfPrimitiveValues<{propertyType}>().ToList";
+                    else
+                        return $"GetCollectionOfObjectValues<{propertyType}>().ToList";
+                else if (currentType.TypeDefinition is CodeEnum enumType)
+                    return $"GetEnumValue<{enumType.Name.ToFirstCharacterUpperCase()}>";
             }
             switch(propertyType) {
                 case "string":
@@ -115,14 +118,20 @@ namespace Kiota.Builder
                     return $"GetObjectValue<{propertyType.ToFirstCharacterUpperCase()}>";
             }
         }
+        private readonly Func<CodeTypeBase, string, bool> shouldTypeHaveNullableMarker = (propType, propTypeName) => propType.IsNullable && (nullableTypes.Contains(propTypeName) || (propType is CodeType codeType && codeType.TypeDefinition is CodeEnum));
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
             var propertyType = TranslateType(propType.Name);
-            if(isCollection && propType is CodeType currentType) {
-                if(currentType.TypeDefinition == null)
-                    return $"WriteCollectionOfPrimitiveValues<{propertyType}>";
-                else
-                    return $"WriteCollectionOfObjectValues<{propertyType}>";
+            var nullableSuffix = shouldTypeHaveNullableMarker(propType, propertyType) ? nullableMarker : string.Empty;
+            if(propType is CodeType currentType) {
+                if(isCollection)
+                    if(currentType.TypeDefinition == null)
+                        return $"WriteCollectionOfPrimitiveValues<{propertyType}{nullableSuffix}>";
+                    else
+                        return $"WriteCollectionOfObjectValues<{propertyType}{nullableSuffix}>";
+                else if (currentType.TypeDefinition is CodeEnum enumType)
+                    return $"WriteEnumValue<{enumType.Name.ToFirstCharacterUpperCase()}>";
+                
             }
             switch(propertyType) {
                 case "string":
@@ -154,6 +163,7 @@ namespace Kiota.Builder
         }
         private const string SerializerFactoryPropertyName = "SerializerFactory";
         private const string StreamTypeName = "stream";
+        private const string VoidTypeName = "void";
 
         public override void WriteMethod(CodeMethod code)
         {
@@ -162,7 +172,7 @@ namespace Kiota.Builder
             var parentClass = code.Parent as CodeClass;
             var shouldHide = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null && code.MethodKind == CodeMethodKind.Serializer;
             var hideModifier = shouldHide ? "new " : string.Empty;
-            var isVoid = "void".Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
+            var isVoid = VoidTypeName.Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
             var isStream = StreamTypeName.Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
             var genericTypePrefix = isVoid ? string.Empty : "<";
             var genricTypeSuffix = code.IsAsync && !isVoid ? ">": string.Empty;
@@ -244,20 +254,22 @@ namespace Kiota.Builder
             Write(GetTypeString(code), includeIndent: false);
 
         }
-
+        private static string[] nullableTypes = { "int", "bool", "float", "double", "decimal", "Guid", "DateTimeOffset" };
+        private const string nullableMarker = "?";
         public override string GetTypeString(CodeTypeBase code)
         {
             if(code is CodeUnionType) 
                 throw new InvalidOperationException($"CSharp does not support union types, the union type {code.Name} should have been filtered out by the refiner");
             else if (code is CodeType currentType) {
                 var typeName = TranslateType(currentType.Name);
+                var nullableSuffix = shouldTypeHaveNullableMarker(code, typeName) ? nullableMarker : string.Empty;
                 var collectionPrefix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? "List<" : string.Empty;
                 var collectionSuffix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? ">" : 
                                             (currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Array ? "[]" : string.Empty);
                 if (currentType.ActionOf)
-                    return $"Action<{collectionPrefix}{typeName}{collectionSuffix}>";
+                    return $"Action<{collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}>";
                 else
-                    return $"{collectionPrefix}{typeName}{collectionSuffix}";
+                    return $"{collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}";
             }
             else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
@@ -287,6 +299,30 @@ namespace Kiota.Builder
                 case AccessModifier.Public: return "public";
                 case AccessModifier.Protected: return "protected";
                 default: return "private";
+            }
+        }
+
+        private readonly Func<int, string> GetEnumIndex = (idx) => (idx == 0 ? 0 : 2^(idx -1)).ToString();
+        public override void WriteEnum(CodeEnum code)
+        {
+            var codeNamespace = code?.Parent as CodeNamespace;
+            if(codeNamespace != null) {
+                WriteLine($"namespace {codeNamespace.Name} {{");
+                IncreaseIndent();
+            }
+            if(code.Flags)
+                WriteLine("[Flags]");
+            WriteLine($"public enum {code.Name.ToFirstCharacterUpperCase()} {{"); //TODO docs
+            IncreaseIndent();
+            WriteLines(code.Options
+                            .Select(x => x.ToFirstCharacterUpperCase())
+                            .Select((x, idx) => $"{x}{(code.Flags ? " = " + GetEnumIndex(idx) : string.Empty)},")
+                            .ToArray());
+            DecreaseIndent();
+            WriteLine("}");
+            if(codeNamespace != null) {
+                DecreaseIndent();
+                WriteLine("}");
             }
         }
     }

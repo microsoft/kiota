@@ -10,4 +10,6 @@ export interface ParseNode {
     getCollectionOfPrimitiveValues<T>(): T[] | undefined;
     getCollectionOfObjectValues<T extends Parsable<T>>(type: new() => T): T[] | undefined;
     getObjectValue<T extends Parsable<T>>(type: new() => T): T;
+    getEnumValues<T>(type: any): T[];
+    getEnumValue<T>(type: any): T | undefined;
 }

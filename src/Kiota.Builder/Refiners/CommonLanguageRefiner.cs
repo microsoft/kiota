@@ -8,6 +8,29 @@ namespace Kiota.Builder {
     {
         public abstract void Refine(CodeNamespace generatedCode);
 
+        protected void AddDefaultImports(CodeElement current, Tuple<string, string>[] defaultNamespaces, Tuple<string, string>[] defaultNamespacesForModels, Tuple<string, string>[] defaultNamespacesForRequestBuilders) {
+            if(current is CodeClass currentClass) {
+                if(currentClass.ClassKind == CodeClassKind.Model)
+                    currentClass.AddUsing(defaultNamespaces.Union(defaultNamespacesForModels)
+                                            .Select(x => {
+                                                            var nUsing = new CodeUsing(currentClass) { 
+                                                                Name = x.Item1,
+                                                            };
+                                                            nUsing.Declaration = new CodeType(nUsing) { Name = x.Item2, IsExternal = true };
+                                                            return nUsing;
+                                                        }).ToArray());
+                if(currentClass.ClassKind == CodeClassKind.RequestBuilder)
+                    currentClass.AddUsing(defaultNamespaces.Union(defaultNamespacesForRequestBuilders)
+                                            .Select(x => {
+                                                            var nUsing = new CodeUsing(currentClass) { 
+                                                                Name = x.Item1,
+                                                            };
+                                                            nUsing.Declaration = new CodeType(nUsing) { Name = x.Item2, IsExternal = true };
+                                                            return nUsing;
+                                                        }).ToArray());
+            }
+            CrawlTree(current, c => AddDefaultImports(c, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders));
+        }
         private const string binaryType = "binary";
         protected void ReplaceBinaryByNativeType(CodeElement currentElement, string symbol, string ns, bool addDeclaration = false) {
             if(currentElement is CodeMethod currentMethod) {
@@ -131,7 +154,7 @@ namespace Kiota.Builder {
                     foreach(var returnType in currentIndexer.ReturnType.AllTypes)
                         AddIndexerMethod(currentElement.GetImmediateParentOfType<CodeNamespace>().GetRootNamespace(), 
                                         currentParentClass,
-                                        returnType.TypeDefinition,
+                                        returnType.TypeDefinition as CodeClass,
                                         pathSegment.Trim('\"').TrimStart('/'),
                                         methodNameSuffix);
             }
@@ -171,10 +194,14 @@ namespace Kiota.Builder {
             if(current is CodeClass currentClass) {
                 foreach(var parameter in current.GetChildElements().OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf && x.ParameterKind == CodeParameterKind.QueryParameter)) 
                     foreach(var returnType in parameter.Type.AllTypes) {
+                        var innerClass = returnType.TypeDefinition as CodeClass;
+                        if(innerClass == null)
+                            continue;
+                            
                         if(!currentClass.InnerChildElements.OfType<CodeClass>().Any(x => x.Name.Equals(returnType.TypeDefinition.Name))) {
-                            currentClass.AddInnerClass(returnType.TypeDefinition);
+                            currentClass.AddInnerClass(innerClass);
                         }
-                        (returnType.TypeDefinition.StartBlock as Declaration).Inherits = new CodeType(returnType.TypeDefinition) { Name = "QueryParametersBase", IsExternal = true };
+                        (innerClass.StartBlock as Declaration).Inherits = new CodeType(returnType.TypeDefinition) { Name = "QueryParametersBase", IsExternal = true };
                     }
             }
             CrawlTree(current, AddInnerClasses);

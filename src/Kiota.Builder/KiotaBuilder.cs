@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
 using Kiota.Builder.Extensions;
+using Microsoft.OpenApi.Any;
 
 namespace Kiota.Builder
 {
@@ -324,7 +325,7 @@ namespace Kiota.Builder
             return prop;
         }
 
-        private CodeProperty CreateProperty(string childIdentifier, string childType, CodeClass codeClass, string defaultValue = null, OpenApiSchema typeSchema = null, CodeClass typeDefinition = null, CodePropertyKind kind = CodePropertyKind.Custom)
+        private CodeProperty CreateProperty(string childIdentifier, string childType, CodeClass codeClass, string defaultValue = null, OpenApiSchema typeSchema = null, CodeElement typeDefinition = null, CodePropertyKind kind = CodePropertyKind.Custom)
         {
             var isCollection = typeSchema?.Type?.Equals("array", StringComparison.CurrentCultureIgnoreCase) ?? false;
             var propertyName = childIdentifier;
@@ -338,7 +339,7 @@ namespace Kiota.Builder
             prop.Type = new CodeType(prop) {
                 Name = isCollection ? (typeSchema?.Items?.Reference?.GetClassName() ?? typeSchema?.Items?.Type) : childType,
                 TypeDefinition = typeDefinition,
-                CollectionKind = isCollection ? CodeType.CodeTypeCollectionKind.Complex : default
+                CollectionKind = isCollection ? CodeType.CodeTypeCollectionKind.Complex : default,
             };
             logger.LogDebug("Creating property {name} of {type}", prop.Name, prop.Type.Name);
             return prop;
@@ -500,14 +501,14 @@ namespace Kiota.Builder
                 if(ns == null)
                     ns = codeNamespace.AddNamespace(namespaceName);
                 var className = currentNode.GetClassName(operation: operation, suffix: "Response");
-                var codeClass = AddModelClassIfDoesntExit(rootNode, currentNode, schema, operation, className, ns, parentElement);
+                var codeDeclaration = AddModelDeclarationIfDoesntExit(rootNode, currentNode, schema, operation, className, ns, parentElement);
                 return new CodeType(parentElement) {
-                    TypeDefinition = codeClass,
+                    TypeDefinition = codeDeclaration,
                     Name = className,
                 };
             } else if(schema?.AllOf?.Any() ?? false) {
                 var lastSchema = schema.AllOf.Last();
-                CodeClass codeClass = null;
+                CodeElement codeDeclaration = null;
                 string className = string.Empty;
                 foreach(var currentSchema in schema.AllOf) {
                     var isLastSchema = currentSchema == lastSchema;
@@ -516,11 +517,11 @@ namespace Kiota.Builder
                     if(shortestNamespace == null)
                         shortestNamespace = codeNamespace.AddNamespace(shortestNamespaceName);
                     className = isLastSchema ? currentNode.GetClassName(operation: operation) : currentSchema.GetClassName();
-                    codeClass = AddModelClassIfDoesntExit(rootNode, currentNode, currentSchema, operation, className, shortestNamespace, parentElement, codeClass, true);
+                    codeDeclaration = AddModelDeclarationIfDoesntExit(rootNode, currentNode, currentSchema, operation, className, shortestNamespace, parentElement, codeDeclaration as CodeClass, true);
                 }
 
                 return new CodeType(parentElement) {
-                    TypeDefinition = codeClass,
+                    TypeDefinition = codeDeclaration,
                     Name = className,
                 };
             } else if((schema?.AnyOf?.Any() ?? false) || (schema?.OneOf?.Any() ?? false)) {
@@ -534,9 +535,9 @@ namespace Kiota.Builder
                     if(shortestNamespace == null)
                         shortestNamespace = codeNamespace.AddNamespace(shortestNamespaceName);
                     var className = currentSchema.GetClassName();
-                    var codeClass = AddModelClassIfDoesntExit(rootNode, currentNode, currentSchema, operation, className, shortestNamespace, parentElement);
+                    var codeDeclaration = AddModelDeclarationIfDoesntExit(rootNode, currentNode, currentSchema, operation, className, shortestNamespace, parentElement);
                     unionType.AddType(new CodeType(unionType) {
-                        TypeDefinition = codeClass,
+                        TypeDefinition = codeDeclaration,
                         Name = className,
                     });
                 }
@@ -545,33 +546,53 @@ namespace Kiota.Builder
             else throw new InvalidOperationException("un handled case, might be object type or array type");
             // object type array of object are technically already handled in properties but if we have a root with those we might be missing some cases here
         }
-        private CodeClass AddModelClassIfDoesntExit(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, string className, CodeNamespace currentNamespace, CodeElement parentElement, CodeClass inheritsFrom = null, bool checkInAllNamespaces = false) {
-            var existingClass = checkInAllNamespaces ? 
-                    currentNamespace
-                        .GetRootNamespace()
-                        .GetChildElementOfType<CodeClass>(x => x.Name?.Equals(className, StringComparison.InvariantCultureIgnoreCase) ?? false) :
-                    (currentNode.DoesNodeBelongToItemSubnamespace() ? 
-                                    currentNamespace.EnsureItemNamespace() : 
-                                    currentNamespace)
+        private static CodeElement GetExistingDeclaration(bool checkInAllNamespaces, CodeNamespace currentNamespace, OpenApiUrlSpaceNode currentNode, string declarationName) {
+            Func<CodeElement, bool> query = x => x.Name?.Equals(declarationName, StringComparison.InvariantCultureIgnoreCase) ?? false;
+            var searchNameSpace = GetSearchNamespace(checkInAllNamespaces, currentNode, currentNamespace);
+            return checkInAllNamespaces ? 
+                    (searchNameSpace.GetChildElementOfType<CodeClass>(query) as CodeElement ?? searchNameSpace.GetChildElementOfType<CodeEnum>(query)) :
+                    (searchNameSpace
                         .InnerChildElements
                         ?.OfType<CodeClass>()
-                        ?.FirstOrDefault(x => x.Name?.Equals(className, StringComparison.InvariantCultureIgnoreCase) ?? false);
-            if(existingClass == null) // we can find it in the components
+                        ?.FirstOrDefault(query) ?? 
+                    searchNameSpace
+                        .InnerChildElements
+                        ?.OfType<CodeEnum>()
+                        ?.FirstOrDefault(query));
+        }
+        private static CodeNamespace GetSearchNamespace(bool checkInAllNamespaces, OpenApiUrlSpaceNode currentNode, CodeNamespace currentNamespace) {
+            if(checkInAllNamespaces) return currentNamespace.GetRootNamespace();
+            else if (currentNode.DoesNodeBelongToItemSubnamespace()) return currentNamespace.EnsureItemNamespace();
+            else return currentNamespace;
+        }
+        private CodeElement AddModelDeclarationIfDoesntExit(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, string declarationName, CodeNamespace currentNamespace, CodeElement parentElement, CodeClass inheritsFrom = null, bool checkInAllNamespaces = false) {
+            var existingDeclaration = GetExistingDeclaration(checkInAllNamespaces, currentNamespace, currentNode, declarationName);
+            if(existingDeclaration == null) // we can find it in the components
             {
-                existingClass = new CodeClass(currentNamespace) { Name = className, ClassKind = CodeClassKind.Model };
-                if(inheritsFrom == null && schema.AllOf.Count > 1) { //the last is always the current class, we want the one before the last as parent
-                    var parentSchema = schema.AllOf.Except(new OpenApiSchema[] {schema.AllOf.Last()}).FirstOrDefault();
-                    if(parentSchema != null)
-                        inheritsFrom = AddModelClassIfDoesntExit(rootNode, currentNode, parentSchema, operation, parentSchema.GetClassName(), currentNamespace, parentElement, null, true);
+                if(schema.Enum.Any()) {
+                    var newEnum = new CodeEnum(currentNamespace) { 
+                        Name = declarationName,
+                        Options = schema.Enum.OfType<OpenApiString>().Select(x => x.Value).Where(x => !"null".Equals(x)).ToList(),//TODO set the flag property
+                    };
+                    currentNamespace.AddEnum(newEnum);
+                    return newEnum;
+                } else {
+                    var newClass = new CodeClass(currentNamespace) { Name = declarationName, ClassKind = CodeClassKind.Model };
+                    if(inheritsFrom == null && schema.AllOf.Count > 1) { //the last is always the current class, we want the one before the last as parent
+                        var parentSchema = schema.AllOf.Except(new OpenApiSchema[] {schema.AllOf.Last()}).FirstOrDefault();
+                        if(parentSchema != null)
+                            inheritsFrom = AddModelDeclarationIfDoesntExit(rootNode, currentNode, parentSchema, operation, parentSchema.GetClassName(), currentNamespace, parentElement, null, true) as CodeClass;
+                    }
+                    if(inheritsFrom != null) {
+                        var declaration = newClass.StartBlock as CodeClass.Declaration;
+                        declaration.Inherits = new CodeType(declaration) { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
+                    }
+                    currentNamespace.AddClass(newClass); //order is important to avoid stack overflow because of recursive add
+                    CreatePropertiesForModelClass(rootNode, currentNode, schema, operation, currentNamespace, newClass, parentElement);
+                    return newClass;
                 }
-                if(inheritsFrom != null) {
-                    var declaration = existingClass.StartBlock as CodeClass.Declaration;
-                    declaration.Inherits = new CodeType(declaration) { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
-                }
-                currentNamespace.AddClass(existingClass); //order is important to avoid stack overflow because of recursive add
-                CreatePropertiesForModelClass(rootNode, currentNode, schema, operation, currentNamespace, existingClass, parentElement);
-            }
-            return existingClass;
+            } else
+                return existingDeclaration;
         }
         private const string OpenApiObjectType = "object";
         private void CreatePropertiesForModelClass(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeNamespace ns, CodeClass model, CodeElement parent) {
@@ -582,12 +603,12 @@ namespace Kiota.Builder
                                     .Select(x => {
                                         var propertyDefinitionSchema = x.Value.Items ?? x.Value;
                                         var className = x.Value.GetClassName();
-                                        CodeClass definition = default;
+                                        CodeElement definition = default;
                                         if(!string.IsNullOrEmpty(className)) {
                                             var shortestNamespaceName = GetShortestNamespaceNameForModelByReferenceId(rootNode, propertyDefinitionSchema.Reference.Id);
                                             var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns : 
                                                                     (ns.GetRootNamespace().GetNamespace(shortestNamespaceName) ?? ns.GetRootNamespace().AddNamespace(shortestNamespaceName));
-                                            definition = AddModelClassIfDoesntExit(rootNode, currentNode, propertyDefinitionSchema, operation, className, targetNamespace, parent, null, true);
+                                            definition = AddModelDeclarationIfDoesntExit(rootNode, currentNode, propertyDefinitionSchema, operation, className, targetNamespace, parent, null, true);
                                         }
                                         return CreateProperty(x.Key, className ?? x.Value.Type, model, typeSchema: x.Value, typeDefinition: definition);
                                     })
