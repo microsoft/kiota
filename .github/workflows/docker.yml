@@ -22,4 +22,4 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: microsoft/kiota/kiota:latest
+          tags: docker.pkg.github.com/microsoft/kiota/generator:latest
