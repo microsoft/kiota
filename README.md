@@ -32,11 +32,11 @@ No additional tools are required for dotnet projects.
 
 ### Generating SDKs
 
-Installing the tools and cloning this repository, you will you can either build Kiota or use it with docker.
+Installing the tools and cloning this repository, you can either build Kiota or use it with docker.
 
 #### Running Kiota with Docker
 
-1. Navigate to [New personnal access token](https://github.com/settings/tokens/new) and generat a new token. (permissions: read:package).
+1. Navigate to [New personnal access token](https://github.com/settings/tokens/new) and generate a new token. (permissions: read:package).
 1. Copy the token, you will need it later.
 1. Enable the SSO on the token if you are a Microsoft employee.
 1. Execute the following command to login to the registry.
