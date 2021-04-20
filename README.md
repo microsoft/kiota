@@ -32,7 +32,7 @@ No additional tools are required for dotnet projects.
 
 ### Generating SDKs
 
-Installing the tools and cloning this repository, you can either build Kiota or use it with docker.
+You can either clone the repository and build Kiota locally, download and run binaries or run the docker image.
 
 #### Running Kiota with Docker
 
@@ -68,6 +68,8 @@ dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -r 
 Navigate to the output directory (usually under `src/kiota/bin/Release/net5.0`) and start generating SDKs by running Kiota.
 
 #### Running Kiota from binaries
+
+If you haven't built kiota locally, select the appropriate version from the [releases page](https://github.com/microsoft/kiota/releases).
 
 ```Shell
 kiota.exe --openapi ../msgraph-sdk-powershell/openApiDocs/v1.0/mail.yml --language csharp -o ../somepath -n samespaceprefix
