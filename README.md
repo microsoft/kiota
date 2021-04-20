@@ -43,7 +43,7 @@ dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -r 
 Navigate to the output directory (usually under `src/kiota/bin/Release/net5.0`) and start generating SDKs by running Kiota.
 
 ```Shell
-kiota.exe --openapi ../msgraph-sdk-powershell/openApiDocs/v1.0/mail.yml --language csharp -o ../somepath -n samespaceprefix
+kiota.exe --openapi ../msgraph-sdk-powershell/openApiDocs/v1.0/mail.yml --language csharp -o ../somepath -n namespaceprefix
 ```
 
 > Note: once your SDK is generated in your target project, you will need to add references to kiota abstractions and kiota core in your project. Refer to [Initializing targed projects][#initializing-targed-projects]
@@ -57,7 +57,7 @@ Kiota accepts the following parameters during the generation:
 | class-name | c | no | The class name to use the for main entry point | A valid class name according to the target language specification. | GraphClient |
 | language | l | no | The programming language to generate the SDK in. | csharp, java, or typescript | csharp |
 | loglevel |  | no | The log level to use when logging events to the main output. | Microsoft.Extensions.Logging.LogLevel values | Warning |
-| namespace-name | n | no | The namespace name to use the for main entry point. | Valid namesapce/module name according to target language specifications. | GraphClient |
+| namespace-name | n | no | The namespace name to use the for main entry point. | Valid namespace/module name according to target language specifications. | GraphClient |
 | openapi |  | no | URI or Path to the OpenAPI description (JSON or YAML) to use to generate the SDK. | A valid URI pointing to an HTTP document or a file on the local file-system. | ./openapi.yml |
 | output | o | no | The ouput path of the folder the code will be generated in. The folders will be created during the generation if they don't already exist. | A valid path to a folder. | ./output |
 
