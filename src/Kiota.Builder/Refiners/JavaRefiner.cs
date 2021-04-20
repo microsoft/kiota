@@ -89,6 +89,16 @@ namespace Kiota.Builder {
                     currentProperty.Type.Name = "Function<String, SerializationWriter>";
                 else if(currentProperty.Name.Equals("deserializeFields", StringComparison.InvariantCultureIgnoreCase))
                     currentProperty.Type.Name = $"Map<String, BiConsumer<T, ParseNode>>";
+                else if(currentProperty.Type.Name.Equals("DateTimeOffset", StringComparison.InvariantCultureIgnoreCase)) {
+                    currentProperty.Type.Name = $"OffsetDateTime";
+                    var nUsing = new CodeUsing(currentProperty.Parent) {
+                        Name = "java.time",
+                    };
+                    nUsing.Declaration = new CodeType(nUsing) {
+                        Name = "OffsetDateTime"
+                    };
+                    (currentProperty.Parent as CodeClass).AddUsing(nUsing);
+                }
             }
             if (currentElement is CodeMethod currentMethod) {
                 if(currentMethod.MethodKind == CodeMethodKind.RequestExecutor)

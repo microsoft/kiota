@@ -49,6 +49,8 @@ namespace Kiota.Builder {
                     currentProperty.Type.Name = "((mediaType: string) => SerializationWriter)";
                 else if(currentProperty.Name.Equals("deserializeFields", StringComparison.InvariantCultureIgnoreCase))
                     currentProperty.Type.Name = $"Map<string, (item: {currentProperty.Parent.Name.ToFirstCharacterUpperCase()}, node: ParseNode) => void>";
+                else if(currentProperty.Type.Name.Equals("DateTimeOffset", StringComparison.InvariantCultureIgnoreCase))
+                    currentProperty.Type.Name = $"Date";
             }
             if (currentElement is CodeMethod currentMethod) {
                 if(currentMethod.MethodKind == CodeMethodKind.RequestExecutor)

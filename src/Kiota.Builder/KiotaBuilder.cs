@@ -347,8 +347,11 @@ namespace Kiota.Builder
                 PropertyKind = kind,
                 Description = typeSchema?.Description,
             };
+            var typeName = isCollection ? (typeSchema?.Items?.Reference?.GetClassName() ?? typeSchema?.Items?.Type) : childType;
+            if(typeName == "string" && typeSchema?.Format == "date-time")
+                typeName = "DateTimeOffset";
             prop.Type = new CodeType(prop) {
-                Name = isCollection ? (typeSchema?.Items?.Reference?.GetClassName() ?? typeSchema?.Items?.Type) : childType,
+                Name = typeName,
                 TypeDefinition = typeDefinition,
                 CollectionKind = isCollection ? CodeType.CodeTypeCollectionKind.Complex : default,
             };
