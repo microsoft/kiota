@@ -12,7 +12,7 @@ This library builds on top of the [Microsoft.OpenAPI.NET](https://github.com/mic
 
 - [.NET SDK 5.0](https://dotnet.microsoft.com/download) *
 - [Visual Studio Code](https://code.visualstudio.com/)
-- [Microsoft Graph PowerShell SDK](https://github.com/microsoftgraph/msgraph-sdk-powershell), cloned into the same parent folder of this repository.
+- [Microsoft Graph PowerShell SDK](https://github.com/microsoftgraph/msgraph-sdk-powershell), cloned into the same parent folder of this repository. This dependency is only required if you want to generate SDKs for Microsoft Graph.
 
 #### TypeScript tools
 
@@ -29,6 +29,66 @@ This library builds on top of the [Microsoft.OpenAPI.NET](https://github.com/mic
 No additional tools are required for dotnet projects.
 
 > Note: tools marked with * are required.
+
+### Generating SDKs
+
+You can either clone the repository and build Kiota locally, download and run binaries or run the docker image.
+
+#### Running Kiota with Docker
+
+1. Navigate to [New personal access token](https://github.com/settings/tokens/new) and generate a new token. (permissions: read:package).
+1. Copy the token, you will need it later.
+1. Enable the SSO on the token if you are a Microsoft employee.
+1. Execute the following command to login to the registry.
+
+    ```Shell
+    echo "<the personal access token>" | docker login https://docker.pkg.github.com/microsoft/kiota/generator -u baywet --password-stdin
+    ```
+
+1. Execute the following command to start generating SDKs
+
+    ```Shell
+    docker run -v /some/output/path:/app/output -v /some/input/description.yml:/app/openapi.yml docker.pkg.github.com/microsoft/kiota/generator --language csharp -n samespaceprefix
+    ```
+
+    > Note: you can alternatively use the --openapi parameter with a URI instead of volume mapping.
+
+> Note: steps 1-4 only need to be done once per machine.
+
+#### Building Kiota
+
+First, clone the current repository. You can either use Visual Studio Code or Visual Studio or execute the following commands:
+
+```Shell
+dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -r win-x64
+```
+
+> Note: refer to [.NET runtime identifier catalog](https://docs.microsoft.com/en-us/dotnet/core/rid-catalog) so select the appropriate runtime for your platform.
+
+Navigate to the output directory (usually under `src/kiota/bin/Release/net5.0`) and start generating SDKs by running Kiota.
+
+#### Running Kiota from binaries
+
+If you haven't built kiota locally, select the appropriate version from the [releases page](https://github.com/microsoft/kiota/releases).
+
+```Shell
+kiota.exe --openapi ../msgraph-sdk-powershell/openApiDocs/v1.0/mail.yml --language csharp -o ../somepath -n namespaceprefix
+```
+
+> Note: once your SDK is generated in your target project, you will need to add references to kiota abstractions and kiota core in your project. Refer to [Initializing targed projects][#initializing-targed-projects]
+
+#### Parameters reference
+
+Kiota accepts the following parameters during the generation:
+
+| Name | Shorthand | Required | Description | Accepted values | Default Value |
+| ---- | --------- | -------- | ----------- | --------------- | ------------- |
+| class-name | c | no | The class name to use the for main entry point | A valid class name according to the target language specification. | GraphClient |
+| language | l | no | The programming language to generate the SDK in. | csharp, java, or typescript | csharp |
+| loglevel |  | no | The log level to use when logging events to the main output. | Microsoft.Extensions.Logging.LogLevel values | Warning |
+| namespace-name | n | no | The namespace name to use the for main entry point. | Valid namespace/module name according to target language specifications. | GraphClient |
+| openapi |  | no | URI or Path to the OpenAPI description (JSON or YAML) to use to generate the SDK. | A valid URI pointing to an HTTP document or a file on the local file-system. | ./openapi.yml |
+| output | o | no | The ouput path of the folder the code will be generated in. The folders will be created during the generation if they don't already exist. | A valid path to a folder. | ./output |
 
 ### Debugging
 

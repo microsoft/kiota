@@ -1,6 +1,6 @@
 import { HttpMethod } from "./httpMethod";
 import { ReadableStream } from 'web-streams-polyfill/es2018';
-import { Parsable, SerializationWriter } from "./serialization";
+import { Parsable, SerializationWriterFactory } from "./serialization";
 
 export class RequestInfo {
     public URI?: string;
@@ -11,9 +11,9 @@ export class RequestInfo {
     private static jsonContentType = "application/json";
     private static binaryContentType = "application/octet-stream";
     private static contentTypeHeader = "Content-Type";
-    public setJsonContentFromParsable = <T extends Parsable<T>>(value?: T | undefined, serializerFactory?: ((mediaType: string) => SerializationWriter) | undefined): void => {
+    public setJsonContentFromParsable = <T extends Parsable<T>>(value?: T | undefined, serializerFactory?: SerializationWriterFactory | undefined): void => {
         if(serializerFactory) {
-            const writer = serializerFactory(RequestInfo.jsonContentType);
+            const writer = serializerFactory.getSerializationWriter(RequestInfo.jsonContentType);
             this.headers.set(RequestInfo.contentTypeHeader, RequestInfo.jsonContentType);
             writer.writeObjectValue(undefined, value);
             this.content = writer.getSerializedContent();

@@ -36,7 +36,7 @@ namespace kiota
                 languageOption,
                 new Option("--openapi", "The path to the OpenAPI description file used to generate the code.") {Argument = new Argument<string>(() => "openapi.yml")},
                 classOption,
-                new Option("--loglevel") { Argument = new Argument<LogLevel>(() => LogLevel.Warning)},
+                new Option("--loglevel", "The log level to use when logging events to the main output.") { Argument = new Argument<LogLevel>(() => LogLevel.Warning)},
                 namespaceOption,
             };
             command.Handler = CommandHandler.Create<string, GenerationLanguage?, string, string, LogLevel, string>(async (output, language, openapi, classname, loglevel, namespacename) =>
@@ -80,6 +80,6 @@ namespace kiota
             return configObject;
         }
 
-        private static string GetAbsolutePath(string source) => Path.IsPathRooted(source) ? source : Path.Combine(Directory.GetCurrentDirectory(), source);
+        private static string GetAbsolutePath(string source) => Path.IsPathRooted(source) || source.StartsWith("http") ? source : Path.Combine(Directory.GetCurrentDirectory(), source);
     }
 }

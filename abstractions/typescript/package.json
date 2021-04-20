@@ -30,6 +30,6 @@
     "registry": "https://npm.pkg.github.com"
   },
   "dependencies": {
-    "web-streams-polyfill": "^3.0.2"
+    "web-streams-polyfill": "^3.0.3"
   }
 }

@@ -104,6 +104,16 @@ namespace Kiota.Builder
             if(!string.IsNullOrEmpty(description))
                 WriteLine($"{docCommentStart} {RemoveInvalidDescriptionCharacters(description)} {docCommentEnd}");
         }
+        private void WriteMethodPrototype(CodeMethod code, string returnType) {
+            var accessModifier = GetAccessModifier(code.Access);
+            var genericTypeParameterDeclaration = code.MethodKind == CodeMethodKind.DeserializerBackwardCompatibility ? "<T> ": string.Empty;
+            var returnTypeAsyncPrefix = code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty;
+            var returnTypeAsyncSuffix = code.IsAsync ? ">" : string.Empty;
+            var methodName = code.Name.ToFirstCharacterLowerCase();
+            var parameters = string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList());
+            var throwableDeclarations = code.MethodKind == CodeMethodKind.RequestGenerator ? "throws URISyntaxException ": string.Empty;
+            WriteLine($"{accessModifier} {genericTypeParameterDeclaration}{returnTypeAsyncPrefix}{returnType}{returnTypeAsyncSuffix} {methodName}({parameters}) {throwableDeclarations}{{");
+        }
         public override void WriteMethod(CodeMethod code)
         {
             var returnType = GetTypeString(code.ReturnType);
@@ -115,7 +125,7 @@ namespace Kiota.Builder
                     returnType = "Void"; //generic type for the future
             } else if(!code.IsAsync)
                 WriteLine(code.ReturnType.IsNullable && !code.IsAsync ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
-            WriteLine($"{GetAccessModifier(code.Access)} {(code.MethodKind == CodeMethodKind.DeserializerBackwardCompatibility ? "<T> ": string.Empty)}{(code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty)}{returnType}{(code.IsAsync ? ">" : string.Empty)} {code.Name.ToFirstCharacterLowerCase()}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {(code.MethodKind == CodeMethodKind.RequestGenerator ? "throws URISyntaxException ": string.Empty)}{{");
+            WriteMethodPrototype(code, returnType);
             IncreaseIndent();
             var requestBodyParam = code.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = code.Parameters.OfKind(CodeParameterKind.QueryParameter);

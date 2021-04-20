@@ -185,21 +185,25 @@ namespace Kiota.Builder
                 WriteLine($"{docCommentPrefix}</summary>");
             }
         }
+        private void WriteMethodPrototype(CodeMethod code, string returnType, bool shouldHide, bool isVoid) {
+            var staticModifier = code.IsStatic ? "static " : string.Empty;
+            var hideModifier = shouldHide ? "new " : string.Empty;
+            var genericTypePrefix = isVoid ? string.Empty : "<";
+            var genricTypeSuffix = code.IsAsync && !isVoid ? ">": string.Empty;
+            // TODO: Task type should be moved into the refiner
+            var completeReturnType = $"{(code.IsAsync ? "async Task" + genericTypePrefix : string.Empty)}{(code.IsAsync && isVoid ? string.Empty : returnType)}{genricTypeSuffix}";
+            var parameters = string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList());
+            WriteLine($"{GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType} {code.Name}({parameters}) {{");
+        }
         public override void WriteMethod(CodeMethod code)
         {
-            var staticModifier = code.IsStatic ? "static " : string.Empty;
             var returnType = GetTypeString(code.ReturnType);
             var parentClass = code.Parent as CodeClass;
             var shouldHide = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null && code.MethodKind == CodeMethodKind.Serializer;
-            var hideModifier = shouldHide ? "new " : string.Empty;
             var isVoid = VoidTypeName.Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
             var isStream = StreamTypeName.Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
-            var genericTypePrefix = isVoid ? string.Empty : "<";
-            var genricTypeSuffix = code.IsAsync && !isVoid ? ">": string.Empty;
-            var completeReturnType = $"{(code.IsAsync ? "async Task" + genericTypePrefix : string.Empty)}{(code.IsAsync && isVoid ? string.Empty : returnType)}{genricTypeSuffix}";
             WriteMethodDocumentation(code);
-            // Task type should be moved into the refiner
-            WriteLine($"{GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType} {code.Name}({string.Join(", ", code.Parameters.Select(p=> GetParameterSignature(p)).ToList())}) {{");
+            WriteMethodPrototype(code, returnType, shouldHide, isVoid);
             IncreaseIndent();
             var requestBodyParam = code.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = code.Parameters.OfKind(CodeParameterKind.QueryParameter);

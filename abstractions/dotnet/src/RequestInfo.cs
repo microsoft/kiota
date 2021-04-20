@@ -19,9 +19,9 @@ namespace Kiota.Abstractions
             Content = content;
             Headers.Add(contentTypeHeader, binaryContentType);
         }
-        public void SetJsonContentFromParsable<T>(T item, Func<string, ISerializationWriter> writerFactory) where T : class, IParsable<T>, new() {
+        public void SetJsonContentFromParsable<T>(T item, ISerializationWriterFactory writerFactory) where T : class, IParsable<T>, new() {
             if(writerFactory != null) {
-                using var writer = writerFactory.Invoke(jsonContentType);
+                using var writer = writerFactory.GetSerializationWriter(jsonContentType);
                 writer.WriteObjectValue(null, item);
                 Headers.Add(contentTypeHeader, jsonContentType);
                 Content = writer.GetSerializedContent();

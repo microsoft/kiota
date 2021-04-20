@@ -280,7 +280,7 @@ namespace Kiota.Builder
                 Description = "Factory to use to get a serializer for payload serialization"
             };
             serializerFactoryProperty.Type = new CodeType(serializerFactoryProperty) {
-                Name = "Func<string, ISerializationWriter>",
+                Name = "ISerializationWriterFactory",
                 IsExternal = true
             };
             currentClass.AddProperty(serializerFactoryProperty);
@@ -501,6 +501,18 @@ namespace Kiota.Builder
             } else 
                 throw new InvalidOperationException($"could not find a shortest namespace name for reference id {referenceId}");
         }
+        private CodeType CreateModelClassAndType(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement, CodeNamespace codeNamespace, string classNameSuffix = "") {
+            var namespaceName = currentNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName);
+            var ns = codeNamespace.GetRootNamespace().GetNamespace(namespaceName);
+            if(ns == null)
+                ns = codeNamespace.AddNamespace(namespaceName);
+            var className = currentNode.GetClassName(operation: operation, suffix: classNameSuffix);
+            var codeDeclaration = AddModelDeclarationIfDoesntExit(rootNode, currentNode, schema, operation, className, ns, parentElement);
+            return new CodeType(parentElement) {
+                TypeDefinition = codeDeclaration,
+                Name = className,
+            };
+        }
         private CodeTypeBase CreateModelClasses(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement)
         {
             var originalReference = schema?.Reference;
@@ -508,16 +520,7 @@ namespace Kiota.Builder
             var codeNamespace = parentElement.GetImmediateParentOfType<CodeNamespace>();
             
             if (originalReference == null) { // Inline schema, i.e. specific to the Operation
-                var namespaceName = currentNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName);
-                var ns = codeNamespace.GetRootNamespace().GetNamespace(namespaceName);
-                if(ns == null)
-                    ns = codeNamespace.AddNamespace(namespaceName);
-                var className = currentNode.GetClassName(operation: operation, suffix: "Response");
-                var codeDeclaration = AddModelDeclarationIfDoesntExit(rootNode, currentNode, schema, operation, className, ns, parentElement);
-                return new CodeType(parentElement) {
-                    TypeDefinition = codeDeclaration,
-                    Name = className,
-                };
+                return CreateModelClassAndType(rootNode, currentNode, schema, operation, parentElement, codeNamespace, "Response");
             } else if(schema?.AllOf?.Any() ?? false) {
                 var lastSchema = schema.AllOf.Last();
                 CodeElement codeDeclaration = null;
@@ -554,6 +557,9 @@ namespace Kiota.Builder
                     });
                 }
                 return unionType;
+            } else if((schema?.Type?.Equals("object") ?? false) && (schema?.Properties?.Any() ?? false)) {
+                // referenced schema, no inheritance or union type
+                return CreateModelClassAndType(rootNode, currentNode, schema, operation, parentElement, codeNamespace);
             }
             else throw new InvalidOperationException("un handled case, might be object type or array type");
             // object type array of object are technically already handled in properties but if we have a root with those we might be missing some cases here
