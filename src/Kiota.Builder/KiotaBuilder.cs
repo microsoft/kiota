@@ -280,7 +280,7 @@ namespace Kiota.Builder
                 Description = "Factory to use to get a serializer for payload serialization"
             };
             serializerFactoryProperty.Type = new CodeType(serializerFactoryProperty) {
-                Name = "Func<string, ISerializationWriter>",
+                Name = "ISerializationWriterFactory",
                 IsExternal = true
             };
             currentClass.AddProperty(serializerFactoryProperty);

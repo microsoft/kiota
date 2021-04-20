@@ -33,11 +33,12 @@ namespace Kiota.Builder {
             new ("HttpMethod", "@microsoft/kiota-abstractions"),
             new ("RequestInfo", "@microsoft/kiota-abstractions"),
             new ("ResponseHandler", "@microsoft/kiota-abstractions"),
+            new ("SerializationWriterFactory", "@microsoft/kiota-abstractions"),
         };
         private static readonly Tuple<string, string>[] defaultNamespaces = new Tuple<string, string>[] { 
-            new ("SerializationWriter", "@microsoft/kiota-abstractions"),
         };
         private static readonly Tuple<string, string>[] defaultNamespacesForModels = new Tuple<string, string>[] { 
+            new ("SerializationWriter", "@microsoft/kiota-abstractions"),
             new ("ParseNode", "@microsoft/kiota-abstractions"),
             new ("Parsable", "@microsoft/kiota-abstractions"),
         };
@@ -46,7 +47,7 @@ namespace Kiota.Builder {
                 if (currentProperty.Type.Name?.Equals("IHttpCore", StringComparison.InvariantCultureIgnoreCase) ?? false)
                     currentProperty.Type.Name = "HttpCore";
                 else if(currentProperty.Name.Equals("serializerFactory", StringComparison.InvariantCultureIgnoreCase))
-                    currentProperty.Type.Name = "((mediaType: string) => SerializationWriter)";
+                    currentProperty.Type.Name = "SerializationWriterFactory";
                 else if(currentProperty.Name.Equals("deserializeFields", StringComparison.InvariantCultureIgnoreCase))
                     currentProperty.Type.Name = $"Map<string, (item: {currentProperty.Parent.Name.ToFirstCharacterUpperCase()}, node: ParseNode) => void>";
             }
