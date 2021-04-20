@@ -1,0 +1,56 @@
+name: Create GitHub release
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  publish_binaries:
+    name: Publish binaries
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        architecture:
+          - win-x64
+          - win-x86
+          - linux-x64
+          - osx-x64
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.x
+      - name: Publish ${{ matrix.architecture }}
+        run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -r ${{ matrix.architecture }} -o ./${{ matrix.architecture }}
+      - name: Archive Release ${{ matrix.architecture }}
+        uses: thedoctor0/zip-release@master
+        with:
+          filename: './${{ matrix.architecture }}.zip'
+          path: './${{ matrix.architecture }}'
+      - uses: actions/upload-artifact@v2
+        with:
+          name: binaries-${{ matrix.architecture }}
+          path: ./${{ matrix.architecture }}.zip
+  create_release:
+    name: Create Release
+    needs: [publish_binaries]
+    environment:
+      name: gh_releases
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          path: output
+      - name: Release
+        uses: anton-yurchenko/git-release@v3.4.4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRAFT_RELEASE: "false"
+          PRE_RELEASE: "false"
+          CHANGELOG_FILE: "CHANGELOG.md"
+          ALLOW_EMPTY_CHANGELOG: "true"
+          ALLOW_TAG_PREFIX: "true"
+        with:
+          args: |
+              output/binaries-*/*.zip
