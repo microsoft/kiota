@@ -6,7 +6,7 @@ export interface SerializationWriter {
     writeBooleanValue(key?: string | undefined, value?: boolean | undefined): void;
     writeNumberValue(key?: string | undefined, value?: number | undefined): void;
     writeGuidValue(key?: string | undefined, value?: string | undefined): void;
-    writeDateTimeOffsetValue(key?: string | undefined, value?: Date | undefined): void;
+    writeDateValue(key?: string | undefined, value?: Date | undefined): void;
     writeCollectionOfPrimitiveValues<T>(key?: string | undefined, values?: T[] | undefined): void;
     writeCollectionOfObjectValues<T extends Parsable<T>>(key?: string | undefined, values?: T[]): void;
     writeObjectValue<T extends Parsable<T>>(key?: string | undefined, value?: T | undefined): void;

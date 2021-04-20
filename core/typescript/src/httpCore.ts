@@ -1,6 +1,5 @@
 import { AuthenticationProvider, HttpCore as IHttpCore, Parsable, RequestInfo, ResponseHandler } from '@microsoft/kiota-abstractions';
 import { fetch, Headers as FetchHeadersCtor } from 'cross-fetch';
-import { RequestInit as FetchRequestInit, Headers as FetchHeaders } from 'cross-fetch/lib.fetch';
 import { ReadableStream } from 'web-streams-polyfill';
 import { JsonParseNode } from './serialization';
 import { URLSearchParams } from 'url';
@@ -102,13 +101,13 @@ export class HttpCore implements IHttpCore {
             requestInfo.headers?.set(HttpCore.authorizationHeaderKey, `Bearer ${token}`);
         }
     }
-    private getRequestFromRequestInfo = (requestInfo: RequestInfo): FetchRequestInit => {
+    private getRequestFromRequestInfo = (requestInfo: RequestInfo): RequestInit => {
         const request = {
             method: requestInfo.httpMethod?.toString(),
             headers: new FetchHeadersCtor(),
             body: requestInfo.content,
-        } as FetchRequestInit;
-        requestInfo.headers?.forEach((v, k) => (request.headers as FetchHeaders).set(k, v));
+        } as RequestInit;
+        requestInfo.headers?.forEach((v, k) => (request.headers as Headers).set(k, v));
         return request;
     }
     private getRequestUrl = (requestInfo: RequestInfo) : string => {
