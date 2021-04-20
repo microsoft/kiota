@@ -186,7 +186,7 @@ namespace Kiota.Builder
                 case "boolean":
                 case "number":
                 case "Guid":
-                case "DateTimeOffset":
+                case "Date":
                     return $"get{propertyType.ToFirstCharacterUpperCase()}Value()";
                 default:
                     return $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
@@ -209,7 +209,7 @@ namespace Kiota.Builder
                 case "boolean":
                 case "number":
                 case "Guid":
-                case "DateTimeOffset":
+                case "Date":
                     return $"write{propertyType.ToFirstCharacterUpperCase()}Value";
                 default:
                     return $"writeObjectValue<{propertyType.ToFirstCharacterUpperCase()}>";

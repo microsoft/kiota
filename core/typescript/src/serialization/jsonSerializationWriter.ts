@@ -28,7 +28,7 @@ export class JsonSerializationWriter implements SerializationWriter {
         value && this.writer.push(`"${value}"`);
         key && value && this.writer.push(JsonSerializationWriter.propertySeparator);
     }
-    public writeDateTimeOffsetValue = (key?: string, value?: Date): void => {
+    public writeDateValue = (key?: string, value?: Date): void => {
         key && value && this.writePropertyName(key);
         value && this.writer.push(`"${value.toISOString()}"`);
         key && value && this.writer.push(JsonSerializationWriter.propertySeparator);
@@ -43,7 +43,7 @@ export class JsonSerializationWriter implements SerializationWriter {
                 } else if (v instanceof String) {
                     this.writeStringValue(undefined, v as any as string);
                 } else if (v instanceof Date) {
-                    this.writeDateTimeOffsetValue(undefined, v as any as Date);
+                    this.writeDateValue(undefined, v as any as Date);
                 } else if (v instanceof Number) {
                     this.writeNumberValue(undefined, v as any as number);
                 } else {
@@ -89,7 +89,7 @@ export class JsonSerializationWriter implements SerializationWriter {
             }
         }
     }
-    public getSerializedContent = (): ReadableStream => {
+    public getSerializedContent = (): ReadableStream<any> => {
         const encoded = new TextEncoder().encode(this.writer.join(""));
         return new ReadableStream<Uint8Array>({
             start: (controller) => {
