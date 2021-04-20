@@ -75,7 +75,7 @@ If you haven't built kiota locally, select the appropriate version from the [rel
 kiota.exe --openapi ../msgraph-sdk-powershell/openApiDocs/v1.0/mail.yml --language csharp -o ../somepath -n namespaceprefix
 ```
 
-> Note: once your SDK is generated in your target project, you will need to add references to kiota abstractions and kiota core in your project. Refer to [Initializing targed projects][#initializing-targed-projects]
+> Note: once your SDK is generated in your target project, you will need to add references to kiota abstractions and kiota core in your project. Refer to [Initializing targed projects](#initializing-targed-projects)
 
 #### Parameters reference
 
