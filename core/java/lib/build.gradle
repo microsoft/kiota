@@ -40,7 +40,7 @@ dependencies {
     api 'com.azure:azure-identity:1.2.5'
     api 'com.google.code.gson:gson:2.8.6'
 
-    api 'com.microsoft.kiota:kiota-abstractions:1.0.6'
+    api 'com.microsoft.kiota:kiota-abstractions:1.0.7'
 }
 
 publishing {
