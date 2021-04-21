@@ -117,6 +117,38 @@ namespace KiotaCore.Serialization {
                 writer.WriteEndObject();
             }
         }
+        public void WriteAdditionalData(IDictionary<string, object> value) {
+            if(value == null) return;
+            
+            foreach(var dataValue in value) {
+                switch(dataValue.Value) {
+                    case string s:
+                        WriteStringValue(dataValue.Key, s);
+                    break;
+                    case bool b:
+                        WriteBoolValue(dataValue.Key, b);
+                    break;
+                    case int i:
+                        WriteIntValue(dataValue.Key, i);
+                    break;
+                    case float f:
+                        WriteFloatValue(dataValue.Key, f);
+                    break;
+                    case double d:
+                        WriteDoubleValue(dataValue.Key, d);
+                    break;
+                    case Guid g:
+                        WriteGuidValue(dataValue.Key, g);
+                    break;
+                    case DateTimeOffset dto:
+                        WriteDateTimeOffsetValue(dataValue.Key, dto);
+                    break;
+                    default:
+                        throw new InvalidOperationException($"error serialization additional data value with key {dataValue.Key}, unknown type {dataValue.Value?.GetType()}");
+                }
+            }
+        }
+
         public void Dispose()
         {
             writer.Dispose();

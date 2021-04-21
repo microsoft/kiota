@@ -74,7 +74,6 @@ namespace KiotaCore.Serialization {
             var item = new T();
             var fieldDeserializers = GetFieldDeserializers(item);
             AssignFieldValues(item, fieldDeserializers);
-            //TODO additional properties that didn't fit into fields
             return item;
         }
         private Dictionary<string, Action<T, IParseNode>> GetFieldDeserializers<T>(T item) where T: class, IParsable<T>, new() {
@@ -106,14 +105,50 @@ namespace KiotaCore.Serialization {
             return fieldDeserializers;
         }
         private void AssignFieldValues<T>(T item, Dictionary<string, Action<T, IParseNode>> fieldDeserializers) where T: class, IParsable<T>, new() {
-            if(_jsonNode.ValueKind == JsonValueKind.Object)
-                foreach(var fieldValue in _jsonNode.EnumerateObject()) {
-                    if(fieldValue.Value.ValueKind != JsonValueKind.Null && fieldDeserializers.ContainsKey(fieldValue.Name)) {
-                        var fieldDeserializer = fieldDeserializers[fieldValue.Name];
-                        Debug.WriteLine($"found property {fieldValue.Name} to deserialize");
-                        fieldDeserializer.Invoke(item, new JsonParseNode(fieldValue.Value));
-                    }
+            if(_jsonNode.ValueKind != JsonValueKind.Object) return;
+
+            foreach(var fieldValue in _jsonNode.EnumerateObject().Where(x => x.Value.ValueKind != JsonValueKind.Null)) {
+                if(fieldDeserializers.ContainsKey(fieldValue.Name)) {
+                    var fieldDeserializer = fieldDeserializers[fieldValue.Name];
+                    Debug.WriteLine($"found property {fieldValue.Name} to deserialize");
+                    fieldDeserializer.Invoke(item, new JsonParseNode(fieldValue.Value));
+                } else {
+                    Debug.WriteLine($"found additional property {fieldValue.Name} to deserialize");
+                    item.AdditionalData.TryAdd(fieldValue.Name, TryGetAnything(fieldValue.Value));
                 }
+            }
+        }
+        private object TryGetAnything(JsonElement element) {
+            switch(element.ValueKind) {
+                case JsonValueKind.Number:
+                    if(element.TryGetDecimal(out var dec)) return dec;
+                    else if(element.TryGetDouble(out var db)) return db;
+                    else if(element.TryGetInt16(out var s)) return s;
+                    else if(element.TryGetInt32(out var i)) return i;
+                    else if(element.TryGetInt64(out var l)) return l;
+                    else if(element.TryGetSingle(out var f)) return f;
+                    else if(element.TryGetUInt16(out var us)) return us;
+                    else if(element.TryGetUInt32(out var ui)) return ui;
+                    else if(element.TryGetUInt64(out var ul)) return ul;
+                    else throw new InvalidOperationException("unexpected additional value type during number deserialization");
+                case JsonValueKind.String:
+                    if(element.TryGetDateTime(out var dt)) return dt;
+                    else if(element.TryGetDateTimeOffset(out var dto)) return dto;
+                    else if(element.TryGetGuid(out var g)) return g;
+                    else return element.GetString();
+                case JsonValueKind.Array:
+                case JsonValueKind.Object:
+                    return element;
+                case JsonValueKind.True:
+                    return true;
+                case JsonValueKind.False:
+                    return false;
+                case JsonValueKind.Null:
+                case JsonValueKind.Undefined:
+                    return null;
+                default:
+                    throw new InvalidOperationException($"unexpected additional value type during deserialization json kind : {element.ValueKind}");
+            }
         }
         public IParseNode GetChildNode(string identifier) => new JsonParseNode(_jsonNode.GetProperty(identifier ?? throw new ArgumentNullException(nameof(identifier))));
     }

@@ -207,6 +207,7 @@ namespace Kiota.Builder
             var headersParam = code.Parameters.OfKind(CodeParameterKind.Headers);
             switch(code.MethodKind) {
                 case CodeMethodKind.Serializer:
+                    var additionalDataProperty = parentClass.InnerChildElements.OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.AdditionalData);
                     if(shouldHide)
                         WriteLine("base.Serialize(writer);");
                     foreach(var otherProp in parentClass
@@ -214,8 +215,9 @@ namespace Kiota.Builder
                                                     .OfType<CodeProperty>()
                                                     .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
                         WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
-                        //TODO: call writer for additional properties
                     }
+                    if(additionalDataProperty != null)
+                        WriteLine($"writer.WriteAdditionalData({additionalDataProperty.Name});");
                 break;
                 case CodeMethodKind.RequestGenerator:
                     var operationName = code.HttpMethod?.ToString();
