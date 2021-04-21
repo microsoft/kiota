@@ -57,11 +57,8 @@ namespace Kiota.Builder
         private const string parseNodeInterfaceName = "IParseNode";
         public override void WriteProperty(CodeProperty code)
         {
-            var simpleBody = "get;";
-            if (!code.ReadOnly)
-            {
-                simpleBody = "get; set;";
-            }
+            var setterAccessModifier = code.ReadOnly && code.Access > AccessModifier.Private ? "private " : string.Empty;
+            var simpleBody = $"get; {setterAccessModifier}set;";
             var defaultValue = string.Empty;
             if (code.DefaultValue != null)
             {
@@ -217,6 +214,7 @@ namespace Kiota.Builder
                                                     .OfType<CodeProperty>()
                                                     .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
                         WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
+                        //TODO: call writer for additional properties
                     }
                 break;
                 case CodeMethodKind.RequestGenerator:

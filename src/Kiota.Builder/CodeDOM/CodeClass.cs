@@ -71,6 +71,20 @@ namespace Kiota.Builder
             AddMissingParent(codeClasses);
             this.InnerChildElements.AddRange(codeClasses);
         }
+        public CodeClass GetParentClass() {
+            if(StartBlock is Declaration declaration)
+                return declaration.Inherits?.TypeDefinition as CodeClass;
+            else return null;
+        }
+        
+        public CodeClass GetUpperMostInheritanceParent(CodeClass startClassToSkip = null) {
+            var parentClass = GetParentClass();
+            if(parentClass == null)
+                return startClassToSkip != null && startClassToSkip == this ? null : this;
+            // we don't want to return the current class if this is the start node in the inheritance tree and doesn't have parent
+            else
+                return parentClass.GetUpperMostInheritanceParent(startClassToSkip);
+        }
 
         public class Declaration : BlockDeclaration
         {
