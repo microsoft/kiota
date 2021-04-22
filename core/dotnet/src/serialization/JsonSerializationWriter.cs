@@ -108,6 +108,11 @@ namespace KiotaCore.Serialization {
             writer.WriteEndObject();
         }
         private void WriteAnyValue<T>(string key, T value) {
+            if(value == null) {
+                if(!string.IsNullOrEmpty(key))
+                    this.writer.WritePropertyName(key);
+                this.writer.WriteNullValue();
+            }
             switch(value) {
                 case string s:
                     WriteStringValue(key, s);
