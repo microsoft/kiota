@@ -642,7 +642,7 @@ namespace Kiota.Builder
             }
             else if(schema?.AllOf?.Any(x => x?.Type?.Equals(OpenApiObjectType) ?? false) ?? false)
                 CreatePropertiesForModelClass(rootNode, currentNode, schema.AllOf.Last(x => x.Type.Equals(OpenApiObjectType)), operation, ns, model, parent);
-            AddSerializationMembers(model, schema.AdditionalPropertiesAllowed);
+            AddSerializationMembers(model, schema?.AdditionalPropertiesAllowed ?? false);
         }
         private const string deserializeFieldsPropName = "DeserializeFields";
         private const string serializeMethodName = "Serialize";
