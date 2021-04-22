@@ -1,17 +1,30 @@
-import { AuthenticationProvider, HttpCore as IHttpCore, Parsable, RequestInfo, ResponseHandler } from '@microsoft/kiota-abstractions';
+import { AuthenticationProvider, HttpCore as IHttpCore, Parsable, ParseNodeFactory, RequestInfo, ResponseHandler } from '@microsoft/kiota-abstractions';
 import { fetch, Headers as FetchHeadersCtor } from 'cross-fetch';
 import { ReadableStream } from 'web-streams-polyfill';
-import { JsonParseNode } from './serialization';
+import { JsonParseNodeFactory, ParseNodeFactoryRegistry } from './serialization';
 import { URLSearchParams } from 'url';
 export class HttpCore implements IHttpCore {
     private static readonly authorizationHeaderKey = "Authorization";
     /**
      *
      */
-    public constructor(public readonly authenticationProvider: AuthenticationProvider) {
+    public constructor(public readonly authenticationProvider: AuthenticationProvider, public readonly parseNodeFactory: ParseNodeFactory = new ParseNodeFactoryRegistry()) {
         if(!authenticationProvider) {
             throw new Error('authentication provider cannot be null');
         }
+        if(parseNodeFactory instanceof ParseNodeFactoryRegistry) {
+            const registry = parseNodeFactory as ParseNodeFactoryRegistry;
+            if(registry.contentTypeAssociatedFactories.size === 0)
+                registry.contentTypeAssociatedFactories.set("application/json", new JsonParseNodeFactory());
+        }
+            
+    }
+    private getResponseContentType = (response: Response): string | undefined => {
+        const header = response.headers.get("content-type")?.toLowerCase();
+        if(!header) return undefined;
+        const segments = header.split(';');
+        if(segments.length === 0) return undefined;
+        else return segments[0];
     }
     public sendAsync = async <ModelType extends Parsable<ModelType>>(requestInfo: RequestInfo, type: new() => ModelType, responseHandler: ResponseHandler | undefined): Promise<ModelType> => {
         if(!requestInfo) {
@@ -24,8 +37,12 @@ export class HttpCore implements IHttpCore {
         if(responseHandler) {
             return await responseHandler.handleResponseAsync(response);
         } else {
-            const payload = await response.json();
-            const rootNode = new JsonParseNode(payload);
+            const payload = await response.arrayBuffer();
+            const responseContentType = this.getResponseContentType(response);
+            if(!responseContentType)
+                throw new Error("no response content type found for deserialization");
+            
+            const rootNode = this.parseNodeFactory.getRootParseNode(responseContentType, payload);
             const result = rootNode.getObjectValue(type);
             return result as unknown as ModelType;
         }
@@ -58,8 +75,12 @@ export class HttpCore implements IHttpCore {
                 case 'number':
                 case 'boolean':
                 case 'Date':
-                    const payload = await response.json();
-                    const rootNode = new JsonParseNode(payload);
+                    const payload = await response.arrayBuffer();
+                    const responseContentType = this.getResponseContentType(response);
+                    if(!responseContentType)
+                        throw new Error("no response content type found for deserialization");
+                    
+                    const rootNode = this.parseNodeFactory.getRootParseNode(responseContentType, payload);
                     if(responseType === 'string') {
                         return rootNode.getStringValue() as unknown as ResponseType;
                     } else if (responseType === 'number') {

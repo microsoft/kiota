@@ -12,4 +12,5 @@ export interface SerializationWriter {
     writeObjectValue<T extends Parsable<T>>(key?: string | undefined, value?: T | undefined): void;
     writeEnumValue<T>(key?: string | undefined, ...values: (T | undefined)[]): void;
     getSerializedContent(): ReadableStream;
+    writeAdditionalData(value: Map<string, unknown>): void;
 }
