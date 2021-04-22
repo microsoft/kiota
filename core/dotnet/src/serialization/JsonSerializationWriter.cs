@@ -3,7 +3,6 @@ using System.Linq;
 using System.IO;
 using System.Text.Json;
 using Kiota.Abstractions.Serialization;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Reflection;
 using KiotaCore.Extensions;
@@ -67,33 +66,8 @@ namespace KiotaCore.Serialization {
             if(values != null) { //empty array is meaningful
                 if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
                 writer.WriteStartArray();
-                foreach(var collectionValue in values) {
-                    switch(collectionValue) {
-                        case bool v:
-                            writer.WriteBooleanValue(v);
-                        break;
-                        case string v:
-                            writer.WriteStringValue(v);
-                        break;
-                        case Guid v:
-                            writer.WriteStringValue(v);
-                        break;
-                        case DateTimeOffset v:
-                            writer.WriteStringValue(v);
-                        break;
-                        case int v:
-                            writer.WriteNumberValue(v);
-                        break;
-                        case float v:
-                            writer.WriteNumberValue(v);
-                        break;
-                        case double v:
-                            writer.WriteNumberValue(v);
-                        break;
-                        default:
-                            throw new InvalidOperationException($"unknown type for serialization {collectionValue.GetType().FullName}");
-                    }
-                }
+                foreach(var collectionValue in values)
+                    WriteAnyValue(null, collectionValue);
                 writer.WriteEndArray();
             }
         }
@@ -120,32 +94,50 @@ namespace KiotaCore.Serialization {
         public void WriteAdditionalData(IDictionary<string, object> value) {
             if(value == null) return;
             
-            foreach(var dataValue in value) {
-                switch(dataValue.Value) {
-                    case string s:
-                        WriteStringValue(dataValue.Key, s);
-                    break;
-                    case bool b:
-                        WriteBoolValue(dataValue.Key, b);
-                    break;
-                    case int i:
-                        WriteIntValue(dataValue.Key, i);
-                    break;
-                    case float f:
-                        WriteFloatValue(dataValue.Key, f);
-                    break;
-                    case double d:
-                        WriteDoubleValue(dataValue.Key, d);
-                    break;
-                    case Guid g:
-                        WriteGuidValue(dataValue.Key, g);
-                    break;
-                    case DateTimeOffset dto:
-                        WriteDateTimeOffsetValue(dataValue.Key, dto);
-                    break;
-                    default:
-                        throw new InvalidOperationException($"error serialization additional data value with key {dataValue.Key}, unknown type {dataValue.Value?.GetType()}");
-                }
+            foreach(var dataValue in value)
+                WriteAnyValue(dataValue.Key, dataValue.Value);
+        }
+        private void WriteNonParsableObjectValue<T>(string key, T value) {
+            if(!string.IsNullOrEmpty(key))
+                writer.WritePropertyName(key);
+            writer.WriteStartObject();
+            if(value == null) writer.WriteNullValue();
+            else
+                foreach(var oProp in value.GetType().GetProperties())
+                    WriteAnyValue(oProp.Name, oProp.GetValue(value));
+            writer.WriteEndObject();
+        }
+        private void WriteAnyValue<T>(string key, T value) {
+            switch(value) {
+                case string s:
+                    WriteStringValue(key, s);
+                break;
+                case bool b:
+                    WriteBoolValue(key, b);
+                break;
+                case int i:
+                    WriteIntValue(key, i);
+                break;
+                case float f:
+                    WriteFloatValue(key, f);
+                break;
+                case double d:
+                    WriteDoubleValue(key, d);
+                break;
+                case Guid g:
+                    WriteGuidValue(key, g);
+                break;
+                case DateTimeOffset dto:
+                    WriteDateTimeOffsetValue(key, dto);
+                break;
+                case IEnumerable<object> coll:
+                    WriteCollectionOfPrimitiveValues(key, coll); // should we support collections of parsables here too?
+                break;
+                case object o:
+                    WriteNonParsableObjectValue(key, o); // should we support parsables here too?
+                break;
+                default:
+                    throw new InvalidOperationException($"error serialization additional data value with key {key}, unknown type {value?.GetType()}");
             }
         }
 
