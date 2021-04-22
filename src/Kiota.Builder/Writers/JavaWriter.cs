@@ -135,6 +135,7 @@ namespace Kiota.Builder
             }
             switch(code.MethodKind) {
                 case CodeMethodKind.Serializer:
+                    var additionalDataProperty = parentClass.InnerChildElements.OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.AdditionalData);
                     if((parentClass.StartBlock as CodeClass.Declaration).Inherits != null)
                         WriteLine("super.serialize(writer);");
                     foreach(var otherProp in parentClass
@@ -143,6 +144,8 @@ namespace Kiota.Builder
                                                     .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
                         WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterLowerCase()});");
                     }
+                    if(additionalDataProperty != null)
+                        WriteLine($"writer.writeAdditionalData(this.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
                 break;
                 case CodeMethodKind.DeserializerBackwardCompatibility:
                     var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
@@ -222,6 +225,9 @@ namespace Kiota.Builder
                     WriteLine("return java.util.concurrent.CompletableFuture.failedFuture(ex);");
                     DecreaseIndent();
                     WriteLine("}");
+                break;
+                case CodeMethodKind.AdditionalDataAccessor:
+                    WriteLine($"return {code.Name.Substring(3).ToFirstCharacterLowerCase()};"); // 3 -> get prefix
                 break;
                 default:
                     WriteLine("return null;");

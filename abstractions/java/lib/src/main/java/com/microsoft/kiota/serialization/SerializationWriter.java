@@ -3,6 +3,7 @@ package com.microsoft.kiota.serialization;
 import java.io.Closeable;
 import java.io.InputStream;
 import java.time.OffsetDateTime;
+import java.util.Map;
 import java.util.UUID;
 import java.util.EnumSet;
 import java.lang.Enum;
@@ -25,4 +26,5 @@ public interface SerializationWriter extends Closeable {
     InputStream getSerializedContent();
     <T extends Enum<T>> void writeEnumSetValue(@Nullable final String key, @Nullable final EnumSet<T> values);
     <T extends Enum<T>> void writeEnumValue(@Nullable final String key, @Nullable final T value);
+    void writeAdditionalData(@Nonnull final Map<String, Object> value);
 }

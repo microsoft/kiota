@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder {
     public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
@@ -99,6 +100,20 @@ namespace Kiota.Builder {
                         Name = "OffsetDateTime"
                     };
                     (currentProperty.Parent as CodeClass).AddUsing(nUsing);
+                } else if (currentProperty.PropertyKind == CodePropertyKind.AdditionalData) {
+                    currentProperty.Access = AccessModifier.Private;
+                    currentProperty.DefaultValue = "new HashMap<>()";
+                    currentProperty.Type.Name = "Map<String, Object>";
+                    var parentClass = currentElement.Parent as CodeClass;
+                    parentClass.AddMethod(new CodeMethod(parentClass) {
+                        Name = $"get{currentProperty.Name.ToFirstCharacterUpperCase()}",
+                        Access = AccessModifier.Public,
+                        Description = currentProperty.Description,
+                        MethodKind = CodeMethodKind.AdditionalDataAccessor,
+                        IsAsync = false,
+                        IsStatic = false,
+                        ReturnType = currentProperty.Type,
+                    });
                 }
             }
             if (currentElement is CodeMethod currentMethod) {

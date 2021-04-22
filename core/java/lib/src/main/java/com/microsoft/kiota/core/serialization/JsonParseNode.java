@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -174,12 +175,32 @@ public class JsonParseNode implements ParseNode {
     private <T extends Parsable> void assignFieldValues(final T item, final Map<String, BiConsumer<T, ParseNode>> fieldDeserializers) {
         if(currentNode.isJsonObject()) {
             for (final Map.Entry<String, JsonElement> fieldEntry : currentNode.getAsJsonObject().entrySet()) {
-                final BiConsumer<? super T, ParseNode> fieldDeserializer = fieldDeserializers.get(fieldEntry.getKey());
+                final String fieldKey = fieldEntry.getKey();
+                final BiConsumer<? super T, ParseNode> fieldDeserializer = fieldDeserializers.get(fieldKey);
                 final JsonElement fieldValue = fieldEntry.getValue();
-                if(fieldDeserializer != null && !fieldValue.isJsonNull()) {
+                if(fieldDeserializer != null && !fieldValue.isJsonNull())
                     fieldDeserializer.accept(item, new JsonParseNode(fieldValue));
-                }
+                else
+                    item.getAdditionalData().put(fieldKey, this.tryGetAnything(fieldValue));
             }
         }
+    }
+    private Object tryGetAnything(final JsonElement element) {
+        if(element.isJsonPrimitive()) {
+            final JsonPrimitive primitive = element.getAsJsonPrimitive();
+            if(primitive.isBoolean())
+                return primitive.getAsBoolean();
+            else if (primitive.isString())
+                return primitive.getAsString();
+            else if (primitive.isNumber())
+                return primitive.getAsFloat();
+            else
+                throw new RuntimeException("Could not get the value during deserialization, unknown primitive type");
+        } else if(element.isJsonNull())
+            return null;
+        else if (element.isJsonObject() || element.isJsonArray())
+            return element;
+        else
+            throw new RuntimeException("Could not get the value during deserialization, unknown primitive type");
     }
 }

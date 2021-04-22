@@ -11,7 +11,8 @@ namespace Kiota.Builder
         RequestExecutor,
         RequestGenerator,
         Serializer,
-        DeserializerBackwardCompatibility
+        DeserializerBackwardCompatibility,
+        AdditionalDataAccessor
     }
     public enum HttpMethod {
         Get,
