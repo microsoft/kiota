@@ -182,7 +182,7 @@ namespace Kiota.Builder
         {
             // Determine Class Name
             CodeClass codeClass;
-            var isRootClientClass = String.IsNullOrEmpty(currentNode.Identifier);
+            var isRootClientClass = String.IsNullOrEmpty(currentNode.GetIdentifier());
             if (isRootClientClass)
             {
                 codeClass = new CodeClass(codeNamespace) { 
@@ -504,10 +504,11 @@ namespace Kiota.Builder
             if (originalReference == null) { // Inline schema, i.e. specific to the Operation
                 return CreateModelClassAndType(rootNode, currentNode, schema, operation, parentElement, codeNamespace, "Response");
             } else if(schema?.AllOf?.Any() ?? false) {
-                var lastSchema = schema.AllOf.Last();
+                var allOfs = schema.FlattenEmptyAllOf();
+                var lastSchema = allOfs.Last();
                 CodeElement codeDeclaration = null;
                 string className = string.Empty;
-                foreach(var currentSchema in schema.AllOf) {
+                foreach(var currentSchema in allOfs) {
                     var isLastSchema = currentSchema == lastSchema;
                     var shortestNamespaceName = currentSchema.Reference == null ? currentNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName) : GetShortestNamespaceNameForModelByReferenceId(rootNode, currentSchema.Reference.Id);
                     var shortestNamespace = codeNamespace.GetRootNamespace().GetNamespace(shortestNamespaceName);
@@ -539,7 +540,7 @@ namespace Kiota.Builder
                     });
                 }
                 return unionType;
-            } else if((schema?.Type?.Equals("object") ?? false) && (schema?.Properties?.Any() ?? false)) {
+            } else if(schema?.Type?.Equals("object") ?? false) {
                 // referenced schema, no inheritance or union type
                 return CreateModelClassAndType(rootNode, currentNode, schema, operation, parentElement, codeNamespace);
             }

@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder.Extensions {
@@ -23,7 +25,7 @@ namespace Kiota.Builder.Extensions {
                                                                     y?.Content?.Values?.Select(z => z.Schema) ?? Enumerable.Empty<OpenApiSchema>()) ?? Enumerable.Empty<OpenApiSchema>());
                 var operationFirstLevelSchemas = requestSchemasFirstLevel.Union(responseSchemasFirstLevel);
 
-                operationFirstLevelSchemas.SelectMany(x => GetSchemaReferenceIds(x)).ToList().ForEach(x => {
+                operationFirstLevelSchemas.SelectMany(x => x.GetSchemaReferenceIds()).ToList().ForEach(x => {
                     if(index.TryGetValue(x, out var entry))
                         entry.Add(currentNode);
                     else
@@ -35,33 +37,56 @@ namespace Kiota.Builder.Extensions {
                 foreach(var child in currentNode.Children.Values)
                     AddAllPathsEntries(child, index);
         }
-        private static IEnumerable<string> GetSchemaReferenceIds(OpenApiSchema schema, HashSet<OpenApiSchema> visitedSchemas = null) {
-            if(visitedSchemas == null)
-                visitedSchemas = new();            
-            if(!visitedSchemas.Contains(schema)) {
-                visitedSchemas.Add(schema);
-                var result = new List<string>();
-                if(!string.IsNullOrEmpty(schema.Reference?.Id))
-                    result.Add(schema.Reference.Id);
-                if(schema.Properties != null) {
-                    schema.Properties.Values.ToList().ForEach(x => visitedSchemas.Add(x));
-                    result.AddRange(schema.Properties.Values.SelectMany(x => GetSchemaReferenceIds(x, visitedSchemas)));
+        internal static string GetNodeNamespaceFromPath(this OpenApiUrlSpaceNode currentNode, string prefix = default) =>
+            prefix + 
+                    ((currentNode?.Path?.Contains(pathNameSeparator) ?? false) ?
+                        "." + currentNode?.Path
+                                ?.Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
+                                ?.Where(x => !x.StartsWith('{'))
+                                ?.Aggregate((x, y) => $"{x}.{y}") :
+                        string.Empty)
+                    .ReplaceValueIdentifier();
+        private static readonly char pathNameSeparator = '\\';
+        private static readonly Regex idClassNameCleanup = new Regex(@"Id\d?$");
+        ///<summary>
+        /// Returns the class name for the node with more or less precision depending on the provided arguments
+        ///</summary>
+        internal static string GetClassName(this OpenApiUrlSpaceNode currentNode, string suffix = default, string prefix = default, OpenApiOperation operation = default) {
+            var rawClassName = operation?.GetResponseSchema()?.Reference?.GetClassName() ?? 
+                                currentNode?.GetIdentifier()?.ReplaceValueIdentifier();
+            if(currentNode?.DoesNodeBelongToItemSubnamespace() ?? false && idClassNameCleanup.IsMatch(rawClassName))
+                rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
+            return prefix + rawClassName + suffix;
+        }
+        internal static bool DoesNodeBelongToItemSubnamespace(this OpenApiUrlSpaceNode currentNode) =>
+        (currentNode?.Segment?.StartsWith("{") ?? false) && (currentNode?.Segment?.EndsWith("}") ?? false);
+        internal static bool HasOperations(this OpenApiUrlSpaceNode currentNode) => currentNode?.PathItem?.Operations?.Any() ?? false;
+        internal static bool IsParameter(this OpenApiUrlSpaceNode currentNode)
+        {
+            return currentNode?.Segment?.StartsWith("{") ?? false;
+        }
+        internal static bool IsFunction(this OpenApiUrlSpaceNode currentNode)
+        {
+            return currentNode?.Segment?.Contains("(") ?? false;
+        }
+        internal static string GetIdentifier(this OpenApiUrlSpaceNode currentNode)
+        {
+            if(currentNode == null) return string.Empty;
+            string identifier;
+            if (currentNode.IsParameter())
+            {
+                identifier = currentNode.Segment.Substring(1, currentNode.Segment.Length - 2).ToPascalCase();
+            }
+            else
+            {
+                identifier = currentNode.Segment.ToPascalCase().Replace("()", "");
+                var openParen = identifier.IndexOf("(");
+                if (openParen >= 0)
+                {
+                    identifier = identifier.Substring(0, openParen);
                 }
-                if(schema.AnyOf != null) {
-                    schema.AnyOf.ToList().ForEach(x => visitedSchemas.Add(x));
-                    result.AddRange(schema.AnyOf.SelectMany(x => GetSchemaReferenceIds(x, visitedSchemas)));
-                }
-                if(schema.AllOf != null) {
-                    schema.AllOf.ToList().ForEach(x => visitedSchemas.Add(x));
-                    result.AddRange(schema.AllOf.SelectMany(x => GetSchemaReferenceIds(x, visitedSchemas)));
-                }
-                if(schema.OneOf != null) {
-                    schema.OneOf.ToList().ForEach(x => visitedSchemas.Add(x));
-                    result.AddRange(schema.OneOf.SelectMany(x => GetSchemaReferenceIds(x, visitedSchemas)));
-                }
-                return result;
-            } else 
-                return Enumerable.Empty<string>();
+            }
+            return identifier;
         }
     }
 }
