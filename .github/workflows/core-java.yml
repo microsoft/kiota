@@ -31,7 +31,7 @@ jobs:
         with:
           name: drop
           path: |
-            ${{ env.relativePath }}/build/libs/*.jar
+            ${{ env.relativePath }}/lib/build/libs/*.jar
   deploy:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     environment:
