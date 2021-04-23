@@ -6,7 +6,12 @@ using static Kiota.Builder.CodeClass;
 namespace Kiota.Builder {
     public abstract class CommonLanguageRefiner : ILanguageRefiner
     {
-        public abstract void Refine(CodeNamespace generatedCode);
+        protected readonly CodeNamespace rootNamespace;
+        public CommonLanguageRefiner(CodeNamespace root)
+        {
+            rootNamespace = root ?? throw new ArgumentNullException(nameof(root));
+        }
+        public abstract void Refine();
 
         protected void AddDefaultImports(CodeElement current, Tuple<string, string>[] defaultNamespaces, Tuple<string, string>[] defaultNamespacesForModels, Tuple<string, string>[] defaultNamespacesForRequestBuilders) {
             if(current is CodeClass currentClass) {
@@ -81,8 +86,7 @@ namespace Kiota.Builder {
         // temporary patch of type to it resolves as the builder sets types we didn't generate to entity
         protected void FixReferencesToEntityType(CodeElement currentElement, CodeClass entityClass = null){
             if(entityClass == null)
-                entityClass = currentElement.GetImmediateParentOfType<CodeNamespace>()
-                            .GetRootNamespace()
+                entityClass = rootNamespace
                             .GetChildElementOfType<CodeClass>(x => x?.Name?.Equals("entity", StringComparison.InvariantCultureIgnoreCase) ?? false);
 
             if(currentElement is CodeMethod currentMethod 
@@ -155,7 +159,7 @@ namespace Kiota.Builder {
                                     ?.DefaultValue;
                 if(!string.IsNullOrEmpty(pathSegment))
                     foreach(var returnType in currentIndexer.ReturnType.AllTypes)
-                        AddIndexerMethod(currentElement.GetImmediateParentOfType<CodeNamespace>().GetRootNamespace(), 
+                        AddIndexerMethod(rootNamespace, 
                                         currentParentClass,
                                         returnType.TypeDefinition as CodeClass,
                                         pathSegment.Trim('\"').TrimStart('/'),

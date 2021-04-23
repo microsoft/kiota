@@ -6,23 +6,27 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder {
     public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
-        public override void Refine(CodeNamespace generatedCode)
+        public JavaRefiner(CodeNamespace root) : base(root)
         {
-            AddInnerClasses(generatedCode);
-            AndInsertOverrideMethodForRequestExecutorsAndBuilders(generatedCode);
-            ReplaceIndexersByMethodsWithParameter(generatedCode);
-            ConvertUnionTypesToWrapper(generatedCode);
-            AddRequireNonNullImports(generatedCode);
-            FixReferencesToEntityType(generatedCode);
-            AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
-            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
-            CorrectCoreType(generatedCode);
-            PatchHeaderParametersType(generatedCode);
-            AddListImport(generatedCode);
-            AddParsableInheritanceForModelClasses(generatedCode);
-            ConvertDeserializerPropsToMethods(generatedCode, "get");
-            ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
-            AddEnumSetImport(generatedCode);
+            
+        }
+        public override void Refine()
+        {
+            AddInnerClasses(rootNamespace);
+            AndInsertOverrideMethodForRequestExecutorsAndBuilders(rootNamespace);
+            ReplaceIndexersByMethodsWithParameter(rootNamespace);
+            ConvertUnionTypesToWrapper(rootNamespace);
+            AddRequireNonNullImports(rootNamespace);
+            FixReferencesToEntityType(rootNamespace);
+            AddPropertiesAndMethodTypesImports(rootNamespace, true, false, true);
+            AddDefaultImports(rootNamespace, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
+            CorrectCoreType(rootNamespace);
+            PatchHeaderParametersType(rootNamespace);
+            AddListImport(rootNamespace);
+            AddParsableInheritanceForModelClasses(rootNamespace);
+            ConvertDeserializerPropsToMethods(rootNamespace, "get");
+            ReplaceBinaryByNativeType(rootNamespace, "InputStream", "java.io", true);
+            AddEnumSetImport(rootNamespace);
         }
         private void AddEnumSetImport(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model &&

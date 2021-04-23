@@ -6,18 +6,22 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder {
     public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
-        public override void Refine(CodeNamespace generatedCode)
+        public CSharpRefiner(CodeNamespace root) : base(root)
         {
-            AddDefaultImports(generatedCode);
-            MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
-            ConvertUnionTypesToWrapper(generatedCode);
-            AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
-            AddAsyncSuffix(generatedCode);
-            AddInnerClasses(generatedCode);
-            AddParsableInheritanceForModelClasses(generatedCode);
-            CapitalizeNamespacesFirstLetters(generatedCode);
-            ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");
-            MakeEnumPropertiesNullable(generatedCode);
+            
+        }
+        public override void Refine()
+        {
+            AddDefaultImports(rootNamespace);
+            MoveClassesWithNamespaceNamesUnderNamespace(rootNamespace);
+            ConvertUnionTypesToWrapper(rootNamespace);
+            AddPropertiesAndMethodTypesImports(rootNamespace, false, false, false);
+            AddAsyncSuffix(rootNamespace);
+            AddInnerClasses(rootNamespace);
+            AddParsableInheritanceForModelClasses(rootNamespace);
+            CapitalizeNamespacesFirstLetters(rootNamespace);
+            ReplaceBinaryByNativeType(rootNamespace, "Stream", "System.IO");
+            MakeEnumPropertiesNullable(rootNamespace);
         }
         private void MakeEnumPropertiesNullable(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model)

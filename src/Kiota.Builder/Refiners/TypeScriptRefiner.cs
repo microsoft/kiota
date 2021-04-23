@@ -6,17 +6,21 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder {
     public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
-        public override void Refine(CodeNamespace generatedCode)
+        public TypeScriptRefiner(CodeNamespace root) : base(root)
         {
-            PatchResponseHandlerType(generatedCode);
-            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
-            ReplaceIndexersByMethodsWithParameter(generatedCode, "ById");
-            CorrectCoreType(generatedCode);
-            FixReferencesToEntityType(generatedCode);
-            AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
-            AddParsableInheritanceForModelClasses(generatedCode);
-            ConvertDeserializerPropsToMethods(generatedCode);
-            ReplaceBinaryByNativeType(generatedCode, "ReadableStream", "web-streams-polyfill/es2018", true);
+            
+        }
+        public override void Refine()
+        {
+            PatchResponseHandlerType(rootNamespace);
+            AddDefaultImports(rootNamespace, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
+            ReplaceIndexersByMethodsWithParameter(rootNamespace, "ById");
+            CorrectCoreType(rootNamespace);
+            FixReferencesToEntityType(rootNamespace);
+            AddPropertiesAndMethodTypesImports(rootNamespace, true, true, true);
+            AddParsableInheritanceForModelClasses(rootNamespace);
+            ConvertDeserializerPropsToMethods(rootNamespace);
+            ReplaceBinaryByNativeType(rootNamespace, "ReadableStream", "web-streams-polyfill/es2018", true);
         }
         private void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model) {

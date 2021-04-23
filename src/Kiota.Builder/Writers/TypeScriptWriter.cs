@@ -104,12 +104,6 @@ namespace Kiota.Builder
             if(codeUsing.Declaration == null)
                 return string.Empty;//it's an external import, add nothing
             var typeDef = codeUsing.Declaration.TypeDefinition;
-            if(typeDef == null) {
-                // sometimes the definition is not attached to the declaration because it's generated after the fact, we need to search it
-                typeDef = currentNamespace
-                    .GetRootNamespace()
-                    .GetChildElementOfType<CodeClass>(x => x.Name.Equals(codeUsing.Declaration.Name));
-            }
 
             if(typeDef == null)
                 return "./"; // it's relative to the folder, with no declaration (default failsafe)

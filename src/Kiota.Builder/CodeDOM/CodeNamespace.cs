@@ -45,12 +45,13 @@ namespace Kiota.Builder
         public CodeNamespace AddNamespace(string namespaceName) {
             if(string.IsNullOrEmpty(namespaceName))
                 throw new ArgumentNullException(nameof(namespaceName));
-            var rootNamespace = GetRootNamespace();
+            if(this.Parent != null)
+                throw new InvalidOperationException("adding namespaces is only supported from the root namespace");
             var namespaceNameSegements = namespaceName.Split(namespaceNameSeparator, StringSplitOptions.RemoveEmptyEntries);
             var lastPresentSegmentIndex = default(int);
-            CodeNamespace lastPresentSegmentNamespace = rootNamespace;
+            CodeNamespace lastPresentSegmentNamespace = this;
             while(lastPresentSegmentIndex < namespaceNameSegements.Length) {
-                var segmentNameSpace = rootNamespace.GetNamespace(namespaceNameSegements.Take(lastPresentSegmentIndex + 1).Aggregate((x, y) => $"{x}.{y}"));
+                var segmentNameSpace = this.GetNamespace(namespaceNameSegements.Take(lastPresentSegmentIndex + 1).Aggregate((x, y) => $"{x}.{y}"));
                 if(segmentNameSpace == null)
                     break;
                 else {
@@ -69,12 +70,14 @@ namespace Kiota.Builder
             return lastPresentSegmentNamespace;
         }
         public bool IsItemNamespace { get; private set; }
-        public CodeNamespace EnsureItemNamespace() { 
+        public CodeNamespace EnsureItemNamespace(CodeNamespace rootNamespace) { 
+            if(rootNamespace.Parent != null)
+                throw new ArgumentException("ensuring item namespaces is only supported when passing the root namespace as a parameter", nameof(rootNamespace));
             if (IsItemNamespace) return this;
             else {
                 var childNamespace = this.InnerChildElements.OfType<CodeNamespace>().FirstOrDefault(x => x.IsItemNamespace);
                 if(childNamespace == null) {
-                    childNamespace = GetRootNamespace().AddNamespace($"{this.Name}.item");
+                    childNamespace = rootNamespace.AddNamespace($"{this.Name}.item");
                     childNamespace.IsItemNamespace = true;
                 }
                 return childNamespace;
@@ -86,17 +89,6 @@ namespace Kiota.Builder
             else
                 return this.GetChildElementOfType<CodeNamespace>(x => x.Name?.Equals(namespaceName, StringComparison.InvariantCultureIgnoreCase) ?? false);
         }
-        public CodeNamespace GetRootNamespace(CodeNamespace ns = null) {
-            if(ns == null)
-                ns = this;
-            if (ns.Parent == null)
-                return ns;
-            else if(ns.Parent is CodeNamespace parent)
-                return GetRootNamespace(parent);
-            else
-                throw new InvalidOperationException($"Found a namespace {ns.name} with a parent that's not a namespace {ns.Parent.Name} {ns.Parent.GetType()}");
-        }
-
         public void AddEnum(params CodeEnum[] enumDeclarations)
         {
             if(!enumDeclarations.Any() || enumDeclarations.Any( x=> x == null))
