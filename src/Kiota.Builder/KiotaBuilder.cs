@@ -682,7 +682,7 @@ namespace Kiota.Builder
             }
             if(!model.ContainsMember(additionalDataPropName) &&
                 includeAdditionalProperties && 
-                !(model.GetUpperMostInheritanceParent(model)?.ContainsMember(additionalDataPropName) ?? false)) {
+                !(model.GetGreatestGrandparent(model)?.ContainsMember(additionalDataPropName) ?? false)) {
                 // we don't want to add the property if the parent already has it
                 var additionalDataProp = new CodeProperty(model) {
                     Name = additionalDataPropName,

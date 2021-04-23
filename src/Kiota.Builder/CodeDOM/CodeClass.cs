@@ -77,13 +77,13 @@ namespace Kiota.Builder
             else return null;
         }
         
-        public CodeClass GetUpperMostInheritanceParent(CodeClass startClassToSkip = null) {
+        public CodeClass GetGreatestGrandparent(CodeClass startClassToSkip = null) {
             var parentClass = GetParentClass();
             if(parentClass == null)
                 return startClassToSkip != null && startClassToSkip == this ? null : this;
             // we don't want to return the current class if this is the start node in the inheritance tree and doesn't have parent
             else
-                return parentClass.GetUpperMostInheritanceParent(startClassToSkip);
+                return parentClass.GetGreatestGrandparent(startClassToSkip);
         }
 
         public class Declaration : BlockDeclaration
