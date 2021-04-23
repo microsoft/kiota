@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Kiota.Builder
@@ -11,7 +12,7 @@ namespace Kiota.Builder
     public class CodeBlock : CodeElement
     {
         public BlockDeclaration StartBlock {get; set;}
-        public List<CodeElement> InnerChildElements {get; set;} = new List<CodeElement>();
+        public Dictionary<string, CodeElement> InnerChildElements {get; set;} = new();
         public BlockEnd EndBlock {get; set;}
         public CodeBlock(CodeElement parent):base(parent)
         {
@@ -21,7 +22,7 @@ namespace Kiota.Builder
 
         public override IList<CodeElement> GetChildElements()
         {
-            var elements = new List<CodeElement>(InnerChildElements);
+            var elements = new List<CodeElement>(InnerChildElements.Values);
             elements.Insert(0, StartBlock);
             elements.Add(EndBlock);
             return elements;
@@ -33,24 +34,32 @@ namespace Kiota.Builder
             AddMissingParent(codeUsings);
             StartBlock.Usings.AddRange(codeUsings);
         }
-        public T GetChildElementOfType<T>(Func<T,bool> predicate) where T : CodeElement {
-            if(predicate == null) 
-                throw new ArgumentNullException(nameof(predicate));
-            else if(this is T thisT && predicate(thisT)) 
-                return thisT;
-            else if(this is CodeBlock currentBlock) {
-                if (currentBlock.InnerChildElements.OfType<T>().Any(predicate))
-                    return currentBlock.InnerChildElements.OfType<T>().First(predicate);
-                else if(currentBlock.InnerChildElements.OfType<CodeBlock>().Any())
-                    return currentBlock.InnerChildElements.OfType<CodeBlock>()
-                                                    .Select(x => x.GetChildElementOfType<T>(predicate))
-                                                    .OfType<T>()
-                                                    .FirstOrDefault();
-                else 
-                    return null;
-            }
-            else 
+        protected void AddRange(params CodeElement[] elements) {
+            if(elements == null) return;
+            
+            foreach(var element in elements)
+                if(!InnerChildElements.TryAdd(element.Name, element))
+                    if(element is CodeMethod currentMethod) {// allows for methods overload
+                        var methodOverloadNameSuffix = currentMethod.Parameters.Any() ? currentMethod.Parameters.Select(x => x.Name).OrderBy(x => x).Aggregate((x, y) => x + y) : "1";
+                        InnerChildElements.Add($"{currentMethod.Name}-{methodOverloadNameSuffix}", currentMethod);
+                    }
+        }
+        public T FindChildByName<T>(string childName, bool findInChildElements = true) where T: CodeElement {
+            if(string.IsNullOrEmpty(childName))
+                throw new ArgumentNullException(nameof(childName));
+            
+            if(!InnerChildElements.Any())
                 return null;
+
+            if(InnerChildElements.TryGetValue(childName, out var result) && result is T)
+                return (T)result;
+            else if(findInChildElements)
+                foreach(var childElement in InnerChildElements.Values.OfType<CodeBlock>()) {
+                    var childResult = childElement.FindChildByName<T>(childName, true);
+                    if(childResult != null)
+                        return childResult;
+                }
+            return null;
         }
         public class BlockDeclaration : CodeTerminal
         {

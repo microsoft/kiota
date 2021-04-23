@@ -26,6 +26,7 @@ namespace Kiota.Builder {
         private void MakeEnumPropertiesNullable(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model)
                 currentClass.InnerChildElements
+                    	    .Values
                             .OfType<CodeProperty>()
                             .Where(x => x.Type is CodeType propType && propType.TypeDefinition is CodeEnum)
                             .ToList()

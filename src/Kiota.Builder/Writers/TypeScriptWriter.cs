@@ -31,6 +31,7 @@ namespace Kiota.Builder
                     IncreaseIndent(4);
                     var childElements = (currentType?.TypeDefinition as CodeClass)
                                                 ?.InnerChildElements
+                                                ?.Values
                                                 ?.OfType<CodeProperty>()
                                                 ?.Select(x => $"{x.Name}?: {GetTypeString(x.Type)}");
                     var innerDeclaration = childElements?.Any() ?? false ? 
@@ -279,6 +280,7 @@ namespace Kiota.Builder
                     IncreaseIndent();
                     foreach(var otherProp in parentClass
                                                     .InnerChildElements
+                                                    .Values
                                                     .OfType<CodeProperty>()
                                                     .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
                         WriteLine($"[\"{otherProp.Name.ToFirstCharacterLowerCase()}\", (o, n) => {{ o.{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type)}; }}],");
@@ -287,11 +289,12 @@ namespace Kiota.Builder
                     WriteLine("]);");
                     break;
                 case CodeMethodKind.Serializer:
-                    var additionalDataProperty = parentClass.InnerChildElements.OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.AdditionalData);
+                    var additionalDataProperty = parentClass.InnerChildElements.Values.OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.AdditionalData);
                     if(shouldHide)
                         WriteLine("super.serialize(writer);");
                     foreach(var otherProp in parentClass
                                                     .InnerChildElements
+                                                    .Values
                                                     .OfType<CodeProperty>()
                                                     .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
                         WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.Name.ToFirstCharacterLowerCase()}\", this.{otherProp.Name.ToFirstCharacterLowerCase()});");
@@ -318,6 +321,7 @@ namespace Kiota.Builder
                 case CodeMethodKind.RequestExecutor:
                     var generatorMethodName = (code.Parent as CodeClass)
                                                 .InnerChildElements
+                                                .Values
                                                 .OfType<CodeMethod>()
                                                 .FirstOrDefault(x => x.MethodKind == CodeMethodKind.RequestGenerator && x.HttpMethod == code.HttpMethod)
                                                 ?.Name

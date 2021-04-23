@@ -135,11 +135,12 @@ namespace Kiota.Builder
             }
             switch(code.MethodKind) {
                 case CodeMethodKind.Serializer:
-                    var additionalDataProperty = parentClass.InnerChildElements.OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.AdditionalData);
+                    var additionalDataProperty = parentClass.InnerChildElements.Values.OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.AdditionalData);
                     if((parentClass.StartBlock as CodeClass.Declaration).Inherits != null)
                         WriteLine("super.serialize(writer);");
                     foreach(var otherProp in parentClass
                                                     .InnerChildElements
+                                                    .Values
                                                     .OfType<CodeProperty>()
                                                     .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
                         WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterLowerCase()});");
@@ -151,6 +152,7 @@ namespace Kiota.Builder
                     var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
                     var fieldToSerialize = parentClass
                             .InnerChildElements
+                            .Values
                             .OfType<CodeProperty>()
                             .Where(x => x.PropertyKind == CodePropertyKind.Custom);
                     WriteLine($"final Map<String, BiConsumer<T, ParseNode>> fields = new HashMap<>({(inherits ? "super." + code.Name+ "()" : fieldToSerialize.Count())});");
@@ -200,6 +202,7 @@ namespace Kiota.Builder
                 case CodeMethodKind.RequestExecutor:
                     var generatorMethodName = (code.Parent as CodeClass)
                                                 .InnerChildElements
+                                                .Values
                                                 .OfType<CodeMethod>()
                                                 .FirstOrDefault(x => x.MethodKind == CodeMethodKind.RequestGenerator && x.HttpMethod == code.HttpMethod)
                                                 ?.Name

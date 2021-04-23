@@ -315,8 +315,10 @@ namespace Kiota.Builder
                                                             .OfType<CodeUnionType>()
                                                             .SelectMany(x => x.Types))
                                                     .Where(x => x.TypeDefinition == null))
-                currentType.TypeDefinition = rootNamespace
-                        .GetChildElementOfType<CodeClass>(x => x.Name == currentType.Name);
+                if(string.IsNullOrEmpty(currentType.Name))
+                    Debug.WriteLine($"Type with empty name and parent {currentType.Parent.Name}");
+                else
+                    currentType.TypeDefinition = rootNamespace.FindChildByName<CodeClass>(currentType.Name) as CodeElement ?? rootNamespace.FindChildByName<CodeEnum>(currentType.Name);
         }
 
         private CodeIndexer CreateIndexer(string childIdentifier, string childType, CodeClass codeClass, OpenApiUrlSpaceNode currentNode)
@@ -546,18 +548,9 @@ namespace Kiota.Builder
             // object type array of object are technically already handled in properties but if we have a root with those we might be missing some cases here
         }
         private CodeElement GetExistingDeclaration(bool checkInAllNamespaces, CodeNamespace currentNamespace, OpenApiUrlSpaceNode currentNode, string declarationName) {
-            Func<CodeElement, bool> query = x => x.Name?.Equals(declarationName, StringComparison.InvariantCultureIgnoreCase) ?? false;
             var searchNameSpace = GetSearchNamespace(checkInAllNamespaces, currentNode, currentNamespace);
-            return checkInAllNamespaces ? 
-                    (searchNameSpace.GetChildElementOfType<CodeClass>(query) as CodeElement ?? searchNameSpace.GetChildElementOfType<CodeEnum>(query)) :
-                    (searchNameSpace
-                        .InnerChildElements
-                        ?.OfType<CodeClass>()
-                        ?.FirstOrDefault(query) ?? 
-                    searchNameSpace
-                        .InnerChildElements
-                        ?.OfType<CodeEnum>()
-                        ?.FirstOrDefault(query));
+            return (searchNameSpace.FindChildByName<CodeClass>(declarationName, checkInAllNamespaces) as CodeElement ?? 
+                    searchNameSpace.FindChildByName<CodeEnum>(declarationName, checkInAllNamespaces));
         }
         private CodeNamespace GetSearchNamespace(bool checkInAllNamespaces, OpenApiUrlSpaceNode currentNode, CodeNamespace currentNamespace) {
             if(checkInAllNamespaces) return rootNamespace;

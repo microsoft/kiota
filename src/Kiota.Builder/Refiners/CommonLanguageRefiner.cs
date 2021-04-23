@@ -67,8 +67,9 @@ namespace Kiota.Builder {
         private const string pathSegmentPropertyName = "pathSegment";
         protected void ConvertDeserializerPropsToMethods(CodeElement currentElement, string prefix = null) {
             if(currentElement is CodeClass currentClass) {
-                var deserializerProp = currentClass.InnerChildElements.OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.Deserializer);
+                var deserializerProp = currentClass.InnerChildElements.Values.OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.Deserializer);
                 if(deserializerProp != null) {
+                    currentClass.InnerChildElements.Remove(deserializerProp.Name);
                     currentClass.AddMethod(new CodeMethod(currentClass) {
                         Name = $"{prefix}{deserializerProp.Name}",
                         MethodKind = CodeMethodKind.DeserializerBackwardCompatibility,
@@ -78,7 +79,6 @@ namespace Kiota.Builder {
                         Access = AccessModifier.Public,
                         Description = deserializerProp.Description
                     });
-                    currentClass.InnerChildElements.Remove(deserializerProp);
                 }
             }
             CrawlTree(currentElement, c => ConvertDeserializerPropsToMethods(c, prefix));
@@ -86,8 +86,7 @@ namespace Kiota.Builder {
         // temporary patch of type to it resolves as the builder sets types we didn't generate to entity
         protected void FixReferencesToEntityType(CodeElement currentElement, CodeClass entityClass = null){
             if(entityClass == null)
-                entityClass = rootNamespace
-                            .GetChildElementOfType<CodeClass>(x => x?.Name?.Equals("entity", StringComparison.InvariantCultureIgnoreCase) ?? false);
+                entityClass = rootNamespace.FindChildByName<CodeClass>("entity") as CodeClass;
 
             if(currentElement is CodeMethod currentMethod 
                 && currentMethod.ReturnType is CodeType currentReturnType
@@ -138,11 +137,12 @@ namespace Kiota.Builder {
                 !string.IsNullOrEmpty(currentClass.Name) &&
                 currentClass.Parent is CodeNamespace parentNamespace) {
                 var childNamespaceWithClassName = parentNamespace.InnerChildElements
+                                                                .Values
                                                                 .OfType<CodeNamespace>()
                                                                 .FirstOrDefault(x => x.Name
                                                                                     .EndsWith(currentClass.Name, StringComparison.InvariantCultureIgnoreCase));
                 if(childNamespaceWithClassName != null) {
-                    parentNamespace.InnerChildElements.Remove(currentClass);
+                    parentNamespace.InnerChildElements.Remove(currentClass.Name);
                     childNamespaceWithClassName.AddClass(currentClass);
                 }
             }
@@ -151,7 +151,7 @@ namespace Kiota.Builder {
         protected void ReplaceIndexersByMethodsWithParameter(CodeElement currentElement, string methodNameSuffix = default) {
             if(currentElement is CodeIndexer currentIndexer) {
                 var currentParentClass = currentElement.Parent as CodeClass;
-                currentParentClass.InnerChildElements.Remove(currentElement);
+                currentParentClass.InnerChildElements.Remove(currentElement.Name);
                 var pathSegment = currentParentClass
                                     .GetChildElements()
                                     .OfType<CodeProperty>()
@@ -208,7 +208,7 @@ namespace Kiota.Builder {
                         if(innerClass == null)
                             continue;
                             
-                        if(!currentClass.InnerChildElements.OfType<CodeClass>().Any(x => x.Name.Equals(returnType.TypeDefinition.Name))) {
+                        if(currentClass.FindChildByName<CodeClass>(returnType.TypeDefinition.Name) == null) {
                             currentClass.AddInnerClass(innerClass);
                         }
                         (innerClass.StartBlock as Declaration).Inherits = new CodeType(returnType.TypeDefinition) { Name = "QueryParametersBase", IsExternal = true };
@@ -223,11 +223,13 @@ namespace Kiota.Builder {
                 var currentClassNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
                 var propertiesTypes = currentClass
                                     .InnerChildElements
+                                    .Values
                                     .OfType<CodeProperty>()
                                     .Select(x => x.Type)
                                     .Distinct();
                 var methods = currentClass
                                     .InnerChildElements
+                                    .Values
                                     .OfType<CodeMethod>();
                 var methodsReturnTypes = methods
                                     .Select(x => x.ReturnType)
@@ -239,6 +241,7 @@ namespace Kiota.Builder {
                                     .Distinct();
                 var indexerTypes = currentClass
                                     .InnerChildElements
+                                    .Values
                                     .OfType<CodeIndexer>()
                                     .Select(x => x.ReturnType)
                                     .Distinct();

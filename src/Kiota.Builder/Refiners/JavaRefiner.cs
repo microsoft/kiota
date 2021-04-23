@@ -30,7 +30,7 @@ namespace Kiota.Builder {
         }
         private void AddEnumSetImport(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model &&
-                currentClass.InnerChildElements.OfType<CodeProperty>().Any(x => x.Type is CodeType xType && xType.TypeDefinition is CodeEnum xEnumType && xEnumType.Flags)) {
+                currentClass.InnerChildElements.Values.OfType<CodeProperty>().Any(x => x.Type is CodeType xType && xType.TypeDefinition is CodeEnum xEnumType && xEnumType.Flags)) {
                     var nUsing = new CodeUsing(currentClass) {
                         Name = "EnumSet",
                     };
@@ -52,9 +52,9 @@ namespace Kiota.Builder {
         }
         private void AddListImport(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass &&
-                (currentClass.InnerChildElements.OfType<CodeProperty>().Any(x => x.Type.CollectionKind == CodeType.CodeTypeCollectionKind.Complex) ||
-                currentClass.InnerChildElements.OfType<CodeMethod>().Any(x => x.ReturnType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex) ||
-                currentClass.InnerChildElements.OfType<CodeMethod>().Any(x => x.Parameters.Any(y => y.Type.CollectionKind == CodeType.CodeTypeCollectionKind.Complex))
+                (currentClass.InnerChildElements.Values.OfType<CodeProperty>().Any(x => x.Type.CollectionKind == CodeType.CodeTypeCollectionKind.Complex) ||
+                currentClass.InnerChildElements.Values.OfType<CodeMethod>().Any(x => x.ReturnType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex) ||
+                currentClass.InnerChildElements.Values.OfType<CodeMethod>().Any(x => x.Parameters.Any(y => y.Type.CollectionKind == CodeType.CodeTypeCollectionKind.Complex))
                 )) {
                     var nUsing = new CodeUsing(currentClass) {
                         Name = "List"

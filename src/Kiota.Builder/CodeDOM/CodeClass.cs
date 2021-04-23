@@ -40,7 +40,7 @@ namespace Kiota.Builder
 
         public void SetIndexer(CodeIndexer indexer)
         {
-            this.InnerChildElements.Add(indexer);
+            AddRange(indexer);
         }
 
         public void AddProperty(params CodeProperty[] properties)
@@ -48,12 +48,12 @@ namespace Kiota.Builder
             if(!properties.Any() || properties.Any(x => x == null))
                 throw new ArgumentNullException(nameof(properties));
             AddMissingParent(properties);
-            this.InnerChildElements.AddRange(properties);
+            AddRange(properties);
         }
 
         public bool ContainsMember(string name)
         {
-            return this.InnerChildElements.Any(e => e.Name == name);
+            return this.InnerChildElements.ContainsKey(name);
         }
 
         public void AddMethod(params CodeMethod[] methods)
@@ -61,7 +61,7 @@ namespace Kiota.Builder
             if(!methods.Any() || methods.Any(x => x == null))
                 throw new ArgumentOutOfRangeException(nameof(methods));
             AddMissingParent(methods);
-            this.InnerChildElements.AddRange(methods);
+            AddRange(methods);
         }
 
         public void AddInnerClass(params CodeClass[] codeClasses)
@@ -69,7 +69,7 @@ namespace Kiota.Builder
             if(!codeClasses.Any() || codeClasses.Any(x => x == null))
                 throw new ArgumentOutOfRangeException(nameof(codeClasses));
             AddMissingParent(codeClasses);
-            this.InnerChildElements.AddRange(codeClasses);
+            AddRange(codeClasses);
         }
         public CodeClass GetParentClass() {
             if(StartBlock is Declaration declaration)

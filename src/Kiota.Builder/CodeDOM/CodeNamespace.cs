@@ -35,13 +35,13 @@ namespace Kiota.Builder
             if(!codeClasses.Any() || codeClasses.Any( x=> x == null))
                 throw new ArgumentOutOfRangeException(nameof(codeClasses));
             AddMissingParent(codeClasses);
-            this.InnerChildElements.AddRange(codeClasses);
+            AddRange(codeClasses);
         }
         private void AddNamespace(params CodeNamespace[] codeNamespaces) {
             if(!codeNamespaces.Any() || codeNamespaces.Any(x => x == null))
                 throw new ArgumentOutOfRangeException(nameof(codeNamespaces));
             AddMissingParent(codeNamespaces);
-            this.InnerChildElements.AddRange(codeNamespaces);
+            AddRange(codeNamespaces);
         }
         private static readonly char namespaceNameSeparator = '.';
         public CodeNamespace AddNamespace(string namespaceName) {
@@ -78,7 +78,7 @@ namespace Kiota.Builder
                 throw new ArgumentException("ensuring item namespaces is only supported when passing the root namespace as a parameter", nameof(rootNamespace));
             if (IsItemNamespace) return this;
             else {
-                var childNamespace = this.InnerChildElements.OfType<CodeNamespace>().FirstOrDefault(x => x.IsItemNamespace);
+                var childNamespace = this.InnerChildElements.Values.OfType<CodeNamespace>().FirstOrDefault(x => x.IsItemNamespace);
                 if(childNamespace == null) {
                     childNamespace = rootNamespace.AddNamespace($"{this.Name}.item");
                     childNamespace.IsItemNamespace = true;
@@ -100,7 +100,7 @@ namespace Kiota.Builder
             if(!enumDeclarations.Any() || enumDeclarations.Any( x=> x == null))
                 throw new ArgumentOutOfRangeException(nameof(enumDeclarations));
             AddMissingParent(enumDeclarations);
-            this.InnerChildElements.AddRange(enumDeclarations);
+            AddRange(enumDeclarations);
         }
     }
 }
