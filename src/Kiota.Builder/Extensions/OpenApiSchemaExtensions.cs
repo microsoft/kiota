@@ -28,22 +28,14 @@ namespace Kiota.Builder.Extensions {
                 var result = new List<string>();
                 if(!string.IsNullOrEmpty(schema.Reference?.Id))
                     result.Add(schema.Reference.Id);
-                if(schema.Properties != null) {
-                    schema.Properties.Values.ToList().ForEach(x => visitedSchemas.Add(x));
+                if(schema.Properties != null)
                     result.AddRange(schema.Properties.Values.SelectMany(x => x.GetSchemaReferenceIds(visitedSchemas)));
-                }
-                if(schema.AnyOf != null) {
-                    schema.AnyOf.ToList().ForEach(x => visitedSchemas.Add(x));
+                if(schema.AnyOf != null)
                     result.AddRange(schema.AnyOf.SelectMany(x => x.GetSchemaReferenceIds(visitedSchemas)));
-                }
-                if(schema.AllOf != null) {
-                    schema.AllOf.ToList().ForEach(x => visitedSchemas.Add(x));
+                if(schema.AllOf != null)
                     result.AddRange(schema.AllOf.SelectMany(x => x.GetSchemaReferenceIds(visitedSchemas)));
-                }
-                if(schema.OneOf != null) {
-                    schema.OneOf.ToList().ForEach(x => visitedSchemas.Add(x));
+                if(schema.OneOf != null)
                     result.AddRange(schema.OneOf.SelectMany(x => x.GetSchemaReferenceIds(visitedSchemas)));
-                }
                 return result;
             } else 
                 return Enumerable.Empty<string>();
