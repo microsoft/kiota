@@ -98,11 +98,13 @@ namespace Kiota.Builder
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             var node = OpenApiUrlSpaceNode.Create(doc);
+            PathToComponentsIndex = node.GetComponentsReferenceIndex();
 
             stopwatch.Stop();
             logger.LogInformation("{timestamp}ms: Created UriSpace tree", stopwatch.ElapsedMilliseconds);
             return node;
         }
+        private Dictionary<string, HashSet<OpenApiUrlSpaceNode>> PathToComponentsIndex;
 
         /// <summary>
         /// Convert UriSpace of OpenApiPathItems into conceptual SDK Code model 
@@ -458,32 +460,9 @@ namespace Kiota.Builder
         }
         private IEnumerable<string> GetAllNamespaceNamesForModelByReferenceId(OpenApiUrlSpaceNode currentNode, string referenceId) {
             if(string.IsNullOrEmpty(referenceId)) throw new ArgumentNullException(nameof(referenceId));
-            var currentNodePath = currentNode
-                                    ?.PathItem
-                                    ?.Operations
-                                    ?.Values
-                                    ?.Any(x => x?.Responses
-                                                    ?.Values
-                                                    ?.SelectMany(y => y.Content.Values)
-                                                    ?.Select(y => y.Schema)
-                                                    ?.Any(y => DoesSchemaContainReferenceId(referenceId, y)) ?? false) ?? false ?
-                                                    new List<string>() { currentNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName) }:
-                                                    Enumerable.Empty<string>();
-            if(currentNode?.Children?.Any() ?? false)
-                return currentNodePath
-                        .Union(currentNode.Children.Values.SelectMany(x => GetAllNamespaceNamesForModelByReferenceId(x, referenceId)));
-            else return currentNodePath;
-        }
-        private bool DoesSchemaContainReferenceId(string referenceId, OpenApiSchema schema, int maxDepth = 10) {
-            maxDepth--;
-            if (string.IsNullOrEmpty(referenceId) || schema == null || maxDepth <= 0) return false;
-            else if (referenceId.Equals(schema.Reference?.Id)) return true;
-            else return 
-                (schema.Properties?.Any(x => DoesSchemaContainReferenceId(referenceId, x.Value, maxDepth)) ?? false) ||
-                (schema.AnyOf?.Any(x => DoesSchemaContainReferenceId(referenceId, x, maxDepth)) ?? false) ||
-                (schema.AllOf?.Any(x => DoesSchemaContainReferenceId(referenceId, x, maxDepth)) ?? false) ||
-                (schema.OneOf?.Any(x => DoesSchemaContainReferenceId(referenceId, x, maxDepth)) ?? false) ||
-                DoesSchemaContainReferenceId(referenceId, schema.Items, maxDepth);
+            return PathToComponentsIndex.TryGetValue(referenceId, out var nodes) ? 
+                        nodes.Select(x => x.GetNodeNamespaceFromPath(this.config.ClientNamespaceName)) :
+                        Enumerable.Empty<string>();
         }
         private string GetShortestNamespaceNameForModelByReferenceId(OpenApiUrlSpaceNode rootNode, string referenceId) {
             if(string.IsNullOrEmpty(referenceId))
@@ -630,7 +609,7 @@ namespace Kiota.Builder
                                         var propertyDefinitionSchema = x.Value.Items ?? x.Value;
                                         var className = x.Value.GetClassName();
                                         CodeElement definition = default;
-                                        if(!string.IsNullOrEmpty(className)) {
+                                        if(!string.IsNullOrEmpty(className) && !string.IsNullOrEmpty(propertyDefinitionSchema?.Reference?.Id)) {
                                             var shortestNamespaceName = GetShortestNamespaceNameForModelByReferenceId(rootNode, propertyDefinitionSchema.Reference.Id);
                                             var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns : 
                                                                     (ns.GetRootNamespace().GetNamespace(shortestNamespaceName) ?? ns.GetRootNamespace().AddNamespace(shortestNamespaceName));
