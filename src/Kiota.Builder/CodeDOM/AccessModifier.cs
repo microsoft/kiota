@@ -1,7 +1,7 @@
 namespace Kiota.Builder {
         public enum AccessModifier {
-        Public,
-        Protected,
-        Private
+        Public = 2,
+        Protected = 1,
+        Private = 0
     }
 }

@@ -5,6 +5,7 @@ import com.microsoft.kiota.serialization.ValuedEnum;
 import com.microsoft.kiota.serialization.Parsable;
 
 import java.lang.Enum;
+import java.lang.reflect.Field;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -32,74 +34,81 @@ public class JsonSerializationWriter implements SerializationWriter {
         this.writer = new JsonWriter(new OutputStreamWriter(this.stream));
     }
     public void writeStringValue(final String key, final String value) {
-        try {
-            if(key != null && !key.isEmpty()) {
-                writer.name(key);
+        if(value != null)
+            try {
+                if(key != null && !key.isEmpty()) {
+                    writer.name(key);
+                }
+                writer.value(value);
+            } catch (IOException ex) {
+                throw new RuntimeException("could not serialize value", ex);
             }
-            writer.value(value);
-        } catch (IOException ex) {
-            throw new RuntimeException("could not serialize value", ex);
-        }
     }
     public void writeBooleanValue(final String key, final Boolean value) {
-        try {
-            if(key != null && !key.isEmpty()) {
-                writer.name(key);
+        if(value != null)
+            try {
+                if(key != null && !key.isEmpty()) {
+                    writer.name(key);
+                }
+                writer.value(value);
+            } catch (IOException ex) {
+                throw new RuntimeException("could not serialize value", ex);
             }
-            writer.value(value);
-        } catch (IOException ex) {
-            throw new RuntimeException("could not serialize value", ex);
-        }
     }
     public void writeIntegerValue(final String key, final Integer value) {
-        try {
-            if(key != null && !key.isEmpty()) {
-                writer.name(key);
+        if(value != null)
+            try {
+                if(key != null && !key.isEmpty()) {
+                    writer.name(key);
+                }
+                writer.value(value);
+            } catch (IOException ex) {
+                throw new RuntimeException("could not serialize value", ex);
             }
-            writer.value(value);
-        } catch (IOException ex) {
-            throw new RuntimeException("could not serialize value", ex);
-        }
     }
     public void writeFloatValue(final String key, final Float value) {
-        try {
-            if(key != null && !key.isEmpty()) {
-                writer.name(key);
+        if(value != null)
+            try {
+                if(key != null && !key.isEmpty()) {
+                    writer.name(key);
+                }
+                writer.value(value);
+            } catch (IOException ex) {
+                throw new RuntimeException("could not serialize value", ex);
             }
-            writer.value(value);
-        } catch (IOException ex) {
-            throw new RuntimeException("could not serialize value", ex);
-        }
     }
     public void writeLongValue(final String key, final Long value) {
-        try {
-            if(key != null && !key.isEmpty()) {
-                writer.name(key);
+        if(value != null)
+            try {
+                if(key != null && !key.isEmpty()) {
+                    writer.name(key);
+                }
+                writer.value(value);
+            } catch (IOException ex) {
+                throw new RuntimeException("could not serialize value", ex);
             }
-            writer.value(value);
-        } catch (IOException ex) {
-            throw new RuntimeException("could not serialize value", ex);
-        }
     }
     public void writeUUIDValue(final String key, final UUID value) {
-        try {
-            if(key != null && !key.isEmpty()) {
-                writer.name(key);
+        if(value != null)
+            try {
+                if(key != null && !key.isEmpty()) {
+                    writer.name(key);
+                }
+                writer.value(value.toString());
+            } catch (IOException ex) {
+                throw new RuntimeException("could not serialize value", ex);
             }
-            writer.value(value.toString());
-        } catch (IOException ex) {
-            throw new RuntimeException("could not serialize value", ex);
-        }
     }
     public void writeOffsetDateTimeValue(final String key, final OffsetDateTime value) {
-        try {
-            if(key != null && !key.isEmpty()) {
-                writer.name(key);
+        if(value != null)
+            try {
+                if(key != null && !key.isEmpty()) {
+                    writer.name(key);
+                }
+                writer.value(value.format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
+            } catch (IOException ex) {
+                throw new RuntimeException("could not serialize value", ex);
             }
-            writer.value(value.format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
-        } catch (IOException ex) {
-            throw new RuntimeException("could not serialize value", ex);
-        }
     }
     public <T> void writeCollectionOfPrimitiveValues(final String key, final Iterable<T> values) {
         try {
@@ -109,24 +118,7 @@ public class JsonSerializationWriter implements SerializationWriter {
                 }
                 writer.beginArray();
                 for (final T t : values) {
-                    final Class<?> clazz = t.getClass();
-                    if(clazz == Boolean.class) {
-                        writer.value((Boolean)t);
-                    } else if(clazz == String.class) {
-                        writer.value((String)t);
-                    } else if(clazz == Float.class) {
-                        writer.value((Float)t);
-                    } else if(clazz == Long.class) {
-                        writer.value((Long)t);
-                    } else if(clazz == Integer.class) {
-                        writer.value((Integer)t);
-                    } else if(clazz == UUID.class) {
-                        writeUUIDValue(null, (UUID)t);
-                    } else if(clazz == OffsetDateTime.class) {
-                        writeOffsetDateTimeValue(null, (OffsetDateTime)t);
-                    } else {
-                        throw new RuntimeException("unknown type to serialize " + clazz.getName());
-                    }
+                    this.writeAnyValue(null, t);
                 }
                 writer.endArray();
             }
@@ -197,5 +189,59 @@ public class JsonSerializationWriter implements SerializationWriter {
     public void close() throws IOException {
         this.writer.close();
         this.stream.close();
+    }
+    public void writeAdditionalData(@Nonnull final Map<String, Object> value) {
+        if(value == null) return;
+        for(final Map.Entry<String, Object> dataValue : value.entrySet()) {
+            this.writeAnyValue(dataValue.getKey(), dataValue.getValue());
+        }
+    }
+    private void writeNonParsableObject(final String key, final Object value) {
+        try {
+            if(key != null && !key.isEmpty())
+                this.writer.name(key);
+            if(value == null)
+                this.writer.nullValue();
+            else {
+                final Class<?> valueClass = value.getClass();
+                for(final Field oProp : valueClass.getFields())
+                    this.writeAnyValue(oProp.getName(), oProp.get(value));
+            }
+        } catch (IOException | IllegalAccessException ex) {
+            throw new RuntimeException("could not serialize value", ex);
+        }
+    }
+    private void writeAnyValue(final String key, final Object value) {
+        try {
+            if(value == null) {
+                if(key != null && !key.isEmpty())
+                    this.writer.name(key);
+                this.writer.nullValue();
+            } else {
+                final Class<?> valueClass = value.getClass();
+                if(valueClass.equals(String.class))
+                    this.writeStringValue(key, (String)value);
+                else if(valueClass.equals(Boolean.class))
+                    this.writeBooleanValue(key, (Boolean)value);
+                else if(valueClass.equals(Float.class))
+                    this.writeFloatValue(key, (Float)value);
+                else if(valueClass.equals(Long.class))
+                    this.writeLongValue(key, (Long)value);
+                else if(valueClass.equals(Integer.class))
+                    this.writeIntegerValue(key, (Integer)value);
+                else if(valueClass.equals(UUID.class))
+                    this.writeUUIDValue(key, (UUID)value);
+                else if(valueClass.equals(OffsetDateTime.class))
+                    this.writeOffsetDateTimeValue(key, (OffsetDateTime)value);
+                else if(value instanceof Iterable<?>)
+                    this.writeCollectionOfPrimitiveValues(key, (Iterable<?>)value);
+                else if(!valueClass.isPrimitive())
+                    this.writeNonParsableObject(key, value);
+                else
+                    throw new RuntimeException("unknown type to serialize " + valueClass.getName());
+            }
+        } catch (IOException ex) {
+            throw new RuntimeException("could not serialize value", ex);
+        }
     }
 }

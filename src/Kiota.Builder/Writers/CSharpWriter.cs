@@ -57,11 +57,8 @@ namespace Kiota.Builder
         private const string parseNodeInterfaceName = "IParseNode";
         public override void WriteProperty(CodeProperty code)
         {
-            var simpleBody = "get;";
-            if (!code.ReadOnly)
-            {
-                simpleBody = "get; set;";
-            }
+            var setterAccessModifier = code.ReadOnly && code.Access > AccessModifier.Private ? "private " : string.Empty;
+            var simpleBody = $"get; {setterAccessModifier}set;";
             var defaultValue = string.Empty;
             if (code.DefaultValue != null)
             {
@@ -210,6 +207,7 @@ namespace Kiota.Builder
             var headersParam = code.Parameters.OfKind(CodeParameterKind.Headers);
             switch(code.MethodKind) {
                 case CodeMethodKind.Serializer:
+                    var additionalDataProperty = parentClass.InnerChildElements.OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.AdditionalData);
                     if(shouldHide)
                         WriteLine("base.Serialize(writer);");
                     foreach(var otherProp in parentClass
@@ -218,6 +216,8 @@ namespace Kiota.Builder
                                                     .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
                         WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
                     }
+                    if(additionalDataProperty != null)
+                        WriteLine($"writer.WriteAdditionalData({additionalDataProperty.Name});");
                 break;
                 case CodeMethodKind.RequestGenerator:
                     var operationName = code.HttpMethod?.ToString();

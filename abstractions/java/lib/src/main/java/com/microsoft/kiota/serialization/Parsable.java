@@ -10,4 +10,6 @@ public interface Parsable {
     @Nonnull
     <T> Map<String, BiConsumer<T, ParseNode>> getDeserializeFields();
     void serialize(@Nonnull final SerializationWriter writer);
+    @Nonnull
+    Map<String, Object> getAdditionalData();
 }

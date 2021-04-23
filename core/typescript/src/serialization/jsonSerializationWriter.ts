@@ -37,20 +37,12 @@ export class JsonSerializationWriter implements SerializationWriter {
         if(values) {
             key && this.writePropertyName(key);
             this.writer.push(`[`);
-            values.forEach(v => {
-                if(v instanceof Boolean) {
-                    this.writeBooleanValue(undefined, v as any as boolean);
-                } else if (v instanceof String) {
-                    this.writeStringValue(undefined, v as any as string);
-                } else if (v instanceof Date) {
-                    this.writeDateValue(undefined, v as any as Date);
-                } else if (v instanceof Number) {
-                    this.writeNumberValue(undefined, v as any as number);
-                } else {
-                    throw new Error(`encountered unknown value type during serialization ${typeof v}`);
-                }
+            values.forEach((v, idx) => {
+                this.writeAnyValue(undefined, v);
+                (idx + 1) < values.length && this.writer.push(JsonSerializationWriter.propertySeparator);
             });
             this.writer.push(`]`);
+            key && this.writer.push(JsonSerializationWriter.propertySeparator);
         }
     }
     public writeCollectionOfObjectValues = <T extends Parsable<T>>(key?: string, values?: T[]): void => {
@@ -65,8 +57,8 @@ export class JsonSerializationWriter implements SerializationWriter {
                 this.writer.pop();
             }
             this.writer.push(`]`);
+            key && this.writer.push(JsonSerializationWriter.propertySeparator);
         }
-        key && values && this.writer.push(JsonSerializationWriter.propertySeparator);
     }
     public writeObjectValue = <T extends Parsable<T>>(key?: string, value?: T): void => {
         if(value) {
@@ -97,5 +89,42 @@ export class JsonSerializationWriter implements SerializationWriter {
                 controller.close();
             }
         });
+    }
+    public writeAdditionalData = (value: Map<string, unknown>) : void => {
+        if(!value) return;
+
+        value.forEach((dataValue, key) => {
+            this.writeAnyValue(key, dataValue);
+        });
+    }
+    private writeNonParsableObjectValue = (key?: string | undefined, value?: object | undefined) => {
+        if(key) {
+            this.writePropertyName(key);
+        }
+        this.writer.push(JSON.stringify(value), JsonSerializationWriter.propertySeparator);
+    }
+    private writeAnyValue = (key?: string | undefined, value?: unknown | undefined) : void => {
+        if(value) {
+            const valueType = typeof value;
+            if(valueType === "boolean") {
+                this.writeBooleanValue(key, value as any as boolean);
+            } else if (valueType === "string") {
+                this.writeStringValue(key, value as any as string);
+            } else if (value instanceof Date) {
+                this.writeDateValue(key, value as any as Date);
+            } else if (valueType === "number") {
+                this.writeNumberValue(key, value as any as number);
+            } else if(Array.isArray(value)) {
+                this.writeCollectionOfPrimitiveValues(key, value);
+            } else if (valueType === "object") {
+                this.writeNonParsableObjectValue(key, value as any as object);
+            } else {
+                throw new Error(`encountered unknown value type during serialization ${valueType}`);
+            }
+        } else {
+            if(key)
+                this.writePropertyName(key)
+            this.writer.push("null");
+        }
     }
 }

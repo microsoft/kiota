@@ -642,11 +642,12 @@ namespace Kiota.Builder
             }
             else if(schema?.AllOf?.Any(x => x?.Type?.Equals(OpenApiObjectType) ?? false) ?? false)
                 CreatePropertiesForModelClass(rootNode, currentNode, schema.AllOf.Last(x => x.Type.Equals(OpenApiObjectType)), operation, ns, model, parent);
-            AddSerializationMembers(model);
+            AddSerializationMembers(model, schema?.AdditionalPropertiesAllowed ?? false);
         }
         private const string deserializeFieldsPropName = "DeserializeFields";
         private const string serializeMethodName = "Serialize";
-        private static void AddSerializationMembers(CodeClass model) {
+        private const string additionalDataPropName = "AdditionalData";
+        private static void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties) {
             var serializationPropsType = $"IDictionary<string, Action<{model.Name.ToFirstCharacterUpperCase()}, IParseNode>>";
             if(!model.ContainsMember(deserializeFieldsPropName)) {
                 var deserializeProp = new CodeProperty(model) {
@@ -678,6 +679,24 @@ namespace Kiota.Builder
                 serializeMethod.AddParameter(parameter);
                 
                 model.AddMethod(serializeMethod);
+            }
+            if(!model.ContainsMember(additionalDataPropName) &&
+                includeAdditionalProperties && 
+                !(model.GetGreatestGrandparent(model)?.ContainsMember(additionalDataPropName) ?? false)) {
+                // we don't want to add the property if the parent already has it
+                var additionalDataProp = new CodeProperty(model) {
+                    Name = additionalDataPropName,
+                    Access = AccessModifier.Public,
+                    DefaultValue = "new Dictionary<string, object>()",
+                    PropertyKind = CodePropertyKind.AdditionalData,
+                    Description = "Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.",
+                    ReadOnly = true,
+                };
+                additionalDataProp.Type = new CodeType(additionalDataProp) {
+                    Name = "IDictionary<string, object>",
+                    IsNullable = false,
+                };
+                model.AddProperty(additionalDataProp);
             }
         }
         private CodeClass CreateOperationParameter(OpenApiUrlSpaceNode node, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)

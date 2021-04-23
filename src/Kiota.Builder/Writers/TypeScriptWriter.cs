@@ -293,6 +293,7 @@ namespace Kiota.Builder
                     WriteLine("]);");
                     break;
                 case CodeMethodKind.Serializer:
+                    var additionalDataProperty = parentClass.InnerChildElements.OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.AdditionalData);
                     if(shouldHide)
                         WriteLine("super.serialize(writer);");
                     foreach(var otherProp in parentClass
@@ -301,6 +302,8 @@ namespace Kiota.Builder
                                                     .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
                         WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.Name.ToFirstCharacterLowerCase()}\", this.{otherProp.Name.ToFirstCharacterLowerCase()});");
                     }
+                    if(additionalDataProperty != null)
+                        WriteLine($"writer.writeAdditionalData(this.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
                     break;
                 case CodeMethodKind.RequestGenerator:
                     WriteLines("const requestInfo = new RequestInfo();",
@@ -372,7 +375,7 @@ namespace Kiota.Builder
                 break;
                 default:
                     var defaultValue = string.IsNullOrEmpty(code.DefaultValue) ? string.Empty : $" = {code.DefaultValue}";
-                    var singleLiner = code.PropertyKind == CodePropertyKind.Custom;
+                    var singleLiner = code.PropertyKind == CodePropertyKind.Custom || code.PropertyKind == CodePropertyKind.AdditionalData;
                     WriteLine($"{GetAccessModifier(code.Access)}{(code.ReadOnly ? " readonly ": " ")}{code.Name.ToFirstCharacterLowerCase()}{(code.Type.IsNullable ? "?" : string.Empty)}: {returnType}{(isFlagEnum ? "[]" : string.Empty)}{(code.Type.IsNullable ? " | undefined" : string.Empty)}{defaultValue}{(singleLiner ? ";" : string.Empty)}");
                 break;
             }

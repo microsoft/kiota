@@ -40,7 +40,7 @@ dependencies {
     api 'com.azure:azure-identity:1.2.5'
     api 'com.google.code.gson:gson:2.8.6'
 
-    api 'com.microsoft.kiota:kiota-abstractions:1.0.7'
+    api 'com.microsoft.kiota:kiota-abstractions:1.0.8'
 }
 
 publishing {
@@ -57,7 +57,7 @@ publishing {
     publications {
         gpr(MavenPublication) {
             artifactId 'kiota-core'
-            version '1.0.0'
+            version '1.0.2'
             from(components.java)
         }
     }

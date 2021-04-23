@@ -59,7 +59,10 @@ export class JsonParseNode implements ParseNode {
         const fields = item.deserializeFields();
         Object.entries(this._jsonNode as any).forEach(([k, v]) => {
             const deserializer = fields.get(k);
-            deserializer && deserializer(item, new JsonParseNode(v));
+            if(deserializer)
+                deserializer(item, new JsonParseNode(v));
+            else
+                item.additionalData.set(k, v);
         });
     }
 }

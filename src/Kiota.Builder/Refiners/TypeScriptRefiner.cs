@@ -52,6 +52,10 @@ namespace Kiota.Builder {
                     currentProperty.Type.Name = $"Map<string, (item: {currentProperty.Parent.Name.ToFirstCharacterUpperCase()}, node: ParseNode) => void>";
                 else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.InvariantCultureIgnoreCase))
                     currentProperty.Type.Name = $"Date";
+                else if(currentProperty.PropertyKind == CodePropertyKind.AdditionalData) {
+                    currentProperty.Type.Name = "Map<string, unknown>";
+                    currentProperty.DefaultValue = "new Map<string, unknown>()";
+                }
             }
             if (currentElement is CodeMethod currentMethod) {
                 if(currentMethod.MethodKind == CodeMethodKind.RequestExecutor)

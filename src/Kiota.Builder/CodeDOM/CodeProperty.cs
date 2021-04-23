@@ -6,7 +6,8 @@ namespace Kiota.Builder
     {
         Custom,
         RequestBuilder,
-        Deserializer
+        Deserializer,
+        AdditionalData
     }
 
     public class CodeProperty : CodeTerminal, IDocumentedElement

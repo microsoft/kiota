@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@azure/identity": "^1.3.0",
-    "@microsoft/kiota-abstractions": "^1.0.7",
+    "@microsoft/kiota-abstractions": "^1.0.8",
     "cross-fetch": "^3.1.4",
     "web-streams-polyfill": "^3.0.3"
   }

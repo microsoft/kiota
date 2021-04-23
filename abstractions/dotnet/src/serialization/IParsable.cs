@@ -9,5 +9,7 @@ namespace Kiota.Abstractions.Serialization {
         }
 
         void Serialize(ISerializationWriter writer);
+
+        IDictionary<string, object> AdditionalData { get; }
     }
 }
