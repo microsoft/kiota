@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Kiota.Builder
@@ -10,7 +11,8 @@ namespace Kiota.Builder
     {
         private CodeNamespace(CodeElement parent):base(parent)
         {
-            
+            if(parent == null)
+                namespacesIndex = new();
         }
         public static CodeNamespace InitRootNamespace() {
             return new CodeNamespace(null);
@@ -65,6 +67,7 @@ namespace Kiota.Builder
                         Name = $"{lastPresentSegmentNamespace?.Name}{(string.IsNullOrEmpty(lastPresentSegmentNamespace?.Name) ? string.Empty : ".")}{childSegment}",
                     };
                     lastPresentSegmentNamespace.AddNamespace(newNS);
+                    namespacesIndex.Add(newNS.Name, newNS);
                     lastPresentSegmentNamespace = newNS;
                 }
             return lastPresentSegmentNamespace;
@@ -83,11 +86,14 @@ namespace Kiota.Builder
                 return childNamespace;
             } 
         }
+        private readonly Dictionary<string, CodeNamespace> namespacesIndex;
         public CodeNamespace GetNamespace(string namespaceName) {
             if(string.IsNullOrEmpty(namespaceName))
                 throw new ArgumentNullException(nameof(namespaceName));
+            else if(this.Parent != null || namespacesIndex == null)
+                throw new InvalidOperationException("searching for namespaces is only supported from the root namespace");
             else
-                return this.GetChildElementOfType<CodeNamespace>(x => x.Name?.Equals(namespaceName, StringComparison.InvariantCultureIgnoreCase) ?? false);
+                return namespacesIndex.TryGetValue(namespaceName, out var result) ? result : null;
         }
         public void AddEnum(params CodeEnum[] enumDeclarations)
         {
