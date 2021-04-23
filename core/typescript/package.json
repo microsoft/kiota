@@ -1,6 +1,6 @@
 {
   "name": "@microsoft/kiota-core",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "core implementation for kiota abstractions",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
