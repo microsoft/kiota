@@ -7,7 +7,7 @@ namespace Kiota.Builder
     /// <summary>
     /// Abstract element of some piece of source code to be generated
     /// </summary>
-    public abstract class CodeElement
+    public abstract class CodeElement : ICodeElement
     {
         public Dictionary<string, object> GenerationProperties { get; set; } = new Dictionary<string, object>();
         protected CodeElement(CodeElement parent)

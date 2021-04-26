@@ -320,7 +320,7 @@ namespace Kiota.Builder
                 if(string.IsNullOrEmpty(currentType.Name))
                     Debug.WriteLine($"Type with empty name and parent {currentType.Parent.Name}");
                 else
-                    currentType.TypeDefinition = rootNamespace.FindChildByName<CodeClass>(currentType.Name) as CodeElement ?? rootNamespace.FindChildByName<CodeEnum>(currentType.Name);
+                    currentType.TypeDefinition = rootNamespace.FindChildByName<ITypeDefinition>(currentType.Name) as CodeElement;
         }
 
         private CodeIndexer CreateIndexer(string childIdentifier, string childType, CodeClass codeClass, OpenApiUrlSpaceNode currentNode)
@@ -552,8 +552,7 @@ namespace Kiota.Builder
         }
         private CodeElement GetExistingDeclaration(bool checkInAllNamespaces, CodeNamespace currentNamespace, OpenApiUrlSpaceNode currentNode, string declarationName) {
             var searchNameSpace = GetSearchNamespace(checkInAllNamespaces, currentNode, currentNamespace);
-            return (searchNameSpace.FindChildByName<CodeClass>(declarationName, checkInAllNamespaces) as CodeElement ?? 
-                    searchNameSpace.FindChildByName<CodeEnum>(declarationName, checkInAllNamespaces));
+            return searchNameSpace.FindChildByName<ITypeDefinition>(declarationName, checkInAllNamespaces) as CodeElement;
         }
         private CodeNamespace GetSearchNamespace(bool checkInAllNamespaces, OpenApiUrlSpaceNode currentNode, CodeNamespace currentNamespace) {
             if(checkInAllNamespaces) return rootNamespace;

@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Kiota.Builder
 {
-    public class CodeEnum : CodeElement, IDocumentedElement {
+    public class CodeEnum : CodeElement, IDocumentedElement, ITypeDefinition {
         public CodeEnum(CodeElement parent) : base(parent)
         {
             

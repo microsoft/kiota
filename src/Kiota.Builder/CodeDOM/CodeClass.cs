@@ -13,7 +13,7 @@ namespace Kiota.Builder
     /// <summary>
     /// CodeClass represents an instance of a Class to be generated in source code
     /// </summary>
-    public class CodeClass : CodeBlock, IDocumentedElement
+    public class CodeClass : CodeBlock, IDocumentedElement, ITypeDefinition
     {
         private string name;
 

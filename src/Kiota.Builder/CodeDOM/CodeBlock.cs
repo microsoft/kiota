@@ -44,22 +44,22 @@ namespace Kiota.Builder
                         InnerChildElements.Add($"{currentMethod.Name}-{methodOverloadNameSuffix}", currentMethod);
                     }
         }
-        public T FindChildByName<T>(string childName, bool findInChildElements = true) where T: CodeElement {
+        public T FindChildByName<T>(string childName, bool findInChildElements = true) where T: ICodeElement {
             if(string.IsNullOrEmpty(childName))
                 throw new ArgumentNullException(nameof(childName));
             
             if(!InnerChildElements.Any())
-                return null;
+                return default(T);
 
             if(InnerChildElements.TryGetValue(childName, out var result) && result is T)
-                return (T)result;
+                return (T)(object)result;
             else if(findInChildElements)
                 foreach(var childElement in InnerChildElements.Values.OfType<CodeBlock>()) {
                     var childResult = childElement.FindChildByName<T>(childName, true);
                     if(childResult != null)
                         return childResult;
                 }
-            return null;
+            return default(T);
         }
         public class BlockDeclaration : CodeTerminal
         {
