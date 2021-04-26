@@ -194,6 +194,7 @@ namespace Kiota.Builder {
                 parameter.Type = new CodeType(parameter) {
                     Name = "String",
                     IsNullable = false,
+                    IsExternal = true,
                 };
                 method.Parameters.Add(parameter);
                 parentClass.AddMethod(method);

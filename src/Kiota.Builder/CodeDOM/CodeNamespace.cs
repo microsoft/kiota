@@ -9,11 +9,7 @@ namespace Kiota.Builder
     /// </summary>
     public class CodeNamespace : CodeBlock
     {
-        private CodeNamespace(CodeElement parent):base(parent)
-        {
-            if(parent == null)
-                namespacesIndex = new();
-        }
+        private CodeNamespace(CodeElement parent):base(parent) {}
         public static CodeNamespace InitRootNamespace() {
             return new CodeNamespace(null);
         }
@@ -44,16 +40,18 @@ namespace Kiota.Builder
             AddRange(codeNamespaces);
         }
         private static readonly char namespaceNameSeparator = '.';
+        private CodeNamespace GetRootNamespace() {
+            if(Parent == null) return this;
+            else return (this.Parent as CodeNamespace).GetRootNamespace();
+        }
         public CodeNamespace AddNamespace(string namespaceName) {
             if(string.IsNullOrEmpty(namespaceName))
                 throw new ArgumentNullException(nameof(namespaceName));
-            if(this.Parent != null)
-                throw new InvalidOperationException("adding namespaces is only supported from the root namespace");
             var namespaceNameSegements = namespaceName.Split(namespaceNameSeparator, StringSplitOptions.RemoveEmptyEntries);
             var lastPresentSegmentIndex = default(int);
-            CodeNamespace lastPresentSegmentNamespace = this;
+            CodeNamespace lastPresentSegmentNamespace = Parent == null ? this : GetRootNamespace();
             while(lastPresentSegmentIndex < namespaceNameSegements.Length) {
-                var segmentNameSpace = this.GetNamespace(namespaceNameSegements.Take(lastPresentSegmentIndex + 1).Aggregate((x, y) => $"{x}.{y}"));
+                var segmentNameSpace = lastPresentSegmentNamespace.FindChildByName<CodeNamespace>(namespaceNameSegements.Take(lastPresentSegmentIndex + 1).Aggregate((x, y) => $"{x}.{y}"));
                 if(segmentNameSpace == null)
                     break;
                 else {
@@ -67,33 +65,21 @@ namespace Kiota.Builder
                         Name = $"{lastPresentSegmentNamespace?.Name}{(string.IsNullOrEmpty(lastPresentSegmentNamespace?.Name) ? string.Empty : ".")}{childSegment}",
                     };
                     lastPresentSegmentNamespace.AddNamespace(newNS);
-                    namespacesIndex.Add(newNS.Name, newNS);
                     lastPresentSegmentNamespace = newNS;
                 }
             return lastPresentSegmentNamespace;
         }
         public bool IsItemNamespace { get; private set; }
-        public CodeNamespace EnsureItemNamespace(CodeNamespace rootNamespace) { 
-            if(rootNamespace.Parent != null)
-                throw new ArgumentException("ensuring item namespaces is only supported when passing the root namespace as a parameter", nameof(rootNamespace));
+        public CodeNamespace EnsureItemNamespace() { 
             if (IsItemNamespace) return this;
             else {
                 var childNamespace = this.InnerChildElements.Values.OfType<CodeNamespace>().FirstOrDefault(x => x.IsItemNamespace);
                 if(childNamespace == null) {
-                    childNamespace = rootNamespace.AddNamespace($"{this.Name}.item");
+                    childNamespace = AddNamespace($"{this.Name}.item");
                     childNamespace.IsItemNamespace = true;
                 }
                 return childNamespace;
             } 
-        }
-        private readonly Dictionary<string, CodeNamespace> namespacesIndex;
-        public CodeNamespace GetNamespace(string namespaceName) {
-            if(string.IsNullOrEmpty(namespaceName))
-                throw new ArgumentNullException(nameof(namespaceName));
-            else if(this.Parent != null || namespacesIndex == null)
-                throw new InvalidOperationException("searching for namespaces is only supported from the root namespace");
-            else
-                return namespacesIndex.TryGetValue(namespaceName, out var result) ? result : null;
         }
         public void AddEnum(params CodeEnum[] enumDeclarations)
         {

@@ -101,7 +101,8 @@ namespace Kiota.Builder {
                         Name = "java.time",
                     };
                     nUsing.Declaration = new CodeType(nUsing) {
-                        Name = "OffsetDateTime"
+                        Name = "OffsetDateTime",
+                        IsExternal = true,
                     };
                     (currentProperty.Parent as CodeClass).AddUsing(nUsing);
                 } else if (currentProperty.PropertyKind == CodePropertyKind.AdditionalData) {
