@@ -26,24 +26,42 @@ namespace Kiota.Builder
 
         public async Task GenerateSDK()
         {
+            var sw = new Stopwatch();
             // Step 1 - Read input stream
             string inputPath = config.OpenAPIFilePath;
+            sw.Start();
             using var input = await LoadStream(inputPath);
+            StopLogAndReset(sw, "step 1 - reading the stream - took");
 
             // Step 2 - Parse OpenAPI
+            sw.Start();
             var doc = CreateOpenApiDocument(input);
+            StopLogAndReset(sw, "step 2 - parsing the document - took");
 
             // Step 3 - Create Uri Space of API
+            sw.Start();
             var openApiTree = CreateUriSpace(doc);
+            StopLogAndReset(sw, "step 3 - create uri space - took");
 
             // Step 4 - Create Source Model
+            sw.Start();
             var generatedCode = CreateSourceModel(openApiTree);
+            StopLogAndReset(sw, "step 4 - create source model - took");
 
             // Step 5 - RefineByLanguage
+            sw.Start();
             ApplyLanguageRefinement(config.Language, generatedCode);
+            StopLogAndReset(sw, "step 5 - refine by language - took");
 
-            // Step 5 - Write language source 
+            // Step 6 - Write language source 
+            sw.Start();
             await CreateLanguageSourceFilesAsync(config.Language, generatedCode);
+            StopLogAndReset(sw, "step 6 - writing files - took");
+        }
+        private void StopLogAndReset(Stopwatch sw, string prefix) {
+            sw.Stop();
+            Debug.WriteLine($"{prefix} {sw.Elapsed}");
+            sw.Reset();
         }
 
 
