@@ -138,9 +138,12 @@ namespace Kiota.Builder
             rootNamespace = CodeNamespace.InitRootNamespace();
             var codeNamespace = rootNamespace.AddNamespace(this.config.ClientNamespaceName);
             CreateRequestBuilderClass(codeNamespace, root, root);
+            StopLogAndReset(stopwatch, $"{nameof(CreateRequestBuilderClass)}");
+            stopwatch.Start();
             MapTypeDefinitions(codeNamespace);
+            StopLogAndReset(stopwatch, $"{nameof(MapTypeDefinitions)}");
 
-            stopwatch.Stop();
+            // stopwatch.Stop();
             logger.LogInformation("{timestamp}ms: Created source model with {count} classes", stopwatch.ElapsedMilliseconds, codeNamespace.InnerChildElements.Count);
 
             return rootNamespace;
@@ -312,35 +315,42 @@ namespace Kiota.Builder
         /// Remaps definitions to custom types so they can be used later in generation or in refiners
         /// </summary>
         private void MapTypeDefinitions(CodeElement codeElement) {
+            var unmappedTypes = GetUnmappedTypeDefinitions(codeElement).Distinct();
+            
+            //TODO remove when missing names are fixed
+            unmappedTypes.Where(x => string.IsNullOrEmpty(x.Name)).ToList().ForEach(x => {
+                Debug.WriteLine($"Type with empty name and parent {x.Parent.Name}");
+            });
+
+            unmappedTypes.Where(x => !string.IsNullOrEmpty(x.Name)).GroupBy(x => x.Name).ToList().ForEach(x => {
+                var definition = rootNamespace.FindChildByName<ITypeDefinition>(x.First().Name) as CodeElement;
+                if(definition != null)
+                    foreach(var type in x) {
+                        type.TypeDefinition = definition;
+                    }
+            });
+        }
+        private static IEnumerable<CodeType> filterUnmappedTypeDefitions(IEnumerable<CodeTypeBase> source) =>
+        source.OfType<CodeType>()
+                .Union(source
+                        .OfType<CodeUnionType>()
+                        .SelectMany(x => x.Types))
+                .Where(x => !x.IsExternal && x.TypeDefinition == null);
+        private IEnumerable<CodeType> GetUnmappedTypeDefinitions(CodeElement codeElement) {
+            var childElementsUnmappedTypes = codeElement.GetChildElements().SelectMany(x => GetUnmappedTypeDefinitions(x));
             switch(codeElement) {
                 case CodeMethod method:
-                    MapTypeDefinition(method.Parameters.Select(x => x.Type).ToArray());
-                break;
+                    return filterUnmappedTypeDefitions(method.Parameters.Select(x => x.Type)).Union(childElementsUnmappedTypes);
                 case CodeProperty property:
-                    MapTypeDefinition(property.Type);
-                break;
+                    return filterUnmappedTypeDefitions(new CodeTypeBase[] {property.Type}).Union(childElementsUnmappedTypes);
                 case CodeIndexer indexer:
-                    MapTypeDefinition(indexer.ReturnType);
-                break;
+                    return filterUnmappedTypeDefitions(new CodeTypeBase[] {indexer.ReturnType}).Union(childElementsUnmappedTypes);
                 case CodeParameter parameter:
-                    MapTypeDefinition(parameter.Type);
-                break;
+                    return filterUnmappedTypeDefitions(new CodeTypeBase[] {parameter.Type}).Union(childElementsUnmappedTypes);
+                default:
+                    return childElementsUnmappedTypes;
             }
-            foreach(var childElement in codeElement.GetChildElements())
-                MapTypeDefinitions(childElement);
         }
-        private void MapTypeDefinition(params CodeTypeBase[] currentTypes) {
-            foreach(var currentType in currentTypes.OfType<CodeType>()
-                                                    .Union(currentTypes
-                                                            .OfType<CodeUnionType>()
-                                                            .SelectMany(x => x.Types))
-                                                    .Where(x => !x.IsExternal && x.TypeDefinition == null))
-                if(string.IsNullOrEmpty(currentType.Name))
-                    Debug.WriteLine($"Type with empty name and parent {currentType.Parent.Name}");
-                else
-                    currentType.TypeDefinition = rootNamespace.FindChildByName<ITypeDefinition>(currentType.Name) as CodeElement;
-        }
-
         private CodeIndexer CreateIndexer(string childIdentifier, string childType, CodeClass codeClass, OpenApiUrlSpaceNode currentNode)
         {
             var prop = new CodeIndexer(codeClass)
@@ -525,7 +535,7 @@ namespace Kiota.Builder
             if (originalReference == null) { // Inline schema, i.e. specific to the Operation
                 return CreateModelClassAndType(rootNode, currentNode, schema, operation, parentElement, codeNamespace, "Response");
             } else if(schema?.AllOf?.Any() ?? false) {
-                var allOfs = schema.FlattenEmptyAllOf();
+                var allOfs = schema.AllOf.FlattenEmptyEntries(x => x.AllOf);
                 var lastSchema = allOfs.Last();
                 CodeElement codeDeclaration = null;
                 string className = string.Empty;

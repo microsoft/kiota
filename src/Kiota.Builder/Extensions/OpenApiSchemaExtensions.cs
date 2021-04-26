@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.OpenApi.Models;
@@ -8,11 +9,11 @@ namespace Kiota.Builder.Extensions {
             if(schema.Items != null)
                 return schema.Items.GetClassNames();
             else if(schema.AnyOf.Any())
-                return schema.AnyOf.Select(x => x.Title);
+                return schema.AnyOf.FlattenEmptyEntries(x => x.AnyOf).Select(x => x.Title);
             else if(schema.AllOf.Any())
-                return schema.AllOf.Select(x => x.Title);
+                return schema.AllOf.FlattenEmptyEntries(x => x.AllOf).Select(x => x.Title);
             else if(schema.OneOf.Any())
-                return schema.OneOf.Select(x => x.Title);
+                return schema.OneOf.FlattenEmptyEntries(x => x.OneOf).Select(x => x.Title);
             else if(!string.IsNullOrEmpty(schema.Title))
                 return new List<string>{ schema.Title };
             else return Enumerable.Empty<string>();
@@ -40,12 +41,18 @@ namespace Kiota.Builder.Extensions {
             } else 
                 return Enumerable.Empty<string>();
         }
-        internal static IList<OpenApiSchema> FlattenEmptyAllOf(this OpenApiSchema schema) {
-            var result = schema.AllOf.ToList();
+        internal static IList<OpenApiSchema> FlattenEmptyEntries(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter) {
+            if(schemas == null) return default;
+            if(subsequentGetter == null) throw new ArgumentNullException(nameof(subsequentGetter));
+            
+            var result = schemas.ToList();
             var permutations = new Dictionary<OpenApiSchema, IList<OpenApiSchema>>();
-            foreach(var allOfItem in result)
-                if(string.IsNullOrEmpty(allOfItem.Title) && (allOfItem.AllOf?.Any() ?? false))
-                    permutations.Add(allOfItem, allOfItem.FlattenEmptyAllOf());
+            foreach(var item in result)
+            {
+                var subsequentItems = subsequentGetter(item);
+                if(string.IsNullOrEmpty(item.Title) && subsequentItems.Any())
+                    permutations.Add(item, subsequentItems.FlattenEmptyEntries(subsequentGetter));
+            }
             foreach(var permutation in permutations) {
                 var index = result.IndexOf(permutation.Key);
                 result.RemoveAt(index);
