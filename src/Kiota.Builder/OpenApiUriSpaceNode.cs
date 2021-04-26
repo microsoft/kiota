@@ -9,7 +9,7 @@ namespace Kiota.Builder
 {
     public class OpenApiUrlSpaceNode
     {
-        public IDictionary<string, OpenApiUrlSpaceNode> Children { get; set; } = new Dictionary<string, OpenApiUrlSpaceNode>();
+        public IDictionary<string, OpenApiUrlSpaceNode> Children { get; set; } = new Dictionary<string, OpenApiUrlSpaceNode>(StringComparer.OrdinalIgnoreCase);
         public string Segment {get;set;}
         public string Layer {get;set;}
 

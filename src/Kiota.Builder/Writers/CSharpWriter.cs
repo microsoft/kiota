@@ -198,8 +198,8 @@ namespace Kiota.Builder
             var returnType = GetTypeString(code.ReturnType);
             var parentClass = code.Parent as CodeClass;
             var shouldHide = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null && code.MethodKind == CodeMethodKind.Serializer;
-            var isVoid = VoidTypeName.Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
-            var isStream = StreamTypeName.Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
+            var isVoid = VoidTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
+            var isStream = StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
             WriteMethodDocumentation(code);
             WriteMethodPrototype(code, returnType, shouldHide, isVoid);
             IncreaseIndent();
@@ -230,7 +230,7 @@ namespace Kiota.Builder
                     DecreaseIndent();
                     WriteLine("};");
                     if(requestBodyParam != null) {
-                        if(requestBodyParam.Type.Name.Equals(StreamTypeName, StringComparison.InvariantCultureIgnoreCase))
+                        if(requestBodyParam.Type.Name.Equals(StreamTypeName, StringComparison.OrdinalIgnoreCase))
                             WriteLine($"requestInfo.SetStreamContent({requestBodyParam.Name});");
                         else
                             WriteLine($"requestInfo.SetJsonContentFromParsable({requestBodyParam.Name}, {SerializerFactoryPropertyName});"); //TODO we're making a big assumption here that everything will be json

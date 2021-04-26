@@ -9,7 +9,7 @@ namespace Kiota.Builder
     /// </summary>
     public abstract class CodeElement : ICodeElement
     {
-        public Dictionary<string, object> GenerationProperties { get; set; } = new Dictionary<string, object>();
+        public Dictionary<string, object> GenerationProperties { get; set; } = new(StringComparer.OrdinalIgnoreCase);
         protected CodeElement(CodeElement parent)
         {
             if(parent == null && !(this is CodeNamespace))

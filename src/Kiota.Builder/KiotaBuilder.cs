@@ -379,13 +379,20 @@ namespace Kiota.Builder
                 PropertyKind = kind,
                 Description = typeSchema?.Description,
             };
-            var typeName = isCollection ? (typeSchema?.Items?.Reference?.GetClassName() ?? typeSchema?.Items?.Type) : childType;
-            if("string".Equals(typeName, StringComparison.InvariantCultureIgnoreCase) && "date-time".Equals(typeSchema?.Format, StringComparison.InvariantCultureIgnoreCase))
+            var typeName = childType;
+            var isExternal = false;
+            if("string".Equals(typeName, StringComparison.OrdinalIgnoreCase) && "date-time".Equals(typeSchema?.Format, StringComparison.OrdinalIgnoreCase)) {
+                isExternal = true;
                 typeName = "DateTimeOffset";
+            } else if ("double".Equals(typeSchema?.Format, StringComparison.OrdinalIgnoreCase)) {
+                isExternal = true;
+                typeName = "double";
+            }
             prop.Type = new CodeType(prop) {
                 Name = typeName,
                 TypeDefinition = typeDefinition,
                 CollectionKind = isCollection ? CodeType.CodeTypeCollectionKind.Complex : default,
+                IsExternal = isExternal,
             };
             logger.LogDebug("Creating property {name} of {type}", prop.Name, prop.Type.Name);
             return prop;
@@ -722,7 +729,7 @@ namespace Kiota.Builder
                     prop.Type = new CodeType(prop)
                     {
                         Name = parameter.Schema.Items?.Type ?? parameter.Schema.Type,
-                        CollectionKind = parameter.Schema.Type.Equals("array", StringComparison.InvariantCultureIgnoreCase) ? CodeType.CodeTypeCollectionKind.Array : default
+                        CollectionKind = parameter.Schema.Type.Equals("array", StringComparison.OrdinalIgnoreCase) ? CodeType.CodeTypeCollectionKind.Array : default
                     };
 
                     if (!parameterClass.ContainsMember(parameter.Name))

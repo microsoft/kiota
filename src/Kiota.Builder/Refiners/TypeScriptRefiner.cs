@@ -48,13 +48,13 @@ namespace Kiota.Builder {
         };
         private void CorrectCoreType(CodeElement currentElement) {
             if (currentElement is CodeProperty currentProperty) {
-                if ("IHttpCore".Equals(currentProperty.Type.Name, StringComparison.InvariantCultureIgnoreCase))
+                if ("IHttpCore".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase))
                     currentProperty.Type.Name = "HttpCore";
-                else if(currentProperty.Name.Equals("serializerFactory", StringComparison.InvariantCultureIgnoreCase))
+                else if(currentProperty.Name.Equals("serializerFactory", StringComparison.OrdinalIgnoreCase))
                     currentProperty.Type.Name = "SerializationWriterFactory";
-                else if(currentProperty.Name.Equals("deserializeFields", StringComparison.InvariantCultureIgnoreCase))
+                else if(currentProperty.Name.Equals("deserializeFields", StringComparison.OrdinalIgnoreCase))
                     currentProperty.Type.Name = $"Map<string, (item: {currentProperty.Parent.Name.ToFirstCharacterUpperCase()}, node: ParseNode) => void>";
-                else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.InvariantCultureIgnoreCase))
+                else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase))
                     currentProperty.Type.Name = $"Date";
                 else if(currentProperty.PropertyKind == CodePropertyKind.AdditionalData) {
                     currentProperty.Type.Name = "Map<string, unknown>";
@@ -70,7 +70,7 @@ namespace Kiota.Builder {
             CrawlTree(currentElement, CorrectCoreType);
         }
         private void PatchResponseHandlerType(CodeElement current) {
-            if(current is CodeMethod currentMethod && currentMethod.Name.Equals("defaultResponseHandler", StringComparison.InvariantCultureIgnoreCase)) 
+            if(current is CodeMethod currentMethod && currentMethod.Name.Equals("defaultResponseHandler", StringComparison.OrdinalIgnoreCase)) 
                 currentMethod.Parameters.First().Type.Name = "ReadableStream";
             CrawlTree(current, PatchResponseHandlerType);
         }

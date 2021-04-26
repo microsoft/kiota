@@ -131,7 +131,7 @@ namespace KiotaCore
                 
             };
             if(requestInfo.Headers?.Any() ?? false)
-                requestInfo.Headers.Where(x => !contentTypeHeaderName.Equals(x.Key, StringComparison.InvariantCultureIgnoreCase)).ToList().ForEach(x => message.Headers.Add(x.Key, x.Value));
+                requestInfo.Headers.Where(x => !contentTypeHeaderName.Equals(x.Key, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => message.Headers.Add(x.Key, x.Value));
             if(requestInfo.Content != null) {
                 message.Content = new StreamContent(requestInfo.Content);
                 if(requestInfo?.Headers?.ContainsKey(contentTypeHeaderName) ?? false)

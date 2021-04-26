@@ -119,7 +119,7 @@ namespace Kiota.Builder
             var returnType = GetTypeString(code.ReturnType);
             var parentClass = code.Parent as CodeClass;
             WriteMethodDocumentation(code);
-            if(returnType.Equals("void", StringComparison.InvariantCultureIgnoreCase))
+            if(returnType.Equals("void", StringComparison.OrdinalIgnoreCase))
             {
                 if(code.MethodKind == CodeMethodKind.RequestExecutor)
                     returnType = "Void"; //generic type for the future
@@ -176,7 +176,7 @@ namespace Kiota.Builder
                     DecreaseIndent();
                     WriteLine("}};");
                     if(requestBodyParam != null)
-                        if(requestBodyParam.Type.Name.Equals(streamType, StringComparison.InvariantCultureIgnoreCase))
+                        if(requestBodyParam.Type.Name.Equals(streamType, StringComparison.OrdinalIgnoreCase))
                             WriteLine($"requestInfo.setStreamContent({requestBodyParam.Name});");
                         else
                             WriteLine($"requestInfo.setJsonContentFromParsable({requestBodyParam.Name}, {serializerFactoryParamName});"); //TODO we're making a big assumption here that the request is json

@@ -80,7 +80,7 @@ namespace Kiota.Builder
             }
             foreach (var codeUsing in code.Usings
                                         .Where(x => (!x.Declaration?.IsExternal) ?? true)
-                                        .Where(x => !x.Declaration.Name.Equals(code.Name, StringComparison.InvariantCultureIgnoreCase))
+                                        .Where(x => !x.Declaration.Name.Equals(code.Name, StringComparison.OrdinalIgnoreCase))
                                         .Select(x => {
                                             var relativeImportPath = GetRelativeImportPathForUsing(x, code.GetImmediateParentOfType<CodeNamespace>());
                                             return new {
@@ -118,7 +118,7 @@ namespace Kiota.Builder
                 throw new ArgumentNullException(nameof(currentNamespace));
             else if (importNamespace == null)
                 throw new ArgumentNullException(nameof(importNamespace));
-            else if(currentNamespace.Name.Equals(importNamespace.Name, StringComparison.InvariantCultureIgnoreCase)) // we're in the same namespace
+            else if(currentNamespace.Name.Equals(importNamespace.Name, StringComparison.OrdinalIgnoreCase)) // we're in the same namespace
                 return "./";
             else {
                 var currentNamespaceSegements = currentNamespace
@@ -131,7 +131,7 @@ namespace Kiota.Builder
                 var currentNamespaceSegementsCount = currentNamespaceSegements.Length;
                 var deeperMostSegmentIndex = 0;
                 while(deeperMostSegmentIndex < Math.Min(importNamespaceSegmentsCount, currentNamespaceSegementsCount)) {
-                    if(currentNamespaceSegements.ElementAt(deeperMostSegmentIndex).Equals(importNamespaceSegments.ElementAt(deeperMostSegmentIndex), StringComparison.InvariantCultureIgnoreCase))
+                    if(currentNamespaceSegements.ElementAt(deeperMostSegmentIndex).Equals(importNamespaceSegments.ElementAt(deeperMostSegmentIndex), StringComparison.OrdinalIgnoreCase))
                         deeperMostSegmentIndex++;
                     else
                         break;
@@ -260,7 +260,7 @@ namespace Kiota.Builder
         public override void WriteMethod(CodeMethod code)
         {
             var returnType = GetTypeString(code.ReturnType);
-            var isVoid = "void".Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
+            var isVoid = "void".Equals(returnType, StringComparison.OrdinalIgnoreCase);
             WriteMethodDocumentation(code);
             WriteMethodPrototype(code, returnType, isVoid);
             IncreaseIndent();
@@ -311,7 +311,7 @@ namespace Kiota.Builder
                     if(queryStringParam != null)
                         WriteLines($"{queryStringParam.Name} && requestInfo.setQueryStringParametersFromRawObject(q);");
                     if(requestBodyParam != null) {
-                        if(requestBodyParam.Type.Name.Equals(StreamType, StringComparison.InvariantCultureIgnoreCase))
+                        if(requestBodyParam.Type.Name.Equals(StreamType, StringComparison.OrdinalIgnoreCase))
                             WriteLine($"requestInfo.setStreamContent({requestBodyParam.Name});");
                         else
                             WriteLine($"requestInfo.setJsonContentFromParsable({requestBodyParam.Name}, this.{SerializerFactoryPropertyName});"); //TODO we're making a big assumption here that everything will be json
@@ -334,7 +334,7 @@ namespace Kiota.Builder
                         DecreaseIndent();
                     }
                     WriteLine(");");
-                    var isStream = StreamType.Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
+                    var isStream = StreamType.Equals(returnType, StringComparison.OrdinalIgnoreCase);
                     var genericTypeForSendMethod = GetSendRequestMethodName(isVoid, isStream, returnType);
                     var newFactoryParameter = GetTypeFactory(isVoid, isStream, returnType);
                     WriteLine($"return this.httpCore?.{genericTypeForSendMethod}(requestInfo,{newFactoryParameter} responseHandler) ?? Promise.reject(new Error('http core is null'));");

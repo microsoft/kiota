@@ -9,7 +9,7 @@ namespace Kiota.Builder.Extensions {
 
         // where component id and the value is the set of openapiurlNode referencing it
         public static Dictionary<string, HashSet<OpenApiUrlSpaceNode>> GetComponentsReferenceIndex(this OpenApiUrlSpaceNode rootNode) {
-            var result = new Dictionary<string, HashSet<OpenApiUrlSpaceNode>>();
+            var result = new Dictionary<string, HashSet<OpenApiUrlSpaceNode>>(StringComparer.OrdinalIgnoreCase);
             AddAllPathsEntries(rootNode, result);
             return result;
         }

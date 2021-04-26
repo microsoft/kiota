@@ -90,7 +90,7 @@ namespace Kiota.Builder {
 
             if(currentElement is CodeMethod currentMethod 
                 && currentMethod.ReturnType is CodeType currentReturnType
-                && currentReturnType.Name.Equals("entity", StringComparison.InvariantCultureIgnoreCase)
+                && currentReturnType.Name.Equals("entity", StringComparison.OrdinalIgnoreCase)
                 && currentReturnType.TypeDefinition == null)
                 currentReturnType.TypeDefinition = entityClass;
 
@@ -140,7 +140,7 @@ namespace Kiota.Builder {
                                                                 .Values
                                                                 .OfType<CodeNamespace>()
                                                                 .FirstOrDefault(x => x.Name
-                                                                                    .EndsWith(currentClass.Name, StringComparison.InvariantCultureIgnoreCase));
+                                                                                    .EndsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase));
                 if(childNamespaceWithClassName != null) {
                     parentNamespace.InnerChildElements.Remove(currentClass.Name);
                     childNamespaceWithClassName.AddClass(currentClass);
@@ -155,7 +155,7 @@ namespace Kiota.Builder {
                 var pathSegment = currentParentClass
                                     .GetChildElements()
                                     .OfType<CodeProperty>()
-                                    .FirstOrDefault(x => x.Name.Equals(pathSegmentPropertyName, StringComparison.InvariantCultureIgnoreCase))
+                                    .FirstOrDefault(x => x.Name.Equals(pathSegmentPropertyName, StringComparison.OrdinalIgnoreCase))
                                     ?.DefaultValue;
                 if(!string.IsNullOrEmpty(pathSegment))
                     foreach(var returnType in currentIndexer.ReturnType.AllTypes)

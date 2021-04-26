@@ -89,13 +89,13 @@ namespace Kiota.Builder {
         };
         private void CorrectCoreType(CodeElement currentElement) {
             if (currentElement is CodeProperty currentProperty) {
-                if("IHttpCore".Equals(currentProperty.Type.Name, StringComparison.InvariantCultureIgnoreCase))
+                if("IHttpCore".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase))
                     currentProperty.Type.Name = "HttpCore";
-                else if(currentProperty.Name.Equals("serializerFactory", StringComparison.InvariantCultureIgnoreCase))
+                else if(currentProperty.Name.Equals("serializerFactory", StringComparison.OrdinalIgnoreCase))
                     currentProperty.Type.Name = "SerializationWriterFactory";
-                else if(currentProperty.Name.Equals("deserializeFields", StringComparison.InvariantCultureIgnoreCase))
+                else if(currentProperty.Name.Equals("deserializeFields", StringComparison.OrdinalIgnoreCase))
                     currentProperty.Type.Name = $"Map<String, BiConsumer<T, ParseNode>>";
-                else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.InvariantCultureIgnoreCase)) {
+                else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase)) {
                     currentProperty.Type.Name = $"OffsetDateTime";
                     var nUsing = new CodeUsing(currentProperty.Parent) {
                         Name = "java.time",

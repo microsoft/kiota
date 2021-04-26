@@ -12,7 +12,7 @@ namespace Kiota.Builder
     public class CodeBlock : CodeElement
     {
         public BlockDeclaration StartBlock {get; set;}
-        public Dictionary<string, CodeElement> InnerChildElements {get; set;} = new();
+        public Dictionary<string, CodeElement> InnerChildElements {get; set;} = new(StringComparer.OrdinalIgnoreCase);
         public BlockEnd EndBlock {get; set;}
         public CodeBlock(CodeElement parent):base(parent)
         {

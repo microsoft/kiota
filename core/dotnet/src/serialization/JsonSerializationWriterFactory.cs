@@ -7,7 +7,7 @@ namespace KiotaCore.Serialization {
         public ISerializationWriter GetSerializationWriter(string contentType) {
             if(string.IsNullOrEmpty(contentType))
                 throw new ArgumentNullException(nameof(contentType));
-            else if(!validContentType.Equals(contentType, StringComparison.InvariantCultureIgnoreCase))
+            else if(!validContentType.Equals(contentType, StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentOutOfRangeException($"expected a {validContentType} content type");
 
             return new JsonSerializationWriter();
