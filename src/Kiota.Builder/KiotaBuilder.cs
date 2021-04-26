@@ -257,12 +257,12 @@ namespace Kiota.Builder
 
             (currentNode.DoesNodeBelongToItemSubnamespace() ? currentNamespace.EnsureItemNamespace() : currentNamespace).AddClass(codeClass);
 
-            foreach (var childNode in currentNode.Children.Values)
+            Parallel.ForEach(currentNode.Children.Values, childNode => 
             {
                 var targetNamespaceName = childNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName);
                 var targetNamespace = rootNamespace.FindChildByName<CodeNamespace>(targetNamespaceName) ?? rootNamespace.AddNamespace(targetNamespaceName);
                 CreateRequestBuilderClass(targetNamespace, childNode, rootNode);
-            }
+            });
         }
 
         private void CreatePathManagement(CodeClass currentClass, OpenApiUrlSpaceNode currentNode, bool isRootClientClass) {
@@ -317,12 +317,11 @@ namespace Kiota.Builder
         private void MapTypeDefinitions(CodeElement codeElement) {
             var unmappedTypes = GetUnmappedTypeDefinitions(codeElement).Distinct();
             
-            //TODO remove when missing names are fixed
             unmappedTypes.Where(x => string.IsNullOrEmpty(x.Name)).ToList().ForEach(x => {
                 Debug.WriteLine($"Type with empty name and parent {x.Parent.Name}");
             });
 
-            unmappedTypes.Where(x => !string.IsNullOrEmpty(x.Name)).GroupBy(x => x.Name).ToList().ForEach(x => {
+            Parallel.ForEach(unmappedTypes.Where(x => !string.IsNullOrEmpty(x.Name)).GroupBy(x => x.Name), x => {
                 var definition = rootNamespace.FindChildByName<ITypeDefinition>(x.First().Name) as CodeElement;
                 if(definition != null)
                     foreach(var type in x) {

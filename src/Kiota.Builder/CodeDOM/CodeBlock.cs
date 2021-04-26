@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace Kiota.Builder
     public class CodeBlock : CodeElement
     {
         public BlockDeclaration StartBlock {get; set;}
-        public Dictionary<string, CodeElement> InnerChildElements {get; set;} = new(StringComparer.OrdinalIgnoreCase);
+        public IDictionary<string, CodeElement> InnerChildElements {get; set;} = new ConcurrentDictionary<string, CodeElement>(StringComparer.OrdinalIgnoreCase);
         public BlockEnd EndBlock {get; set;}
         public CodeBlock(CodeElement parent):base(parent)
         {
