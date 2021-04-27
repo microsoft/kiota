@@ -260,7 +260,7 @@ namespace Kiota.Builder
             Parallel.ForEach(currentNode.Children.Values, childNode => 
             {
                 var targetNamespaceName = childNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName);
-                var targetNamespace = rootNamespace.FindChildByName<CodeNamespace>(targetNamespaceName) ?? rootNamespace.AddNamespace(targetNamespaceName);
+                var targetNamespace = rootNamespace.FindNamespaceByName(targetNamespaceName) ?? rootNamespace.AddNamespace(targetNamespaceName);
                 CreateRequestBuilderClass(targetNamespace, childNode, rootNode);
             });
         }
@@ -318,7 +318,7 @@ namespace Kiota.Builder
             var unmappedTypes = GetUnmappedTypeDefinitions(codeElement).Distinct();
             
             unmappedTypes.Where(x => string.IsNullOrEmpty(x.Name)).ToList().ForEach(x => {
-                Debug.WriteLine($"Type with empty name and parent {x.Parent.Name}");
+                logger.LogWarning($"Type with empty name and parent {x.Parent.Name}");
             });
 
             Parallel.ForEach(unmappedTypes.Where(x => !string.IsNullOrEmpty(x.Name)).GroupBy(x => x.Name), x => {
@@ -520,7 +520,7 @@ namespace Kiota.Builder
         }
         private CodeType CreateModelClassAndType(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement, CodeNamespace codeNamespace, string classNameSuffix = "") {
             var namespaceName = currentNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName);
-            var ns = rootNamespace.FindChildByName<CodeNamespace>(namespaceName);
+            var ns = rootNamespace.FindNamespaceByName(namespaceName);
             if(ns == null)
                 ns = rootNamespace.AddNamespace(namespaceName);
             var className = currentNode.GetClassName(operation: operation, suffix: classNameSuffix);
@@ -546,7 +546,7 @@ namespace Kiota.Builder
                 foreach(var currentSchema in allOfs) {
                     var isLastSchema = currentSchema == lastSchema;
                     var shortestNamespaceName = currentSchema.Reference == null ? currentNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName) : GetShortestNamespaceNameForModelByReferenceId(currentSchema.Reference.Id);
-                    var shortestNamespace = rootNamespace.FindChildByName<CodeNamespace>(shortestNamespaceName);
+                    var shortestNamespace = rootNamespace.FindNamespaceByName(shortestNamespaceName);
                     if(shortestNamespace == null)
                         shortestNamespace = rootNamespace.AddNamespace(shortestNamespaceName);
                     className = isLastSchema ? currentNode.GetClassName(operation: operation) : currentSchema.GetClassName();
@@ -564,7 +564,7 @@ namespace Kiota.Builder
                 };
                 foreach(var currentSchema in schemas) {
                     var shortestNamespaceName = currentSchema.Reference == null ? currentNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName) : GetShortestNamespaceNameForModelByReferenceId(currentSchema.Reference.Id);
-                    var shortestNamespace = rootNamespace.FindChildByName<CodeNamespace>(shortestNamespaceName);
+                    var shortestNamespace = rootNamespace.FindNamespaceByName(shortestNamespaceName);
                     if(shortestNamespace == null)
                         shortestNamespace = rootNamespace.AddNamespace(shortestNamespaceName);
                     var className = currentSchema.GetClassName();
@@ -638,7 +638,7 @@ namespace Kiota.Builder
                                         if(!string.IsNullOrEmpty(className) && !string.IsNullOrEmpty(propertyDefinitionSchema?.Reference?.Id)) {
                                             var shortestNamespaceName = GetShortestNamespaceNameForModelByReferenceId(propertyDefinitionSchema.Reference.Id);
                                             var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns : 
-                                                                    (rootNamespace.FindChildByName<CodeNamespace>(shortestNamespaceName) ?? rootNamespace.AddNamespace(shortestNamespaceName));
+                                                                    (rootNamespace.FindNamespaceByName(shortestNamespaceName) ?? rootNamespace.AddNamespace(shortestNamespaceName));
                                             definition = AddModelDeclarationIfDoesntExit(rootNode, currentNode, propertyDefinitionSchema, operation, className, targetNamespace, parent, null, true);
                                         }
                                         return CreateProperty(x.Key, className ?? x.Value.Type, model, typeSchema: x.Value, typeDefinition: definition);

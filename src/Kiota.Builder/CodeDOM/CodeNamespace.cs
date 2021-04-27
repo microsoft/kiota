@@ -44,6 +44,16 @@ namespace Kiota.Builder
             if(Parent == null) return this;
             else return (this.Parent as CodeNamespace).GetRootNamespace();
         }
+        public CodeNamespace FindNamespaceByName(string nsName) {
+            var result = FindChildByName<CodeNamespace>(nsName, false);
+            if(result == null)
+                foreach(var childNS in InnerChildElements.Values.OfType<CodeNamespace>()) {
+                    result = childNS.FindNamespaceByName(nsName);
+                    if(result != null)
+                        break;
+                }
+            return result;
+        }
         public CodeNamespace AddNamespace(string namespaceName) {
             if(string.IsNullOrEmpty(namespaceName))
                 throw new ArgumentNullException(nameof(namespaceName));
@@ -51,7 +61,7 @@ namespace Kiota.Builder
             var lastPresentSegmentIndex = default(int);
             CodeNamespace lastPresentSegmentNamespace = Parent == null ? this : GetRootNamespace();
             while(lastPresentSegmentIndex < namespaceNameSegements.Length) {
-                var segmentNameSpace = lastPresentSegmentNamespace.FindChildByName<CodeNamespace>(namespaceNameSegements.Take(lastPresentSegmentIndex + 1).Aggregate((x, y) => $"{x}.{y}"));
+                var segmentNameSpace = lastPresentSegmentNamespace.FindNamespaceByName(namespaceNameSegements.Take(lastPresentSegmentIndex + 1).Aggregate((x, y) => $"{x}.{y}"));
                 if(segmentNameSpace == null)
                     break;
                 else {
