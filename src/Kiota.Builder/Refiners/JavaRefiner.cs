@@ -144,26 +144,26 @@ namespace Kiota.Builder {
             CrawlTree(currentElement, AddRequireNonNullImports);
         }
         private void AndInsertOverrideMethodForRequestExecutorsAndBuilders(CodeElement currentElement) {
-            var codeMethods = currentElement
-                                    .GetChildElements()
-                                    .OfType<CodeMethod>();
-            if(currentElement is CodeClass currentClass && codeMethods.Any()) {
-                var originalExecutorMethods = codeMethods.Where(x => x.MethodKind == CodeMethodKind.RequestExecutor);
-                var executorMethodsToAdd = originalExecutorMethods
-                                    .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter))
-                                    .Union(originalExecutorMethods
-                                            .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers)))
-                                    .Union(originalExecutorMethods
-                                            .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers, CodeParameterKind.ResponseHandler)))
-                                    .Where(x => x != null);
-                var originalGeneratorMethods = codeMethods.Where(x => x.MethodKind == CodeMethodKind.RequestGenerator);
-                var generatorMethodsToAdd = originalGeneratorMethods
-                                    .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter))
-                                    .Union(originalGeneratorMethods
-                                            .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers)))
-                                    .Where(x => x != null);
-                if(executorMethodsToAdd.Any() || generatorMethodsToAdd.Any())
-                    currentClass.AddMethod(executorMethodsToAdd.Union(generatorMethodsToAdd).ToArray());
+            if(currentElement is CodeClass currentClass) {
+                var codeMethods = currentClass.InnerChildElements.Values.OfType<CodeMethod>();
+                if(codeMethods.Any()) {
+                    var originalExecutorMethods = codeMethods.Where(x => x.MethodKind == CodeMethodKind.RequestExecutor);
+                    var executorMethodsToAdd = originalExecutorMethods
+                                        .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter))
+                                        .Union(originalExecutorMethods
+                                                .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers)))
+                                        .Union(originalExecutorMethods
+                                                .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers, CodeParameterKind.ResponseHandler)))
+                                        .Where(x => x != null);
+                    var originalGeneratorMethods = codeMethods.Where(x => x.MethodKind == CodeMethodKind.RequestGenerator);
+                    var generatorMethodsToAdd = originalGeneratorMethods
+                                        .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter))
+                                        .Union(originalGeneratorMethods
+                                                .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers)))
+                                        .Where(x => x != null);
+                    if(executorMethodsToAdd.Any() || generatorMethodsToAdd.Any())
+                        currentClass.AddMethod(executorMethodsToAdd.Union(generatorMethodsToAdd).ToArray());
+                }
             }
             
             CrawlTree(currentElement, AndInsertOverrideMethodForRequestExecutorsAndBuilders);

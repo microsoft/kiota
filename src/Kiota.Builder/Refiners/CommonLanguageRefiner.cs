@@ -153,9 +153,7 @@ namespace Kiota.Builder {
                 var currentParentClass = currentElement.Parent as CodeClass;
                 currentParentClass.InnerChildElements.Remove(currentElement.Name);
                 var pathSegment = currentParentClass
-                                    .GetChildElements()
-                                    .OfType<CodeProperty>()
-                                    .FirstOrDefault(x => x.Name.Equals(pathSegmentPropertyName, StringComparison.OrdinalIgnoreCase))
+                                    .FindChildByName<CodeProperty>(pathSegmentPropertyName)
                                     ?.DefaultValue;
                 if(!string.IsNullOrEmpty(pathSegment))
                     foreach(var returnType in currentIndexer.ReturnType.AllTypes)
@@ -203,7 +201,7 @@ namespace Kiota.Builder {
         }
         internal void AddInnerClasses(CodeElement current) {
             if(current is CodeClass currentClass) {
-                foreach(var parameter in current.GetChildElements().OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf && x.ParameterKind == CodeParameterKind.QueryParameter)) 
+                foreach(var parameter in currentClass.InnerChildElements.Values.OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf && x.ParameterKind == CodeParameterKind.QueryParameter)) 
                     foreach(var returnType in parameter.Type.AllTypes) {
                         var innerClass = returnType.TypeDefinition as CodeClass;
                         if(innerClass == null)
