@@ -37,7 +37,7 @@ namespace Kiota.Builder.Extensions {
                 foreach(var child in currentNode.Children.Values)
                     AddAllPathsEntries(child, index);
         }
-        internal static string GetNodeNamespaceFromPath(this OpenApiUrlSpaceNode currentNode, string prefix = default) =>
+        internal static string GetNodeNamespaceFromPath(this OpenApiUrlSpaceNode currentNode, string prefix) =>
             prefix + 
                     ((currentNode?.Path?.Contains(pathNameSeparator) ?? false) ?
                         "." + currentNode?.Path
