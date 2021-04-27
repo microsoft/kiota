@@ -38,11 +38,9 @@ namespace Kiota.Builder
             foreach(var element in elements)
                 try {
                     InnerChildElements.Add(element.Name, element); //try add is not behaving like documented
-                } catch (ArgumentException) {
-                    if(element is CodeMethod currentMethod) {// allows for methods overload
-                        var methodOverloadNameSuffix = currentMethod.Parameters.Any() ? currentMethod.Parameters.Select(x => x.Name).OrderBy(x => x).Aggregate((x, y) => x + y) : "1";
-                        InnerChildElements.Add($"{currentMethod.Name}-{methodOverloadNameSuffix}", currentMethod);
-                    }
+                } catch (ArgumentException) when (element is CodeMethod currentMethod) { // allows for methods overload
+                    var methodOverloadNameSuffix = currentMethod.Parameters.Any() ? currentMethod.Parameters.Select(x => x.Name).OrderBy(x => x).Aggregate((x, y) => x + y) : "1";
+                    InnerChildElements.Add($"{currentMethod.Name}-{methodOverloadNameSuffix}", currentMethod);
                 }
         }
         public T FindChildByName<T>(string childName, bool findInChildElements = true) where T: ICodeElement {
