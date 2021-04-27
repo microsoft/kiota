@@ -8,9 +8,5 @@ namespace Kiota.Builder
         {
             
         }
-        public override IList<CodeElement> GetChildElements()
-        {
-            return new List<CodeElement>();
-        }
     }
 }

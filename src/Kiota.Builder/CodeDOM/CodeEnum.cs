@@ -9,10 +9,6 @@ namespace Kiota.Builder
         {
             
         }
-        public override IList<CodeElement> GetChildElements()
-        {
-            return Enumerable.Empty<CodeElement>().ToList();
-        }
         public List<string> Options { get; set; } = new List<string>();
         public bool Flags { get; set; }
         public string Description {get; set;}

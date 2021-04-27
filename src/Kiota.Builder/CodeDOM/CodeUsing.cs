@@ -9,10 +9,5 @@ namespace Kiota.Builder
             
         }
         public CodeType Declaration { get; set; }
-
-        public override IList<CodeElement> GetChildElements()
-        {
-            return new List<CodeElement>();
-        }
     }
 }

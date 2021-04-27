@@ -21,12 +21,9 @@ namespace Kiota.Builder
             EndBlock = new BlockEnd(this);
         }
 
-        public override IList<CodeElement> GetChildElements()
+        public override IEnumerable<CodeElement> GetChildElements()
         {
-            var elements = new List<CodeElement>(InnerChildElements.Values);
-            elements.Insert(0, StartBlock);
-            elements.Add(EndBlock);
-            return elements;
+            return new CodeElement[] { StartBlock, EndBlock }.Union(InnerChildElements.Values);
         }
         public void AddUsing(params CodeUsing[] codeUsings)
         {
