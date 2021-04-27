@@ -344,8 +344,6 @@ namespace Kiota.Builder
                     return filterUnmappedTypeDefitions(new CodeTypeBase[] {property.Type}).Union(childElementsUnmappedTypes);
                 case CodeIndexer indexer:
                     return filterUnmappedTypeDefitions(new CodeTypeBase[] {indexer.ReturnType}).Union(childElementsUnmappedTypes);
-                case CodeParameter parameter:
-                    return filterUnmappedTypeDefitions(new CodeTypeBase[] {parameter.Type}).Union(childElementsUnmappedTypes);
                 default:
                     return childElementsUnmappedTypes;
             }
