@@ -355,7 +355,7 @@ namespace Kiota.Builder
             var prop = new CodeIndexer(codeClass)
             {
                 Name = childIdentifier,
-                Description = $"Gets an item from the {currentNode.GetNodeNamespaceFromPath().Substring(1)} collection",
+                Description = $"Gets an item from the {currentNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName)} collection",
             };
             prop.IndexType = new CodeType(prop) { Name = "string", IsExternal = true, };
             prop.ReturnType = new CodeType(prop)
