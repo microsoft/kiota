@@ -197,7 +197,6 @@ namespace Kiota.Builder {
                 method.Parameters.Add(parameter);
                 parentClass.AddMethod(method);
             }
-            CrawlTree(currentElement, c => AddIndexerMethod(c, targetClass, indexerClass, pathSegment, methodNameSuffix, description));
         }
         internal void AddInnerClasses(CodeElement current) {
             if(current is CodeClass currentClass) {
