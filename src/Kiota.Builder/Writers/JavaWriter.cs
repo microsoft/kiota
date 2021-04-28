@@ -89,7 +89,7 @@ namespace Kiota.Builder
                 WriteLine(docCommentStart);
                 if(isDescriptionPresent)
                     WriteLine($"{docCommentPrefix}{RemoveInvalidDescriptionCharacters(code.Description)}");
-                foreach(var paramWithDescription in parametersWithDescription)
+                foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
                     WriteLine($"{docCommentPrefix}@param {paramWithDescription.Name} {RemoveInvalidDescriptionCharacters(paramWithDescription.Description)}");
                 
                 if(code.IsAsync)
@@ -130,7 +130,7 @@ namespace Kiota.Builder
             var requestBodyParam = code.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = code.Parameters.OfKind(CodeParameterKind.QueryParameter);
             var headersParam = code.Parameters.OfKind(CodeParameterKind.Headers);
-            foreach(var parameter in code.Parameters.Where(x => !x.Optional)) {
+            foreach(var parameter in code.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
                 WriteLine($"Objects.requireNonNull({parameter.Name});");
             }
             switch(code.MethodKind) {
@@ -142,7 +142,8 @@ namespace Kiota.Builder
                                                     .InnerChildElements
                                                     .Values
                                                     .OfType<CodeProperty>()
-                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
+                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)
+                                                    .OrderBy(x => x.Name)) {
                         WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterLowerCase()});");
                     }
                     if(additionalDataProperty != null)

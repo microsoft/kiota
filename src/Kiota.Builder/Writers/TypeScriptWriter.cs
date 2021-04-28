@@ -232,7 +232,7 @@ namespace Kiota.Builder
                 WriteLine(docCommentStart);
                 if(isDescriptionPresent)
                     WriteLine($"{docCommentPrefix}{RemoveInvalidDescriptionCharacters(code.Description)}");
-                foreach(var paramWithDescription in parametersWithDescription)
+                foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
                     WriteLine($"{docCommentPrefix}@param {paramWithDescription.Name} {RemoveInvalidDescriptionCharacters(paramWithDescription.Description)}");
                 
                 if(code.IsAsync)
@@ -282,7 +282,8 @@ namespace Kiota.Builder
                                                     .InnerChildElements
                                                     .Values
                                                     .OfType<CodeProperty>()
-                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
+                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)
+                                                    .OrderBy(x => x.Name)) {
                         WriteLine($"[\"{otherProp.Name.ToFirstCharacterLowerCase()}\", (o, n) => {{ o.{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type)}; }}],");
                     }
                     DecreaseIndent();
@@ -296,7 +297,8 @@ namespace Kiota.Builder
                                                     .InnerChildElements
                                                     .Values
                                                     .OfType<CodeProperty>()
-                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
+                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)
+                                                    .OrderBy(x => x.Name)) {
                         WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.Name.ToFirstCharacterLowerCase()}\", this.{otherProp.Name.ToFirstCharacterLowerCase()});");
                     }
                     if(additionalDataProperty != null)

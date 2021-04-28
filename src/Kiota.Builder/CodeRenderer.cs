@@ -40,11 +40,12 @@ namespace Kiota.Builder
                     await RenderCodeNamespaceToFilePerClassAsync(writer, codeNamespace);
             }
         }
-
+        private static readonly CodeElementOrderComparer rendererElementComparer = new CodeElementOrderComparer();
         private static void RenderCode(LanguageWriter writer, CodeElement element)
         {
             writer.Write(element);
-            foreach (var childElement in element.GetChildElements())
+            foreach (var childElement in element.GetChildElements()
+                                                .OrderBy(x => x, rendererElementComparer))
             {
                 RenderCode(writer, childElement);
             }

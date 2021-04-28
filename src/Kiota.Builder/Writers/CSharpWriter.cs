@@ -83,7 +83,8 @@ namespace Kiota.Builder
                                                     .InnerChildElements
                                                     .Values
                                                     .OfType<CodeProperty>()
-                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
+                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)
+                                                    .OrderBy(x => x.Name)) {
                         WriteLine("{");
                         IncreaseIndent();
                         WriteLine($"\"{otherProp.Name.ToFirstCharacterLowerCase()}\", (o,n) => {{ o.{otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type)}(); }}");
@@ -178,7 +179,7 @@ namespace Kiota.Builder
                 WriteLine($"{docCommentPrefix}<summary>");
                 if(isDescriptionPresent)
                     WriteLine($"{docCommentPrefix}{code.Description}");
-                foreach(var paramWithDescription in parametersWithDescription)
+                foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
                     WriteLine($"{docCommentPrefix}<param name=\"{paramWithDescription.Name}\">{paramWithDescription.Description}</param>");
                 WriteLine($"{docCommentPrefix}</summary>");
             }
@@ -215,7 +216,8 @@ namespace Kiota.Builder
                                                     .InnerChildElements
                                                     .Values
                                                     .OfType<CodeProperty>()
-                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
+                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)
+                                                    .OrderBy(x => x.Name)) {
                         WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
                     }
                     if(additionalDataProperty != null)
