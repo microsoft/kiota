@@ -19,7 +19,7 @@ namespace Kiota.Builder {
         }
         private static readonly int nameWeight = 10;
         private static readonly int typeWeight = 100;
-        private int GetTypeFactor(CodeElement element) {
+        private static int GetTypeFactor(CodeElement element) {
             switch(element) {
                 case CodeUsing:
                     return 1;
@@ -40,7 +40,7 @@ namespace Kiota.Builder {
             }
         }
         private static readonly int parametersWeight = 1;
-        private int GetParametersFactor(CodeElement element) {
+        private static int GetParametersFactor(CodeElement element) {
             if(element is CodeMethod method && (method.Parameters?.Any() ?? false))
                 return method.Parameters.Count;
             return 0;

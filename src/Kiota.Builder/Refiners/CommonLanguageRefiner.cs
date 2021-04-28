@@ -7,7 +7,7 @@ namespace Kiota.Builder {
     public abstract class CommonLanguageRefiner : ILanguageRefiner
     {
         protected readonly CodeNamespace rootNamespace;
-        public CommonLanguageRefiner(CodeNamespace root)
+        protected CommonLanguageRefiner(CodeNamespace root)
         {
             rootNamespace = root ?? throw new ArgumentNullException(nameof(root));
         }
@@ -86,7 +86,7 @@ namespace Kiota.Builder {
         // temporary patch of type to it resolves as the builder sets types we didn't generate to entity
         protected void FixReferencesToEntityType(CodeElement currentElement, CodeClass entityClass = null){
             if(entityClass == null)
-                entityClass = rootNamespace.FindChildByName<CodeClass>("entity") as CodeClass;
+                entityClass = rootNamespace.FindChildByName<CodeClass>("entity");
 
             if(currentElement is CodeMethod currentMethod 
                 && currentMethod.ReturnType is CodeType currentReturnType
@@ -165,7 +165,7 @@ namespace Kiota.Builder {
             }
             CrawlTree(currentElement, c => ReplaceIndexersByMethodsWithParameter(c, methodNameSuffix));
         }
-        protected void AddIndexerMethod(CodeElement currentElement, CodeClass targetClass, CodeClass indexerClass, string pathSegment, string methodNameSuffix, string description) {
+        protected static void AddIndexerMethod(CodeElement currentElement, CodeClass targetClass, CodeClass indexerClass, string pathSegment, string methodNameSuffix, string description) {
             if(currentElement is CodeProperty currentProperty && currentProperty.Type.AllTypes.Any(x => x.TypeDefinition == targetClass)) {
                 var parentClass = currentElement.Parent as CodeClass;
                 var method = new CodeMethod(parentClass) {

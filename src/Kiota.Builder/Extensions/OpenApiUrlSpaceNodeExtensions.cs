@@ -54,7 +54,7 @@ namespace Kiota.Builder.Extensions {
         internal static string GetClassName(this OpenApiUrlSpaceNode currentNode, string suffix = default, string prefix = default, OpenApiOperation operation = default) {
             var rawClassName = operation?.GetResponseSchema()?.Reference?.GetClassName() ?? 
                                 currentNode?.GetIdentifier()?.ReplaceValueIdentifier();
-            if(currentNode?.DoesNodeBelongToItemSubnamespace() ?? false && idClassNameCleanup.IsMatch(rawClassName))
+            if((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup.IsMatch(rawClassName))
                 rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
             return prefix + rawClassName + suffix;
         }

@@ -59,7 +59,7 @@ namespace Kiota.Builder
             await CreateLanguageSourceFilesAsync(config.Language, generatedCode);
             StopLogAndReset(sw, "step 6 - writing files - took");
         }
-        private void StopLogAndReset(Stopwatch sw, string prefix) {
+        private static void StopLogAndReset(Stopwatch sw, string prefix) {
             sw.Stop();
             Debug.WriteLine($"{prefix} {sw.Elapsed}");
             sw.Reset();
@@ -144,7 +144,6 @@ namespace Kiota.Builder
             MapTypeDefinitions(codeNamespace);
             StopLogAndReset(stopwatch, $"{nameof(MapTypeDefinitions)}");
 
-            // stopwatch.Stop();
             logger.LogInformation("{timestamp}ms: Created source model with {count} classes", stopwatch.ElapsedMilliseconds, codeNamespace.GetChildElements(true).Count());
 
             return rootNamespace;
@@ -542,12 +541,8 @@ namespace Kiota.Builder
                 throw new InvalidOperationException($"could not find a shortest namespace name for reference id {referenceId}");
         }
         private CodeType CreateModelClassAndType(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement, CodeNamespace codeNamespace, string classNameSuffix = "") {
-            var namespaceName = currentNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName);
-            var ns = rootNamespace.FindNamespaceByName(namespaceName);
-            if(ns == null)
-                ns = rootNamespace.AddNamespace(namespaceName);
             var className = currentNode.GetClassName(operation: operation, suffix: classNameSuffix);
-            var codeDeclaration = AddModelDeclarationIfDoesntExit(rootNode, currentNode, schema, operation, className, ns, parentElement);
+            var codeDeclaration = AddModelDeclarationIfDoesntExit(rootNode, currentNode, schema, operation, className, codeNamespace, parentElement);
             return new CodeType(parentElement) {
                 TypeDefinition = codeDeclaration,
                 Name = className,
