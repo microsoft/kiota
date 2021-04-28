@@ -26,18 +26,16 @@ namespace Kiota.Builder
             }
         }
 
-        public void AddClass(params CodeClass[] codeClasses)
+        public IEnumerable<CodeClass> AddClass(params CodeClass[] codeClasses)
         {
             if(!codeClasses.Any() || codeClasses.Any( x=> x == null))
                 throw new ArgumentOutOfRangeException(nameof(codeClasses));
-            AddMissingParent(codeClasses);
-            AddRange(codeClasses);
+            return AddRange(codeClasses);
         }
-        private void AddNamespace(params CodeNamespace[] codeNamespaces) {
+        private IEnumerable<CodeNamespace> AddNamespace(params CodeNamespace[] codeNamespaces) {
             if(!codeNamespaces.Any() || codeNamespaces.Any(x => x == null))
                 throw new ArgumentOutOfRangeException(nameof(codeNamespaces));
-            AddMissingParent(codeNamespaces);
-            AddRange(codeNamespaces);
+            return AddRange(codeNamespaces);
         }
         private static readonly char namespaceNameSeparator = '.';
         private CodeNamespace GetRootNamespace() {
@@ -59,7 +57,7 @@ namespace Kiota.Builder
                 throw new ArgumentNullException(nameof(namespaceName));
             var namespaceNameSegements = namespaceName.Split(namespaceNameSeparator, StringSplitOptions.RemoveEmptyEntries);
             var lastPresentSegmentIndex = default(int);
-            CodeNamespace lastPresentSegmentNamespace = Parent == null ? this : GetRootNamespace();
+            var lastPresentSegmentNamespace = GetRootNamespace();
             while(lastPresentSegmentIndex < namespaceNameSegements.Length) {
                 var segmentNameSpace = lastPresentSegmentNamespace.FindNamespaceByName(namespaceNameSegements.Take(lastPresentSegmentIndex + 1).Aggregate((x, y) => $"{x}.{y}"));
                 if(segmentNameSpace == null)
@@ -69,14 +67,12 @@ namespace Kiota.Builder
                     lastPresentSegmentIndex++;
                 }
             }
-            if(lastPresentSegmentNamespace != null)
-                foreach(var childSegment in namespaceNameSegements.Skip(lastPresentSegmentIndex)) {
-                    var newNS = new CodeNamespace(lastPresentSegmentNamespace) {
-                        Name = $"{lastPresentSegmentNamespace?.Name}{(string.IsNullOrEmpty(lastPresentSegmentNamespace?.Name) ? string.Empty : ".")}{childSegment}",
-                    };
-                    lastPresentSegmentNamespace.AddNamespace(newNS);
-                    lastPresentSegmentNamespace = newNS;
-                }
+            foreach(var childSegment in namespaceNameSegements.Skip(lastPresentSegmentIndex))
+                lastPresentSegmentNamespace = lastPresentSegmentNamespace
+                                            .AddNamespace(
+                                                new CodeNamespace(lastPresentSegmentNamespace) {
+                                                    Name = $"{lastPresentSegmentNamespace?.Name}{(string.IsNullOrEmpty(lastPresentSegmentNamespace?.Name) ? string.Empty : ".")}{childSegment}",
+                                            }).First();
             return lastPresentSegmentNamespace;
         }
         public bool IsItemNamespace { get; private set; }
@@ -91,12 +87,11 @@ namespace Kiota.Builder
                 return childNamespace;
             } 
         }
-        public void AddEnum(params CodeEnum[] enumDeclarations)
+        public IEnumerable<CodeEnum> AddEnum(params CodeEnum[] enumDeclarations)
         {
             if(!enumDeclarations.Any() || enumDeclarations.Any( x=> x == null))
                 throw new ArgumentOutOfRangeException(nameof(enumDeclarations));
-            AddMissingParent(enumDeclarations);
-            AddRange(enumDeclarations);
+            return AddRange(enumDeclarations);
         }
     }
 }

@@ -30,7 +30,7 @@ namespace Kiota.Builder {
         }
         private void AddEnumSetImport(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model &&
-                currentClass.InnerChildElements.Values.OfType<CodeProperty>().Any(x => x.Type is CodeType xType && xType.TypeDefinition is CodeEnum xEnumType && xEnumType.Flags)) {
+                currentClass.GetChildElements(true).OfType<CodeProperty>().Any(x => x.Type is CodeType xType && xType.TypeDefinition is CodeEnum xEnumType && xEnumType.Flags)) {
                     var nUsing = new CodeUsing(currentClass) {
                         Name = "EnumSet",
                     };
@@ -51,17 +51,18 @@ namespace Kiota.Builder {
             CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
         }
         private void AddListImport(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass &&
-                (currentClass.InnerChildElements.Values.OfType<CodeProperty>().Any(x => x.Type.CollectionKind == CodeType.CodeTypeCollectionKind.Complex) ||
-                currentClass.InnerChildElements.Values.OfType<CodeMethod>().Any(x => x.ReturnType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex) ||
-                currentClass.InnerChildElements.Values.OfType<CodeMethod>().Any(x => x.Parameters.Any(y => y.Type.CollectionKind == CodeType.CodeTypeCollectionKind.Complex))
-                )) {
-                    var nUsing = new CodeUsing(currentClass) {
-                        Name = "List"
-                    };
-                    nUsing.Declaration = new CodeType(nUsing) { Name = "java.util", IsExternal = true };
-                    currentClass.AddUsing(nUsing);
+            if(currentElement is CodeClass currentClass) {
+                var childElements = currentClass.GetChildElements(true);
+                if(childElements.OfType<CodeProperty>().Any(x => x.Type.CollectionKind == CodeType.CodeTypeCollectionKind.Complex) ||
+                    childElements.OfType<CodeMethod>().Any(x => x.ReturnType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex) ||
+                    childElements.OfType<CodeMethod>().Any(x => x.Parameters.Any(y => y.Type.CollectionKind == CodeType.CodeTypeCollectionKind.Complex))) {
+                        var nUsing = new CodeUsing(currentClass) {
+                            Name = "List"
+                        };
+                        nUsing.Declaration = new CodeType(nUsing) { Name = "java.util", IsExternal = true };
+                        currentClass.AddUsing(nUsing);
                 }
+            }
             CrawlTree(currentElement, AddListImport);
         }
         private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
@@ -145,7 +146,7 @@ namespace Kiota.Builder {
         }
         private void AndInsertOverrideMethodForRequestExecutorsAndBuilders(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass) {
-                var codeMethods = currentClass.InnerChildElements.Values.OfType<CodeMethod>();
+                var codeMethods = currentClass.GetChildElements(true).OfType<CodeMethod>();
                 if(codeMethods.Any()) {
                     var originalExecutorMethods = codeMethods.Where(x => x.MethodKind == CodeMethodKind.RequestExecutor);
                     var executorMethodsToAdd = originalExecutorMethods

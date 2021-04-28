@@ -13,7 +13,7 @@ namespace Kiota.Builder
     public class CodeBlock : CodeElement
     {
         public BlockDeclaration StartBlock {get; set;}
-        public IDictionary<string, CodeElement> InnerChildElements {get; private set;} = new ConcurrentDictionary<string, CodeElement>(StringComparer.OrdinalIgnoreCase);
+        protected IDictionary<string, CodeElement> InnerChildElements {get; private set;} = new ConcurrentDictionary<string, CodeElement>(StringComparer.OrdinalIgnoreCase);
         public BlockEnd EndBlock {get; set;}
         public CodeBlock(CodeElement parent):base(parent)
         {
@@ -21,9 +21,19 @@ namespace Kiota.Builder
             EndBlock = new BlockEnd(this);
         }
 
-        public override IEnumerable<CodeElement> GetChildElements()
+        public override IEnumerable<CodeElement> GetChildElements(bool innerOnly = false)
         {
-            return new CodeElement[] { StartBlock, EndBlock }.Union(InnerChildElements.Values);
+            if(innerOnly)
+                return InnerChildElements.Values;
+            else
+                return new CodeElement[] { StartBlock, EndBlock }.Union(InnerChildElements.Values);
+        }
+        public void RemoveChildElement<T>(params T[] elements) where T: CodeElement {
+            if(elements == null) return;
+
+            foreach(var element in elements) {
+                InnerChildElements.Remove(element.Name);
+            }
         }
         public void AddUsing(params CodeUsing[] codeUsings)
         {
@@ -32,16 +42,25 @@ namespace Kiota.Builder
             AddMissingParent(codeUsings);
             StartBlock.Usings.AddRange(codeUsings);
         }
-        protected void AddRange(params CodeElement[] elements) {
-            if(elements == null) return;
-            
+        protected IEnumerable<T> AddRange<T>(params T[] elements) where T : CodeElement {
+            if(elements == null) return Enumerable.Empty<T>();
+            AddMissingParent(elements);
             var innerChildElements = InnerChildElements as ConcurrentDictionary<string, CodeElement>; // to avoid calling the non thread-safe extension method
+            var result = new T[elements.Length]; // not using yield return as they'll only get called if the result is assigned
 
-            foreach(var element in elements)
-                if(!innerChildElements.TryAdd(element.Name, element) && element is CodeMethod currentMethod) { // allows for methods overload
-                    var methodOverloadNameSuffix = currentMethod.Parameters.Any() ? currentMethod.Parameters.Select(x => x.Name).OrderBy(x => x).Aggregate((x, y) => x + y) : "1";
-                    innerChildElements.TryAdd($"{currentMethod.Name}-{methodOverloadNameSuffix}", currentMethod);
-                }
+            for(var i = 0; i < elements.Length; i++) {
+                var element = elements[i];
+                var addedValue = innerChildElements.GetOrAdd(element.Name, element);
+                if(addedValue != element)
+                    if(!(addedValue is T))
+                        throw new InvalidOperationException($"the current dom node already contains a child with name {addedValue.Name} and of type {addedValue.GetType().Name}");
+                    else if(element is CodeMethod currentMethod) { // allows for methods overload
+                        var methodOverloadNameSuffix = currentMethod.Parameters.Any() ? currentMethod.Parameters.Select(x => x.Name).OrderBy(x => x).Aggregate((x, y) => x + y) : "1";
+                        addedValue = innerChildElements.GetOrAdd($"{element.Name}-{methodOverloadNameSuffix}", currentMethod);
+                    }
+                result[i] = (T)addedValue;
+            }
+            return result;
         }
         public T FindChildByName<T>(string childName, bool findInChildElements = true) where T: ICodeElement {
             if(string.IsNullOrEmpty(childName))

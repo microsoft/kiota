@@ -145,7 +145,7 @@ namespace Kiota.Builder
             StopLogAndReset(stopwatch, $"{nameof(MapTypeDefinitions)}");
 
             // stopwatch.Stop();
-            logger.LogInformation("{timestamp}ms: Created source model with {count} classes", stopwatch.ElapsedMilliseconds, codeNamespace.InnerChildElements.Count);
+            logger.LogInformation("{timestamp}ms: Created source model with {count} classes", stopwatch.ElapsedMilliseconds, codeNamespace.GetChildElements(true).Count());
 
             return rootNamespace;
         }
@@ -223,6 +223,8 @@ namespace Kiota.Builder
                     Description = currentNode.PathItem?.Description ?? currentNode.PathItem?.Summary ?? $"Builds and executes requests for operations under {currentNode.Path}",
                 };
             }
+            var targetNS = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNamespace.EnsureItemNamespace() : currentNamespace;
+            codeClass = targetNS.AddClass(codeClass).First();
 
             logger.LogDebug("Creating class {class}", codeClass.Name);
 
@@ -233,7 +235,7 @@ namespace Kiota.Builder
                 var propType = propIdentifier + requestBuilderSuffix;
                 if (child.Value.IsParameter())
                 {
-                    var prop = CreateIndexer(propIdentifier, propType, codeClass, child.Value);
+                    var prop = CreateIndexer($"{propIdentifier}-indexer", propType, codeClass, child.Value);
                     codeClass.SetIndexer(prop);
                 }
                 else if (child.Value.IsFunction())
@@ -255,10 +257,7 @@ namespace Kiota.Builder
             }
             CreatePathManagement(codeClass, currentNode, isRootClientClass);
            
-
-            (currentNode.DoesNodeBelongToItemSubnamespace() ? currentNamespace.EnsureItemNamespace() : currentNamespace).AddClass(codeClass);
-
-            Parallel.ForEach(currentNode.Children.Values, childNode => 
+            Parallel.ForEach(currentNode.Children.Values, childNode =>
             {
                 var targetNamespaceName = childNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName);
                 var targetNamespace = rootNamespace.FindNamespaceByName(targetNamespaceName) ?? rootNamespace.AddNamespace(targetNamespaceName);
@@ -318,11 +317,34 @@ namespace Kiota.Builder
         private void MapTypeDefinitions(CodeElement codeElement) {
             var unmappedTypes = GetUnmappedTypeDefinitions(codeElement).Distinct();
             
-            unmappedTypes.Where(x => string.IsNullOrEmpty(x.Name)).ToList().ForEach(x => {
+            var unmappedTypesWithNoName = unmappedTypes.Where(x => string.IsNullOrEmpty(x.Name)).ToList();
+            
+            unmappedTypesWithNoName.ForEach(x => {
                 logger.LogWarning($"Type with empty name and parent {x.Parent.Name}");
             });
 
-            Parallel.ForEach(unmappedTypes.Where(x => !string.IsNullOrEmpty(x.Name)).GroupBy(x => x.Name), x => {
+            var unmappedTypesWithName = unmappedTypes.Except(unmappedTypesWithNoName);
+
+            var unmappedRequestBuilderTypes = unmappedTypesWithName
+                                    .Where(x => 
+                                    x.Parent is CodeProperty property && property.PropertyKind == CodePropertyKind.RequestBuilder || x.Parent is CodeIndexer)
+                                    .ToList();
+            
+            Parallel.ForEach(unmappedRequestBuilderTypes, x => {
+                var parentNS = x.Parent.Parent.Parent as CodeNamespace;
+                x.TypeDefinition = parentNS.FindChildByName<CodeClass>(x.Name); 
+                // searching down first because most request builder properties on a request builder are just sub paths on the API
+                if(x.TypeDefinition == null) {
+                    parentNS = parentNS.Parent as CodeNamespace;
+                    x.TypeDefinition = parentNS
+                        .FindNamespaceByName($"{parentNS.Name}.{x.Name.Substring(0, x.Name.Length - requestBuilderSuffix.Length).ToFirstCharacterLowerCase()}")
+                        .FindChildByName<CodeClass>(x.Name);
+                    // in case of the .item namespace, going to the parent and then down to the target by convention
+                    // this avoid getting the wrong request builder in case we have multiple request builders with the same name in the parent branch
+                }
+            });
+
+            Parallel.ForEach(unmappedTypesWithName.Except(unmappedRequestBuilderTypes).GroupBy(x => x.Name), x => {
                 var definition = rootNamespace.FindChildByName<ITypeDefinition>(x.First().Name) as CodeElement;
                 if(definition != null)
                     foreach(var type in x) {
@@ -337,7 +359,7 @@ namespace Kiota.Builder
                         .SelectMany(x => x.Types))
                 .Where(x => !x.IsExternal && x.TypeDefinition == null);
         private IEnumerable<CodeType> GetUnmappedTypeDefinitions(CodeElement codeElement) {
-            var childElementsUnmappedTypes = codeElement.GetChildElements().SelectMany(x => GetUnmappedTypeDefinitions(x));
+            var childElementsUnmappedTypes = codeElement.GetChildElements(true).SelectMany(x => GetUnmappedTypeDefinitions(x));
             switch(codeElement) {
                 case CodeMethod method:
                     return filterUnmappedTypeDefitions(method.Parameters.Select(x => x.Type)).Union(childElementsUnmappedTypes);
@@ -602,24 +624,22 @@ namespace Kiota.Builder
                         Options = schema.Enum.OfType<OpenApiString>().Select(x => x.Value).Where(x => !"null".Equals(x)).ToList(),//TODO set the flag property
                         Description = currentNode.PathItem.Description ?? currentNode.PathItem.Summary,
                     };
-                    currentNamespace.AddEnum(newEnum);
-                    return newEnum;
+                    return currentNamespace.AddEnum(newEnum).First();
                 } else {
-                    var newClass = new CodeClass(currentNamespace) { 
-                        Name = declarationName,
-                        ClassKind = CodeClassKind.Model,
-                        Description = currentNode.PathItem.Description ?? currentNode.PathItem.Summary
-                    };
                     if(inheritsFrom == null && schema.AllOf.Count > 1) { //the last is always the current class, we want the one before the last as parent
                         var parentSchema = schema.AllOf.Except(new OpenApiSchema[] {schema.AllOf.Last()}).FirstOrDefault();
                         if(parentSchema != null)
                             inheritsFrom = AddModelDeclarationIfDoesntExit(rootNode, currentNode, parentSchema, operation, parentSchema.GetClassName(), currentNamespace, parentElement, null, true) as CodeClass;
                     }
+                    var newClass = currentNamespace.AddClass(new CodeClass(currentNamespace) {
+                        Name = declarationName,
+                        ClassKind = CodeClassKind.Model,
+                        Description = currentNode.PathItem.Description ?? currentNode.PathItem.Summary
+                    }).First();
                     if(inheritsFrom != null) {
                         var declaration = newClass.StartBlock as CodeClass.Declaration;
                         declaration.Inherits = new CodeType(declaration) { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
                     }
-                    currentNamespace.AddClass(newClass); //order is important to avoid stack overflow because of recursive add
                     CreatePropertiesForModelClass(rootNode, currentNode, schema, operation, currentNamespace, newClass, parentElement);
                     return newClass;
                 }

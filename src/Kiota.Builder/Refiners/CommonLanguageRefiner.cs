@@ -67,9 +67,9 @@ namespace Kiota.Builder {
         private const string pathSegmentPropertyName = "pathSegment";
         protected void ConvertDeserializerPropsToMethods(CodeElement currentElement, string prefix = null) {
             if(currentElement is CodeClass currentClass) {
-                var deserializerProp = currentClass.InnerChildElements.Values.OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.Deserializer);
+                var deserializerProp = currentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.Deserializer);
                 if(deserializerProp != null) {
-                    currentClass.InnerChildElements.Remove(deserializerProp.Name);
+                    currentClass.RemoveChildElement(deserializerProp);
                     currentClass.AddMethod(new CodeMethod(currentClass) {
                         Name = $"{prefix}{deserializerProp.Name}",
                         MethodKind = CodeMethodKind.DeserializerBackwardCompatibility,
@@ -136,13 +136,12 @@ namespace Kiota.Builder {
             if(currentElement is CodeClass currentClass && 
                 !string.IsNullOrEmpty(currentClass.Name) &&
                 currentClass.Parent is CodeNamespace parentNamespace) {
-                var childNamespaceWithClassName = parentNamespace.InnerChildElements
-                                                                .Values
+                var childNamespaceWithClassName = parentNamespace.GetChildElements(true)
                                                                 .OfType<CodeNamespace>()
                                                                 .FirstOrDefault(x => x.Name
                                                                                     .EndsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase));
                 if(childNamespaceWithClassName != null) {
-                    parentNamespace.InnerChildElements.Remove(currentClass.Name);
+                    parentNamespace.RemoveChildElement(currentClass);
                     childNamespaceWithClassName.AddClass(currentClass);
                 }
             }
@@ -151,7 +150,7 @@ namespace Kiota.Builder {
         protected void ReplaceIndexersByMethodsWithParameter(CodeElement currentElement, string methodNameSuffix = default) {
             if(currentElement is CodeIndexer currentIndexer) {
                 var currentParentClass = currentElement.Parent as CodeClass;
-                currentParentClass.InnerChildElements.Remove(currentElement.Name);
+                currentParentClass.RemoveChildElement(currentElement);
                 var pathSegment = currentParentClass
                                     .FindChildByName<CodeProperty>(pathSegmentPropertyName)
                                     ?.DefaultValue;
@@ -200,7 +199,7 @@ namespace Kiota.Builder {
         }
         internal void AddInnerClasses(CodeElement current) {
             if(current is CodeClass currentClass) {
-                foreach(var parameter in currentClass.InnerChildElements.Values.OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf && x.ParameterKind == CodeParameterKind.QueryParameter)) 
+                foreach(var parameter in currentClass.GetChildElements(true).OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf && x.ParameterKind == CodeParameterKind.QueryParameter)) 
                     foreach(var returnType in parameter.Type.AllTypes) {
                         var innerClass = returnType.TypeDefinition as CodeClass;
                         if(innerClass == null)
@@ -220,14 +219,12 @@ namespace Kiota.Builder {
             if(current is CodeClass currentClass) {
                 var currentClassNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
                 var propertiesTypes = currentClass
-                                    .InnerChildElements
-                                    .Values
+                                    .GetChildElements(true)
                                     .OfType<CodeProperty>()
                                     .Select(x => x.Type)
                                     .Distinct();
                 var methods = currentClass
-                                    .InnerChildElements
-                                    .Values
+                                    .GetChildElements(true)
                                     .OfType<CodeMethod>();
                 var methodsReturnTypes = methods
                                     .Select(x => x.ReturnType)
@@ -238,8 +235,7 @@ namespace Kiota.Builder {
                                     .Select(x => x.Type)
                                     .Distinct();
                 var indexerTypes = currentClass
-                                    .InnerChildElements
-                                    .Values
+                                    .GetChildElements(true)
                                     .OfType<CodeIndexer>()
                                     .Select(x => x.ReturnType)
                                     .Distinct();

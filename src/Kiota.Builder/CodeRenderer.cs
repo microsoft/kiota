@@ -30,7 +30,7 @@ namespace Kiota.Builder
 
         public static async Task RenderCodeNamespaceToFilePerClassAsync(LanguageWriter writer, CodeNamespace root)
         {
-            foreach (var codeElement in root.GetChildElements())
+            foreach (var codeElement in root.GetChildElements(true))
             {
                 if (codeElement is CodeClass codeClass)
                     await RenderCodeNamespaceToSingleFileAsync(writer, codeClass, writer.PathSegmenter.GetPath(root, codeClass));

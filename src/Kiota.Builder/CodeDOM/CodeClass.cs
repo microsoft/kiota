@@ -43,12 +43,11 @@ namespace Kiota.Builder
             AddRange(indexer);
         }
 
-        public void AddProperty(params CodeProperty[] properties)
+        public IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties)
         {
             if(!properties.Any() || properties.Any(x => x == null))
                 throw new ArgumentNullException(nameof(properties));
-            AddMissingParent(properties);
-            AddRange(properties);
+            return AddRange(properties);
         }
 
         public bool ContainsMember(string name)
@@ -56,20 +55,18 @@ namespace Kiota.Builder
             return this.InnerChildElements.ContainsKey(name);
         }
 
-        public void AddMethod(params CodeMethod[] methods)
+        public IEnumerable<CodeMethod> AddMethod(params CodeMethod[] methods)
         {
             if(!methods.Any() || methods.Any(x => x == null))
                 throw new ArgumentOutOfRangeException(nameof(methods));
-            AddMissingParent(methods);
-            AddRange(methods);
+            return AddRange(methods);
         }
 
-        public void AddInnerClass(params CodeClass[] codeClasses)
+        public IEnumerable<CodeClass> AddInnerClass(params CodeClass[] codeClasses)
         {
             if(!codeClasses.Any() || codeClasses.Any(x => x == null))
                 throw new ArgumentOutOfRangeException(nameof(codeClasses));
-            AddMissingParent(codeClasses);
-            AddRange(codeClasses);
+            return AddRange(codeClasses);
         }
         public CodeClass GetParentClass() {
             if(StartBlock is Declaration declaration)

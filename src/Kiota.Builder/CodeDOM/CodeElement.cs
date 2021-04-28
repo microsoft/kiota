@@ -17,7 +17,7 @@ namespace Kiota.Builder
             Parent = parent;
         }
         public CodeElement Parent { get; set; }
-        public virtual IEnumerable<CodeElement> GetChildElements() => Enumerable.Empty<CodeElement>();
+        public virtual IEnumerable<CodeElement> GetChildElements(bool innerOnly = false) => Enumerable.Empty<CodeElement>();
 
         public virtual string Name
         {
