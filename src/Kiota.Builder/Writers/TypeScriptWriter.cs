@@ -32,6 +32,7 @@ namespace Kiota.Builder
                     var childElements = (currentType?.TypeDefinition as CodeClass)
                                                 ?.GetChildElements(true)
                                                 ?.OfType<CodeProperty>()
+                                                ?.OrderBy(x => x.Name)
                                                 ?.Select(x => $"{x.Name}?: {GetTypeString(x.Type)}");
                     var innerDeclaration = childElements?.Any() ?? false ? 
                                                     NewLine +
