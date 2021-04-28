@@ -10,6 +10,7 @@ using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
 using Kiota.Builder.Extensions;
 using Microsoft.OpenApi.Any;
+using System.ComponentModel;
 
 namespace Kiota.Builder
 {
@@ -186,7 +187,7 @@ namespace Kiota.Builder
                     languageWriter = new TypeScriptWriter(this.config.OutputPath, this.config.ClientNamespaceName);
                     break;
                 default:
-                    throw new ArgumentException($"{language} language currently not supported.");
+                    throw new InvalidEnumArgumentException($"{language} language currently not supported.");
             }
 
             var stopwatch = new Stopwatch();
