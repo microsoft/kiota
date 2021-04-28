@@ -13,7 +13,7 @@ namespace Kiota.Builder
     public class CodeBlock : CodeElement
     {
         public BlockDeclaration StartBlock {get; set;}
-        public IDictionary<string, CodeElement> InnerChildElements {get; set;} = new ConcurrentDictionary<string, CodeElement>(StringComparer.OrdinalIgnoreCase);
+        public IDictionary<string, CodeElement> InnerChildElements {get; private set;} = new ConcurrentDictionary<string, CodeElement>(StringComparer.OrdinalIgnoreCase);
         public BlockEnd EndBlock {get; set;}
         public CodeBlock(CodeElement parent):base(parent)
         {
@@ -35,12 +35,12 @@ namespace Kiota.Builder
         protected void AddRange(params CodeElement[] elements) {
             if(elements == null) return;
             
+            var innerChildElements = InnerChildElements as ConcurrentDictionary<string, CodeElement>; // to avoid calling the non thread-safe extension method
+
             foreach(var element in elements)
-                try {
-                    InnerChildElements.Add(element.Name, element); //try add is not behaving like documented
-                } catch (ArgumentException) when (element is CodeMethod currentMethod) { // allows for methods overload
+                if(!innerChildElements.TryAdd(element.Name, element) && element is CodeMethod currentMethod) { // allows for methods overload
                     var methodOverloadNameSuffix = currentMethod.Parameters.Any() ? currentMethod.Parameters.Select(x => x.Name).OrderBy(x => x).Aggregate((x, y) => x + y) : "1";
-                    InnerChildElements.Add($"{currentMethod.Name}-{methodOverloadNameSuffix}", currentMethod);
+                    innerChildElements.TryAdd($"{currentMethod.Name}-{methodOverloadNameSuffix}", currentMethod);
                 }
         }
         public T FindChildByName<T>(string childName, bool findInChildElements = true) where T: ICodeElement {
