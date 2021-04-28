@@ -159,6 +159,7 @@ namespace Kiota.Builder
                     WriteLine($"final Map<String, BiConsumer<T, ParseNode>> fields = new HashMap<>({(inherits ? "super." + code.Name+ "()" : fieldToSerialize.Count())});");
                     if(fieldToSerialize.Any())
                         fieldToSerialize
+                                .OrderBy(x => x.Name)
                                 .Select(x => 
                                     $"fields.put(\"{x.Name.ToFirstCharacterLowerCase()}\", (o, n) -> {{ (({parentClass.Name.ToFirstCharacterUpperCase()})o).{x.Name.ToFirstCharacterLowerCase()} = {GetDeserializationMethodName(x.Type)}; }});")
                                 .ToList()
