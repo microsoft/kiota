@@ -98,10 +98,10 @@ namespace Kiota.Builder {
                 else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase)) {
                     currentProperty.Type.Name = $"OffsetDateTime";
                     var nUsing = new CodeUsing(currentProperty.Parent) {
-                        Name = "java.time",
+                        Name = "OffsetDateTime",
                     };
                     nUsing.Declaration = new CodeType(nUsing) {
-                        Name = "OffsetDateTime",
+                        Name = "java.time",
                         IsExternal = true,
                     };
                     (currentProperty.Parent as CodeClass).AddUsing(nUsing);
