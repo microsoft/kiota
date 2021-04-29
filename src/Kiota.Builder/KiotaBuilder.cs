@@ -309,7 +309,7 @@ namespace Kiota.Builder
             };
             currentClass.AddProperty(serializerFactoryProperty);
         }
-
+        private static Func<CodeClass, int> shortestNamespaceOrder = (x) => x.Parent.Name.Split('.').Length;
         /// <summary>
         /// Remaps definitions to custom types so they can be used later in generation or in refiners
         /// </summary>
@@ -331,15 +331,20 @@ namespace Kiota.Builder
             
             Parallel.ForEach(unmappedRequestBuilderTypes, x => {
                 var parentNS = x.Parent.Parent.Parent as CodeNamespace;
-                x.TypeDefinition = parentNS.FindChildByName<CodeClass>(x.Name); 
+                x.TypeDefinition = parentNS.FindChildrenByName<CodeClass>(x.Name)
+                                            .OrderBy(shortestNamespaceOrder)
+                                            .FirstOrDefault();
                 // searching down first because most request builder properties on a request builder are just sub paths on the API
                 if(x.TypeDefinition == null) {
                     parentNS = parentNS.Parent as CodeNamespace;
                     x.TypeDefinition = parentNS
                         .FindNamespaceByName($"{parentNS.Name}.{x.Name.Substring(0, x.Name.Length - requestBuilderSuffix.Length).ToFirstCharacterLowerCase()}")
-                        .FindChildByName<CodeClass>(x.Name);
+                        .FindChildrenByName<CodeClass>(x.Name)
+                        .OrderBy(shortestNamespaceOrder)
+                        .FirstOrDefault();
                     // in case of the .item namespace, going to the parent and then down to the target by convention
                     // this avoid getting the wrong request builder in case we have multiple request builders with the same name in the parent branch
+                    // in both cases we always take the uppermost item (smaller numbers of segments in the namespace name)
                 }
             });
 

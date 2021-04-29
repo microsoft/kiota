@@ -77,6 +77,21 @@ namespace Kiota.Builder
 
             return returnedValue;
         }
+        public IEnumerable<T> FindChildrenByName<T>(string childName) where T: ICodeElement {
+            if(string.IsNullOrEmpty(childName))
+                throw new ArgumentNullException(nameof(childName));
+
+            if(InnerChildElements.Any()) {
+                var result = new List<T>();
+                var immediateResult = this.FindChildByName<T>(childName, false);
+                if(immediateResult != null)
+                    result.Add(immediateResult);
+                foreach(var childElement in InnerChildElements.Values.OfType<CodeBlock>())
+                    result.AddRange(childElement.FindChildrenByName<T>(childName));
+                return result;
+            } else
+                return Enumerable.Empty<T>();
+        }
         public T FindChildByName<T>(string childName, bool findInChildElements = true) where T: ICodeElement {
             if(string.IsNullOrEmpty(childName))
                 throw new ArgumentNullException(nameof(childName));
