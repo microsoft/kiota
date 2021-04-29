@@ -66,7 +66,7 @@ namespace Kiota.Builder
                         returnedValue = innerChildElements.GetOrAdd($"{element.Name}-{methodOverloadNameSuffix}", element);
                         added = true;
                     }
-                if(!added)
+                if(!added && returnedValue.GetType() != element.GetType())
                     throw new InvalidOperationException($"the current dom node already contains a child with name {returnedValue.Name} and of type {returnedValue.GetType().Name}");
                 result[i] = (T)returnedValue;
             }
