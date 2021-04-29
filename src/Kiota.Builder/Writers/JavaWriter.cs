@@ -143,7 +143,7 @@ namespace Kiota.Builder
                                                     .OfType<CodeProperty>()
                                                     .Where(x => x.PropertyKind == CodePropertyKind.Custom)
                                                     .OrderBy(x => x.Name)) {
-                        WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterLowerCase()});");
+                        WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterLowerCase()});");
                     }
                     if(additionalDataProperty != null)
                         WriteLine($"writer.writeAdditionalData(this.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
@@ -159,7 +159,7 @@ namespace Kiota.Builder
                         fieldToSerialize
                                 .OrderBy(x => x.Name)
                                 .Select(x => 
-                                    $"fields.put(\"{x.Name.ToFirstCharacterLowerCase()}\", (o, n) -> {{ (({parentClass.Name.ToFirstCharacterUpperCase()})o).{x.Name.ToFirstCharacterLowerCase()} = {GetDeserializationMethodName(x.Type)}; }});")
+                                    $"fields.put(\"{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}\", (o, n) -> {{ (({parentClass.Name.ToFirstCharacterUpperCase()})o).{x.Name.ToFirstCharacterLowerCase()} = {GetDeserializationMethodName(x.Type)}; }});")
                                 .ToList()
                                 .ForEach(x => WriteLine(x));
                     WriteLine("return fields;");
