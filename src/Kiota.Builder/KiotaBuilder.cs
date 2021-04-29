@@ -59,9 +59,9 @@ namespace Kiota.Builder
             await CreateLanguageSourceFilesAsync(config.Language, generatedCode);
             StopLogAndReset(sw, "step 6 - writing files - took");
         }
-        private static void StopLogAndReset(Stopwatch sw, string prefix) {
+        private void StopLogAndReset(Stopwatch sw, string prefix) {
             sw.Stop();
-            Debug.WriteLine($"{prefix} {sw.Elapsed}");
+            logger.LogDebug($"{prefix} {sw.Elapsed}");
             sw.Reset();
         }
 
@@ -82,7 +82,7 @@ namespace Kiota.Builder
                 input = new FileStream(inputPath, FileMode.Open);
             }
             stopwatch.Stop();
-            logger.LogInformation("{timestamp}ms: Read OpenAPI file {file}", stopwatch.ElapsedMilliseconds, inputPath);
+            logger.LogTrace("{timestamp}ms: Read OpenAPI file {file}", stopwatch.ElapsedMilliseconds, inputPath);
             return input;
         }
 
@@ -91,7 +91,7 @@ namespace Kiota.Builder
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            logger.LogInformation("Parsing OpenAPI file");
+            logger.LogTrace("Parsing OpenAPI file");
             var reader = new OpenApiStreamReader();
             var doc = reader.Read(input, out var diag);
             stopwatch.Stop();
@@ -101,7 +101,7 @@ namespace Kiota.Builder
             }
             else
             {
-                logger.LogInformation("{timestamp}ms: Parsed OpenAPI successfully. {count} paths found.", stopwatch.ElapsedMilliseconds, doc.Paths.Count);
+                logger.LogTrace("{timestamp}ms: Parsed OpenAPI successfully. {count} paths found.", stopwatch.ElapsedMilliseconds, doc.Paths.Count);
             }
 
             return doc;
@@ -120,7 +120,7 @@ namespace Kiota.Builder
             ComponentsReferencesIndex = node.GetComponentsReferenceIndex();
 
             stopwatch.Stop();
-            logger.LogInformation("{timestamp}ms: Created UriSpace tree", stopwatch.ElapsedMilliseconds);
+            logger.LogTrace("{timestamp}ms: Created UriSpace tree", stopwatch.ElapsedMilliseconds);
             return node;
         }
         private Dictionary<string, HashSet<OpenApiUrlSpaceNode>> ComponentsReferencesIndex;
@@ -144,7 +144,7 @@ namespace Kiota.Builder
             MapTypeDefinitions(codeNamespace);
             StopLogAndReset(stopwatch, $"{nameof(MapTypeDefinitions)}");
 
-            logger.LogInformation("{timestamp}ms: Created source model with {count} classes", stopwatch.ElapsedMilliseconds, codeNamespace.GetChildElements(true).Count());
+            logger.LogTrace("{timestamp}ms: Created source model with {count} classes", stopwatch.ElapsedMilliseconds, codeNamespace.GetChildElements(true).Count());
 
             return rootNamespace;
         }
@@ -162,7 +162,7 @@ namespace Kiota.Builder
             ILanguageRefiner.Refine(language, generatedCode);
 
             stopwatch.Stop();
-            logger.LogInformation("{timestamp}ms: Language refinement applied", stopwatch.ElapsedMilliseconds);
+            logger.LogDebug("{timestamp}ms: Language refinement applied", stopwatch.ElapsedMilliseconds);
         }
 
         /// <summary>
@@ -193,7 +193,7 @@ namespace Kiota.Builder
             stopwatch.Start();
             await CodeRenderer.RenderCodeNamespaceToFilePerClassAsync(languageWriter, generatedCode);
             stopwatch.Stop();
-            logger.LogInformation("{timestamp}ms: Files written to {path}", stopwatch.ElapsedMilliseconds, config.OutputPath);
+            logger.LogTrace("{timestamp}ms: Files written to {path}", stopwatch.ElapsedMilliseconds, config.OutputPath);
         }
         private static readonly string requestBuilderSuffix = "RequestBuilder";
 
@@ -225,7 +225,7 @@ namespace Kiota.Builder
             var targetNS = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNamespace.EnsureItemNamespace() : currentNamespace;
             codeClass = targetNS.AddClass(codeClass).First();
 
-            logger.LogDebug("Creating class {class}", codeClass.Name);
+            logger.LogTrace("Creating class {class}", codeClass.Name);
 
             // Add properties for children
             foreach (var child in currentNode.Children)
@@ -382,7 +382,7 @@ namespace Kiota.Builder
             {
                 Name = childType
             };
-            logger.LogDebug("Creating indexer {name}", childIdentifier);
+            logger.LogTrace("Creating indexer {name}", childIdentifier);
             return prop;
         }
 
@@ -413,7 +413,7 @@ namespace Kiota.Builder
                 CollectionKind = isCollection ? CodeType.CodeTypeCollectionKind.Complex : default,
                 IsExternal = isExternal,
             };
-            logger.LogDebug("Creating property {name} of {type}", prop.Name, prop.Type.Name);
+            logger.LogTrace("Creating property {name} of {type}", prop.Name, prop.Type.Name);
             return prop;
         }
 
@@ -456,7 +456,7 @@ namespace Kiota.Builder
             };
             handlerParam.Type = new CodeType(handlerParam) { Name = "IResponseHandler", IsExternal = true };
             executorMethod.AddParameter(handlerParam);
-            logger.LogDebug("Creating method {name} of {type}", executorMethod.Name, executorMethod.ReturnType);
+            logger.LogTrace("Creating method {name} of {type}", executorMethod.Name, executorMethod.ReturnType);
 
             var generatorMethod = new CodeMethod(parentClass) {
                 Name = $"Create{operationType.ToString().ToFirstCharacterUpperCase()}RequestInfo",
@@ -468,7 +468,7 @@ namespace Kiota.Builder
             generatorMethod.ReturnType = new CodeType(generatorMethod) { Name = "RequestInfo", IsNullable = false, IsExternal = true};
             parentClass.AddMethod(generatorMethod);
             AddRequestBuilderMethodParameters(rootNode, currentNode, operation, parameterClass, generatorMethod);
-            logger.LogDebug("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
+            logger.LogTrace("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
         }
         private void AddRequestBuilderMethodParameters(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiOperation operation, CodeClass parameterClass, CodeMethod method) {
             if (operation.RequestBody?.Content?.ContainsKey(requestBodyJsonContentType) ?? false)

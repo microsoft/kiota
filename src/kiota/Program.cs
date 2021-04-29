@@ -52,6 +52,10 @@ namespace kiota
                 if (language.HasValue)
                     configuration.Language = language.Value;
 
+                #if DEBUG
+                loglevel = loglevel > LogLevel.Debug ? LogLevel.Debug : loglevel;
+                #endif
+
                 configuration.OpenAPIFilePath = GetAbsolutePath(configuration.OpenAPIFilePath);
                 configuration.OutputPath = GetAbsolutePath(configuration.OutputPath);
 
