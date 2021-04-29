@@ -55,7 +55,7 @@ namespace Kiota.Builder
             }
             return result;
         }
-        private CodeElement HandleDuplicatedExceptions(ConcurrentDictionary<string, CodeElement> innerChildElements, CodeElement element, CodeElement returnedValue) {
+        private static CodeElement HandleDuplicatedExceptions(ConcurrentDictionary<string, CodeElement> innerChildElements, CodeElement element, CodeElement returnedValue) {
             var added = returnedValue == element;
             if(!added && element is CodeMethod currentMethod)
                 if(currentMethod.MethodKind == CodeMethodKind.IndexerBackwardCompatibility &&
