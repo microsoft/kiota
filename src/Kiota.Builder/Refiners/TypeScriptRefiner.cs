@@ -10,7 +10,7 @@ namespace Kiota.Builder {
         {
             PatchResponseHandlerType(generatedCode);
             AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
-            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode as CodeNamespace, "ById");
+            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, "ById");
             CorrectCoreType(generatedCode);
             FixReferencesToEntityType(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);

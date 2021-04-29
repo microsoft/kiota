@@ -51,26 +51,31 @@ namespace Kiota.Builder
             for(var i = 0; i < elements.Length; i++) {
                 var element = elements[i];
                 var returnedValue = innerChildElements.GetOrAdd(element.Name, element);
-                var added = returnedValue == element;
-                if(!added && element is CodeMethod currentMethod)
-                    if(currentMethod.MethodKind == CodeMethodKind.IndexerBackwardCompatibility &&
-                        returnedValue is CodeProperty cProp &&
-                        cProp.PropertyKind == CodePropertyKind.RequestBuilder) {
-                        // indexer retrofited to method in the parent request builder on the path and conflicting with the collection request builder propeerty
-                        returnedValue = innerChildElements.GetOrAdd($"{element.Name}-indexerbackcompat", element);
-                        added = true;
-                    } else if(currentMethod.MethodKind == CodeMethodKind.RequestExecutor ||
-                            currentMethod.MethodKind == CodeMethodKind.RequestGenerator) {
-                        // allows for methods overload
-                        var methodOverloadNameSuffix = currentMethod.Parameters.Any() ? currentMethod.Parameters.Select(x => x.Name).OrderBy(x => x).Aggregate((x, y) => x + y) : "1";
-                        returnedValue = innerChildElements.GetOrAdd($"{element.Name}-{methodOverloadNameSuffix}", element);
-                        added = true;
-                    }
-                if(!added && returnedValue.GetType() != element.GetType())
-                    throw new InvalidOperationException($"the current dom node already contains a child with name {returnedValue.Name} and of type {returnedValue.GetType().Name}");
-                result[i] = (T)returnedValue;
+                result[i] = (T)HandleDuplicatedExceptions(innerChildElements, element, returnedValue);
             }
             return result;
+        }
+        private CodeElement HandleDuplicatedExceptions(ConcurrentDictionary<string, CodeElement> innerChildElements, CodeElement element, CodeElement returnedValue) {
+            var added = returnedValue == element;
+            if(!added && element is CodeMethod currentMethod)
+                if(currentMethod.MethodKind == CodeMethodKind.IndexerBackwardCompatibility &&
+                    returnedValue is CodeProperty cProp &&
+                    cProp.PropertyKind == CodePropertyKind.RequestBuilder) {
+                    // indexer retrofited to method in the parent request builder on the path and conflicting with the collection request builder propeerty
+                    returnedValue = innerChildElements.GetOrAdd($"{element.Name}-indexerbackcompat", element);
+                    added = true;
+                } else if(currentMethod.MethodKind == CodeMethodKind.RequestExecutor ||
+                        currentMethod.MethodKind == CodeMethodKind.RequestGenerator) {
+                    // allows for methods overload
+                    var methodOverloadNameSuffix = currentMethod.Parameters.Any() ? currentMethod.Parameters.Select(x => x.Name).OrderBy(x => x).Aggregate((x, y) => x + y) : "1";
+                    returnedValue = innerChildElements.GetOrAdd($"{element.Name}-{methodOverloadNameSuffix}", element);
+                    added = true;
+                }
+
+            if(!added && returnedValue.GetType() != element.GetType())
+                throw new InvalidOperationException($"the current dom node already contains a child with name {returnedValue.Name} and of type {returnedValue.GetType().Name}");
+
+            return returnedValue;
         }
         public T FindChildByName<T>(string childName, bool findInChildElements = true) where T: ICodeElement {
             if(string.IsNullOrEmpty(childName))

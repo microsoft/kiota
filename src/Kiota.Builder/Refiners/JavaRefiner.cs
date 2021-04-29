@@ -10,7 +10,7 @@ namespace Kiota.Builder {
         {
             AddInnerClasses(generatedCode);
             AndInsertOverrideMethodForRequestExecutorsAndBuilders(generatedCode);
-            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode as CodeNamespace);
+            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode);
             ConvertUnionTypesToWrapper(generatedCode);
             AddRequireNonNullImports(generatedCode);
             FixReferencesToEntityType(generatedCode);
