@@ -6,23 +6,19 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder {
     public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
-        public TypeScriptRefiner(CodeNamespace root) : base(root)
+        public override void Refine(CodeNamespace generatedCode)
         {
-            
+            PatchResponseHandlerType(generatedCode);
+            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
+            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode as CodeNamespace, "ById");
+            CorrectCoreType(generatedCode);
+            FixReferencesToEntityType(generatedCode);
+            AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
+            AddParsableInheritanceForModelClasses(generatedCode);
+            ConvertDeserializerPropsToMethods(generatedCode);
+            ReplaceBinaryByNativeType(generatedCode, "ReadableStream", "web-streams-polyfill/es2018", true);
         }
-        public override void Refine()
-        {
-            PatchResponseHandlerType(rootNamespace);
-            AddDefaultImports(rootNamespace, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
-            ReplaceIndexersByMethodsWithParameter(rootNamespace, "ById");
-            CorrectCoreType(rootNamespace);
-            FixReferencesToEntityType(rootNamespace);
-            AddPropertiesAndMethodTypesImports(rootNamespace, true, true, true);
-            AddParsableInheritanceForModelClasses(rootNamespace);
-            ConvertDeserializerPropsToMethods(rootNamespace);
-            ReplaceBinaryByNativeType(rootNamespace, "ReadableStream", "web-streams-polyfill/es2018", true);
-        }
-        private void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
+        private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model) {
                 var declaration = currentClass.StartBlock as CodeClass.Declaration;
                 declaration.Implements.Add(new CodeType(currentClass) {
@@ -46,7 +42,7 @@ namespace Kiota.Builder {
             new ("ParseNode", "@microsoft/kiota-abstractions"),
             new ("Parsable", "@microsoft/kiota-abstractions"),
         };
-        private void CorrectCoreType(CodeElement currentElement) {
+        private static void CorrectCoreType(CodeElement currentElement) {
             if (currentElement is CodeProperty currentProperty) {
                 if ("IHttpCore".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase))
                     currentProperty.Type.Name = "HttpCore";
@@ -69,7 +65,7 @@ namespace Kiota.Builder {
             }
             CrawlTree(currentElement, CorrectCoreType);
         }
-        private void PatchResponseHandlerType(CodeElement current) {
+        private static void PatchResponseHandlerType(CodeElement current) {
             if(current is CodeMethod currentMethod && currentMethod.Name.Equals("defaultResponseHandler", StringComparison.OrdinalIgnoreCase)) 
                 currentMethod.Parameters.First().Type.Name = "ReadableStream";
             CrawlTree(current, PatchResponseHandlerType);

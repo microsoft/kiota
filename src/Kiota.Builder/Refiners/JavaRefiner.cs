@@ -6,29 +6,25 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder {
     public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
-        public JavaRefiner(CodeNamespace root) : base(root)
+        public override void Refine(CodeNamespace generatedCode)
         {
-            
+            AddInnerClasses(generatedCode);
+            AndInsertOverrideMethodForRequestExecutorsAndBuilders(generatedCode);
+            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode as CodeNamespace);
+            ConvertUnionTypesToWrapper(generatedCode);
+            AddRequireNonNullImports(generatedCode);
+            FixReferencesToEntityType(generatedCode);
+            AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
+            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
+            CorrectCoreType(generatedCode);
+            PatchHeaderParametersType(generatedCode);
+            AddListImport(generatedCode);
+            AddParsableInheritanceForModelClasses(generatedCode);
+            ConvertDeserializerPropsToMethods(generatedCode, "get");
+            ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
+            AddEnumSetImport(generatedCode);
         }
-        public override void Refine()
-        {
-            AddInnerClasses(rootNamespace);
-            AndInsertOverrideMethodForRequestExecutorsAndBuilders(rootNamespace);
-            ReplaceIndexersByMethodsWithParameter(rootNamespace);
-            ConvertUnionTypesToWrapper(rootNamespace);
-            AddRequireNonNullImports(rootNamespace);
-            FixReferencesToEntityType(rootNamespace);
-            AddPropertiesAndMethodTypesImports(rootNamespace, true, false, true);
-            AddDefaultImports(rootNamespace, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
-            CorrectCoreType(rootNamespace);
-            PatchHeaderParametersType(rootNamespace);
-            AddListImport(rootNamespace);
-            AddParsableInheritanceForModelClasses(rootNamespace);
-            ConvertDeserializerPropsToMethods(rootNamespace, "get");
-            ReplaceBinaryByNativeType(rootNamespace, "InputStream", "java.io", true);
-            AddEnumSetImport(rootNamespace);
-        }
-        private void AddEnumSetImport(CodeElement currentElement) {
+        private static void AddEnumSetImport(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model &&
                 currentClass.GetChildElements(true).OfType<CodeProperty>().Any(x => x.Type is CodeType xType && xType.TypeDefinition is CodeEnum xEnumType && xEnumType.Flags)) {
                     var nUsing = new CodeUsing(currentClass) {
@@ -40,7 +36,7 @@ namespace Kiota.Builder {
 
             CrawlTree(currentElement, AddEnumSetImport);
         }
-        private void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
+        private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model) {
                 var declaration = currentClass.StartBlock as CodeClass.Declaration;
                 declaration.Implements.Add(new CodeType(currentClass) {
@@ -50,7 +46,7 @@ namespace Kiota.Builder {
             }
             CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
         }
-        private void AddListImport(CodeElement currentElement) {
+        private static void AddListImport(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass) {
                 var childElements = currentClass.GetChildElements(true);
                 if(childElements.OfType<CodeProperty>().Any(x => x.Type.CollectionKind == CodeType.CodeTypeCollectionKind.Complex) ||
@@ -88,7 +84,7 @@ namespace Kiota.Builder {
             new ("Map", "java.util"),
             new ("HashMap", "java.util"),
         };
-        private void CorrectCoreType(CodeElement currentElement) {
+        private static void CorrectCoreType(CodeElement currentElement) {
             if (currentElement is CodeProperty currentProperty) {
                 if("IHttpCore".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase))
                     currentProperty.Type.Name = "HttpCore";
@@ -130,7 +126,7 @@ namespace Kiota.Builder {
             }
             CrawlTree(currentElement, CorrectCoreType);
         }
-        private void AddRequireNonNullImports(CodeElement currentElement) {
+        private static void AddRequireNonNullImports(CodeElement currentElement) {
             if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => !x.Optional)) {
                 var parentClass = currentMethod.Parent as CodeClass;
                 var newUsing = new CodeUsing(parentClass) {
@@ -144,7 +140,7 @@ namespace Kiota.Builder {
             }
             CrawlTree(currentElement, AddRequireNonNullImports);
         }
-        private void AndInsertOverrideMethodForRequestExecutorsAndBuilders(CodeElement currentElement) {
+        private static void AndInsertOverrideMethodForRequestExecutorsAndBuilders(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass) {
                 var codeMethods = currentClass.GetChildElements(true).OfType<CodeMethod>();
                 if(codeMethods.Any()) {
@@ -169,7 +165,7 @@ namespace Kiota.Builder {
             
             CrawlTree(currentElement, AndInsertOverrideMethodForRequestExecutorsAndBuilders);
         }
-        private void PatchHeaderParametersType(CodeElement currentElement) {
+        private static void PatchHeaderParametersType(CodeElement currentElement) {
             if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => x.ParameterKind == CodeParameterKind.Headers))
                 currentMethod.Parameters.Where(x => x.ParameterKind == CodeParameterKind.Headers)
                                         .ToList()
