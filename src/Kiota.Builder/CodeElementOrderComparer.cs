@@ -13,7 +13,7 @@ namespace Kiota.Builder {
                 (_, null) => 1,
                 _ => GetTypeFactor(x).CompareTo(GetTypeFactor(y)) * typeWeight +
                     (x.Name?.CompareTo(y.Name) ?? 0) * nameWeight +
-                    GetParametersFactor(x).CompareTo(GetParametersFactor(y)) * parametersWeight;
+                    GetParametersFactor(x).CompareTo(GetParametersFactor(y)) * parametersWeight,
             };
         }
         private static readonly int nameWeight = 10;
