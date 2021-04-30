@@ -7,10 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- Fixed a bug where prefixed properties would be missing their prefix for serialization
-
 ## [0.0.4] - 2021-04-28
 
 ### Changed
@@ -19,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deterministic ordering of properties/methods/indexers/subclasses
 - Deterministic import of sub path request builders
 - Stopped generating phantom indexer methods for TypeScript and Java
+- Fixed a bug where prefixed properties would be missing their prefix for serialization
 
 ## [0.0.3] - 2021-04-25
 
