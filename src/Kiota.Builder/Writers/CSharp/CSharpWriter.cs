@@ -1,17 +1,16 @@
-using Kiota.Builder.Writers.Java;
-
-namespace Kiota.Builder.Writers
+﻿namespace Kiota.Builder.Writers.CSharp
 {
-    public class JavaWriter : LanguageWriter
+    public class CSharpWriter : LanguageWriter
     {
-        public JavaWriter(string rootPath, string clientNamespaceName)
+        public CSharpWriter(string rootPath, string clientNamespaceName)
         {
-            PathSegmenter = new JavaPathSegmenter(rootPath, clientNamespaceName);
-            var conventionService = new JavaConventionService();
+            PathSegmenter = new CSharpPathSegmenter(rootPath, clientNamespaceName);
+            var conventionService = new CSharpConventionService();
             Writers = new() {
                 { typeof(CodeClass.Declaration), new CodeClassDeclarationWriter(conventionService) as object as ICodeElementWriter<CodeElement> },
-                { typeof(CodeClass.End), new CodeClassEndWriter() as object as ICodeElementWriter<CodeElement> },
+                { typeof(CodeClass.End), new CodeClassEndWriter(conventionService) as object as ICodeElementWriter<CodeElement> },
                 { typeof(CodeEnum), new CodeEnumWriter(conventionService) as object as ICodeElementWriter<CodeElement> },
+                { typeof(CodeIndexer), new CodeIndexerWriter(conventionService) as object as ICodeElementWriter<CodeElement> },
                 { typeof(CodeMethod), new CodeMethodWriter(conventionService) as object as ICodeElementWriter<CodeElement> },
                 { typeof(CodeProperty), new CodePropertyWriter(conventionService) as object as ICodeElementWriter<CodeElement> },
                 { typeof(CodeType), new CodeTypeWriter(conventionService) as object as ICodeElementWriter<CodeElement> },

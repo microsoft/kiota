@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
+using Kiota.Builder.Writers.CSharp;
+using Kiota.Builder.Writers.Java;
+using Kiota.Builder.Writers.TypeScript;
 
 namespace Kiota.Builder.Writers
 {
@@ -73,5 +77,14 @@ namespace Kiota.Builder.Writers
                 throw new InvalidOperationException($"Dispatcher missing for type {code.GetType()}");
         }
         public Dictionary<Type, ICodeElementWriter<CodeElement>> Writers { get; protected set; }
+        public static LanguageWriter GetLanguageWriter(GenerationLanguage language, string outputPath, string clientNamespaceName) {
+            return language switch
+            {
+                GenerationLanguage.CSharp => new CSharpWriter(outputPath, clientNamespaceName),
+                GenerationLanguage.Java => new JavaWriter(outputPath, clientNamespaceName),
+                GenerationLanguage.TypeScript => new TypeScriptWriter(outputPath, clientNamespaceName),
+                _ => throw new InvalidEnumArgumentException($"{language} language currently not supported."),
+            };
+        }
     }
 }
