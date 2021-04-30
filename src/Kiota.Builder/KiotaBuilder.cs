@@ -403,6 +403,8 @@ namespace Kiota.Builder
                 PropertyKind = kind,
                 Description = typeSchema?.Description,
             };
+            if(propertyName != childIdentifier)
+                prop.SerializationName = childIdentifier;
             var typeName = childType;
             var isExternal = false;
             if("string".Equals(typeName, StringComparison.OrdinalIgnoreCase) && "date-time".Equals(typeSchema?.Format, StringComparison.OrdinalIgnoreCase)) {

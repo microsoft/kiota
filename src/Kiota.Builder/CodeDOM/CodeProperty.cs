@@ -22,5 +22,6 @@ namespace Kiota.Builder
         public CodeTypeBase Type {get;set;}
         public string DefaultValue {get;set;}
         public string Description {get; set;}
+        public string SerializationName { get; set; }
     }
 }

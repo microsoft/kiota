@@ -86,7 +86,7 @@ namespace Kiota.Builder
                                                     .OrderBy(x => x.Name)) {
                         WriteLine("{");
                         IncreaseIndent();
-                        WriteLine($"\"{otherProp.Name.ToFirstCharacterLowerCase()}\", (o,n) => {{ o.{otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type)}(); }}");
+                        WriteLine($"\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", (o,n) => {{ o.{otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type)}(); }}");
                         DecreaseIndent();
                         WriteLine("},");
                     }
@@ -216,7 +216,7 @@ namespace Kiota.Builder
                                                     .OfType<CodeProperty>()
                                                     .Where(x => x.PropertyKind == CodePropertyKind.Custom)
                                                     .OrderBy(x => x.Name)) {
-                        WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
+                        WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
                     }
                     if(additionalDataProperty != null)
                         WriteLine($"writer.WriteAdditionalData({additionalDataProperty.Name});");
