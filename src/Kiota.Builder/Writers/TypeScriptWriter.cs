@@ -14,12 +14,12 @@ namespace Kiota.Builder.Writers
         }
         private readonly IPathSegmenter segmenter;
         public override IPathSegmenter PathSegmenter => segmenter;
-        public override string GetParameterSignature(CodeParameter parameter)
+        public string GetParameterSignature(CodeParameter parameter)
         {
             return $"{parameter.Name}{(parameter.Optional ? "?" : string.Empty)}: {GetTypeString(parameter.Type)}{(parameter.Optional ? " | undefined": string.Empty)}";
         }
 
-        public override string GetTypeString(CodeTypeBase code)
+        public string GetTypeString(CodeTypeBase code)
         {
             var collectionSuffix = code.CollectionKind == CodeType.CodeTypeCollectionKind.None ? string.Empty : "[]";
             if(code is CodeUnionType currentUnion && currentUnion.Types.Any())
@@ -55,7 +55,7 @@ namespace Kiota.Builder.Writers
             else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
 
-        public override string TranslateType(string typeName)
+        public string TranslateType(string typeName)
         {
             switch (typeName)
             {//TODO we're probably missing a bunch of type mappings
@@ -69,7 +69,7 @@ namespace Kiota.Builder.Writers
             } // string, boolean, object : same casing
         }
 
-        public override void WriteCodeClassDeclaration(CodeClass.Declaration code)
+        public void WriteCodeClassDeclaration(CodeClass.Declaration code)
         {
             foreach (var codeUsing in code.Usings
                                         .Where(x => x.Declaration?.IsExternal ?? false)
@@ -154,13 +154,13 @@ namespace Kiota.Builder.Writers
                 return string.Empty;
         }
 
-        public override void WriteCodeClassEnd(CodeClass.End code)
+        public void WriteCodeClassEnd(CodeClass.End code)
         {
             DecreaseIndent();
             WriteLine("}");
         }
 
-        public override void WriteIndexer(CodeIndexer code)
+        public void WriteIndexer(CodeIndexer code)
         {
             throw new InvalidOperationException("indexers are not supported in TypeScript, the refiner should have removes those");
         }
@@ -257,7 +257,7 @@ namespace Kiota.Builder.Writers
             var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? " | undefined" : string.Empty;
             WriteLine($"{accessModifier} {methodName} {asyncPrefix}({parameters}) : {asyncReturnTypePrefix}{returnType}{nullableSuffix}{asyncReturnTypeSuffix} {{");
         }
-        public override void WriteMethod(CodeMethod code)
+        public void WriteMethod(CodeMethod code)
         {
             var returnType = GetTypeString(code.ReturnType);
             var isVoid = "void".Equals(returnType, StringComparison.OrdinalIgnoreCase);
@@ -355,7 +355,7 @@ namespace Kiota.Builder.Writers
             else if(isStream) return $"sendPrimitiveAsync<{returnType}>";
             else return $"sendAsync<{returnType}>";
         }
-        public override void WriteProperty(CodeProperty code)
+        public void WriteProperty(CodeProperty code)
         {
             var returnType = GetTypeString(code.Type);
             var isFlagEnum = code.Type is CodeType currentType && currentType.TypeDefinition is CodeEnum currentEnum && currentEnum.Flags;
@@ -378,11 +378,11 @@ namespace Kiota.Builder.Writers
             }
         }
 
-        public override void WriteType(CodeType code)
+        public void WriteType(CodeType code)
         {
             Write(GetTypeString(code), includeIndent: false);
         }
-        public override string GetAccessModifier(AccessModifier access)
+        public string GetAccessModifier(AccessModifier access)
         {
             switch(access) {
                 case AccessModifier.Public: return "public";
@@ -391,7 +391,7 @@ namespace Kiota.Builder.Writers
             }
         }
 
-        public override void WriteEnum(CodeEnum code)
+        public void WriteEnum(CodeEnum code)
         {
             WriteShortDescription(code.Description);
             WriteLine($"export enum {code.Name.ToFirstCharacterUpperCase()} {{");

@@ -15,12 +15,12 @@ namespace Kiota.Builder.Writers
         }
         public override IPathSegmenter PathSegmenter => segmenter;
 
-        public override string GetParameterSignature(CodeParameter parameter)
+        public string GetParameterSignature(CodeParameter parameter)
         {
             return $"@javax.annotation.{(parameter.Optional ? "Nullable" : "Nonnull")} final {GetTypeString(parameter.Type)} {parameter.Name}";
         }
 
-        public override string GetTypeString(CodeTypeBase code)
+        public string GetTypeString(CodeTypeBase code)
         {
             if(code is CodeUnionType) 
                 throw new InvalidOperationException($"Java does not support union types, the union type {code.Name} should have been filtered out by the refiner");
@@ -37,7 +37,7 @@ namespace Kiota.Builder.Writers
             else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
 
-        public override string TranslateType(string typeName)
+        public string TranslateType(string typeName)
         {
             switch (typeName)
             {//TODO we're probably missing a bunch of type mappings
@@ -46,7 +46,7 @@ namespace Kiota.Builder.Writers
             }
         }
 
-        public override void WriteCodeClassDeclaration(CodeClass.Declaration code)
+        public void WriteCodeClassDeclaration(CodeClass.Declaration code)
         {
             if(code?.Parent?.Parent is CodeNamespace ns) {
                 WriteLine($"package {ns.Name};");
@@ -67,13 +67,13 @@ namespace Kiota.Builder.Writers
             IncreaseIndent();
         }
 
-        public override void WriteCodeClassEnd(CodeClass.End code)
+        public void WriteCodeClassEnd(CodeClass.End code)
         {
             DecreaseIndent();
             WriteLine("}");
         }
 
-        public override void WriteIndexer(CodeIndexer code)
+        public void WriteIndexer(CodeIndexer code)
         {
             throw new InvalidOperationException("indexers are not supported in Java, the refiner should have replaced those by methods");
         }
@@ -114,7 +114,7 @@ namespace Kiota.Builder.Writers
             var throwableDeclarations = code.MethodKind == CodeMethodKind.RequestGenerator ? "throws URISyntaxException ": string.Empty;
             WriteLine($"{accessModifier} {genericTypeParameterDeclaration}{returnTypeAsyncPrefix}{returnType}{returnTypeAsyncSuffix} {methodName}({parameters}) {throwableDeclarations}{{");
         }
-        public override void WriteMethod(CodeMethod code)
+        public void WriteMethod(CodeMethod code)
         {
             var returnType = GetTypeString(code.ReturnType);
             var parentClass = code.Parent as CodeClass;
@@ -299,7 +299,7 @@ namespace Kiota.Builder.Writers
                         $"final HttpCore parentCore = {httpCorePropertyName};", //this variable naming is because Java can't tell the difference in terms of scopes priority in property initializers
                         $"return new {returnType}() {{{{ {currentPathPropertyName} = parentPath; {httpCorePropertyName} = parentCore; }}}};");
         }
-        public override void WriteProperty(CodeProperty code)
+        public void WriteProperty(CodeProperty code)
         {
             WriteShortDescription(code.Description);
             var returnType = GetTypeString(code.Type);
@@ -324,11 +324,11 @@ namespace Kiota.Builder.Writers
             }
         }
 
-        public override void WriteType(CodeType code)
+        public void WriteType(CodeType code)
         {
             Write(GetTypeString(code), includeIndent: false);
         }
-        public override string GetAccessModifier(AccessModifier access)
+        public string GetAccessModifier(AccessModifier access)
         {
             switch(access) {
                 case AccessModifier.Public: return "public";
@@ -337,7 +337,7 @@ namespace Kiota.Builder.Writers
             }
         }
 
-        public override void WriteEnum(CodeEnum code)
+        public void WriteEnum(CodeEnum code)
         {
             if(!code.Options.Any())
                 return;

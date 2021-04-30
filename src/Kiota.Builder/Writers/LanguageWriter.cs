@@ -46,18 +46,18 @@ namespace Kiota.Builder.Writers
         /// <summary>
         /// Adds an empty line
         /// </summary>
-        protected void WriteLine() => WriteLine(string.Empty, false);
-        protected void WriteLine(string line, bool includeIndent = true)
+        internal void WriteLine() => WriteLine(string.Empty, false);
+        internal void WriteLine(string line, bool includeIndent = true)
         {
             writer.WriteLine(includeIndent ? GetIndent() + line : line);
         }
-        protected void WriteLines(params string[] lines) {
+        internal void WriteLines(params string[] lines) {
             foreach(var line in lines) {
                 WriteLine(line, true);
             }
         }
 
-        protected void Write(string text, bool includeIndent = true)
+        internal void Write(string text, bool includeIndent = true)
         {
             writer.Write(includeIndent ? GetIndent() + text : text);
         }
@@ -67,34 +67,11 @@ namespace Kiota.Builder.Writers
         /// <param name="code"></param>
         public void Write(CodeElement code)
         {
-            switch (code)
-            {
-                case CodeClass.Declaration c: WriteCodeClassDeclaration(c); break;
-                case CodeClass.End c: WriteCodeClassEnd(c); break;
-                case CodeNamespace.BlockDeclaration c: break;
-                case CodeNamespace.BlockEnd c: break;
-                case CodeProperty c: WriteProperty(c); break;
-                case CodeIndexer c: WriteIndexer(c); break;
-                case CodeMethod c: WriteMethod(c); break;
-                case CodeType c: WriteType(c); break;
-                case CodeEnum e: WriteEnum(e); break;
-                case CodeNamespace: break;
-                case CodeClass: break;
-                default:
-                    throw new InvalidOperationException($"Dispatcher missing for type {code.GetType()}");
-            }
-
+            if(Writers.TryGetValue(code.GetType(), out var writer))
+                writer.WriteCodeElement(code, this);
+            else
+                throw new InvalidOperationException($"Dispatcher missing for type {code.GetType()}");
         }
-        public abstract void WriteEnum(CodeEnum code);
-        public abstract string GetParameterSignature(CodeParameter parameter);
-        public abstract string GetTypeString(CodeTypeBase code);
-        public abstract string TranslateType(string typeName);
-        public abstract void WriteProperty(CodeProperty code);
-        public abstract void WriteIndexer(CodeIndexer code);
-        public abstract void WriteMethod(CodeMethod code);
-        public abstract void WriteType(CodeType code);
-        public abstract void WriteCodeClassDeclaration(CodeClass.Declaration code);
-        public abstract void WriteCodeClassEnd(CodeClass.End code);
-        public abstract string GetAccessModifier(AccessModifier access);
+        public Dictionary<Type, ICodeElementWriter<CodeElement>> Writers { get; protected set; }
     }
 }
