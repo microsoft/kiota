@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers;
 using Microsoft.OpenApi.Any;
 using System.ComponentModel;
 

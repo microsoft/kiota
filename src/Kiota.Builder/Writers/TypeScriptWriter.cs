@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using Kiota.Builder.Extensions;
 
-namespace Kiota.Builder
+namespace Kiota.Builder.Writers
 {
     public class TypeScriptWriter : LanguageWriter
     {

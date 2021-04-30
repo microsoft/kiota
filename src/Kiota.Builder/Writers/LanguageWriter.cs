@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace Kiota.Builder
+namespace Kiota.Builder.Writers
 {
  
     public abstract class LanguageWriter

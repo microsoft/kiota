@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
 
-namespace Kiota.Builder
+namespace Kiota.Builder.Writers
 {
     public class CSharpWriter : LanguageWriter
     {
