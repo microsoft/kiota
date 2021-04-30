@@ -4,11 +4,9 @@ namespace Kiota.Builder.Writers
 {
     public class JavaWriter : LanguageWriter
     {
-        private readonly IPathSegmenter segmenter;
-
         public JavaWriter(string rootPath, string clientNamespaceName)
         {
-            segmenter = new JavaPathSegmenter(rootPath, clientNamespaceName);
+            PathSegmenter = new JavaPathSegmenter(rootPath, clientNamespaceName);
             var conventionService = new JavaConventionService();
             Writers = new() {
                 { typeof(CodeClass.Declaration), new CodeClassDeclarationWriter(conventionService) as object as ICodeElementWriter<CodeElement> },
@@ -19,6 +17,5 @@ namespace Kiota.Builder.Writers
                 { typeof(CodeType), new CodeTypeWriter(conventionService) as object as ICodeElementWriter<CodeElement> },
             };
         }
-        public override IPathSegmenter PathSegmenter => segmenter;
     }
 }

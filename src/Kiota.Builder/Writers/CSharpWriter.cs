@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Kiota.Builder.Writers.CSharp;
+﻿using Kiota.Builder.Writers.CSharp;
 
 namespace Kiota.Builder.Writers
 {
@@ -8,7 +6,7 @@ namespace Kiota.Builder.Writers
     {
         public CSharpWriter(string rootPath, string clientNamespaceName)
         {
-            segmenter = new CSharpPathSegmenter(rootPath, clientNamespaceName);
+            PathSegmenter = new CSharpPathSegmenter(rootPath, clientNamespaceName);
             var conventionService = new CSharpConventionService();
             Writers = new() {
                 { typeof(CodeClass.Declaration), new CodeClassDeclarationWriter(conventionService) as object as ICodeElementWriter<CodeElement> },
@@ -20,7 +18,5 @@ namespace Kiota.Builder.Writers
                 { typeof(CodeType), new CodeTypeWriter(conventionService) as object as ICodeElementWriter<CodeElement> },
             };
         }
-        private readonly IPathSegmenter segmenter;
-        public override IPathSegmenter PathSegmenter => segmenter;
     }
 }

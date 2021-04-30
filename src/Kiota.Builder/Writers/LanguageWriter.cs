@@ -23,7 +23,7 @@ namespace Kiota.Builder.Writers
         {
             this.writer = writer;
         }
-        public abstract IPathSegmenter PathSegmenter { get; }
+        public IPathSegmenter PathSegmenter { get; protected set; }
 
         private readonly Stack<int> factorStack = new Stack<int>();
         public void IncreaseIndent(int factor = 1)

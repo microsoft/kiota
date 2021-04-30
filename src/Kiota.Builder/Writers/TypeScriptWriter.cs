@@ -10,10 +10,8 @@ namespace Kiota.Builder.Writers
     {
         public TypeScriptWriter(string rootPath, string clientNamespaceName)
         {
-            segmenter = new TypeScriptPathSegmenter(rootPath,clientNamespaceName);
+            PathSegmenter = new TypeScriptPathSegmenter(rootPath,clientNamespaceName);
         }
-        private readonly IPathSegmenter segmenter;
-        public override IPathSegmenter PathSegmenter => segmenter;
         public string GetParameterSignature(CodeParameter parameter)
         {
             return $"{parameter.Name}{(parameter.Optional ? "?" : string.Empty)}: {GetTypeString(parameter.Type)}{(parameter.Optional ? " | undefined": string.Empty)}";

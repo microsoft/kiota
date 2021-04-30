@@ -15,7 +15,7 @@ namespace Kiota.Builder.Writers.Java {
         public string CurrentPathPropertyName => "currentPath";
         public string HttpCorePropertyName => "httpCore";
         internal HashSet<string> PrimitiveTypes = new() {"String", "Boolean", "Integer", "Float", "Long", "Guid", "OffsetDateTime", _voidTypeName, _streamTypeName };
-        public string ParseNodeInterfaceName => throw new System.NotImplementedException();
+        public string ParseNodeInterfaceName => "ParseNode";
         internal string DocCommentStart = "/**";
         internal string DocCommentEnd = " */";
         public string GetAccessModifier(AccessModifier access)

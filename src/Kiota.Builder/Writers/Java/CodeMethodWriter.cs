@@ -47,7 +47,7 @@ namespace Kiota.Builder.Writers.Java {
                             .GetChildElements(true)
                             .OfType<CodeProperty>()
                             .Where(x => x.PropertyKind == CodePropertyKind.Custom);
-                    writer.WriteLine($"final Map<String, BiConsumer<T, ParseNode>> fields = new HashMap<>({(inherits ? "super." + codeElement.Name+ "()" : fieldToSerialize.Count())});");
+                    writer.WriteLine($"final Map<String, BiConsumer<T, {conventions.ParseNodeInterfaceName}>> fields = new HashMap<>({(inherits ? "super." + codeElement.Name+ "()" : fieldToSerialize.Count())});");
                     if(fieldToSerialize.Any())
                         fieldToSerialize
                                 .OrderBy(x => x.Name)
