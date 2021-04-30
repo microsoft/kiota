@@ -3,7 +3,7 @@ using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.CSharp {
-    public class CodePropertyWriter : BaseCSharpElementWriter<CodeProperty>
+    public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventionService>
     {
         public CodePropertyWriter(CSharpConventionService conventionService): base(conventionService) { }
         public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)

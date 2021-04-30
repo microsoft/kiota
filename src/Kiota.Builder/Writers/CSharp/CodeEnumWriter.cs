@@ -3,7 +3,7 @@ using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.CSharp {
-    public class CodeEnumWriter : BaseCSharpElementWriter<CodeEnum>
+    public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionService>
     {
         public CodeEnumWriter(CSharpConventionService conventionService):base(conventionService) {}
         public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer)

@@ -4,7 +4,7 @@ using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.CSharp {
-    public class CodeMethodWriter : BaseCSharpElementWriter<CodeMethod>
+    public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionService>
     {
         public CodeMethodWriter(CSharpConventionService conventionService): base(conventionService) { }
         public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)

@@ -1,5 +1,5 @@
 namespace Kiota.Builder.Writers.CSharp {
-    public class CodeClassEndWriter : BaseCSharpElementWriter<CodeClass.End>
+    public class CodeClassEndWriter : BaseElementWriter<CodeClass.End, CSharpConventionService>
     {
         public CodeClassEndWriter(CSharpConventionService conventionService):base(conventionService){}
         public override void WriteCodeElement(CodeClass.End codeElement, LanguageWriter writer)

@@ -1,5 +1,5 @@
 namespace Kiota.Builder.Writers.CSharp {
-    public class CodeIndexerWriter : BaseCSharpElementWriter<CodeIndexer>
+    public class CodeIndexerWriter : BaseElementWriter<CodeIndexer, CSharpConventionService>
     {
         public CodeIndexerWriter(CSharpConventionService conventionService) : base(conventionService) {}
         public override void WriteCodeElement(CodeIndexer codeElement, LanguageWriter writer)

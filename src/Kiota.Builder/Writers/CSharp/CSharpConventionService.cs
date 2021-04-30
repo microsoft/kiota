@@ -1,19 +1,20 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.CSharp {
-    public class CSharpConventionService {
-        public string SerializerFactoryPropertyName {get; private set; } = "SerializerFactory";
-        public string StreamTypeName {get; private set; } = "stream";
-        public string VoidTypeName {get; private set; } = "void";
-        public string DocCommentPrefix {get; private set; } = "/// ";
-        public string PathSegmentPropertyName {get; private set; } = "PathSegment";
-        public string CurrentPathPropertyName {get; private set; } = "CurrentPath";
-        public string HttpCorePropertyName {get; private set; } = "HttpCore";
-        public string[] NullableTypes {get; private set; } = { "int", "bool", "float", "double", "decimal", "Guid", "DateTimeOffset" };
-        public string NullableMarker {get; private set;} = "?";
-        public string ParseNodeInterfaceName {get; private set; } = "IParseNode";
+    public class CSharpConventionService : ILanguageConventionService {
+        public string SerializerFactoryPropertyName => "SerializerFactory";
+        public string StreamTypeName => "stream";
+        public string VoidTypeName => "void";
+        public string DocCommentPrefix => "/// ";
+        public string PathSegmentPropertyName => "PathSegment";
+        public string CurrentPathPropertyName => "CurrentPath";
+        public string HttpCorePropertyName => "HttpCore";
+        public HashSet<string> NullableTypes { get; } = new() { "int", "bool", "float", "double", "decimal", "Guid", "DateTimeOffset" };
+        public string NullableMarker => "?";
+        public string ParseNodeInterfaceName => "IParseNode";
         public void WriteShortDescription(string description, LanguageWriter writer) {
             if(!string.IsNullOrEmpty(description))
                 writer.WriteLine($"{DocCommentPrefix}<summary>{description}</summary>");
