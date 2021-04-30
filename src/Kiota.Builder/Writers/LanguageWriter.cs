@@ -69,14 +69,44 @@ namespace Kiota.Builder.Writers
         /// Dispatch call to Write the code element to the proper derivative write method
         /// </summary>
         /// <param name="code"></param>
-        public void Write(CodeElement code)
+        public void Write<T>(T code) where T : CodeElement
         {
-            if(Writers.TryGetValue(code.GetType(), out var writer))
-                writer.WriteCodeElement(code, this);
-            else
-                throw new InvalidOperationException($"Dispatcher missing for type {code.GetType()}");
+            _ = Writers.TryGetValue(code.GetType(), out var elementWriter);
+            switch(code) {
+                case CodeProperty p: // we have to do this triage because dotnet is limited in terms of covariance
+                    ((ICodeElementWriter<CodeProperty>) elementWriter).WriteCodeElement(p, this);
+                    break;
+                case CodeIndexer i:
+                    ((ICodeElementWriter<CodeIndexer>) elementWriter).WriteCodeElement(i, this);
+                    break;
+                case CodeClass.Declaration d:
+                    ((ICodeElementWriter<CodeClass.Declaration>) elementWriter).WriteCodeElement(d, this);
+                    break;
+                case CodeClass.End i:
+                    ((ICodeElementWriter<CodeClass.End>) elementWriter).WriteCodeElement(i, this);
+                    break;
+                case CodeEnum e:
+                    ((ICodeElementWriter<CodeEnum>) elementWriter).WriteCodeElement(e, this);
+                    break;
+                case CodeMethod m:
+                    ((ICodeElementWriter<CodeMethod>) elementWriter).WriteCodeElement(m, this);
+                    break;
+                case CodeType t:
+                    ((ICodeElementWriter<CodeType>) elementWriter).WriteCodeElement(t, this);
+                    break;
+                case CodeNamespace.BlockDeclaration:
+                case CodeNamespace.BlockEnd:
+                case CodeNamespace:
+                case CodeClass:
+                    break;
+                default:
+                    throw new InvalidOperationException($"Dispatcher missing for type {code.GetType()}");
+            }
         }
-        public Dictionary<Type, ICodeElementWriter<CodeElement>> Writers { get; protected set; }
+        protected void AddCodeElementWriter<T>(ICodeElementWriter<T> writer) where T: CodeElement {
+            Writers.Add(typeof(T), writer);
+        }
+        private readonly Dictionary<Type, object> Writers = new(); // we have to type as object because dotnet doesn't have type capture i.e eq for `? extends CodeElement`
         public static LanguageWriter GetLanguageWriter(GenerationLanguage language, string outputPath, string clientNamespaceName) {
             return language switch
             {

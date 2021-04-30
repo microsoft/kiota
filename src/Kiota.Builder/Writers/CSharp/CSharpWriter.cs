@@ -6,15 +6,13 @@
         {
             PathSegmenter = new CSharpPathSegmenter(rootPath, clientNamespaceName);
             var conventionService = new CSharpConventionService();
-            Writers = new() {
-                { typeof(CodeClass.Declaration), new CodeClassDeclarationWriter(conventionService) as object as ICodeElementWriter<CodeElement> },
-                { typeof(CodeClass.End), new CodeClassEndWriter(conventionService) as object as ICodeElementWriter<CodeElement> },
-                { typeof(CodeEnum), new CodeEnumWriter(conventionService) as object as ICodeElementWriter<CodeElement> },
-                { typeof(CodeIndexer), new CodeIndexerWriter(conventionService) as object as ICodeElementWriter<CodeElement> },
-                { typeof(CodeMethod), new CodeMethodWriter(conventionService) as object as ICodeElementWriter<CodeElement> },
-                { typeof(CodeProperty), new CodePropertyWriter(conventionService) as object as ICodeElementWriter<CodeElement> },
-                { typeof(CodeType), new CodeTypeWriter(conventionService) as object as ICodeElementWriter<CodeElement> },
-            };
+            AddCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
+            AddCodeElementWriter(new CodeClassEndWriter(conventionService));
+            AddCodeElementWriter(new CodeEnumWriter(conventionService));
+            AddCodeElementWriter(new CodeIndexerWriter(conventionService));
+            AddCodeElementWriter(new CodeMethodWriter(conventionService));
+            AddCodeElementWriter(new CodePropertyWriter(conventionService));
+            AddCodeElementWriter(new CodeTypeWriter(conventionService));
         }
     }
 }
