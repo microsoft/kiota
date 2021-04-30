@@ -6,16 +6,15 @@ namespace Kiota.Builder {
     {
         public int Compare(CodeElement x, CodeElement y)
         {
-            var isXNull = x == null;
-            var isYNull = y == null;
-            if(isXNull && isYNull) return 0;
-            else if (isXNull) return -1;
-            else if(isYNull) return 1;
-
-
-            return GetTypeFactor(x).CompareTo(GetTypeFactor(y)) * typeWeight + 
-                (x.Name?.CompareTo(y.Name) ?? 0) * nameWeight + 
-                GetParametersFactor(x).CompareTo(GetParametersFactor(y)) * parametersWeight;
+            return (x, y) switch
+            {
+                (null, null) => 0,
+                (null, _) => -1,
+                (_, null) => 1,
+                _ => GetTypeFactor(x).CompareTo(GetTypeFactor(y)) * typeWeight +
+                    (x.Name?.CompareTo(y.Name) ?? 0) * nameWeight +
+                    GetParametersFactor(x).CompareTo(GetParametersFactor(y)) * parametersWeight;
+            };
         }
         private static readonly int nameWeight = 10;
         private static readonly int typeWeight = 100;
