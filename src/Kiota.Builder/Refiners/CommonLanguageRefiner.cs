@@ -8,7 +8,7 @@ namespace Kiota.Builder {
     {
         public abstract void Refine(CodeNamespace generatedCode);
 
-        protected void AddDefaultImports(CodeElement current, Tuple<string, string>[] defaultNamespaces, Tuple<string, string>[] defaultNamespacesForModels, Tuple<string, string>[] defaultNamespacesForRequestBuilders) {
+        protected static void AddDefaultImports(CodeElement current, Tuple<string, string>[] defaultNamespaces, Tuple<string, string>[] defaultNamespacesForModels, Tuple<string, string>[] defaultNamespacesForRequestBuilders) {
             if(current is CodeClass currentClass) {
                 if(currentClass.ClassKind == CodeClassKind.Model)
                     currentClass.AddUsing(defaultNamespaces.Union(defaultNamespacesForModels)
@@ -32,7 +32,7 @@ namespace Kiota.Builder {
             CrawlTree(current, c => AddDefaultImports(c, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders));
         }
         private const string binaryType = "binary";
-        protected void ReplaceBinaryByNativeType(CodeElement currentElement, string symbol, string ns, bool addDeclaration = false) {
+        protected static void ReplaceBinaryByNativeType(CodeElement currentElement, string symbol, string ns, bool addDeclaration = false) {
             if(currentElement is CodeMethod currentMethod) {
                 var parentClass = currentMethod.Parent as CodeClass;
                 var shouldInsertUsing = false;
@@ -60,10 +60,11 @@ namespace Kiota.Builder {
             CrawlTree(currentElement, c => ReplaceBinaryByNativeType(c, symbol, ns, addDeclaration));
         }
         private const string pathSegmentPropertyName = "pathSegment";
-        protected void ConvertDeserializerPropsToMethods(CodeElement currentElement, string prefix = null) {
+        protected static void ConvertDeserializerPropsToMethods(CodeElement currentElement, string prefix = null) {
             if(currentElement is CodeClass currentClass) {
-                var deserializerProp = currentClass.InnerChildElements.OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.Deserializer);
+                var deserializerProp = currentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.Deserializer);
                 if(deserializerProp != null) {
+                    currentClass.RemoveChildElement(deserializerProp);
                     currentClass.AddMethod(new CodeMethod(currentClass) {
                         Name = $"{prefix}{deserializerProp.Name}",
                         MethodKind = CodeMethodKind.DeserializerBackwardCompatibility,
@@ -73,27 +74,24 @@ namespace Kiota.Builder {
                         Access = AccessModifier.Public,
                         Description = deserializerProp.Description
                     });
-                    currentClass.InnerChildElements.Remove(deserializerProp);
                 }
             }
             CrawlTree(currentElement, c => ConvertDeserializerPropsToMethods(c, prefix));
         }
         // temporary patch of type to it resolves as the builder sets types we didn't generate to entity
-        protected void FixReferencesToEntityType(CodeElement currentElement, CodeClass entityClass = null){
-            if(entityClass == null)
-                entityClass = currentElement.GetImmediateParentOfType<CodeNamespace>()
-                            .GetRootNamespace()
-                            .GetChildElementOfType<CodeClass>(x => x?.Name?.Equals("entity", StringComparison.InvariantCultureIgnoreCase) ?? false);
+        protected static void FixReferencesToEntityType(CodeElement currentElement, CodeClass entityClass = null){
+            if(entityClass == null && currentElement is CodeNamespace currentNamespace)
+                entityClass = currentNamespace.FindChildByName<CodeClass>("entity");
 
             if(currentElement is CodeMethod currentMethod 
                 && currentMethod.ReturnType is CodeType currentReturnType
-                && currentReturnType.Name.Equals("entity", StringComparison.InvariantCultureIgnoreCase)
+                && currentReturnType.Name.Equals("entity", StringComparison.OrdinalIgnoreCase)
                 && currentReturnType.TypeDefinition == null)
                 currentReturnType.TypeDefinition = entityClass;
 
             CrawlTree(currentElement, (c) => FixReferencesToEntityType(c, entityClass));
         }
-        protected void ConvertUnionTypesToWrapper(CodeElement currentElement) {
+        protected static void ConvertUnionTypesToWrapper(CodeElement currentElement) {
             if(currentElement is CodeMethod currentMethod) {
                 if(currentMethod.ReturnType is CodeUnionType currentUnionType)
                     currentMethod.ReturnType = ConvertUnionTypeToWrapper(currentMethod.Parent as CodeClass, currentUnionType);
@@ -129,42 +127,40 @@ namespace Kiota.Builder {
                 ActionOf = codeUnionType.ActionOf,
             };
         }
-        protected void MoveClassesWithNamespaceNamesUnderNamespace(CodeElement currentElement) {
+        protected static void MoveClassesWithNamespaceNamesUnderNamespace(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && 
                 !string.IsNullOrEmpty(currentClass.Name) &&
                 currentClass.Parent is CodeNamespace parentNamespace) {
-                var childNamespaceWithClassName = parentNamespace.InnerChildElements
+                var childNamespaceWithClassName = parentNamespace.GetChildElements(true)
                                                                 .OfType<CodeNamespace>()
                                                                 .FirstOrDefault(x => x.Name
-                                                                                    .EndsWith(currentClass.Name, StringComparison.InvariantCultureIgnoreCase));
+                                                                                    .EndsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase));
                 if(childNamespaceWithClassName != null) {
-                    parentNamespace.InnerChildElements.Remove(currentClass);
+                    parentNamespace.RemoveChildElement(currentClass);
                     childNamespaceWithClassName.AddClass(currentClass);
                 }
             }
             CrawlTree(currentElement, MoveClassesWithNamespaceNamesUnderNamespace);
         }
-        protected void ReplaceIndexersByMethodsWithParameter(CodeElement currentElement, string methodNameSuffix = default) {
+        protected static void ReplaceIndexersByMethodsWithParameter(CodeElement currentElement, CodeNamespace rootNamespace, string methodNameSuffix = default) {
             if(currentElement is CodeIndexer currentIndexer) {
                 var currentParentClass = currentElement.Parent as CodeClass;
-                currentParentClass.InnerChildElements.Remove(currentElement);
+                currentParentClass.RemoveChildElement(currentElement);
                 var pathSegment = currentParentClass
-                                    .GetChildElements()
-                                    .OfType<CodeProperty>()
-                                    .FirstOrDefault(x => x.Name.Equals(pathSegmentPropertyName, StringComparison.InvariantCultureIgnoreCase))
+                                    .FindChildByName<CodeProperty>(pathSegmentPropertyName)
                                     ?.DefaultValue;
                 if(!string.IsNullOrEmpty(pathSegment))
                     foreach(var returnType in currentIndexer.ReturnType.AllTypes)
-                        AddIndexerMethod(currentElement.GetImmediateParentOfType<CodeNamespace>().GetRootNamespace(), 
+                        AddIndexerMethod(rootNamespace,
                                         currentParentClass,
                                         returnType.TypeDefinition as CodeClass,
                                         pathSegment.Trim('\"').TrimStart('/'),
                                         methodNameSuffix,
                                         currentIndexer.Description);
             }
-            CrawlTree(currentElement, c => ReplaceIndexersByMethodsWithParameter(c, methodNameSuffix));
+            CrawlTree(currentElement, c => ReplaceIndexersByMethodsWithParameter(c, rootNamespace, methodNameSuffix));
         }
-        protected void AddIndexerMethod(CodeElement currentElement, CodeClass targetClass, CodeClass indexerClass, string pathSegment, string methodNameSuffix, string description) {
+        private static void AddIndexerMethod(CodeElement currentElement, CodeClass targetClass, CodeClass indexerClass, string pathSegment, string methodNameSuffix, string description) {
             if(currentElement is CodeProperty currentProperty && currentProperty.Type.AllTypes.Any(x => x.TypeDefinition == targetClass)) {
                 var parentClass = currentElement.Parent as CodeClass;
                 var method = new CodeMethod(parentClass) {
@@ -190,6 +186,7 @@ namespace Kiota.Builder {
                 parameter.Type = new CodeType(parameter) {
                     Name = "String",
                     IsNullable = false,
+                    IsExternal = true,
                 };
                 method.Parameters.Add(parameter);
                 parentClass.AddMethod(method);
@@ -198,13 +195,13 @@ namespace Kiota.Builder {
         }
         internal void AddInnerClasses(CodeElement current) {
             if(current is CodeClass currentClass) {
-                foreach(var parameter in current.GetChildElements().OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf && x.ParameterKind == CodeParameterKind.QueryParameter)) 
+                foreach(var parameter in currentClass.GetChildElements(true).OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf && x.ParameterKind == CodeParameterKind.QueryParameter)) 
                     foreach(var returnType in parameter.Type.AllTypes) {
                         var innerClass = returnType.TypeDefinition as CodeClass;
                         if(innerClass == null)
                             continue;
                             
-                        if(!currentClass.InnerChildElements.OfType<CodeClass>().Any(x => x.Name.Equals(returnType.TypeDefinition.Name))) {
+                        if(currentClass.FindChildByName<CodeClass>(returnType.TypeDefinition.Name) == null) {
                             currentClass.AddInnerClass(innerClass);
                         }
                         (innerClass.StartBlock as Declaration).Inherits = new CodeType(returnType.TypeDefinition) { Name = "QueryParametersBase", IsExternal = true };
@@ -212,18 +209,18 @@ namespace Kiota.Builder {
             }
             CrawlTree(current, AddInnerClasses);
         }
-        private readonly CodeUsingComparer usingComparerWithDeclarations = new CodeUsingComparer(true);
-        private readonly CodeUsingComparer usingComparerWithoutDeclarations = new CodeUsingComparer(false);
-        protected void AddPropertiesAndMethodTypesImports(CodeElement current, bool includeParentNamespaces, bool includeCurrentNamespace, bool compareOnDeclaration) {
+        private static readonly CodeUsingComparer usingComparerWithDeclarations = new CodeUsingComparer(true);
+        private static readonly CodeUsingComparer usingComparerWithoutDeclarations = new CodeUsingComparer(false);
+        protected static void AddPropertiesAndMethodTypesImports(CodeElement current, bool includeParentNamespaces, bool includeCurrentNamespace, bool compareOnDeclaration) {
             if(current is CodeClass currentClass) {
                 var currentClassNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
                 var propertiesTypes = currentClass
-                                    .InnerChildElements
+                                    .GetChildElements(true)
                                     .OfType<CodeProperty>()
                                     .Select(x => x.Type)
                                     .Distinct();
                 var methods = currentClass
-                                    .InnerChildElements
+                                    .GetChildElements(true)
                                     .OfType<CodeMethod>();
                 var methodsReturnTypes = methods
                                     .Select(x => x.ReturnType)
@@ -234,7 +231,7 @@ namespace Kiota.Builder {
                                     .Select(x => x.Type)
                                     .Distinct();
                 var indexerTypes = currentClass
-                                    .InnerChildElements
+                                    .GetChildElements(true)
                                     .OfType<CodeIndexer>()
                                     .Select(x => x.ReturnType)
                                     .Distinct();

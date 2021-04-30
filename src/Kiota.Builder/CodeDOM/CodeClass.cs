@@ -13,7 +13,7 @@ namespace Kiota.Builder
     /// <summary>
     /// CodeClass represents an instance of a Class to be generated in source code
     /// </summary>
-    public class CodeClass : CodeBlock, IDocumentedElement
+    public class CodeClass : CodeBlock, IDocumentedElement, ITypeDefinition
     {
         private string name;
 
@@ -40,36 +40,33 @@ namespace Kiota.Builder
 
         public void SetIndexer(CodeIndexer indexer)
         {
-            this.InnerChildElements.Add(indexer);
+            AddRange(indexer);
         }
 
-        public void AddProperty(params CodeProperty[] properties)
+        public IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties)
         {
             if(!properties.Any() || properties.Any(x => x == null))
                 throw new ArgumentNullException(nameof(properties));
-            AddMissingParent(properties);
-            this.InnerChildElements.AddRange(properties);
+            return AddRange(properties);
         }
 
         public bool ContainsMember(string name)
         {
-            return this.InnerChildElements.Any(e => e.Name == name);
+            return this.InnerChildElements.ContainsKey(name);
         }
 
-        public void AddMethod(params CodeMethod[] methods)
+        public IEnumerable<CodeMethod> AddMethod(params CodeMethod[] methods)
         {
             if(!methods.Any() || methods.Any(x => x == null))
                 throw new ArgumentOutOfRangeException(nameof(methods));
-            AddMissingParent(methods);
-            this.InnerChildElements.AddRange(methods);
+            return AddRange(methods);
         }
 
-        public void AddInnerClass(params CodeClass[] codeClasses)
+        public IEnumerable<CodeClass> AddInnerClass(params CodeClass[] codeClasses)
         {
             if(!codeClasses.Any() || codeClasses.Any(x => x == null))
                 throw new ArgumentOutOfRangeException(nameof(codeClasses));
-            AddMissingParent(codeClasses);
-            this.InnerChildElements.AddRange(codeClasses);
+            return AddRange(codeClasses);
         }
         public CodeClass GetParentClass() {
             if(StartBlock is Declaration declaration)

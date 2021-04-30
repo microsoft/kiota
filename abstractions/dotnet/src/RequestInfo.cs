@@ -9,8 +9,8 @@ namespace Kiota.Abstractions
     {
         public Uri URI { get; set; }
         public HttpMethod HttpMethod { get; set; }
-        public IDictionary<string, object> QueryParameters { get; set; } = new Dictionary<string, object>(StringComparer.InvariantCultureIgnoreCase);
-        public IDictionary<string, string> Headers { get; set; } = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+        public IDictionary<string, object> QueryParameters { get; set; } = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        public IDictionary<string, string> Headers { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         public Stream Content { get; set; }
         private const string jsonContentType = "application/json";
         private const string binaryContentType = "application/octet-stream";

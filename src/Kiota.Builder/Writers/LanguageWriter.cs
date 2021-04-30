@@ -81,7 +81,7 @@ namespace Kiota.Builder
                 case CodeNamespace: break;
                 case CodeClass: break;
                 default:
-                    throw new ArgumentException($"Dispatcher missing for type {code.GetType()}");
+                    throw new InvalidOperationException($"Dispatcher missing for type {code.GetType()}");
             }
 
         }

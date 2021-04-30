@@ -7,9 +7,9 @@ namespace Kiota.Builder
     /// <summary>
     /// Abstract element of some piece of source code to be generated
     /// </summary>
-    public abstract class CodeElement
+    public abstract class CodeElement : ICodeElement
     {
-        public Dictionary<string, object> GenerationProperties { get; set; } = new Dictionary<string, object>();
+        public Dictionary<string, object> GenerationProperties { get; set; } = new(StringComparer.OrdinalIgnoreCase);
         protected CodeElement(CodeElement parent)
         {
             if(parent == null && !(this is CodeNamespace))
@@ -17,7 +17,7 @@ namespace Kiota.Builder
             Parent = parent;
         }
         public CodeElement Parent { get; set; }
-        public abstract IList<CodeElement> GetChildElements();
+        public virtual IEnumerable<CodeElement> GetChildElements(bool innerOnly = false) => Enumerable.Empty<CodeElement>();
 
         public virtual string Name
         {

@@ -30,7 +30,7 @@ namespace Kiota.Builder
 
         public static async Task RenderCodeNamespaceToFilePerClassAsync(LanguageWriter writer, CodeNamespace root)
         {
-            foreach (var codeElement in root.GetChildElements())
+            foreach (var codeElement in root.GetChildElements(true))
             {
                 if (codeElement is CodeClass codeClass)
                     await RenderCodeNamespaceToSingleFileAsync(writer, codeClass, writer.PathSegmenter.GetPath(root, codeClass));
@@ -40,11 +40,12 @@ namespace Kiota.Builder
                     await RenderCodeNamespaceToFilePerClassAsync(writer, codeNamespace);
             }
         }
-
+        private static readonly CodeElementOrderComparer rendererElementComparer = new CodeElementOrderComparer();
         private static void RenderCode(LanguageWriter writer, CodeElement element)
         {
             writer.Write(element);
-            foreach (var childElement in element.GetChildElements())
+            foreach (var childElement in element.GetChildElements()
+                                                .OrderBy(x => x, rendererElementComparer))
             {
                 RenderCode(writer, childElement);
             }

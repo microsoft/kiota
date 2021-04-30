@@ -9,10 +9,7 @@ namespace Kiota.Builder
     /// </summary>
     public class CodeNamespace : CodeBlock
     {
-        private CodeNamespace(CodeElement parent):base(parent)
-        {
-            
-        }
+        private CodeNamespace(CodeElement parent):base(parent) {}
         public static CodeNamespace InitRootNamespace() {
             return new CodeNamespace(null);
         }
@@ -29,29 +26,40 @@ namespace Kiota.Builder
             }
         }
 
-        public void AddClass(params CodeClass[] codeClasses)
+        public IEnumerable<CodeClass> AddClass(params CodeClass[] codeClasses)
         {
             if(!codeClasses.Any() || codeClasses.Any( x=> x == null))
                 throw new ArgumentOutOfRangeException(nameof(codeClasses));
-            AddMissingParent(codeClasses);
-            this.InnerChildElements.AddRange(codeClasses);
+            return AddRange(codeClasses);
         }
-        private void AddNamespace(params CodeNamespace[] codeNamespaces) {
+        private IEnumerable<CodeNamespace> AddNamespace(params CodeNamespace[] codeNamespaces) {
             if(!codeNamespaces.Any() || codeNamespaces.Any(x => x == null))
                 throw new ArgumentOutOfRangeException(nameof(codeNamespaces));
-            AddMissingParent(codeNamespaces);
-            this.InnerChildElements.AddRange(codeNamespaces);
+            return AddRange(codeNamespaces);
         }
         private static readonly char namespaceNameSeparator = '.';
+        private CodeNamespace GetRootNamespace() {
+            if(Parent == null) return this;
+            else return (this.Parent as CodeNamespace).GetRootNamespace();
+        }
+        public CodeNamespace FindNamespaceByName(string nsName) {
+            var result = FindChildByName<CodeNamespace>(nsName, false);
+            if(result == null)
+                foreach(var childNS in InnerChildElements.Values.OfType<CodeNamespace>()) {
+                    result = childNS.FindNamespaceByName(nsName);
+                    if(result != null)
+                        break;
+                }
+            return result;
+        }
         public CodeNamespace AddNamespace(string namespaceName) {
             if(string.IsNullOrEmpty(namespaceName))
                 throw new ArgumentNullException(nameof(namespaceName));
-            var rootNamespace = GetRootNamespace();
             var namespaceNameSegements = namespaceName.Split(namespaceNameSeparator, StringSplitOptions.RemoveEmptyEntries);
             var lastPresentSegmentIndex = default(int);
-            CodeNamespace lastPresentSegmentNamespace = rootNamespace;
+            var lastPresentSegmentNamespace = GetRootNamespace();
             while(lastPresentSegmentIndex < namespaceNameSegements.Length) {
-                var segmentNameSpace = rootNamespace.GetNamespace(namespaceNameSegements.Take(lastPresentSegmentIndex + 1).Aggregate((x, y) => $"{x}.{y}"));
+                var segmentNameSpace = lastPresentSegmentNamespace.FindNamespaceByName(namespaceNameSegements.Take(lastPresentSegmentIndex + 1).Aggregate((x, y) => $"{x}.{y}"));
                 if(segmentNameSpace == null)
                     break;
                 else {
@@ -59,51 +67,31 @@ namespace Kiota.Builder
                     lastPresentSegmentIndex++;
                 }
             }
-            if(lastPresentSegmentNamespace != null)
-                foreach(var childSegment in namespaceNameSegements.Skip(lastPresentSegmentIndex)) {
-                    var newNS = new CodeNamespace(lastPresentSegmentNamespace) {
-                        Name = $"{lastPresentSegmentNamespace?.Name}{(string.IsNullOrEmpty(lastPresentSegmentNamespace?.Name) ? string.Empty : ".")}{childSegment}",
-                    };
-                    lastPresentSegmentNamespace.AddNamespace(newNS);
-                    lastPresentSegmentNamespace = newNS;
-                }
+            foreach(var childSegment in namespaceNameSegements.Skip(lastPresentSegmentIndex))
+                lastPresentSegmentNamespace = lastPresentSegmentNamespace
+                                            .AddNamespace(
+                                                new CodeNamespace(lastPresentSegmentNamespace) {
+                                                    Name = $"{lastPresentSegmentNamespace?.Name}{(string.IsNullOrEmpty(lastPresentSegmentNamespace?.Name) ? string.Empty : ".")}{childSegment}",
+                                            }).First();
             return lastPresentSegmentNamespace;
         }
         public bool IsItemNamespace { get; private set; }
         public CodeNamespace EnsureItemNamespace() { 
             if (IsItemNamespace) return this;
             else {
-                var childNamespace = this.InnerChildElements.OfType<CodeNamespace>().FirstOrDefault(x => x.IsItemNamespace);
+                var childNamespace = this.InnerChildElements.Values.OfType<CodeNamespace>().FirstOrDefault(x => x.IsItemNamespace);
                 if(childNamespace == null) {
-                    childNamespace = GetRootNamespace().AddNamespace($"{this.Name}.item");
+                    childNamespace = AddNamespace($"{this.Name}.item");
                     childNamespace.IsItemNamespace = true;
                 }
                 return childNamespace;
             } 
         }
-        public CodeNamespace GetNamespace(string namespaceName) {
-            if(string.IsNullOrEmpty(namespaceName))
-                throw new ArgumentNullException(nameof(namespaceName));
-            else
-                return this.GetChildElementOfType<CodeNamespace>(x => x.Name?.Equals(namespaceName, StringComparison.InvariantCultureIgnoreCase) ?? false);
-        }
-        public CodeNamespace GetRootNamespace(CodeNamespace ns = null) {
-            if(ns == null)
-                ns = this;
-            if (ns.Parent == null)
-                return ns;
-            else if(ns.Parent is CodeNamespace parent)
-                return GetRootNamespace(parent);
-            else
-                throw new InvalidOperationException($"Found a namespace {ns.name} with a parent that's not a namespace {ns.Parent.Name} {ns.Parent.GetType()}");
-        }
-
-        public void AddEnum(params CodeEnum[] enumDeclarations)
+        public IEnumerable<CodeEnum> AddEnum(params CodeEnum[] enumDeclarations)
         {
             if(!enumDeclarations.Any() || enumDeclarations.Any( x=> x == null))
                 throw new ArgumentOutOfRangeException(nameof(enumDeclarations));
-            AddMissingParent(enumDeclarations);
-            this.InnerChildElements.AddRange(enumDeclarations);
+            return AddRange(enumDeclarations);
         }
     }
 }

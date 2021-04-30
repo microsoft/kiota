@@ -11,7 +11,7 @@ namespace KiotaCore.Serialization {
         {
             if(string.IsNullOrEmpty(contentType))
                 throw new ArgumentNullException(nameof(contentType));
-            else if(!validContentType.Equals(contentType, StringComparison.InvariantCultureIgnoreCase))
+            else if(!validContentType.Equals(contentType, StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentOutOfRangeException($"expected a {validContentType} content type");
             
             _ = content ?? throw new ArgumentNullException(nameof(content));

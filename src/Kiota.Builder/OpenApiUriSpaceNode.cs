@@ -9,7 +9,7 @@ namespace Kiota.Builder
 {
     public class OpenApiUrlSpaceNode
     {
-        public IDictionary<string, OpenApiUrlSpaceNode> Children { get; set; } = new Dictionary<string, OpenApiUrlSpaceNode>();
+        public IDictionary<string, OpenApiUrlSpaceNode> Children { get; set; } = new Dictionary<string, OpenApiUrlSpaceNode>(StringComparer.OrdinalIgnoreCase);
         public string Segment {get;set;}
         public string Layer {get;set;}
 
@@ -20,41 +20,6 @@ namespace Kiota.Builder
         {
             Segment = segment;
         }
-
-        public bool IsParameter()
-        {
-            return Segment.StartsWith("{");
-        }
-
-        public bool IsFunction()
-        {
-            return Segment.Contains("(");
-        }
-
-        public string Identifier
-        {
-            get
-            {
-                string identifier;
-                if (IsParameter())
-                {
-                    identifier = Segment.Substring(1, Segment.Length - 2).ToPascalCase();
-                }
-                else
-                {
-                    identifier = Segment.ToPascalCase().Replace("()", "");
-                    var openParen = identifier.IndexOf("(");
-                    if (openParen >= 0)
-                    {
-                        identifier = identifier.Substring(0, openParen);
-                    }
-                }
-                return identifier;
-            }
-        }
-
-        internal bool HasOperations() => PathItem?.Operations?.Any() ?? false;
-
         public static OpenApiUrlSpaceNode Create(OpenApiDocument doc, string layer = "")
         {
             OpenApiUrlSpaceNode root = null;
@@ -122,28 +87,6 @@ namespace Kiota.Builder
                 return node.Attach(segments.Skip(1), pathItem, layer, currentPath + pathNameSeparator + segment);
             }
         }
-        public bool DoesNodeBelongToItemSubnamespace() =>
-        (Segment?.StartsWith("{") ?? false) && (Segment?.EndsWith("}") ?? false);
         private readonly char pathNameSeparator = '\\';
-        public string GetNodeNamespaceFromPath(string prefix = default) =>
-            prefix + 
-                    ((Path?.Contains(pathNameSeparator) ?? false) ?
-                        "." + Path
-                                ?.Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
-                                ?.Where(x => !x.StartsWith('{'))
-                                ?.Aggregate((x, y) => $"{x}.{y}") :
-                        string.Empty)
-                    .ReplaceValueIdentifier();
-        private static readonly Regex idClassNameCleanup = new Regex(@"Id\d?$");
-        ///<summary>
-        /// Returns the class name for the node with more or less precision depending on the provided arguments
-        ///</summary>
-        public string GetClassName(string suffix = default, string prefix = default, OpenApiOperation operation = default) {
-            var rawClassName = operation?.GetResponseSchema()?.Reference?.GetClassName() ?? 
-                                Identifier?.ReplaceValueIdentifier();
-            if(DoesNodeBelongToItemSubnamespace() && idClassNameCleanup.IsMatch(rawClassName))
-                rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
-            return prefix + rawClassName + suffix;
-        }
     }
 }

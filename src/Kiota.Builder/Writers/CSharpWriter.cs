@@ -80,9 +80,10 @@ namespace Kiota.Builder
                     WriteLine($"{GetAccessModifier(code.Access)} {(hideParentMember ? "new " : string.Empty)}{code.Type.Name} {code.Name.ToFirstCharacterUpperCase()} => new Dictionary<string, Action<{parentClass.Name.ToFirstCharacterUpperCase()}, {parseNodeInterfaceName}>> {{");
                     IncreaseIndent();
                     foreach(var otherProp in parentClass
-                                                    .InnerChildElements
+                                                    .GetChildElements(true)
                                                     .OfType<CodeProperty>()
-                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
+                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)
+                                                    .OrderBy(x => x.Name)) {
                         WriteLine("{");
                         IncreaseIndent();
                         WriteLine($"\"{otherProp.Name.ToFirstCharacterLowerCase()}\", (o,n) => {{ o.{otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type)}(); }}");
@@ -177,7 +178,7 @@ namespace Kiota.Builder
                 WriteLine($"{docCommentPrefix}<summary>");
                 if(isDescriptionPresent)
                     WriteLine($"{docCommentPrefix}{code.Description}");
-                foreach(var paramWithDescription in parametersWithDescription)
+                foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
                     WriteLine($"{docCommentPrefix}<param name=\"{paramWithDescription.Name}\">{paramWithDescription.Description}</param>");
                 WriteLine($"{docCommentPrefix}</summary>");
             }
@@ -197,8 +198,8 @@ namespace Kiota.Builder
             var returnType = GetTypeString(code.ReturnType);
             var parentClass = code.Parent as CodeClass;
             var shouldHide = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null && code.MethodKind == CodeMethodKind.Serializer;
-            var isVoid = VoidTypeName.Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
-            var isStream = StreamTypeName.Equals(returnType, StringComparison.InvariantCultureIgnoreCase);
+            var isVoid = VoidTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
+            var isStream = StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
             WriteMethodDocumentation(code);
             WriteMethodPrototype(code, returnType, shouldHide, isVoid);
             IncreaseIndent();
@@ -207,13 +208,14 @@ namespace Kiota.Builder
             var headersParam = code.Parameters.OfKind(CodeParameterKind.Headers);
             switch(code.MethodKind) {
                 case CodeMethodKind.Serializer:
-                    var additionalDataProperty = parentClass.InnerChildElements.OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.AdditionalData);
+                    var additionalDataProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.AdditionalData);
                     if(shouldHide)
                         WriteLine("base.Serialize(writer);");
                     foreach(var otherProp in parentClass
-                                                    .InnerChildElements
+                                                    .GetChildElements(true)
                                                     .OfType<CodeProperty>()
-                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)) {
+                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)
+                                                    .OrderBy(x => x.Name)) {
                         WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
                     }
                     if(additionalDataProperty != null)
@@ -228,7 +230,7 @@ namespace Kiota.Builder
                     DecreaseIndent();
                     WriteLine("};");
                     if(requestBodyParam != null) {
-                        if(requestBodyParam.Type.Name.Equals(StreamTypeName, StringComparison.InvariantCultureIgnoreCase))
+                        if(requestBodyParam.Type.Name.Equals(StreamTypeName, StringComparison.OrdinalIgnoreCase))
                             WriteLine($"requestInfo.SetStreamContent({requestBodyParam.Name});");
                         else
                             WriteLine($"requestInfo.SetJsonContentFromParsable({requestBodyParam.Name}, {SerializerFactoryPropertyName});"); //TODO we're making a big assumption here that everything will be json
@@ -249,7 +251,7 @@ namespace Kiota.Builder
                     break;
                 case CodeMethodKind.RequestExecutor:
                     var generatorMethodName = (code.Parent as CodeClass)
-                                                .InnerChildElements
+                                                .GetChildElements(true)
                                                 .OfType<CodeMethod>()
                                                 .FirstOrDefault(x => x.MethodKind == CodeMethodKind.RequestGenerator && x.HttpMethod == code.HttpMethod)
                                                 ?.Name;
