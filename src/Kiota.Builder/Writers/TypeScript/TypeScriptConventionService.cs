@@ -95,7 +95,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             };
         }
 
-        internal string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
+        internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
         public void WriteShortDescription(string description, LanguageWriter writer)
         {
             if(!string.IsNullOrEmpty(description))

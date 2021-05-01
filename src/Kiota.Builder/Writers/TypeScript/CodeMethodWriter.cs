@@ -103,9 +103,9 @@ namespace  Kiota.Builder.Writers.TypeScript {
             if (isDescriptionPresent || parametersWithDescription.Any()) {
                 writer.WriteLine(localConventions.DocCommentStart);
                 if(isDescriptionPresent)
-                    writer.WriteLine($"{localConventions.DocCommentPrefix}{localConventions.RemoveInvalidDescriptionCharacters(code.Description)}");
+                    writer.WriteLine($"{localConventions.DocCommentPrefix}{TypeScriptConventionService.RemoveInvalidDescriptionCharacters(code.Description)}");
                 foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
-                    writer.WriteLine($"{localConventions.DocCommentPrefix}@param {paramWithDescription.Name} {localConventions.RemoveInvalidDescriptionCharacters(paramWithDescription.Description)}");
+                    writer.WriteLine($"{localConventions.DocCommentPrefix}@param {paramWithDescription.Name} {TypeScriptConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Description)}");
                 
                 if(code.IsAsync)
                     writer.WriteLine($"{localConventions.DocCommentPrefix}@returns a Promise of {code.ReturnType.Name}");

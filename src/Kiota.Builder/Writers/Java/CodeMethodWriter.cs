@@ -148,9 +148,9 @@ namespace Kiota.Builder.Writers.Java {
             if (isDescriptionPresent || parametersWithDescription.Any()) {
                 writer.WriteLine(conventions.DocCommentStart);
                 if(isDescriptionPresent)
-                    writer.WriteLine($"{conventions.DocCommentPrefix}{conventions.RemoveInvalidDescriptionCharacters(code.Description)}");
+                    writer.WriteLine($"{conventions.DocCommentPrefix}{JavaConventionService.RemoveInvalidDescriptionCharacters(code.Description)}");
                 foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
-                    writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Name} {conventions.RemoveInvalidDescriptionCharacters(paramWithDescription.Description)}");
+                    writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Name} {JavaConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Description)}");
                 
                 if(code.IsAsync)
                     writer.WriteLine($"{conventions.DocCommentPrefix}@return a CompletableFuture of {code.ReturnType.Name}");

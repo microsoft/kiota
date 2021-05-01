@@ -13,7 +13,7 @@ namespace Kiota.Builder.Writers.CSharp {
         public string CurrentPathPropertyName => "CurrentPath";
         public string HttpCorePropertyName => "HttpCore";
         public HashSet<string> NullableTypes { get; } = new() { "int", "bool", "float", "double", "decimal", "Guid", "DateTimeOffset" };
-        public string NullableMarker => "?";
+        public static string NullableMarker => "?";
         public string ParseNodeInterfaceName => "IParseNode";
         public void WriteShortDescription(string description, LanguageWriter writer) {
             if(!string.IsNullOrEmpty(description))
@@ -41,8 +41,11 @@ namespace Kiota.Builder.Writers.CSharp {
                 var typeName = TranslateType(currentType.Name);
                 var nullableSuffix = ShouldTypeHaveNullableMarker(code, typeName) ? NullableMarker : string.Empty;
                 var collectionPrefix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? "List<" : string.Empty;
-                var collectionSuffix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? ">" : 
-                                            (currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Array ? "[]" : string.Empty);
+                var collectionSuffix = currentType.CollectionKind switch {
+                    CodeType.CodeTypeCollectionKind.Complex => ">",
+                    CodeType.CodeTypeCollectionKind.Array => "[]",
+                    _ => string.Empty,
+                };
                 if (currentType.ActionOf)
                     return $"Action<{collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}>";
                 else

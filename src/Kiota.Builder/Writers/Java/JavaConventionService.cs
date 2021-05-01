@@ -39,8 +39,11 @@ namespace Kiota.Builder.Writers.Java {
             else if (code is CodeType currentType) {
                 var typeName = TranslateType(currentType.Name);
                 var collectionPrefix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? "List<" : string.Empty;
-                var collectionSuffix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? ">" : 
-                                            (currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Array ? "[]" : string.Empty);
+                var collectionSuffix = currentType.CollectionKind switch {
+                    CodeType.CodeTypeCollectionKind.Complex => ">",
+                    CodeType.CodeTypeCollectionKind.Array => "[]",
+                    _ => string.Empty,
+                };
                 if (currentType.ActionOf)
                     return $"java.util.function.Consumer<{collectionPrefix}{typeName}{collectionSuffix}>";
                 else
@@ -62,7 +65,7 @@ namespace Kiota.Builder.Writers.Java {
             if(!string.IsNullOrEmpty(description))
                 writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)} {DocCommentEnd}");
         }
-        internal string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
+        internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
         internal void AddRequestBuilderBody(string returnType, LanguageWriter writer, string suffix = default) {
             // we're assigning this temp variable because java doesn't have a way to differentiate references with same names in properties initializers
             // and because if currentPath is null it'll add "null" to the string...
