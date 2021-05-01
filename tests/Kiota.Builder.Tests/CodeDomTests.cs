@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using Kiota.Builder.Writers.CSharp;
 using Xunit;
 
 namespace Kiota.Builder.tests
