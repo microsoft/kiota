@@ -28,98 +28,21 @@ namespace Kiota.Builder.Writers.Java {
             }
             switch(codeElement.MethodKind) {
                 case CodeMethodKind.Serializer:
-                    var additionalDataProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.AdditionalData);
-                    if((parentClass.StartBlock as CodeClass.Declaration).Inherits != null)
-                        writer.WriteLine("super.serialize(writer);");
-                    foreach(var otherProp in parentClass
-                                                    .GetChildElements(true)
-                                                    .OfType<CodeProperty>()
-                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)
-                                                    .OrderBy(x => x.Name)) {
-                        writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterLowerCase()});");
-                    }
-                    if(additionalDataProperty != null)
-                        writer.WriteLine($"writer.writeAdditionalData(this.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
+                    WriteSerializerBody(parentClass, writer);
+                    
                 break;
                 case CodeMethodKind.DeserializerBackwardCompatibility:
-                    var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
-                    var fieldToSerialize = parentClass
-                            .GetChildElements(true)
-                            .OfType<CodeProperty>()
-                            .Where(x => x.PropertyKind == CodePropertyKind.Custom);
-                    writer.WriteLine($"final Map<String, BiConsumer<T, {conventions.ParseNodeInterfaceName}>> fields = new HashMap<>({(inherits ? "super." + codeElement.Name+ "()" : fieldToSerialize.Count())});");
-                    if(fieldToSerialize.Any())
-                        fieldToSerialize
-                                .OrderBy(x => x.Name)
-                                .Select(x => 
-                                    $"fields.put(\"{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}\", (o, n) -> {{ (({parentClass.Name.ToFirstCharacterUpperCase()})o).{x.Name.ToFirstCharacterLowerCase()} = {GetDeserializationMethodName(x.Type)}; }});")
-                                .ToList()
-                                .ForEach(x => writer.WriteLine(x));
-                    writer.WriteLine("return fields;");
-                    break;
+                    WriteDeserializerBody(codeElement, parentClass, writer);
+                break;
                 case CodeMethodKind.IndexerBackwardCompatibility:
                     var pathSegment = codeElement.GenerationProperties.ContainsKey(conventions.PathSegmentPropertyName) ? codeElement.GenerationProperties[conventions.PathSegmentPropertyName] as string : string.Empty;
                     conventions.AddRequestBuilderBody(returnType, writer, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
                 break;
                 case CodeMethodKind.RequestGenerator:
-                    writer.WriteLine("final RequestInfo requestInfo = new RequestInfo() {{");
-                    writer.IncreaseIndent();
-                    writer.WriteLines($"uri = new URI({conventions.CurrentPathPropertyName} + {conventions.PathSegmentPropertyName});",
-                                $"httpMethod = HttpMethod.{codeElement.HttpMethod?.ToString().ToUpperInvariant()};");
-                    writer.DecreaseIndent();
-                    writer.WriteLine("}};");
-                    if(requestBodyParam != null)
-                        if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                            writer.WriteLine($"requestInfo.setStreamContent({requestBodyParam.Name});");
-                        else
-                            writer.WriteLine($"requestInfo.setJsonContentFromParsable({requestBodyParam.Name}, {conventions.SerializerFactoryPropertyName});"); //TODO we're making a big assumption here that the request is json
-                    if(queryStringParam != null) {
-                        var httpMethodPrefix = codeElement.HttpMethod.ToString().ToFirstCharacterUpperCase();
-                        writer.WriteLine($"if ({queryStringParam.Name} != null) {{");
-                        writer.IncreaseIndent();
-                        writer.WriteLines($"final {httpMethodPrefix}QueryParameters qParams = new {httpMethodPrefix}QueryParameters();",
-                                    $"{queryStringParam.Name}.accept(qParams);",
-                                    "qParams.AddQueryParameters(requestInfo.queryParameters);");
-                        writer.DecreaseIndent();
-                        writer.WriteLine("}");
-                    }
-                    if(headersParam != null) {
-                        writer.WriteLine($"if ({headersParam.Name} != null) {{");
-                        writer.IncreaseIndent();
-                        writer.WriteLine($"{headersParam.Name}.accept(requestInfo.headers);");
-                        writer.DecreaseIndent();
-                        writer.WriteLine("}");
-                    }
-                    writer.WriteLine("return requestInfo;");
+                    WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, writer);
                 break;
                 case CodeMethodKind.RequestExecutor:
-                    var generatorMethodName = (codeElement.Parent as CodeClass)
-                                                .GetChildElements(true)
-                                                .OfType<CodeMethod>()
-                                                .FirstOrDefault(x => x.MethodKind == CodeMethodKind.RequestGenerator && x.HttpMethod == codeElement.HttpMethod)
-                                                ?.Name
-                                                ?.ToFirstCharacterLowerCase();
-                    writer.WriteLine("try {");
-                    writer.IncreaseIndent();
-                    writer.WriteLine($"final RequestInfo requestInfo = {generatorMethodName}(");
-                    var requestInfoParameters = new List<string> { requestBodyParam?.Name, queryStringParam?.Name, headersParam?.Name }.Where(x => x != null);
-                    if(requestInfoParameters.Any()) {
-                        writer.IncreaseIndent();
-                        writer.WriteLine(requestInfoParameters.Aggregate((x,y) => $"{x}, {y}"));
-                        writer.DecreaseIndent();
-                    }
-                    writer.WriteLine(");");
-                    var sendMethodName = conventions.PrimitiveTypes.Contains(returnType) ? "sendPrimitiveAsync" : "sendAsync";
-                    if(codeElement.Parameters.Any(x => x.ParameterKind == CodeParameterKind.ResponseHandler))
-                        writer.WriteLine($"return this.httpCore.{sendMethodName}(requestInfo, {returnType}.class, responseHandler);");
-                    else
-                        writer.WriteLine($"return this.httpCore.{sendMethodName}(requestInfo, {returnType}.class, null);");
-                    writer.DecreaseIndent();
-                    writer.WriteLine("} catch (URISyntaxException ex) {");
-                    writer.IncreaseIndent();
-                    writer.WriteLine("return java.util.concurrent.CompletableFuture.failedFuture(ex);");
-                    writer.DecreaseIndent();
-                    writer.WriteLine("}");
+                    WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, returnType, writer);
                 break;
                 case CodeMethodKind.AdditionalDataAccessor:
                     writer.WriteLine($"return {codeElement.Name.Substring(3).ToFirstCharacterLowerCase()};"); // 3 -> get prefix
@@ -131,7 +54,96 @@ namespace Kiota.Builder.Writers.Java {
             writer.DecreaseIndent();
             writer.WriteLine("}");
         }
-
+        private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
+            var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
+            var fieldToSerialize = parentClass
+                    .GetChildElements(true)
+                    .OfType<CodeProperty>()
+                    .Where(x => x.PropertyKind == CodePropertyKind.Custom);
+            writer.WriteLine($"final Map<String, BiConsumer<T, {conventions.ParseNodeInterfaceName}>> fields = new HashMap<>({(inherits ? "super." + codeElement.Name+ "()" : fieldToSerialize.Count())});");
+            if(fieldToSerialize.Any())
+                fieldToSerialize
+                        .OrderBy(x => x.Name)
+                        .Select(x => 
+                            $"fields.put(\"{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}\", (o, n) -> {{ (({parentClass.Name.ToFirstCharacterUpperCase()})o).{x.Name.ToFirstCharacterLowerCase()} = {GetDeserializationMethodName(x.Type)}; }});")
+                        .ToList()
+                        .ForEach(x => writer.WriteLine(x));
+            writer.WriteLine("return fields;");
+        }
+        private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, string returnType, LanguageWriter writer) {
+            var generatorMethodName = (codeElement.Parent as CodeClass)
+                                                .GetChildElements(true)
+                                                .OfType<CodeMethod>()
+                                                .FirstOrDefault(x => x.MethodKind == CodeMethodKind.RequestGenerator && x.HttpMethod == codeElement.HttpMethod)
+                                                ?.Name
+                                                ?.ToFirstCharacterLowerCase();
+            writer.WriteLine("try {");
+            writer.IncreaseIndent();
+            writer.WriteLine($"final RequestInfo requestInfo = {generatorMethodName}(");
+            var requestInfoParameters = new List<string> { requestBodyParam?.Name, queryStringParam?.Name, headersParam?.Name }.Where(x => x != null);
+            if(requestInfoParameters.Any()) {
+                writer.IncreaseIndent();
+                writer.WriteLine(requestInfoParameters.Aggregate((x,y) => $"{x}, {y}"));
+                writer.DecreaseIndent();
+            }
+            writer.WriteLine(");");
+            var sendMethodName = conventions.PrimitiveTypes.Contains(returnType) ? "sendPrimitiveAsync" : "sendAsync";
+            if(codeElement.Parameters.Any(x => x.ParameterKind == CodeParameterKind.ResponseHandler))
+                writer.WriteLine($"return this.httpCore.{sendMethodName}(requestInfo, {returnType}.class, responseHandler);");
+            else
+                writer.WriteLine($"return this.httpCore.{sendMethodName}(requestInfo, {returnType}.class, null);");
+            writer.DecreaseIndent();
+            writer.WriteLine("} catch (URISyntaxException ex) {");
+            writer.IncreaseIndent();
+            writer.WriteLine("return java.util.concurrent.CompletableFuture.failedFuture(ex);");
+            writer.DecreaseIndent();
+            writer.WriteLine("}");
+        }
+        private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, LanguageWriter writer) {
+            writer.WriteLine("final RequestInfo requestInfo = new RequestInfo() {{");
+            writer.IncreaseIndent();
+            writer.WriteLines($"uri = new URI({conventions.CurrentPathPropertyName} + {conventions.PathSegmentPropertyName});",
+                        $"httpMethod = HttpMethod.{codeElement.HttpMethod?.ToString().ToUpperInvariant()};");
+            writer.DecreaseIndent();
+            writer.WriteLine("}};");
+            if(requestBodyParam != null)
+                if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
+                    writer.WriteLine($"requestInfo.setStreamContent({requestBodyParam.Name});");
+                else
+                    writer.WriteLine($"requestInfo.setJsonContentFromParsable({requestBodyParam.Name}, {conventions.SerializerFactoryPropertyName});"); //TODO we're making a big assumption here that the request is json
+            if(queryStringParam != null) {
+                var httpMethodPrefix = codeElement.HttpMethod.ToString().ToFirstCharacterUpperCase();
+                writer.WriteLine($"if ({queryStringParam.Name} != null) {{");
+                writer.IncreaseIndent();
+                writer.WriteLines($"final {httpMethodPrefix}QueryParameters qParams = new {httpMethodPrefix}QueryParameters();",
+                            $"{queryStringParam.Name}.accept(qParams);",
+                            "qParams.AddQueryParameters(requestInfo.queryParameters);");
+                writer.DecreaseIndent();
+                writer.WriteLine("}");
+            }
+            if(headersParam != null) {
+                writer.WriteLine($"if ({headersParam.Name} != null) {{");
+                writer.IncreaseIndent();
+                writer.WriteLine($"{headersParam.Name}.accept(requestInfo.headers);");
+                writer.DecreaseIndent();
+                writer.WriteLine("}");
+            }
+            writer.WriteLine("return requestInfo;");
+        }
+        private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer) {
+            var additionalDataProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.AdditionalData);
+            if((parentClass.StartBlock as CodeClass.Declaration).Inherits != null)
+                writer.WriteLine("super.serialize(writer);");
+            foreach(var otherProp in parentClass
+                                            .GetChildElements(true)
+                                            .OfType<CodeProperty>()
+                                            .Where(x => x.PropertyKind == CodePropertyKind.Custom)
+                                            .OrderBy(x => x.Name)) {
+                writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterLowerCase()});");
+            }
+            if(additionalDataProperty != null)
+                writer.WriteLine($"writer.writeAdditionalData(this.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
+        }
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType) {
             var accessModifier = conventions.GetAccessModifier(code.Access);
             var genericTypeParameterDeclaration = code.MethodKind == CodeMethodKind.DeserializerBackwardCompatibility ? "<T> ": string.Empty;
