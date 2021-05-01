@@ -13,7 +13,6 @@ namespace Kiota.Builder.Writers.CSharp {
             var parentClass = codeElement.Parent as CodeClass;
             var shouldHide = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null && codeElement.MethodKind == CodeMethodKind.Serializer;
             var isVoid = conventions.VoidTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
-            var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
             WriteMethodDocumentation(codeElement, writer);
             WriteMethodPrototype(codeElement, writer, returnType, shouldHide, isVoid);
             writer.IncreaseIndent();
@@ -22,49 +21,24 @@ namespace Kiota.Builder.Writers.CSharp {
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
             switch(codeElement.MethodKind) {
                 case CodeMethodKind.Serializer:
-                    var additionalDataProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.AdditionalData);
-                    if(shouldHide)
-                        writer.WriteLine("base.Serialize(writer);");
-                    foreach(var otherProp in parentClass
-                                                    .GetChildElements(true)
-                                                    .OfType<CodeProperty>()
-                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)
-                                                    .OrderBy(x => x.Name)) {
-                        writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
-                    }
-                    if(additionalDataProperty != null)
-                        writer.WriteLine($"writer.WriteAdditionalData({additionalDataProperty.Name});");
+                    WriteSerializerBody(shouldHide, parentClass, writer);
                 break;
                 case CodeMethodKind.RequestGenerator:
-                    var operationName = codeElement.HttpMethod?.ToString();
-                    writer.WriteLine("var requestInfo = new RequestInfo {");
-                    writer.IncreaseIndent();
-                    writer.WriteLines($"HttpMethod = HttpMethod.{operationName?.ToUpperInvariant()},",
-                               $"URI = new Uri({conventions.CurrentPathPropertyName} + {conventions.PathSegmentPropertyName}),");
-                    writer.DecreaseIndent();
-                    writer.WriteLine("};");
-                    if(requestBodyParam != null) {
-                        if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                            writer.WriteLine($"requestInfo.SetStreamContent({requestBodyParam.Name});");
-                        else
-                            writer.WriteLine($"requestInfo.SetJsonContentFromParsable({requestBodyParam.Name}, {conventions.SerializerFactoryPropertyName});"); //TODO we're making a big assumption here that everything will be json
-                    }
-                    if(queryStringParam != null) {
-                        writer.WriteLine($"if ({queryStringParam.Name} != null) {{");
-                        writer.IncreaseIndent();
-                        writer.WriteLines($"var qParams = new {operationName?.ToFirstCharacterUpperCase()}QueryParameters();",
-                                    $"{queryStringParam.Name}.Invoke(qParams);",
-                                    "qParams.AddQueryParameters(requestInfo.QueryParameters);");
-                        writer.DecreaseIndent();
-                        writer.WriteLine("}");
-                    }
-                    if(headersParam != null) {
-                        writer.WriteLines($"{headersParam.Name}?.Invoke(requestInfo.Headers);",
-                                "return requestInfo;");
-                    }
+                    WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, writer);
                     break;
                 case CodeMethodKind.RequestExecutor:
-                    var generatorMethodName = (codeElement.Parent as CodeClass)
+                    WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, isVoid, returnType, writer);
+                    break;
+                default:
+                    writer.WriteLine("return null;");
+                break;
+            }
+            writer.DecreaseIndent();
+            writer.WriteLine("}");
+        }
+        private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, bool isVoid, string returnType, LanguageWriter writer) {
+            var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
+            var generatorMethodName = (codeElement.Parent as CodeClass)
                                                 .GetChildElements(true)
                                                 .OfType<CodeMethod>()
                                                 .FirstOrDefault(x => x.MethodKind == CodeMethodKind.RequestGenerator && x.HttpMethod == codeElement.HttpMethod)
@@ -75,13 +49,49 @@ namespace Kiota.Builder.Writers.CSharp {
                     writer.DecreaseIndent();
                     writer.WriteLines(");",
                                 $"{(isVoid ? string.Empty : "return ")}await HttpCore.{GetSendRequestMethodName(isVoid, isStream, returnType)}(requestInfo, responseHandler);");
-                break;
-                default:
-                    writer.WriteLine("return null;");
-                break;
-            }
+
+        }
+        private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, LanguageWriter writer) {
+            var operationName = codeElement.HttpMethod?.ToString();
+            writer.WriteLine("var requestInfo = new RequestInfo {");
+            writer.IncreaseIndent();
+            writer.WriteLines($"HttpMethod = HttpMethod.{operationName?.ToUpperInvariant()},",
+                        $"URI = new Uri({conventions.CurrentPathPropertyName} + {conventions.PathSegmentPropertyName}),");
             writer.DecreaseIndent();
-            writer.WriteLine("}");
+            writer.WriteLine("};");
+            if(requestBodyParam != null) {
+                if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
+                    writer.WriteLine($"requestInfo.SetStreamContent({requestBodyParam.Name});");
+                else
+                    writer.WriteLine($"requestInfo.SetJsonContentFromParsable({requestBodyParam.Name}, {conventions.SerializerFactoryPropertyName});"); //TODO we're making a big assumption here that everything will be json
+            }
+            if(queryStringParam != null) {
+                writer.WriteLine($"if ({queryStringParam.Name} != null) {{");
+                writer.IncreaseIndent();
+                writer.WriteLines($"var qParams = new {operationName?.ToFirstCharacterUpperCase()}QueryParameters();",
+                            $"{queryStringParam.Name}.Invoke(qParams);",
+                            "qParams.AddQueryParameters(requestInfo.QueryParameters);");
+                writer.DecreaseIndent();
+                writer.WriteLine("}");
+            }
+            if(headersParam != null) {
+                writer.WriteLines($"{headersParam.Name}?.Invoke(requestInfo.Headers);",
+                        "return requestInfo;");
+            }
+        }
+        private void WriteSerializerBody(bool shouldHide, CodeClass parentClass, LanguageWriter writer) {
+            var additionalDataProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.AdditionalData);
+            if(shouldHide)
+                writer.WriteLine("base.Serialize(writer);");
+            foreach(var otherProp in parentClass
+                                            .GetChildElements(true)
+                                            .OfType<CodeProperty>()
+                                            .Where(x => x.PropertyKind == CodePropertyKind.Custom)
+                                            .OrderBy(x => x.Name)) {
+                writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
+            }
+            if(additionalDataProperty != null)
+                writer.WriteLine($"writer.WriteAdditionalData({additionalDataProperty.Name});");
         }
         private static string GetSendRequestMethodName(bool isVoid, bool isStream, string returnType) {
             if(isVoid) return "SendNoContentAsync";

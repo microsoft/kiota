@@ -59,31 +59,33 @@ namespace  Kiota.Builder.Writers.TypeScript {
                 throw new ArgumentNullException(nameof(importNamespace));
             else if(currentNamespace.Name.Equals(importNamespace.Name, StringComparison.OrdinalIgnoreCase)) // we're in the same namespace
                 return "./";
-            else {
-                var currentNamespaceSegements = currentNamespace
+            else
+                return GetRelativeImportPathFromSegments(currentNamespace, importNamespace);                
+        }
+        private static string GetRelativeImportPathFromSegments(CodeNamespace currentNamespace, CodeNamespace importNamespace) {
+            var currentNamespaceSegements = currentNamespace
                                     .Name
                                     .Split(namespaceNameSeparator, StringSplitOptions.RemoveEmptyEntries);
-                var importNamespaceSegments = importNamespace
-                                    .Name
-                                    .Split(namespaceNameSeparator, StringSplitOptions.RemoveEmptyEntries);
-                var importNamespaceSegmentsCount = importNamespaceSegments.Length;
-                var currentNamespaceSegementsCount = currentNamespaceSegements.Length;
-                var deeperMostSegmentIndex = 0;
-                while(deeperMostSegmentIndex < Math.Min(importNamespaceSegmentsCount, currentNamespaceSegementsCount)) {
-                    if(currentNamespaceSegements.ElementAt(deeperMostSegmentIndex).Equals(importNamespaceSegments.ElementAt(deeperMostSegmentIndex), StringComparison.OrdinalIgnoreCase))
-                        deeperMostSegmentIndex++;
-                    else
-                        break;
-                }
-                if (deeperMostSegmentIndex == currentNamespaceSegementsCount) { // we're in a parent namespace and need to import with a relative path
-                    return "./" + GetRemainingImportPath(importNamespaceSegments.Skip(deeperMostSegmentIndex));
-                } else { // we're in a sub namespace and need to go "up" with dot dots
-                    var upMoves = currentNamespaceSegementsCount - deeperMostSegmentIndex;
-                    var upMovesBuilder = new StringBuilder();
-                    for(var i = 0; i < upMoves; i++)
-                        upMovesBuilder.Append("../");
-                    return upMovesBuilder.ToString() + GetRemainingImportPath(importNamespaceSegments.Skip(deeperMostSegmentIndex));
-                }
+            var importNamespaceSegments = importNamespace
+                                .Name
+                                .Split(namespaceNameSeparator, StringSplitOptions.RemoveEmptyEntries);
+            var importNamespaceSegmentsCount = importNamespaceSegments.Length;
+            var currentNamespaceSegementsCount = currentNamespaceSegements.Length;
+            var deeperMostSegmentIndex = 0;
+            while(deeperMostSegmentIndex < Math.Min(importNamespaceSegmentsCount, currentNamespaceSegementsCount)) {
+                if(currentNamespaceSegements.ElementAt(deeperMostSegmentIndex).Equals(importNamespaceSegments.ElementAt(deeperMostSegmentIndex), StringComparison.OrdinalIgnoreCase))
+                    deeperMostSegmentIndex++;
+                else
+                    break;
+            }
+            if (deeperMostSegmentIndex == currentNamespaceSegementsCount) { // we're in a parent namespace and need to import with a relative path
+                return "./" + GetRemainingImportPath(importNamespaceSegments.Skip(deeperMostSegmentIndex));
+            } else { // we're in a sub namespace and need to go "up" with dot dots
+                var upMoves = currentNamespaceSegementsCount - deeperMostSegmentIndex;
+                var upMovesBuilder = new StringBuilder();
+                for(var i = 0; i < upMoves; i++)
+                    upMovesBuilder.Append("../");
+                return upMovesBuilder.ToString() + GetRemainingImportPath(importNamespaceSegments.Skip(deeperMostSegmentIndex));
             }
         }
         private static string GetRemainingImportPath(IEnumerable<string> remainingSegments) {

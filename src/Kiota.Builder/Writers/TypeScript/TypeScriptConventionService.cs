@@ -58,32 +58,33 @@ namespace Kiota.Builder.Writers.TypeScript {
             else if(code is CodeType currentType) {
                 var typeName = TranslateType(currentType.Name);
                 if (code.ActionOf)
-                {
-                    writer.IncreaseIndent(4);
-                    var childElements = (currentType?.TypeDefinition as CodeClass)
-                                                ?.GetChildElements(true)
-                                                ?.OfType<CodeProperty>()
-                                                ?.OrderBy(x => x.Name)
-                                                ?.Select(x => $"{x.Name}?: {GetTypeString(x.Type)}");
-                    var innerDeclaration = childElements?.Any() ?? false ? 
-                                                    LanguageWriter.NewLine +
-                                                    writer.GetIndent() +
-                                                    childElements
-                                                    .Aggregate((x, y) => $"{x};{LanguageWriter.NewLine}{writer.GetIndent()}{y}")
-                                                    .Replace(';', ',') +
-                                                    LanguageWriter.NewLine +
-                                                    writer.GetIndent()
-                                                : string.Empty;
-                    writer.DecreaseIndent();
-                    if(string.IsNullOrEmpty(innerDeclaration))
-                        return "object";
-                    else
-                        return $"{{{innerDeclaration}}}";
-                }
+                    return WriteInlineDeclaration(currentType);
                 else
                     return $"{typeName}{collectionSuffix}";
             }
             else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
+        }
+        private string WriteInlineDeclaration(CodeType currentType) {
+            writer.IncreaseIndent(4);
+            var childElements = (currentType?.TypeDefinition as CodeClass)
+                                        ?.GetChildElements(true)
+                                        ?.OfType<CodeProperty>()
+                                        ?.OrderBy(x => x.Name)
+                                        ?.Select(x => $"{x.Name}?: {GetTypeString(x.Type)}");
+            var innerDeclaration = childElements?.Any() ?? false ? 
+                                            LanguageWriter.NewLine +
+                                            writer.GetIndent() +
+                                            childElements
+                                            .Aggregate((x, y) => $"{x};{LanguageWriter.NewLine}{writer.GetIndent()}{y}")
+                                            .Replace(';', ',') +
+                                            LanguageWriter.NewLine +
+                                            writer.GetIndent()
+                                        : string.Empty;
+            writer.DecreaseIndent();
+            if(string.IsNullOrEmpty(innerDeclaration))
+                return "object";
+            else
+                return $"{{{innerDeclaration}}}";
         }
 
         public string TranslateType(string typeName)
