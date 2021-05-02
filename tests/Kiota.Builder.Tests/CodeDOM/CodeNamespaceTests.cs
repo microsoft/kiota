@@ -24,7 +24,7 @@ namespace Kiota.Builder.tests
 ", outputCode);
             
         }
-        private const string childName = "one.two.three";
+        public const string childName = "one.two.three";
         [Fact]
         public void DoesntThrowOnRootInitialization() {
             var root = CodeNamespace.InitRootNamespace();
@@ -94,16 +94,25 @@ namespace Kiota.Builder.tests
                 child.AddClass(new CodeClass[] {});
             });
             Assert.Throws<ArgumentOutOfRangeException>(() => {
+                child.AddClass(new CodeClass[] {null});
+            });
+            Assert.Throws<ArgumentOutOfRangeException>(() => {
                 child.AddEnum(null);
             });
             Assert.Throws<ArgumentOutOfRangeException>(() => {
                 child.AddEnum(new CodeEnum[] {});
             });
             Assert.Throws<ArgumentOutOfRangeException>(() => {
+                child.AddEnum(new CodeEnum[] {null});
+            });
+            Assert.Throws<ArgumentOutOfRangeException>(() => {
                 child.AddUsing(null);
             });
             Assert.Throws<ArgumentOutOfRangeException>(() => {
                 child.AddUsing(new CodeUsing[] {});
+            });
+            Assert.Throws<ArgumentOutOfRangeException>(() => {
+                child.AddUsing(new CodeUsing[] {null});
             });
         }
     }

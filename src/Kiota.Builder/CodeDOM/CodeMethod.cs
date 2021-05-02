@@ -46,7 +46,7 @@ namespace Kiota.Builder
         {
             return new CodeMethod(Parent) {
                 MethodKind = MethodKind,
-                ReturnType = ReturnType.Clone() as CodeTypeBase,
+                ReturnType = ReturnType?.Clone() as CodeTypeBase,
                 Parameters = Parameters.Select(x => x.Clone() as CodeParameter).ToList(),
                 Name = Name.Clone() as string,
                 HttpMethod = HttpMethod,

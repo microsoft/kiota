@@ -37,7 +37,7 @@ namespace Kiota.Builder
         }
         public void AddUsing(params CodeUsing[] codeUsings)
         {
-            if(codeUsings ==null || !codeUsings.Any() || codeUsings.Any(x => x == null))
+            if(codeUsings == null || !codeUsings.Any() || codeUsings.Any(x => x == null))
                 throw new ArgumentOutOfRangeException(nameof(codeUsings));
             AddMissingParent(codeUsings);
             StartBlock.Usings.AddRange(codeUsings);
@@ -72,7 +72,7 @@ namespace Kiota.Builder
                     added = true;
                 }
 
-            if(!added && returnedValue.GetType() != element.GetType())
+            if(!added)
                 throw new InvalidOperationException($"the current dom node already contains a child with name {returnedValue.Name} and of type {returnedValue.GetType().Name}");
 
             return returnedValue;
