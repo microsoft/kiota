@@ -37,7 +37,7 @@ namespace Kiota.Builder.tests {
             });
         }
         [Fact]
-        [InlineData(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)]
+        // [InlineData(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)]
         public void DoesntThrowWhenAddingOVerloads() {
             //TODO research how to access the data when online
             var root = CodeNamespace.InitRootNamespace();
