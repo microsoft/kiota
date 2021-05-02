@@ -37,7 +37,7 @@ namespace Kiota.Builder
         }
         public void AddUsing(params CodeUsing[] codeUsings)
         {
-            if(!codeUsings.Any() || codeUsings.Any(x => x == null))
+            if(codeUsings ==null || !codeUsings.Any() || codeUsings.Any(x => x == null))
                 throw new ArgumentOutOfRangeException(nameof(codeUsings));
             AddMissingParent(codeUsings);
             StartBlock.Usings.AddRange(codeUsings);

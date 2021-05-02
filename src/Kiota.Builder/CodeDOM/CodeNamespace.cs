@@ -20,22 +20,15 @@ namespace Kiota.Builder
             }
             set {
                 name = value;
-                if(StartBlock == null)
-                    StartBlock = new BlockDeclaration(this);
                 StartBlock.Name = name;
             }
         }
 
         public IEnumerable<CodeClass> AddClass(params CodeClass[] codeClasses)
         {
-            if(!codeClasses.Any() || codeClasses.Any( x=> x == null))
+            if(codeClasses == null || !codeClasses.Any() || codeClasses.Any( x=> x == null))
                 throw new ArgumentOutOfRangeException(nameof(codeClasses));
             return AddRange(codeClasses);
-        }
-        private IEnumerable<CodeNamespace> AddNamespace(params CodeNamespace[] codeNamespaces) {
-            if(!codeNamespaces.Any() || codeNamespaces.Any(x => x == null))
-                throw new ArgumentOutOfRangeException(nameof(codeNamespaces));
-            return AddRange(codeNamespaces);
         }
         private static readonly char namespaceNameSeparator = '.';
         private CodeNamespace GetRootNamespace() {
@@ -69,7 +62,7 @@ namespace Kiota.Builder
             }
             foreach(var childSegment in namespaceNameSegements.Skip(lastPresentSegmentIndex))
                 lastPresentSegmentNamespace = lastPresentSegmentNamespace
-                                            .AddNamespace(
+                                            .AddRange(
                                                 new CodeNamespace(lastPresentSegmentNamespace) {
                                                     Name = $"{lastPresentSegmentNamespace?.Name}{(string.IsNullOrEmpty(lastPresentSegmentNamespace?.Name) ? string.Empty : ".")}{childSegment}",
                                             }).First();
@@ -78,6 +71,8 @@ namespace Kiota.Builder
         public bool IsItemNamespace { get; private set; }
         public CodeNamespace EnsureItemNamespace() { 
             if (IsItemNamespace) return this;
+            else if(string.IsNullOrEmpty(this.Name))
+                throw new InvalidOperationException("adding an item namespace at the root is not supported");
             else {
                 var childNamespace = this.InnerChildElements.Values.OfType<CodeNamespace>().FirstOrDefault(x => x.IsItemNamespace);
                 if(childNamespace == null) {
@@ -89,7 +84,7 @@ namespace Kiota.Builder
         }
         public IEnumerable<CodeEnum> AddEnum(params CodeEnum[] enumDeclarations)
         {
-            if(!enumDeclarations.Any() || enumDeclarations.Any( x=> x == null))
+            if(enumDeclarations == null || !enumDeclarations.Any() || enumDeclarations.Any( x=> x == null))
                 throw new ArgumentOutOfRangeException(nameof(enumDeclarations));
             return AddRange(enumDeclarations);
         }
