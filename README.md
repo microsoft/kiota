@@ -2,7 +2,7 @@
 
 [![Dotnet](https://github.com/microsoft/kiota/actions/workflows/dotnet.yml/badge.svg)](https://github.com/microsoft/kiota/actions/workflows/dotnet.yml) [![CodeQL](https://github.com/microsoft/kiota/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/microsoft/kiota/actions/workflows/codeql-analysis.yml) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=microsoft_kiota&metric=coverage)](https://sonarcloud.io/dashboard?id=microsoft_kiota) [![Sonarcloud Status](https://sonarcloud.io/api/project_badges/measure?project=microsoft_kiota&metric=alert_status)](https://sonarcloud.io/dashboard?id=microsoft_kiota)
 
-Kiota is project to build an OpenAPI based code generator for creating SDKs for HTTP APIs. The goal is to produce a lightweight, low maintenance, code generator that is fast enough to run as part of the compile time tool-chain but scalable enough to handle the largest APIs. Kiota generates a lightweight set of strongly typed classes that layer over a core HTTP library and product an intuitive and discoverable way of creating HTTP requests. A set of abstractions decouple the generated service library from the core allowing a variety of core libraries to be supported.
+Kiota is a project to build an OpenAPI based code generator for creating SDKs for HTTP APIs. The goal is to produce a lightweight, low maintenance, code generator that is fast enough to run as part of the compile time tool-chain but scalable enough to handle the largest APIs. Kiota generates a lightweight set of strongly typed classes that layer over a core HTTP library and produce an intuitive and discoverable way of creating HTTP requests. A set of abstractions decouple the generated service library from the core allowing a variety of core libraries to be supported.
 
 This library builds on top of the [Microsoft.OpenAPI.NET](https://github.com/microsoft/openapi.net) library to ensure comprehensive support for APIs that use OpenAPI descriptions. One of the goals of the project is to provide the best code generator support possible for OpenAPI and JSON Schema features.
 
@@ -75,7 +75,7 @@ If you haven't built kiota locally, select the appropriate version from the [rel
 kiota.exe --openapi ../msgraph-sdk-powershell/openApiDocs/v1.0/mail.yml --language csharp -o ../somepath -n namespaceprefix
 ```
 
-> Note: once your SDK is generated in your target project, you will need to add references to kiota abstractions and kiota core in your project. Refer to [Initializing targed projects](#initializing-targed-projects)
+> Note: once your SDK is generated in your target project, you will need to add references to kiota abstractions and kiota core in your project. Refer to [Initializing target projects](#initializing-target-projects)
 
 #### Parameters reference
 
@@ -88,7 +88,7 @@ Kiota accepts the following parameters during the generation:
 | loglevel |  | no | The log level to use when logging events to the main output. | Microsoft.Extensions.Logging.LogLevel values | Warning |
 | namespace-name | n | no | The namespace name to use the for main entry point. | Valid namespace/module name according to target language specifications. | GraphClient |
 | openapi |  | no | URI or Path to the OpenAPI description (JSON or YAML) to use to generate the SDK. | A valid URI pointing to an HTTP document or a file on the local file-system. | ./openapi.yml |
-| output | o | no | The ouput path of the folder the code will be generated in. The folders will be created during the generation if they don't already exist. | A valid path to a folder. | ./output |
+| output | o | no | The output path of the folder the code will be generated in. The folders will be created during the generation if they don't already exist. | A valid path to a folder. | ./output |
 
 ### Debugging
 
@@ -96,7 +96,7 @@ If you are using Visual Studio Code as your IDE, the **launch.json** file alread
 
 Selecting the language you want to generate an SDK for in the Visual Studio Debug tab and hitting **F5** will automatically build, start, and attach the debugging process to Kiota.
 
-### Initializing targed projects
+### Initializing target projects
 
 Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](./abstractions) and the [core](./core) package from the GitHub feed.
 
@@ -110,7 +110,7 @@ npm i @azure/identity node-fetch
 
 #### Java initialization
 
-Execute the following command in the directory you want to iniatilize the project in.
+Execute the following command in the directory you want to initialize the project in.
 
 ```Shell
 gradle init
@@ -126,7 +126,7 @@ api 'com.squareup.okhttp3:okhttp:4.9.1'
 api 'com.google.code.gson:gson:2.8.6'
 ```
 
-#### Dotnet initilization
+#### Dotnet initialization
 
 Execute the following command in the directory you want to initialize the project in.
 
