@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Setup .NET
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v1.8.0
         with:
           dotnet-version: 5.0.x
       - run: ./scripts/updateNugetCredentials.ps1 -username "${{ secrets.PUBLISH_GH_USERNAME }}" -apiToken "${{ secrets.PUBLISH_GH_TOKEN }}" -nugetFileAbsolutePath "./core/dotnet/nuget.config"
@@ -50,7 +50,7 @@ jobs:
     needs: [build]
     steps:
       - name: Setup .NET
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v1.8.0
         with:
           dotnet-version: 5.0.x
       - uses: actions/download-artifact@v2
