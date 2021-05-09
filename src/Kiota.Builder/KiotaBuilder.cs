@@ -559,7 +559,7 @@ namespace Kiota.Builder
                     var shortestNamespace = rootNamespace.FindNamespaceByName(shortestNamespaceName);
                     if(shortestNamespace == null)
                         shortestNamespace = rootNamespace.AddNamespace(shortestNamespaceName);
-                    className = isLastSchema ? currentNode.GetClassName(operation: operation) : currentSchema.GetClassName();
+                    className = isLastSchema ? currentNode.GetClassName(operation: operation) : currentSchema.GetSchemaTitle();
                     codeDeclaration = AddModelDeclarationIfDoesntExit(rootNode, currentNode, currentSchema, operation, className, shortestNamespace, parentElement, codeDeclaration as CodeClass, true);
                 }
 
@@ -577,7 +577,7 @@ namespace Kiota.Builder
                     var shortestNamespace = rootNamespace.FindNamespaceByName(shortestNamespaceName);
                     if(shortestNamespace == null)
                         shortestNamespace = rootNamespace.AddNamespace(shortestNamespaceName);
-                    var className = currentSchema.GetClassName();
+                    var className = currentSchema.GetSchemaTitle();
                     var codeDeclaration = AddModelDeclarationIfDoesntExit(rootNode, currentNode, currentSchema, operation, className, shortestNamespace, parentElement);
                     unionType.AddType(new CodeType(unionType) {
                         TypeDefinition = codeDeclaration,
@@ -616,7 +616,7 @@ namespace Kiota.Builder
                     if(inheritsFrom == null && schema.AllOf.Count > 1) { //the last is always the current class, we want the one before the last as parent
                         var parentSchema = schema.AllOf.Except(new OpenApiSchema[] {schema.AllOf.Last()}).FirstOrDefault();
                         if(parentSchema != null)
-                            inheritsFrom = AddModelDeclarationIfDoesntExit(rootNode, currentNode, parentSchema, operation, parentSchema.GetClassName(), currentNamespace, parentElement, null, true) as CodeClass;
+                            inheritsFrom = AddModelDeclarationIfDoesntExit(rootNode, currentNode, parentSchema, operation, parentSchema.GetSchemaTitle(), currentNamespace, parentElement, null, true) as CodeClass;
                     }
                     var newClass = currentNamespace.AddClass(new CodeClass(currentNamespace) {
                         Name = declarationName,
@@ -642,7 +642,7 @@ namespace Kiota.Builder
                                     .Properties
                                     .Select(x => {
                                         var propertyDefinitionSchema = x.Value.Items ?? x.Value;
-                                        var className = x.Value.GetClassName();
+                                        var className = x.Value.GetSchemaTitle();
                                         CodeElement definition = default;
                                         if(!string.IsNullOrEmpty(className) && !string.IsNullOrEmpty(propertyDefinitionSchema?.Reference?.Id)) {
                                             var shortestNamespaceName = GetShortestNamespaceNameForModelByReferenceId(propertyDefinitionSchema.Reference.Id);
