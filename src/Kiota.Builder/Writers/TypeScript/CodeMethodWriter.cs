@@ -10,6 +10,11 @@ namespace  Kiota.Builder.Writers.TypeScript {
         private TypeScriptConventionService localConventions;
         public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
+            if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
+            if(codeElement.ReturnType == null) throw new ArgumentNullException(nameof(codeElement.ReturnType));
+            if(writer == null) throw new ArgumentNullException(nameof(writer));
+            if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
+
             localConventions = new TypeScriptConventionService(writer); //because we allow inline type definitions for methods parameters
             var returnType = localConventions.GetTypeString(codeElement.ReturnType);
             var isVoid = "void".Equals(returnType, StringComparison.OrdinalIgnoreCase);
