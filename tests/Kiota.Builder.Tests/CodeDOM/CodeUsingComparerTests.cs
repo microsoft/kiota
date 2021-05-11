@@ -19,7 +19,7 @@ namespace Kiota.Builder.tests {
                 Name = "type2"
             };
             var comparer = new CodeUsingComparer(true);
-            Assert.Equal(false, comparer.Equals(cUsing, cUsing2));
+            Assert.False(comparer.Equals(cUsing, cUsing2));
             Assert.NotEqual(0, comparer.GetHashCode(cUsing));
         }
     }

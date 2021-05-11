@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using Xunit;
 
 namespace Kiota.Builder.Writers.TypeScript.Tests {
@@ -9,15 +10,19 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeMethod method;
+        private readonly CodeClass parentClass;
         private const string methodName = "methodName";
         private const string returnTypeName = "Somecustomtype";
+        private const string methodDescription = "some description";
+        private const string paramDescription = "some parameter description";
+        private const string paramName = "paramName";
         public CodeMethodWriterTests()
         {
             writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, defaultPath, defaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
-            var parentClass = new CodeClass(root) {
+            parentClass = new CodeClass(root) {
                 Name = "parentClass"
             };
             root.AddClass(parentClass);
@@ -32,6 +37,121 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         public void Dispose()
         {
             tw?.Dispose();
+        }
+        private void AddSerializationProperties() {
+            var addData = parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = "additionalData",
+                PropertyKind = CodePropertyKind.AdditionalData,
+            }).First();
+            addData.Type = new CodeType(addData) {
+                Name = "string"
+            };
+            var dummyProp = parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = "dummyProp",
+            }).First();
+            dummyProp.Type = new CodeType(dummyProp) {
+                Name = "string"
+            };
+            var dummyCollectionProp = parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = "dummyColl",
+            }).First();
+            dummyCollectionProp.Type = new CodeType(dummyCollectionProp) {
+                Name = "string",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            };
+            var dummyComplexCollection = parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = "dummyComplexColl"
+            }).First();
+            dummyComplexCollection.Type = new CodeType(dummyComplexCollection) {
+                Name = "Complex",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+                TypeDefinition = new CodeClass(parentClass.Parent) {
+                    Name = "SomeComplexType"
+                }
+            };
+            var dummyEnumProp = parentClass.AddProperty(new CodeProperty(parentClass){
+                Name = "dummyEnumCollection",
+            }).First();
+            dummyEnumProp.Type = new CodeType(dummyEnumProp) {
+                Name = "SomeEnum",
+                TypeDefinition = new CodeEnum(parentClass.Parent) {
+                    Name = "EnumType"
+                }
+            };
+        }
+        private void AddInheritanceClass() {
+            (parentClass.StartBlock as CodeClass.Declaration).Inherits = new CodeType(parentClass) {
+                Name = "someParentClass"
+            };
+        }
+        [Fact]
+        public void WritesInheritedSerializerBody() {
+            method.MethodKind = CodeMethodKind.Serializer;
+            method.IsAsync = false;
+            AddSerializationProperties();
+            AddInheritanceClass();
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("super.serialize", result);
+        }
+        [Fact]
+        public void WritesSerializerBody() {
+            var parameter = new CodeParameter(method){
+                Description = paramDescription,
+                Name = paramName
+            };
+            parameter.Type = new CodeType(parameter) {
+                Name = "string"
+            };
+            method.MethodKind = CodeMethodKind.Serializer;
+            method.IsAsync = false;
+            AddSerializationProperties();
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("writeStringValue", result);
+            Assert.Contains("writeCollectionOfPrimitiveValues", result);
+            Assert.Contains("writeCollectionOfObjectValues", result);
+            Assert.Contains("writeEnumValue", result);
+            Assert.Contains("writeAdditionalData(this.additionalData);", result);
+        }
+        [Fact]
+        public void WritesMethodAsyncDescription() {
+            
+            method.Description = methodDescription;
+            var parameter = new CodeParameter(method){
+                Description = paramDescription,
+                Name = paramName
+            };
+            parameter.Type = new CodeType(parameter) {
+                Name = "string"
+            };
+            method.AddParameter(parameter);
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("/**", result);
+            Assert.Contains(methodDescription, result);
+            Assert.Contains("@param ", result);
+            Assert.Contains(paramName, result);
+            Assert.Contains(paramDescription, result); 
+            Assert.Contains("@returns a Promise of", result);
+            Assert.Contains("*/", result);
+        }
+        [Fact]
+        public void WritesMethodSyncDescription() {
+            
+            method.Description = methodDescription;
+            method.IsAsync = false;
+            var parameter = new CodeParameter(method){
+                Description = paramDescription,
+                Name = paramName
+            };
+            parameter.Type = new CodeType(parameter) {
+                Name = "string"
+            };
+            method.AddParameter(parameter);
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.DoesNotContain("@returns a Promise of", result);
         }
         [Fact]
         public void ThrowsIfParentIsNotClass() {

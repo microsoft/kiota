@@ -50,7 +50,7 @@ namespace  Kiota.Builder.Writers.TypeScript {
             writer.DecreaseIndent();
             writer.WriteLine("};");
         }
-        private void WriteDefaultMethodBody(CodeMethod codeElement, LanguageWriter writer) {
+        private static void WriteDefaultMethodBody(CodeMethod codeElement, LanguageWriter writer) {
             var promisePrefix = codeElement.IsAsync ? "Promise.resolve(" : string.Empty;
             var promiseSuffix = codeElement.IsAsync ? ")" : string.Empty;
             writer.WriteLine($"return {promisePrefix}{(codeElement.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{promiseSuffix};");
