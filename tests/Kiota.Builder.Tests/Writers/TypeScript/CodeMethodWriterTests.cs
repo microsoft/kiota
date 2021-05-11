@@ -41,7 +41,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         [Fact]
         public void ThrowsIfReturnTypeIsMissing() {
             method.ReturnType = null;
-            Assert.Throws<ArgumentNullException>(() => writer.Write(method));
+            Assert.Throws<InvalidOperationException>(() => writer.Write(method));
         }
         [Fact]
         public void WritesReturnType() {

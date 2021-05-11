@@ -11,7 +11,7 @@ namespace  Kiota.Builder.Writers.TypeScript {
         public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
             if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
-            if(codeElement.ReturnType == null) throw new ArgumentNullException(nameof(codeElement.ReturnType));
+            if(codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
             if(writer == null) throw new ArgumentNullException(nameof(writer));
             if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
 
@@ -44,11 +44,16 @@ namespace  Kiota.Builder.Writers.TypeScript {
                     WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, isVoid, returnType, writer);
                     break;
                 default:
-                    writer.WriteLine($"return {(codeElement.IsAsync ? "Promise.resolve(" : string.Empty)}{(codeElement.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{(codeElement.IsAsync ? ")" : string.Empty)};");
+                    WriteDefaultMethodBody(codeElement, writer);
                     break;
             }
             writer.DecreaseIndent();
             writer.WriteLine("};");
+        }
+        private void WriteDefaultMethodBody(CodeMethod codeElement, LanguageWriter writer) {
+            var promisePrefix = codeElement.IsAsync ? "Promise.resolve(" : string.Empty;
+            var promiseSuffix = codeElement.IsAsync ? ")" : string.Empty;
+            writer.WriteLine($"return {promisePrefix}{(codeElement.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{promiseSuffix};");
         }
         private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
             var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
