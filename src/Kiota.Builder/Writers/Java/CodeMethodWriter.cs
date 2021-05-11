@@ -9,6 +9,11 @@ namespace Kiota.Builder.Writers.Java {
         public CodeMethodWriter(JavaConventionService conventionService) : base(conventionService){}
         public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
+            if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
+            if(codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
+            if(writer == null) throw new ArgumentNullException(nameof(writer));
+            if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
+
             var returnType = conventions.GetTypeString(codeElement.ReturnType);
             var parentClass = codeElement.Parent as CodeClass;
             WriteMethodDocumentation(codeElement, writer);
@@ -71,6 +76,8 @@ namespace Kiota.Builder.Writers.Java {
             writer.WriteLine("return fields;");
         }
         private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, string returnType, LanguageWriter writer) {
+            if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
+            
             var generatorMethodName = (codeElement.Parent as CodeClass)
                                                 .GetChildElements(true)
                                                 .OfType<CodeMethod>()
@@ -100,6 +107,8 @@ namespace Kiota.Builder.Writers.Java {
             writer.WriteLine("}");
         }
         private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, LanguageWriter writer) {
+            if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
+            
             writer.WriteLine("final RequestInfo requestInfo = new RequestInfo() {{");
             writer.IncreaseIndent();
             writer.WriteLines($"uri = new URI({conventions.CurrentPathPropertyName} + {conventions.PathSegmentPropertyName});",

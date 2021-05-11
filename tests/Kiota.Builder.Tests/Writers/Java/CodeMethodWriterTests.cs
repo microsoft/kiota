@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using Xunit;
 
-namespace Kiota.Builder.Writers.TypeScript.Tests {
+namespace Kiota.Builder.Writers.Java.Tests {
     public class CodeMethodWriterTests : IDisposable {
         private const string defaultPath = "./";
         private const string defaultName = "name";
@@ -18,7 +18,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         private const string paramName = "paramName";
         public CodeMethodWriterTests()
         {
-            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, defaultPath, defaultName);
+            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, defaultPath, defaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
@@ -110,6 +110,17 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             });
         }
         [Fact]
+        public void WritesNullableVoidTypeForExecutor(){
+            method.MethodKind = CodeMethodKind.RequestExecutor;
+            method.HttpMethod = HttpMethod.Get;
+            method.ReturnType = new CodeType(method) {
+                Name = "void",
+            };
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("CompletableFuture<Void>", result);
+        }
+        [Fact]
         public void WritesRequestBodiesThrowOnNullHttpMethod() {
             method.MethodKind = CodeMethodKind.RequestExecutor;
             Assert.Throws<InvalidOperationException>(() => writer.Write(method));
@@ -123,9 +134,9 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("const requestInfo", result);
+            Assert.Contains("final RequestInfo requestInfo", result);
             Assert.Contains("sendAsync", result);
-            Assert.Contains("Promise.reject", result);
+            Assert.Contains("CompletableFuture.failedFuture(ex)", result);
         }
         [Fact]
         public void WritesRequestGeneratorBody() {
@@ -134,10 +145,10 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("const requestInfo = new RequestInfo()", result);
-            Assert.Contains("requestInfo.httpMethod = HttpMethod", result);
-            Assert.Contains("setHeadersFromRawObject", result);
-            Assert.Contains("setQueryStringParametersFromRawObject", result);
+            Assert.Contains("final RequestInfo requestInfo = new RequestInfo()", result);
+            Assert.Contains("httpMethod = HttpMethod.GET", result);
+            Assert.Contains("h.accept(requestInfo.headers)", result);
+            Assert.Contains("AddQueryParameters", result);
             Assert.Contains("setJsonContentFromParsable", result);
             Assert.Contains("return requestInfo;", result);
         }
@@ -149,7 +160,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             AddInheritanceClass();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("...super", result);
+            Assert.Contains("super.methodName()", result);
         }
         [Fact]
         public void WritesDeSerializerBody() {
@@ -219,7 +230,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             Assert.Contains("@param ", result);
             Assert.Contains(paramName, result);
             Assert.Contains(paramDescription, result); 
-            Assert.Contains("@returns a Promise of", result);
+            Assert.Contains("@return a CompletableFuture of", result);
             Assert.Contains("*/", result);
         }
         [Fact]
@@ -237,11 +248,11 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             method.AddParameter(parameter);
             writer.Write(method);
             var result = tw.ToString();
-            Assert.DoesNotContain("@returns a Promise of", result);
+            Assert.DoesNotContain("@return a CompletableFuture of", result);
         }
         [Fact]
         public void Defensive() {
-            var codeMethodWriter = new CodeMethodWriter(new TypeScriptConventionService(writer));
+            var codeMethodWriter = new CodeMethodWriter(new JavaConventionService());
             Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(null, writer));
             Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(method, null));
         }
@@ -261,23 +272,14 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             var result = tw.ToString();
             Assert.Contains(methodName, result);
             Assert.Contains(returnTypeName, result);
-            Assert.Contains("Promise<", result);// async default
-            Assert.Contains("| undefined", result);// nullable default
-        }
-        [Fact]
-        public void DoesNotAddUndefinedOnNonNullableReturnType(){
-            method.ReturnType.IsNullable = false;
-            writer.Write(method);
-            var result = tw.ToString();
-            Assert.DoesNotContain("| undefined", result);
+            Assert.Contains("CompletableFuture<", result);// async default
         }
         [Fact]
         public void DoesNotAddAsyncInformationOnSyncMethods() {
             method.IsAsync = false;
             writer.Write(method);
             var result = tw.ToString();
-            Assert.DoesNotContain("Promise<", result);
-            Assert.DoesNotContain("async", result);
+            Assert.DoesNotContain("CompletableFuture<", result);
         }
         //TODO: we might want to move those into the convention service tests
         [Fact]
