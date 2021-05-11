@@ -1,6 +1,6 @@
 using Xunit;
 
-namespace Kiota.Builder.tests {
+namespace Kiota.Builder.Tests {
     public class CodeIndexerTests {
         [Fact]
         public void IndexerInits() {

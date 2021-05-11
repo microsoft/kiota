@@ -3,7 +3,7 @@ using System.IO;
 using Kiota.Builder.Writers.CSharp;
 using Xunit;
 
-namespace Kiota.Builder.tests
+namespace Kiota.Builder.Tests
 {
     public class CodeNamespaceTests
     {

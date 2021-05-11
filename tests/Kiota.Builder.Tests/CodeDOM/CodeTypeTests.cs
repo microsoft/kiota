@@ -1,6 +1,6 @@
 using Xunit;
 
-namespace Kiota.Builder.tests {
+namespace Kiota.Builder.Tests {
     public class CodeTypeTests {
         [Fact]
         public void ClonesTypeProperly() {

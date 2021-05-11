@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using Xunit;
 
-namespace Kiota.Builder.tests {
+namespace Kiota.Builder.Tests {
     public class CodeElementTests {
         [Fact]
         public void ThrowsOnEmptyParent() {

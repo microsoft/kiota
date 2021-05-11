@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Xunit;
 
-namespace Kiota.Builder.tests {
+namespace Kiota.Builder.Tests {
     public class CodeElementComparerTests {
         [Fact]
         public void Works() {

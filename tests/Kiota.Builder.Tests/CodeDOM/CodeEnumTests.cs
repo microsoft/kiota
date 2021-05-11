@@ -1,7 +1,7 @@
 using System.Linq;
 using Xunit;
 
-namespace Kiota.Builder.tests {
+namespace Kiota.Builder.Tests {
     public class CodeEnumTests {
         [Fact]
         public void EnumInits() {
