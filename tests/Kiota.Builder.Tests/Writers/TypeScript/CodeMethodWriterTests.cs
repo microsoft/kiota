@@ -84,6 +84,58 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
                 Name = "someParentClass"
             };
         }
+        private void AddRequestBodyParameters() {
+            var stringType = new CodeType(method) {
+                Name = "string",
+            };
+            method.AddParameter(new CodeParameter(method) {
+                Name = "h",
+                ParameterKind = CodeParameterKind.Headers,
+                Type = stringType,
+            });
+            method.AddParameter(new CodeParameter(method){
+                Name = "q",
+                ParameterKind = CodeParameterKind.QueryParameter,
+                Type = stringType,
+            });
+            method.AddParameter(new CodeParameter(method){
+                Name = "b",
+                ParameterKind = CodeParameterKind.RequestBody,
+                Type = stringType,
+            });
+        }
+        [Fact]
+        public void WritesRequestBodiesThrowOnNullHttpMethod() {
+            method.MethodKind = CodeMethodKind.RequestExecutor;
+            Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+            method.MethodKind = CodeMethodKind.RequestGenerator;
+            Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+        }
+        [Fact]
+        public void WritesRequestExecutorBody() {
+            method.MethodKind = CodeMethodKind.RequestExecutor;
+            method.HttpMethod = HttpMethod.Get;
+            AddRequestBodyParameters();
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("const requestInfo", result);
+            Assert.Contains("sendAsync", result);
+            Assert.Contains("Promise.reject", result);
+        }
+        [Fact]
+        public void WritesRequestGeneratorBody() {
+            method.MethodKind = CodeMethodKind.RequestGenerator;
+            method.HttpMethod = HttpMethod.Get;
+            AddRequestBodyParameters();
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("const requestInfo = new RequestInfo()", result);
+            Assert.Contains("requestInfo.httpMethod = HttpMethod", result);
+            Assert.Contains("setHeadersFromRawObject", result);
+            Assert.Contains("setQueryStringParametersFromRawObject", result);
+            Assert.Contains("setJsonContentFromParsable", result);
+            Assert.Contains("return requestInfo;", result);
+        }
         [Fact]
         public void WritesInheritedDeSerializerBody() {
             method.MethodKind = CodeMethodKind.DeserializerBackwardCompatibility;
@@ -181,6 +233,12 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.DoesNotContain("@returns a Promise of", result);
+        }
+        [Fact]
+        public void Defensive() {
+            var codeMethodWriter = new CodeMethodWriter(new TypeScriptConventionService(writer));
+            Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(null, writer));
+            Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(method, null));
         }
         [Fact]
         public void ThrowsIfParentIsNotClass() {
