@@ -85,6 +85,35 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             };
         }
         [Fact]
+        public void WritesInheritedDeSerializerBody() {
+            method.MethodKind = CodeMethodKind.DeserializerBackwardCompatibility;
+            method.IsAsync = false;
+            AddSerializationProperties();
+            AddInheritanceClass();
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("...super", result);
+        }
+        [Fact]
+        public void WritesDeSerializerBody() {
+            var parameter = new CodeParameter(method){
+                Description = paramDescription,
+                Name = paramName
+            };
+            parameter.Type = new CodeType(parameter) {
+                Name = "string"
+            };
+            method.MethodKind = CodeMethodKind.DeserializerBackwardCompatibility;
+            method.IsAsync = false;
+            AddSerializationProperties();
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("getStringValue", result);
+            Assert.Contains("getCollectionOfPrimitiveValues", result);
+            Assert.Contains("getCollectionOfObjectValues", result);
+            Assert.Contains("getEnumValue", result);
+        }
+        [Fact]
         public void WritesInheritedSerializerBody() {
             method.MethodKind = CodeMethodKind.Serializer;
             method.IsAsync = false;
