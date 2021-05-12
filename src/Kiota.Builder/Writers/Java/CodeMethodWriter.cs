@@ -34,14 +34,12 @@ namespace Kiota.Builder.Writers.Java {
             switch(codeElement.MethodKind) {
                 case CodeMethodKind.Serializer:
                     WriteSerializerBody(parentClass, writer);
-                    
                 break;
                 case CodeMethodKind.DeserializerBackwardCompatibility:
                     WriteDeserializerBody(codeElement, parentClass, writer);
                 break;
                 case CodeMethodKind.IndexerBackwardCompatibility:
-                    var pathSegment = codeElement.GenerationProperties.ContainsKey(conventions.PathSegmentPropertyName) ? codeElement.GenerationProperties[conventions.PathSegmentPropertyName] as string : string.Empty;
-                    conventions.AddRequestBuilderBody(returnType, writer, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
+                    WriteIndexerBody(codeElement, writer, returnType);
                 break;
                 case CodeMethodKind.RequestGenerator:
                     WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, writer);
@@ -58,6 +56,10 @@ namespace Kiota.Builder.Writers.Java {
             }
             writer.DecreaseIndent();
             writer.WriteLine("}");
+        }
+        private void WriteIndexerBody(CodeMethod codeElement, LanguageWriter writer, string returnType) {
+            var pathSegment = codeElement.GenerationProperties.ContainsKey(conventions.PathSegmentPropertyName) ? codeElement.GenerationProperties[conventions.PathSegmentPropertyName] as string : string.Empty;
+            conventions.AddRequestBuilderBody(returnType, writer, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
         }
         private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
             var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
