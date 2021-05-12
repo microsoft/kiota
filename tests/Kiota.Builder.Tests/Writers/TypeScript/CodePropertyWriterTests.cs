@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using Xunit;
 
-namespace Kiota.Builder.Writers.Java.Tests {
+namespace Kiota.Builder.Writers.TypeScript.Tests {
     public class CodePropertyWriterTests: IDisposable {
         private const string defaultPath = "./";
         private const string defaultName = "name";
@@ -15,7 +15,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
         private const string propertyDescription = "some description";
         private const string typeName = "Somecustomtype";
         public CodePropertyWriterTests() {
-            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, defaultPath, defaultName);
+            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, defaultPath, defaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
@@ -53,17 +53,25 @@ namespace Kiota.Builder.Writers.Java.Tests {
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains($"new {typeName}", result);
-            Assert.Contains("HttpCore parentCore = httpCore", result);
-            Assert.Contains("SerializationWriterFactory parentSerializationFactory = serializerFactory", result);
-            Assert.Contains("String parentPath =", result);
+            Assert.Contains("builder.httpCore = this.httpCore", result);
+            Assert.Contains("builder.serializerFactory = this.serializerFactory", result);
+            Assert.Contains("builder.currentPath = (this.currentPath ?? '') + this.pathSegment", result);
+            Assert.Contains("return builder", result);
         }
         [Fact]
         public void WritesCustomProperty() {
             property.PropertyKind = CodePropertyKind.Custom;
             writer.Write(property);
             var result = tw.ToString();
-            Assert.Contains($"{typeName} {propertyName}", result);
-            Assert.Contains("@javax.annotation.Nullable", result);
+            Assert.Contains($"{propertyName}?: {typeName} | undefined", result);
+        }
+        [Fact]
+        public void WritesPrivateSetter() {
+            property.PropertyKind = CodePropertyKind.Custom;
+            property.ReadOnly = true;
+            writer.Write(property);
+            var result = tw.ToString();
+            Assert.Contains("readonly", result);
         }
         [Fact]
         public void WritesFlagEnums() {
@@ -77,15 +85,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             };
             writer.Write(property);
             var result = tw.ToString();
-            Assert.Contains("EnumSet", result);
-        }
-        [Fact]
-        public void WritesNonNull() {
-            property.PropertyKind = CodePropertyKind.Custom;
-            (property.Type as CodeType).IsNullable = false;
-            writer.Write(property);
-            var result = tw.ToString();
-            Assert.Contains("@javax.annotation.Nonnull", result);
+            Assert.Contains("[]", result);
         }
     }
 }
