@@ -28,7 +28,9 @@ namespace Kiota.Builder.Writers.CSharp {
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
             }
+            
         }
-        private readonly Func<int, string> GetEnumIndex = (idx) => (idx == 0 ? 0 : 2^(idx -1)).ToString();
+        private readonly Func<int, string> GetEnumIndex = (idx) => 
+            (idx == 0 ? 1 : Math.Pow(2, idx)).ToString();
     }
 }
