@@ -13,6 +13,7 @@ namespace Kiota.Builder.Writers.Java {
             writer.WriteLines($"package {(codeElement.Parent as CodeNamespace)?.Name};",
                 string.Empty,
                 "import com.microsoft.kiota.serialization.ValuedEnum;",
+                "import java.util.Objects;",
                 string.Empty);
             conventions.WriteShortDescription(codeElement.Description, writer);
             writer.WriteLine($"public enum {enumName} implements ValuedEnum {{");
@@ -31,7 +32,8 @@ namespace Kiota.Builder.Writers.Java {
                         "@javax.annotation.Nullable",
                         $"public static {enumName} forValue(@javax.annotation.Nonnull final String searchValue) {{");
             writer.IncreaseIndent();
-            writer.WriteLine("switch(searchValue) {");
+            writer.WriteLines("Objects.requireNonNull(searchValue)",
+                            "switch(searchValue) {");
             writer.IncreaseIndent();
             writer.Write(codeElement.Options
                         .Select(x => $"case \"{x}\": return {x.ToFirstCharacterUpperCase()};")
