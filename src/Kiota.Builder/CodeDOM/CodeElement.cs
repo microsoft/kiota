@@ -23,11 +23,6 @@ namespace Kiota.Builder
         {
             get; set;
         }
-
-        public void Render(LanguageWriter writer)
-        {
-            writer.Write(this);
-        }
         protected void AddMissingParent(params CodeElement[] elements) {
             foreach(var element in elements.Where(x => x.Parent == null || x.Parent != this))
                 element.Parent = this;

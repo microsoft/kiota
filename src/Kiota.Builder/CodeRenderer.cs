@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Kiota.Builder.Writers;
 
 namespace Kiota.Builder
 {

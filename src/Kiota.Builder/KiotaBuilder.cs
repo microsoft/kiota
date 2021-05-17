@@ -9,8 +9,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers;
 using Microsoft.OpenApi.Any;
-using System.ComponentModel;
 
 namespace Kiota.Builder
 {
@@ -173,22 +173,7 @@ namespace Kiota.Builder
 
         public async Task CreateLanguageSourceFilesAsync(GenerationLanguage language, CodeNamespace generatedCode)
         {
-            LanguageWriter languageWriter;
-            switch (language)
-            {
-                case GenerationLanguage.CSharp:
-                    languageWriter = new CSharpWriter(this.config.OutputPath, this.config.ClientNamespaceName);
-                    break;
-                case GenerationLanguage.Java:
-                    languageWriter = new JavaWriter(this.config.OutputPath, this.config.ClientNamespaceName);
-                    break;
-                case GenerationLanguage.TypeScript:
-                    languageWriter = new TypeScriptWriter(this.config.OutputPath, this.config.ClientNamespaceName);
-                    break;
-                default:
-                    throw new InvalidEnumArgumentException($"{language} language currently not supported.");
-            }
-
+            var languageWriter = LanguageWriter.GetLanguageWriter(language, this.config.OutputPath, this.config.ClientNamespaceName);
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             await CodeRenderer.RenderCodeNamespaceToFilePerClassAsync(languageWriter, generatedCode);

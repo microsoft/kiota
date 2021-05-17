@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
+using Kiota.Builder.Writers.CSharp;
+using Kiota.Builder.Writers.Java;
+using Kiota.Builder.Writers.TypeScript;
 
-namespace Kiota.Builder
+namespace Kiota.Builder.Writers
 {
  
     public abstract class LanguageWriter
@@ -23,7 +27,7 @@ namespace Kiota.Builder
         {
             this.writer = writer;
         }
-        public abstract IPathSegmenter PathSegmenter { get; }
+        public IPathSegmenter PathSegmenter { get; protected set; }
 
         private readonly Stack<int> factorStack = new Stack<int>();
         public void IncreaseIndent(int factor = 1)
@@ -46,18 +50,18 @@ namespace Kiota.Builder
         /// <summary>
         /// Adds an empty line
         /// </summary>
-        protected void WriteLine() => WriteLine(string.Empty, false);
-        protected void WriteLine(string line, bool includeIndent = true)
+        internal void WriteLine() => WriteLine(string.Empty, false);
+        internal void WriteLine(string line, bool includeIndent = true)
         {
             writer.WriteLine(includeIndent ? GetIndent() + line : line);
         }
-        protected void WriteLines(params string[] lines) {
+        internal void WriteLines(params string[] lines) {
             foreach(var line in lines) {
                 WriteLine(line, true);
             }
         }
 
-        protected void Write(string text, bool includeIndent = true)
+        internal void Write(string text, bool includeIndent = true)
         {
             writer.Write(includeIndent ? GetIndent() + text : text);
         }
@@ -65,36 +69,52 @@ namespace Kiota.Builder
         /// Dispatch call to Write the code element to the proper derivative write method
         /// </summary>
         /// <param name="code"></param>
-        public void Write(CodeElement code)
+        public void Write<T>(T code) where T : CodeElement
         {
-            switch (code)
-            {
-                case CodeClass.Declaration c: WriteCodeClassDeclaration(c); break;
-                case CodeClass.End c: WriteCodeClassEnd(c); break;
-                case CodeNamespace.BlockDeclaration c: break;
-                case CodeNamespace.BlockEnd c: break;
-                case CodeProperty c: WriteProperty(c); break;
-                case CodeIndexer c: WriteIndexer(c); break;
-                case CodeMethod c: WriteMethod(c); break;
-                case CodeType c: WriteType(c); break;
-                case CodeEnum e: WriteEnum(e); break;
-                case CodeNamespace: break;
-                case CodeClass: break;
+            _ = Writers.TryGetValue(code.GetType(), out var elementWriter);
+            switch(code) {
+                case CodeProperty p: // we have to do this triage because dotnet is limited in terms of covariance
+                    ((ICodeElementWriter<CodeProperty>) elementWriter).WriteCodeElement(p, this);
+                    break;
+                case CodeIndexer i:
+                    ((ICodeElementWriter<CodeIndexer>) elementWriter).WriteCodeElement(i, this);
+                    break;
+                case CodeClass.Declaration d:
+                    ((ICodeElementWriter<CodeClass.Declaration>) elementWriter).WriteCodeElement(d, this);
+                    break;
+                case CodeClass.End i:
+                    ((ICodeElementWriter<CodeClass.End>) elementWriter).WriteCodeElement(i, this);
+                    break;
+                case CodeEnum e:
+                    ((ICodeElementWriter<CodeEnum>) elementWriter).WriteCodeElement(e, this);
+                    break;
+                case CodeMethod m:
+                    ((ICodeElementWriter<CodeMethod>) elementWriter).WriteCodeElement(m, this);
+                    break;
+                case CodeType t:
+                    ((ICodeElementWriter<CodeType>) elementWriter).WriteCodeElement(t, this);
+                    break;
+                case CodeNamespace.BlockDeclaration:
+                case CodeNamespace.BlockEnd:
+                case CodeNamespace:
+                case CodeClass:
+                    break;
                 default:
                     throw new InvalidOperationException($"Dispatcher missing for type {code.GetType()}");
             }
-
         }
-        public abstract void WriteEnum(CodeEnum code);
-        public abstract string GetParameterSignature(CodeParameter parameter);
-        public abstract string GetTypeString(CodeTypeBase code);
-        public abstract string TranslateType(string typeName);
-        public abstract void WriteProperty(CodeProperty code);
-        public abstract void WriteIndexer(CodeIndexer code);
-        public abstract void WriteMethod(CodeMethod code);
-        public abstract void WriteType(CodeType code);
-        public abstract void WriteCodeClassDeclaration(CodeClass.Declaration code);
-        public abstract void WriteCodeClassEnd(CodeClass.End code);
-        public abstract string GetAccessModifier(AccessModifier access);
+        protected void AddCodeElementWriter<T>(ICodeElementWriter<T> writer) where T: CodeElement {
+            Writers.Add(typeof(T), writer);
+        }
+        private readonly Dictionary<Type, object> Writers = new(); // we have to type as object because dotnet doesn't have type capture i.e eq for `? extends CodeElement`
+        public static LanguageWriter GetLanguageWriter(GenerationLanguage language, string outputPath, string clientNamespaceName) {
+            return language switch
+            {
+                GenerationLanguage.CSharp => new CSharpWriter(outputPath, clientNamespaceName),
+                GenerationLanguage.Java => new JavaWriter(outputPath, clientNamespaceName),
+                GenerationLanguage.TypeScript => new TypeScriptWriter(outputPath, clientNamespaceName),
+                _ => throw new InvalidEnumArgumentException($"{language} language currently not supported."),
+            };
+        }
     }
 }
