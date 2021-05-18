@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using static Kiota.Builder.CodeClass;
 
-namespace Kiota.Builder {
+namespace Kiota.Builder.Refiners {
     public abstract class CommonLanguageRefiner : ILanguageRefiner
     {
         public abstract void Refine(CodeNamespace generatedCode);

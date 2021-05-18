@@ -3,7 +3,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Kiota.Builder.Extensions;
 
-namespace Kiota.Builder {
+namespace Kiota.Builder.Refiners {
     public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         public override void Refine(CodeNamespace generatedCode)

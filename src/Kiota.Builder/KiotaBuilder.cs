@@ -11,6 +11,7 @@ using Microsoft.OpenApi.Readers;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
 using Microsoft.OpenApi.Any;
+using Kiota.Builder.Refiners;
 
 namespace Kiota.Builder
 {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System;
 using Kiota.Builder.Extensions;
 
-namespace Kiota.Builder {
+namespace Kiota.Builder.Refiners {
     public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         public override void Refine(CodeNamespace generatedCode)
