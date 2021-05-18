@@ -12,9 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - name: Login to GitHub package feed
-        uses: docker/login-action@v1 
+        uses: docker/login-action@v1.9.0 
         with:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
@@ -29,13 +29,13 @@ jobs:
           BRANCH_NAME: ${{ github.ref }}
       - name: Push to GitHub Packages - Nightly
         if: contains(github.ref, 'refs/head/main')
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v2.4.0
         with:
           push: true
           tags: docker.pkg.github.com/microsoft/kiota/generator:nightly
       - name: Push to GitHub Packages - Release
         if: contains(github.ref, 'refs/tags/v')
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v2.4.0
         with:
           push: true
           tags: docker.pkg.github.com/microsoft/kiota/generator:latest,docker.pkg.github.com/microsoft/kiota/generator:${{ steps.getversion.outputs.version }}
