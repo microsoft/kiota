@@ -1,3 +1,4 @@
+using Kiota.Builder.Refiners;
 using Xunit;
 
 namespace Kiota.Builder.Tests {
