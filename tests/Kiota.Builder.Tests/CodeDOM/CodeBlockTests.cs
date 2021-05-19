@@ -31,15 +31,14 @@ namespace Kiota.Builder.Tests {
             Assert.Throws<InvalidOperationException>(() => {
                 child.AddClass(new CodeClass(child) {
                     Name = "class1"
-                }, new CodeClass(child) {
+                });
+                child.AddEnum(new CodeEnum(child) {
                     Name = "class1"
                 });
             });
         }
         [Fact]
-        // [InlineData(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)]
         public void DoesntThrowWhenAddingOVerloads() {
-            //TODO research how to access the data when online
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(CodeNamespaceTests.childName);
             var codeClass = child.AddClass(new CodeClass(child) {

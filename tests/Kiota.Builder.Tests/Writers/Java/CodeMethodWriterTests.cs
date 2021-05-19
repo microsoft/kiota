@@ -281,7 +281,6 @@ namespace Kiota.Builder.Writers.Java.Tests {
             var result = tw.ToString();
             Assert.DoesNotContain("CompletableFuture<", result);
         }
-        //TODO: we might want to move those into the convention service tests
         [Fact]
         public void WritesPublicMethodByDefault() {
             writer.Write(method);

@@ -72,7 +72,7 @@ namespace Kiota.Builder
                     added = true;
                 }
 
-            if(!added)
+            if(!added && returnedValue.GetType() != element.GetType())
                 throw new InvalidOperationException($"the current dom node already contains a child with name {returnedValue.Name} and of type {returnedValue.GetType().Name}");
 
             return returnedValue;

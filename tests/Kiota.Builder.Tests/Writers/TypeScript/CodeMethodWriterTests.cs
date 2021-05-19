@@ -279,7 +279,6 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             Assert.DoesNotContain("Promise<", result);
             Assert.DoesNotContain("async", result);
         }
-        //TODO: we might want to move those into the convention service tests
         [Fact]
         public void WritesPublicMethodByDefault() {
             writer.Write(method);
