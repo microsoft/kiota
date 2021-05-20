@@ -10,7 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Kiota {
-    public class KiotaHost {
+    public static class KiotaHost {
         public static RootCommand GetRootCommand()
         {
             var configuration = LoadDefaultConfiguration();
@@ -65,7 +65,9 @@ namespace Kiota {
                 var logger = LoggerFactory.Create((builder) => {
                     builder
                         .AddConsole()
+#if DEBUG
                         .AddDebug()
+#endif
                         .SetMinimumLevel(loglevel);
                 }).CreateLogger<KiotaBuilder>();
 
