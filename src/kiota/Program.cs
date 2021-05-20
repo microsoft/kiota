@@ -74,10 +74,13 @@ namespace kiota
                 else
                     return null;
             });
+            var descriptionOption = new Option("--openapi", "The path to the OpenAPI description file used to generate the code.") {Argument = new Argument<string>(() => "openapi.yml")};
+            descriptionOption.AddAlias("-d");
+
             var command = new RootCommand {
                 outputOption,
                 languageOption,
-                new Option("--openapi", "The path to the OpenAPI description file used to generate the code.") {Argument = new Argument<string>(() => "openapi.yml")},
+                descriptionOption,
                 classOption,
                 logLevelOption,
                 namespaceOption,

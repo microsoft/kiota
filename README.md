@@ -120,9 +120,9 @@ Kiota accepts the following parameters during the generation:
 | ---- | --------- | -------- | ----------- | --------------- | ------------- |
 | class-name | c | no | The class name to use the for main entry point | A valid class name according to the target language specification. | GraphClient |
 | language | l | no | The programming language to generate the SDK in. | csharp, java, or typescript | csharp |
-| loglevel |  | no | The log level to use when logging events to the main output. | Microsoft.Extensions.Logging.LogLevel values | Warning |
+| loglevel | ll | no | The log level to use when logging events to the main output. | Microsoft.Extensions.Logging.LogLevel values | Warning |
 | namespace-name | n | no | The namespace name to use the for main entry point. | Valid namespace/module name according to target language specifications. | GraphClient |
-| openapi |  | no | URI or Path to the OpenAPI description (JSON or YAML) to use to generate the SDK. | A valid URI pointing to an HTTP document or a file on the local file-system. | ./openapi.yml |
+| openapi | d | no | URI or Path to the OpenAPI description (JSON or YAML) to use to generate the SDK. | A valid URI pointing to an HTTP document or a file on the local file-system. | ./openapi.yml |
 | output | o | no | The output path of the folder the code will be generated in. The folders will be created during the generation if they don't already exist. | A valid path to a folder. | ./output |
 
 ### Debugging
