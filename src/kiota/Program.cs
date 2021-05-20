@@ -28,52 +28,18 @@ namespace kiota
             
             var languageOption = new Option("--language", "The language to generate the code in.") { Argument = new Argument<GenerationLanguage?>(() => GenerationLanguage.CSharp) };
             languageOption.AddAlias("-l");
-            languageOption.Argument.AddValidator((input) => {
-                if(input.Tokens.Any() &&
-                    !Enum.TryParse<GenerationLanguage>(input.Tokens.First().Value, true, out var _)) {
-                        var languagesList = Enum.GetValues<GenerationLanguage>().Select(x => x.ToString()).Aggregate((x, y) => x + ", " + y);
-                        var message = $"{input.Tokens.First().Value} is not a supported generation language, supported values are {languagesList}";
-                        return message;
-                    }
-                else
-                    return null;
-            });
-            const string classNameValidationPattern = @"^[a-zA-Z_][\w_-]+";
-            var classNameValidator = new Regex(classNameValidationPattern);
+            AddEnumValidator<GenerationLanguage>(languageOption.Argument, "language");
             var classOption = new Option("--class-name", "The class name to use the for main entry point") { Argument = new Argument<string>(() => "GraphClient") };
             classOption.AddAlias("-c");
-            classOption.Argument.AddValidator((input) => {
-                if(input.Tokens.Any() &&
-                    !classNameValidator.IsMatch(input.Tokens.First().Value))
-                        return $"{input.Tokens.First().Value} is not a valid class name for the client, the class name must conform to {classNameValidationPattern}";
-                else
-                    return null;
-            });
+            AddStringRegexValidator(classOption.Argument, @"^[a-zA-Z_][\w_-]+", "class name");
 
-            const string namespaceNameValidationPattern = @"^[\w][\w\._-]+";
-            var namespaceNameValidator = new Regex(namespaceNameValidationPattern);
             var namespaceOption = new Option("--namespace-name", "The namespace name to use the for main entry point") { Argument = new Argument<string>(() => "GraphClient") };
             namespaceOption.AddAlias("-n");
-            namespaceOption.Argument.AddValidator((input) => {
-                if(input.Tokens.Any() &&
-                    !namespaceNameValidator.IsMatch(input.Tokens.First().Value))
-                        return $"{input.Tokens.First().Value} is not a valid namespace name for the client, the namespace name must conform to {namespaceNameValidationPattern}";
-                else
-                    return null;
-            });
+            AddStringRegexValidator(namespaceOption.Argument, @"^[\w][\w\._-]+", "namespace name");
 
             var logLevelOption = new Option("--loglevel", "The log level to use when logging events to the main output.") { Argument = new Argument<LogLevel>(() => LogLevel.Warning)};
             logLevelOption.AddAlias("--ll");
-            logLevelOption.Argument.AddValidator((input) => {
-                if(input.Tokens.Any() &&
-                    !Enum.TryParse<LogLevel>(input.Tokens.First().Value, true, out var _)) {
-                        var logLevelsList = Enum.GetValues<LogLevel>().Select(x => x.ToString()).Aggregate((x, y) => x + ", " + y);
-                        var message = $"{input.Tokens.First().Value} is not a supported generation log level, supported values are {logLevelsList}";
-                        return message;
-                    }
-                else
-                    return null;
-            });
+            AddEnumValidator<LogLevel>(logLevelOption.Argument, "log level");
             var descriptionOption = new Option("--openapi", "The path to the OpenAPI description file used to generate the code.") {Argument = new Argument<string>(() => "openapi.yml")};
             descriptionOption.AddAlias("-d");
 
@@ -119,7 +85,25 @@ namespace kiota
             });
             return command;
         }
-
+        private static void AddStringRegexValidator(Argument argument, string pattern, string parameterName) {
+            var validator = new Regex(pattern);
+            argument.AddValidator((input) => {
+                if(input.Tokens.Any() &&
+                    !validator.IsMatch(input.Tokens[0].Value))
+                        return $"{input.Tokens[0].Value} is not a valid {parameterName} for the client, the {parameterName} must conform to {pattern}";
+                return null;
+            });
+        }
+        private static void AddEnumValidator<T>(Argument argument, string parameterName) where T: struct, Enum {
+            argument.AddValidator((input) => {
+                if(input.Tokens.Any() &&
+                    !Enum.TryParse<T>(input.Tokens[0].Value, true, out var _)) {
+                        var validOptionsList = Enum.GetValues<T>().Select(x => x.ToString()).Aggregate((x, y) => x + ", " + y);
+                        return $"{input.Tokens[0].Value} is not a supported generation {parameterName}, supported values are {validOptionsList}";
+                    }
+                return null;
+            });
+        }
         private static GenerationConfiguration LoadDefaultConfiguration() {
             var builder = new ConfigurationBuilder();
             var configuration = builder.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
