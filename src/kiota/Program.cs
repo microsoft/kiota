@@ -1,8 +1,11 @@
 ﻿using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.CommandLine.Parsing;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Kiota.Builder;
 using Microsoft.Extensions.Configuration;
@@ -16,27 +19,67 @@ namespace kiota
         {
             var configuration = LoadDefaultConfiguration();
             var command = GetRootCommand(configuration);
-
             return await command.InvokeAsync(args);
         }
-
         private static RootCommand GetRootCommand(GenerationConfiguration configuration)
         {
             var outputOption = new Option("--output", "The ouput path of the folder the code will be generated in.") { Argument = new Argument<string>(() => "./output") };
             outputOption.AddAlias("-o");
+            
             var languageOption = new Option("--language", "The language to generate the code in.") { Argument = new Argument<GenerationLanguage?>(() => GenerationLanguage.CSharp) };
             languageOption.AddAlias("-l");
+            languageOption.Argument.AddValidator((input) => {
+                if(input.Tokens.Any() &&
+                    !Enum.TryParse<GenerationLanguage>(input.Tokens.First().Value, true, out var _)) {
+                        var languagesList = Enum.GetValues<GenerationLanguage>().Select(x => x.ToString()).Aggregate((x, y) => x + ", " + y);
+                        var message = $"{input.Tokens.First().Value} is not a supported generation language, supported values are {languagesList}";
+                        return message;
+                    }
+                else
+                    return null;
+            });
+            const string classNameValidationPattern = @"^[a-zA-Z_][\w_-]+";
+            var classNameValidator = new Regex(classNameValidationPattern);
             var classOption = new Option("--class-name", "The class name to use the for main entry point") { Argument = new Argument<string>(() => "GraphClient") };
             classOption.AddAlias("-c");
+            classOption.Argument.AddValidator((input) => {
+                if(input.Tokens.Any() &&
+                    !classNameValidator.IsMatch(input.Tokens.First().Value))
+                        return $"{input.Tokens.First().Value} is not a valid class name for the client, the class name must conform to {classNameValidationPattern}";
+                else
+                    return null;
+            });
+
+            const string namespaceNameValidationPattern = @"^[\w][\w\._-]+";
+            var namespaceNameValidator = new Regex(namespaceNameValidationPattern);
             var namespaceOption = new Option("--namespace-name", "The namespace name to use the for main entry point") { Argument = new Argument<string>(() => "GraphClient") };
             namespaceOption.AddAlias("-n");
+            namespaceOption.Argument.AddValidator((input) => {
+                if(input.Tokens.Any() &&
+                    !namespaceNameValidator.IsMatch(input.Tokens.First().Value))
+                        return $"{input.Tokens.First().Value} is not a valid namespace name for the client, the namespace name must conform to {namespaceNameValidationPattern}";
+                else
+                    return null;
+            });
 
+            var logLevelOption = new Option("--loglevel", "The log level to use when logging events to the main output.") { Argument = new Argument<LogLevel>(() => LogLevel.Warning)};
+            logLevelOption.AddAlias("--ll");
+            logLevelOption.Argument.AddValidator((input) => {
+                if(input.Tokens.Any() &&
+                    !Enum.TryParse<LogLevel>(input.Tokens.First().Value, true, out var _)) {
+                        var logLevelsList = Enum.GetValues<LogLevel>().Select(x => x.ToString()).Aggregate((x, y) => x + ", " + y);
+                        var message = $"{input.Tokens.First().Value} is not a supported generation log level, supported values are {logLevelsList}";
+                        return message;
+                    }
+                else
+                    return null;
+            });
             var command = new RootCommand {
                 outputOption,
                 languageOption,
                 new Option("--openapi", "The path to the OpenAPI description file used to generate the code.") {Argument = new Argument<string>(() => "openapi.yml")},
                 classOption,
-                new Option("--loglevel", "The log level to use when logging events to the main output.") { Argument = new Argument<LogLevel>(() => LogLevel.Warning)},
+                logLevelOption,
                 namespaceOption,
             };
             command.Handler = CommandHandler.Create<string, GenerationLanguage?, string, string, LogLevel, string>(async (output, language, openapi, classname, loglevel, namespacename) =>
