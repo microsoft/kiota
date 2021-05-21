@@ -29,6 +29,13 @@ paths:
                       $ref: "#/components/schemas/todo"
 
     post:
+      requestBody:
+        description: New Todo
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/todo'
+        required: true
       responses:
         '201':
           description: OK
