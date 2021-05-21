@@ -73,5 +73,18 @@ namespace Kiota.Builder.Writers.Java.Tests {
             Assert.Contains("import project.graph.Message", result);
             Assert.Contains("import java.util.Objects", result);
         }
+        [Fact]
+        public void RemovesImportWithClassName() {
+            var declaration = parentClass.StartBlock as CodeClass.Declaration;
+            declaration.Usings.Add(new (parentClass) {
+                Name = "project.graph",
+                Declaration = new(parentClass) {
+                    Name = "parentClass",
+                }
+            });
+            codeElementWriter.WriteCodeElement(declaration, writer);
+            var result = tw.ToString();
+            Assert.DoesNotContain("project.graph.parentClass", result);
+        }
     }
 }
