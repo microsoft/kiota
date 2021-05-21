@@ -409,8 +409,6 @@ namespace Kiota.Builder
             logger.LogTrace("Creating property {name} of {type}", prop.Name, prop.Type.Name);
             return prop;
         }
-
-        private const string requestBodyJsonContentType = "application/json"; //TODO: this is temporary, we should handle other content types like yaml, grpc, xml...
         private const string requestBodyBinaryContentType = "application/octet-stream";
         private void CreateOperationMethods(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
         {
@@ -464,9 +462,10 @@ namespace Kiota.Builder
             logger.LogTrace("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
         }
         private void AddRequestBuilderMethodParameters(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiOperation operation, CodeClass parameterClass, CodeMethod method) {
-            if (operation.RequestBody?.Content?.ContainsKey(requestBodyJsonContentType) ?? false)
+            var nonBinaryRequestBody = operation.RequestBody?.Content?.FirstOrDefault(x => !requestBodyBinaryContentType.Equals(x.Key, StringComparison.OrdinalIgnoreCase));
+            if (nonBinaryRequestBody.HasValue && nonBinaryRequestBody.Value.Value != null)
             {
-                var requestBodySchema = operation.RequestBody.Content[requestBodyJsonContentType].Schema;
+                var requestBodySchema = nonBinaryRequestBody.Value.Value.Schema;
                 var requestBodyType = CreateModelClasses(rootNode, currentNode, requestBodySchema, operation, method);
                 method.AddParameter(new CodeParameter(method) {
                     Name = "body",
@@ -475,6 +474,7 @@ namespace Kiota.Builder
                     ParameterKind = CodeParameterKind.RequestBody,
                     Description = requestBodySchema.Description
                 });
+                method.ContentType = nonBinaryRequestBody.Value.Key;
             } else if (operation.RequestBody?.Content?.ContainsKey(requestBodyBinaryContentType) ?? false) {
                 var nParam = new CodeParameter(method) {
                     Name = "body",

@@ -140,7 +140,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             Assert.Contains("requestInfo.httpMethod = HttpMethod", result);
             Assert.Contains("setHeadersFromRawObject", result);
             Assert.Contains("setQueryStringParametersFromRawObject", result);
-            Assert.Contains("setJsonContentFromParsable", result);
+            Assert.Contains("setContentFromParsable", result);
             Assert.Contains("return requestInfo;", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }

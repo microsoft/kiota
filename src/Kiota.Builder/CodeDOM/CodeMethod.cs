@@ -28,12 +28,10 @@ namespace Kiota.Builder
 
     public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
     {
-        public CodeMethod(CodeElement parent): base(parent)
-        {
-            
-        }
+        public CodeMethod(CodeElement parent): base(parent) {}
         public HttpMethod? HttpMethod {get;set;}
         public CodeMethodKind MethodKind {get;set;} = CodeMethodKind.Custom;
+        public string ContentType { get; set; }
         public AccessModifier Access {get;set;} = AccessModifier.Public;
         public CodeTypeBase ReturnType {get;set;}
         public List<CodeParameter> Parameters {get;set;} = new List<CodeParameter>();
@@ -55,6 +53,7 @@ namespace Kiota.Builder
                 IsStatic = IsStatic,
                 Description = Description?.Clone() as string,
                 GenerationProperties = new (GenerationProperties),
+                ContentType = ContentType?.Clone() as string,
             };
         }
 

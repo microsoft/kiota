@@ -152,7 +152,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             Assert.Contains("httpMethod = HttpMethod.GET", result);
             Assert.Contains("h.accept(requestInfo.headers)", result);
             Assert.Contains("AddQueryParameters", result);
-            Assert.Contains("setJsonContentFromParsable", result);
+            Assert.Contains("setContentFromParsable", result);
             Assert.Contains("return requestInfo;", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }

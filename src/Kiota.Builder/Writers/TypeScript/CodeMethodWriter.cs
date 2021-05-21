@@ -105,7 +105,7 @@ namespace  Kiota.Builder.Writers.TypeScript {
                 if(requestBodyParam.Type.Name.Equals(localConventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"requestInfo.setStreamContent({requestBodyParam.Name});");
                 else
-                    writer.WriteLine($"requestInfo.setJsonContentFromParsable({requestBodyParam.Name}, this.{localConventions.SerializerFactoryPropertyName});"); //TODO we're making a big assumption here that everything will be json
+                    writer.WriteLine($"requestInfo.setContentFromParsable({requestBodyParam.Name}, this.{localConventions.SerializerFactoryPropertyName}, \"{codeElement.ContentType}\");"); //TODO we're making a big assumption here that everything will be json
             }
             writer.WriteLine("return requestInfo;");
         }

@@ -74,7 +74,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"requestInfo.SetStreamContent({requestBodyParam.Name});");
                 else
-                    writer.WriteLine($"requestInfo.SetJsonContentFromParsable({requestBodyParam.Name}, {conventions.SerializerFactoryPropertyName});"); //TODO we're making a big assumption here that everything will be json
+                    writer.WriteLine($"requestInfo.SetContentFromParsable({requestBodyParam.Name}, {conventions.SerializerFactoryPropertyName}, \"{codeElement.ContentType}\");"); //TODO we're making a big assumption here that everything will be json
             }
             if(queryStringParam != null) {
                 writer.WriteLine($"if ({queryStringParam.Name} != null) {{");
