@@ -20,7 +20,7 @@ namespace Kiota.Abstractions
         }
         public void SetContentFromParsable<T>(T item, ISerializationWriterFactory writerFactory, string contentType) where T : class, IParsable<T>, new() {
             if(string.IsNullOrEmpty(contentType)) throw new ArgumentNullException(nameof(contentType));
-            if(writerFactory == null) throw new ArgumentNullException(writerFactory);
+            if(writerFactory == null) throw new ArgumentNullException(nameof(writerFactory));
 
             using var writer = writerFactory.GetSerializationWriter(contentType);
             writer.WriteObjectValue(null, item);
