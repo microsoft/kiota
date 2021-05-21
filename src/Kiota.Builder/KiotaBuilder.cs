@@ -379,7 +379,7 @@ namespace Kiota.Builder
 
         private CodeProperty CreateProperty(string childIdentifier, string childType, CodeClass codeClass, string defaultValue = null, OpenApiSchema typeSchema = null, CodeElement typeDefinition = null, CodePropertyKind kind = CodePropertyKind.Custom)
         {
-            var isCollection = typeSchema?.Type?.Equals("array", StringComparison.CurrentCultureIgnoreCase) ?? false;
+            var isCollection = typeSchema?.Type?.Equals("array", StringComparison.OrdinalIgnoreCase) ?? false;
             var propertyName = childIdentifier;
             this.config.PropertiesPrefixToStrip.ForEach(x => propertyName = propertyName.Replace(x, string.Empty));
             var prop = new CodeProperty(codeClass)
@@ -391,12 +391,14 @@ namespace Kiota.Builder
             };
             if(propertyName != childIdentifier)
                 prop.SerializationName = childIdentifier;
-            var typeName = childType;
+            var typeName = typeSchema?.Items?.Type ?? childType; // first value that's not null, and not "object" for primitive collections, the items type matters
+            if(typeName == "object") typeName = childType;
+            var format = typeSchema?.Items?.Format ?? typeSchema?.Format;
             var isExternal = false;
-            if("string".Equals(typeName, StringComparison.OrdinalIgnoreCase) && "date-time".Equals(typeSchema?.Format, StringComparison.OrdinalIgnoreCase)) {
+            if("string".Equals(typeName, StringComparison.OrdinalIgnoreCase) && "date-time".Equals(format, StringComparison.OrdinalIgnoreCase)) {
                 isExternal = true;
                 typeName = "DateTimeOffset";
-            } else if ("double".Equals(typeSchema?.Format, StringComparison.OrdinalIgnoreCase)) {
+            } else if ("double".Equals(format, StringComparison.OrdinalIgnoreCase)) {
                 isExternal = true;
                 typeName = "double";
             }
