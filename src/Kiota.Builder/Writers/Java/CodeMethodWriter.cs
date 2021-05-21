@@ -121,7 +121,7 @@ namespace Kiota.Builder.Writers.Java {
                 if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"requestInfo.setStreamContent({requestBodyParam.Name});");
                 else
-                    writer.WriteLine($"requestInfo.setContentFromParsable({requestBodyParam.Name}, {conventions.SerializerFactoryPropertyName}, \"{codeElement.ContentType}\");"); //TODO we're making a big assumption here that the request is json
+                    writer.WriteLine($"requestInfo.setContentFromParsable({requestBodyParam.Name}, {conventions.SerializerFactoryPropertyName}, \"{codeElement.ContentType}\");");
             if(queryStringParam != null) {
                 var httpMethodPrefix = codeElement.HttpMethod.ToString().ToFirstCharacterUpperCase();
                 writer.WriteLine($"if ({queryStringParam.Name} != null) {{");
