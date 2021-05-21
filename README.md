@@ -32,7 +32,42 @@ No additional tools are required for dotnet projects.
 
 ### Generating SDKs
 
-You can either clone the repository and build Kiota locally, download and run binaries or run the docker image.
+You can either clone the repository and [build Kiota locally](#building-kiota), [download and run binaries](#running-kiota-from-binaries), [install and run the dotnet tool](#running-kiota-from-the-dotnet-tool) or [run the docker image](#running-kiota-with-docker).
+
+#### Running Kiota from the dotnet tool
+
+1. Navigate to [New personal access token](https://github.com/settings/tokens/new) and generate a new token. (permissions: read:package).
+1. Copy the token, you will need it later.
+1. Enable the SSO on the token if you are a Microsoft employee.
+1. Create a `nuget.config` file in the current directory with the following content.
+
+    ```xml
+    <?xml version="1.0" encoding="utf-8"?>
+    <configuration>
+        <packageSources>
+            <add key="GitHub" value="https://nuget.pkg.github.com/microsoft/index.json" />
+        </packageSources>
+        <packageSourceCredentials>
+            <GitHub>
+                <add key="Username" value="" /><!-- your github username -->
+                <!-- your github PAT: read:pacakges with SSO enabled for the Microsoft org (for microsoft employees only) -->
+                <add key="ClearTextPassword" value="" />
+            </GitHub>
+        </packageSourceCredentials>
+    </configuration>
+    ```
+
+1. Execute the following command to install the tool.
+
+    ```Shell
+    dotnet tool install --global --configfile nuget.config kiota
+    ```
+
+1. Execute the following command to run kiota.
+
+    ```Shell
+    kiota -d /some/input/description.yml -o /some/output/path --language csharp -n samespaceprefix
+    ```
 
 #### Running Kiota with Docker
 
@@ -72,7 +107,7 @@ Navigate to the output directory (usually under `src/kiota/bin/Release/net5.0`) 
 If you haven't built kiota locally, select the appropriate version from the [releases page](https://github.com/microsoft/kiota/releases).
 
 ```Shell
-kiota.exe --openapi ../msgraph-sdk-powershell/openApiDocs/v1.0/mail.yml --language csharp -o ../somepath -n namespaceprefix
+kiota.exe -d ../msgraph-sdk-powershell/openApiDocs/v1.0/mail.yml --language csharp -o ../somepath -n namespaceprefix
 ```
 
 > Note: once your SDK is generated in your target project, you will need to add references to kiota abstractions and kiota core in your project. Refer to [Initializing target projects](#initializing-target-projects)
