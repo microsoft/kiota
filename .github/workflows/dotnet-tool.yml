@@ -32,5 +32,5 @@ jobs:
         with:
           name: drop
           path: |
-            ${{ env.relativePath }}/nuget/*.nupkg
-      - run: dotnet nuget push "${{ env.relativePath }}/nuget/*.nupkg" --skip-duplicate -s https://nuget.pkg.github.com/microsoft/index.json -k ${{ secrets.PUBLISH_GH_TOKEN }}
+            ${{ env.relativePath }}/nupkg/*.nupkg
+      - run: dotnet nuget push "${{ env.relativePath }}/nupkg/*.nupkg" --skip-duplicate -s https://nuget.pkg.github.com/microsoft/index.json -k ${{ secrets.PUBLISH_GH_TOKEN }}
