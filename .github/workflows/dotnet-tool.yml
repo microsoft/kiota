@@ -1,9 +1,9 @@
 name: Publish Docker image
 on:
-  push:
-    branches: [main]
-    tags: ['v*']
-    paths: ['src/**', '.github/workflows/**']
+  push
+    # branches: [main]
+    # tags: ['v*']
+    # paths: ['src/**', '.github/workflows/**']
 jobs:
   push_to_feed:
     env:
