@@ -26,7 +26,9 @@ namespace Kiota.Builder
 
         public IEnumerable<CodeClass> AddClass(params CodeClass[] codeClasses)
         {
-            if(codeClasses == null || !codeClasses.Any() || codeClasses.Any( x=> x == null))
+            if(codeClasses == null || codeClasses.Any( x=> x == null))
+                throw new ArgumentNullException(nameof(codeClasses));
+            if(!codeClasses.Any())
                 throw new ArgumentOutOfRangeException(nameof(codeClasses));
             return AddRange(codeClasses);
         }
@@ -84,7 +86,9 @@ namespace Kiota.Builder
         }
         public IEnumerable<CodeEnum> AddEnum(params CodeEnum[] enumDeclarations)
         {
-            if(enumDeclarations == null || !enumDeclarations.Any() || enumDeclarations.Any( x=> x == null))
+            if(enumDeclarations == null || enumDeclarations.Any( x=> x == null))
+                throw new ArgumentNullException(nameof(enumDeclarations));
+            if(!enumDeclarations.Any())
                 throw new ArgumentOutOfRangeException(nameof(enumDeclarations));
             return AddRange(enumDeclarations);
         }

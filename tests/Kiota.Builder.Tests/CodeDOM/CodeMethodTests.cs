@@ -10,10 +10,10 @@ namespace Kiota.Builder.Tests {
             var method = new CodeMethod(root) {
                 Name = "method1"
             };
-            Assert.Throws<ArgumentOutOfRangeException>(() => {
+            Assert.Throws<ArgumentNullException>(() => {
                 method.AddParameter((CodeParameter)null);
             });
-            Assert.Throws<ArgumentOutOfRangeException>(() => {
+            Assert.Throws<ArgumentNullException>(() => {
                 method.AddParameter(null);
             });
             Assert.Throws<ArgumentOutOfRangeException>(() => {

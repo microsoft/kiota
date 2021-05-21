@@ -30,31 +30,31 @@ namespace Kiota.Builder.Tests {
             var codeClass = child.AddClass(new CodeClass(child) {
                 Name = "class1"
             }).First();
-            Assert.Throws<ArgumentOutOfRangeException>(() => {
+            Assert.Throws<ArgumentNullException>(() => {
                 codeClass.AddMethod(null);
             });
             Assert.Throws<ArgumentOutOfRangeException>(() => {
                 codeClass.AddMethod(new CodeMethod[] {});
             });
-            Assert.Throws<ArgumentOutOfRangeException>(() => {
+            Assert.Throws<ArgumentNullException>(() => {
                 codeClass.AddMethod(new CodeMethod[] {null});
             });
-            Assert.Throws<ArgumentOutOfRangeException>(() => {
+            Assert.Throws<ArgumentNullException>(() => {
                 codeClass.AddProperty(null);
             });
             Assert.Throws<ArgumentOutOfRangeException>(() => {
                 codeClass.AddProperty(new CodeProperty[] {});
             });
-            Assert.Throws<ArgumentOutOfRangeException>(() => {
+            Assert.Throws<ArgumentNullException>(() => {
                 codeClass.AddProperty(new CodeProperty[] {null});
             });
-            Assert.Throws<ArgumentOutOfRangeException>(() => {
+            Assert.Throws<ArgumentNullException>(() => {
                 codeClass.AddInnerClass(null);
             });
             Assert.Throws<ArgumentOutOfRangeException>(() => {
                 codeClass.AddInnerClass(new CodeClass[] {});
             });
-            Assert.Throws<ArgumentOutOfRangeException>(() => {
+            Assert.Throws<ArgumentNullException>(() => {
                 codeClass.AddInnerClass(new CodeClass[] {null});
             });
         }

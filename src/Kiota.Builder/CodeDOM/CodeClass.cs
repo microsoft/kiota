@@ -49,7 +49,9 @@ namespace Kiota.Builder
 
         public IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties)
         {
-            if(properties == null || !properties.Any() || properties.Any(x => x == null))
+            if(properties == null || properties.Any(x => x == null))
+                throw new ArgumentNullException(nameof(properties));
+            if(!properties.Any())
                 throw new ArgumentOutOfRangeException(nameof(properties));
             return AddRange(properties);
         }
@@ -61,14 +63,18 @@ namespace Kiota.Builder
 
         public IEnumerable<CodeMethod> AddMethod(params CodeMethod[] methods)
         {
-            if(methods == null || !methods.Any() || methods.Any(x => x == null))
+            if(methods == null || methods.Any(x => x == null))
+                throw new ArgumentNullException(nameof(methods));
+            if(!methods.Any())
                 throw new ArgumentOutOfRangeException(nameof(methods));
             return AddRange(methods);
         }
 
         public IEnumerable<CodeClass> AddInnerClass(params CodeClass[] codeClasses)
         {
-            if(codeClasses == null || !codeClasses.Any() || codeClasses.Any(x => x == null))
+            if(codeClasses == null || codeClasses.Any(x => x == null))
+                throw new ArgumentNullException(nameof(codeClasses));
+            if(!codeClasses.Any())
                 throw new ArgumentOutOfRangeException(nameof(codeClasses));
             return AddRange(codeClasses);
         }

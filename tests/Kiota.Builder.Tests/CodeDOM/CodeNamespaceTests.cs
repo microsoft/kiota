@@ -87,31 +87,31 @@ namespace Kiota.Builder.Tests
         public void ThrowsOnAddingEmptyCollections() {
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(childName);
-            Assert.Throws<ArgumentOutOfRangeException>(() => {
+            Assert.Throws<ArgumentNullException>(() => {
                 child.AddClass(null);
             });
             Assert.Throws<ArgumentOutOfRangeException>(() => {
                 child.AddClass(new CodeClass[] {});
             });
-            Assert.Throws<ArgumentOutOfRangeException>(() => {
+            Assert.Throws<ArgumentNullException>(() => {
                 child.AddClass(new CodeClass[] {null});
             });
-            Assert.Throws<ArgumentOutOfRangeException>(() => {
+            Assert.Throws<ArgumentNullException>(() => {
                 child.AddEnum(null);
             });
             Assert.Throws<ArgumentOutOfRangeException>(() => {
                 child.AddEnum(new CodeEnum[] {});
             });
-            Assert.Throws<ArgumentOutOfRangeException>(() => {
+            Assert.Throws<ArgumentNullException>(() => {
                 child.AddEnum(new CodeEnum[] {null});
             });
-            Assert.Throws<ArgumentOutOfRangeException>(() => {
+            Assert.Throws<ArgumentNullException>(() => {
                 child.AddUsing(null);
             });
             Assert.Throws<ArgumentOutOfRangeException>(() => {
                 child.AddUsing(new CodeUsing[] {});
             });
-            Assert.Throws<ArgumentOutOfRangeException>(() => {
+            Assert.Throws<ArgumentNullException>(() => {
                 child.AddUsing(new CodeUsing[] {null});
             });
         }

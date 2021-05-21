@@ -60,7 +60,9 @@ namespace Kiota.Builder
 
         public void AddParameter(params CodeParameter[] methodParameters)
         {
-            if(methodParameters == null || !methodParameters.Any() || methodParameters.Any(x => x == null))
+            if(methodParameters == null || methodParameters.Any(x => x == null))
+                throw new ArgumentNullException(nameof(methodParameters));
+            if(!methodParameters.Any())
                 throw new ArgumentOutOfRangeException(nameof(methodParameters));
             AddMissingParent(methodParameters);
             Parameters.AddRange(methodParameters);
