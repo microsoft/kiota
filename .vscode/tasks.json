@@ -32,28 +32,58 @@
             "label": "coverage:clean",
             "type": "shell",
             "command": "powershell",
+            "group": "test",
             "args": [
                 "-command",
-                "Remove-Item -Recurse -Include TestResults -Path tests",
+                "Remove-Item -Recurse -Include TestResults -Path tests"
             ],
             "linux": {
                 "command": "rm",
                 "args": [
                     "-r",
-                    "./tests/Kiota.Builder.Tests/TestResults",
-                    "./tests/Kiota.Builder.IntegrationTests/TestResults",
+                    "${workspaceFolder}/tests/Kiota.Builder.Tests/TestResults",
+                    "${workspaceFolder}/tests/Kiota.Builder.IntegrationTests/TestResults"
                 ]
             }
         },
         {
-            "label": "coverage",
+            "label": "coverage:global",
             "type": "process",
             "command": "reportgenerator",
             "group": "test",
             "args": [
-                "-reports:**/coverage.cobertura.xml",
-                "-targetdir:./reports/coverage"
+                "-reports:${workspaceFolder}\\tests\\**\\coverage.cobertura.xml",
+                "-targetdir:${workspaceFolder}\\reports\\coverage"
             ],
+            "linux":{
+                "command": "reportgenerator",
+                "args": [
+                    "-reports:${workspaceFolder}/tests/**/coverage.cobertura.xml",
+                    "-targetdir:${workspaceFolder}/reports/coverage"
+                ],
+            },
+            "dependsOn": [
+                "coverage:clean",
+                "test"
+            ],
+            "dependsOrder": "sequence"
+        },
+        {
+            "label": "coverage:unit",
+            "type": "process",
+            "command": "reportgenerator",
+            "group": "test",
+            "args": [
+                "-reports:${workspaceFolder}\\tests\\Kiota.Builder.Tests\\**\\coverage.cobertura.xml",
+                "-targetdir:${workspaceFolder}\\reports\\coverage"
+            ],
+            "linux":{
+                "command": "reportgenerator",
+                "args": [
+                    "-reports:${workspaceFolder}/tests/Kiota.Builder.Tests/**/coverage.cobertura.xml",
+                    "-targetdir:${workspaceFolder}/reports/coverage"
+                ],
+            },
             "dependsOn": [
                 "coverage:clean",
                 "test"
@@ -67,22 +97,36 @@
             "linux": {
                 "command": "xdg-open",
                 "args": [
-                    "./reports/coverage/index.html"
+                    "${workspaceFolder}/reports/coverage/index.html"
                 ]
             },
             "osx": {
                 "command": "open",
                 "args": [
-                    "./reports/coverage/index.html"
-
+                    "${workspaceFolder}/reports/coverage/index.html"
                 ]
             },
             "group": "test",
             "args": [
-                "./reports/coverage/index.html"
+                "${workspaceFolder}/reports/coverage/index.html"
             ],
-            "dependsOn":[
-                "coverage"
+        },
+        {
+            "label": "coverage:launch:global",
+            "group": "test",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "coverage:global",
+                "coverage:launch"
+            ]
+        },
+        {
+            "label": "coverage:launch:unit",
+            "group": "test",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "coverage:unit",
+                "coverage:launch"
             ]
         },
         {

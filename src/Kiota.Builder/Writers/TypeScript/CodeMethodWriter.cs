@@ -10,6 +10,11 @@ namespace  Kiota.Builder.Writers.TypeScript {
         private TypeScriptConventionService localConventions;
         public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
+            if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
+            if(codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
+            if(writer == null) throw new ArgumentNullException(nameof(writer));
+            if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
+
             localConventions = new TypeScriptConventionService(writer); //because we allow inline type definitions for methods parameters
             var returnType = localConventions.GetTypeString(codeElement.ReturnType);
             var isVoid = "void".Equals(returnType, StringComparison.OrdinalIgnoreCase);
@@ -39,11 +44,16 @@ namespace  Kiota.Builder.Writers.TypeScript {
                     WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, isVoid, returnType, writer);
                     break;
                 default:
-                    writer.WriteLine($"return {(codeElement.IsAsync ? "Promise.resolve(" : string.Empty)}{(codeElement.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{(codeElement.IsAsync ? ")" : string.Empty)};");
+                    WriteDefaultMethodBody(codeElement, writer);
                     break;
             }
             writer.DecreaseIndent();
             writer.WriteLine("};");
+        }
+        private static void WriteDefaultMethodBody(CodeMethod codeElement, LanguageWriter writer) {
+            var promisePrefix = codeElement.IsAsync ? "Promise.resolve(" : string.Empty;
+            var promiseSuffix = codeElement.IsAsync ? ")" : string.Empty;
+            writer.WriteLine($"return {promisePrefix}{(codeElement.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{promiseSuffix};");
         }
         private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
             var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
@@ -60,6 +70,8 @@ namespace  Kiota.Builder.Writers.TypeScript {
             writer.WriteLine("]);");
         }
         private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, bool isVoid, string returnType, LanguageWriter writer) {
+            if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
+
             var generatorMethodName = (codeElement.Parent as CodeClass)
                                                 .GetChildElements(true)
                                                 .OfType<CodeMethod>()
@@ -80,6 +92,8 @@ namespace  Kiota.Builder.Writers.TypeScript {
             writer.WriteLine($"return this.httpCore?.{genericTypeForSendMethod}(requestInfo,{newFactoryParameter} responseHandler) ?? Promise.reject(new Error('http core is null'));");
         }
         private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, LanguageWriter writer) {
+            if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
+            
             writer.WriteLines("const requestInfo = new RequestInfo();",
                                 $"requestInfo.URI = (this.{localConventions.CurrentPathPropertyName} ?? '') + this.{localConventions.PathSegmentPropertyName},",
                                 $"requestInfo.httpMethod = HttpMethod.{codeElement.HttpMethod.ToString().ToUpperInvariant()},");

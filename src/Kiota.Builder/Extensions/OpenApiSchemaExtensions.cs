@@ -7,9 +7,9 @@ namespace Kiota.Builder.Extensions {
     public static class OpenApiSchemaExtensions {
         private static Func<OpenApiSchema, IList<OpenApiSchema>> classNamesFlattener = (x) =>
         (x.AnyOf ?? Enumerable.Empty<OpenApiSchema>()).Union(x.AllOf).Union(x.OneOf).ToList();
-        internal static IEnumerable<string> GetClassNames(this OpenApiSchema schema) {
+        public static IEnumerable<string> GetSchemaTitles(this OpenApiSchema schema) {
             if(schema.Items != null)
-                return schema.Items.GetClassNames();
+                return schema.Items.GetSchemaTitles();
             else if(!string.IsNullOrEmpty(schema.Title))
                 return new List<string>{ schema.Title };
             else if(schema.AnyOf.Any())
@@ -28,10 +28,10 @@ namespace Kiota.Builder.Extensions {
             return resultSet.Select(x => x.Title).Where(x => !string.IsNullOrEmpty(x));
         }
 
-        internal static string GetClassName(this OpenApiSchema schema) {
-            return schema.GetClassNames().LastOrDefault();
+        public static string GetSchemaTitle(this OpenApiSchema schema) {
+            return schema.GetSchemaTitles().LastOrDefault();
         }
-        internal static IEnumerable<string> GetSchemaReferenceIds(this OpenApiSchema schema, HashSet<OpenApiSchema> visitedSchemas = null) {
+        public static IEnumerable<string> GetSchemaReferenceIds(this OpenApiSchema schema, HashSet<OpenApiSchema> visitedSchemas = null) {
             if(visitedSchemas == null)
                 visitedSchemas = new();            
             if(!visitedSchemas.Contains(schema)) {

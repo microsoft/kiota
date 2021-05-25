@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
 
-namespace Kiota.Builder {
+namespace Kiota.Builder.Refiners {
     public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         public override void Refine(CodeNamespace generatedCode)
@@ -49,8 +49,8 @@ namespace Kiota.Builder {
         private static void AddListImport(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass) {
                 var childElements = currentClass.GetChildElements(true);
-                if(childElements.OfType<CodeProperty>().Any(x => x.Type.CollectionKind == CodeType.CodeTypeCollectionKind.Complex) ||
-                    childElements.OfType<CodeMethod>().Any(x => x.ReturnType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex) ||
+                if(childElements.OfType<CodeProperty>().Any(x => x.Type?.CollectionKind == CodeType.CodeTypeCollectionKind.Complex) ||
+                    childElements.OfType<CodeMethod>().Any(x => x.ReturnType?.CollectionKind == CodeType.CodeTypeCollectionKind.Complex) ||
                     childElements.OfType<CodeMethod>().Any(x => x.Parameters.Any(y => y.Type.CollectionKind == CodeType.CodeTypeCollectionKind.Complex))) {
                         var nUsing = new CodeUsing(currentClass) {
                             Name = "List"
@@ -85,7 +85,7 @@ namespace Kiota.Builder {
             new ("HashMap", "java.util"),
         };
         private static void CorrectCoreType(CodeElement currentElement) {
-            if (currentElement is CodeProperty currentProperty) {
+            if (currentElement is CodeProperty currentProperty && currentProperty.Type != null) {
                 if("IHttpCore".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase))
                     currentProperty.Type.Name = "HttpCore";
                 else if(currentProperty.Name.Equals("serializerFactory", StringComparison.OrdinalIgnoreCase))

@@ -71,7 +71,8 @@ namespace Kiota.Builder.Writers.Java {
             // and because if currentPath is null it'll add "null" to the string...
             writer.WriteLines($"final String parentPath = ({CurrentPathPropertyName} == null ? \"\" : {CurrentPathPropertyName}) + {PathSegmentPropertyName}{suffix};",
                         $"final HttpCore parentCore = {HttpCorePropertyName};", //this variable naming is because Java can't tell the difference in terms of scopes priority in property initializers
-                        $"return new {returnType}() {{{{ {CurrentPathPropertyName} = parentPath; {HttpCorePropertyName} = parentCore; }}}};");
+                        $"final SerializationWriterFactory parentSerializationFactory = {SerializerFactoryPropertyName};",
+                        $"return new {returnType}() {{{{ {CurrentPathPropertyName} = parentPath; {HttpCorePropertyName} = parentCore; {SerializerFactoryPropertyName} = parentSerializationFactory; }}}};");
         }
     }
 }

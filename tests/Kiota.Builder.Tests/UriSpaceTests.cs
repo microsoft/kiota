@@ -1,7 +1,7 @@
 ﻿using Microsoft.OpenApi.Models;
 using Xunit;
 
-namespace Kiota.Builder.tests
+namespace Kiota.Builder.Tests
 {
     public class UriSpaceTests
     {

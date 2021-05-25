@@ -46,7 +46,7 @@ namespace Kiota.Builder
         {
             return new CodeMethod(Parent) {
                 MethodKind = MethodKind,
-                ReturnType = ReturnType.Clone() as CodeTypeBase,
+                ReturnType = ReturnType?.Clone() as CodeTypeBase,
                 Parameters = Parameters.Select(x => x.Clone() as CodeParameter).ToList(),
                 Name = Name.Clone() as string,
                 HttpMethod = HttpMethod,
@@ -58,9 +58,11 @@ namespace Kiota.Builder
             };
         }
 
-        internal void AddParameter(params CodeParameter[] methodParameters)
+        public void AddParameter(params CodeParameter[] methodParameters)
         {
-            if(!methodParameters.Any() || methodParameters.Any(x => x == null))
+            if(methodParameters == null || methodParameters.Any(x => x == null))
+                throw new ArgumentNullException(nameof(methodParameters));
+            if(!methodParameters.Any())
                 throw new ArgumentOutOfRangeException(nameof(methodParameters));
             AddMissingParent(methodParameters);
             Parameters.AddRange(methodParameters);

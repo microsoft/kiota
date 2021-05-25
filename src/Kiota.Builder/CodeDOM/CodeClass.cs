@@ -40,13 +40,19 @@ namespace Kiota.Builder
 
         public void SetIndexer(CodeIndexer indexer)
         {
+            if(indexer == null)
+                throw new ArgumentNullException(nameof(indexer));
+            if(InnerChildElements.Values.OfType<CodeIndexer>().Any())
+                throw new InvalidOperationException("this class already has an indexer, remove it first");
             AddRange(indexer);
         }
 
         public IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties)
         {
-            if(!properties.Any() || properties.Any(x => x == null))
+            if(properties == null || properties.Any(x => x == null))
                 throw new ArgumentNullException(nameof(properties));
+            if(!properties.Any())
+                throw new ArgumentOutOfRangeException(nameof(properties));
             return AddRange(properties);
         }
 
@@ -57,14 +63,18 @@ namespace Kiota.Builder
 
         public IEnumerable<CodeMethod> AddMethod(params CodeMethod[] methods)
         {
-            if(!methods.Any() || methods.Any(x => x == null))
+            if(methods == null || methods.Any(x => x == null))
+                throw new ArgumentNullException(nameof(methods));
+            if(!methods.Any())
                 throw new ArgumentOutOfRangeException(nameof(methods));
             return AddRange(methods);
         }
 
         public IEnumerable<CodeClass> AddInnerClass(params CodeClass[] codeClasses)
         {
-            if(!codeClasses.Any() || codeClasses.Any(x => x == null))
+            if(codeClasses == null || codeClasses.Any(x => x == null))
+                throw new ArgumentNullException(nameof(codeClasses));
+            if(!codeClasses.Any())
                 throw new ArgumentOutOfRangeException(nameof(codeClasses));
             return AddRange(codeClasses);
         }
@@ -83,7 +93,7 @@ namespace Kiota.Builder
                 return parentClass.GetGreatestGrandparent(startClassToSkip);
         }
 
-        public class Declaration : BlockDeclaration
+    public class Declaration : BlockDeclaration
         {
             public Declaration(CodeElement parent):base(parent)
             {

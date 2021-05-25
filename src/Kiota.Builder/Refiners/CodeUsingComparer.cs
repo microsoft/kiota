@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Kiota.Builder {
+namespace Kiota.Builder.Refiners {
     public class CodeUsingComparer : IEqualityComparer<CodeUsing>
     {
         private readonly bool _compareOnDeclaration;

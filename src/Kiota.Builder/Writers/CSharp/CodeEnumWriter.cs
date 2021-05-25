@@ -20,7 +20,7 @@ namespace Kiota.Builder.Writers.CSharp {
             writer.IncreaseIndent();
             writer.WriteLines(codeElement.Options
                             .Select(x => x.ToFirstCharacterUpperCase())
-                            .Select((x, idx) => $"{x}{(codeElement.Flags ? " = " + GetEnumIndex(idx) : string.Empty)},")
+                            .Select((x, idx) => $"{x}{(codeElement.Flags ? " = " + GetEnumFlag(idx) : string.Empty)},")
                             .ToArray());
             writer.DecreaseIndent();
             writer.WriteLine("}");
@@ -28,7 +28,9 @@ namespace Kiota.Builder.Writers.CSharp {
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
             }
+            
         }
-        private readonly Func<int, string> GetEnumIndex = (idx) => (idx == 0 ? 0 : 2^(idx -1)).ToString();
+        private readonly Func<int, string> GetEnumFlag = (idx) => 
+            (idx == 0 ? 1 : Math.Pow(2, idx)).ToString();
     }
 }

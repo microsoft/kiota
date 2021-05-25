@@ -9,7 +9,6 @@ namespace Kiota.Builder.Extensions {
         {
             // Return Schema that represents all the possible success responses!
             // For the moment assume 200s and application/json
-            // TODO: figure out how to create types that accurately correspond to HTTP responses!
             var schemas = operation.Responses.Where(r => successCodes.Contains(r.Key))
                                 .SelectMany(re => re.Value.Content)
                                 .Where(c => c.Key == "application/json")

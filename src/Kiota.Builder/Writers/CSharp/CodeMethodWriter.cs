@@ -9,6 +9,11 @@ namespace Kiota.Builder.Writers.CSharp {
         public CodeMethodWriter(CSharpConventionService conventionService): base(conventionService) { }
         public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
+            if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
+            if(codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
+            if(writer == null) throw new ArgumentNullException(nameof(writer));
+            if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
+
             var returnType = conventions.GetTypeString(codeElement.ReturnType);
             var parentClass = codeElement.Parent as CodeClass;
             var shouldHide = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null && codeElement.MethodKind == CodeMethodKind.Serializer;
@@ -29,6 +34,8 @@ namespace Kiota.Builder.Writers.CSharp {
                 case CodeMethodKind.RequestExecutor:
                     WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, isVoid, returnType, writer);
                     break;
+                case CodeMethodKind.DeserializerBackwardCompatibility:
+                    throw new InvalidOperationException("Deserialization information is held by a property in CSharp");
                 default:
                     writer.WriteLine("return null;");
                 break;
@@ -37,6 +44,8 @@ namespace Kiota.Builder.Writers.CSharp {
             writer.WriteLine("}");
         }
         private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, bool isVoid, string returnType, LanguageWriter writer) {
+            if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
+            
             var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
             var generatorMethodName = (codeElement.Parent as CodeClass)
                                                 .GetChildElements(true)
@@ -52,7 +61,9 @@ namespace Kiota.Builder.Writers.CSharp {
 
         }
         private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, LanguageWriter writer) {
-            var operationName = codeElement.HttpMethod?.ToString();
+            if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
+            
+            var operationName = codeElement.HttpMethod.ToString();
             writer.WriteLine("var requestInfo = new RequestInfo {");
             writer.IncreaseIndent();
             writer.WriteLines($"HttpMethod = HttpMethod.{operationName?.ToUpperInvariant()},",

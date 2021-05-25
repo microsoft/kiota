@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using static Kiota.Builder.CodeClass;
 
-namespace Kiota.Builder {
+namespace Kiota.Builder.Refiners {
     public abstract class CommonLanguageRefiner : ILanguageRefiner
     {
         public abstract void Refine(CodeNamespace generatedCode);
@@ -36,7 +36,7 @@ namespace Kiota.Builder {
             if(currentElement is CodeMethod currentMethod) {
                 var parentClass = currentMethod.Parent as CodeClass;
                 var shouldInsertUsing = false;
-                if(currentMethod.ReturnType.Name == binaryType) {
+                if(binaryType.Equals(currentMethod.ReturnType?.Name)) {
                     currentMethod.ReturnType.Name = symbol;
                     shouldInsertUsing = true;
                 }
@@ -95,12 +95,14 @@ namespace Kiota.Builder {
             if(currentElement is CodeMethod currentMethod) {
                 if(currentMethod.ReturnType is CodeUnionType currentUnionType)
                     currentMethod.ReturnType = ConvertUnionTypeToWrapper(currentMethod.Parent as CodeClass, currentUnionType);
-                else if(currentMethod.Parameters.Any(x => x.Type is CodeUnionType))
+                if(currentMethod.Parameters.Any(x => x.Type is CodeUnionType))
                     foreach(var currentParameter in currentMethod.Parameters.Where(x => x.Type is CodeUnionType))
                         currentParameter.Type = ConvertUnionTypeToWrapper(currentMethod.Parent as CodeClass, currentParameter.Type as CodeUnionType);
             }
             else if (currentElement is CodeIndexer currentIndexer && currentIndexer.ReturnType is CodeUnionType currentUnionType)
                 currentIndexer.ReturnType = ConvertUnionTypeToWrapper(currentIndexer.Parent as CodeClass, currentUnionType);
+            else if(currentElement is CodeProperty currentProperty && currentProperty.Type is CodeUnionType currentPropUnionType)
+                currentProperty.Type = ConvertUnionTypeToWrapper(currentProperty.Parent as CodeClass, currentPropUnionType);
 
             CrawlTree(currentElement, ConvertUnionTypesToWrapper);
         }
