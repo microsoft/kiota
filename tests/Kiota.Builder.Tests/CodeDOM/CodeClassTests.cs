@@ -79,7 +79,7 @@ namespace Kiota.Builder.Tests {
             Assert.Equal(3, codeClass.GetChildElements(true).Count());
         }
         [Fact]
-        public void GetsParentAndGrantParent() {
+        public void GetsParentAndGrandParent() {
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(CodeNamespaceTests.childName);
             var grandParent = child.AddClass(new CodeClass(child) {
