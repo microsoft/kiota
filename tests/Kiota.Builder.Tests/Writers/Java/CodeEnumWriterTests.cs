@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using Kiota.Builder.Tests;
 using Xunit;
 
 namespace Kiota.Builder.Writers.Java.Tests {
@@ -39,7 +40,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             Assert.Contains($"@javax.annotation.Nullable", result);
             Assert.Contains($"forValue(@javax.annotation.Nonnull final String searchValue)", result);
             Assert.Contains($"default: return null;", result);
-            Assert.Equal(result.Count(x => x == '}'), result.Count(x => x == '{'));
+            AssertExtensions.CurlyBracesAreClosed(result);
             Assert.Contains(optionName, result);
         }
     }

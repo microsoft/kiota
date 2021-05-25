@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using Kiota.Builder.Tests;
 using Xunit;
 
 namespace Kiota.Builder.Writers.TypeScript.Tests {
@@ -126,6 +127,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             Assert.Contains("const requestInfo", result);
             Assert.Contains("sendAsync", result);
             Assert.Contains("Promise.reject", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesRequestGeneratorBody() {
@@ -140,6 +142,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             Assert.Contains("setQueryStringParametersFromRawObject", result);
             Assert.Contains("setJsonContentFromParsable", result);
             Assert.Contains("return requestInfo;", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesInheritedDeSerializerBody() {
@@ -150,6 +153,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("...super", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesDeSerializerBody() {
@@ -169,6 +173,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             Assert.Contains("getCollectionOfPrimitiveValues", result);
             Assert.Contains("getCollectionOfObjectValues", result);
             Assert.Contains("getEnumValue", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesInheritedSerializerBody() {
@@ -179,6 +184,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("super.serialize", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesSerializerBody() {
@@ -199,6 +205,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             Assert.Contains("writeCollectionOfObjectValues", result);
             Assert.Contains("writeEnumValue", result);
             Assert.Contains("writeAdditionalData(this.additionalData);", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesMethodAsyncDescription() {
@@ -221,6 +228,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             Assert.Contains(paramDescription, result); 
             Assert.Contains("@returns a Promise of", result);
             Assert.Contains("*/", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesMethodSyncDescription() {
@@ -238,6 +246,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.DoesNotContain("@returns a Promise of", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void Defensive() {
@@ -263,6 +272,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             Assert.Contains(returnTypeName, result);
             Assert.Contains("Promise<", result);// async default
             Assert.Contains("| undefined", result);// nullable default
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void DoesNotAddUndefinedOnNonNullableReturnType(){
@@ -270,6 +280,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.DoesNotContain("| undefined", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void DoesNotAddAsyncInformationOnSyncMethods() {
@@ -278,12 +289,14 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             var result = tw.ToString();
             Assert.DoesNotContain("Promise<", result);
             Assert.DoesNotContain("async", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesPublicMethodByDefault() {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("public ", result);// public default
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesPrivateMethod() {
@@ -291,6 +304,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("private ", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesProtectedMethod() {
@@ -298,7 +312,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("protected ", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
     }
-    
 }

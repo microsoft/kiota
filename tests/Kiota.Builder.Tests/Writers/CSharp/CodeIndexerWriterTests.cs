@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Kiota.Builder.Tests;
 using Xunit;
 
 namespace Kiota.Builder.Writers.CSharp.Tests {
@@ -43,6 +44,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             Assert.Contains("CurrentPath = CurrentPath + PathSegment", result);
             Assert.Contains("+ position", result);
             Assert.Contains("public SomeRequestBuilder this[string position]", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
     }
 }

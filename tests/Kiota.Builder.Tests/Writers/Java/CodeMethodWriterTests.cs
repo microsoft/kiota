@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using Kiota.Builder.Tests;
 using Xunit;
 
 namespace Kiota.Builder.Writers.Java.Tests {
@@ -119,6 +120,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("CompletableFuture<Void>", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesRequestBodiesThrowOnNullHttpMethod() {
@@ -137,6 +139,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             Assert.Contains("final RequestInfo requestInfo", result);
             Assert.Contains("sendAsync", result);
             Assert.Contains("CompletableFuture.failedFuture(ex)", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesRequestGeneratorBody() {
@@ -151,6 +154,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             Assert.Contains("AddQueryParameters", result);
             Assert.Contains("setJsonContentFromParsable", result);
             Assert.Contains("return requestInfo;", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesInheritedDeSerializerBody() {
@@ -161,6 +165,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("super.methodName()", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesDeSerializerBody() {
@@ -180,6 +185,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             Assert.Contains("getCollectionOfPrimitiveValues", result);
             Assert.Contains("getCollectionOfObjectValues", result);
             Assert.Contains("getEnumValue", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesInheritedSerializerBody() {
@@ -190,6 +196,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("super.serialize", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesSerializerBody() {
@@ -210,6 +217,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             Assert.Contains("writeCollectionOfObjectValues", result);
             Assert.Contains("writeEnumValue", result);
             Assert.Contains("writeAdditionalData(this.additionalData);", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesMethodAsyncDescription() {
@@ -232,6 +240,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             Assert.Contains(paramDescription, result); 
             Assert.Contains("@return a CompletableFuture of", result);
             Assert.Contains("*/", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesMethodSyncDescription() {
@@ -249,6 +258,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.DoesNotContain("@return a CompletableFuture of", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void Defensive() {
@@ -266,26 +276,28 @@ namespace Kiota.Builder.Writers.Java.Tests {
             method.ReturnType = null;
             Assert.Throws<InvalidOperationException>(() => writer.Write(method));
         }
+        private const string taskPrefix = "CompletableFuture<";
         [Fact]
         public void WritesReturnType() {
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains(methodName, result);
-            Assert.Contains(returnTypeName, result);
-            Assert.Contains("CompletableFuture<", result);// async default
+            Assert.Contains($"{taskPrefix}{returnTypeName}> {methodName}", result);// async default
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void DoesNotAddAsyncInformationOnSyncMethods() {
             method.IsAsync = false;
             writer.Write(method);
             var result = tw.ToString();
-            Assert.DoesNotContain("CompletableFuture<", result);
+            Assert.DoesNotContain(taskPrefix, result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesPublicMethodByDefault() {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("public ", result);// public default
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesPrivateMethod() {
@@ -293,6 +305,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("private ", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesProtectedMethod() {
@@ -300,6 +313,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("protected ", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
     }
     

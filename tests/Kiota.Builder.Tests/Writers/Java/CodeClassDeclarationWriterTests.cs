@@ -70,9 +70,8 @@ namespace Kiota.Builder.Writers.Java.Tests {
             });
             codeElementWriter.WriteCodeElement(declaration, writer);
             var result = tw.ToString();
-            Assert.Contains("import", result);
-            Assert.Contains("project.graph.Message", result);
-            Assert.Contains("java.util.Objects", result);
+            Assert.Contains("import project.graph.Message", result);
+            Assert.Contains("import java.util.Objects", result);
         }
     }
 }

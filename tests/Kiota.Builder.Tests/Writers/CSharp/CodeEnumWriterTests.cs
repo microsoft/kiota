@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using Kiota.Builder.Tests;
 using Xunit;
 
 namespace Kiota.Builder.Writers.CSharp.Tests {
@@ -30,7 +31,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             writer.Write(currentEnum);
             var result = tw.ToString();
             Assert.Contains("public enum", result);
-            Assert.Equal(result.Count(x => x == '}'), result.Count(x => x == '{'));
+            AssertExtensions.CurlyBracesAreClosed(result);
             Assert.Contains(optionName, result);
         }
         [Fact]

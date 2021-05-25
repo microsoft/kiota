@@ -35,7 +35,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             tw?.Dispose();
         }
         [Fact]
-        public void WritesDeSerializerThrows() {
+        public void WritesDeserializerThrows() {
             property.PropertyKind = CodePropertyKind.Deserializer;
             Assert.Throws<InvalidOperationException>(() => writer.Write(property));
         }

@@ -38,7 +38,7 @@ namespace Kiota.Builder.Tests {
             });
         }
         [Fact]
-        public void DoesntThrowWhenAddingOVerloads() {
+        public void DoesntThrowWhenAddingOverloads() {
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(CodeNamespaceTests.childName);
             var codeClass = child.AddClass(new CodeClass(child) {
@@ -55,7 +55,7 @@ namespace Kiota.Builder.Tests {
             codeClass.AddMethod(method, overload);
         }
         [Fact]
-        public void DoesntThrowWhenAddingIndexersWIthPropName() {
+        public void DoesntThrowWhenAddingIndexersWithPropName() {
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(CodeNamespaceTests.childName);
             var codeClass = child.AddClass(new CodeClass(child) {

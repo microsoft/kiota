@@ -4,13 +4,15 @@ using Xunit;
 namespace Kiota.Builder.Refiners.Tests {
     public class TypeScriptLanguageRefinerTests {
         private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
+        private const string httpCoreDefaultName = "IHttpCore";
+        private const string factoryDefaultName = "ISerializationWriterFactory";
+        private const string deserializeDefaultName = "IDictionary<string, Action<Model, IParseNode>>";
+        private const string dateTimeOffsetDefaultName = "DateTimeOffset";
+        private const string addiationalDataDefaultName = "new Dictionary<string, object>()";
+        private const string handlerDefaultName = "IResponseHandler";
         [Fact]
         public void CorrectsCoreType() {
-            const string httpCoreDefaultName = "IHttpCore";
-            const string factoryDefaultName = "ISerializationWriterFactory";
-            const string deserializeDefaultName = "IDictionary<string, Action<Model, IParseNode>>";
-            const string dateTimeOffsetDefaultName = "DateTimeOffset";
-            const string addiationalDataDefaultName = "new Dictionary<string, object>()";
+
             var model = root.AddClass(new CodeClass (root) {
                 Name = "model",
                 ClassKind = CodeClassKind.Model
@@ -42,7 +44,6 @@ namespace Kiota.Builder.Refiners.Tests {
                     Name = addiationalDataDefaultName
                 }
             });
-            const string handlerDefaultName = "IResponseHandler";
             var executorMethod = model.AddMethod(new CodeMethod(model) {
                 Name = "executor",
                 MethodKind = CodeMethodKind.RequestExecutor,
