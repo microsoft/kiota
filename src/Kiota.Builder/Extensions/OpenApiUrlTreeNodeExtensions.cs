@@ -15,7 +15,7 @@ namespace Kiota.Builder.Extensions {
             return result;
         }
         private static void AddAllPathsEntries(OpenApiUrlTreeNode currentNode, Dictionary<string, HashSet<OpenApiUrlTreeNode>> index, string label) {
-            if(currentNode == null && string.IsNullOrEmpty(label))
+            if(currentNode == null || string.IsNullOrEmpty(label))
                 return;
             
             if(currentNode.PathItems.ContainsKey(label) && currentNode.HasOperations(label)) {
@@ -38,10 +38,11 @@ namespace Kiota.Builder.Extensions {
                 foreach(var child in currentNode.Children.Values)
                     AddAllPathsEntries(child, index, label);
         }
-        internal static string GetNodeNamespaceFromPath(this OpenApiUrlTreeNode currentNode, string prefix) =>
+        public static string GetNodeNamespaceFromPath(this OpenApiUrlTreeNode currentNode, string prefix) =>
             prefix + 
                     ((currentNode?.Path?.Contains(pathNameSeparator) ?? false) ?
-                        "." + currentNode?.Path
+                        (string.IsNullOrEmpty(prefix) ? string.Empty : ".")
+                             + currentNode?.Path
                                 ?.Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
                                 ?.Where(x => !x.StartsWith('{'))
                                 ?.Aggregate((x, y) => $"{x}.{y}") :
@@ -52,30 +53,30 @@ namespace Kiota.Builder.Extensions {
         ///<summary>
         /// Returns the class name for the node with more or less precision depending on the provided arguments
         ///</summary>
-        internal static string GetClassName(this OpenApiUrlTreeNode currentNode, string suffix = default, string prefix = default, OpenApiOperation operation = default) {
+        public static string GetClassName(this OpenApiUrlTreeNode currentNode, string suffix = default, string prefix = default, OpenApiOperation operation = default) {
             var rawClassName = operation?.GetResponseSchema()?.Reference?.GetClassName() ?? 
                                 currentNode?.GetIdentifier()?.ReplaceValueIdentifier();
             if((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup.IsMatch(rawClassName))
                 rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
             return prefix + rawClassName + suffix;
         }
-        internal static string GetPathItemDescription(this OpenApiUrlTreeNode currentNode, string label, string defaultValue = default) =>
-        currentNode?.PathItems?.ContainsKey(label) ?? false ?
+        public static string GetPathItemDescription(this OpenApiUrlTreeNode currentNode, string label, string defaultValue = default) =>
+        !string.IsNullOrEmpty(label) && (currentNode?.PathItems.ContainsKey(label) ?? false) ?
                 currentNode.PathItems[label].Description ??
                 currentNode.PathItems[label].Summary ??
                 defaultValue :
             defaultValue;
-        internal static bool DoesNodeBelongToItemSubnamespace(this OpenApiUrlTreeNode currentNode) =>
-        (currentNode?.Segment?.StartsWith("{") ?? false) && (currentNode?.Segment?.EndsWith("}") ?? false);
-        internal static bool IsParameter(this OpenApiUrlTreeNode currentNode)
+        public static bool DoesNodeBelongToItemSubnamespace(this OpenApiUrlTreeNode currentNode) =>
+        (currentNode?.Segment.StartsWith("{") ?? false) && currentNode.Segment.EndsWith("}");
+        public static bool IsParameter(this OpenApiUrlTreeNode currentNode)
         {
-            return currentNode?.Segment?.StartsWith("{") ?? false;
+            return currentNode?.Segment.StartsWith("{") ?? false;
         }
-        internal static bool IsFunction(this OpenApiUrlTreeNode currentNode)
+        public static bool IsFunction(this OpenApiUrlTreeNode currentNode)
         {
-            return currentNode?.Segment?.Contains("(") ?? false;
+            return currentNode?.Segment.Contains("(") ?? false;
         }
-        internal static string GetIdentifier(this OpenApiUrlTreeNode currentNode)
+        public static string GetIdentifier(this OpenApiUrlTreeNode currentNode)
         {
             if(currentNode == null) return string.Empty;
             string identifier;
