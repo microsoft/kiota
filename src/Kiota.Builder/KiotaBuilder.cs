@@ -13,6 +13,7 @@ using Kiota.Builder.Writers;
 using Microsoft.OpenApi.Any;
 using Kiota.Builder.Refiners;
 using System.Security;
+using Microsoft.OpenApi.Services;
 
 namespace Kiota.Builder
 {
@@ -137,18 +138,18 @@ namespace Kiota.Builder
         /// </summary>
         /// <param name="doc">OpenAPI Document of the API to be processed</param>
         /// <returns>Root node of the API URI space</returns>
-        public OpenApiUrlSpaceNode CreateUriSpace(OpenApiDocument doc)
+        public OpenApiUrlTreeNode CreateUriSpace(OpenApiDocument doc)
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            var node = OpenApiUrlSpaceNode.Create(doc);
-            ComponentsReferencesIndex = node.GetComponentsReferenceIndex();
+            var node = OpenApiUrlTreeNode.Create(doc, Constants.DefaultOpenApiLabel);
+            ComponentsReferencesIndex = node.GetComponentsReferenceIndex(Constants.DefaultOpenApiLabel);
 
             stopwatch.Stop();
             logger.LogTrace("{timestamp}ms: Created UriSpace tree", stopwatch.ElapsedMilliseconds);
             return node;
         }
-        private Dictionary<string, HashSet<OpenApiUrlSpaceNode>> ComponentsReferencesIndex;
+        private Dictionary<string, HashSet<OpenApiUrlTreeNode>> ComponentsReferencesIndex;
         private CodeNamespace rootNamespace;
 
         /// <summary>
@@ -156,7 +157,7 @@ namespace Kiota.Builder
         /// </summary>
         /// <param name="root">Root OpenApiUriSpaceNode of API to be generated</param>
         /// <returns></returns>
-        public CodeNamespace CreateSourceModel(OpenApiUrlSpaceNode root)
+        public CodeNamespace CreateSourceModel(OpenApiUrlTreeNode root)
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -208,13 +209,13 @@ namespace Kiota.Builder
         private static readonly string requestBuilderSuffix = "RequestBuilder";
 
         /// <summary>
-        /// Create a CodeClass instance that is a request builder class for the OpenApiUrlSpaceNode
+        /// Create a CodeClass instance that is a request builder class for the OpenApiUrlTreeNode
         /// </summary>
-        private void CreateRequestBuilderClass(CodeNamespace currentNamespace, OpenApiUrlSpaceNode currentNode, OpenApiUrlSpaceNode rootNode)
+        private void CreateRequestBuilderClass(CodeNamespace currentNamespace, OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode rootNode)
         {
             // Determine Class Name
             CodeClass codeClass;
-            var isRootClientClass = String.IsNullOrEmpty(currentNode.GetIdentifier());
+            var isRootClientClass = currentNode == rootNode;
             if (isRootClientClass)
             {
                 codeClass = new CodeClass(currentNamespace) { 
@@ -229,7 +230,7 @@ namespace Kiota.Builder
                 codeClass = new CodeClass((currentNode.DoesNodeBelongToItemSubnamespace() ? currentNamespace.EnsureItemNamespace() : currentNamespace)) {
                     Name = className, 
                     ClassKind = CodeClassKind.RequestBuilder,
-                    Description = currentNode.PathItem?.Description ?? currentNode.PathItem?.Summary ?? $"Builds and executes requests for operations under {currentNode.Path}",
+                    Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel, $"Builds and executes requests for operations under {currentNode.Path}"),
                 };
             }
             var targetNS = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNamespace.EnsureItemNamespace() : currentNamespace;
@@ -259,9 +260,9 @@ namespace Kiota.Builder
             }
 
             // Add methods for Operations
-            if (currentNode.HasOperations())
+            if (currentNode.HasOperations(Constants.DefaultOpenApiLabel))
             {
-                foreach(var operation in currentNode.PathItem.Operations)
+                foreach(var operation in currentNode.PathItems[Constants.DefaultOpenApiLabel].Operations)
                     CreateOperationMethods(rootNode, currentNode, operation.Key, operation.Value, codeClass);
             }
             CreatePathManagement(codeClass, currentNode, isRootClientClass);
@@ -274,7 +275,7 @@ namespace Kiota.Builder
             });
         }
 
-        private void CreatePathManagement(CodeClass currentClass, OpenApiUrlSpaceNode currentNode, bool isRootClientClass) {
+        private void CreatePathManagement(CodeClass currentClass, OpenApiUrlTreeNode currentNode, bool isRootClientClass) {
             var pathProperty = new CodeProperty(currentClass) {
                 Access = AccessModifier.Private,
                 Name = "pathSegment",
@@ -385,7 +386,7 @@ namespace Kiota.Builder
                     return childElementsUnmappedTypes;
             }
         }
-        private CodeIndexer CreateIndexer(string childIdentifier, string childType, CodeClass codeClass, OpenApiUrlSpaceNode currentNode)
+        private CodeIndexer CreateIndexer(string childIdentifier, string childType, CodeClass codeClass, OpenApiUrlTreeNode currentNode)
         {
             var prop = new CodeIndexer(codeClass)
             {
@@ -436,7 +437,7 @@ namespace Kiota.Builder
             return prop;
         }
         private const string requestBodyBinaryContentType = "application/octet-stream";
-        private void CreateOperationMethods(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
+        private void CreateOperationMethods(OpenApiUrlTreeNode rootNode, OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
         {
             var parameterClass = CreateOperationParameter(currentNode, operationType, operation, parentClass);
 
@@ -487,7 +488,7 @@ namespace Kiota.Builder
             AddRequestBuilderMethodParameters(rootNode, currentNode, operation, parameterClass, generatorMethod);
             logger.LogTrace("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
         }
-        private void AddRequestBuilderMethodParameters(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiOperation operation, CodeClass parameterClass, CodeMethod method) {
+        private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode rootNode, OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeClass parameterClass, CodeMethod method) {
             var nonBinaryRequestBody = operation.RequestBody?.Content?.FirstOrDefault(x => !requestBodyBinaryContentType.Equals(x.Key, StringComparison.OrdinalIgnoreCase));
             if (nonBinaryRequestBody.HasValue && nonBinaryRequestBody.Value.Value != null)
             {
@@ -559,7 +560,7 @@ namespace Kiota.Builder
             } else 
                 throw new InvalidOperationException($"could not find a shortest namespace name for reference id {referenceId}");
         }
-        private CodeType CreateModelClassAndType(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement, CodeNamespace codeNamespace, string classNameSuffix = "") {
+        private CodeType CreateModelClassAndType(OpenApiUrlTreeNode rootNode, OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement, CodeNamespace codeNamespace, string classNameSuffix = "") {
             var className = currentNode.GetClassName(operation: operation, suffix: classNameSuffix);
             var codeDeclaration = AddModelDeclarationIfDoesntExit(rootNode, currentNode, schema, operation, className, codeNamespace, parentElement);
             return new CodeType(parentElement) {
@@ -567,7 +568,7 @@ namespace Kiota.Builder
                 Name = className,
             };
         }
-        private CodeTypeBase CreateModelClasses(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement)
+        private CodeTypeBase CreateModelClasses(OpenApiUrlTreeNode rootNode, OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement)
         {
             var originalReference = schema?.Reference;
             var originalReferenceId = originalReference?.Id;
@@ -619,16 +620,16 @@ namespace Kiota.Builder
             else throw new InvalidOperationException("un handled case, might be object type or array type");
             // object type array of object are technically already handled in properties but if we have a root with those we might be missing some cases here
         }
-        private CodeElement GetExistingDeclaration(bool checkInAllNamespaces, CodeNamespace currentNamespace, OpenApiUrlSpaceNode currentNode, string declarationName) {
+        private CodeElement GetExistingDeclaration(bool checkInAllNamespaces, CodeNamespace currentNamespace, OpenApiUrlTreeNode currentNode, string declarationName) {
             var searchNameSpace = GetSearchNamespace(checkInAllNamespaces, currentNode, currentNamespace);
             return searchNameSpace.FindChildByName<ITypeDefinition>(declarationName, checkInAllNamespaces) as CodeElement;
         }
-        private CodeNamespace GetSearchNamespace(bool checkInAllNamespaces, OpenApiUrlSpaceNode currentNode, CodeNamespace currentNamespace) {
+        private CodeNamespace GetSearchNamespace(bool checkInAllNamespaces, OpenApiUrlTreeNode currentNode, CodeNamespace currentNamespace) {
             if(checkInAllNamespaces) return rootNamespace;
             else if (currentNode.DoesNodeBelongToItemSubnamespace()) return rootNamespace.EnsureItemNamespace();
             else return currentNamespace;
         }
-        private CodeElement AddModelDeclarationIfDoesntExit(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, string declarationName, CodeNamespace currentNamespace, CodeElement parentElement, CodeClass inheritsFrom = null, bool checkInAllNamespaces = false) {
+        private CodeElement AddModelDeclarationIfDoesntExit(OpenApiUrlTreeNode rootNode, OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, string declarationName, CodeNamespace currentNamespace, CodeElement parentElement, CodeClass inheritsFrom = null, bool checkInAllNamespaces = false) {
             var existingDeclaration = GetExistingDeclaration(checkInAllNamespaces, currentNamespace, currentNode, declarationName);
             if(existingDeclaration == null) // we can find it in the components
             {
@@ -636,7 +637,7 @@ namespace Kiota.Builder
                     var newEnum = new CodeEnum(currentNamespace) { 
                         Name = declarationName,
                         Options = schema.Enum.OfType<OpenApiString>().Select(x => x.Value).Where(x => !"null".Equals(x)).ToList(),//TODO set the flag property
-                        Description = currentNode.PathItem.Description ?? currentNode.PathItem.Summary,
+                        Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel),
                     };
                     return currentNamespace.AddEnum(newEnum).First();
                 } else {
@@ -648,7 +649,7 @@ namespace Kiota.Builder
                     var newClass = currentNamespace.AddClass(new CodeClass(currentNamespace) {
                         Name = declarationName,
                         ClassKind = CodeClassKind.Model,
-                        Description = currentNode.PathItem.Description ?? currentNode.PathItem.Summary
+                        Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel)
                     }).First();
                     if(inheritsFrom != null) {
                         var declaration = newClass.StartBlock as CodeClass.Declaration;
@@ -661,7 +662,7 @@ namespace Kiota.Builder
                 return existingDeclaration;
         }
         private const string OpenApiObjectType = "object";
-        private void CreatePropertiesForModelClass(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeNamespace ns, CodeClass model, CodeElement parent) {
+        private void CreatePropertiesForModelClass(OpenApiUrlTreeNode rootNode, OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeNamespace ns, CodeClass model, CodeElement parent) {
             AddSerializationMembers(model, schema?.AdditionalPropertiesAllowed ?? false);
             if(schema?.Properties?.Any() ?? false)
             {
@@ -741,9 +742,9 @@ namespace Kiota.Builder
                 model.AddProperty(additionalDataProp);
             }
         }
-        private CodeClass CreateOperationParameter(OpenApiUrlSpaceNode node, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
+        private CodeClass CreateOperationParameter(OpenApiUrlTreeNode node, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
         {
-            var parameters = node.PathItem.Parameters.Union(operation.Parameters).Where(p => p.In == ParameterLocation.Query);
+            var parameters = node.PathItems[Constants.DefaultOpenApiLabel].Parameters.Union(operation.Parameters).Where(p => p.In == ParameterLocation.Query);
             if(parameters.Any()) {
                 var parameterClass = new CodeClass(parentClass)
                 {
