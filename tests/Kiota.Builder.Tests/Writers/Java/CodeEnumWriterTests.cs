@@ -43,5 +43,11 @@ namespace Kiota.Builder.Writers.Java.Tests {
             AssertExtensions.CurlyBracesAreClosed(result);
             Assert.Contains(optionName, result);
         }
+        [Fact]
+        public void DoesntWriteAnythingOnNoOption() {
+            writer.Write(currentEnum);
+            var result = tw.ToString();
+            Assert.Empty(result);
+        }
     }
 }

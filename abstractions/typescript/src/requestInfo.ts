@@ -8,16 +8,16 @@ export class RequestInfo {
     public content?: ReadableStream;
     public queryParameters: Map<string, object> = new Map<string, object>();
     public headers: Map<string, string> = new Map<string, string>();
-    private static jsonContentType = "application/json";
     private static binaryContentType = "application/octet-stream";
     private static contentTypeHeader = "Content-Type";
-    public setJsonContentFromParsable = <T extends Parsable<T>>(value?: T | undefined, serializerFactory?: SerializationWriterFactory | undefined): void => {
-        if(serializerFactory) {
-            const writer = serializerFactory.getSerializationWriter(RequestInfo.jsonContentType);
-            this.headers.set(RequestInfo.contentTypeHeader, RequestInfo.jsonContentType);
-            writer.writeObjectValue(undefined, value);
-            this.content = writer.getSerializedContent();
-        }
+    public setContentFromParsable = <T extends Parsable<T>>(value?: T | undefined, serializerFactory?: SerializationWriterFactory | undefined, contentType?: string | undefined): void => {
+        if(!serializerFactory) throw new Error("serializerFactory cannot be undefined");
+        if(!contentType) throw new Error("contentType cannot be undefined");
+
+        const writer = serializerFactory.getSerializationWriter(contentType);
+        this.headers.set(RequestInfo.contentTypeHeader, contentType);
+        writer.writeObjectValue(undefined, value);
+        this.content = writer.getSerializedContent();
     }
     public setStreamContent = (value: ReadableStream): void => {
         this.headers.set(RequestInfo.contentTypeHeader, RequestInfo.binaryContentType);

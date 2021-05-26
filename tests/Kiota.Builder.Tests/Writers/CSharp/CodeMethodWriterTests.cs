@@ -141,7 +141,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             Assert.Contains("HttpMethod = HttpMethod.GET", result);
             Assert.Contains("h?.Invoke", result);
             Assert.Contains("AddQueryParameters", result);
-            Assert.Contains("SetJsonContentFromParsable", result);
+            Assert.Contains("SetContentFromParsable", result);
             Assert.Contains("return requestInfo;", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }

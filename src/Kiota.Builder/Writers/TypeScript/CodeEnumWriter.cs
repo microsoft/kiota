@@ -1,3 +1,4 @@
+using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace  Kiota.Builder.Writers.TypeScript {
@@ -6,6 +7,9 @@ namespace  Kiota.Builder.Writers.TypeScript {
         public CodeEnumWriter(TypeScriptConventionService conventionService) : base(conventionService){}
         public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer)
         {
+            if(!codeElement.Options.Any())
+                return;
+
             conventions.WriteShortDescription(codeElement.Description, writer);
             writer.WriteLine($"export enum {codeElement.Name.ToFirstCharacterUpperCase()} {{");
             writer.IncreaseIndent();

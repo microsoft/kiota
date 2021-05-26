@@ -8,6 +8,9 @@ namespace Kiota.Builder.Writers.CSharp {
         public CodeEnumWriter(CSharpConventionService conventionService):base(conventionService) {}
         public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer)
         {
+            if(!codeElement.Options.Any())
+                return;
+
             var codeNamespace = codeElement?.Parent as CodeNamespace;
             if(codeNamespace != null) {
                 writer.WriteLine($"namespace {codeNamespace.Name} {{");

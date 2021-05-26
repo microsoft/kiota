@@ -32,7 +32,7 @@ namespace Kiota.Builder.Writers.Java {
                         "@javax.annotation.Nullable",
                         $"public static {enumName} forValue(@javax.annotation.Nonnull final String searchValue) {{");
             writer.IncreaseIndent();
-            writer.WriteLines("Objects.requireNonNull(searchValue)",
+            writer.WriteLines("Objects.requireNonNull(searchValue);",
                             "switch(searchValue) {");
             writer.IncreaseIndent();
             writer.Write(codeElement.Options

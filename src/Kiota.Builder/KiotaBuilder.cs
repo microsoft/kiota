@@ -379,7 +379,7 @@ namespace Kiota.Builder
 
         private CodeProperty CreateProperty(string childIdentifier, string childType, CodeClass codeClass, string defaultValue = null, OpenApiSchema typeSchema = null, CodeElement typeDefinition = null, CodePropertyKind kind = CodePropertyKind.Custom)
         {
-            var isCollection = typeSchema?.Type?.Equals("array", StringComparison.CurrentCultureIgnoreCase) ?? false;
+            var isCollection = typeSchema?.Type?.Equals("array", StringComparison.OrdinalIgnoreCase) ?? false;
             var propertyName = childIdentifier;
             this.config.PropertiesPrefixToStrip.ForEach(x => propertyName = propertyName.Replace(x, string.Empty));
             var prop = new CodeProperty(codeClass)
@@ -391,12 +391,14 @@ namespace Kiota.Builder
             };
             if(propertyName != childIdentifier)
                 prop.SerializationName = childIdentifier;
-            var typeName = childType;
+            var typeName = typeSchema?.Items?.Type ?? childType; // first value that's not null, and not "object" for primitive collections, the items type matters
+            if(typeName == "object") typeName = childType;
+            var format = typeSchema?.Items?.Format ?? typeSchema?.Format;
             var isExternal = false;
-            if("string".Equals(typeName, StringComparison.OrdinalIgnoreCase) && "date-time".Equals(typeSchema?.Format, StringComparison.OrdinalIgnoreCase)) {
+            if("string".Equals(typeName, StringComparison.OrdinalIgnoreCase) && "date-time".Equals(format, StringComparison.OrdinalIgnoreCase)) {
                 isExternal = true;
                 typeName = "DateTimeOffset";
-            } else if ("double".Equals(typeSchema?.Format, StringComparison.OrdinalIgnoreCase)) {
+            } else if ("double".Equals(format, StringComparison.OrdinalIgnoreCase)) {
                 isExternal = true;
                 typeName = "double";
             }
@@ -409,8 +411,6 @@ namespace Kiota.Builder
             logger.LogTrace("Creating property {name} of {type}", prop.Name, prop.Type.Name);
             return prop;
         }
-
-        private const string requestBodyJsonContentType = "application/json"; //TODO: this is temporary, we should handle other content types like yaml, grpc, xml...
         private const string requestBodyBinaryContentType = "application/octet-stream";
         private void CreateOperationMethods(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
         {
@@ -464,9 +464,10 @@ namespace Kiota.Builder
             logger.LogTrace("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
         }
         private void AddRequestBuilderMethodParameters(OpenApiUrlSpaceNode rootNode, OpenApiUrlSpaceNode currentNode, OpenApiOperation operation, CodeClass parameterClass, CodeMethod method) {
-            if (operation.RequestBody?.Content?.ContainsKey(requestBodyJsonContentType) ?? false)
+            var nonBinaryRequestBody = operation.RequestBody?.Content?.FirstOrDefault(x => !requestBodyBinaryContentType.Equals(x.Key, StringComparison.OrdinalIgnoreCase));
+            if (nonBinaryRequestBody.HasValue && nonBinaryRequestBody.Value.Value != null)
             {
-                var requestBodySchema = operation.RequestBody.Content[requestBodyJsonContentType].Schema;
+                var requestBodySchema = nonBinaryRequestBody.Value.Value.Schema;
                 var requestBodyType = CreateModelClasses(rootNode, currentNode, requestBodySchema, operation, method);
                 method.AddParameter(new CodeParameter(method) {
                     Name = "body",
@@ -475,6 +476,7 @@ namespace Kiota.Builder
                     ParameterKind = CodeParameterKind.RequestBody,
                     Description = requestBodySchema.Description
                 });
+                method.ContentType = nonBinaryRequestBody.Value.Key;
             } else if (operation.RequestBody?.Content?.ContainsKey(requestBodyBinaryContentType) ?? false) {
                 var nParam = new CodeParameter(method) {
                     Name = "body",

@@ -34,5 +34,11 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             Assert.Contains(optionName, result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
+        [Fact]
+        public void DoesntWriteAnythingOnNoOption() {
+            writer.Write(currentEnum);
+            var result = tw.ToString();
+            Assert.Empty(result);
+        }
     }
 }
