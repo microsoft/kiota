@@ -14,24 +14,24 @@ namespace Kiota {
         public static RootCommand GetRootCommand()
         {
             var configuration = LoadDefaultConfiguration();
-            var outputOption = new Option("--output", "The ouput path of the folder the code will be generated in.") { Argument = new Argument<string>(() => "./output") };
+            var outputOption = new Option("--output", "The output directory path for the generated code files.") { Argument = new Argument<string>(() => "./output") };
             outputOption.AddAlias("-o");
             
-            var languageOption = new Option("--language", "The language to generate the code in.") { Argument = new Argument<GenerationLanguage?>(() => GenerationLanguage.CSharp) };
+            var languageOption = new Option("--language", "The target language for the generated code files.") { Argument = new Argument<GenerationLanguage?>(() => GenerationLanguage.CSharp) };
             languageOption.AddAlias("-l");
             AddEnumValidator<GenerationLanguage>(languageOption.Argument, "language");
-            var classOption = new Option("--class-name", "The class name to use the for main entry point") { Argument = new Argument<string>(() => "GraphClient") };
+            var classOption = new Option("--class-name", "The class name to use for the core client class.") { Argument = new Argument<string>(() => "GraphClient") };
             classOption.AddAlias("-c");
             AddStringRegexValidator(classOption.Argument, @"^[a-zA-Z_][\w_-]+", "class name");
 
-            var namespaceOption = new Option("--namespace-name", "The namespace name to use the for main entry point") { Argument = new Argument<string>(() => "GraphClient") };
+            var namespaceOption = new Option("--namespace-name", "The namespace to use for the core client class specified with the --class-name option.") { Argument = new Argument<string>(() => "GraphClient") };
             namespaceOption.AddAlias("-n");
             AddStringRegexValidator(namespaceOption.Argument, @"^[\w][\w\._-]+", "namespace name");
 
-            var logLevelOption = new Option("--loglevel", "The log level to use when logging events to the main output.") { Argument = new Argument<LogLevel>(() => LogLevel.Warning)};
+            var logLevelOption = new Option("--loglevel", "The log level to use when logging messages to the main output.") { Argument = new Argument<LogLevel>(() => LogLevel.Warning)};
             logLevelOption.AddAlias("--ll");
             AddEnumValidator<LogLevel>(logLevelOption.Argument, "log level");
-            var descriptionOption = new Option("--openapi", "The path to the OpenAPI description file used to generate the code.") {Argument = new Argument<string>(() => "openapi.yml")};
+            var descriptionOption = new Option("--openapi", "The path to the OpenAPI description file used to generate the code files.") {Argument = new Argument<string>(() => "openapi.yml")};
             descriptionOption.AddAlias("-d");
 
             var command = new RootCommand {
