@@ -25,7 +25,7 @@ namespace Kiota.Tests
         }
         [Fact]
         public async Task ThrowsOnInvalidLogLevel() {
-            await KiotaHost.GetRootCommand().InvokeAsync(new string[] { "-ll", "Dangerous" });
+            await KiotaHost.GetRootCommand().InvokeAsync(new string[] { "--ll", "Dangerous" });
         }
         [Fact]
         public async Task ThrowsOnInvalidClassName() {
