@@ -18,7 +18,7 @@ namespace Kiota.Builder.Refiners {
                                     .ForEach(x => {
                                         x.Name = replacement.Invoke(x.Name);
                                     });
-            else if(provider.ReservedNames.Contains(current.Name))
+            if(provider.ReservedNames.Contains(current.Name))
                 current.Name = replacement.Invoke(current.Name);
 
             CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement));
