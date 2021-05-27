@@ -474,7 +474,7 @@ namespace Kiota.Builder
                     Type = requestBodyType,
                     Optional = false,
                     ParameterKind = CodeParameterKind.RequestBody,
-                    Description = requestBodySchema.Description
+                    Description = requestBodySchema.Description ?? "The request body"
                 });
                 method.ContentType = nonBinaryRequestBody.Value.Key;
             } else if (operation.RequestBody?.Content?.ContainsKey(requestBodyBinaryContentType) ?? false) {
