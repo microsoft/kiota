@@ -35,7 +35,9 @@ namespace Kiota.Builder.Writers.CSharp {
         }
         public string GetTypeString(CodeTypeBase code)
         {
-            if(code is CodeUnionType) 
+            if(code == null)
+                return string.Empty;
+            else if(code is CodeUnionType) 
                 throw new InvalidOperationException($"CSharp does not support union types, the union type {code.Name} should have been filtered out by the refiner");
             else if (code is CodeType currentType) {
                 var typeName = TranslateType(currentType.Name);

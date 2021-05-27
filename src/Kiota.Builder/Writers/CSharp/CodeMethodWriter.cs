@@ -52,12 +52,12 @@ namespace Kiota.Builder.Writers.CSharp {
                                                 .OfType<CodeMethod>()
                                                 .FirstOrDefault(x => x.MethodKind == CodeMethodKind.RequestGenerator && x.HttpMethod == codeElement.HttpMethod)
                                                 ?.Name;
-                    writer.WriteLine($"var requestInfo = {generatorMethodName}(");
-                    writer.IncreaseIndent();
-                    writer.WriteLine(new List<string> { requestBodyParam?.Name, queryStringParam?.Name, headersParam?.Name }.Where(x => x != null).Aggregate((x,y) => $"{x}, {y}"));
-                    writer.DecreaseIndent();
-                    writer.WriteLines(");",
-                                $"{(isVoid ? string.Empty : "return ")}await HttpCore.{GetSendRequestMethodName(isVoid, isStream, returnType)}(requestInfo, responseHandler);");
+            writer.WriteLine($"var requestInfo = {generatorMethodName}(");
+            writer.IncreaseIndent();
+            writer.WriteLine(new List<string> { requestBodyParam?.Name, queryStringParam?.Name, headersParam?.Name }.Where(x => x != null).Aggregate((x,y) => $"{x}, {y}"));
+            writer.DecreaseIndent();
+            writer.WriteLines(");",
+                        $"{(isVoid ? string.Empty : "return ")}await HttpCore.{GetSendRequestMethodName(isVoid, isStream, "T")}(requestInfo, responseHandler);");
 
         }
         private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, LanguageWriter writer) {
@@ -121,15 +121,25 @@ namespace Kiota.Builder.Writers.CSharp {
                 writer.WriteLine($"{conventions.DocCommentPrefix}</summary>");
             }
         }
+        private static readonly CodeMethodKind[] genericMethods = new [] { CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator };
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool shouldHide, bool isVoid) {
             var staticModifier = code.IsStatic ? "static " : string.Empty;
             var hideModifier = shouldHide ? "new " : string.Empty;
-            var genericTypePrefix = isVoid ? string.Empty : "<";
-            var genricTypeSuffix = code.IsAsync && !isVoid ? ">": string.Empty;
-            // TODO: Task type should be moved into the refiner
-            var completeReturnType = $"{(code.IsAsync ? "async Task" + genericTypePrefix : string.Empty)}{(code.IsAsync && isVoid ? string.Empty : returnType)}{genricTypeSuffix}";
+            var asyncTypePrefix = isVoid ? string.Empty : "<";
+            var asyncTypeSuffix = code.IsAsync && !isVoid ? ">": string.Empty;
+            var shouldReturnTypeBeGeneric = code.MethodKind == CodeMethodKind.RequestExecutor && !isVoid;
+            var bodyParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.RequestBody);
+            var shouldParmeterBeGeneric = genericMethods.Contains(code.MethodKind) && bodyParam != null;
+            var shouldBeGeneric = shouldParmeterBeGeneric || shouldReturnTypeBeGeneric;
+            var finalReturnType = shouldReturnTypeBeGeneric ? "T" : returnType;
+            var genericModifierPrefix = shouldBeGeneric ? "<T>" : string.Empty;
+            var genericTypeConstraint = shouldReturnTypeBeGeneric ? returnType : conventions.GetTypeString(bodyParam?.Type);
+            var genericModifierSuffix = shouldBeGeneric ? $"where T : {genericTypeConstraint}, IParsable<T>, new()" : string.Empty;
+            var completeReturnType = $"{(code.IsAsync ? "async Task" + asyncTypePrefix : string.Empty)}{(code.IsAsync && isVoid ? string.Empty : finalReturnType)}{asyncTypeSuffix}";
+            if(shouldBeGeneric && bodyParam != null && bodyParam.Type != null)
+                bodyParam.Type.Name = "T";
             var parameters = string.Join(", ", code.Parameters.Select(p=> conventions.GetParameterSignature(p)).ToList());
-            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType} {code.Name}({parameters}) {{");
+            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType} {code.Name}{genericModifierPrefix}({parameters}) {genericModifierSuffix}{{");
         }
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
