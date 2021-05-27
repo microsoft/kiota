@@ -8,6 +8,26 @@ namespace Kiota.Builder.Extensions.Tests {
         [Fact]
         public void Defensive() {
             Assert.Empty(OpenApiSchemaExtensions.GetSchemaReferenceIds(null));
+            var schema = new OpenApiSchema{
+                AnyOf = null
+            };
+            Assert.Null(schema.AnyOf);
+            Assert.Empty(schema.GetSchemaReferenceIds());
+            schema = new() {
+                AllOf = null
+            };
+            Assert.Null(schema.AllOf);
+            Assert.Empty(schema.GetSchemaReferenceIds());
+            schema = new() {
+                OneOf = null
+            };
+            Assert.Null(schema.OneOf);
+            Assert.Empty(schema.GetSchemaReferenceIds());
+            schema = new() {
+                Properties = null
+            };
+            Assert.Null(schema.Properties);
+            Assert.Empty(schema.GetSchemaReferenceIds());
         }
         [Fact]
         public void GetSchemaTitleAllOf() {
