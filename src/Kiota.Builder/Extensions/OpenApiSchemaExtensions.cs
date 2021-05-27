@@ -34,7 +34,7 @@ namespace Kiota.Builder.Extensions {
         public static IEnumerable<string> GetSchemaReferenceIds(this OpenApiSchema schema, HashSet<OpenApiSchema> visitedSchemas = null) {
             if(visitedSchemas == null)
                 visitedSchemas = new();            
-            if(!visitedSchemas.Contains(schema)) {
+            if(schema != null && !visitedSchemas.Contains(schema)) {
                 visitedSchemas.Add(schema);
                 var result = new List<string>();
                 if(!string.IsNullOrEmpty(schema.Reference?.Id))

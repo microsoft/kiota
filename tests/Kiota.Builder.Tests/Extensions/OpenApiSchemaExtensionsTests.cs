@@ -6,6 +6,10 @@ using Xunit;
 namespace Kiota.Builder.Extensions.Tests {
     public class OpenApiSchemaExtensionsTests {
         [Fact]
+        public void Defensive() {
+            Assert.Empty(OpenApiSchemaExtensions.GetSchemaReferenceIds(null));
+        }
+        [Fact]
         public void GetSchemaTitleAllOf() {
             var schema = new OpenApiSchema {
                 AllOf = new List<OpenApiSchema> {
