@@ -12,6 +12,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
 using Microsoft.OpenApi.Any;
 using Kiota.Builder.Refiners;
+using System.Security;
 
 namespace Kiota.Builder
 {
@@ -31,8 +32,19 @@ namespace Kiota.Builder
             var sw = new Stopwatch();
             // Step 1 - Read input stream
             string inputPath = config.OpenAPIFilePath;
+
+            try {
+                // doing this verification at the begining to give immediate feedback to the user
+                Directory.CreateDirectory(config.OutputPath);
+            } catch (Exception ex) {
+                logger.LogError($"Could not open/create output directory {config.OutputPath}, reason: {ex.Message}");
+                return;
+            }
+            
             sw.Start();
             using var input = await LoadStream(inputPath);
+            if(input == null)
+                return;
             StopLogAndReset(sw, "step 1 - reading the stream - took");
 
             // Step 2 - Parse OpenAPI
@@ -74,14 +86,26 @@ namespace Kiota.Builder
 
             Stream input;
             if (inputPath.StartsWith("http"))
-            {
-                using var httpClient = new HttpClient();
-                input = await httpClient.GetStreamAsync(inputPath);
-            }
+                try {
+                    using var httpClient = new HttpClient();
+                    input = await httpClient.GetStreamAsync(inputPath);
+                } catch (HttpRequestException ex) {
+                    logger.LogError($"Could not download the file at {inputPath}, reason: {ex.Message}");
+                    return null;
+                }
             else
-            {
-                input = new FileStream(inputPath, FileMode.Open);
-            }
+                try {
+                    input = new FileStream(inputPath, FileMode.Open);
+                } catch (Exception ex) when (ex is FileNotFoundException ||
+                    ex is PathTooLongException ||
+                    ex is DirectoryNotFoundException ||
+                    ex is IOException ||
+                    ex is UnauthorizedAccessException ||
+                    ex is SecurityException ||
+                    ex is NotSupportedException) {
+                    logger.LogError($"Could not open the file at {inputPath}, reason: {ex.Message}");
+                    return null;
+                }
             stopwatch.Stop();
             logger.LogTrace("{timestamp}ms: Read OpenAPI file {file}", stopwatch.ElapsedMilliseconds, inputPath);
             return input;
