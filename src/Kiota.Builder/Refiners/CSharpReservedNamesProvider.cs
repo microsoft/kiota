@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Kiota.Builder.Refiners {
     public class CSharpReservedNamesProvider : IReservedNamesProvider
     {
-        private Lazy<HashSet<string>> _reservedNames = new(() => new(StringComparer.OrdinalIgnoreCase) {
+        private readonly Lazy<HashSet<string>> _reservedNames = new(() => new(StringComparer.OrdinalIgnoreCase) {
             "abstract",
             "add",
             "alias",
