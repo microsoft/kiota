@@ -9,8 +9,15 @@ namespace Kiota.Builder.Refiners {
         public abstract void Refine(CodeNamespace generatedCode);
 
         protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement) {
-            if(current is CodeUsing currentUsing && (currentUsing.Declaration?.IsExternal ?? false) && provider.ReservedNames.Contains(currentUsing.Declaration.Name))
-                currentUsing.Declaration.Name = replacement.Invoke(currentUsing.Declaration.Name);
+            if(current is CodeClass currentClass && currentClass.StartBlock is CodeClass.Declaration currentDeclaration)
+                currentDeclaration.Usings
+                                    .Select(x => x.Declaration)
+                                    .Where(x => x != null && !x.IsExternal)
+                                    .Join(provider.ReservedNames, x => x.Name, y => y, (x, y) => x)
+                                    .ToList()
+                                    .ForEach(x => {
+                                        x.Name = replacement.Invoke(x.Name);
+                                    });
             else if(provider.ReservedNames.Contains(current.Name))
                 current.Name = replacement.Invoke(current.Name);
 
