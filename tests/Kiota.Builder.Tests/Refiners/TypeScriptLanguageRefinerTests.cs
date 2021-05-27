@@ -11,6 +11,16 @@ namespace Kiota.Builder.Refiners.Tests {
         private const string addiationalDataDefaultName = "new Dictionary<string, object>()";
         private const string handlerDefaultName = "IResponseHandler";
         [Fact]
+        public void EscapesReservedKeywords() {
+            var model = root.AddClass(new CodeClass (root) {
+                Name = "break",
+                ClassKind = CodeClassKind.Model
+            }).First();
+            ILanguageRefiner.Refine(GenerationLanguage.TypeScript, root);
+            Assert.NotEqual("break", model.Name);
+            Assert.Contains("escaped", model.Name);
+        }
+        [Fact]
         public void CorrectsCoreType() {
 
             var model = root.AddClass(new CodeClass (root) {

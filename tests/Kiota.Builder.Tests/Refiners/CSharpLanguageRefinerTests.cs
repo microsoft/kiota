@@ -6,6 +6,16 @@ namespace Kiota.Builder.Refiners.Tests {
         private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
         #region CommonLanguageRefinerTests
         [Fact]
+        public void EscapesReservedKeywords() {
+            var model = root.AddClass(new CodeClass (root) {
+                Name = "break",
+                ClassKind = CodeClassKind.Model
+            }).First();
+            ILanguageRefiner.Refine(GenerationLanguage.CSharp, root);
+            Assert.NotEqual("break", model.Name);
+            Assert.Contains("@", model.Name);
+        }
+        [Fact]
         public void ConvertsUnionTypesToWrapper() {
             var model = root.AddClass(new CodeClass (root) {
                 Name = "model",

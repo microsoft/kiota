@@ -8,6 +8,15 @@ namespace Kiota.Builder.Refiners {
     {
         public abstract void Refine(CodeNamespace generatedCode);
 
+        protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement) {
+            if(current is CodeUsing currentUsing && (currentUsing.Declaration?.IsExternal ?? false) && provider.ReservedNames.Contains(currentUsing.Declaration.Name))
+                currentUsing.Declaration.Name = replacement.Invoke(currentUsing.Declaration.Name);
+            else if(provider.ReservedNames.Contains(current.Name))
+                current.Name = replacement.Invoke(current.Name);
+
+            CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement));
+        }
+
         protected static void AddDefaultImports(CodeElement current, Tuple<string, string>[] defaultNamespaces, Tuple<string, string>[] defaultNamespacesForModels, Tuple<string, string>[] defaultNamespacesForRequestBuilders) {
             if(current is CodeClass currentClass) {
                 if(currentClass.ClassKind == CodeClassKind.Model)
