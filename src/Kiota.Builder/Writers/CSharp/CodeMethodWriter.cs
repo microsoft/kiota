@@ -122,6 +122,7 @@ namespace Kiota.Builder.Writers.CSharp {
             }
         }
         private static readonly CodeMethodKind[] genericMethods = new [] { CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator };
+        private const string modelGenericTypeName = "T";
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool shouldHide, bool isVoid) {
             var staticModifier = code.IsStatic ? "static " : string.Empty;
             var hideModifier = shouldHide ? "new " : string.Empty;
@@ -131,13 +132,13 @@ namespace Kiota.Builder.Writers.CSharp {
             var bodyParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.RequestBody);
             var shouldParmeterBeGeneric = genericMethods.Contains(code.MethodKind) && bodyParam != null;
             var shouldBeGeneric = shouldParmeterBeGeneric || shouldReturnTypeBeGeneric;
-            var finalReturnType = shouldReturnTypeBeGeneric ? "T" : returnType;
-            var genericModifierPrefix = shouldBeGeneric ? "<T>" : string.Empty;
+            var finalReturnType = shouldReturnTypeBeGeneric ? modelGenericTypeName : returnType;
+            var genericModifierPrefix = shouldBeGeneric ? $"<{modelGenericTypeName}>" : string.Empty;
             var genericTypeConstraint = shouldReturnTypeBeGeneric ? returnType : conventions.GetTypeString(bodyParam?.Type);
-            var genericModifierSuffix = shouldBeGeneric ? $"where T : {genericTypeConstraint}, IParsable<T>, new()" : string.Empty;
+            var genericModifierSuffix = shouldBeGeneric ? $"where {modelGenericTypeName} : {genericTypeConstraint}, IParsable<{modelGenericTypeName}>, new()" : string.Empty;
             var completeReturnType = $"{(code.IsAsync ? "async Task" + asyncTypePrefix : string.Empty)}{(code.IsAsync && isVoid ? string.Empty : finalReturnType)}{asyncTypeSuffix}";
             if(shouldBeGeneric && bodyParam != null && bodyParam.Type != null)
-                bodyParam.Type.Name = "T";
+                bodyParam.Type.Name = modelGenericTypeName;
             var parameters = string.Join(", ", code.Parameters.Select(p=> conventions.GetParameterSignature(p)).ToList());
             writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType} {code.Name}{genericModifierPrefix}({parameters}) {genericModifierSuffix}{{");
         }

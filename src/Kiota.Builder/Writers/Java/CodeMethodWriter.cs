@@ -16,14 +16,21 @@ namespace Kiota.Builder.Writers.Java {
 
             var returnType = conventions.GetTypeString(codeElement.ReturnType);
             var parentClass = codeElement.Parent as CodeClass;
-            WriteMethodDocumentation(codeElement, writer);
-            if(returnType.Equals("void", StringComparison.OrdinalIgnoreCase))
+            var isVoid = returnType.Equals("void", StringComparison.OrdinalIgnoreCase);
+            var bodyParam = ShouldBeGeneric(codeElement, isVoid, out var shouldBeGeneric, out var shouldParameterBeGeneric, out var shouldReturnTypeBeGeneric);
+            var genericParentType = shouldReturnTypeBeGeneric ? returnType : (shouldParameterBeGeneric ? conventions.GetTypeString(bodyParam?.Type) : string.Empty);
+            var additionalParamsDescriptions = shouldBeGeneric ? 
+                new Tuple<string, string>[] { 
+                    new($"<{modelGenericTypeName}>", $"The generic type for the model, must inherit {genericParentType}")
+                } : Enumerable.Empty<Tuple<string, string>>().ToArray();
+            WriteMethodDocumentation(codeElement, writer, additionalParamsDescriptions);
+            if(isVoid)
             {
                 if(codeElement.MethodKind == CodeMethodKind.RequestExecutor)
                     returnType = "Void"; //generic type for the future
             } else if(!codeElement.IsAsync)
                 writer.WriteLine(codeElement.ReturnType.IsNullable && !codeElement.IsAsync ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
-            WriteMethodPrototype(codeElement, writer, returnType);
+            WriteMethodPrototype(codeElement, writer, returnType, isVoid);
             writer.IncreaseIndent();
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
@@ -155,25 +162,45 @@ namespace Kiota.Builder.Writers.Java {
             if(additionalDataProperty != null)
                 writer.WriteLine($"writer.writeAdditionalData(this.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
         }
-        private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType) {
+        private static readonly CodeMethodKind[] genericMethods = new [] { CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator };
+        private const string modelGenericTypeName = "U";
+        private CodeParameter ShouldBeGeneric(CodeMethod code, bool isVoid, out bool shouldBeGeneric, out bool shouldParameterBeGeneric, out bool shouldReturnTypeBeGeneric) {
+            var bodyParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.RequestBody);
+            shouldReturnTypeBeGeneric = code.MethodKind == CodeMethodKind.RequestExecutor && !isVoid;
+            shouldParameterBeGeneric = genericMethods.Contains(code.MethodKind) && bodyParam != null;
+            shouldBeGeneric = shouldParameterBeGeneric || shouldReturnTypeBeGeneric;
+            return bodyParam;
+        }
+        private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid) {
             var accessModifier = conventions.GetAccessModifier(code.Access);
-            var genericTypeParameterDeclaration = code.MethodKind == CodeMethodKind.DeserializerBackwardCompatibility ? "<T> ": string.Empty;
+            var genericTypeParameter = code.MethodKind == CodeMethodKind.DeserializerBackwardCompatibility ? "T": string.Empty;
             var returnTypeAsyncPrefix = code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty;
+            var bodyParam = ShouldBeGeneric(code, isVoid, out var shouldBeGeneric, out var shouldParameterBeGeneric, out var shouldReturnTypeBeGeneric);
+            var finalReturnType = shouldReturnTypeBeGeneric ? modelGenericTypeName : returnType;
+            var genericTypeConstraint = shouldReturnTypeBeGeneric ? returnType : conventions.GetTypeString(bodyParam?.Type);
+            var genericModifierPrefix = shouldBeGeneric ? $"{modelGenericTypeName} extends {genericTypeConstraint}" : string.Empty;
+            var genericTypes = new string[] { genericTypeParameter, genericModifierPrefix }.Where(x => !string.IsNullOrEmpty(x));
+            var genericTypesDeclaration = genericTypes.Any() ? "<" + genericTypes.Aggregate((x, y) => $"{x}, {y}") + "> " : string.Empty;
             var returnTypeAsyncSuffix = code.IsAsync ? ">" : string.Empty;
             var methodName = code.Name.ToFirstCharacterLowerCase();
+            if(shouldBeGeneric && bodyParam != null && bodyParam.Type != null)
+                bodyParam.Type.Name = modelGenericTypeName;
             var parameters = string.Join(", ", code.Parameters.Select(p=> conventions.GetParameterSignature(p)).ToList());
             var throwableDeclarations = code.MethodKind == CodeMethodKind.RequestGenerator ? "throws URISyntaxException ": string.Empty;
-            writer.WriteLine($"{accessModifier} {genericTypeParameterDeclaration}{returnTypeAsyncPrefix}{returnType}{returnTypeAsyncSuffix} {methodName}({parameters}) {throwableDeclarations}{{");
+            writer.WriteLine($"{accessModifier} {genericTypesDeclaration}{returnTypeAsyncPrefix}{finalReturnType}{returnTypeAsyncSuffix} {methodName}({parameters}) {throwableDeclarations}{{");
         }
-        private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer) {
+        private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, params Tuple<string, string>[] additionalParamsDescriptions) {
             var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);
             var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Description));
             if (isDescriptionPresent || parametersWithDescription.Any()) {
                 writer.WriteLine(conventions.DocCommentStart);
                 if(isDescriptionPresent)
                     writer.WriteLine($"{conventions.DocCommentPrefix}{JavaConventionService.RemoveInvalidDescriptionCharacters(code.Description)}");
-                foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
-                    writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Name} {JavaConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Description)}");
+                foreach(var paramWithDescription in parametersWithDescription
+                                                    .Select(x => new Tuple<string, string>(x.Name, x.Description))
+                                                    .Union(additionalParamsDescriptions)
+                                                    .OrderBy(x => x.Item1))
+                    writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Item1} {JavaConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Item2)}");
                 
                 if(code.IsAsync)
                     writer.WriteLine($"{conventions.DocCommentPrefix}@return a CompletableFuture of {code.ReturnType.Name}");
