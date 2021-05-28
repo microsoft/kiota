@@ -2,12 +2,12 @@ using System;
 using System.Linq;
 using System.IO;
 using System.Text.Json;
-using Kiota.Abstractions.Serialization;
+using Microsoft.Kiota.Abstractions.Serialization;
 using System.Collections.Generic;
 using System.Reflection;
 using KiotaCore.Extensions;
 
-namespace KiotaCore.Serialization {
+namespace Microsoft.Kiota.Serialization.Json {
     public class JsonSerializationWriter : ISerializationWriter, IDisposable {
         private readonly MemoryStream stream = new MemoryStream();
         public readonly Utf8JsonWriter writer;

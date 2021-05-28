@@ -1,9 +1,9 @@
 using System;
 using System.IO;
 using System.Text.Json;
-using Kiota.Abstractions.Serialization;
+using Microsoft.Kiota.Abstractions.Serialization;
 
-namespace KiotaCore.Serialization {
+namespace Microsoft.Kiota.Serialization.Json {
     public class JsonParseNodeFactory : IParseNodeFactory
     {
         private const string validContentType = "application/json";

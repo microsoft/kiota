@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
-using Kiota.Abstractions.Serialization;
+using Microsoft.Kiota.Abstractions.Serialization;
 
-namespace KiotaCore.Serialization {
+namespace Microsoft.Kiota.Serialization.Json {
     public class JsonParseNode : IParseNode {
         private readonly JsonElement _jsonNode;
         public JsonParseNode(JsonElement node)

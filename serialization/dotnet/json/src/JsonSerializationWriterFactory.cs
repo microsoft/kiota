@@ -1,7 +1,7 @@
 using System;
-using Kiota.Abstractions.Serialization;
+using Microsoft.Kiota.Abstractions.Serialization;
 
-namespace KiotaCore.Serialization {
+namespace Microsoft.Kiota.Serialization.Json {
     public class JsonSerializationWriterFactory : ISerializationWriterFactory {
         private const string validContentType = "application/json";
         public ISerializationWriter GetSerializationWriter(string contentType) {
