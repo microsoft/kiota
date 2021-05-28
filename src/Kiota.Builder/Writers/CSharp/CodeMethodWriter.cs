@@ -18,7 +18,11 @@ namespace Kiota.Builder.Writers.CSharp {
             var parentClass = codeElement.Parent as CodeClass;
             var shouldHide = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null && codeElement.MethodKind == CodeMethodKind.Serializer;
             var isVoid = conventions.VoidTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
-            WriteMethodDocumentation(codeElement, writer);
+            var genericTypeConstraint = GetGenericTypeParentClassAndUpdateParameterType(codeElement, isVoid, returnType, false, out var shouldBeGeneric, out var _);
+            var additionalParamsDescriptions = new Dictionary<string, string>(); 
+            if(shouldBeGeneric) 
+                additionalParamsDescriptions.Add(modelGenericTypeName, $"The generic type for the model, must inherit {genericTypeConstraint}");
+            WriteMethodDocumentation(codeElement, writer, additionalParamsDescriptions);
             WriteMethodPrototype(codeElement, writer, returnType, shouldHide, isVoid);
             writer.IncreaseIndent();
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
@@ -109,7 +113,7 @@ namespace Kiota.Builder.Writers.CSharp {
             else if(isStream) return $"SendPrimitiveAsync<{returnType}>";
             else return $"SendAsync<{returnType}>";
         }
-        private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer) {
+        private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, Dictionary<string, string> genericTypesDescription) {
             var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);
             var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Description));
             if (isDescriptionPresent || parametersWithDescription.Any()) {
@@ -118,27 +122,33 @@ namespace Kiota.Builder.Writers.CSharp {
                     writer.WriteLine($"{conventions.DocCommentPrefix}{code.Description}");
                 foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
                     writer.WriteLine($"{conventions.DocCommentPrefix}<param name=\"{paramWithDescription.Name}\">{paramWithDescription.Description}</param>");
+                foreach(var paramWithDescription in genericTypesDescription.OrderBy(x => x.Key))
+                    writer.WriteLine($"{conventions.DocCommentPrefix}<typeparam name=\"{paramWithDescription.Key}\">{paramWithDescription.Value}</typeparam>");
                 writer.WriteLine($"{conventions.DocCommentPrefix}</summary>");
             }
         }
         private static readonly CodeMethodKind[] genericMethods = new [] { CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator };
         private const string modelGenericTypeName = "T";
+        private string GetGenericTypeParentClassAndUpdateParameterType(CodeMethod code, bool isVoid, string returnType, bool updateParamReturnType, out bool shouldBeGeneric, out bool shouldReturnTypeBeGeneric) {
+            shouldReturnTypeBeGeneric = code.MethodKind == CodeMethodKind.RequestExecutor && !isVoid;
+            var bodyParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.RequestBody);
+            var shouldParameterBeGeneric = genericMethods.Contains(code.MethodKind) && bodyParam != null;
+            shouldBeGeneric = shouldParameterBeGeneric || shouldReturnTypeBeGeneric;
+            var parameterType = shouldParameterBeGeneric ? conventions.GetTypeString(bodyParam?.Type) : string.Empty;
+            if(updateParamReturnType && shouldBeGeneric && bodyParam != null && bodyParam.Type != null)
+                bodyParam.Type.Name = modelGenericTypeName;
+            return shouldReturnTypeBeGeneric ? returnType : parameterType;
+        }
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool shouldHide, bool isVoid) {
             var staticModifier = code.IsStatic ? "static " : string.Empty;
             var hideModifier = shouldHide ? "new " : string.Empty;
             var asyncTypePrefix = isVoid ? string.Empty : "<";
             var asyncTypeSuffix = code.IsAsync && !isVoid ? ">": string.Empty;
-            var shouldReturnTypeBeGeneric = code.MethodKind == CodeMethodKind.RequestExecutor && !isVoid;
-            var bodyParam = code.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.RequestBody);
-            var shouldParmeterBeGeneric = genericMethods.Contains(code.MethodKind) && bodyParam != null;
-            var shouldBeGeneric = shouldParmeterBeGeneric || shouldReturnTypeBeGeneric;
+            var genericTypeConstraint = GetGenericTypeParentClassAndUpdateParameterType(code, isVoid, returnType, true, out var shouldBeGeneric, out var shouldReturnTypeBeGeneric);
             var finalReturnType = shouldReturnTypeBeGeneric ? modelGenericTypeName : returnType;
             var genericModifierPrefix = shouldBeGeneric ? $"<{modelGenericTypeName}>" : string.Empty;
-            var genericTypeConstraint = shouldReturnTypeBeGeneric ? returnType : conventions.GetTypeString(bodyParam?.Type);
             var genericModifierSuffix = shouldBeGeneric ? $"where {modelGenericTypeName} : {genericTypeConstraint}, IParsable<{modelGenericTypeName}>, new()" : string.Empty;
             var completeReturnType = $"{(code.IsAsync ? "async Task" + asyncTypePrefix : string.Empty)}{(code.IsAsync && isVoid ? string.Empty : finalReturnType)}{asyncTypeSuffix}";
-            if(shouldBeGeneric && bodyParam != null && bodyParam.Type != null)
-                bodyParam.Type.Name = modelGenericTypeName;
             var parameters = string.Join(", ", code.Parameters.Select(p=> conventions.GetParameterSignature(p)).ToList());
             writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType} {code.Name}{genericModifierPrefix}({parameters}) {genericModifierSuffix}{{");
         }
