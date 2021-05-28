@@ -4,11 +4,10 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
-using Kiota.Abstractions;
-using Kiota.Abstractions.Serialization;
-using KiotaCore.Serialization;
+using Microsoft.Kiota.Abstractions;
+using Microsoft.Kiota.Abstractions.Serialization;
 
-namespace KiotaCore
+namespace Microsoft.Kiota.Http.HttpClient
 {
     public class HttpCore : IHttpCore
     {
@@ -20,11 +19,7 @@ namespace KiotaCore
         {
             authProvider = authenticationProvider ?? throw new ArgumentNullException(nameof(authenticationProvider));
             client = httpClient ?? new HttpClient();
-            pNodeFactory = parseNodeFactory ?? new ParseNodeFactoryRegistry() {
-                ContentTypeAssociatedFactories = new () {
-                    {"application/json", new JsonParseNodeFactory() }
-                }
-            };
+            pNodeFactory = parseNodeFactory ?? new ParseNodeFactoryRegistry() {};
         }
         public async Task<ModelType> SendAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = null) where ModelType : class, IParsable<ModelType>, new()
         {

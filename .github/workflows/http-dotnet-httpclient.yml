@@ -1,46 +1,47 @@
-name: Dotnet Core
+name: Dotnet HTTP HTTPClient
 
 on:
   push:
     branches: [ main ]
-    paths: ['core/dotnet/**', '.github/workflows/**', 'scripts']
+    paths: ['http/dotnet/http/**', '.github/workflows/**', 'scripts']
   pull_request:
-    paths: ['core/dotnet/**', '.github/workflows/**', 'scripts']
+    paths: ['http/dotnet/http/**', '.github/workflows/**', 'scripts']
 
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      relativePath: ./core/dotnet
+      relativePath: ./http/dotnet/httpclient
+      solutionName: Microsoft.Kiota.Http.HttpClient.sln
     steps:
       - uses: actions/checkout@v2.3.4
       - name: Setup .NET
         uses: actions/setup-dotnet@v1.8.0
         with:
           dotnet-version: 5.0.x
-      - run: ./scripts/updateNugetCredentials.ps1 -username "${{ secrets.PUBLISH_GH_USERNAME }}" -apiToken "${{ secrets.PUBLISH_GH_TOKEN }}" -nugetFileAbsolutePath "./core/dotnet/nuget.config"
+      - run: ./scripts/updateNugetCredentials.ps1 -username "${{ secrets.PUBLISH_GH_USERNAME }}" -apiToken "${{ secrets.PUBLISH_GH_TOKEN }}" -nugetFileAbsolutePath "${{ env.relativePath }}/nuget.config"
         shell: pwsh
       - name: Restore dependencies
-        run: dotnet restore KiotaCore.sln
+        run: dotnet restore ${{ env.solutionName }}
         working-directory: ${{ env.relativePath }}
       - name: Build
-        run: dotnet build KiotaCore.sln --no-restore -c Release
+        run: dotnet build ${{ env.solutionName }} --no-restore -c Release
         working-directory: ${{ env.relativePath }}
       - name: Test
-        run: dotnet test KiotaCore.sln --no-build --verbosity normal -c Release
+        run: dotnet test ${{ env.solutionName }} --no-build --verbosity normal -c Release
         working-directory: ${{ env.relativePath }}
       - name: Publish
-        run: dotnet publish KiotaCore.sln --no-restore --no-build --verbosity normal -c Release
+        run: dotnet publish ${{ env.solutionName }} --no-restore --no-build --verbosity normal -c Release
         working-directory: ${{ env.relativePath }}
       - name: Pack
-        run: dotnet pack KiotaCore.sln --no-restore --no-build --verbosity normal -c Release
+        run: dotnet pack ${{ env.solutionName }} --no-restore --no-build --verbosity normal -c Release
         working-directory: ${{ env.relativePath }}
       - uses: actions/upload-artifact@v2
         with:
           name: drop
           path: |
             ${{ env.relativePath }}/src/bin/Release/*.nupkg
-      - run: git checkout ./core/dotnet/nuget.config
+      - run: git checkout ${{ env.relativePath }}/nuget.config
         if: always()
   deploy:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
