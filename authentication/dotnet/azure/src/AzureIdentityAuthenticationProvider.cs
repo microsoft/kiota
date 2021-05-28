@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Azure.Core;
-using Kiota.Abstractions;
+using Microsoft.Kiota.Abstractions;
 
-namespace KiotaCore {
+namespace Microsoft.Kiota.Authentication.Azure {
     public class AzureIdentityAuthenticationProvider : IAuthenticationProvider
     {
         private readonly TokenCredential creds;
