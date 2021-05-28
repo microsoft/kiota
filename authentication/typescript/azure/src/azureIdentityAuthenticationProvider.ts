@@ -1,4 +1,4 @@
-import { TokenCredential } from "@azure/identity";
+import { TokenCredential } from "@azure/core-auth";
 import { AuthenticationProvider  } from '@microsoft/kiota-abstractions';
 
 export class AzureIdentityAuthenticationProvider implements AuthenticationProvider {
