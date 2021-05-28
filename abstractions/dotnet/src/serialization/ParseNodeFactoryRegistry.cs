@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Kiota.Abstractions;
-using Kiota.Abstractions.Serialization;
+using Microsoft.Kiota.Abstractions;
 
-namespace KiotaCore.Serialization {
+namespace Microsoft.Kiota.Abstractions.Serialization {
     public class ParseNodeFactoryRegistry : IParseNodeFactory {
         public Dictionary<string, IParseNodeFactory> ContentTypeAssociatedFactories {get; set;} = new Dictionary<string, IParseNodeFactory>();
         public IParseNode GetRootParseNode(string contentType, Stream content) {
