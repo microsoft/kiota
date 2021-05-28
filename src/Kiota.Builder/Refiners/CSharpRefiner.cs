@@ -36,13 +36,13 @@ namespace Kiota.Builder.Refiners {
                     Name = $"IParsable<{currentClass.Name.ToFirstCharacterUpperCase()}>",
                 });
                 declaration.Usings.Add(new CodeUsing(currentClass) {
-                    Name = "Kiota.Abstractions.Serialization"
+                    Name = "Microsoft.Kiota.Abstractions.Serialization"
                 });
             }
             CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
         }
         private static readonly string[] defaultNamespacesForClasses = new string[] {"System", "System.Collections.Generic", "System.Linq"};
-        private static readonly string[] defaultNamespacesForRequestBuilders = new string[] { "System.Threading.Tasks", "System.IO", "Kiota.Abstractions", "Kiota.Abstractions.Serialization"};
+        private static readonly string[] defaultNamespacesForRequestBuilders = new string[] { "System.Threading.Tasks", "System.IO", "Microsoft.Kiota.Abstractions", "Microsoft.Kiota.Abstractions.Serialization"};
         private static void AddDefaultImports(CodeElement current) {
             if(current is CodeClass currentClass) {
                 currentClass.AddUsing(defaultNamespacesForClasses.Select(x => new CodeUsing(currentClass) { Name = x }).ToArray());
