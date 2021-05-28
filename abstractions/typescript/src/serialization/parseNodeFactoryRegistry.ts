@@ -1,4 +1,5 @@
-import { ParseNode, ParseNodeFactory } from "@microsoft/kiota-abstractions";
+import { ParseNode } from "./parseNode";
+import { ParseNodeFactory } from "./parseNodeFactory";
 
 export class ParseNodeFactoryRegistry implements ParseNodeFactory {
     public contentTypeAssociatedFactories = new Map<string, ParseNodeFactory>();
