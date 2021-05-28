@@ -1,7 +1,6 @@
-import { AuthenticationProvider, HttpCore as IHttpCore, Parsable, ParseNodeFactory, RequestInfo, ResponseHandler } from '@microsoft/kiota-abstractions';
+import { AuthenticationProvider, HttpCore as IHttpCore, Parsable, ParseNodeFactory, RequestInfo, ResponseHandler, ParseNodeFactoryRegistry } from '@microsoft/kiota-abstractions';
 import { fetch, Headers as FetchHeadersCtor } from 'cross-fetch';
 import { ReadableStream } from 'web-streams-polyfill';
-import { JsonParseNodeFactory, ParseNodeFactoryRegistry } from './serialization';
 import { URLSearchParams } from 'url';
 export class HttpCore implements IHttpCore {
     private static readonly authorizationHeaderKey = "Authorization";
@@ -12,12 +11,6 @@ export class HttpCore implements IHttpCore {
         if(!authenticationProvider) {
             throw new Error('authentication provider cannot be null');
         }
-        if(parseNodeFactory instanceof ParseNodeFactoryRegistry) {
-            const registry = parseNodeFactory as ParseNodeFactoryRegistry;
-            if(registry.contentTypeAssociatedFactories.size === 0)
-                registry.contentTypeAssociatedFactories.set("application/json", new JsonParseNodeFactory());
-        }
-            
     }
     private getResponseContentType = (response: Response): string | undefined => {
         const header = response.headers.get("content-type")?.toLowerCase();

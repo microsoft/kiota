@@ -1,13 +1,13 @@
 # To-do
 
-![TypeScript](https://github.com/microsoft/kiota/actions/workflows/core-typescript.yml/badge.svg)
+![TypeScript](https://github.com/microsoft/kiota/actions/workflows/http-typescript-fetch.yml/badge.svg)
 
 - [ ] browserlist configuration for compat
 - [ ] eslint configuration for linting
 - [ ] unit tests (chai + mocha + chai as promised + some coverage reporter)
 - [ ] doc comments
 
-## Using the core implementations
+## Using the Http fetch implementations
 
 1. Add a `.npmrc` file with the following content
 
@@ -16,4 +16,4 @@
     ```
 
 1. `npm login --scope=@microsoft --registry=https://npm.pkg.github.com` (use a token with package:read, repo and SSO enabled for the Microsoft organization as the password)
-1. `npm i @microsoft/kiota-core -S`.
+1. `npm i @microsoft/kiota-http-fetch -S`.

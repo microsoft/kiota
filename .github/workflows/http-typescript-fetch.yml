@@ -1,17 +1,17 @@
-name: Typescript Core
+name: Typescript HTTP fetch
 
 on:
   push:
     branches: [ main ]
-    paths: ['core/typescript/**', '.github/workflows/**']
+    paths: ['http/typescript/fetch/**', '.github/workflows/**']
   pull_request:
-    paths: ['core/typescript/**', '.github/workflows/**']
+    paths: ['http/typescript/fetch/**', '.github/workflows/**']
 
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      relativePath: ./core/typescript
+      relativePath: ./http/typescript/fetch
     steps:
       - uses: actions/checkout@v2.3.4
       - uses: actions/setup-node@v2.1.5
