@@ -12,13 +12,13 @@ namespace Microsoft.Kiota.Http.HttpClient
     public class HttpCore : IHttpCore
     {
         private const string authorizationHeaderKey = "Authorization";
-        private readonly HttpClient client;
+        private readonly System.Net.Http.HttpClient client;
         private readonly IAuthenticationProvider authProvider;
         private readonly IParseNodeFactory pNodeFactory;
-        public HttpCore(IAuthenticationProvider authenticationProvider, IParseNodeFactory parseNodeFactory = null, HttpClient httpClient = null)
+        public HttpCore(IAuthenticationProvider authenticationProvider, IParseNodeFactory parseNodeFactory = null, System.Net.Http.HttpClient httpClient = null)
         {
             authProvider = authenticationProvider ?? throw new ArgumentNullException(nameof(authenticationProvider));
-            client = httpClient ?? new HttpClient();
+            client = httpClient ?? new System.Net.Http.HttpClient();
             pNodeFactory = parseNodeFactory ?? new ParseNodeFactoryRegistry() {};
         }
         public async Task<ModelType> SendAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = null) where ModelType : class, IParsable<ModelType>, new()

@@ -5,7 +5,7 @@ using System.Text.Json;
 using Microsoft.Kiota.Abstractions.Serialization;
 using System.Collections.Generic;
 using System.Reflection;
-using KiotaCore.Extensions;
+using Microsoft.Kiota.Abstractions.Extensions;
 
 namespace Microsoft.Kiota.Serialization.Json {
     public class JsonSerializationWriter : ISerializationWriter, IDisposable {
