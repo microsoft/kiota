@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Kiota.Abstractions.Serialization {
+namespace Microsoft.Kiota.Abstractions.Serialization {
     public interface IParseNode {
         string GetStringValue();
         IParseNode GetChildNode(string identifier);

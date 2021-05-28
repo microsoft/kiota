@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KiotaAbstractions", "src\KiotaAbstractions.csproj", "{DEE3A7F9-7951-403C-A90C-C182A381D6B6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KiotaAbstractions", "src\Microsoft.Kiota.Abstractions.csproj", "{DEE3A7F9-7951-403C-A90C-C182A381D6B6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace Kiota.Abstractions.Serialization {
+namespace Microsoft.Kiota.Abstractions.Serialization {
     public interface ISerializationWriter : IDisposable {
         void WriteStringValue(string key, string value);
         void WriteBoolValue(string key, bool? value);

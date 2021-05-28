@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 
-namespace Kiota.Abstractions {
+namespace Microsoft.Kiota.Abstractions {
     public abstract class QueryParametersBase {
         public void AddQueryParameters(IDictionary<string, object> target) {
             if (target == null) throw new ArgumentNullException(nameof(target));

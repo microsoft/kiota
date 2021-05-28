@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Kiota.Abstractions {
+namespace Microsoft.Kiota.Abstractions {
     public class NativeResponseWrapper {
         public static async Task<NativeResponseType> CallAndGetNativeType<ModelType, NativeResponseType, QueryParametersType>(
                 Func<Action<QueryParametersType>, Action<IDictionary<string, string>>, IResponseHandler, Task<ModelType>> originalCall,

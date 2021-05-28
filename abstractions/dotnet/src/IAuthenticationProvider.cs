@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Kiota.Abstractions {
+namespace Microsoft.Kiota.Abstractions {
     public interface IAuthenticationProvider {
         Task<string> GetAuthorizationToken(Uri requestUri);
     }
