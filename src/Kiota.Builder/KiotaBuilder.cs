@@ -615,13 +615,18 @@ namespace Kiota.Builder
             
             if (originalReference == null) { // Inline schema, i.e. specific to the Operation
                 return CreateModelDeclarationAndType(currentNode, schema, operation, parentElement, codeNamespace, "Response");
-            } else if(schema?.AllOf?.Any() ?? false) {
+            } else if(schema.IsAllOf()) {
                 return CreateInheritedModelDeclaration(currentNode, schema, operation, parentElement);
-            } else if((schema?.AnyOf?.Any() ?? false) || (schema?.OneOf?.Any() ?? false)) {
+            } else if(schema.IsAnyOf() || schema.IsOneOf()) {
                 return CreateUnionModelDeclaration(currentNode, schema, operation, parentElement);
-            } else if(schema?.Type?.Equals("object") ?? false) {
+            } else if(schema.IsObject()) {
                 // referenced schema, no inheritance or union type
                 return CreateModelDeclarationAndType(currentNode, schema, operation, parentElement, codeNamespace);
+            } else if (schema.IsArray()) {
+                // collection of referenced schema
+                var type = CreateModelDeclarationAndType(currentNode, schema, operation, parentElement, codeNamespace, "Collection");
+                type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
+                return type;
             }
             else throw new InvalidOperationException("un handled case, might be object type or array type");
             // object type array of object are technically already handled in properties but if we have a root with those we might be missing some cases here
@@ -632,7 +637,7 @@ namespace Kiota.Builder
         }
         private CodeNamespace GetSearchNamespace(bool checkInAllNamespaces, OpenApiUrlTreeNode currentNode, CodeNamespace currentNamespace) {
             if(checkInAllNamespaces) return rootNamespace;
-            else if (currentNode.DoesNodeBelongToItemSubnamespace()) return rootNamespace.EnsureItemNamespace();
+            else if (currentNode.DoesNodeBelongToItemSubnamespace()) return currentNamespace.EnsureItemNamespace();
             else return currentNamespace;
         }
         private CodeElement AddModelDeclarationIfDoesntExit(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeElement parentElement, CodeClass inheritsFrom = null, bool checkInAllNamespaces = false) {

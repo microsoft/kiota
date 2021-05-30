@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.OpenApi.Models;
@@ -31,6 +31,31 @@ namespace Kiota.Builder.Extensions {
         public static string GetSchemaTitle(this OpenApiSchema schema) {
             return schema.GetSchemaTitles().LastOrDefault();
         }
+
+        public static bool IsArray(this OpenApiSchema schema)
+        {
+            return schema?.Type?.Equals("array") ?? false;
+        }
+
+        public static bool IsObject(this OpenApiSchema schema)
+        {
+            return schema?.Type?.Equals("object") ?? false;
+        }
+        public static bool IsAnyOf(this OpenApiSchema schema)
+        {
+            return schema?.AnyOf?.Any() ?? false;
+        }
+
+        public static bool IsAllOf(this OpenApiSchema schema)
+        {
+            return schema?.AllOf?.Any() ?? false;
+        }
+
+        public static bool IsOneOf(this OpenApiSchema schema)
+        {
+            return schema?.OneOf?.Any() ?? false;
+        }
+
         public static IEnumerable<string> GetSchemaReferenceIds(this OpenApiSchema schema, HashSet<OpenApiSchema> visitedSchemas = null) {
             if(visitedSchemas == null)
                 visitedSchemas = new();            
