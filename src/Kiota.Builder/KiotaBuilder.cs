@@ -624,7 +624,7 @@ namespace Kiota.Builder
                 return CreateModelDeclarationAndType(currentNode, schema, operation, parentElement, codeNamespace);
             } else if (schema.IsArray()) {
                 // collection of referenced schema
-                var type = CreateModelDeclarationAndType(currentNode, schema, operation, parentElement, codeNamespace, "Collection");
+                var type = CreateModelDeclarationAndType(currentNode, schema, operation, parentElement, codeNamespace);
                 type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
                 return type;
             }
