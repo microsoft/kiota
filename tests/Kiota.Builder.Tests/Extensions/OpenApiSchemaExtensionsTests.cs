@@ -6,6 +6,30 @@ using Xunit;
 namespace Kiota.Builder.Extensions.Tests {
     public class OpenApiSchemaExtensionsTests {
         [Fact]
+        public void Defensive() {
+            Assert.Empty(OpenApiSchemaExtensions.GetSchemaReferenceIds(null));
+            var schema = new OpenApiSchema{
+                AnyOf = null
+            };
+            Assert.Null(schema.AnyOf);
+            Assert.Empty(schema.GetSchemaReferenceIds());
+            schema = new() {
+                AllOf = null
+            };
+            Assert.Null(schema.AllOf);
+            Assert.Empty(schema.GetSchemaReferenceIds());
+            schema = new() {
+                OneOf = null
+            };
+            Assert.Null(schema.OneOf);
+            Assert.Empty(schema.GetSchemaReferenceIds());
+            schema = new() {
+                Properties = null
+            };
+            Assert.Null(schema.Properties);
+            Assert.Empty(schema.GetSchemaReferenceIds());
+        }
+        [Fact]
         public void GetSchemaTitleAllOf() {
             var schema = new OpenApiSchema {
                 AllOf = new List<OpenApiSchema> {
@@ -18,8 +42,8 @@ namespace Kiota.Builder.Extensions.Tests {
                 }
             };
             var names = schema.GetSchemaTitles();
-            Assert.Equal("microsoft.graph.entity", names.First());
-            Assert.Equal("microsoft.graph.user", names.Last());
+            Assert.Contains("microsoft.graph.entity", names);
+            Assert.Contains("microsoft.graph.user", names);
             Assert.Equal("microsoft.graph.user", schema.GetSchemaTitle());
         }
         [Fact]
@@ -39,8 +63,8 @@ namespace Kiota.Builder.Extensions.Tests {
                 }
             };
             var names = schema.GetSchemaTitles();
-            Assert.Equal("microsoft.graph.entity", names.First());
-            Assert.Equal("microsoft.graph.user", names.Last());
+            Assert.Contains("microsoft.graph.entity", names);
+            Assert.Contains("microsoft.graph.user", names);
             Assert.Equal("microsoft.graph.user", schema.GetSchemaTitle());
         }
         [Fact]
@@ -56,8 +80,8 @@ namespace Kiota.Builder.Extensions.Tests {
                 }
             };
             var names = schema.GetSchemaTitles();
-            Assert.Equal("microsoft.graph.entity", names.First());
-            Assert.Equal("microsoft.graph.user", names.Last());
+            Assert.Contains("microsoft.graph.entity", names);
+            Assert.Contains("microsoft.graph.user", names);
             Assert.Equal("microsoft.graph.user", schema.GetSchemaTitle());
         }
         [Fact]
@@ -73,8 +97,8 @@ namespace Kiota.Builder.Extensions.Tests {
                 }
             };
             var names = schema.GetSchemaTitles();
-            Assert.Equal("microsoft.graph.entity", names.First());
-            Assert.Equal("microsoft.graph.user", names.Last());
+            Assert.Contains("microsoft.graph.entity", names);
+            Assert.Contains("microsoft.graph.user", names);
             Assert.Equal("microsoft.graph.user", schema.GetSchemaTitle());
         }
         [Fact]
@@ -85,7 +109,7 @@ namespace Kiota.Builder.Extensions.Tests {
                 },
             };
             var names = schema.GetSchemaTitles();
-            Assert.Equal("microsoft.graph.entity", names.First());
+            Assert.Contains("microsoft.graph.entity", names);
             Assert.Equal("microsoft.graph.entity", schema.GetSchemaTitle());
             Assert.Single(names);
         }
@@ -95,7 +119,7 @@ namespace Kiota.Builder.Extensions.Tests {
                 Title = "microsoft.graph.entity"
             };
             var names = schema.GetSchemaTitles();
-            Assert.Equal("microsoft.graph.entity", names.First());
+            Assert.Contains("microsoft.graph.entity", names);
             Assert.Equal("microsoft.graph.entity", schema.GetSchemaTitle());
             Assert.Single(names);
         }
@@ -124,8 +148,8 @@ namespace Kiota.Builder.Extensions.Tests {
                 }
             };
             var names = schema.GetSchemaReferenceIds();
-            Assert.Equal("microsoft.graph.entity", names.First());
-            Assert.Equal("microsoft.graph.user", names.Last());
+            Assert.Contains("microsoft.graph.entity", names);
+            Assert.Contains("microsoft.graph.user", names);
         }
         [Fact]
         public void GetReferenceIdsAllOfNested() {
@@ -148,8 +172,8 @@ namespace Kiota.Builder.Extensions.Tests {
                 }
             };
             var names = schema.GetSchemaReferenceIds();
-            Assert.Equal("microsoft.graph.entity", names.First());
-            Assert.Equal("microsoft.graph.user", names.Last());
+            Assert.Contains("microsoft.graph.entity", names);
+            Assert.Contains("microsoft.graph.user", names);
         }
         [Fact]
         public void GetReferenceIdsAnyOf() {
@@ -168,8 +192,8 @@ namespace Kiota.Builder.Extensions.Tests {
                 }
             };
             var names = schema.GetSchemaReferenceIds();
-            Assert.Equal("microsoft.graph.entity", names.First());
-            Assert.Equal("microsoft.graph.user", names.Last());
+            Assert.Contains("microsoft.graph.entity", names);
+            Assert.Contains("microsoft.graph.user", names);
         }
         [Fact]
         public void GetReferenceIdsOneOf() {
@@ -188,8 +212,8 @@ namespace Kiota.Builder.Extensions.Tests {
                 }
             };
             var names = schema.GetSchemaReferenceIds();
-            Assert.Equal("microsoft.graph.entity", names.First());
-            Assert.Equal("microsoft.graph.user", names.Last());
+            Assert.Contains("microsoft.graph.entity", names);
+            Assert.Contains("microsoft.graph.user", names);
         }
         [Fact]
         public void GetReferenceIdsItems() {
@@ -201,7 +225,7 @@ namespace Kiota.Builder.Extensions.Tests {
                 },
             };
             var names = schema.GetSchemaReferenceIds();
-            Assert.Equal("microsoft.graph.entity", names.First());
+            Assert.Contains("microsoft.graph.entity", names);
             Assert.Single(names);
         }
         [Fact]
@@ -212,7 +236,7 @@ namespace Kiota.Builder.Extensions.Tests {
                 }
             };
             var names = schema.GetSchemaReferenceIds();
-            Assert.Equal("microsoft.graph.entity", names.First());
+            Assert.Contains("microsoft.graph.entity", names);
             Assert.Single(names);
         }
         [Fact]

@@ -34,21 +34,21 @@ namespace Kiota.Builder.Extensions {
         public static IEnumerable<string> GetSchemaReferenceIds(this OpenApiSchema schema, HashSet<OpenApiSchema> visitedSchemas = null) {
             if(visitedSchemas == null)
                 visitedSchemas = new();            
-            if(!visitedSchemas.Contains(schema)) {
+            if(schema != null && !visitedSchemas.Contains(schema)) {
                 visitedSchemas.Add(schema);
                 var result = new List<string>();
                 if(!string.IsNullOrEmpty(schema.Reference?.Id))
                     result.Add(schema.Reference.Id);
                 if(!string.IsNullOrEmpty(schema.Items?.Reference?.Id))
                     result.Add(schema.Items.Reference.Id);
-                if(schema.Properties != null)
-                    result.AddRange(schema.Properties.Values.SelectMany(x => x.GetSchemaReferenceIds(visitedSchemas)));
-                if(schema.AnyOf != null)
-                    result.AddRange(schema.AnyOf.SelectMany(x => x.GetSchemaReferenceIds(visitedSchemas)));
-                if(schema.AllOf != null)
-                    result.AddRange(schema.AllOf.SelectMany(x => x.GetSchemaReferenceIds(visitedSchemas)));
-                if(schema.OneOf != null)
-                    result.AddRange(schema.OneOf.SelectMany(x => x.GetSchemaReferenceIds(visitedSchemas)));
+                var subSchemaReferences = (schema.Properties?.Values ?? Enumerable.Empty<OpenApiSchema>())
+                                            .Union(schema.AnyOf ?? Enumerable.Empty<OpenApiSchema>())
+                                            .Union(schema.AllOf ?? Enumerable.Empty<OpenApiSchema>())
+                                            .Union(schema.OneOf ?? Enumerable.Empty<OpenApiSchema>())
+                                            .SelectMany(x => x.GetSchemaReferenceIds(visitedSchemas))
+                                            .ToList();// this to list is important otherwise the any marks the schemas as visited and add range doesn't find anything
+                if(subSchemaReferences.Any())
+                    result.AddRange(subSchemaReferences);
                 return result;
             } else 
                 return Enumerable.Empty<string>();
