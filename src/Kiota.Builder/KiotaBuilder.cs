@@ -416,21 +416,22 @@ namespace Kiota.Builder
             if(propertyName != childIdentifier)
                 prop.SerializationName = childIdentifier;
             
-            var propType = GetPrimitiveType(prop, typeSchema?.Items, childType);
+            var propType = GetPrimitiveType(prop, typeSchema, childType);
             propType.TypeDefinition = typeDefinition;
             propType.CollectionKind = typeSchema.IsArray() ? CodeType.CodeTypeCollectionKind.Complex : default;
             prop.Type = propType;
             logger.LogTrace("Creating property {name} of {type}", prop.Name, prop.Type.Name);
             return prop;
         }
+        private static HashSet<string> typeNamesToSkip = new() {"object", "array"};
         private static CodeType GetPrimitiveType(CodeElement parent, OpenApiSchema typeSchema, string childType) {
-            var typeName = typeSchema?.Type ?? childType; // first value that's not null, and not "object" for primitive collections, the items type matters
+            var typeNames = new List<string>{typeSchema?.Items?.Type, childType, typeSchema?.Type};
+            // first value that's not null, and not "object" for primitive collections, the items type matters
+            var typeName = typeNames.FirstOrDefault(x => !string.IsNullOrEmpty(x) && !typeNamesToSkip.Contains(x));
            
-            if(typeName == "object")
-                typeName = childType;
             if(string.IsNullOrEmpty(typeName))
                 return null;
-            var format = typeSchema?.Format;
+            var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
             var isExternal = false;
             if("string".Equals(typeName, StringComparison.OrdinalIgnoreCase) && "date-time".Equals(format, StringComparison.OrdinalIgnoreCase)) {
                 isExternal = true;
