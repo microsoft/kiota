@@ -404,7 +404,6 @@ namespace Kiota.Builder
 
         private CodeProperty CreateProperty(string childIdentifier, string childType, CodeClass codeClass, string defaultValue = null, OpenApiSchema typeSchema = null, CodeElement typeDefinition = null, CodePropertyKind kind = CodePropertyKind.Custom)
         {
-            var isCollection = typeSchema?.Type?.Equals("array", StringComparison.OrdinalIgnoreCase) ?? false;
             var propertyName = childIdentifier;
             this.config.PropertiesPrefixToStrip.ForEach(x => propertyName = propertyName.Replace(x, string.Empty));
             var prop = new CodeProperty(codeClass)
@@ -430,7 +429,7 @@ namespace Kiota.Builder
             prop.Type = new CodeType(prop) {
                 Name = typeName,
                 TypeDefinition = typeDefinition,
-                CollectionKind = isCollection ? CodeType.CodeTypeCollectionKind.Complex : default,
+                CollectionKind = typeSchema.IsArray() ? CodeType.CodeTypeCollectionKind.Complex : default,
                 IsExternal = isExternal,
             };
             logger.LogTrace("Creating property {name} of {type}", prop.Name, prop.Type.Name);
@@ -672,7 +671,6 @@ namespace Kiota.Builder
             CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass, parentElement);
             return newClass;
         }
-        private const string OpenApiObjectType = "object";
         private void CreatePropertiesForModelClass(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace ns, CodeClass model, CodeElement parent) {
             AddSerializationMembers(model, schema?.AdditionalPropertiesAllowed ?? false);
             if(schema?.Properties?.Any() ?? false)
@@ -693,8 +691,8 @@ namespace Kiota.Builder
                                     })
                                     .ToArray());
             }
-            else if(schema?.AllOf?.Any(x => x?.Type?.Equals(OpenApiObjectType) ?? false) ?? false)
-                CreatePropertiesForModelClass(currentNode, schema.AllOf.Last(x => x.Type.Equals(OpenApiObjectType)), ns, model, parent);
+            else if(schema?.AllOf?.Any(x => x.IsObject()) ?? false)
+                CreatePropertiesForModelClass(currentNode, schema.AllOf.Last(x => x.IsObject()), ns, model, parent);
         }
         private const string deserializeFieldsPropName = "DeserializeFields";
         private const string serializeMethodName = "Serialize";
@@ -773,7 +771,7 @@ namespace Kiota.Builder
                     prop.Type = new CodeType(prop)
                     {
                         Name = parameter.Schema.Items?.Type ?? parameter.Schema.Type,
-                        CollectionKind = parameter.Schema.Type.Equals("array", StringComparison.OrdinalIgnoreCase) ? CodeType.CodeTypeCollectionKind.Array : default
+                        CollectionKind = parameter.Schema.IsArray() ? CodeType.CodeTypeCollectionKind.Array : default
                     };
 
                     if (!parameterClass.ContainsMember(parameter.Name))

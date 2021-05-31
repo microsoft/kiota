@@ -38,12 +38,12 @@ namespace Kiota.Builder.Extensions {
 
         public static bool IsArray(this OpenApiSchema schema)
         {
-            return schema?.Type?.Equals("array") ?? false;
+            return schema?.Type?.Equals("array", StringComparison.OrdinalIgnoreCase) ?? false;
         }
 
         public static bool IsObject(this OpenApiSchema schema)
         {
-            return schema?.Type?.Equals("object") ?? false;
+            return schema?.Type?.Equals("object", StringComparison.OrdinalIgnoreCase) ?? false;
         }
         public static bool IsAnyOf(this OpenApiSchema schema)
         {
