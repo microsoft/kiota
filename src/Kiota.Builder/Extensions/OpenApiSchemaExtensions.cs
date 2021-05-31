@@ -32,6 +32,10 @@ namespace Kiota.Builder.Extensions {
             return schema.GetSchemaTitles().LastOrDefault();
         }
 
+        public static bool IsReferencedSchema(this OpenApiSchema schema) {
+            return schema?.Reference != null;
+        }
+
         public static bool IsArray(this OpenApiSchema schema)
         {
             return schema?.Type?.Equals("array") ?? false;

@@ -609,11 +609,9 @@ namespace Kiota.Builder
         }
         private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement)
         {
-            var originalReference = schema?.Reference;
-            var originalReferenceId = originalReference?.Id;
             var codeNamespace = parentElement.GetImmediateParentOfType<CodeNamespace>();
             
-            if (originalReference == null) { // Inline schema, i.e. specific to the Operation
+            if (!schema.IsReferencedSchema()) { // Inline schema, i.e. specific to the Operation
                 return CreateModelDeclarationAndType(currentNode, schema, operation, parentElement, codeNamespace, "Response");
             } else if(schema.IsAllOf()) {
                 return CreateInheritedModelDeclaration(currentNode, schema, operation, parentElement);
