@@ -55,6 +55,7 @@ paths:
 components:
   schemas:
     todo:
+      title: Todo
       type: object
       properties:
         id:
