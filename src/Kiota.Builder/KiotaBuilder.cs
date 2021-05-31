@@ -425,10 +425,11 @@ namespace Kiota.Builder
         }
         private static CodeType GetPrimitiveType(CodeElement parent, OpenApiSchema typeSchema, string childType) {
             var typeName = typeSchema?.Type ?? childType; // first value that's not null, and not "object" for primitive collections, the items type matters
+           
+            if(typeName == "object")
+                typeName = childType;
             if(string.IsNullOrEmpty(typeName))
                 return null;
-            else if(typeName == "object")
-                typeName = childType;
             var format = typeSchema?.Format;
             var isExternal = false;
             if("string".Equals(typeName, StringComparison.OrdinalIgnoreCase) && "date-time".Equals(format, StringComparison.OrdinalIgnoreCase)) {
@@ -444,6 +445,7 @@ namespace Kiota.Builder
             };
         }
         private const string requestBodyBinaryContentType = "application/octet-stream";
+        private static HashSet<string> noContentStatusCodes = new() { "201", "202", "204" };
         private void CreateOperationMethods(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
         {
             var parameterClass = CreateOperationParameter(currentNode, operationType, operation, parentClass);
@@ -459,16 +461,14 @@ namespace Kiota.Builder
             parentClass.AddMethod(executorMethod);
             if (schema != null)
             {
-                var returnType = CreateModelDeclarations(currentNode, schema, operation, executorMethod) ??
-                    GetPrimitiveType(executorMethod, schema, string.Empty);
-                returnType.CollectionKind = schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default;
+                var returnType = CreateModelDeclarations(currentNode, schema, operation, executorMethod);
                 executorMethod.ReturnType = returnType ?? throw new InvalidOperationException("Could not resolve return type for operation");
             } else {
-                var returnType = "Entity";//TODO remove this temporary default when the method above handles all cases
-                if(operation.Responses.Any(x => x.Key == "204"))
-                    returnType = "void";
-                else if(operation.Responses.Any(x => x.Value.Content.Keys.Contains(requestBodyBinaryContentType)))
+                var returnType = "void";
+                if(operation.Responses.Any(x => x.Value.Content.Keys.Contains(requestBodyBinaryContentType)))
                     returnType = "binary";
+                else if(!operation.Responses.Any(x => noContentStatusCodes.Contains(x.Key)))
+                    logger.LogWarning($"could not find operation return type {operationType} {currentNode.Path}");
                 executorMethod.ReturnType = new CodeType(executorMethod) { Name = returnType };
             }
 
@@ -691,7 +691,7 @@ namespace Kiota.Builder
                                     .Properties
                                     .Select(x => {
                                         var propertyDefinitionSchema = x.Value.Items ?? x.Value;
-                                        var className = x.Value.GetSchemaTitle();
+                                        var className = propertyDefinitionSchema.GetSchemaTitle();
                                         CodeElement definition = default;
                                         if(!string.IsNullOrEmpty(className) && !string.IsNullOrEmpty(propertyDefinitionSchema?.Reference?.Id)) {
                                             var shortestNamespaceName = GetShortestNamespaceNameForModelByReferenceId(propertyDefinitionSchema.Reference.Id);
