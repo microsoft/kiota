@@ -18,6 +18,8 @@ namespace Kiota.Builder.Extensions {
                 return schema.AllOf.FlattenIfRequired(classNamesFlattener);
             else if(schema.OneOf.Any())
                 return schema.OneOf.FlattenIfRequired(classNamesFlattener);
+            else if(!string.IsNullOrEmpty(schema.Xml?.Name))
+                return new List<string>{schema.Xml.Name};
             else return Enumerable.Empty<string>();
         }
         private static IEnumerable<string> FlattenIfRequired(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter) {
