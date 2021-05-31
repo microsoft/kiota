@@ -54,7 +54,7 @@ namespace Kiota.Builder.Tests
             var codeModel = builder.CreateSourceModel(node);
 
             var rootNamespace = codeModel.GetChildElements(true).Single();
-            var rootBuilder = rootNamespace.GetChildElements(true).Where(e => e.Name == "Graph").Single();
+            var rootBuilder = rootNamespace.GetChildElements(true).Single(e => e.Name == "Graph");
             var tasksProperty = rootBuilder.GetChildElements(true).OfType<CodeProperty>().Single(e => e.Name == "Tasks");
             var tasksRequestBuilder = tasksProperty.Type as CodeType;
             Assert.NotNull(tasksRequestBuilder);
