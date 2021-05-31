@@ -6,6 +6,34 @@ namespace Kiota.Builder.Refiners.Tests {
         private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
         #region CommonLanguageRefinerTests
         [Fact]
+        public void EscapesReservedKeywordsInInternalDeclaration() {
+            var model = root.AddClass(new CodeClass (root) {
+                Name = "break",
+                ClassKind = CodeClassKind.Model
+            }).First();
+            var nUsing = new CodeUsing(model) {
+                Name = "some.ns",
+            };
+            nUsing.Declaration = new CodeType(nUsing) {
+                Name = "break",
+                IsExternal = false,
+            };
+            model.AddUsing(nUsing);
+            ILanguageRefiner.Refine(GenerationLanguage.Java, root);
+            Assert.NotEqual("break", nUsing.Declaration.Name);
+            Assert.Contains("escaped", nUsing.Declaration.Name);
+        }
+        [Fact]
+        public void EscapesReservedKeywords() {
+            var model = root.AddClass(new CodeClass (root) {
+                Name = "break",
+                ClassKind = CodeClassKind.Model
+            }).First();
+            ILanguageRefiner.Refine(GenerationLanguage.Java, root);
+            Assert.NotEqual("break", model.Name);
+            Assert.Contains("escaped", model.Name);
+        }
+        [Fact]
         public void AddsDefaultImports() {
             var model = root.AddClass(new CodeClass (root) {
                 Name = "model",

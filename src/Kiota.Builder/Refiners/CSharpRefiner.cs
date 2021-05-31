@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Text.RegularExpressions;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners {
@@ -18,6 +17,7 @@ namespace Kiota.Builder.Refiners {
             CapitalizeNamespacesFirstLetters(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");
             MakeEnumPropertiesNullable(generatedCode);
+            ReplaceReservedNames(generatedCode, new CSharpReservedNamesProvider(), x => $"@{x}");
         }
         private static void MakeEnumPropertiesNullable(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model)
