@@ -53,16 +53,12 @@ namespace Kiota.Builder.Tests
             var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph" });
             var codeModel = builder.CreateSourceModel(node);
 
-            var rootNamespace = codeModel.GetChildElements(true).SingleOrDefault();
-            Assert.NotNull(rootNamespace);
-            var rootBuilder = rootNamespace.GetChildElements(true).Where(e => e.Name == "Graph").SingleOrDefault();
-            Assert.NotNull(rootBuilder);
-            var tasksProperty = (CodeProperty)rootBuilder.GetChildElements(true).Where(e => e.Name == "Tasks").SingleOrDefault();
-            Assert.NotNull(tasksProperty);
-            var tasksRequestBuilder = (CodeType)tasksProperty.Type;
+            var rootNamespace = codeModel.GetChildElements(true).Single();
+            var rootBuilder = rootNamespace.GetChildElements(true).Where(e => e.Name == "Graph").Single();
+            var tasksProperty = (CodeProperty)rootBuilder.GetChildElements(true).Single(e => e.Name == "Tasks");
+            var tasksRequestBuilder = tasksProperty.Type as CodeType;
             Assert.NotNull(tasksRequestBuilder);
-            var getMethod = (CodeMethod)tasksRequestBuilder.TypeDefinition.GetChildElements(true).Where(e => e.Name == "Get").SingleOrDefault();
-            Assert.NotNull(getMethod);
+            var getMethod = tasksRequestBuilder.TypeDefinition.GetChildElements(true).OfType<CodeMethod>().Single(e => e.Name == "Get");
             var returnType = getMethod.ReturnType;
             Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Array, returnType.CollectionKind);
         }
