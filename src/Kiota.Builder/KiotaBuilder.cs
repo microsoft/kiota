@@ -416,19 +416,20 @@ namespace Kiota.Builder
             if(propertyName != childIdentifier)
                 prop.SerializationName = childIdentifier;
             
-            var propType = GetPrimitiveType(prop, typeSchema, childType, CodeType.CodeTypeCollectionKind.Complex);
+            var propType = GetPrimitiveType(prop, typeSchema?.Items, childType);
             propType.TypeDefinition = typeDefinition;
+            propType.CollectionKind = typeSchema.IsArray() ? CodeType.CodeTypeCollectionKind.Complex : default;
             prop.Type = propType;
             logger.LogTrace("Creating property {name} of {type}", prop.Name, prop.Type.Name);
             return prop;
         }
-        private static CodeType GetPrimitiveType(CodeElement parent, OpenApiSchema typeSchema, string childType, CodeType.CodeTypeCollectionKind collectionKind) {
-            var typeName = typeSchema?.Items?.Type ?? childType; // first value that's not null, and not "object" for primitive collections, the items type matters
+        private static CodeType GetPrimitiveType(CodeElement parent, OpenApiSchema typeSchema, string childType) {
+            var typeName = typeSchema?.Type ?? childType; // first value that's not null, and not "object" for primitive collections, the items type matters
             if(string.IsNullOrEmpty(typeName))
                 return null;
             else if(typeName == "object")
                 typeName = childType;
-            var format = typeSchema?.Items?.Format ?? typeSchema?.Format;
+            var format = typeSchema?.Format;
             var isExternal = false;
             if("string".Equals(typeName, StringComparison.OrdinalIgnoreCase) && "date-time".Equals(format, StringComparison.OrdinalIgnoreCase)) {
                 isExternal = true;
@@ -439,7 +440,6 @@ namespace Kiota.Builder
             }
             return new CodeType(parent) {
                 Name = typeName,
-                CollectionKind = typeSchema.IsArray() ? collectionKind : default,
                 IsExternal = isExternal,
             };
         }
@@ -459,7 +459,9 @@ namespace Kiota.Builder
             parentClass.AddMethod(executorMethod);
             if (schema != null)
             {
-                var returnType = CreateModelDeclarations(currentNode, schema, operation, executorMethod);
+                var returnType = CreateModelDeclarations(currentNode, schema, operation, executorMethod) ??
+                    GetPrimitiveType(executorMethod, schema, string.Empty);
+                returnType.CollectionKind = schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default;
                 executorMethod.ReturnType = returnType ?? throw new InvalidOperationException("Could not resolve return type for operation");
             } else {
                 var returnType = "Entity";//TODO remove this temporary default when the method above handles all cases
@@ -629,13 +631,13 @@ namespace Kiota.Builder
                 return CreateModelDeclarationAndType(currentNode, schema, operation, parentElement, codeNamespace);
             } else if (schema.IsArray()) {
                 // collections at root
-                var type = GetPrimitiveType(parentElement, schema, string.Empty, CodeTypeBase.CodeTypeCollectionKind.Array);
-                if(type == null) {
+                var type = GetPrimitiveType(parentElement, schema?.Items, string.Empty);
+                if(type == null)
                     type = CreateModelDeclarationAndType(currentNode, schema.Items, operation, parentElement, codeNamespace);
-                    type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
-                }
+                type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
                 return type;
-            }
+            } else if(!string.IsNullOrEmpty(schema.Type))
+                return GetPrimitiveType(parentElement, schema, string.Empty);
             else throw new InvalidOperationException("un handled case, might be object type or array type");
         }
         private CodeElement GetExistingDeclaration(bool checkInAllNamespaces, CodeNamespace currentNamespace, OpenApiUrlTreeNode currentNode, string declarationName) {
