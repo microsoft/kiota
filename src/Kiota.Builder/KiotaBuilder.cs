@@ -415,8 +415,19 @@ namespace Kiota.Builder
             };
             if(propertyName != childIdentifier)
                 prop.SerializationName = childIdentifier;
+            
+            var propType = GetPrimitiveType(prop, typeSchema, childType, CodeType.CodeTypeCollectionKind.Complex);
+            propType.TypeDefinition = typeDefinition;
+            prop.Type = propType;
+            logger.LogTrace("Creating property {name} of {type}", prop.Name, prop.Type.Name);
+            return prop;
+        }
+        private static CodeType GetPrimitiveType(CodeElement parent, OpenApiSchema typeSchema, string childType, CodeType.CodeTypeCollectionKind collectionKind) {
             var typeName = typeSchema?.Items?.Type ?? childType; // first value that's not null, and not "object" for primitive collections, the items type matters
-            if(typeName == "object") typeName = childType;
+            if(string.IsNullOrEmpty(typeName))
+                return null;
+            else if(typeName == "object")
+                typeName = childType;
             var format = typeSchema?.Items?.Format ?? typeSchema?.Format;
             var isExternal = false;
             if("string".Equals(typeName, StringComparison.OrdinalIgnoreCase) && "date-time".Equals(format, StringComparison.OrdinalIgnoreCase)) {
@@ -426,14 +437,11 @@ namespace Kiota.Builder
                 isExternal = true;
                 typeName = "double";
             }
-            prop.Type = new CodeType(prop) {
+            return new CodeType(parent) {
                 Name = typeName,
-                TypeDefinition = typeDefinition,
-                CollectionKind = typeSchema.IsArray() ? CodeType.CodeTypeCollectionKind.Complex : default,
+                CollectionKind = typeSchema.IsArray() ? collectionKind : default,
                 IsExternal = isExternal,
             };
-            logger.LogTrace("Creating property {name} of {type}", prop.Name, prop.Type.Name);
-            return prop;
         }
         private const string requestBodyBinaryContentType = "application/octet-stream";
         private void CreateOperationMethods(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
@@ -610,7 +618,7 @@ namespace Kiota.Builder
         {
             var codeNamespace = parentElement.GetImmediateParentOfType<CodeNamespace>();
             
-            if (!schema.IsReferencedSchema()) { // Inline schema, i.e. specific to the Operation
+            if (!schema.IsReferencedSchema() && schema.Properties.Any()) { // Inline schema, i.e. specific to the Operation
                 return CreateModelDeclarationAndType(currentNode, schema, operation, parentElement, codeNamespace, "Response");
             } else if(schema.IsAllOf()) {
                 return CreateInheritedModelDeclaration(currentNode, schema, operation, parentElement);
@@ -620,13 +628,15 @@ namespace Kiota.Builder
                 // referenced schema, no inheritance or union type
                 return CreateModelDeclarationAndType(currentNode, schema, operation, parentElement, codeNamespace);
             } else if (schema.IsArray()) {
-                // collection of referenced schema
-                var type = CreateModelDeclarationAndType(currentNode, schema, operation, parentElement, codeNamespace);
-                type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
+                // collections at root
+                var type = GetPrimitiveType(parentElement, schema, string.Empty, CodeTypeBase.CodeTypeCollectionKind.Array);
+                if(type == null) {
+                    type = CreateModelDeclarationAndType(currentNode, schema.Items, operation, parentElement, codeNamespace);
+                    type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
+                }
                 return type;
             }
             else throw new InvalidOperationException("un handled case, might be object type or array type");
-            // object type array of object are technically already handled in properties but if we have a root with those we might be missing some cases here
         }
         private CodeElement GetExistingDeclaration(bool checkInAllNamespaces, CodeNamespace currentNamespace, OpenApiUrlTreeNode currentNode, string declarationName) {
             var searchNameSpace = GetSearchNamespace(checkInAllNamespaces, currentNode, currentNamespace);
