@@ -5,6 +5,7 @@ info:
 paths:
   /todos: 
     get:
+      description: Return a list of Todo entities
       operationId: todos_ListTodos
       parameters:
           - name: active
@@ -25,6 +26,7 @@ paths:
                 type: object
                 properties:
                   value:
+                    type: array
                     items: 
                       $ref: "#/components/schemas/todo"
 
@@ -41,10 +43,12 @@ paths:
           description: OK
   /todos/{todoId}:
     get:
+      description: Return a single Todo object
       responses:
         '200':
           description: OK
     delete:
+      description: Delete a single Todo object
       responses:
         '200':
           description: OK

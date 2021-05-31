@@ -2,7 +2,9 @@
 
 Kiota is an OpenAPI based code generator for creating SDKs for HTTP APIs. The goal is to produce a lightweight, low maintenance, code generator that is fast enough to run as part of the compile time tool-chain but scalable enough to handle the largest APIs.
 
-Current SDK tooling assumes that consumers of the API want to consume API resources using the same boundaries as the teams that provide the APIs. However, that is often not the case.  Many companies are beginning to use API Management gateways and portals to bring APIs across their organization together and provide a coherent and consistent experience across many APIs.  However, SDKs continue to be shipped based on the team that provided the API.  HTTP URI spaces allow for seamless integration of many APIs into a coherent whole. SDK tooling should enable the same level of integration.
+For those looking to try it out rather than hearing why we built it, checkout out the [Getting Started](https://github.com/microsoft/kiota#getting-started) section.
+
+Current SDK tooling forces the API provider to make choices about the granularity of how API consumers want to consume their APIs. However you can't please everyone. Some devs building mobile applications care deeply about binary footprint and want SDKs that only contain what they need. Other developers building enterprise experiences don't want have to worry about finding which one in a dozen SDKs contain the feature they are looking for. Many companies are beginning to use API Management gateways and portals to bring APIs across their organization together and provide a coherent and consistent experience across many APIs. However, traditional SDKs continue to be shipped based on the team that provided the API. Kiota has the flexibility to quickly and easily build SDKs the shape and size that our customers need regardless of size. Conway's law doesn't apply here.
 
 ### Goals
 
@@ -75,6 +77,7 @@ For more information on the various components used by the Kiota SDK, see the fo
 
 - [Request Builders](requestbuilders)
 - [Models](models)
+- [Abstractions](kiotaabstractions)
 - [Core Library](corelibrary)
 
-For an overview of how the code generation process works, see the [Design Overview](designoverview).  This library was created to support the [Microsoft Graph](microsoftgraph) API and therefore needs to support a number of [OData](odata) conventions.
+For an overview of how the code generation process works, see the [Design Overview](designoverview).  
