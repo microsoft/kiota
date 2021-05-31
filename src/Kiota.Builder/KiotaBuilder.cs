@@ -634,7 +634,7 @@ namespace Kiota.Builder
                 // collections at root
                 var type = GetPrimitiveType(parentElement, schema?.Items, string.Empty);
                 if(type == null)
-                    type = CreateModelDeclarationAndType(currentNode, schema.Items, operation, parentElement, codeNamespace);
+                    type = CreateModelDeclarationAndType(currentNode, schema?.Items, operation, parentElement, codeNamespace);
                 type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
                 return type;
             } else if(!string.IsNullOrEmpty(schema.Type))
