@@ -1,4 +1,4 @@
-package com.microsoft.kiota.core.serialization;
+package com.microsoft.kiota.serialization.json;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -19,7 +19,6 @@ import java.util.UUID;
 import java.util.function.BiConsumer;
 
 import com.microsoft.kiota.serialization.ParseNode;
-
 import com.microsoft.kiota.serialization.Parsable;
 
 import javax.annotation.Nonnull;
