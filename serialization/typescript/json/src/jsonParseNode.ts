@@ -1,5 +1,4 @@
-import { Parsable, ParseNode } from "@microsoft/kiota-abstractions";
-import { toFirstCharacterUpper } from "@microsoft/kiota-abstractions/utils/stringUtils";
+import { Parsable, ParseNode, toFirstCharacterUpper } from "@microsoft/kiota-abstractions";
 
 export class JsonParseNode implements ParseNode {
     /**

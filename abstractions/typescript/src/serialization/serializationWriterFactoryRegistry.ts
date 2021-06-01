@@ -1,4 +1,5 @@
-import { SerializationWriter, SerializationWriterFactory } from "@microsoft/kiota-abstractions";
+import { SerializationWriter } from "./serializationWriter";
+import { SerializationWriterFactory } from "./serializationWriterFactory";
 
 export class SerializationWriterFactoryRegistry implements SerializationWriterFactory {
     public contentTypeAssociatedFactories = new Map<string, SerializationWriterFactory>();
