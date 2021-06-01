@@ -7,5 +7,5 @@
  * in the user manual at https://docs.gradle.org/7.0/userguide/multi_project_builds.html
  */
 
-rootProject.name = 'com.microsoft.kiota.serialization.json'
+rootProject.name = 'com.microsoft.kiota.serialization'
 include('lib')
