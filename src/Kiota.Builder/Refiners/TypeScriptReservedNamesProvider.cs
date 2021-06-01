@@ -12,7 +12,6 @@ namespace Kiota.Builder.Refiners {
             "continue",
             "debugger",
             "default",
-            "delete",
             "do",
             "else",
             "enum",
