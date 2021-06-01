@@ -1,4 +1,4 @@
-package com.microsoft.kiota.serialization.json;
+package com.microsoft.kiota.serialization;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;

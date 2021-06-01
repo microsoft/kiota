@@ -1,4 +1,4 @@
-package com.microsoft.kiota.serialization.json;
+package com.microsoft.kiota.serialization;
 
 import java.util.Objects;
 

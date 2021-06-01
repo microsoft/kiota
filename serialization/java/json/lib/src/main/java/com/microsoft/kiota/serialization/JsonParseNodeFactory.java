@@ -1,4 +1,4 @@
-package com.microsoft.kiota.serialization.json;
+package com.microsoft.kiota.serialization;
 
 import com.microsoft.kiota.serialization.ParseNode;
 import com.microsoft.kiota.serialization.ParseNodeFactory;
