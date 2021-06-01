@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Escapes language reserved keywords #184
 - Replaces custom URL tree node by class provided by OpenAPI.net #179
 - Adds support for collections as root responses #191
+- Splits the core libraries in 3 separate libraries #197
 
 ## [0.0.4] - 2021-04-28
 
