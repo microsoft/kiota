@@ -1,12 +1,9 @@
-package com.microsoft.kiota.core.serialization;
+package com.microsoft.kiota.serialization;
 
 import java.util.HashMap;
 import java.util.Objects;
 
 import javax.annotation.Nonnull;
-
-import com.microsoft.kiota.serialization.SerializationWriter;
-import com.microsoft.kiota.serialization.SerializationWriterFactory;
 
 public class SerializationWriterFactoryRegistry implements SerializationWriterFactory {
     public HashMap<String, SerializationWriterFactory> contentTypeAssociatedFactories = new HashMap<>();

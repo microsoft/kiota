@@ -1,13 +1,10 @@
-package com.microsoft.kiota.core.serialization;
+package com.microsoft.kiota.serialization;
 
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Objects;
 
 import javax.annotation.Nonnull;
-
-import com.microsoft.kiota.serialization.ParseNode;
-import com.microsoft.kiota.serialization.ParseNodeFactory;
 
 public class ParseNodeFactoryRegistry implements ParseNodeFactory {
     public HashMap<String, ParseNodeFactory> contentTypeAssociatedFactories = new HashMap<>();
