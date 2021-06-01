@@ -1,4 +1,4 @@
-package com.microsoft.kiota.core;
+package com.microsoft.kiota.http;
 
 import java.io.IOException;
 
