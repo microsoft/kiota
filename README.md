@@ -2,7 +2,7 @@
 
 [![Dotnet](https://github.com/microsoft/kiota/actions/workflows/dotnet.yml/badge.svg)](https://github.com/microsoft/kiota/actions/workflows/dotnet.yml) [![CodeQL](https://github.com/microsoft/kiota/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/microsoft/kiota/actions/workflows/codeql-analysis.yml) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=microsoft_kiota&metric=coverage)](https://sonarcloud.io/dashboard?id=microsoft_kiota) [![Sonarcloud Status](https://sonarcloud.io/api/project_badges/measure?project=microsoft_kiota&metric=alert_status)](https://sonarcloud.io/dashboard?id=microsoft_kiota)
 
-Kiota is a project to build an OpenAPI based code generator for creating SDKs for HTTP APIs. The goal is to produce a lightweight, low maintenance, code generator that is fast enough to run as part of the compile time tool-chain but scalable enough to handle the largest APIs. Kiota generates a lightweight set of strongly typed classes that layer over a core HTTP library and produce an intuitive and discoverable way of creating HTTP requests. A set of abstractions decouple the generated service library from the core allowing a variety of core libraries to be supported.
+Kiota is a project to build an OpenAPI based code generator for creating SDKs for HTTP APIs. The goal is to produce a lightweight, low maintenance, code generator that is fast enough to run as part of the compile time tool-chain but scalable enough to handle the largest APIs. Kiota generates a lightweight set of strongly typed classes that layer over a set of core HTTP libraries and produce an intuitive and discoverable way of creating HTTP requests. A set of abstractions decouple the generated service library from the core libraries allowing a variety of core libraries to be supported.
 
 This library builds on top of the [Microsoft.OpenAPI.NET](https://github.com/microsoft/openapi.net) library to ensure comprehensive support for APIs that use OpenAPI descriptions. One of the goals of the project is to provide the best code generator support possible for OpenAPI and JSON Schema features.
 
@@ -110,7 +110,7 @@ If you haven't built kiota locally, select the appropriate version from the [rel
 kiota.exe -d ../msgraph-sdk-powershell/openApiDocs/v1.0/mail.yml --language csharp -o ../somepath -n namespaceprefix
 ```
 
-> Note: once your SDK is generated in your target project, you will need to add references to kiota abstractions and kiota core in your project. Refer to [Initializing target projects](#initializing-target-projects)
+> Note: once your SDK is generated in your target project, you will need to add references to kiota abstractions and kiota http, serialization and authentication in your project. Refer to [Initializing target projects](#initializing-target-projects)
 
 #### Parameters reference
 
@@ -133,7 +133,7 @@ Selecting the language you want to generate an SDK for in the Visual Studio Debu
 
 ### Initializing target projects
 
-Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](./abstractions) and the [core](./core) package from the GitHub feed.
+Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](./abstractions) and the [authentication](./authentication), [http](./http), [serialization](./serialization) packages from the GitHub feed.
 
 #### TypeScript initialization
 
