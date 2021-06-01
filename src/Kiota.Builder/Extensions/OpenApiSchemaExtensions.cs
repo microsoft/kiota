@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.OpenApi.Models;
@@ -18,6 +18,8 @@ namespace Kiota.Builder.Extensions {
                 return schema.AllOf.FlattenIfRequired(classNamesFlattener);
             else if(schema.OneOf.Any())
                 return schema.OneOf.FlattenIfRequired(classNamesFlattener);
+            else if(!string.IsNullOrEmpty(schema.Xml?.Name))
+                return new List<string>{schema.Xml.Name};
             else return Enumerable.Empty<string>();
         }
         private static IEnumerable<string> FlattenIfRequired(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter) {
@@ -31,6 +33,35 @@ namespace Kiota.Builder.Extensions {
         public static string GetSchemaTitle(this OpenApiSchema schema) {
             return schema.GetSchemaTitles().LastOrDefault();
         }
+
+        public static bool IsReferencedSchema(this OpenApiSchema schema) {
+            return schema?.Reference != null;
+        }
+
+        public static bool IsArray(this OpenApiSchema schema)
+        {
+            return schema?.Type?.Equals("array", StringComparison.OrdinalIgnoreCase) ?? false;
+        }
+
+        public static bool IsObject(this OpenApiSchema schema)
+        {
+            return schema?.Type?.Equals("object", StringComparison.OrdinalIgnoreCase) ?? false;
+        }
+        public static bool IsAnyOf(this OpenApiSchema schema)
+        {
+            return schema?.AnyOf?.Any() ?? false;
+        }
+
+        public static bool IsAllOf(this OpenApiSchema schema)
+        {
+            return schema?.AllOf?.Any() ?? false;
+        }
+
+        public static bool IsOneOf(this OpenApiSchema schema)
+        {
+            return schema?.OneOf?.Any() ?? false;
+        }
+
         public static IEnumerable<string> GetSchemaReferenceIds(this OpenApiSchema schema, HashSet<OpenApiSchema> visitedSchemas = null) {
             if(visitedSchemas == null)
                 visitedSchemas = new();            

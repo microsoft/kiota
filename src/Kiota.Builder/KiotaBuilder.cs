@@ -404,7 +404,6 @@ namespace Kiota.Builder
 
         private CodeProperty CreateProperty(string childIdentifier, string childType, CodeClass codeClass, string defaultValue = null, OpenApiSchema typeSchema = null, CodeElement typeDefinition = null, CodePropertyKind kind = CodePropertyKind.Custom)
         {
-            var isCollection = typeSchema?.Type?.Equals("array", StringComparison.OrdinalIgnoreCase) ?? false;
             var propertyName = childIdentifier;
             this.config.PropertiesPrefixToStrip.ForEach(x => propertyName = propertyName.Replace(x, string.Empty));
             var prop = new CodeProperty(codeClass)
@@ -416,9 +415,23 @@ namespace Kiota.Builder
             };
             if(propertyName != childIdentifier)
                 prop.SerializationName = childIdentifier;
-            var typeName = typeSchema?.Items?.Type ?? childType; // first value that's not null, and not "object" for primitive collections, the items type matters
-            if(typeName == "object") typeName = childType;
-            var format = typeSchema?.Items?.Format ?? typeSchema?.Format;
+            
+            var propType = GetPrimitiveType(prop, typeSchema, childType);
+            propType.TypeDefinition = typeDefinition;
+            propType.CollectionKind = typeSchema.IsArray() ? CodeType.CodeTypeCollectionKind.Complex : default;
+            prop.Type = propType;
+            logger.LogTrace("Creating property {name} of {type}", prop.Name, prop.Type.Name);
+            return prop;
+        }
+        private static HashSet<string> typeNamesToSkip = new() {"object", "array"};
+        private static CodeType GetPrimitiveType(CodeElement parent, OpenApiSchema typeSchema, string childType) {
+            var typeNames = new List<string>{typeSchema?.Items?.Type, childType, typeSchema?.Type};
+            // first value that's not null, and not "object" for primitive collections, the items type matters
+            var typeName = typeNames.FirstOrDefault(x => !string.IsNullOrEmpty(x) && !typeNamesToSkip.Contains(x));
+           
+            if(string.IsNullOrEmpty(typeName))
+                return null;
+            var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
             var isExternal = false;
             if("string".Equals(typeName, StringComparison.OrdinalIgnoreCase) && "date-time".Equals(format, StringComparison.OrdinalIgnoreCase)) {
                 isExternal = true;
@@ -427,16 +440,13 @@ namespace Kiota.Builder
                 isExternal = true;
                 typeName = "double";
             }
-            prop.Type = new CodeType(prop) {
+            return new CodeType(parent) {
                 Name = typeName,
-                TypeDefinition = typeDefinition,
-                CollectionKind = isCollection ? CodeType.CodeTypeCollectionKind.Complex : default,
                 IsExternal = isExternal,
             };
-            logger.LogTrace("Creating property {name} of {type}", prop.Name, prop.Type.Name);
-            return prop;
         }
         private const string requestBodyBinaryContentType = "application/octet-stream";
+        private static HashSet<string> noContentStatusCodes = new() { "201", "202", "204" };
         private void CreateOperationMethods(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
         {
             var parameterClass = CreateOperationParameter(currentNode, operationType, operation, parentClass);
@@ -455,11 +465,11 @@ namespace Kiota.Builder
                 var returnType = CreateModelDeclarations(currentNode, schema, operation, executorMethod);
                 executorMethod.ReturnType = returnType ?? throw new InvalidOperationException("Could not resolve return type for operation");
             } else {
-                var returnType = "Entity";//TODO remove this temporary default when the method above handles all cases
-                if(operation.Responses.Any(x => x.Key == "204"))
-                    returnType = "void";
-                else if(operation.Responses.Any(x => x.Value.Content.Keys.Contains(requestBodyBinaryContentType)))
+                var returnType = "void";
+                if(operation.Responses.Any(x => x.Value.Content.Keys.Contains(requestBodyBinaryContentType)))
                     returnType = "binary";
+                else if(!operation.Responses.Any(x => noContentStatusCodes.Contains(x.Key)))
+                    logger.LogWarning($"could not find operation return type {operationType} {currentNode.Path}");
                 executorMethod.ReturnType = new CodeType(executorMethod) { Name = returnType };
             }
 
@@ -609,22 +619,27 @@ namespace Kiota.Builder
         }
         private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement)
         {
-            var originalReference = schema?.Reference;
-            var originalReferenceId = originalReference?.Id;
             var codeNamespace = parentElement.GetImmediateParentOfType<CodeNamespace>();
             
-            if (originalReference == null) { // Inline schema, i.e. specific to the Operation
+            if (!schema.IsReferencedSchema() && schema.Properties.Any()) { // Inline schema, i.e. specific to the Operation
                 return CreateModelDeclarationAndType(currentNode, schema, operation, parentElement, codeNamespace, "Response");
-            } else if(schema?.AllOf?.Any() ?? false) {
+            } else if(schema.IsAllOf()) {
                 return CreateInheritedModelDeclaration(currentNode, schema, operation, parentElement);
-            } else if((schema?.AnyOf?.Any() ?? false) || (schema?.OneOf?.Any() ?? false)) {
+            } else if(schema.IsAnyOf() || schema.IsOneOf()) {
                 return CreateUnionModelDeclaration(currentNode, schema, operation, parentElement);
-            } else if(schema?.Type?.Equals("object") ?? false) {
+            } else if(schema.IsObject()) {
                 // referenced schema, no inheritance or union type
                 return CreateModelDeclarationAndType(currentNode, schema, operation, parentElement, codeNamespace);
-            }
+            } else if (schema.IsArray()) {
+                // collections at root
+                var type = GetPrimitiveType(parentElement, schema?.Items, string.Empty);
+                if(type == null)
+                    type = CreateModelDeclarationAndType(currentNode, schema?.Items, operation, parentElement, codeNamespace);
+                type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
+                return type;
+            } else if(!string.IsNullOrEmpty(schema.Type))
+                return GetPrimitiveType(parentElement, schema, string.Empty);
             else throw new InvalidOperationException("un handled case, might be object type or array type");
-            // object type array of object are technically already handled in properties but if we have a root with those we might be missing some cases here
         }
         private CodeElement GetExistingDeclaration(bool checkInAllNamespaces, CodeNamespace currentNamespace, OpenApiUrlTreeNode currentNode, string declarationName) {
             var searchNameSpace = GetSearchNamespace(checkInAllNamespaces, currentNode, currentNamespace);
@@ -632,7 +647,7 @@ namespace Kiota.Builder
         }
         private CodeNamespace GetSearchNamespace(bool checkInAllNamespaces, OpenApiUrlTreeNode currentNode, CodeNamespace currentNamespace) {
             if(checkInAllNamespaces) return rootNamespace;
-            else if (currentNode.DoesNodeBelongToItemSubnamespace()) return rootNamespace.EnsureItemNamespace();
+            else if (currentNode.DoesNodeBelongToItemSubnamespace()) return currentNamespace.EnsureItemNamespace();
             else return currentNamespace;
         }
         private CodeElement AddModelDeclarationIfDoesntExit(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeElement parentElement, CodeClass inheritsFrom = null, bool checkInAllNamespaces = false) {
@@ -669,7 +684,6 @@ namespace Kiota.Builder
             CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass, parentElement);
             return newClass;
         }
-        private const string OpenApiObjectType = "object";
         private void CreatePropertiesForModelClass(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace ns, CodeClass model, CodeElement parent) {
             AddSerializationMembers(model, schema?.AdditionalPropertiesAllowed ?? false);
             if(schema?.Properties?.Any() ?? false)
@@ -678,7 +692,7 @@ namespace Kiota.Builder
                                     .Properties
                                     .Select(x => {
                                         var propertyDefinitionSchema = x.Value.Items ?? x.Value;
-                                        var className = x.Value.GetSchemaTitle();
+                                        var className = propertyDefinitionSchema.GetSchemaTitle();
                                         CodeElement definition = default;
                                         if(!string.IsNullOrEmpty(className) && !string.IsNullOrEmpty(propertyDefinitionSchema?.Reference?.Id)) {
                                             var shortestNamespaceName = GetShortestNamespaceNameForModelByReferenceId(propertyDefinitionSchema.Reference.Id);
@@ -690,8 +704,8 @@ namespace Kiota.Builder
                                     })
                                     .ToArray());
             }
-            else if(schema?.AllOf?.Any(x => x?.Type?.Equals(OpenApiObjectType) ?? false) ?? false)
-                CreatePropertiesForModelClass(currentNode, schema.AllOf.Last(x => x.Type.Equals(OpenApiObjectType)), ns, model, parent);
+            else if(schema?.AllOf?.Any(x => x.IsObject()) ?? false)
+                CreatePropertiesForModelClass(currentNode, schema.AllOf.Last(x => x.IsObject()), ns, model, parent);
         }
         private const string deserializeFieldsPropName = "DeserializeFields";
         private const string serializeMethodName = "Serialize";
@@ -770,7 +784,7 @@ namespace Kiota.Builder
                     prop.Type = new CodeType(prop)
                     {
                         Name = parameter.Schema.Items?.Type ?? parameter.Schema.Type,
-                        CollectionKind = parameter.Schema.Type.Equals("array", StringComparison.OrdinalIgnoreCase) ? CodeType.CodeTypeCollectionKind.Array : default
+                        CollectionKind = parameter.Schema.IsArray() ? CodeType.CodeTypeCollectionKind.Array : default
                     };
 
                     if (!parameterClass.ContainsMember(parameter.Name))
