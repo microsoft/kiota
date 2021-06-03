@@ -37,26 +37,29 @@ namespace Kiota.Builder.Writers.CSharp {
                     WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, isVoid, returnType, writer);
                     break;
                 case CodeMethodKind.Deserializer:
-                    var hideParentMember = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
-                    var parentSerializationInfo = hideParentMember ? $"(base.{codeElement.Name.ToFirstCharacterUpperCase()}())" : string.Empty;
-                    writer.WriteLine($"return new Dictionary<string, Action<T, {conventions.ParseNodeInterfaceName}>>{parentSerializationInfo} {{");
-                    writer.IncreaseIndent();
-                    foreach(var otherProp in parentClass
-                                                    .GetChildElements(true)
-                                                    .OfType<CodeProperty>()
-                                                    .Where(x => x.PropertyKind == CodePropertyKind.Custom)
-                                                    .OrderBy(x => x.Name)) {
-                        writer.WriteLine($"{{\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", (o,n) => {{ (o as {parentClass.Name.ToFirstCharacterUpperCase()}).{otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type)}(); }} }},");
-                    }
-                    writer.DecreaseIndent();
-                    writer.WriteLine("};");
-                break;
+                    WriteDeserializerBody(codeElement, parentClass, writer);
+                    break;
                 default:
                     writer.WriteLine("return null;");
                 break;
             }
             writer.DecreaseIndent();
             writer.WriteLine("}");
+        }
+        private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
+            var hideParentMember = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
+            var parentSerializationInfo = hideParentMember ? $"(base.{codeElement.Name.ToFirstCharacterUpperCase()}())" : string.Empty;
+            writer.WriteLine($"return new Dictionary<string, Action<T, {conventions.ParseNodeInterfaceName}>>{parentSerializationInfo} {{");
+            writer.IncreaseIndent();
+            foreach(var otherProp in parentClass
+                                            .GetChildElements(true)
+                                            .OfType<CodeProperty>()
+                                            .Where(x => x.PropertyKind == CodePropertyKind.Custom)
+                                            .OrderBy(x => x.Name)) {
+                writer.WriteLine($"{{\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", (o,n) => {{ (o as {parentClass.Name.ToFirstCharacterUpperCase()}).{otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type)}(); }} }},");
+            }
+            writer.DecreaseIndent();
+            writer.WriteLine("};");
         }
         private string GetDeserializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
