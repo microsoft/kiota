@@ -1,6 +1,7 @@
 name: Typescript abstractions
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths: ['abstractions/typescript/**', '.github/workflows/**']

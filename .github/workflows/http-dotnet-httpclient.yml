@@ -1,6 +1,7 @@
 name: Dotnet HTTP HTTPClient
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths: ['http/dotnet/http/**', '.github/workflows/**', 'scripts']

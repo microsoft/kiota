@@ -1,6 +1,7 @@
 name: Typescript HTTP fetch
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths: ['http/typescript/fetch/**', '.github/workflows/**']

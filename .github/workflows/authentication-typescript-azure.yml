@@ -1,6 +1,7 @@
 name: Typescript Authentication Azure
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths: ['authentication/typescript/azure/**', '.github/workflows/**']
