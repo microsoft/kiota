@@ -707,7 +707,7 @@ namespace Kiota.Builder
             else if(schema?.AllOf?.Any(x => x.IsObject()) ?? false)
                 CreatePropertiesForModelClass(currentNode, schema.AllOf.Last(x => x.IsObject()), ns, model, parent);
         }
-        private const string fieldDeserializersMethodName = "GetFieldDeserializers";
+        private const string fieldDeserializersMethodName = "GetFieldDeserializers<T>";
         private const string serializeMethodName = "Serialize";
         private const string additionalDataPropName = "AdditionalData";
         private static void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties) {
