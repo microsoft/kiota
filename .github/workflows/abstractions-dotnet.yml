@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       relativePath: ./abstractions/dotnet
+      solutionName: Microsoft.Kiota.Abstractions.sln
     steps:
       - uses: actions/checkout@v2.3.4
       - name: Setup .NET
@@ -19,19 +20,19 @@ jobs:
         with:
           dotnet-version: 5.0.x
       - name: Restore dependencies
-        run: dotnet restore KiotaAbstractions.sln
+        run: dotnet restore ${{ env.solutionName }}
         working-directory: ${{ env.relativePath }}
       - name: Build
-        run: dotnet build KiotaAbstractions.sln --no-restore -c Release
+        run: dotnet build ${{ env.solutionName }} --no-restore -c Release
         working-directory: ${{ env.relativePath }}
       - name: Test
-        run: dotnet test KiotaAbstractions.sln --no-build --verbosity normal -c Release
+        run: dotnet test ${{ env.solutionName }} --no-build --verbosity normal -c Release
         working-directory: ${{ env.relativePath }}
       - name: Publish
-        run: dotnet publish KiotaAbstractions.sln --no-restore --no-build --verbosity normal -c Release
+        run: dotnet publish ${{ env.solutionName }} --no-restore --no-build --verbosity normal -c Release
         working-directory: ${{ env.relativePath }}
       - name: Pack
-        run: dotnet pack KiotaAbstractions.sln --no-restore --no-build --verbosity normal -c Release
+        run: dotnet pack ${{ env.solutionName }} --no-restore --no-build --verbosity normal -c Release
         working-directory: ${{ env.relativePath }}
       - uses: actions/upload-artifact@v2
         with:

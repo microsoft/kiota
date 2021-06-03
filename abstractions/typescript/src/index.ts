@@ -6,3 +6,4 @@ export * from "./authenticationProvider";
 export * from "./nativeResponseHandler";
 export * from "./nativeResponseWrapper";
 export * from './serialization';
+export * from './utils';

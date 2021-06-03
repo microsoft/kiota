@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <RepositoryUrl>https://github.com/microsoft/kiota</RepositoryUrl>
+    <Version>1.0.10</Version>
+  </PropertyGroup>
+
+</Project>

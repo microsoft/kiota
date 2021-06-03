@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Kiota.Abstractions.Serialization;
+using Microsoft.Kiota.Abstractions.Serialization;
 
-namespace Kiota.Abstractions
+namespace Microsoft.Kiota.Abstractions
 {
     public class RequestInfo
     {

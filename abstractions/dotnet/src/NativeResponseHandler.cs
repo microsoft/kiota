@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace Kiota.Abstractions {
+namespace Microsoft.Kiota.Abstractions {
     public class NativeResponseHandler : IResponseHandler {
         public object Value;
         public Task<ModelType> HandleResponseAsync<NativeResponseType, ModelType>(NativeResponseType response) {
