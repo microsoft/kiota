@@ -29,9 +29,9 @@
     "registry": "https://npm.pkg.github.com"
   },
   "dependencies": {
+    "@microsoft/kiota-abstractions": "^1.0.10",
     "cross-fetch": "^3.1.4",
-    "web-streams-polyfill": "^3.0.3",
-    "@microsoft/kiota-abstractions": "^1.0.10"
+    "web-streams-polyfill": "^3.0.3"
   },
   "devDependencies": {
     "@types/node": "^15.6.1",
