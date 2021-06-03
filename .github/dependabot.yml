@@ -31,17 +31,47 @@ updates:
     interval: daily
   open-pull-requests-limit: 10
 - package-ecosystem: nuget
-  directory: "/core/dotnet"
+  directory: "/authentication/dotnet/azure"
   schedule:
     interval: daily
   open-pull-requests-limit: 10
 - package-ecosystem: gradle
-  directory: "/core/java"
+  directory: "/authentication/java/azure"
   schedule:
     interval: daily
   open-pull-requests-limit: 10
 - package-ecosystem: npm
-  directory: "/core/typescript"
+  directory: "/authentication/typescript/azure"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+- package-ecosystem: nuget
+  directory: "/serialization/dotnet/json"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+- package-ecosystem: gradle
+  directory: "/serialization/java/json"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+- package-ecosystem: npm
+  directory: "/serialization/typescript/json"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+- package-ecosystem: nuget
+  directory: "/http/dotnet/httpclient"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+- package-ecosystem: gradle
+  directory: "/http/java/okhttp"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+- package-ecosystem: npm
+  directory: "/http/typescript/fetch"
   schedule:
     interval: daily
   open-pull-requests-limit: 10
