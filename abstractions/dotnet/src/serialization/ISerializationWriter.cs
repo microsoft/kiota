@@ -12,8 +12,8 @@ namespace Microsoft.Kiota.Abstractions.Serialization {
         void WriteGuidValue(string key, Guid? value);
         void WriteDateTimeOffsetValue(string key, DateTimeOffset? value);
         void WriteCollectionOfPrimitiveValues<T>(string key, IEnumerable<T> values);
-        void WriteCollectionOfObjectValues<T>(string key, IEnumerable<T> values) where T : class, IParsable<T>, new();
-        void WriteObjectValue<T>(string key, T value) where T : class, IParsable<T>, new();
+        void WriteCollectionOfObjectValues<T>(string key, IEnumerable<T> values) where T : IParsable;
+        void WriteObjectValue<T>(string key, T value) where T : IParsable;
         void WriteEnumValue<T>(string key, T? value) where T : struct, Enum;
         void WriteAdditionalData(IDictionary<string, object> value);
         Stream GetSerializedContent();

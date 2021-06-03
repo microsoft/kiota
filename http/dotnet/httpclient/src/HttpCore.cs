@@ -21,7 +21,7 @@ namespace Microsoft.Kiota.Http.HttpClient
             client = httpClient ?? new System.Net.Http.HttpClient();
             pNodeFactory = parseNodeFactory ?? new ParseNodeFactoryRegistry() {};
         }
-        public async Task<ModelType> SendAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = null) where ModelType : class, IParsable<ModelType>, new()
+        public async Task<ModelType> SendAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = null) where ModelType : IParsable
         {
             if(requestInfo == null)
                 throw new ArgumentNullException(nameof(requestInfo));

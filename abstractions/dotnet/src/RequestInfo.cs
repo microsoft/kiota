@@ -18,7 +18,7 @@ namespace Microsoft.Kiota.Abstractions
             Content = content;
             Headers.Add(contentTypeHeader, binaryContentType);
         }
-        public void SetContentFromParsable<T>(T item, ISerializationWriterFactory writerFactory, string contentType) where T : class, IParsable<T>, new() {
+        public void SetContentFromParsable<T>(T item, ISerializationWriterFactory writerFactory, string contentType) where T : IParsable {
             if(string.IsNullOrEmpty(contentType)) throw new ArgumentNullException(nameof(contentType));
             if(writerFactory == null) throw new ArgumentNullException(nameof(writerFactory));
 
