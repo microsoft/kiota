@@ -3,9 +3,9 @@ name: .NET
 on:
   push:
     branches: [ main ]
-    path-ignore: ['abstractions/**', '**.md', '.vscode/**', '**.svg']
+    path-ignore: ['abstractions/**', 'authentication/**', 'serialization/**', 'http/**', '**.md', '.vscode/**', '**.svg']
   pull_request:
-    path-ignore: ['abstractions/**', '**.md', '.vscode/**', '**.svg']
+    path-ignore: ['abstractions/**', 'authentication/**', 'serialization/**', 'http/**', '**.md', '.vscode/**', '**.svg']
 
 jobs:
   build:
