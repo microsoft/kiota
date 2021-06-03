@@ -11,8 +11,6 @@ namespace  Kiota.Builder.Writers.TypeScript {
             var isFlagEnum = codeElement.Type is CodeType currentType && currentType.TypeDefinition is CodeEnum currentEnum && currentEnum.Flags;
             conventions.WriteShortDescription(codeElement.Description, writer);
             switch(codeElement.PropertyKind) {
-                case CodePropertyKind.Deserializer:
-                    throw new InvalidOperationException("typescript uses methods for the deserializers and this property should have been converted to a method");
                 case CodePropertyKind.RequestBuilder:
                     writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} get {codeElement.Name.ToFirstCharacterLowerCase()}(): {returnType} {{");
                     writer.IncreaseIndent();

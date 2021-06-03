@@ -20,7 +20,6 @@ namespace Kiota.Builder.Refiners {
             PatchHeaderParametersType(generatedCode);
             AddListImport(generatedCode);
             AddParsableInheritanceForModelClasses(generatedCode);
-            ConvertDeserializerPropsToMethods(generatedCode, "get");
             ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
             AddEnumSetImport(generatedCode);
             ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");

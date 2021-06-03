@@ -18,8 +18,6 @@ namespace Kiota.Builder.Writers.Java {
                     writer.DecreaseIndent();
                     writer.WriteLine("}");
                 break;
-                case CodePropertyKind.Deserializer:
-                    throw new InvalidOperationException("java uses methods for the deserializer and this property should have been converted by the refiner");
                 default:
                     var defaultValue = string.IsNullOrEmpty(codeElement.DefaultValue) ? string.Empty : $" = {codeElement.DefaultValue}";
                     if(codeElement.Type is CodeType currentType && currentType.TypeDefinition is CodeEnum enumType && enumType.Flags)

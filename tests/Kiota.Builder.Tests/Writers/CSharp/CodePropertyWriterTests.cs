@@ -81,26 +81,6 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             };
         }
         [Fact]
-        public void WritesInheritedDeSerializerBody() {
-            property.PropertyKind = CodePropertyKind.Deserializer;
-            AddSerializationProperties();
-            AddInheritanceClass();
-            writer.Write(property);
-            var result = tw.ToString();
-            Assert.Contains("new", result);
-        }
-        [Fact]
-        public void WritesDeSerializerBody() {
-            property.PropertyKind = CodePropertyKind.Deserializer;
-            AddSerializationProperties();
-            writer.Write(property);
-            var result = tw.ToString();
-            Assert.Contains("GetStringValue", result);
-            Assert.Contains("GetCollectionOfPrimitiveValues", result);
-            Assert.Contains("GetCollectionOfObjectValues", result);
-            Assert.Contains("GetEnumValue", result);
-        }
-        [Fact]
         public void WritesDefaultValue() {
             var defaultValue = "someDefaultValue";
             property.DefaultValue = defaultValue;

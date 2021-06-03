@@ -64,20 +64,6 @@ namespace Kiota.Builder.Refiners.Tests {
             Assert.NotEqual("binary", method.ReturnType.Name);
         }
         [Fact]
-        public void ConvertsDeserializerPropsToMethods() {
-            var model = root.AddClass(new CodeClass (root) {
-                Name = "model",
-                ClassKind = CodeClassKind.Model
-            }).First();
-            var property = model.AddProperty(new CodeProperty(model) {
-                Name = "deserialize",
-                PropertyKind = CodePropertyKind.Deserializer,
-            }).First();
-            ILanguageRefiner.Refine(GenerationLanguage.Java, root);
-            Assert.Empty(model.GetChildElements().OfType<CodeProperty>());
-            Assert.NotEmpty(model.GetChildElements().OfType<CodeMethod>());
-        }
-        [Fact]
         public void ReplacesIndexersByMethodsWithParameter() {
             var model = root.AddClass(new CodeClass (root) {
                 Name = "model",

@@ -33,7 +33,7 @@ namespace Kiota.Builder.Refiners {
                 var declaration = currentClass.StartBlock as CodeClass.Declaration;
                 declaration.Implements.Add(new CodeType(currentClass) {
                     IsExternal = true,
-                    Name = $"IParsable<{currentClass.Name.ToFirstCharacterUpperCase()}>",
+                    Name = $"IParsable",
                 });
                 declaration.Usings.Add(new CodeUsing(currentClass) {
                     Name = "Microsoft.Kiota.Abstractions.Serialization"

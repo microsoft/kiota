@@ -35,7 +35,7 @@ namespace Kiota.Builder.Writers.Java {
                 case CodeMethodKind.Serializer:
                     WriteSerializerBody(parentClass, writer);
                 break;
-                case CodeMethodKind.DeserializerBackwardCompatibility:
+                case CodeMethodKind.Deserializer:
                     WriteDeserializerBody(codeElement, parentClass, writer);
                 break;
                 case CodeMethodKind.IndexerBackwardCompatibility:
@@ -157,7 +157,7 @@ namespace Kiota.Builder.Writers.Java {
         }
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType) {
             var accessModifier = conventions.GetAccessModifier(code.Access);
-            var genericTypeParameterDeclaration = code.MethodKind == CodeMethodKind.DeserializerBackwardCompatibility ? "<T> ": string.Empty;
+            var genericTypeParameterDeclaration = code.MethodKind == CodeMethodKind.Deserializer ? "<T> ": string.Empty;
             var returnTypeAsyncPrefix = code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty;
             var returnTypeAsyncSuffix = code.IsAsync ? ">" : string.Empty;
             var methodName = code.Name.ToFirstCharacterLowerCase();

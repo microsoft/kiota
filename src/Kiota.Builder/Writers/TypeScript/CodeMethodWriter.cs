@@ -31,7 +31,7 @@ namespace  Kiota.Builder.Writers.TypeScript {
                     var pathSegment = codeElement.GenerationProperties.ContainsKey(localConventions.PathSegmentPropertyName) ? codeElement.GenerationProperties[localConventions.PathSegmentPropertyName] as string : string.Empty;
                     localConventions.AddRequestBuilderBody(returnType, writer, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
                     break;
-                case CodeMethodKind.DeserializerBackwardCompatibility:
+                case CodeMethodKind.Deserializer:
                     WriteDeserializerBody(codeElement, parentClass, writer);
                     break;
                 case CodeMethodKind.Serializer:

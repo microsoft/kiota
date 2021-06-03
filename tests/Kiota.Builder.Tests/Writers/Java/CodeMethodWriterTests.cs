@@ -158,7 +158,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
         }
         [Fact]
         public void WritesInheritedDeSerializerBody() {
-            method.MethodKind = CodeMethodKind.DeserializerBackwardCompatibility;
+            method.MethodKind = CodeMethodKind.Deserializer;
             method.IsAsync = false;
             AddSerializationProperties();
             AddInheritanceClass();
@@ -176,7 +176,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             parameter.Type = new CodeType(parameter) {
                 Name = "string"
             };
-            method.MethodKind = CodeMethodKind.DeserializerBackwardCompatibility;
+            method.MethodKind = CodeMethodKind.Deserializer;
             method.IsAsync = false;
             AddSerializationProperties();
             writer.Write(method);
