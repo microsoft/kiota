@@ -20,11 +20,11 @@ namespace Kiota {
             var languageOption = new Option("--language", "The target language for the generated code files.") { Argument = new Argument<GenerationLanguage?>(() => GenerationLanguage.CSharp) };
             languageOption.AddAlias("-l");
             AddEnumValidator<GenerationLanguage>(languageOption.Argument, "language");
-            var classOption = new Option("--class-name", "The class name to use for the core client class.") { Argument = new Argument<string>(() => "GraphClient") };
+            var classOption = new Option("--class-name", "The class name to use for the core client class.") { Argument = new Argument<string>(() => "ApiClient") };
             classOption.AddAlias("-c");
             AddStringRegexValidator(classOption.Argument, @"^[a-zA-Z_][\w_-]+", "class name");
 
-            var namespaceOption = new Option("--namespace-name", "The namespace to use for the core client class specified with the --class-name option.") { Argument = new Argument<string>(() => "GraphClient") };
+            var namespaceOption = new Option("--namespace-name", "The namespace to use for the core client class specified with the --class-name option.") { Argument = new Argument<string>(() => "ApiClient") };
             namespaceOption.AddAlias("-n");
             AddStringRegexValidator(namespaceOption.Argument, @"^[\w][\w\._-]+", "namespace name");
 
