@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adds support for collections as root responses #191
 - Splits the core libraries in 3 separate libraries #197
 - Changes default namespace and class name to api client #199
+- Aligns Parsable interfaces across languages #204
 
 ## [0.0.4] - 2021-04-28
 
