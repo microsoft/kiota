@@ -23,51 +23,25 @@ namespace Microsoft.Kiota.Http.HttpClient
         }
         public async Task<ModelType> SendAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = null) where ModelType : IParsable
         {
-            if(requestInfo == null)
-                throw new ArgumentNullException(nameof(requestInfo));
-
-            await AddBearerIfNotPresent(requestInfo);
-            
-            using var message = GetRequestMessageFromRequestInfo(requestInfo);
-            var response = await this.client.SendAsync(message);
-            if(response == null)
-                throw new InvalidOperationException("Could not get a response after calling the service");
+            var response = await GetHttpResponseMessage(requestInfo);
+            requestInfo.Content?.Dispose();
             if(responseHandler == null) {
-                var responseContentType = response.Content.Headers?.ContentType?.MediaType?.ToLowerInvariant();
-                if(string.IsNullOrEmpty(responseContentType))
-                    throw new InvalidOperationException("no response content type header for deserialization");
-                using var contentStream = await response.Content.ReadAsStreamAsync();
-                var rootNode = pNodeFactory.GetRootParseNode(responseContentType, contentStream);
+                var rootNode = await GetRootParseNode(response);
                 var result = rootNode.GetObjectValue<ModelType>();
-                response.Dispose();
-                requestInfo.Content?.Dispose();
                 return result;
             }
             else
                 return await responseHandler.HandleResponseAsync<HttpResponseMessage, ModelType>(response);
         }
         public async Task<ModelType> SendPrimitiveAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = default) {
-            if(requestInfo == null)
-                throw new ArgumentNullException(nameof(requestInfo));
-
-            await AddBearerIfNotPresent(requestInfo);
-            
-            using var message = GetRequestMessageFromRequestInfo(requestInfo);
-            var response = await this.client.SendAsync(message);
-            if(response == null)
-                throw new InvalidOperationException("Could not get a response after calling the service");
+            var response = await GetHttpResponseMessage(requestInfo);
+            requestInfo.Content?.Dispose();
             if(responseHandler == null) {
-                using var contentStream = await response.Content.ReadAsStreamAsync();
                 var modelType = typeof(ModelType);
                 if(modelType == typeof(Stream)) {
-                    return (ModelType)(contentStream as object);
+                    return (ModelType)(await response.Content.ReadAsStreamAsync() as object);
                 } else {
-                    var responseContentType = response.Content.Headers?.ContentType?.MediaType?.ToLowerInvariant();
-                    if(string.IsNullOrEmpty(responseContentType))
-                        throw new InvalidOperationException("no response content type header for deserialization");
-                    var rootNode = pNodeFactory.GetRootParseNode(responseContentType, contentStream);
-                    response.Dispose();
-                    requestInfo.Content?.Dispose();
+                    var rootNode = await GetRootParseNode(response);
                     object result;
                     if(modelType == typeof(bool)) {
                         result = rootNode.GetBoolValue();
@@ -101,6 +75,23 @@ namespace Microsoft.Kiota.Http.HttpClient
         }
         public async Task SendNoContentAsync(RequestInfo requestInfo, IResponseHandler responseHandler = null)
         {
+            var response = await GetHttpResponseMessage(requestInfo);
+            requestInfo.Content?.Dispose();
+            if(responseHandler == null) 
+                response.Dispose();
+            else
+                await responseHandler.HandleResponseAsync<HttpResponseMessage, object>(response);
+        }
+        private async Task<IParseNode> GetRootParseNode(HttpResponseMessage response) {
+            var responseContentType = response.Content.Headers?.ContentType?.MediaType?.ToLowerInvariant();
+            if(string.IsNullOrEmpty(responseContentType))
+                throw new InvalidOperationException("no response content type header for deserialization");
+            using var contentStream = await response.Content.ReadAsStreamAsync();
+            var rootNode = pNodeFactory.GetRootParseNode(responseContentType, contentStream);
+            response.Dispose();
+            return rootNode;
+        }
+        private async Task<HttpResponseMessage> GetHttpResponseMessage(RequestInfo requestInfo) {
             if(requestInfo == null)
                 throw new ArgumentNullException(nameof(requestInfo));
             
@@ -110,8 +101,7 @@ namespace Microsoft.Kiota.Http.HttpClient
             var response = await this.client.SendAsync(message);
             if(response == null)
                 throw new InvalidOperationException("Could not get a response after calling the service");
-            if(responseHandler != null) 
-                await responseHandler.HandleResponseAsync<HttpResponseMessage, object>(response);
+            return response;
         }
         private const string contentTypeHeaderName = "content-type";
         private HttpRequestMessage GetRequestMessageFromRequestInfo(RequestInfo requestInfo) {
