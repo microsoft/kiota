@@ -1,6 +1,7 @@
 name: Java abstractions
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths: ['abstractions/java/**', '.github/workflows/**']

@@ -1,6 +1,7 @@
 name: Typescript Serialization JSON
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths: ['serialization/typescript/json/**', '.github/workflows/**']

@@ -1,6 +1,7 @@
 name: Java Serialization Json
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths: ['serialization/java/json/**', '.github/workflows/**']

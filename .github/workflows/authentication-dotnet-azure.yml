@@ -1,6 +1,7 @@
 name: Dotnet Authentication Azure
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths: ['authentication/dotnet/azure/**', '.github/workflows/**', 'scripts']

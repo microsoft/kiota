@@ -1,6 +1,7 @@
 name: Dotnet abstractions
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths: ['abstractions/dotnet/**', '.github/workflows/**']

@@ -1,6 +1,7 @@
 name: Java Http OkHttp
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths: ['http/java/okhttp/**', '.github/workflows/**']

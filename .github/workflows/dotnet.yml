@@ -1,6 +1,7 @@
 name: .NET
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     path-ignore: ['abstractions/**', 'authentication/**', 'serialization/**', 'http/**', '**.md', '.vscode/**', '**.svg']

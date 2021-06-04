@@ -1,6 +1,7 @@
 name: Java Authentication Azure
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths: ['authentication/java/azure/**', '.github/workflows/**']
