@@ -132,8 +132,7 @@ public class JsonParseNode implements ParseNode {
         try {
             final Constructor<T> constructor = targetClass.getConstructor();
             final T item = constructor.newInstance();
-            assignFieldValues(item, item.getDeserializeFields());
-            //TODO additional properties when the strucutre is available
+            assignFieldValues(item, item.getFieldDeserializers());
             return item;
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException ex) {
             throw new RuntimeException("Error during deserialization", ex);

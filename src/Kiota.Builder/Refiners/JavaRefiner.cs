@@ -121,8 +121,10 @@ namespace Kiota.Builder.Refiners {
                     currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x => x.Type.Name = "ResponseHandler");
                 else if(currentMethod.MethodKind == CodeMethodKind.Serializer)
                     currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
-                else if(currentMethod.MethodKind == CodeMethodKind.Deserializer)
+                else if(currentMethod.MethodKind == CodeMethodKind.Deserializer) {
                     currentMethod.ReturnType.Name = $"Map<String, BiConsumer<T, ParseNode>>";
+                    currentMethod.Name = "getFieldDeserializers";
+                }
             }
             CrawlTree(currentElement, CorrectCoreType);
         }
