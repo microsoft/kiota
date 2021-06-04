@@ -118,6 +118,7 @@ Kiota accepts the following parameters during the generation:
 
 | Name | Shorthand | Required | Description | Accepted values | Default Value |
 | ---- | --------- | -------- | ----------- | --------------- | ------------- |
+| backing-store | b | no | The fully qualified name for the backing store class to use. | A fully qualified class name like Microsoft.Kiota.Abstractions.Store.InMemoryBackingStore | Empty string |
 | class-name | c | no | The class name to use the for main entry point | A valid class name according to the target language specification. | ApiClient |
 | language | l | no | The programming language to generate the SDK in. | csharp, java, or typescript | csharp |
 | loglevel | ll | no | The log level to use when logging events to the main output. | Microsoft.Extensions.Logging.LogLevel values | Warning |
