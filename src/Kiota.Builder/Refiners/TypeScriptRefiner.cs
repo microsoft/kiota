@@ -23,7 +23,7 @@ namespace Kiota.Builder.Refiners {
                 var declaration = currentClass.StartBlock as CodeClass.Declaration;
                 declaration.Implements.Add(new CodeType(currentClass) {
                     IsExternal = true,
-                    Name = $"Parsable<{currentClass.Name.ToFirstCharacterUpperCase()}>",
+                    Name = "Parsable",
                 });
             }
             CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
@@ -61,7 +61,7 @@ namespace Kiota.Builder.Refiners {
                 else if(currentMethod.MethodKind == CodeMethodKind.Serializer)
                     currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
                 else if(currentMethod.MethodKind == CodeMethodKind.Deserializer)
-                    currentMethod.ReturnType.Name = $"Map<string, (item: {currentMethod.Parent.Name.ToFirstCharacterUpperCase()}, node: ParseNode) => void>";
+                    currentMethod.ReturnType.Name = $"Map<string, (item: T, node: ParseNode) => void>";
             }
             CrawlTree(currentElement, CorrectCoreType);
         }
