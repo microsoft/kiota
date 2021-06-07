@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adds support for collections as root responses #191
 - Splits the core libraries in 3 separate libraries #197
 - Changes default namespace and class name to api client #199
-- Fixes a bug where classes with properties of identical name would make build fail in CSharp #221
+- Fixes a bug where classes with properties of identical name would make build fail in CSharp #222
 
 ## [0.0.4] - 2021-04-28
 
