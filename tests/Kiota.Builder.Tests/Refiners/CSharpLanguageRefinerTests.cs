@@ -69,5 +69,40 @@ namespace Kiota.Builder.Refiners.Tests {
             Assert.Equal(modelNS, model.Parent);
         }
         #endregion
+        #region CSharp
+        [Fact]
+        public void DisambiguatePropertiesWithClassNames() {
+            var model = root.AddClass(new CodeClass (root) {
+                Name = "model",
+                ClassKind = CodeClassKind.Model
+            }).First();
+            var propToAdd = model.AddProperty(new CodeProperty(model){
+                Name = "model",
+                Type = new CodeType(model) {
+                    Name = "string"
+                }
+            }).First();
+            ILanguageRefiner.Refine(GenerationLanguage.CSharp, root);
+            Assert.Equal("model_prop", propToAdd.Name);
+            Assert.Equal("model", propToAdd.SerializationName);
+        }
+        [Fact]
+        public void DisambiguatePropertiesWithClassNames_DoesntReplaceSerializationName() {
+            var serializationName = "serializationName";
+            var model = root.AddClass(new CodeClass (root) {
+                Name = "model",
+                ClassKind = CodeClassKind.Model
+            }).First();
+            var propToAdd = model.AddProperty(new CodeProperty(model){
+                Name = "model",
+                Type = new CodeType(model) {
+                    Name = "string"
+                },
+                SerializationName = serializationName,
+            }).First();
+            ILanguageRefiner.Refine(GenerationLanguage.CSharp, root);
+            Assert.Equal(serializationName, propToAdd.SerializationName);
+        }
+        #endregion
     }
 }
