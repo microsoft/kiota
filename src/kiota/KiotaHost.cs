@@ -34,7 +34,7 @@ namespace Kiota {
             var descriptionOption = new Option("--openapi", "The path to the OpenAPI description file used to generate the code files.") {Argument = new Argument<string>(() => "openapi.yml")};
             descriptionOption.AddAlias("-d");
 
-            var backingStoreOption = new Option("--backing-store", "The fully qualified name for the backing store class to use.") {Argument = new Argument<string>(() => string.Empty)};
+            var backingStoreOption = new Option("--backing-store", "The fully qualified name for the backing store class to use.") {Argument = new Argument<string>()};
             backingStoreOption.AddAlias("-b");
 
             var command = new RootCommand {
@@ -46,7 +46,7 @@ namespace Kiota {
                 logLevelOption,
                 namespaceOption,
             };
-            command.Handler = CommandHandler.Create<string, GenerationLanguage?, string, string, string, LogLevel, string>(async (output, language, openapi, store, classname, loglevel, namespacename) =>
+            command.Handler = CommandHandler.Create<string, GenerationLanguage?, string, string, string, LogLevel, string>(async (output, language, openapi, backingstore, classname, loglevel, namespacename) =>
             {
                 if (!string.IsNullOrEmpty(output))
                     configuration.OutputPath = output;
@@ -58,7 +58,8 @@ namespace Kiota {
                     configuration.ClientNamespaceName = namespacename;
                 if (language.HasValue)
                     configuration.Language = language.Value;
-                configuration.BackingStore = store;
+                if(!string.IsNullOrEmpty(backingstore))
+                    configuration.BackingStore = backingstore;
 
                 #if DEBUG
                 loglevel = loglevel > LogLevel.Debug ? LogLevel.Debug : loglevel;
