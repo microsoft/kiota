@@ -713,7 +713,9 @@ namespace Kiota.Builder
         private const string fieldDeserializersMethodName = "GetFieldDeserializers<T>";
         private const string serializeMethodName = "Serialize";
         private const string additionalDataPropName = "AdditionalData";
-        private static void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties) {
+        private const string backingStorePropertyName = "BackingStore";
+        private const string backingStoreInterface = "IBackingStore";
+        private void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties) {
             var serializationPropsType = $"IDictionary<string, Action<T, IParseNode>>";
             if(!model.ContainsMember(fieldDeserializersMethodName)) {
                 var deserializeProp = new CodeMethod(model) {
@@ -765,6 +767,43 @@ namespace Kiota.Builder
                     IsExternal = true,
                 };
                 model.AddProperty(additionalDataProp);
+            }
+            if(!model.ContainsMember(backingStorePropertyName) &&
+               !string.IsNullOrEmpty(config.BackingStore) &&
+               !(model.GetGreatestGrandparent(model)?.ContainsMember(backingStorePropertyName) ?? false)) {
+                var storeImplFragments = config.BackingStore.Split('.');
+                var storeImplClassName = storeImplFragments.Last();
+                var backingStoreProperty = new CodeProperty(model) {
+                    Name = backingStorePropertyName,
+                    Access = AccessModifier.Public,
+                    DefaultValue = $"new {storeImplClassName}()",
+                    PropertyKind = CodePropertyKind.BackingStore,
+                    Description = "Stores model information.",
+                    ReadOnly = true,
+                };
+                var storeType = new CodeType(backingStoreProperty) {
+                    Name = backingStoreInterface,
+                    IsNullable = false,
+                    IsExternal = true,
+                };
+                backingStoreProperty.Type = storeType;
+                model.AddProperty(backingStoreProperty);
+                var storeUsing = new CodeUsing(model) {
+                    Name = "Microsoft.Kiota.Abstractions.Store",
+                };
+                storeUsing.Declaration = new CodeType(storeType) {
+                    Name = backingStoreInterface
+                };
+                var storeImplUsing = new CodeUsing(model) {
+                    Name = storeImplFragments.SkipLast(1).Aggregate((x, y) => $"{x}.{y}"),
+                };
+                storeImplUsing.Declaration = new CodeType(storeImplUsing) {
+                    Name = storeImplClassName,
+                };
+                model.AddUsing(storeUsing, storeImplUsing);
+                (model.StartBlock as CodeClass.Declaration).Implements.Add(new CodeType(model) {
+                    Name = "IBackedModel",
+                });
             }
         }
         private CodeClass CreateOperationParameter(OpenApiUrlTreeNode node, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)

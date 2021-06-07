@@ -6,7 +6,8 @@ namespace Kiota.Builder
     {
         Custom,
         RequestBuilder,
-        AdditionalData
+        AdditionalData,
+        BackingStore
     }
 
     public class CodeProperty : CodeTerminal, IDocumentedElement
