@@ -262,7 +262,10 @@ namespace Kiota.Builder
             // Add methods for Operations
             if (currentNode.HasOperations(Constants.DefaultOpenApiLabel))
             {
-                foreach(var operation in currentNode.PathItems[Constants.DefaultOpenApiLabel].Operations)
+                foreach(var operation in currentNode
+                                        .PathItems[Constants.DefaultOpenApiLabel]
+                                        .Operations
+                                        .Where(x => x.Value.RequestBody?.Content?.Any(y => !this.config.IgnoredRequestContentTypes.Contains(y.Key)) ?? true))
                     CreateOperationMethods(currentNode, operation.Key, operation.Value, codeClass);
             }
             CreatePathManagement(codeClass, currentNode, isRootClientClass);
