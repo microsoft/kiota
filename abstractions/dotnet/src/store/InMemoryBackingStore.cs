@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Microsoft.Kiota.Abstractions.Store {
     public class InMemoryBackingStore : IBackingStore {
-        private bool isInitializationComplete;
+        private bool isInitializationComplete = true;
         public bool ReturnOnlyChangedValues {get; set;}
         private readonly Dictionary<string, Tuple<bool, object>> store = new();
         private Dictionary<string, Action<string, object, object>> subscriptions = new();
@@ -13,7 +13,7 @@ namespace Microsoft.Kiota.Abstractions.Store {
                 throw new ArgumentNullException(nameof(key));
 
             if(store.TryGetValue(key, out var result))
-                return (T)result.Item2;
+                return ReturnOnlyChangedValues && result.Item1 || !ReturnOnlyChangedValues ? (T)result.Item2 : default;
             else
                 return default;
         }
