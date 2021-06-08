@@ -34,7 +34,7 @@
     "web-streams-polyfill": "^3.0.3"
   },
   "devDependencies": {
-    "@types/node": "^15.12.0",
+    "@types/node": "^15.12.2",
     "typescript": "^4.3.2"
   }
 }

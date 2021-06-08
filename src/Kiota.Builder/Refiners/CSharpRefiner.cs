@@ -18,6 +18,22 @@ namespace Kiota.Builder.Refiners {
             ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");
             MakeEnumPropertiesNullable(generatedCode);
             ReplaceReservedNames(generatedCode, new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}");
+            DisambiguatePropertiesWithClassNames(generatedCode);
+        }
+        private static void DisambiguatePropertiesWithClassNames(CodeElement currentElement) {
+            if(currentElement is CodeClass currentClass) {
+                var sameNameProperty = currentClass
+                                                .GetChildElements(true)
+                                                .OfType<CodeProperty>()
+                                                .FirstOrDefault(x => x.Name.Equals(currentClass.Name));
+                if(sameNameProperty != null) {
+                    currentClass.RemoveChildElement(sameNameProperty);
+                    sameNameProperty.SerializationName = sameNameProperty.SerializationName ?? sameNameProperty.Name;
+                    sameNameProperty.Name = $"{sameNameProperty.Name}_prop";
+                    currentClass.AddProperty(sameNameProperty);
+                }
+            }
+            CrawlTree(currentElement, DisambiguatePropertiesWithClassNames);
         }
         private static void MakeEnumPropertiesNullable(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model)
