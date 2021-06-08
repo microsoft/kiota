@@ -39,8 +39,6 @@ namespace Kiota.Builder.Writers.CSharp {
                     writer.DecreaseIndent();
                     writer.WriteLine(string.IsNullOrEmpty(codeElement.DefaultValue) ? "}" : $"}} = {codeElement.DefaultValue};");
                 break;
-                case CodePropertyKind.Custom when backingStorePropery == null:
-                case CodePropertyKind.AdditionalData when backingStorePropery == null:
                 default:
                     writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ {simpleBody} }}{defaultValue}");
                 break;
