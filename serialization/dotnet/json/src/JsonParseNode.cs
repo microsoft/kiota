@@ -88,6 +88,8 @@ namespace Microsoft.Kiota.Serialization.Json {
         }
         private void AssignFieldValues<T>(T item, IDictionary<string, Action<T, IParseNode>> fieldDeserializers) where T: IParsable {
             if(_jsonNode.ValueKind != JsonValueKind.Object) return;
+            if(item.AdditionalData == null)
+                item.AdditionalData = new Dictionary<string, object>();
 
             foreach(var fieldValue in _jsonNode.EnumerateObject().Where(x => x.Value.ValueKind != JsonValueKind.Null)) {
                 if(fieldDeserializers.ContainsKey(fieldValue.Name)) {
