@@ -36,7 +36,10 @@ namespace Microsoft.Kiota.Serialization.Json {
         public IEnumerable<T> GetCollectionOfObjectValues<T>() where T: IParsable {
             var enumerator = _jsonNode.EnumerateArray();
             while(enumerator.MoveNext()) {
-                var currentParseNode = new JsonParseNode(enumerator.Current);
+                var currentParseNode = new JsonParseNode(enumerator.Current) {
+                    OnAfterAssignFieldValues = OnAfterAssignFieldValues,
+                    OnBeforeAssignFieldValues = OnBeforeAssignFieldValues
+                };
                 yield return currentParseNode.GetObjectValue<T>();
             }
         }
@@ -50,7 +53,10 @@ namespace Microsoft.Kiota.Serialization.Json {
         public IEnumerable<T> GetCollectionOfPrimitiveValues<T>() {
             var genericType = typeof(T);
             foreach(var collectionValue in _jsonNode.EnumerateArray()) {
-                var currentParseNode = new JsonParseNode(collectionValue);
+                var currentParseNode = new JsonParseNode(collectionValue){
+                    OnBeforeAssignFieldValues = OnBeforeAssignFieldValues,
+                    OnAfterAssignFieldValues = OnAfterAssignFieldValues
+                };
                 if(genericType == booleanType)
                     yield return (T)(object)currentParseNode.GetBoolValue();
                 else if(genericType == stringType)
@@ -69,11 +75,15 @@ namespace Microsoft.Kiota.Serialization.Json {
                     throw new InvalidOperationException($"unknown type for deserialization {genericType.FullName}");
             }
         }
+        public Action<IParsable> OnBeforeAssignFieldValues { get; set; }
+        public Action<IParsable> OnAfterAssignFieldValues { get; set; }
         private static Type objectType = typeof(object);
         public T GetObjectValue<T>() where T: IParsable {
             var item = (T)(typeof(T).GetConstructor(new Type[]{}).Invoke(new object[] {}));
             var fieldDeserializers = item.GetFieldDeserializers<T>();
+            OnBeforeAssignFieldValues?.Invoke(item);
             AssignFieldValues(item, fieldDeserializers);
+            OnAfterAssignFieldValues?.Invoke(item);
             return item;
         }
         private void AssignFieldValues<T>(T item, IDictionary<string, Action<T, IParseNode>> fieldDeserializers) where T: IParsable {
@@ -83,7 +93,10 @@ namespace Microsoft.Kiota.Serialization.Json {
                 if(fieldDeserializers.ContainsKey(fieldValue.Name)) {
                     var fieldDeserializer = fieldDeserializers[fieldValue.Name];
                     Debug.WriteLine($"found property {fieldValue.Name} to deserialize");
-                    fieldDeserializer.Invoke(item, new JsonParseNode(fieldValue.Value));
+                    fieldDeserializer.Invoke(item, new JsonParseNode(fieldValue.Value) {
+                        OnBeforeAssignFieldValues = OnBeforeAssignFieldValues,
+                        OnAfterAssignFieldValues = OnAfterAssignFieldValues
+                    });
                 } else {
                     Debug.WriteLine($"found additional property {fieldValue.Name} to deserialize");
                     item.AdditionalData.TryAdd(fieldValue.Name, TryGetAnything(fieldValue.Value));
@@ -122,6 +135,9 @@ namespace Microsoft.Kiota.Serialization.Json {
                     throw new InvalidOperationException($"unexpected additional value type during deserialization json kind : {element.ValueKind}");
             }
         }
-        public IParseNode GetChildNode(string identifier) => new JsonParseNode(_jsonNode.GetProperty(identifier ?? throw new ArgumentNullException(nameof(identifier))));
+        public IParseNode GetChildNode(string identifier) => new JsonParseNode(_jsonNode.GetProperty(identifier ?? throw new ArgumentNullException(nameof(identifier)))) {
+            OnBeforeAssignFieldValues = OnBeforeAssignFieldValues,
+            OnAfterAssignFieldValues = OnAfterAssignFieldValues
+        };
     }
 }
