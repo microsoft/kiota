@@ -34,10 +34,10 @@ namespace Kiota.Builder.Writers.CSharp {
                 case CodePropertyKind.Custom when backingStorePropery != null:
                     writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{");
                     writer.IncreaseIndent();
-                    writer.WriteLine($"get {{ return {backingStorePropery.Name.ToFirstCharacterUpperCase()}?.Get(nameof({codeElement.Name.ToFirstCharacterUpperCase()})); }}");
+                    writer.WriteLine($"get {{ return {backingStorePropery.Name.ToFirstCharacterUpperCase()}?.Get<{propertyType}>(nameof({codeElement.Name.ToFirstCharacterUpperCase()})); }}");
                     writer.WriteLine($"set {{ {backingStorePropery.Name.ToFirstCharacterUpperCase()}?.Set(nameof({codeElement.Name.ToFirstCharacterUpperCase()}), value); }}");
                     writer.DecreaseIndent();
-                    writer.WriteLine(string.IsNullOrEmpty(codeElement.DefaultValue) ? "}" : $"}} = {codeElement.DefaultValue};");
+                    writer.WriteLine("}");
                 break;
                 default:
                     writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ {simpleBody} }}{defaultValue}");
