@@ -71,7 +71,7 @@ namespace Microsoft.Kiota.Serialization.Json {
                 writer.WriteEndArray();
             }
         }
-        public void WriteCollectionOfObjectValues<T>(string key, IEnumerable<T> values) where T : class, IParsable<T>, new() {
+        public void WriteCollectionOfObjectValues<T>(string key, IEnumerable<T> values) where T : IParsable {
             if(values != null) { //empty array is meaningful
                 if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
                 writer.WriteStartArray();
@@ -83,7 +83,7 @@ namespace Microsoft.Kiota.Serialization.Json {
                 writer.WriteEndArray();
             }
         }
-        public void WriteObjectValue<T>(string key, T value) where T : class, IParsable<T>, new() {
+        public void WriteObjectValue<T>(string key, T value) where T : IParsable {
             if(value != null) {
                 if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
                 writer.WriteStartObject();

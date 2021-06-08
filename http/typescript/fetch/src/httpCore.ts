@@ -19,7 +19,7 @@ export class HttpCore implements IHttpCore {
         if(segments.length === 0) return undefined;
         else return segments[0];
     }
-    public sendAsync = async <ModelType extends Parsable<ModelType>>(requestInfo: RequestInfo, type: new() => ModelType, responseHandler: ResponseHandler | undefined): Promise<ModelType> => {
+    public sendAsync = async <ModelType extends Parsable>(requestInfo: RequestInfo, type: new() => ModelType, responseHandler: ResponseHandler | undefined): Promise<ModelType> => {
         if(!requestInfo) {
             throw new Error('requestInfo cannot be null');
         }

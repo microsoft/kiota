@@ -45,7 +45,7 @@ export class JsonSerializationWriter implements SerializationWriter {
             key && this.writer.push(JsonSerializationWriter.propertySeparator);
         }
     }
-    public writeCollectionOfObjectValues = <T extends Parsable<T>>(key?: string, values?: T[]): void => {
+    public writeCollectionOfObjectValues = <T extends Parsable>(key?: string, values?: T[]): void => {
         if(values) {
             key && this.writePropertyName(key);
             this.writer.push(`[`);
@@ -60,7 +60,7 @@ export class JsonSerializationWriter implements SerializationWriter {
             key && this.writer.push(JsonSerializationWriter.propertySeparator);
         }
     }
-    public writeObjectValue = <T extends Parsable<T>>(key?: string, value?: T): void => {
+    public writeObjectValue = <T extends Parsable>(key?: string, value?: T): void => {
         if(value) {
             if(key) {
                 this.writePropertyName(key);

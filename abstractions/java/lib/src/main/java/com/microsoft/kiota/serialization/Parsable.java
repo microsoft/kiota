@@ -6,9 +6,8 @@ import java.util.function.BiConsumer;
 import javax.annotation.Nonnull;
 
 public interface Parsable {
-    // the generic type is on the method to avoid multiple generic interface implementation which is impossible in Java
     @Nonnull
-    <T> Map<String, BiConsumer<T, ParseNode>> getDeserializeFields();
+    <T> Map<String, BiConsumer<T, ParseNode>> getFieldDeserializers();
     void serialize(@Nonnull final SerializationWriter writer);
     @Nonnull
     Map<String, Object> getAdditionalData();

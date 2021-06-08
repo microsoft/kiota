@@ -146,18 +146,25 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
-        public void ThrowsOnDeserializerMethods() {
-            var parameter = new CodeParameter(method){
-                Description = paramDescription,
-                Name = paramName
-            };
-            parameter.Type = new CodeType(parameter) {
-                Name = "string"
-            };
-            method.MethodKind = CodeMethodKind.DeserializerBackwardCompatibility;
-            method.IsAsync = false;
+        public void WritesInheritedDeSerializerBody() {
+            method.MethodKind = CodeMethodKind.Deserializer;
             AddSerializationProperties();
-            Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+            AddInheritanceClass();
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("base.", result);
+            Assert.Contains("new", result);
+        }
+        [Fact]
+        public void WritesDeSerializerBody() {
+            method.MethodKind = CodeMethodKind.Deserializer;
+            AddSerializationProperties();
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("GetStringValue", result);
+            Assert.Contains("GetCollectionOfPrimitiveValues", result);
+            Assert.Contains("GetCollectionOfObjectValues", result);
+            Assert.Contains("GetEnumValue", result);
         }
         [Fact]
         public void WritesInheritedSerializerBody() {

@@ -20,7 +20,6 @@ namespace Kiota.Builder.Refiners {
             PatchHeaderParametersType(generatedCode);
             AddListImport(generatedCode);
             AddParsableInheritanceForModelClasses(generatedCode);
-            ConvertDeserializerPropsToMethods(generatedCode, "get");
             ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
             AddEnumSetImport(generatedCode);
             ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
@@ -91,8 +90,6 @@ namespace Kiota.Builder.Refiners {
                     currentProperty.Type.Name = "HttpCore";
                 else if(currentProperty.Name.Equals("serializerFactory", StringComparison.OrdinalIgnoreCase))
                     currentProperty.Type.Name = "SerializationWriterFactory";
-                else if(currentProperty.Name.Equals("deserializeFields", StringComparison.OrdinalIgnoreCase))
-                    currentProperty.Type.Name = $"Map<String, BiConsumer<T, ParseNode>>";
                 else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase)) {
                     currentProperty.Type.Name = $"OffsetDateTime";
                     var nUsing = new CodeUsing(currentProperty.Parent) {
@@ -124,6 +121,10 @@ namespace Kiota.Builder.Refiners {
                     currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x => x.Type.Name = "ResponseHandler");
                 else if(currentMethod.MethodKind == CodeMethodKind.Serializer)
                     currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
+                else if(currentMethod.MethodKind == CodeMethodKind.Deserializer) {
+                    currentMethod.ReturnType.Name = $"Map<String, BiConsumer<T, ParseNode>>";
+                    currentMethod.Name = "getFieldDeserializers";
+                }
             }
             CrawlTree(currentElement, CorrectCoreType);
         }

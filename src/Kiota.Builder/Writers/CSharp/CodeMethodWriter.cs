@@ -16,7 +16,9 @@ namespace Kiota.Builder.Writers.CSharp {
 
             var returnType = conventions.GetTypeString(codeElement.ReturnType);
             var parentClass = codeElement.Parent as CodeClass;
-            var shouldHide = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null && codeElement.MethodKind == CodeMethodKind.Serializer;
+            var shouldHide = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null && 
+                            (codeElement.MethodKind == CodeMethodKind.Serializer ||
+                            codeElement.MethodKind == CodeMethodKind.Deserializer);
             var isVoid = conventions.VoidTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
             WriteMethodDocumentation(codeElement, writer);
             WriteMethodPrototype(codeElement, writer, returnType, shouldHide, isVoid);
@@ -34,14 +36,55 @@ namespace Kiota.Builder.Writers.CSharp {
                 case CodeMethodKind.RequestExecutor:
                     WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, isVoid, returnType, writer);
                     break;
-                case CodeMethodKind.DeserializerBackwardCompatibility:
-                    throw new InvalidOperationException("Deserialization information is held by a property in CSharp");
+                case CodeMethodKind.Deserializer:
+                    WriteDeserializerBody(codeElement, parentClass, writer);
+                    break;
                 default:
                     writer.WriteLine("return null;");
                 break;
             }
             writer.DecreaseIndent();
             writer.WriteLine("}");
+        }
+        private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
+            var hideParentMember = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
+            var parentSerializationInfo = hideParentMember ? $"(base.{codeElement.Name.ToFirstCharacterUpperCase()}())" : string.Empty;
+            writer.WriteLine($"return new Dictionary<string, Action<T, {conventions.ParseNodeInterfaceName}>>{parentSerializationInfo} {{");
+            writer.IncreaseIndent();
+            foreach(var otherProp in parentClass
+                                            .GetChildElements(true)
+                                            .OfType<CodeProperty>()
+                                            .Where(x => x.PropertyKind == CodePropertyKind.Custom)
+                                            .OrderBy(x => x.Name)) {
+                writer.WriteLine($"{{\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", (o,n) => {{ (o as {parentClass.Name.ToFirstCharacterUpperCase()}).{otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type)}(); }} }},");
+            }
+            writer.DecreaseIndent();
+            writer.WriteLine("};");
+        }
+        private string GetDeserializationMethodName(CodeTypeBase propType) {
+            var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
+            var propertyType = conventions.TranslateType(propType.Name);
+            if(propType is CodeType currentType) {
+                if(isCollection)
+                    if(currentType.TypeDefinition == null)
+                        return $"GetCollectionOfPrimitiveValues<{propertyType}>().ToList";
+                    else
+                        return $"GetCollectionOfObjectValues<{propertyType}>().ToList";
+                else if (currentType.TypeDefinition is CodeEnum enumType)
+                    return $"GetEnumValue<{enumType.Name.ToFirstCharacterUpperCase()}>";
+            }
+            switch(propertyType) {
+                case "string":
+                case "bool":
+                case "int":
+                case "float":
+                case "double":
+                case "Guid":
+                case "DateTimeOffset":
+                    return $"Get{propertyType.ToFirstCharacterUpperCase()}Value";
+                default:
+                    return $"GetObjectValue<{propertyType.ToFirstCharacterUpperCase()}>";
+            }
         }
         private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, bool isVoid, string returnType, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");

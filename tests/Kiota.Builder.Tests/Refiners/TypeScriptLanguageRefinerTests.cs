@@ -38,11 +38,6 @@ namespace Kiota.Builder.Refiners.Tests {
                     Name = factoryDefaultName,
                 }
             }, new (model) {
-                Name = "deserializeFields",
-                Type = new CodeType(model) {
-                    Name = deserializeDefaultName,
-                }
-            }, new (model) {
                 Name = "someDate",
                 Type = new CodeType(model) {
                     Name = dateTimeOffsetDefaultName,
@@ -86,6 +81,12 @@ namespace Kiota.Builder.Refiners.Tests {
                 ReturnType = new CodeType(model) {
                     Name = "string"
                 }
+            }, new (model) {
+                Name = "deserializeFields",
+                ReturnType = new CodeType(model) {
+                    Name = deserializeDefaultName,
+                },
+                MethodKind = CodeMethodKind.Deserializer
             }).First();
             const string streamDefaultName = "Stream";
             responseHandlerMethod.AddParameter(new CodeParameter(responseHandlerMethod) {
@@ -97,9 +98,9 @@ namespace Kiota.Builder.Refiners.Tests {
             ILanguageRefiner.Refine(GenerationLanguage.TypeScript, root);
             Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => httpCoreDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => factoryDefaultName.Equals(x.Type.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => deserializeDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => addiationalDataDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().Where(x => deserializeDefaultName.Equals(x.ReturnType.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => handlerDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => streamDefaultName.Equals(x.Type.Name)));
