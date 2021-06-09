@@ -8,7 +8,8 @@ namespace Kiota.Builder
         QueryParameter,
         Headers,
         ResponseHandler,
-        RequestBody
+        RequestBody,
+        SetterValue
     }
 
     public class CodeParameter : CodeTerminal, ICloneable, IDocumentedElement

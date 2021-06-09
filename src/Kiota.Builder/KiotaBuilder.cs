@@ -744,7 +744,7 @@ namespace Kiota.Builder
                     Name = "writer",
                     Description = "Serialization writer to use to serialize this model"
                 };
-                parameter.Type = new CodeType(parameter) { Name = "ISerializationWriter", IsExternal = true };
+                parameter.Type = new CodeType(parameter) { Name = "ISerializationWriter", IsExternal = true, IsNullable = false };
                 serializeMethod.AddParameter(parameter);
                 
                 model.AddMethod(serializeMethod);
@@ -759,7 +759,6 @@ namespace Kiota.Builder
                     DefaultValue = "new Dictionary<string, object>()",
                     PropertyKind = CodePropertyKind.AdditionalData,
                     Description = "Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.",
-                    ReadOnly = true,
                 };
                 additionalDataProp.Type = new CodeType(additionalDataProp) {
                     Name = "IDictionary<string, object>",

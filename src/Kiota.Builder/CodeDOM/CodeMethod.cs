@@ -13,7 +13,9 @@ namespace Kiota.Builder
         Serializer,
         Deserializer,
         AdditionalDataAccessor,
-        Constructor
+        Constructor,
+        Getter,
+        Setter
     }
     public enum HttpMethod {
         Get,
@@ -39,7 +41,11 @@ namespace Kiota.Builder
         public bool IsStatic {get;set;} = false;
         public bool IsAsync {get;set;} = true;
         public string Description {get; set;}
-
+        public bool IsAccessor { 
+            get {
+                return MethodKind == CodeMethodKind.Getter || MethodKind == CodeMethodKind.Setter;
+            }
+        }
 
         public object Clone()
         {

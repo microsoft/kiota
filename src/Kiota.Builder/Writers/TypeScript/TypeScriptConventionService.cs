@@ -47,7 +47,7 @@ namespace Kiota.Builder.Writers.TypeScript {
 
         public string GetParameterSignature(CodeParameter parameter)
         {
-            return $"{parameter.Name}{(parameter.Optional ? "?" : string.Empty)}: {GetTypeString(parameter.Type)}{(parameter.Optional ? " | undefined": string.Empty)}";
+            return $"{parameter.Name}{(parameter.Optional ? "?" : string.Empty)}: {GetTypeString(parameter.Type)}{(parameter.Type.IsNullable ? " | undefined": string.Empty)}";
         }
 
         public string GetTypeString(CodeTypeBase code)

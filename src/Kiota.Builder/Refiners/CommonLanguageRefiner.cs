@@ -7,6 +7,48 @@ namespace Kiota.Builder.Refiners {
     public abstract class CommonLanguageRefiner : ILanguageRefiner
     {
         public abstract void Refine(CodeNamespace generatedCode);
+        internal static string GetterPrefix = "get-";
+        internal static string SetterPrefix = "set-";
+        internal static HashSet<CodePropertyKind> PropertyKindsToAddAccessors = new() {
+            CodePropertyKind.Custom,
+            CodePropertyKind.AdditionalData,
+            CodePropertyKind.BackingStore,
+        };
+        protected static void AddGetterAndSetterMethods(CodeElement current) {
+            if(current is CodeProperty currentProperty &&
+                PropertyKindsToAddAccessors.Contains(currentProperty.PropertyKind) &&
+                current.Parent is CodeClass parentClass) {
+                currentProperty.Access = AccessModifier.Private;
+                parentClass.AddMethod(new CodeMethod(parentClass) {
+                    Name = $"{GetterPrefix}{current.Name}",
+                    Access = AccessModifier.Public,
+                    IsAsync = false,
+                    MethodKind = CodeMethodKind.Getter,
+                    ReturnType = currentProperty.Type,
+                    Description = $"Gets the {current.Name} property value. {currentProperty.Description}",
+                });
+                if(!currentProperty.ReadOnly) {
+                    var setter = parentClass.AddMethod(new CodeMethod(parentClass) {
+                        Name = $"{SetterPrefix}{current.Name}",
+                        Access = AccessModifier.Public,
+                        IsAsync = false,
+                        MethodKind = CodeMethodKind.Setter,
+                        Description = $"Sets the {current.Name} property value. {currentProperty.Description}",
+                    }).First();
+                    setter.ReturnType = new CodeType(setter) {
+                        Name = "void"
+                    };
+                    setter.Parameters.Add(new(setter) {
+                        Name = "value",
+                        ParameterKind = CodeParameterKind.SetterValue,
+                        Description = $"Value to set for the {current.Name} property.",
+                        Optional = false,
+                        Type = currentProperty.Type,
+                    });
+                }
+            }
+            CrawlTree(current, AddGetterAndSetterMethods);
+        }
         protected static void AddConstructorsForDefaultValues(CodeElement current) {
             if(current is CodeClass currentClass && currentClass.GetChildElements(true).OfType<CodeProperty>().Any(x => !string.IsNullOrEmpty(x.DefaultValue)))
                 currentClass.AddMethod(new CodeMethod(current) {

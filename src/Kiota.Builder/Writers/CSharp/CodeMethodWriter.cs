@@ -42,6 +42,9 @@ namespace Kiota.Builder.Writers.CSharp {
                 case CodeMethodKind.Constructor:
                     WriteConstructorBody(codeElement, parentClass, writer);
                     break;
+                case CodeMethodKind.Getter:
+                case CodeMethodKind.Setter:
+                    throw new InvalidOperationException("getters and setters are automatically added on fields in dotnet");
                 default:
                     writer.WriteLine("return null;");
                 break;

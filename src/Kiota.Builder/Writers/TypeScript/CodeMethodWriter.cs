@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Refiners;
 
 namespace  Kiota.Builder.Writers.TypeScript {
     public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventionService>
@@ -18,7 +19,7 @@ namespace  Kiota.Builder.Writers.TypeScript {
             localConventions = new TypeScriptConventionService(writer); //because we allow inline type definitions for methods parameters
             var returnType = localConventions.GetTypeString(codeElement.ReturnType);
             var isVoid = "void".Equals(returnType, StringComparison.OrdinalIgnoreCase);
-            WriteMethodDocumentation(codeElement, writer);
+            WriteMethodDocumentation(codeElement, writer, isVoid);
             WriteMethodPrototype(codeElement, writer, returnType, isVoid);
             writer.IncreaseIndent();
             var parentClass = codeElement.Parent as CodeClass;
@@ -43,12 +44,24 @@ namespace  Kiota.Builder.Writers.TypeScript {
                 case CodeMethodKind.RequestExecutor:
                     WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, isVoid, returnType, writer);
                     break;
+                case CodeMethodKind.Getter:
+                    WriteGetterBody(codeElement, writer);
+                    break;
+                case CodeMethodKind.Setter:
+                    WriteSetterBody(codeElement, writer);
+                    break;
                 default:
                     WriteDefaultMethodBody(codeElement, writer);
                     break;
             }
             writer.DecreaseIndent();
             writer.WriteLine("};");
+        }
+        private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer) {
+            writer.WriteLine($"this._{codeElement.Name.Replace(CommonLanguageRefiner.SetterPrefix, string.Empty).ToFirstCharacterLowerCase()} = value;");
+        }
+        private static void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer) {
+            writer.WriteLine($"return this._{codeElement.Name.Replace(CommonLanguageRefiner.GetterPrefix, string.Empty).ToFirstCharacterLowerCase()};");
         }
         private static void WriteDefaultMethodBody(CodeMethod codeElement, LanguageWriter writer) {
             var promisePrefix = codeElement.IsAsync ? "Promise.resolve(" : string.Empty;
@@ -124,7 +137,7 @@ namespace  Kiota.Builder.Writers.TypeScript {
             if(additionalDataProperty != null)
                 writer.WriteLine($"writer.writeAdditionalData(this.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
         }
-        private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer) {
+        private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, bool isVoid) {
             var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);
             var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Description));
             if (isDescriptionPresent || parametersWithDescription.Any()) {
@@ -134,22 +147,33 @@ namespace  Kiota.Builder.Writers.TypeScript {
                 foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
                     writer.WriteLine($"{localConventions.DocCommentPrefix}@param {paramWithDescription.Name} {TypeScriptConventionService.RemoveInvalidDescriptionCharacters(paramWithDescription.Description)}");
                 
-                if(code.IsAsync)
-                    writer.WriteLine($"{localConventions.DocCommentPrefix}@returns a Promise of {code.ReturnType.Name}");
-                else
-                    writer.WriteLine($"{localConventions.DocCommentPrefix}@returns a {code.ReturnType.Name}");
+                if(!isVoid)
+                    if(code.IsAsync)
+                        writer.WriteLine($"{localConventions.DocCommentPrefix}@returns a Promise of {code.ReturnType.Name}");
+                    else
+                        writer.WriteLine($"{localConventions.DocCommentPrefix}@returns a {code.ReturnType.Name}");
                 writer.WriteLine(localConventions.DocCommentEnd);
             }
         }
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid) {
             var accessModifier = localConventions.GetAccessModifier(code.Access);
-            var methodName = code.Name.ToFirstCharacterLowerCase();
+            var methodName = (code.MethodKind switch {
+                CodeMethodKind.Getter => code.Name.Replace(CommonLanguageRefiner.GetterPrefix, string.Empty),
+                CodeMethodKind.Setter => code.Name.Replace(CommonLanguageRefiner.SetterPrefix, string.Empty),
+                _ => code.Name
+            }).ToFirstCharacterLowerCase();
             var asyncPrefix = code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? "async ": string.Empty;
             var parameters = string.Join(", ", code.Parameters.Select(p=> localConventions.GetParameterSignature(p)).ToList());
             var asyncReturnTypePrefix = code.IsAsync ? "Promise<": string.Empty;
             var asyncReturnTypeSuffix = code.IsAsync ? ">": string.Empty;
             var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? " | undefined" : string.Empty;
-            writer.WriteLine($"{accessModifier} {methodName} {asyncPrefix}({parameters}) : {asyncReturnTypePrefix}{returnType}{nullableSuffix}{asyncReturnTypeSuffix} {{");
+            var accessorPrefix = code.MethodKind switch {
+                    CodeMethodKind.Getter => "get ",
+                    CodeMethodKind.Setter => "set ",
+                    _ => string.Empty
+                };
+            var returnTypeSuffix = code.IsAccessor ? string.Empty : $" : {asyncReturnTypePrefix}{returnType}{nullableSuffix}{asyncReturnTypeSuffix}";
+            writer.WriteLine($"{accessModifier} {accessorPrefix}{methodName} {asyncPrefix}({parameters}){returnTypeSuffix} {{");
         }
         private string GetDeserializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;

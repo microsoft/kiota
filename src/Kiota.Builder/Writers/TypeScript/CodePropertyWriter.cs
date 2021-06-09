@@ -1,5 +1,6 @@
 using System;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Refiners;
 
 namespace  Kiota.Builder.Writers.TypeScript {
     public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConventionService>
@@ -20,8 +21,9 @@ namespace  Kiota.Builder.Writers.TypeScript {
                 break;
                 default:
                     var defaultValue = string.IsNullOrEmpty(codeElement.DefaultValue) ? string.Empty : $" = {codeElement.DefaultValue}";
-                    var singleLiner = codeElement.PropertyKind == CodePropertyKind.Custom || codeElement.PropertyKind == CodePropertyKind.AdditionalData;
-                    writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{(codeElement.ReadOnly ? " readonly ": " ")}{codeElement.Name.ToFirstCharacterLowerCase()}{(codeElement.Type.IsNullable ? "?" : string.Empty)}: {returnType}{(isFlagEnum ? "[]" : string.Empty)}{(codeElement.Type.IsNullable ? " | undefined" : string.Empty)}{defaultValue}{(singleLiner ? ";" : string.Empty)}");
+                    var singleLiner = CommonLanguageRefiner.PropertyKindsToAddAccessors.Contains(codeElement.PropertyKind);
+                    var namePrefix = singleLiner ? "_" : string.Empty;
+                    writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{(codeElement.ReadOnly ? " readonly ": " ")}{namePrefix}{codeElement.Name.ToFirstCharacterLowerCase()}{(codeElement.Type.IsNullable ? "?" : string.Empty)}: {returnType}{(isFlagEnum ? "[]" : string.Empty)}{(codeElement.Type.IsNullable ? " | undefined" : string.Empty)}{defaultValue}{(singleLiner ? ";" : string.Empty)}");
                 break;
             }
         }
