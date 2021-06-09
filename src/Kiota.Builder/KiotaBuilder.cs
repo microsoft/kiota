@@ -710,25 +710,25 @@ namespace Kiota.Builder
             else if(schema?.AllOf?.Any(x => x.IsObject()) ?? false)
                 CreatePropertiesForModelClass(currentNode, schema.AllOf.Last(x => x.IsObject()), ns, model, parent);
         }
-        private const string deserializeFieldsPropName = "DeserializeFields";
+        private const string fieldDeserializersMethodName = "GetFieldDeserializers<T>";
         private const string serializeMethodName = "Serialize";
         private const string additionalDataPropName = "AdditionalData";
         private static void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties) {
-            var serializationPropsType = $"IDictionary<string, Action<{model.Name.ToFirstCharacterUpperCase()}, IParseNode>>";
-            if(!model.ContainsMember(deserializeFieldsPropName)) {
-                var deserializeProp = new CodeProperty(model) {
-                    Name = deserializeFieldsPropName,
-                    PropertyKind = CodePropertyKind.Deserializer,
+            var serializationPropsType = $"IDictionary<string, Action<T, IParseNode>>";
+            if(!model.ContainsMember(fieldDeserializersMethodName)) {
+                var deserializeProp = new CodeMethod(model) {
+                    Name = fieldDeserializersMethodName,
+                    MethodKind = CodeMethodKind.Deserializer,
                     Access = AccessModifier.Public,
-                    ReadOnly = true,
-                    Description = "The serialization information for the current model"
+                    Description = "The deserialization information for the current model",
+                    IsAsync = false,
                 };
-                deserializeProp.Type = new CodeType(deserializeProp) {
+                deserializeProp.ReturnType = new CodeType(deserializeProp) {
                     Name = serializationPropsType,
                     IsNullable = false,
                     IsExternal = true,
                 };
-                model.AddProperty(deserializeProp);
+                model.AddMethod(deserializeProp);
             }
             if(!model.ContainsMember(serializeMethodName)) {
                 var serializeMethod = new CodeMethod(model) {

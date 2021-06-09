@@ -10,7 +10,7 @@ export class RequestInfo {
     public headers: Map<string, string> = new Map<string, string>();
     private static binaryContentType = "application/octet-stream";
     private static contentTypeHeader = "Content-Type";
-    public setContentFromParsable = <T extends Parsable<T>>(value?: T | undefined, serializerFactory?: SerializationWriterFactory | undefined, contentType?: string | undefined): void => {
+    public setContentFromParsable = <T extends Parsable>(value?: T | undefined, serializerFactory?: SerializationWriterFactory | undefined, contentType?: string | undefined): void => {
         if(!serializerFactory) throw new Error("serializerFactory cannot be undefined");
         if(!contentType) throw new Error("contentType cannot be undefined");
 

@@ -12,8 +12,8 @@ namespace Microsoft.Kiota.Abstractions.Serialization {
         Guid? GetGuidValue();
         DateTimeOffset? GetDateTimeOffsetValue();
         IEnumerable<T> GetCollectionOfPrimitiveValues<T>();
-        IEnumerable<T> GetCollectionOfObjectValues<T>() where T: class, IParsable<T>, new();
+        IEnumerable<T> GetCollectionOfObjectValues<T>() where T: IParsable;
         T? GetEnumValue<T>() where T: struct, Enum;
-        T GetObjectValue<T>() where T: class, IParsable<T>, new();
+        T GetObjectValue<T>() where T: IParsable;
     }
 }

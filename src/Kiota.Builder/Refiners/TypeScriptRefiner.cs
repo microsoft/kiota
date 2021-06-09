@@ -15,7 +15,6 @@ namespace Kiota.Builder.Refiners {
             FixReferencesToEntityType(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
             AddParsableInheritanceForModelClasses(generatedCode);
-            ConvertDeserializerPropsToMethods(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "ReadableStream", "web-streams-polyfill/es2018", true);
             ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
         }
@@ -24,7 +23,7 @@ namespace Kiota.Builder.Refiners {
                 var declaration = currentClass.StartBlock as CodeClass.Declaration;
                 declaration.Implements.Add(new CodeType(currentClass) {
                     IsExternal = true,
-                    Name = $"Parsable<{currentClass.Name.ToFirstCharacterUpperCase()}>",
+                    Name = "Parsable",
                 });
             }
             CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
@@ -49,8 +48,6 @@ namespace Kiota.Builder.Refiners {
                     currentProperty.Type.Name = "HttpCore";
                 else if(currentProperty.Name.Equals("serializerFactory", StringComparison.OrdinalIgnoreCase))
                     currentProperty.Type.Name = "SerializationWriterFactory";
-                else if(currentProperty.Name.Equals("deserializeFields", StringComparison.OrdinalIgnoreCase))
-                    currentProperty.Type.Name = $"Map<string, (item: {currentProperty.Parent.Name.ToFirstCharacterUpperCase()}, node: ParseNode) => void>";
                 else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase))
                     currentProperty.Type.Name = $"Date";
                 else if(currentProperty.PropertyKind == CodePropertyKind.AdditionalData) {
@@ -63,6 +60,8 @@ namespace Kiota.Builder.Refiners {
                     currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x => x.Type.Name = "ResponseHandler");
                 else if(currentMethod.MethodKind == CodeMethodKind.Serializer)
                     currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
+                else if(currentMethod.MethodKind == CodeMethodKind.Deserializer)
+                    currentMethod.ReturnType.Name = $"Map<string, (item: T, node: ParseNode) => void>";
             }
             CrawlTree(currentElement, CorrectCoreType);
         }

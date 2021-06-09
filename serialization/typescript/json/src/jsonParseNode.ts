@@ -29,12 +29,12 @@ export class JsonParseNode implements ParseNode {
                 } else throw new Error(`encountered an unknown type during deserialization ${typeof x}`);
             });
     }
-    public getCollectionOfObjectValues = <T extends Parsable<T>>(type: new() => T): T[] | undefined => {
+    public getCollectionOfObjectValues = <T extends Parsable>(type: new() => T): T[] | undefined => {
         return (this._jsonNode as unknown[])
             .map(x => new JsonParseNode(x))
             .map(x => x.getObjectValue<T>(type));
     }
-    public getObjectValue = <T extends Parsable<T>>(type: new() => T): T => {
+    public getObjectValue = <T extends Parsable>(type: new() => T): T => {
         const result = new type();
         this.assignFieldValues(result);
         return result;
@@ -54,8 +54,8 @@ export class JsonParseNode implements ParseNode {
             return undefined;
         }
     }
-    private assignFieldValues = <T extends Parsable<T>>(item: T) : void => {
-        const fields = item.deserializeFields();
+    private assignFieldValues = <T extends Parsable>(item: T) : void => {
+        const fields = item.getFieldDeserializers();
         Object.entries(this._jsonNode as any).forEach(([k, v]) => {
             const deserializer = fields.get(k);
             if(deserializer)

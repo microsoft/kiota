@@ -76,24 +76,6 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(currentElement, c => ReplaceBinaryByNativeType(c, symbol, ns, addDeclaration));
         }
         private const string pathSegmentPropertyName = "pathSegment";
-        protected static void ConvertDeserializerPropsToMethods(CodeElement currentElement, string prefix = null) {
-            if(currentElement is CodeClass currentClass) {
-                var deserializerProp = currentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.Deserializer);
-                if(deserializerProp != null) {
-                    currentClass.RemoveChildElement(deserializerProp);
-                    currentClass.AddMethod(new CodeMethod(currentClass) {
-                        Name = $"{prefix}{deserializerProp.Name}",
-                        MethodKind = CodeMethodKind.DeserializerBackwardCompatibility,
-                        IsAsync = false,
-                        IsStatic = false,
-                        ReturnType = deserializerProp.Type,
-                        Access = AccessModifier.Public,
-                        Description = deserializerProp.Description
-                    });
-                }
-            }
-            CrawlTree(currentElement, c => ConvertDeserializerPropsToMethods(c, prefix));
-        }
         // temporary patch of type to it resolves as the builder sets types we didn't generate to entity
         protected static void FixReferencesToEntityType(CodeElement currentElement, CodeClass entityClass = null){
             if(entityClass == null && currentElement is CodeNamespace currentNamespace)

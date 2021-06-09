@@ -35,11 +35,6 @@ namespace Kiota.Builder.Writers.Java.Tests {
             tw?.Dispose();
         }
         [Fact]
-        public void WritesDeserializerThrows() {
-            property.PropertyKind = CodePropertyKind.Deserializer;
-            Assert.Throws<InvalidOperationException>(() => writer.Write(property));
-        }
-        [Fact]
         public void WritesDefaultValue() {
             var defaultValue = "someDefaultValue";
             property.DefaultValue = defaultValue;

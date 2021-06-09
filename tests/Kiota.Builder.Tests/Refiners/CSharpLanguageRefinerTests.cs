@@ -31,7 +31,7 @@ namespace Kiota.Builder.Refiners.Tests {
             });
             var property = model.AddProperty(new CodeProperty(model) {
                 Name = "deserialize",
-                PropertyKind = CodePropertyKind.Deserializer,
+                PropertyKind = CodePropertyKind.Custom,
                 Type = union,
             }).First();
             var method = model.AddMethod(new CodeMethod(model) {

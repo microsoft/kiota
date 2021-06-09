@@ -64,20 +64,6 @@ namespace Kiota.Builder.Refiners.Tests {
             Assert.NotEqual("binary", method.ReturnType.Name);
         }
         [Fact]
-        public void ConvertsDeserializerPropsToMethods() {
-            var model = root.AddClass(new CodeClass (root) {
-                Name = "model",
-                ClassKind = CodeClassKind.Model
-            }).First();
-            var property = model.AddProperty(new CodeProperty(model) {
-                Name = "deserialize",
-                PropertyKind = CodePropertyKind.Deserializer,
-            }).First();
-            ILanguageRefiner.Refine(GenerationLanguage.Java, root);
-            Assert.Empty(model.GetChildElements().OfType<CodeProperty>());
-            Assert.NotEmpty(model.GetChildElements().OfType<CodeMethod>());
-        }
-        [Fact]
         public void ReplacesIndexersByMethodsWithParameter() {
             var model = root.AddClass(new CodeClass (root) {
                 Name = "model",
@@ -206,11 +192,6 @@ namespace Kiota.Builder.Refiners.Tests {
                     Name = factoryDefaultName,
                 }
             }, new (model) {
-                Name = "deserializeFields",
-                Type = new CodeType(model) {
-                    Name = deserializeDefaultName,
-                }
-            }, new (model) {
                 Name = "someDate",
                 Type = new CodeType(model) {
                     Name = dateTimeOffsetDefaultName,
@@ -230,6 +211,12 @@ namespace Kiota.Builder.Refiners.Tests {
                 ReturnType = new CodeType(model) {
                     Name = "string"
                 }
+            }, new (model) {
+                Name = "deserializeFields",
+                ReturnType = new CodeType(model) {
+                    Name = deserializeDefaultName,
+                },
+                MethodKind = CodeMethodKind.Deserializer
             }).First();
             executorMethod.AddParameter(new (executorMethod) {
                 Name = "handler",
@@ -260,9 +247,9 @@ namespace Kiota.Builder.Refiners.Tests {
             ILanguageRefiner.Refine(GenerationLanguage.Java, root);
             Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => httpCoreDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => factoryDefaultName.Equals(x.Type.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => deserializeDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => addiationalDataDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().Where(x => deserializeDefaultName.Equals(x.ReturnType.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => handlerDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => headersDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));

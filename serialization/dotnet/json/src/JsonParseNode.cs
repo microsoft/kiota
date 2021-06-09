@@ -33,7 +33,7 @@ namespace Microsoft.Kiota.Serialization.Json {
             } else
                 return Enum.Parse<T>(rawValue, true);
         }
-        public IEnumerable<T> GetCollectionOfObjectValues<T>() where T: class, IParsable<T>, new() {
+        public IEnumerable<T> GetCollectionOfObjectValues<T>() where T: IParsable {
             var enumerator = _jsonNode.EnumerateArray();
             while(enumerator.MoveNext()) {
                 var currentParseNode = new JsonParseNode(enumerator.Current);
@@ -70,41 +70,13 @@ namespace Microsoft.Kiota.Serialization.Json {
             }
         }
         private static Type objectType = typeof(object);
-        public T GetObjectValue<T>() where T: class, IParsable<T>, new() {
-            var item = new T();
-            var fieldDeserializers = GetFieldDeserializers(item);
+        public T GetObjectValue<T>() where T: IParsable {
+            var item = (T)(typeof(T).GetConstructor(new Type[]{}).Invoke(new object[] {}));
+            var fieldDeserializers = item.GetFieldDeserializers<T>();
             AssignFieldValues(item, fieldDeserializers);
             return item;
         }
-        private Dictionary<string, Action<T, IParseNode>> GetFieldDeserializers<T>(T item) where T: class, IParsable<T>, new() {
-            //note: we might be able to save a lot of cycles by simply "caching" these dictionaries with their types in a static property
-            var baseType = typeof(T).BaseType;
-            var fieldDeserializers = new Dictionary<string, Action<T, IParseNode>>(item.DeserializeFields);
-            while(baseType != null && baseType != objectType) {
-                Debug.WriteLine($"setting property values for parent type {baseType.Name}");
-                var baseTypeFieldsProperty = baseType.GetProperty(nameof(item.DeserializeFields), BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);
-                if(baseTypeFieldsProperty == null)
-                    baseType = null;
-                else {
-                    var baseTypeFieldDeserializers = baseTypeFieldsProperty.GetValue(item) as IEnumerable<object>;
-                    // cannot be cast to IDictionary<string, Action<T, IParseNode>> as action generic types are contra variant
-                    // cheap lazy loading to avoid running reflection on every object of the collection when we know they are the same type
-                    if(baseTypeFieldDeserializers?.Any() ?? false) {
-                        Type baseFieldDeserializerType  = baseTypeFieldDeserializers.First().GetType();
-                        PropertyInfo keyProperty = baseFieldDeserializerType.GetProperty("Key");
-                        PropertyInfo valuePropery = baseFieldDeserializerType.GetProperty("Value");
-                        foreach(var baseTypeFieldDeserializer in baseTypeFieldDeserializers) {
-                            var key = keyProperty.GetValue(baseTypeFieldDeserializer) as string;
-                            var action = valuePropery.GetValue(baseTypeFieldDeserializer) as Action<T, IParseNode>;
-                            fieldDeserializers.Add(key, action);
-                        }
-                    }
-                    baseType = baseType.BaseType;
-                }
-            }
-            return fieldDeserializers;
-        }
-        private void AssignFieldValues<T>(T item, Dictionary<string, Action<T, IParseNode>> fieldDeserializers) where T: class, IParsable<T>, new() {
+        private void AssignFieldValues<T>(T item, IDictionary<string, Action<T, IParseNode>> fieldDeserializers) where T: IParsable {
             if(_jsonNode.ValueKind != JsonValueKind.Object) return;
 
             foreach(var fieldValue in _jsonNode.EnumerateObject().Where(x => x.Value.ValueKind != JsonValueKind.Null)) {

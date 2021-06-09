@@ -35,7 +35,7 @@ namespace Kiota.Builder.Writers.Java {
                 case CodeMethodKind.Serializer:
                     WriteSerializerBody(parentClass, writer);
                 break;
-                case CodeMethodKind.DeserializerBackwardCompatibility:
+                case CodeMethodKind.Deserializer:
                     WriteDeserializerBody(codeElement, parentClass, writer);
                 break;
                 case CodeMethodKind.IndexerBackwardCompatibility:
@@ -67,15 +67,18 @@ namespace Kiota.Builder.Writers.Java {
                     .GetChildElements(true)
                     .OfType<CodeProperty>()
                     .Where(x => x.PropertyKind == CodePropertyKind.Custom);
-            writer.WriteLine($"final Map<String, BiConsumer<T, {conventions.ParseNodeInterfaceName}>> fields = new HashMap<>({(inherits ? "super." + codeElement.Name+ "()" : fieldToSerialize.Count())});");
-            if(fieldToSerialize.Any())
+            writer.WriteLine($"return new HashMap<>({(inherits ? "super." + codeElement.Name.ToFirstCharacterLowerCase()+ "()" : fieldToSerialize.Count())}) {{{{");
+            if(fieldToSerialize.Any()) {
+                writer.IncreaseIndent();
                 fieldToSerialize
                         .OrderBy(x => x.Name)
                         .Select(x => 
-                            $"fields.put(\"{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}\", (o, n) -> {{ (({parentClass.Name.ToFirstCharacterUpperCase()})o).{x.Name.ToFirstCharacterLowerCase()} = {GetDeserializationMethodName(x.Type)}; }});")
+                            $"this.put(\"{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}\", (o, n) -> {{ (({parentClass.Name.ToFirstCharacterUpperCase()})o).{x.Name.ToFirstCharacterLowerCase()} = {GetDeserializationMethodName(x.Type)}; }});")
                         .ToList()
                         .ForEach(x => writer.WriteLine(x));
-            writer.WriteLine("return fields;");
+                writer.DecreaseIndent();
+            }
+            writer.WriteLine("}};");
         }
         private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, string returnType, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
@@ -157,7 +160,7 @@ namespace Kiota.Builder.Writers.Java {
         }
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType) {
             var accessModifier = conventions.GetAccessModifier(code.Access);
-            var genericTypeParameterDeclaration = code.MethodKind == CodeMethodKind.DeserializerBackwardCompatibility ? "<T> ": string.Empty;
+            var genericTypeParameterDeclaration = code.MethodKind == CodeMethodKind.Deserializer ? "<T> ": string.Empty;
             var returnTypeAsyncPrefix = code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty;
             var returnTypeAsyncSuffix = code.IsAsync ? ">" : string.Empty;
             var methodName = code.Name.ToFirstCharacterLowerCase();

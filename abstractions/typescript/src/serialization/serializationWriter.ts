@@ -8,8 +8,8 @@ export interface SerializationWriter {
     writeGuidValue(key?: string | undefined, value?: string | undefined): void;
     writeDateValue(key?: string | undefined, value?: Date | undefined): void;
     writeCollectionOfPrimitiveValues<T>(key?: string | undefined, values?: T[] | undefined): void;
-    writeCollectionOfObjectValues<T extends Parsable<T>>(key?: string | undefined, values?: T[]): void;
-    writeObjectValue<T extends Parsable<T>>(key?: string | undefined, value?: T | undefined): void;
+    writeCollectionOfObjectValues<T extends Parsable>(key?: string | undefined, values?: T[]): void;
+    writeObjectValue<T extends Parsable>(key?: string | undefined, value?: T | undefined): void;
     writeEnumValue<T>(key?: string | undefined, ...values: (T | undefined)[]): void;
     getSerializedContent(): ReadableStream;
     writeAdditionalData(value: Map<string, unknown>): void;
