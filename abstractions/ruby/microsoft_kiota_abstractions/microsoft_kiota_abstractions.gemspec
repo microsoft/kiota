@@ -5,17 +5,19 @@ require_relative "lib/microsoft_kiota_abstractions/version"
 Gem::Specification.new do |spec|
   spec.name          = "microsoft_kiota_abstractions"
   spec.version       = MicrosoftKiotaAbstractions::VERSION
-  spec.authors       = ["abfarah"]
-  spec.email         = ["TODO: Write your email address"]
+  spec.authors       = ["Microsoft"] # Todo: required
+  # spec.email         = ["TODO: Write your email address - not required"]
 
-  spec.summary       = "TODO: Write a short summary, because RubyGems requires one."
-  spec.description   = "TODO: Write a longer description or delete this line."
-  spec.homepage      = "TODO: Put your gem's website or public repo URL here."
+  # TODO: required
+  spec.summary       = "The Kiota abstractions are language specific libraries defining the basic constructs Kiota projects need once an SDK has been generated from an OpenAPI definition." 
+  # spec.description   = "TODO: Write a longer description or delete this line. - not required" 
+  spec.homepage      = "https://github.com/microsoft/kiota"
   spec.required_ruby_version = ">= 2.4.0"
 
   spec.metadata["allowed_push_host"] = "TODO: Set to 'http://mygemserver.com'"
 
   spec.metadata["homepage_uri"] = spec.homepage
+  spec.metadata["github_repo"] = "ssh://github.com/microsoft/kiota"
   spec.metadata["source_code_uri"] = "https://github.com/microsoft/kiota"
   spec.metadata["changelog_uri"] = "https://github.com/microsoft/kiota/blob/main/CHANGELOG.md"
 
@@ -30,6 +32,8 @@ Gem::Specification.new do |spec|
 
   # Uncomment to register a new dependency of your gem
   # spec.add_dependency "example-gem", "~> 1.0"
+
+  spec.add_dependency "uri"
 
   # For more information and examples about making a new gem, checkout our
   # guide at: https://bundler.io/guides/creating_gem.html
