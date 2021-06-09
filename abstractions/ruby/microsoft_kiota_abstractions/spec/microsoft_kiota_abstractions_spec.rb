@@ -5,7 +5,8 @@ RSpec.describe MicrosoftKiotaAbstractions do
     expect(MicrosoftKiotaAbstractions::VERSION).not_to be nil
   end
 
-  it "does something useful" do
-    expect(false).to eq(true)
+  it "tests library method" do
+    request_obj = MicrosoftKiotaAbstractions::RequestInfo.new
+    expect(!request_obj).to eq(false)
   end
 end
