@@ -737,7 +737,7 @@ namespace Kiota.Builder
                     Name = serializeMethodName,
                     MethodKind = CodeMethodKind.Serializer,
                     IsAsync = false,
-                    Description = $"Serialiazes information the current object",
+                    Description = $"Serializes information the current object",
                 };
                 serializeMethod.ReturnType = new CodeType(serializeMethod) { Name = "void", IsNullable = false, IsExternal = true };
                 var parameter = new CodeParameter(serializeMethod) {
