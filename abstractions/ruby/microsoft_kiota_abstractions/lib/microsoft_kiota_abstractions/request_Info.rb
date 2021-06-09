@@ -32,7 +32,7 @@ module MicrosoftKiotaAbstractions
       begin
         writer  = serializerFactory.getSerializationWriter(contentType)
         headers[@@contentTypeHeader] = contentType
-        writer.writeObjectValue(null, value);
+        writer.writeObjectValue(nil, value);
         this.content = writer.getSerializedContent();
       rescue => exception
         raise Exception.new "could not serialize payload"
