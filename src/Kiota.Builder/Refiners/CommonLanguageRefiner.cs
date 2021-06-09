@@ -14,6 +14,16 @@ namespace Kiota.Builder.Refiners {
             CodePropertyKind.AdditionalData,
             CodePropertyKind.BackingStore,
         };
+        private static bool DoesAnyParentHaveAPropertyWithDefaultValue(CodeClass current) {
+            if(current.StartBlock is CodeClass.Declaration currentDeclaration &&
+                currentDeclaration.Inherits?.TypeDefinition is CodeClass parentClass) {
+                    if(parentClass.GetChildElements(true).OfType<CodeProperty>().Any(x => !string.IsNullOrEmpty(x.DefaultValue)))
+                        return true;
+                    else
+                        return DoesAnyParentHaveAPropertyWithDefaultValue(parentClass);
+            } else
+                return false;
+        }
         protected static void AddGetterAndSetterMethods(CodeElement current) {
             if(current is CodeProperty currentProperty &&
                 PropertyKindsToAddAccessors.Contains(currentProperty.PropertyKind) &&
@@ -49,8 +59,10 @@ namespace Kiota.Builder.Refiners {
             }
             CrawlTree(current, AddGetterAndSetterMethods);
         }
-        protected static void AddConstructorsForDefaultValues(CodeElement current) {
-            if(current is CodeClass currentClass && currentClass.GetChildElements(true).OfType<CodeProperty>().Any(x => !string.IsNullOrEmpty(x.DefaultValue)))
+        protected static void AddConstructorsForDefaultValues(CodeElement current, bool addIfInherited) {
+            if(current is CodeClass currentClass && 
+                (currentClass.GetChildElements(true).OfType<CodeProperty>().Any(x => !string.IsNullOrEmpty(x.DefaultValue)) ||
+                addIfInherited && DoesAnyParentHaveAPropertyWithDefaultValue(currentClass)))
                 currentClass.AddMethod(new CodeMethod(current) {
                     Name = "constructor",
                     MethodKind = CodeMethodKind.Constructor,
@@ -60,7 +72,7 @@ namespace Kiota.Builder.Refiners {
                     IsAsync = false,
                     Description = $"Instantiates a new {current.Name} and sets the default values."
                 });
-            CrawlTree(current, AddConstructorsForDefaultValues);
+            CrawlTree(current, x => AddConstructorsForDefaultValues(x, addIfInherited));
         }
         protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement) {
             if(current is CodeClass currentClass && currentClass.StartBlock is CodeClass.Declaration currentDeclaration)

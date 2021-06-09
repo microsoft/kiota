@@ -23,7 +23,7 @@ namespace  Kiota.Builder.Writers.TypeScript {
             WriteMethodPrototype(codeElement, writer, returnType, isVoid);
             writer.IncreaseIndent();
             var parentClass = codeElement.Parent as CodeClass;
-            var shouldHide = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null && codeElement.MethodKind == CodeMethodKind.Serializer;
+            var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
@@ -36,7 +36,7 @@ namespace  Kiota.Builder.Writers.TypeScript {
                     WriteDeserializerBody(codeElement, parentClass, writer);
                     break;
                 case CodeMethodKind.Serializer:
-                    WriteSerializerBody(shouldHide, parentClass, writer);
+                    WriteSerializerBody(inherits, parentClass, writer);
                     break;
                 case CodeMethodKind.RequestGenerator:
                     WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, writer);
@@ -50,12 +50,27 @@ namespace  Kiota.Builder.Writers.TypeScript {
                 case CodeMethodKind.Setter:
                     WriteSetterBody(codeElement, writer);
                     break;
+                case CodeMethodKind.Constructor:
+                    WriteConstructorBody(codeElement, parentClass, writer, inherits);
+                    break;
                 default:
                     WriteDefaultMethodBody(codeElement, writer);
                     break;
             }
             writer.DecreaseIndent();
             writer.WriteLine("};");
+        }
+        private void WriteConstructorBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits) {
+            if(inherits)
+                writer.WriteLine("super();");
+            foreach(var propWithDefault in parentClass
+                                            .GetChildElements(true)
+                                            .OfType<CodeProperty>()
+                                            .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
+                                            .OrderByDescending(x => x.PropertyKind)
+                                            .ThenBy(x => x.Name)) {
+                writer.WriteLine($"this._{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
+            }
         }
         private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer) {
             writer.WriteLine($"this._{codeElement.Name.Replace(CommonLanguageRefiner.SetterPrefix, string.Empty).ToFirstCharacterLowerCase()} = value;");
@@ -123,9 +138,9 @@ namespace  Kiota.Builder.Writers.TypeScript {
             }
             writer.WriteLine("return requestInfo;");
         }
-        private void WriteSerializerBody(bool shouldHide, CodeClass parentClass, LanguageWriter writer) {
+        private void WriteSerializerBody(bool inherits, CodeClass parentClass, LanguageWriter writer) {
             var additionalDataProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.AdditionalData);
-            if(shouldHide)
+            if(inherits)
                 writer.WriteLine("super.serialize(writer);");
             foreach(var otherProp in parentClass
                                             .GetChildElements(true)
@@ -162,7 +177,7 @@ namespace  Kiota.Builder.Writers.TypeScript {
                 CodeMethodKind.Setter => code.Name.Replace(CommonLanguageRefiner.SetterPrefix, string.Empty),
                 _ => code.Name
             }).ToFirstCharacterLowerCase();
-            var asyncPrefix = code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? "async ": string.Empty;
+            var asyncPrefix = code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? " async ": string.Empty;
             var parameters = string.Join(", ", code.Parameters.Select(p=> localConventions.GetParameterSignature(p)).ToList());
             var asyncReturnTypePrefix = code.IsAsync ? "Promise<": string.Empty;
             var asyncReturnTypeSuffix = code.IsAsync ? ">": string.Empty;
@@ -172,8 +187,9 @@ namespace  Kiota.Builder.Writers.TypeScript {
                     CodeMethodKind.Setter => "set ",
                     _ => string.Empty
                 };
-            var returnTypeSuffix = code.IsAccessor ? string.Empty : $" : {asyncReturnTypePrefix}{returnType}{nullableSuffix}{asyncReturnTypeSuffix}";
-            writer.WriteLine($"{accessModifier} {accessorPrefix}{methodName} {asyncPrefix}({parameters}){returnTypeSuffix} {{");
+            var shouldHaveTypeSuffix = !code.IsAccessor && code.MethodKind != CodeMethodKind.Constructor;
+            var returnTypeSuffix = shouldHaveTypeSuffix ? $" : {asyncReturnTypePrefix}{returnType}{nullableSuffix}{asyncReturnTypeSuffix}" : string.Empty;
+            writer.WriteLine($"{accessModifier} {accessorPrefix}{methodName}{asyncPrefix}({parameters}){returnTypeSuffix} {{");
         }
         private string GetDeserializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;

@@ -18,6 +18,7 @@ namespace Kiota.Builder.Refiners {
             ReplaceBinaryByNativeType(generatedCode, "ReadableStream", "web-streams-polyfill/es2018", true);
             ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
             AddGetterAndSetterMethods(generatedCode);
+            AddConstructorsForDefaultValues(generatedCode, true);
         }
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model) {

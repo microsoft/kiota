@@ -19,7 +19,7 @@ namespace Kiota.Builder.Refiners {
             MakeEnumPropertiesNullable(generatedCode);
             ReplaceReservedNames(generatedCode, new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}");
             DisambiguatePropertiesWithClassNames(generatedCode);
-            AddConstructorsForDefaultValues(generatedCode);
+            AddConstructorsForDefaultValues(generatedCode, false);
         }
         private static void DisambiguatePropertiesWithClassNames(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass) {
