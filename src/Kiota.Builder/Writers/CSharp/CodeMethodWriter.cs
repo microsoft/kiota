@@ -39,12 +39,25 @@ namespace Kiota.Builder.Writers.CSharp {
                 case CodeMethodKind.Deserializer:
                     WriteDeserializerBody(codeElement, parentClass, writer);
                     break;
+                case CodeMethodKind.Constructor:
+                    WriteConstructorBody(codeElement, parentClass, writer);
+                    break;
                 default:
                     writer.WriteLine("return null;");
                 break;
             }
             writer.DecreaseIndent();
             writer.WriteLine("}");
+        }
+        private void WriteConstructorBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
+            foreach(var propWithDefault in parentClass
+                                            .GetChildElements(true)
+                                            .OfType<CodeProperty>()
+                                            .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
+                                            .OrderByDescending(x => x.PropertyKind)
+                                            .ThenBy(x => x.Name)) {
+                writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterUpperCase()} = {propWithDefault.DefaultValue};");
+            }
         }
         private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
             var hideParentMember = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
@@ -169,10 +182,17 @@ namespace Kiota.Builder.Writers.CSharp {
             var hideModifier = shouldHide ? "new " : string.Empty;
             var genericTypePrefix = isVoid ? string.Empty : "<";
             var genricTypeSuffix = code.IsAsync && !isVoid ? ">": string.Empty;
+            var isConstructor = code.MethodKind == CodeMethodKind.Constructor;
             // TODO: Task type should be moved into the refiner
-            var completeReturnType = $"{(code.IsAsync ? "async Task" + genericTypePrefix : string.Empty)}{(code.IsAsync && isVoid ? string.Empty : returnType)}{genricTypeSuffix}";
+            var completeReturnType = isConstructor ?
+                string.Empty :
+                $"{(code.IsAsync ? "async Task" + genericTypePrefix : string.Empty)}{(code.IsAsync && isVoid ? string.Empty : returnType)}{genricTypeSuffix} ";
+            var baseSuffix = string.Empty;
+            if(isConstructor && shouldHide)
+                baseSuffix = " : base()";
             var parameters = string.Join(", ", code.Parameters.Select(p=> conventions.GetParameterSignature(p)).ToList());
-            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType} {code.Name}({parameters}) {{");
+            var methodName = isConstructor ? code.Parent.Name.ToFirstCharacterUpperCase() : code.Name;
+            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({parameters}){baseSuffix} {{");
         }
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;

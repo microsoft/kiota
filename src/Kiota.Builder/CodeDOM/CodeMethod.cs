@@ -12,7 +12,8 @@ namespace Kiota.Builder
         RequestGenerator,
         Serializer,
         Deserializer,
-        AdditionalDataAccessor
+        AdditionalDataAccessor,
+        Constructor
     }
     public enum HttpMethod {
         Get,

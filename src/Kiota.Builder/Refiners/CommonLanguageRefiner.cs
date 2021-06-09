@@ -7,7 +7,19 @@ namespace Kiota.Builder.Refiners {
     public abstract class CommonLanguageRefiner : ILanguageRefiner
     {
         public abstract void Refine(CodeNamespace generatedCode);
-
+        protected static void AddConstructorsForDefaultValues(CodeElement current) {
+            if(current is CodeClass currentClass && currentClass.GetChildElements(true).OfType<CodeProperty>().Any(x => !string.IsNullOrEmpty(x.DefaultValue)))
+                currentClass.AddMethod(new CodeMethod(current) {
+                    Name = "constructor",
+                    MethodKind = CodeMethodKind.Constructor,
+                    ReturnType = new CodeType(current) {
+                        Name = "void"
+                    },
+                    IsAsync = false,
+                    Description = $"Instantiates a new {current.Name} and sets the default values."
+                });
+            CrawlTree(current, AddConstructorsForDefaultValues);
+        }
         protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement) {
             if(current is CodeClass currentClass && currentClass.StartBlock is CodeClass.Declaration currentDeclaration)
                 currentDeclaration.Usings

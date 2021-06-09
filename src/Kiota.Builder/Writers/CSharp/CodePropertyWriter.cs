@@ -15,11 +15,6 @@ namespace Kiota.Builder.Writers.CSharp {
                                     .FirstOrDefault(x => x.PropertyKind == CodePropertyKind.BackingStore);
             var setterAccessModifier = codeElement.ReadOnly && codeElement.Access > AccessModifier.Private ? "private " : string.Empty;
             var simpleBody = $"get; {setterAccessModifier}set;";
-            var defaultValue = string.Empty;
-            if (codeElement.DefaultValue != null)
-            {
-                defaultValue = " = " + codeElement.DefaultValue + ";";
-            }
             var propertyType = conventions.GetTypeString(codeElement.Type);
             conventions.WriteShortDescription(codeElement.Description, writer);
             switch(codeElement.PropertyKind) {
@@ -40,7 +35,7 @@ namespace Kiota.Builder.Writers.CSharp {
                     writer.WriteLine("}");
                 break;
                 default:
-                    writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ {simpleBody} }}{defaultValue}");
+                    writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ {simpleBody} }}");
                 break;
             }
         }
