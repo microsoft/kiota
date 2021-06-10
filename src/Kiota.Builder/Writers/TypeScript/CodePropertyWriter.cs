@@ -21,8 +21,7 @@ namespace  Kiota.Builder.Writers.TypeScript {
                 break;
                 default:
                     var singleLiner = CommonLanguageRefiner.PropertyKindsToAddAccessors.Contains(codeElement.PropertyKind);
-                    var namePrefix = singleLiner ? "_" : string.Empty;
-                    writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{(codeElement.ReadOnly ? " readonly ": " ")}{namePrefix}{codeElement.Name.ToFirstCharacterLowerCase()}{(codeElement.Type.IsNullable ? "?" : string.Empty)}: {returnType}{(isFlagEnum ? "[]" : string.Empty)}{(codeElement.Type.IsNullable ? " | undefined" : string.Empty)}{(singleLiner ? ";" : string.Empty)}");
+                    writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{(codeElement.ReadOnly ? " readonly ": " ")}{codeElement.NamePrefix}{codeElement.Name.ToFirstCharacterLowerCase()}{(codeElement.Type.IsNullable ? "?" : string.Empty)}: {returnType}{(isFlagEnum ? "[]" : string.Empty)}{(codeElement.Type.IsNullable ? " | undefined" : string.Empty)}{(singleLiner ? ";" : string.Empty)}");
                 break;
             }
         }

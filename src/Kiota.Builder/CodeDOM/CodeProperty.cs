@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace Kiota.Builder
 {
@@ -23,5 +24,9 @@ namespace Kiota.Builder
         public string DefaultValue {get;set;}
         public string Description {get; set;}
         public string SerializationName { get; set; }
+        public string NamePrefix { get; set; }
+        public bool IsOfKind(params CodePropertyKind[] kinds) {
+            return kinds?.Any(x => PropertyKind == x) ?? false;
+        }
     }
 }

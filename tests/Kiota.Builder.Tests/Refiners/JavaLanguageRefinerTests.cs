@@ -19,7 +19,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 IsExternal = false,
             };
             model.AddUsing(nUsing);
-            ILanguageRefiner.Refine(GenerationLanguage.Java, root);
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
             Assert.NotEqual("break", nUsing.Declaration.Name);
             Assert.Contains("escaped", nUsing.Declaration.Name);
         }
@@ -29,7 +29,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 Name = "break",
                 ClassKind = CodeClassKind.Model
             }).First();
-            ILanguageRefiner.Refine(GenerationLanguage.Java, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
             Assert.NotEqual("break", model.Name);
             Assert.Contains("escaped", model.Name);
         }
@@ -43,7 +43,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 Name = "rb",
                 ClassKind = CodeClassKind.RequestBuilder,
             }).First();
-            ILanguageRefiner.Refine(GenerationLanguage.Java, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
             Assert.NotEmpty(model.StartBlock.Usings);
             Assert.NotEmpty(requestBuilder.StartBlock.Usings);
         }
@@ -59,7 +59,7 @@ namespace Kiota.Builder.Refiners.Tests {
             method.ReturnType = new CodeType(method) {
                 Name = "binary"
             };
-            ILanguageRefiner.Refine(GenerationLanguage.Java, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
             Assert.NotEmpty(model.StartBlock.Usings);
             Assert.NotEqual("binary", method.ReturnType.Name);
         }
@@ -97,7 +97,7 @@ namespace Kiota.Builder.Refiners.Tests {
                     TypeDefinition = requestBuilder,
                 },
             });
-            ILanguageRefiner.Refine(GenerationLanguage.Java, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
             Assert.Single(requestBuilder.GetChildElements(true));
             Assert.True(requestBuilder.GetChildElements(true).First() is CodeProperty);
             Assert.Equal(2, collectionRequestBuilder.GetChildElements(true).Count());
@@ -129,7 +129,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 }
             };
             method.Parameters.Add(parameter);
-            ILanguageRefiner.Refine(GenerationLanguage.Java, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
             Assert.Equal(2, model.GetChildElements(true).Count());
         }
         #endregion
@@ -148,7 +148,7 @@ namespace Kiota.Builder.Refiners.Tests {
                     IsExternal = true,
                 }
             });
-            ILanguageRefiner.Refine(GenerationLanguage.Java, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
             Assert.NotEmpty((model.StartBlock as CodeClass.Declaration).Usings.Where(x => "List".Equals(x.Name)));
         }
         [Fact]
@@ -167,7 +167,7 @@ namespace Kiota.Builder.Refiners.Tests {
                     }
                 }
             });
-            ILanguageRefiner.Refine(GenerationLanguage.Java, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
             Assert.NotEmpty((model.StartBlock as CodeClass.Declaration).Usings.Where(x => "EnumSet".Equals(x.Name)));
         }
         [Fact]
@@ -244,7 +244,7 @@ namespace Kiota.Builder.Refiners.Tests {
                     Name = serializerDefaultName,
                 }
             });
-            ILanguageRefiner.Refine(GenerationLanguage.Java, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
             Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => httpCoreDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => factoryDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));

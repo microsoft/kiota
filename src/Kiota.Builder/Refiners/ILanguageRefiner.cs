@@ -3,17 +3,17 @@ namespace Kiota.Builder.Refiners
     public interface ILanguageRefiner
     {
         void Refine(CodeNamespace generatedCode);
-        public static void Refine(GenerationLanguage language, CodeNamespace generatedCode) {
-            switch (language)
+        public static void Refine(GenerationConfiguration config, CodeNamespace generatedCode) {
+            switch (config.Language)
             {
                 case GenerationLanguage.CSharp:
-                    new CSharpRefiner().Refine(generatedCode);
+                    new CSharpRefiner(config).Refine(generatedCode);
                     break;
                 case GenerationLanguage.TypeScript:
-                    new TypeScriptRefiner().Refine(generatedCode);
+                    new TypeScriptRefiner(config).Refine(generatedCode);
                     break;
                 case GenerationLanguage.Java:
-                    new JavaRefiner().Refine(generatedCode);
+                    new JavaRefiner(config).Refine(generatedCode);
                     break;
                 default:
                     break; //Do nothing

@@ -5,6 +5,7 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Refiners {
     public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
+        public CSharpRefiner(GenerationConfiguration configuration) : base(configuration) {}
         public override void Refine(CodeNamespace generatedCode)
         {
             AddDefaultImports(generatedCode);

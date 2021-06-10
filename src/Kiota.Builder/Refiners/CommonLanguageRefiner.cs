@@ -6,6 +6,9 @@ using static Kiota.Builder.CodeClass;
 namespace Kiota.Builder.Refiners {
     public abstract class CommonLanguageRefiner : ILanguageRefiner
     {
+        public CommonLanguageRefiner(GenerationConfiguration configuration) {
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        }
         public abstract void Refine(CodeNamespace generatedCode);
         internal const string GetterPrefix = "get-";
         internal const string SetterPrefix = "set-";
@@ -24,11 +27,16 @@ namespace Kiota.Builder.Refiners {
             } else
                 return false;
         }
-        protected static void AddGetterAndSetterMethods(CodeElement current) {
+        protected static void AddGetterAndSetterMethods(CodeElement current, bool removeProperty) {
             if(current is CodeProperty currentProperty &&
                 PropertyKindsToAddAccessors.Contains(currentProperty.PropertyKind) &&
                 current.Parent is CodeClass parentClass) {
-                currentProperty.Access = AccessModifier.Private;
+                if(removeProperty && currentProperty.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.AdditionalData)) // we never want to remove backing stores
+                    parentClass.RemoveChildElement(currentProperty);
+                else {
+                    currentProperty.Access = AccessModifier.Private;
+                    currentProperty.NamePrefix = "_";
+                }
                 parentClass.AddMethod(new CodeMethod(parentClass) {
                     Name = $"{GetterPrefix}{current.Name}",
                     Access = AccessModifier.Public,
@@ -36,6 +44,7 @@ namespace Kiota.Builder.Refiners {
                     MethodKind = CodeMethodKind.Getter,
                     ReturnType = currentProperty.Type,
                     Description = $"Gets the {current.Name} property value. {currentProperty.Description}",
+                    AccessedProperty = currentProperty,
                 });
                 if(!currentProperty.ReadOnly) {
                     var setter = parentClass.AddMethod(new CodeMethod(parentClass) {
@@ -44,6 +53,7 @@ namespace Kiota.Builder.Refiners {
                         IsAsync = false,
                         MethodKind = CodeMethodKind.Setter,
                         Description = $"Sets the {current.Name} property value. {currentProperty.Description}",
+                        AccessedProperty = currentProperty,
                     }).First();
                     setter.ReturnType = new CodeType(setter) {
                         Name = "void"
@@ -57,7 +67,7 @@ namespace Kiota.Builder.Refiners {
                     });
                 }
             }
-            CrawlTree(current, AddGetterAndSetterMethods);
+            CrawlTree(current, x => AddGetterAndSetterMethods(x , removeProperty));
         }
         protected static void AddConstructorsForDefaultValues(CodeElement current, bool addIfInherited) {
             if(current is CodeClass currentClass && 
@@ -277,6 +287,8 @@ namespace Kiota.Builder.Refiners {
         }
         private static readonly CodeUsingComparer usingComparerWithDeclarations = new CodeUsingComparer(true);
         private static readonly CodeUsingComparer usingComparerWithoutDeclarations = new CodeUsingComparer(false);
+        protected readonly GenerationConfiguration _configuration;
+
         protected static void AddPropertiesAndMethodTypesImports(CodeElement current, bool includeParentNamespaces, bool includeCurrentNamespace, bool compareOnDeclaration) {
             if(current is CodeClass currentClass) {
                 var currentClassNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();

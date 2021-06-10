@@ -41,6 +41,7 @@ namespace Kiota.Builder
         public bool IsStatic {get;set;} = false;
         public bool IsAsync {get;set;} = true;
         public string Description {get; set;}
+        public CodeProperty AccessedProperty { get; set; }
         public bool IsOfKind(params CodeMethodKind[] kinds) {
             return kinds?.Any(x => x == MethodKind) ?? false;
         }
@@ -65,6 +66,7 @@ namespace Kiota.Builder
                 Description = Description?.Clone() as string,
                 GenerationProperties = new (GenerationProperties),
                 ContentType = ContentType?.Clone() as string,
+                AccessedProperty = AccessedProperty,
             };
         }
 

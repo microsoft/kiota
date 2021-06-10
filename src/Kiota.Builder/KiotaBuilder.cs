@@ -65,7 +65,7 @@ namespace Kiota.Builder
 
             // Step 5 - RefineByLanguage
             sw.Start();
-            ApplyLanguageRefinement(config.Language, generatedCode);
+            ApplyLanguageRefinement(config, generatedCode);
             StopLogAndReset(sw, "step 5 - refine by language - took");
 
             // Step 6 - Write language source 
@@ -178,14 +178,14 @@ namespace Kiota.Builder
         /// <summary>
         /// Manipulate CodeDOM for language specific issues
         /// </summary>
-        /// <param name="language"></param>
+        /// <param name="config"></param>
         /// <param name="generatedCode"></param>
-        public void ApplyLanguageRefinement(GenerationLanguage language, CodeNamespace generatedCode)
+        public void ApplyLanguageRefinement(GenerationConfiguration config, CodeNamespace generatedCode)
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            ILanguageRefiner.Refine(language, generatedCode);
+            ILanguageRefiner.Refine(config, generatedCode);
 
             stopwatch.Stop();
             logger.LogDebug("{timestamp}ms: Language refinement applied", stopwatch.ElapsedMilliseconds);
@@ -768,7 +768,7 @@ namespace Kiota.Builder
                 model.AddProperty(additionalDataProp);
             }
             if(!model.ContainsMember(backingStorePropertyName) &&
-               !string.IsNullOrEmpty(config.BackingStore) &&
+               config.UsesBackingStore &&
                !(model.GetGreatestGrandparent(model)?.ContainsMember(backingStorePropertyName) ?? false)) {
                 var storeImplFragments = config.BackingStore.Split('.');
                 var storeImplClassName = storeImplFragments.Last();

@@ -16,7 +16,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 Name = "break",
                 ClassKind = CodeClassKind.Model
             }).First();
-            ILanguageRefiner.Refine(GenerationLanguage.TypeScript, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
             Assert.NotEqual("break", model.Name);
             Assert.Contains("escaped", model.Name);
         }
@@ -95,7 +95,7 @@ namespace Kiota.Builder.Refiners.Tests {
                     Name = streamDefaultName
                 }
             });
-            ILanguageRefiner.Refine(GenerationLanguage.TypeScript, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration{ Language = GenerationLanguage.TypeScript }, root);
             Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => httpCoreDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => factoryDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));

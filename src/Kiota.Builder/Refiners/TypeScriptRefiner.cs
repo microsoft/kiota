@@ -1,11 +1,10 @@
 using System.Linq;
-using System.Collections.Generic;
 using System;
-using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners {
     public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
+        public TypeScriptRefiner(GenerationConfiguration configuration) : base(configuration) {}
         public override void Refine(CodeNamespace generatedCode)
         {
             PatchResponseHandlerType(generatedCode);
@@ -17,7 +16,7 @@ namespace Kiota.Builder.Refiners {
             AddParsableInheritanceForModelClasses(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "ReadableStream", "web-streams-polyfill/es2018", true);
             ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
-            AddGetterAndSetterMethods(generatedCode);
+            AddGetterAndSetterMethods(generatedCode, _configuration.UsesBackingStore);
             AddConstructorsForDefaultValues(generatedCode, true);
         }
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {

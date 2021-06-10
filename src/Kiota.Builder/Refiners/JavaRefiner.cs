@@ -6,6 +6,7 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Refiners {
     public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
+        public JavaRefiner(GenerationConfiguration configuration) : base(configuration) {}
         public override void Refine(CodeNamespace generatedCode)
         {
             AddInnerClasses(generatedCode);

@@ -69,14 +69,14 @@ namespace  Kiota.Builder.Writers.TypeScript {
                                             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
                                             .OrderByDescending(x => x.PropertyKind)
                                             .ThenBy(x => x.Name)) {
-                writer.WriteLine($"this._{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
+                writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
             }
         }
         private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer) {
-            writer.WriteLine($"this._{codeElement.Name.Replace(CommonLanguageRefiner.SetterPrefix, string.Empty).ToFirstCharacterLowerCase()} = value;");
+            writer.WriteLine($"this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()} = value;");
         }
         private static void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer) {
-            writer.WriteLine($"return this._{codeElement.Name.Replace(CommonLanguageRefiner.GetterPrefix, string.Empty).ToFirstCharacterLowerCase()};");
+            writer.WriteLine($"return this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()};");
         }
         private static void WriteDefaultMethodBody(CodeMethod codeElement, LanguageWriter writer) {
             var promisePrefix = codeElement.IsAsync ? "Promise.resolve(" : string.Empty;
@@ -172,11 +172,10 @@ namespace  Kiota.Builder.Writers.TypeScript {
         }
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid) {
             var accessModifier = localConventions.GetAccessModifier(code.Access);
-            var methodName = (code.MethodKind switch {
-                CodeMethodKind.Getter => code.Name.Replace(CommonLanguageRefiner.GetterPrefix, string.Empty),
-                CodeMethodKind.Setter => code.Name.Replace(CommonLanguageRefiner.SetterPrefix, string.Empty),
-                _ => code.Name
-            }).ToFirstCharacterLowerCase();
+            var methodName = (code.IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter) ?
+                code.AccessedProperty?.Name :
+                code.Name
+            ).ToFirstCharacterLowerCase();
             var asyncPrefix = code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? " async ": string.Empty;
             var parameters = string.Join(", ", code.Parameters.Select(p=> localConventions.GetParameterSignature(p)).ToList());
             var asyncReturnTypePrefix = code.IsAsync ? "Promise<": string.Empty;
