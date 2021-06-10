@@ -7,6 +7,8 @@ export class JsonParseNode implements ParseNode {
     constructor(private readonly _jsonNode: unknown) {
         
     }
+    public onBeforeAssignFieldValues: ((value: Parsable) => void) | undefined;
+    public onAfterAssignFieldValues: ((value: Parsable) => void) | undefined;
     public getStringValue = (): string => this._jsonNode as string;
     public getChildNode = (identifier: string): ParseNode => new JsonParseNode((this._jsonNode as any)[identifier]);
     public getBooleanValue = (): boolean => this._jsonNode as boolean;
@@ -36,7 +38,9 @@ export class JsonParseNode implements ParseNode {
     }
     public getObjectValue = <T extends Parsable>(type: new() => T): T => {
         const result = new type();
+        this.onBeforeAssignFieldValues && this.onBeforeAssignFieldValues(result);
         this.assignFieldValues(result);
+        this.onAfterAssignFieldValues && this.onAfterAssignFieldValues(result);
         return result;
     }
     public getEnumValues = <T>(type: any): T[] => {

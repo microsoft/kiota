@@ -5,6 +5,8 @@ import { ReadableStream } from 'web-streams-polyfill/es2018';
 export class JsonSerializationWriter implements SerializationWriter {
     private readonly writer: string[] = [];
     private static propertySeparator = `,`;
+    public onBeforeObjectSerialization: ((value: Parsable) => void) | undefined;
+    public onAfterObjectSerialization: ((value: Parsable) => void) | undefined;
     public writeStringValue = (key?: string, value?: string): void => {
         key && value && this.writePropertyName(key);
         value && this.writer.push(`"${value}"`);
@@ -66,7 +68,9 @@ export class JsonSerializationWriter implements SerializationWriter {
                 this.writePropertyName(key);
             }
             this.writer.push(`{`);
+            this.onBeforeObjectSerialization && this.onBeforeObjectSerialization(value);
             value.serialize(this);
+            this.onAfterObjectSerialization && this.onAfterObjectSerialization(value);
             if(this.writer.length > 0 && this.writer[this.writer.length - 1] === JsonSerializationWriter.propertySeparator) { //removing the last separator
                 this.writer.pop();
             }

@@ -13,6 +13,6 @@ export interface SerializationWriter {
     writeEnumValue<T>(key?: string | undefined, ...values: (T | undefined)[]): void;
     getSerializedContent(): ReadableStream;
     writeAdditionalData(value: Map<string, unknown>): void;
-    onBeforeObjectSerialization: (value: Parsable) => void;
-    onAfterObjectSerialization: (value: Parsable) => void;
+    onBeforeObjectSerialization: ((value: Parsable) => void) | undefined;
+    onAfterObjectSerialization: ((value: Parsable) => void) | undefined;
 }
