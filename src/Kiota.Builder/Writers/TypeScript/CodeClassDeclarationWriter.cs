@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using Kiota.Builder.Extensions;
 
-namespace  Kiota.Builder.Writers.TypeScript {
+namespace Kiota.Builder.Writers.TypeScript {
     public class CodeClassDeclarationWriter : BaseElementWriter<CodeClass.Declaration, TypeScriptConventionService>
     {
         public CodeClassDeclarationWriter(TypeScriptConventionService conventionService) : base(conventionService){}
@@ -35,7 +35,7 @@ namespace  Kiota.Builder.Writers.TypeScript {
             }
             writer.WriteLine();
             var derivation = (codeElement.Inherits == null ? string.Empty : $" extends {codeElement.Inherits.Name.ToFirstCharacterUpperCase()}") +
-                            (!codeElement.Implements.Any() ? string.Empty : $" implements {codeElement.Implements.Select(x => x.Name).Aggregate((x,y) => x + " ," + y)}");
+                            (!codeElement.Implements.Any() ? string.Empty : $" implements {codeElement.Implements.Select(x => x.Name).Aggregate((x,y) => x + ", " + y)}");
             conventions.WriteShortDescription((codeElement.Parent as CodeClass).Description, writer);
             writer.WriteLine($"export class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation} {{");
             writer.IncreaseIndent();
