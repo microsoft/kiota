@@ -22,13 +22,13 @@ namespace Microsoft.Kiota.Abstractions.Store {
                 throw new ArgumentNullException(nameof(key));
 
             var valueToAdd = new Tuple<bool, object>(InitilizationCompleted, value);
-            object oldValue = null;
+            Tuple<bool, object> oldValue = null;
             if(!store.TryAdd(key, valueToAdd)) {
                 oldValue = store[key];
                 store[key] = valueToAdd;
             }
             foreach(var sub in subscriptions.Values)
-                sub.Invoke(key, value, oldValue);
+                sub.Invoke(key, oldValue?.Item2, value);
         }
         public IEnumerable<KeyValuePair<string, object>> Enumerate() {
             return (ReturnOnlyChangedValues ? store.Where(x => !x.Value.Item1) : store)
