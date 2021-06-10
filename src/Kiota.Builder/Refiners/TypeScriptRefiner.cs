@@ -45,9 +45,11 @@ namespace Kiota.Builder.Refiners {
         };
         private static void CorrectCoreType(CodeElement currentElement) {
             if (currentElement is CodeProperty currentProperty) {
-                if ("IHttpCore".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase))
+                if(currentProperty.IsOfKind(CodePropertyKind.HttpCore))
                     currentProperty.Type.Name = "HttpCore";
-                else if(currentProperty.Name.Equals("serializerFactory", StringComparison.OrdinalIgnoreCase))
+                else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
+                    currentProperty.Type.Name = currentProperty.Type.Name.Substring(1); // removing the "I"
+                else if(currentProperty.IsOfKind(CodePropertyKind.SerializerFactory))
                     currentProperty.Type.Name = "SerializationWriterFactory";
                 else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase))
                     currentProperty.Type.Name = $"Date";
@@ -64,6 +66,19 @@ namespace Kiota.Builder.Refiners {
                 else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer))
                     currentMethod.ReturnType.Name = $"Map<string, (item: T, node: ParseNode) => void>";
             }
+            if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model
+                && currentClass.StartBlock is CodeClass.Declaration currentDeclaration) {
+                foreach(var backingStoreUsing in currentDeclaration.Usings.Where(x => "Microsoft.Kiota.Abstractions.Store".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase))) {
+                    if(backingStoreUsing?.Declaration != null) {
+                        backingStoreUsing.Name = backingStoreUsing.Name.Substring(1); // removing the "I"
+                        backingStoreUsing.Declaration.Name = "@microsoft/kiota-abstractions";
+                    }
+                }
+                var backedModelImplements = currentDeclaration.Implements.FirstOrDefault(x => "IBackedModel".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
+                if(backedModelImplements != null)
+                    backedModelImplements.Name = backedModelImplements.Name.Substring(1); //removing the "I"
+            }
+                
             CrawlTree(currentElement, CorrectCoreType);
         }
         private static void PatchResponseHandlerType(CodeElement current) {
