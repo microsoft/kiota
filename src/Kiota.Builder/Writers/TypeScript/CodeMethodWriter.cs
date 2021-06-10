@@ -2,8 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers.Extensions;
 
-namespace  Kiota.Builder.Writers.TypeScript {
+namespace Kiota.Builder.Writers.TypeScript {
     public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventionService>
     {
         public CodeMethodWriter(TypeScriptConventionService conventionService) : base(conventionService){}
@@ -62,9 +63,10 @@ namespace  Kiota.Builder.Writers.TypeScript {
         private static void WriteConstructorBody(CodeClass parentClass, LanguageWriter writer, bool inherits) {
             if(inherits)
                 writer.WriteLine("super();");
-            foreach(var propWithDefault in parentClass
-                                            .GetChildElements(true)
-                                            .OfType<CodeProperty>()
+            foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData,
+                                                                            CodePropertyKind.BackingStore,
+                                                                            CodePropertyKind.RequestBuilder,
+                                                                            CodePropertyKind.PathSegment)
                                             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
                                             .OrderByDescending(x => x.PropertyKind)
                                             .ThenBy(x => x.Name)) {
@@ -87,11 +89,7 @@ namespace  Kiota.Builder.Writers.TypeScript {
             writer.WriteLine($"return new Map<string, (item: T, node: {localConventions.ParseNodeInterfaceName}) => void>([{(inherits ? $"...super.{codeElement.Name.ToFirstCharacterLowerCase()}()," : string.Empty)}");
             writer.IncreaseIndent();
             var parentClassName = parentClass.Name.ToFirstCharacterUpperCase();
-            foreach(var otherProp in parentClass
-                                            .GetChildElements(true)
-                                            .OfType<CodeProperty>()
-                                            .Where(x => x.IsOfKind(CodePropertyKind.Custom))
-                                            .OrderBy(x => x.Name)) {
+            foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
                 writer.WriteLine($"[\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", (o, n) => {{ (o as unknown as {parentClassName}).{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type)}; }}],");
             }
             writer.DecreaseIndent();
@@ -138,14 +136,10 @@ namespace  Kiota.Builder.Writers.TypeScript {
             writer.WriteLine("return requestInfo;");
         }
         private void WriteSerializerBody(bool inherits, CodeClass parentClass, LanguageWriter writer) {
-            var additionalDataProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.AdditionalData));
+            var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();
             if(inherits)
                 writer.WriteLine("super.serialize(writer);");
-            foreach(var otherProp in parentClass
-                                            .GetChildElements(true)
-                                            .OfType<CodeProperty>()
-                                            .Where(x => x.IsOfKind(CodePropertyKind.Custom))
-                                            .OrderBy(x => x.Name)) {
+            foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
                 writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", this.{otherProp.Name.ToFirstCharacterLowerCase()});");
             }
             if(additionalDataProperty != null)
