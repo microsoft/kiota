@@ -2,7 +2,7 @@ using System;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
 
-namespace  Kiota.Builder.Writers.TypeScript {
+namespace Kiota.Builder.Writers.TypeScript {
     public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConventionService>
     {
         public CodePropertyWriter(TypeScriptConventionService conventionService) : base(conventionService){}
@@ -20,8 +20,7 @@ namespace  Kiota.Builder.Writers.TypeScript {
                     writer.WriteLine("}");
                 break;
                 default:
-                    var singleLiner = CommonLanguageRefiner.PropertyKindsToAddAccessors.Contains(codeElement.PropertyKind);
-                    writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{(codeElement.ReadOnly ? " readonly ": " ")}{codeElement.NamePrefix}{codeElement.Name.ToFirstCharacterLowerCase()}{(codeElement.Type.IsNullable ? "?" : string.Empty)}: {returnType}{(isFlagEnum ? "[]" : string.Empty)}{(codeElement.Type.IsNullable ? " | undefined" : string.Empty)}{(singleLiner ? ";" : string.Empty)}");
+                    writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{(codeElement.ReadOnly ? " readonly ": " ")}{codeElement.NamePrefix}{codeElement.Name.ToFirstCharacterLowerCase()}{(codeElement.Type.IsNullable ? "?" : string.Empty)}: {returnType}{(isFlagEnum ? "[]" : string.Empty)}{(codeElement.Type.IsNullable ? " | undefined" : string.Empty)};");
                 break;
             }
         }
