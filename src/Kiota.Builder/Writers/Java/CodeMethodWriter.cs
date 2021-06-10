@@ -19,7 +19,7 @@ namespace Kiota.Builder.Writers.Java {
             WriteMethodDocumentation(codeElement, writer);
             if(returnType.Equals("void", StringComparison.OrdinalIgnoreCase))
             {
-                if(codeElement.MethodKind == CodeMethodKind.RequestExecutor)
+                if(codeElement.IsOfKind(CodeMethodKind.RequestExecutor))
                     returnType = "Void"; //generic type for the future
             } else if(!codeElement.IsAsync)
                 writer.WriteLine(codeElement.ReturnType.IsNullable && !codeElement.IsAsync ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
@@ -86,7 +86,7 @@ namespace Kiota.Builder.Writers.Java {
             var generatorMethodName = (codeElement.Parent as CodeClass)
                                                 .GetChildElements(true)
                                                 .OfType<CodeMethod>()
-                                                .FirstOrDefault(x => x.MethodKind == CodeMethodKind.RequestGenerator && x.HttpMethod == codeElement.HttpMethod)
+                                                .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
                                                 ?.Name
                                                 ?.ToFirstCharacterLowerCase();
             writer.WriteLine("try {");
@@ -160,12 +160,12 @@ namespace Kiota.Builder.Writers.Java {
         }
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType) {
             var accessModifier = conventions.GetAccessModifier(code.Access);
-            var genericTypeParameterDeclaration = code.MethodKind == CodeMethodKind.Deserializer ? "<T> ": string.Empty;
+            var genericTypeParameterDeclaration = code.IsOfKind(CodeMethodKind.Deserializer) ? "<T> ": string.Empty;
             var returnTypeAsyncPrefix = code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty;
             var returnTypeAsyncSuffix = code.IsAsync ? ">" : string.Empty;
             var methodName = code.Name.ToFirstCharacterLowerCase();
             var parameters = string.Join(", ", code.Parameters.Select(p=> conventions.GetParameterSignature(p)).ToList());
-            var throwableDeclarations = code.MethodKind == CodeMethodKind.RequestGenerator ? "throws URISyntaxException ": string.Empty;
+            var throwableDeclarations = code.IsOfKind(CodeMethodKind.RequestGenerator) ? "throws URISyntaxException ": string.Empty;
             writer.WriteLine($"{accessModifier} {genericTypeParameterDeclaration}{returnTypeAsyncPrefix}{returnType}{returnTypeAsyncSuffix} {methodName}({parameters}) {throwableDeclarations}{{");
         }
         private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer) {

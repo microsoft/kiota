@@ -7,9 +7,9 @@ namespace Kiota.Builder.Refiners {
     public abstract class CommonLanguageRefiner : ILanguageRefiner
     {
         public abstract void Refine(CodeNamespace generatedCode);
-        internal static string GetterPrefix = "get-";
-        internal static string SetterPrefix = "set-";
-        internal static HashSet<CodePropertyKind> PropertyKindsToAddAccessors = new() {
+        internal const string GetterPrefix = "get-";
+        internal const string SetterPrefix = "set-";
+        internal static readonly HashSet<CodePropertyKind> PropertyKindsToAddAccessors = new() {
             CodePropertyKind.Custom,
             CodePropertyKind.AdditionalData,
             CodePropertyKind.BackingStore,

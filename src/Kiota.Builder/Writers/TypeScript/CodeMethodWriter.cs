@@ -51,7 +51,7 @@ namespace  Kiota.Builder.Writers.TypeScript {
                     WriteSetterBody(codeElement, writer);
                     break;
                 case CodeMethodKind.Constructor:
-                    WriteConstructorBody(codeElement, parentClass, writer, inherits);
+                    WriteConstructorBody(parentClass, writer, inherits);
                     break;
                 default:
                     WriteDefaultMethodBody(codeElement, writer);
@@ -60,7 +60,7 @@ namespace  Kiota.Builder.Writers.TypeScript {
             writer.DecreaseIndent();
             writer.WriteLine("};");
         }
-        private void WriteConstructorBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits) {
+        private static void WriteConstructorBody(CodeClass parentClass, LanguageWriter writer, bool inherits) {
             if(inherits)
                 writer.WriteLine("super();");
             foreach(var propWithDefault in parentClass
@@ -104,7 +104,7 @@ namespace  Kiota.Builder.Writers.TypeScript {
             var generatorMethodName = (codeElement.Parent as CodeClass)
                                                 .GetChildElements(true)
                                                 .OfType<CodeMethod>()
-                                                .FirstOrDefault(x => x.MethodKind == CodeMethodKind.RequestGenerator && x.HttpMethod == codeElement.HttpMethod)
+                                                .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
                                                 ?.Name
                                                 ?.ToFirstCharacterLowerCase();
             writer.WriteLine($"const requestInfo = this.{generatorMethodName}(");

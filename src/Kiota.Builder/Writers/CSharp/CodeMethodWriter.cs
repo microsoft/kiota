@@ -38,7 +38,7 @@ namespace Kiota.Builder.Writers.CSharp {
                     WriteDeserializerBody(codeElement, parentClass, writer);
                     break;
                 case CodeMethodKind.Constructor:
-                    WriteConstructorBody(codeElement, parentClass, writer);
+                    WriteConstructorBody(parentClass, writer);
                     break;
                 case CodeMethodKind.Getter:
                 case CodeMethodKind.Setter:
@@ -50,7 +50,7 @@ namespace Kiota.Builder.Writers.CSharp {
             writer.DecreaseIndent();
             writer.WriteLine("}");
         }
-        private void WriteConstructorBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
+        private static void WriteConstructorBody(CodeClass parentClass, LanguageWriter writer) {
             foreach(var propWithDefault in parentClass
                                             .GetChildElements(true)
                                             .OfType<CodeProperty>()
@@ -107,7 +107,7 @@ namespace Kiota.Builder.Writers.CSharp {
             var generatorMethodName = (codeElement.Parent as CodeClass)
                                                 .GetChildElements(true)
                                                 .OfType<CodeMethod>()
-                                                .FirstOrDefault(x => x.MethodKind == CodeMethodKind.RequestGenerator && x.HttpMethod == codeElement.HttpMethod)
+                                                .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
                                                 ?.Name;
                     writer.WriteLine($"var requestInfo = {generatorMethodName}(");
                     writer.IncreaseIndent();
@@ -180,15 +180,16 @@ namespace Kiota.Builder.Writers.CSharp {
         }
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool inherits, bool isVoid) {
             var staticModifier = code.IsStatic ? "static " : string.Empty;
-            var isSerializationMethod = code.MethodKind == CodeMethodKind.Serializer || code.MethodKind == CodeMethodKind.Deserializer;
-            var hideModifier = inherits && isSerializationMethod ? "new " : string.Empty;
+            var hideModifier = inherits && code.IsSerializationMethod ? "new " : string.Empty;
             var genericTypePrefix = isVoid ? string.Empty : "<";
             var genricTypeSuffix = code.IsAsync && !isVoid ? ">": string.Empty;
-            var isConstructor = code.MethodKind == CodeMethodKind.Constructor;
+            var isConstructor = code.IsOfKind(CodeMethodKind.Constructor);
+            var asyncPrefix = code.IsAsync ? "async Task" + genericTypePrefix : string.Empty;
+            var voidCorrectedTaskReturnType = code.IsAsync && isVoid ? string.Empty : returnType;
             // TODO: Task type should be moved into the refiner
             var completeReturnType = isConstructor ?
                 string.Empty :
-                $"{(code.IsAsync ? "async Task" + genericTypePrefix : string.Empty)}{(code.IsAsync && isVoid ? string.Empty : returnType)}{genricTypeSuffix} ";
+                $"{asyncPrefix}{voidCorrectedTaskReturnType}{genricTypeSuffix} ";
             var baseSuffix = string.Empty;
             if(isConstructor && inherits)
                 baseSuffix = " : base()";

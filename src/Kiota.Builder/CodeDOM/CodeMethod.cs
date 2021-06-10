@@ -41,10 +41,14 @@ namespace Kiota.Builder
         public bool IsStatic {get;set;} = false;
         public bool IsAsync {get;set;} = true;
         public string Description {get; set;}
+        public bool IsOfKind(params CodeMethodKind[] kinds) {
+            return kinds?.Any(x => x == MethodKind) ?? false;
+        }
         public bool IsAccessor { 
-            get {
-                return MethodKind == CodeMethodKind.Getter || MethodKind == CodeMethodKind.Setter;
-            }
+            get => IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter);
+        }
+        public bool IsSerializationMethod {
+            get => IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer);
         }
 
         public object Clone()

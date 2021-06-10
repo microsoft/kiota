@@ -58,11 +58,11 @@ namespace Kiota.Builder.Refiners {
                 }
             }
             if (currentElement is CodeMethod currentMethod) {
-                if(currentMethod.MethodKind == CodeMethodKind.RequestExecutor)
+                if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
                     currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x => x.Type.Name = "ResponseHandler");
-                else if(currentMethod.MethodKind == CodeMethodKind.Serializer)
+                else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
                     currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
-                else if(currentMethod.MethodKind == CodeMethodKind.Deserializer)
+                else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer))
                     currentMethod.ReturnType.Name = $"Map<string, (item: T, node: ParseNode) => void>";
             }
             CrawlTree(currentElement, CorrectCoreType);

@@ -117,11 +117,11 @@ namespace Kiota.Builder.Refiners {
                 }
             }
             if (currentElement is CodeMethod currentMethod) {
-                if(currentMethod.MethodKind == CodeMethodKind.RequestExecutor)
+                if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
                     currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x => x.Type.Name = "ResponseHandler");
-                else if(currentMethod.MethodKind == CodeMethodKind.Serializer)
+                else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
                     currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
-                else if(currentMethod.MethodKind == CodeMethodKind.Deserializer) {
+                else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer)) {
                     currentMethod.ReturnType.Name = $"Map<String, BiConsumer<T, ParseNode>>";
                     currentMethod.Name = "getFieldDeserializers";
                 }
@@ -146,7 +146,7 @@ namespace Kiota.Builder.Refiners {
             if(currentElement is CodeClass currentClass) {
                 var codeMethods = currentClass.GetChildElements(true).OfType<CodeMethod>();
                 if(codeMethods.Any()) {
-                    var originalExecutorMethods = codeMethods.Where(x => x.MethodKind == CodeMethodKind.RequestExecutor);
+                    var originalExecutorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
                     var executorMethodsToAdd = originalExecutorMethods
                                         .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter))
                                         .Union(originalExecutorMethods
@@ -154,7 +154,7 @@ namespace Kiota.Builder.Refiners {
                                         .Union(originalExecutorMethods
                                                 .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers, CodeParameterKind.ResponseHandler)))
                                         .Where(x => x != null);
-                    var originalGeneratorMethods = codeMethods.Where(x => x.MethodKind == CodeMethodKind.RequestGenerator);
+                    var originalGeneratorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestGenerator));
                     var generatorMethodsToAdd = originalGeneratorMethods
                                         .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter))
                                         .Union(originalGeneratorMethods
