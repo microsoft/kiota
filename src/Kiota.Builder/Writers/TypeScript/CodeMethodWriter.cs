@@ -45,10 +45,10 @@ namespace Kiota.Builder.Writers.TypeScript {
                     WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, isVoid, returnType, writer);
                     break;
                 case CodeMethodKind.Getter:
-                    WriteGetterBody(codeElement, writer);
+                    WriteGetterBody(codeElement, writer, parentClass);
                     break;
                 case CodeMethodKind.Setter:
-                    WriteSetterBody(codeElement, writer);
+                    WriteSetterBody(codeElement, writer, parentClass);
                     break;
                 case CodeMethodKind.Constructor:
                     WriteConstructorBody(parentClass, writer, inherits);
@@ -73,11 +73,29 @@ namespace Kiota.Builder.Writers.TypeScript {
                 writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
             }
         }
-        private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer) {
-            writer.WriteLine($"this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()} = value;");
+        private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass) {
+            var backingStore = parentClass.GetBackingStoreProperty();
+            if(backingStore == null)
+                writer.WriteLine($"this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()} = value;");
+            else
+                writer.WriteLine($"this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.set(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\", value);");
         }
-        private static void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer) {
-            writer.WriteLine($"return this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()};");
+        private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass) {
+            var backingStore = parentClass.GetBackingStoreProperty();
+            if(backingStore == null)
+                writer.WriteLine($"return this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()};");
+            else 
+                if(!(codeElement.AccessedProperty?.Type?.IsNullable ?? true) && !string.IsNullOrEmpty(codeElement.AccessedProperty?.DefaultValue)) {
+                    writer.WriteLines($"let value = this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.get<{conventions.GetTypeString(codeElement.AccessedProperty.Type)}>(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\");",
+                        "if(!value) {");
+                    writer.IncreaseIndent();
+                    writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue};",
+                        $"this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()} = value;");
+                    writer.DecreaseIndent();
+                    writer.WriteLines("}", "return value");
+                } else
+                    writer.WriteLine($"return this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\");");
+
         }
         private static void WriteDefaultMethodBody(CodeMethod codeElement, LanguageWriter writer) {
             var promisePrefix = codeElement.IsAsync ? "Promise.resolve(" : string.Empty;
