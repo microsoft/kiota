@@ -68,7 +68,7 @@ namespace Kiota.Builder.Writers.CSharp {
             foreach(var otherProp in parentClass
                                             .GetChildElements(true)
                                             .OfType<CodeProperty>()
-                                            .Where(x => x.PropertyKind == CodePropertyKind.Custom)
+                                            .Where(x => x.IsOfKind(CodePropertyKind.Custom))
                                             .OrderBy(x => x.Name)) {
                 writer.WriteLine($"{{\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", (o,n) => {{ (o as {parentClass.Name.ToFirstCharacterUpperCase()}).{otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type)}(); }} }},");
             }
@@ -148,13 +148,13 @@ namespace Kiota.Builder.Writers.CSharp {
             }
         }
         private void WriteSerializerBody(bool shouldHide, CodeClass parentClass, LanguageWriter writer) {
-            var additionalDataProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.AdditionalData);
+            var additionalDataProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.AdditionalData));
             if(shouldHide)
                 writer.WriteLine("base.Serialize(writer);");
             foreach(var otherProp in parentClass
                                             .GetChildElements(true)
                                             .OfType<CodeProperty>()
-                                            .Where(x => x.PropertyKind == CodePropertyKind.Custom)
+                                            .Where(x => x.IsOfKind(CodePropertyKind.Custom))
                                             .OrderBy(x => x.Name)) {
                 writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
             }

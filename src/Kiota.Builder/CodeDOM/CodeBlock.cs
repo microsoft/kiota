@@ -62,7 +62,7 @@ namespace Kiota.Builder
             if(!added && element is CodeMethod currentMethod)
                 if(currentMethod.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) &&
                     returnedValue is CodeProperty cProp &&
-                    cProp.PropertyKind == CodePropertyKind.RequestBuilder) {
+                    cProp.IsOfKind(CodePropertyKind.RequestBuilder)) {
                     // indexer retrofited to method in the parent request builder on the path and conflicting with the collection request builder propeerty
                     returnedValue = innerChildElements.GetOrAdd($"{element.Name}-indexerbackcompat", element);
                     added = true;

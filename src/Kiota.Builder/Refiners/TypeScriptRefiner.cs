@@ -51,7 +51,7 @@ namespace Kiota.Builder.Refiners {
                     currentProperty.Type.Name = "SerializationWriterFactory";
                 else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase))
                     currentProperty.Type.Name = $"Date";
-                else if(currentProperty.PropertyKind == CodePropertyKind.AdditionalData) {
+                else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
                     currentProperty.Type.Name = "Map<string, unknown>";
                     currentProperty.DefaultValue = "new Map<string, unknown>()";
                 }

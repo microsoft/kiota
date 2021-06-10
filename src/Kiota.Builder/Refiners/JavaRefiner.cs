@@ -101,7 +101,7 @@ namespace Kiota.Builder.Refiners {
                         IsExternal = true,
                     };
                     (currentProperty.Parent as CodeClass).AddUsing(nUsing);
-                } else if (currentProperty.PropertyKind == CodePropertyKind.AdditionalData) {
+                } else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
                     currentProperty.Access = AccessModifier.Private;
                     currentProperty.DefaultValue = "new HashMap<>()";
                     currentProperty.Type.Name = "Map<String, Object>";

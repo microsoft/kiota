@@ -12,7 +12,7 @@ namespace Kiota.Builder.Writers.CSharp {
             var backingStorePropery = (parentClass.GetGreatestGrandparent(parentClass) ?? parentClass) // the backing store is always on the uppermost class
                                     .GetChildElements(true)
                                     .OfType<CodeProperty>()
-                                    .FirstOrDefault(x => x.PropertyKind == CodePropertyKind.BackingStore);
+                                    .FirstOrDefault(x => x.IsOfKind(CodePropertyKind.BackingStore));
             var setterAccessModifier = codeElement.ReadOnly && codeElement.Access > AccessModifier.Private ? "private " : string.Empty;
             var simpleBody = $"get; {setterAccessModifier}set;";
             var propertyType = conventions.GetTypeString(codeElement.Type);

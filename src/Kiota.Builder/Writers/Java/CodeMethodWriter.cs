@@ -66,7 +66,7 @@ namespace Kiota.Builder.Writers.Java {
             var fieldToSerialize = parentClass
                     .GetChildElements(true)
                     .OfType<CodeProperty>()
-                    .Where(x => x.PropertyKind == CodePropertyKind.Custom);
+                    .Where(x => x.IsOfKind(CodePropertyKind.Custom));
             writer.WriteLine($"return new HashMap<>({(inherits ? "super." + codeElement.Name.ToFirstCharacterLowerCase()+ "()" : fieldToSerialize.Count())}) {{{{");
             if(fieldToSerialize.Any()) {
                 writer.IncreaseIndent();
@@ -145,13 +145,13 @@ namespace Kiota.Builder.Writers.Java {
             writer.WriteLine("return requestInfo;");
         }
         private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer) {
-            var additionalDataProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.AdditionalData);
+            var additionalDataProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.AdditionalData));
             if((parentClass.StartBlock as CodeClass.Declaration).Inherits != null)
                 writer.WriteLine("super.serialize(writer);");
             foreach(var otherProp in parentClass
                                             .GetChildElements(true)
                                             .OfType<CodeProperty>()
-                                            .Where(x => x.PropertyKind == CodePropertyKind.Custom)
+                                            .Where(x => x.IsOfKind(CodePropertyKind.Custom))
                                             .OrderBy(x => x.Name)) {
                 writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterLowerCase()});");
             }

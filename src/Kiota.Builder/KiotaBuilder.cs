@@ -340,7 +340,7 @@ namespace Kiota.Builder
 
             var unmappedRequestBuilderTypes = unmappedTypesWithName
                                     .Where(x => 
-                                    x.Parent is CodeProperty property && property.PropertyKind == CodePropertyKind.RequestBuilder || x.Parent is CodeIndexer)
+                                    x.Parent is CodeProperty property && property.IsOfKind(CodePropertyKind.RequestBuilder) || x.Parent is CodeIndexer)
                                     .ToList();
             
             Parallel.ForEach(unmappedRequestBuilderTypes, x => {

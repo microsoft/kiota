@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Refiners;
 
 namespace  Kiota.Builder.Writers.TypeScript {
     public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventionService>
@@ -91,7 +90,7 @@ namespace  Kiota.Builder.Writers.TypeScript {
             foreach(var otherProp in parentClass
                                             .GetChildElements(true)
                                             .OfType<CodeProperty>()
-                                            .Where(x => x.PropertyKind == CodePropertyKind.Custom)
+                                            .Where(x => x.IsOfKind(CodePropertyKind.Custom))
                                             .OrderBy(x => x.Name)) {
                 writer.WriteLine($"[\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", (o, n) => {{ (o as unknown as {parentClassName}).{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type)}; }}],");
             }
@@ -139,13 +138,13 @@ namespace  Kiota.Builder.Writers.TypeScript {
             writer.WriteLine("return requestInfo;");
         }
         private void WriteSerializerBody(bool inherits, CodeClass parentClass, LanguageWriter writer) {
-            var additionalDataProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.AdditionalData);
+            var additionalDataProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.AdditionalData));
             if(inherits)
                 writer.WriteLine("super.serialize(writer);");
             foreach(var otherProp in parentClass
                                             .GetChildElements(true)
                                             .OfType<CodeProperty>()
-                                            .Where(x => x.PropertyKind == CodePropertyKind.Custom)
+                                            .Where(x => x.IsOfKind(CodePropertyKind.Custom))
                                             .OrderBy(x => x.Name)) {
                 writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", this.{otherProp.Name.ToFirstCharacterLowerCase()});");
             }
