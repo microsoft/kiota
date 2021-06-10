@@ -6,7 +6,7 @@ using static Kiota.Builder.CodeClass;
 namespace Kiota.Builder.Refiners {
     public abstract class CommonLanguageRefiner : ILanguageRefiner
     {
-        public CommonLanguageRefiner(GenerationConfiguration configuration) {
+        protected CommonLanguageRefiner(GenerationConfiguration configuration) {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
         public abstract void Refine(CodeNamespace generatedCode);

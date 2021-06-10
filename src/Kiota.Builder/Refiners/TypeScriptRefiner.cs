@@ -11,6 +11,7 @@ namespace Kiota.Builder.Refiners {
             AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, "ById");
             CorrectCoreType(generatedCode);
+            CorrectCoreTypesForBackingStoreUsings(generatedCode);
             FixReferencesToEntityType(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
             AddParsableInheritanceForModelClasses(generatedCode);
@@ -66,6 +67,11 @@ namespace Kiota.Builder.Refiners {
                 else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer))
                     currentMethod.ReturnType.Name = $"Map<string, (item: T, node: ParseNode) => void>";
             }
+            
+                
+            CrawlTree(currentElement, CorrectCoreType);
+        }
+        private static void CorrectCoreTypesForBackingStoreUsings(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model
                 && currentClass.StartBlock is CodeClass.Declaration currentDeclaration) {
                 foreach(var backingStoreUsing in currentDeclaration.Usings.Where(x => "Microsoft.Kiota.Abstractions.Store".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase))) {
@@ -78,8 +84,7 @@ namespace Kiota.Builder.Refiners {
                 if(backedModelImplements != null)
                     backedModelImplements.Name = backedModelImplements.Name.Substring(1); //removing the "I"
             }
-                
-            CrawlTree(currentElement, CorrectCoreType);
+            CrawlTree(currentElement, CorrectCoreTypesForBackingStoreUsings);
         }
         private static void PatchResponseHandlerType(CodeElement current) {
             if(current is CodeMethod currentMethod && currentMethod.Name.Equals("defaultResponseHandler", StringComparison.OrdinalIgnoreCase)) 
