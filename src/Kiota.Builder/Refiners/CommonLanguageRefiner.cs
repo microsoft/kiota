@@ -15,7 +15,6 @@ namespace Kiota.Builder.Refiners {
         internal static readonly HashSet<CodePropertyKind> PropertyKindsToAddAccessors = new() {
             CodePropertyKind.Custom,
             CodePropertyKind.AdditionalData,
-            CodePropertyKind.BackingStore,
         };
         private static bool DoesAnyParentHaveAPropertyWithDefaultValue(CodeClass current) {
             if(current.StartBlock is CodeClass.Declaration currentDeclaration &&
