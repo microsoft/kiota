@@ -22,6 +22,12 @@ namespace Kiota.Builder.Writers.Extensions {
                         .Distinct()
                         .OrderBy(x => x.Name);
         }
+        public static CodeProperty GetBackingStoreProperty(this CodeClass parentClass) {
+            if(parentClass == null) return null;
+            return (parentClass.GetGreatestGrandparent(parentClass) ?? parentClass) // the backing store is always on the uppermost class
+                                    .GetChildElements(true)
+                                    .OfType<CodeProperty>()
+                                    .FirstOrDefault(x => x.IsOfKind(CodePropertyKind.BackingStore));
+        }
     }
-    
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers.Extensions;
 
 namespace Kiota.Builder.Writers.CSharp {
     public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventionService>
@@ -9,10 +10,7 @@ namespace Kiota.Builder.Writers.CSharp {
         public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
         {
             var parentClass = codeElement.Parent as CodeClass;
-            var backingStorePropery = (parentClass.GetGreatestGrandparent(parentClass) ?? parentClass) // the backing store is always on the uppermost class
-                                    .GetChildElements(true)
-                                    .OfType<CodeProperty>()
-                                    .FirstOrDefault(x => x.IsOfKind(CodePropertyKind.BackingStore));
+            var backingStorePropery = parentClass.GetBackingStoreProperty();
             var setterAccessModifier = codeElement.ReadOnly && codeElement.Access > AccessModifier.Private ? "private " : string.Empty;
             var simpleBody = $"get; {setterAccessModifier}set;";
             var propertyType = conventions.GetTypeString(codeElement.Type);
