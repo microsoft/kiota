@@ -59,7 +59,7 @@ namespace Kiota {
                 if (language.HasValue)
                     configuration.Language = language.Value;
                 if(!string.IsNullOrEmpty(backingstore))
-                    configuration.BackingStore = backingstore;
+                    configuration.BackingStore = backingstore.Trim('\'', '"'); //npm modules can start with @ which prompts some terminals to read response files and quotes are not automatically trimmed by the framework
 
                 #if DEBUG
                 loglevel = loglevel > LogLevel.Debug ? LogLevel.Debug : loglevel;
