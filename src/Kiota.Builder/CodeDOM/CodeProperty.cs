@@ -8,7 +8,11 @@ namespace Kiota.Builder
         Custom,
         RequestBuilder,
         AdditionalData,
-        BackingStore
+        BackingStore,
+        PathSegment,
+        CurrentPath,
+        HttpCore,
+        SerializerFactory
     }
 
     public class CodeProperty : CodeTerminal, IDocumentedElement

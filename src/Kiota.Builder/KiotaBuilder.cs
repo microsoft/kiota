@@ -284,7 +284,8 @@ namespace Kiota.Builder
                 Name = "pathSegment",
                 DefaultValue = isRootClientClass ? $"\"{this.config.ApiRootUrl}\"" : (currentNode.IsParameter() ? "\"\"" : $"\"/{currentNode.Segment}\""),
                 ReadOnly = true,
-                Description = "Path segment to use to build the URL for the current request builder"
+                Description = "Path segment to use to build the URL for the current request builder",
+                PropertyKind = CodePropertyKind.PathSegment
             };
             pathProperty.Type = new CodeType(pathProperty) {
                 Name = "string",
@@ -295,7 +296,8 @@ namespace Kiota.Builder
 
             var currentPathProperty = new CodeProperty(currentClass) {
                 Name = "currentPath",
-                Description = "Current path for the request"
+                Description = "Current path for the request",
+                PropertyKind = CodePropertyKind.CurrentPath
             };
             currentPathProperty.Type = new CodeType(currentPathProperty) {
                 Name = "string",
@@ -305,7 +307,8 @@ namespace Kiota.Builder
 
             var httpCoreProperty = new CodeProperty(currentClass) {
                 Name = "httpCore",
-                Description = "Core service to use to execute the requests"
+                Description = "Core service to use to execute the requests",
+                PropertyKind = CodePropertyKind.HttpCore
             };
             httpCoreProperty.Type = new CodeType(httpCoreProperty) {
                 Name = "IHttpCore",
@@ -315,7 +318,8 @@ namespace Kiota.Builder
 
             var serializerFactoryProperty = new CodeProperty(currentClass) {
                 Name = "serializerFactory",
-                Description = "Factory to use to get a serializer for payload serialization"
+                Description = "Factory to use to get a serializer for payload serialization",
+                PropertyKind = CodePropertyKind.SerializerFactory
             };
             serializerFactoryProperty.Type = new CodeType(serializerFactoryProperty) {
                 Name = "ISerializationWriterFactory",
@@ -715,6 +719,8 @@ namespace Kiota.Builder
         private const string additionalDataPropName = "AdditionalData";
         private const string backingStorePropertyName = "BackingStore";
         private const string backingStoreInterface = "IBackingStore";
+        private const string backedModelInterface = "IBackedModel";
+        private const string storeNamespaceName = "Microsoft.Kiota.Abstractions.Store";
         private void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties) {
             var serializationPropsType = $"IDictionary<string, Action<T, IParseNode>>";
             if(!model.ContainsMember(fieldDeserializersMethodName)) {
@@ -787,21 +793,30 @@ namespace Kiota.Builder
                 };
                 backingStoreProperty.Type = storeType;
                 model.AddProperty(backingStoreProperty);
-                var storeUsing = new CodeUsing(model) {
-                    Name = "Microsoft.Kiota.Abstractions.Store",
+                var backingStoreUsing = new CodeUsing(model) {
+                    Name = backingStoreInterface,
                 };
-                storeUsing.Declaration = new CodeType(storeType) {
-                    Name = backingStoreInterface
+                backingStoreUsing.Declaration = new CodeType(backingStoreUsing) {
+                    Name = storeNamespaceName,
+                    IsExternal = true
+                };
+                var backedModelUsing = new CodeUsing(model) {
+                    Name = backedModelInterface,
+                };
+                backedModelUsing.Declaration = new CodeType(backedModelUsing) {
+                    Name = storeNamespaceName,
+                    IsExternal = true
                 };
                 var storeImplUsing = new CodeUsing(model) {
-                    Name = storeImplFragments.SkipLast(1).Aggregate((x, y) => $"{x}.{y}"),
-                };
-                storeImplUsing.Declaration = new CodeType(storeImplUsing) {
                     Name = storeImplClassName,
                 };
-                model.AddUsing(storeUsing, storeImplUsing);
+                storeImplUsing.Declaration = new CodeType(storeImplUsing) {
+                    Name = storeImplFragments.SkipLast(1).Aggregate((x, y) => $"{x}.{y}"),
+                    IsExternal = true,
+                };
+                model.AddUsing(backingStoreUsing, backedModelUsing, storeImplUsing);
                 (model.StartBlock as CodeClass.Declaration).Implements.Add(new CodeType(model) {
-                    Name = "IBackedModel",
+                    Name = backedModelInterface,
                 });
             }
         }
