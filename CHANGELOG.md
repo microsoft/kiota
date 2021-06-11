@@ -9,11 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial ruby abstractions 
 
-## [Unreleased]
-
-- Adds kiota packaging as a dotnet tool #169
-- Adds input parameters validation #168
-
 ## [0.0.5] - 2021-06-10
 
 ### Changed
