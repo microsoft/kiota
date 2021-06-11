@@ -6,8 +6,8 @@
 
 Option 1: Bundler config
 
-```
-$ bundle config https://rubygems.pkg.github.com/microsoft/kiota USERNAME:TOKEN
+```shell
+bundle config https://rubygems.pkg.github.com/microsoft/kiota USERNAME:TOKEN
 ```
 
 Option 2: Configuring `~/.gemrc` file
@@ -32,11 +32,15 @@ gem 'microsoft_kiota_abstractions'
 
 And then execute:
 
-    $ bundle install
+    ```shell
+    bundle install
+    ```
 
 Or install it yourself as:
 
-    $ gem install microsoft_kiota_abstractions
+    ```shell
+    gem install microsoft_kiota_abstractions
+    ```
 
 ## Contributing
 
