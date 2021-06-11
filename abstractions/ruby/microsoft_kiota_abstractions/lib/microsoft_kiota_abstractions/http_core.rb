@@ -6,15 +6,15 @@ module MicrosoftKiotaAbstractions
         include RequestInfo
         include ResponseHandler
 
-        def sendAsync(requestInfo=RequestInfo, ResponseHandler=ResponseHandler)
+        def sendAsync(request_info=RequestInfo, response_handler=ResponseHandler)
             raise NotImplementedError.new
         end
 
-        def sendPrimitiveAsync(requestInfo=RequestInfo, ResponseHandler=ResponseHandler)
+        def sendPrimitiveAsync(request_info=RequestInfo, response_handler=ResponseHandler)
             raise NotImplementedError.new
         end
 
-        def sendAsync(requestInfo=RequestInfo, ResponseHandler=ResponseHandler)
+        def sendAsync(request_info=RequestInfo, response_handler=ResponseHandler)
             raise NotImplementedError.new
         end
 

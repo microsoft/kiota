@@ -1,6 +1,6 @@
 module MicrosoftKiotaAbstractions
     module ResponseHandler
-        def HandleResponseAsync(response)
+        def handle_response_async(response)
             raise NotImplementedError.new
         end
     end

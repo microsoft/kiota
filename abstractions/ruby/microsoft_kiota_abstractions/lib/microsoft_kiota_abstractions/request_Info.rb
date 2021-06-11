@@ -4,8 +4,8 @@ require_relative "http_method"
 module MicrosoftKiotaAbstractions
   class RequestInfo
     attr_reader :uri, :content, :http_method
-    @@binaryContentType = "application/octet-stream"
-    @@contentTypeHeader = "Content-Type"
+    @@binary_content_type = "application/octet-stream"
+    @@content_type_header = "Content-Type"
     
     def uri=(arg)
       @uri = URI(arg)
@@ -23,17 +23,17 @@ module MicrosoftKiotaAbstractions
       @headers ||= Hash.new
     end
 
-    def setStreamContent(value = $stdin)
+    def set_stream_content(value = $stdin)
       @content = value
-      @headers[@@contentTypeHeader] = @@binaryContentType
+      @headers[@@content_type_header] = @@binary_content_type
     end
 
-    def setContentFromParsable(value, serializerFactory, contentType)
+    def set_content_from_parsable(value, serializer_factory, content_type)
       begin
-        writer  = serializerFactory.getSerializationWriter(contentType)
-        headers[@@contentTypeHeader] = contentType
-        writer.writeObjectValue(nil, value);
-        this.content = writer.getSerializedContent();
+        writer  = serializer_factory.get_serialization_writer(content_type)
+        headers[@@content_type_header] = content_type
+        writer.write_object_value(nil, value);
+        this.content = writer.get_serialized_content();
       rescue => exception
         raise Exception.new "could not serialize payload"
       end
