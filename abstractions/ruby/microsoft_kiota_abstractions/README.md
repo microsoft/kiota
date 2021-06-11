@@ -32,15 +32,15 @@ gem 'microsoft_kiota_abstractions'
 
 And then execute:
 
-    ```shell
-    bundle install
-    ```
+```shell
+bundle install
+```
 
 Or install it yourself as:
 
-    ```shell
-    gem install microsoft_kiota_abstractions
-    ```
+ ```shell
+ gem install microsoft_kiota_abstractions
+ ```
 
 ## Contributing
 
