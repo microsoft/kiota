@@ -13,15 +13,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Adds kiota packaging as a dotnet tool #169
 - Adds input parameters validation #168
+
+## [0.0.5] - 2021-06-10
+
+### Changed
+
 - Expands code coverage to 88% #147
 - Removes json assumption for request body to support multiple formats #170
 - Escapes language reserved keywords #184
 - Replaces custom URL tree node by class provided by OpenAPI.net #179
-- Adds support for collections as root responses #191
 - Splits the core libraries in 3 separate libraries #197
 - Changes default namespace and class name to api client #199
 - Aligns Parsable interfaces across languages #204
 - Fixes a bug where classes with properties of identical name would make build fail in CSharp #222
+
+### Added
+
+- Adds kiota packaging as a dotnet tool #169
+- Adds input parameters validation #168
+- Adds support for collections as root responses #191
 
 ## [0.0.4] - 2021-04-28
 
