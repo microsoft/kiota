@@ -85,11 +85,11 @@ namespace Microsoft.Kiota.Serialization.Json {
         public void WriteObjectValue<T>(string key, T value) where T : IParsable {
             if(value != null) {
                 if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
-                OnBeforeObjectSerialization.Invoke(value);
+                OnBeforeObjectSerialization?.Invoke(value);
                 writer.WriteStartObject();
                 value.Serialize(this);
                 writer.WriteEndObject();
-                OnAfterObjectSerialization.Invoke(value);
+                OnAfterObjectSerialization?.Invoke(value);
             }
         }
         public void WriteAdditionalData(IDictionary<string, object> value) {
