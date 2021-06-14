@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.EnumSet;
 import java.lang.Enum;
+import java.util.function.Consumer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -27,4 +28,10 @@ public interface SerializationWriter extends Closeable {
     <T extends Enum<T>> void writeEnumSetValue(@Nullable final String key, @Nullable final EnumSet<T> values);
     <T extends Enum<T>> void writeEnumValue(@Nullable final String key, @Nullable final T value);
     void writeAdditionalData(@Nonnull final Map<String, Object> value);
+    @Nullable
+    Consumer<Parsable> getOnBeforeObjectSerialization();
+    @Nullable
+    Consumer<Parsable> getOnAfterObjectSerialization();
+    void setOnBeforeObjectSerialization(@Nullable final Consumer<Parsable> value);
+    void setOnAfterObjectSerialization(@Nullable final Consumer<Parsable> value);
 }

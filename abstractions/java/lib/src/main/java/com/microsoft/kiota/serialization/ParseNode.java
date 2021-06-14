@@ -5,6 +5,7 @@ import java.time.OffsetDateTime;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -36,4 +37,10 @@ public interface ParseNode {
     <T extends Parsable> List<T> getCollectionOfObjectValues(@Nonnull final Class<T> targetClass);
     @Nonnull
     <T extends Parsable> T getObjectValue(@Nonnull final Class<T> targetClass);
+    @Nullable
+    Consumer<Parsable> getOnBeforeAssignFieldValues();
+    @Nullable
+    Consumer<Parsable> getOnAfterAssignFieldValues();
+    void setOnBeforeAssignFieldValues(@Nullable final Consumer<Parsable> value);
+    void setOnAfterAssignFieldValues(@Nullable final Consumer<Parsable> value);
 }
