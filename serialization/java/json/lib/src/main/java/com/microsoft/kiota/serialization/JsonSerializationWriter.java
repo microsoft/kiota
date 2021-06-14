@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -134,9 +135,7 @@ public class JsonSerializationWriter implements SerializationWriter {
                 }
                 writer.beginArray();
                 for (final T t : values) {
-                    writer.beginObject();
-                    t.serialize(this);
-                    writer.endObject();
+                    this.writeObjectValue(null, t);
                 }
                 writer.endArray();
             }
@@ -150,9 +149,15 @@ public class JsonSerializationWriter implements SerializationWriter {
                 if(key != null && !key.isEmpty()) {
                     writer.name(key);
                 }
+                if(onBeforeObjectSerialization != null) {
+                    onBeforeObjectSerialization.accept(value);
+                }
                 writer.beginObject();
                 value.serialize(this);
                 writer.endObject();
+                if(onAfterObjectSerialization != null) {
+                    onAfterObjectSerialization.accept(value);
+                }
             }
         } catch (IOException ex) {
             throw new RuntimeException("could not serialize value", ex);
@@ -243,5 +248,19 @@ public class JsonSerializationWriter implements SerializationWriter {
         } catch (IOException ex) {
             throw new RuntimeException("could not serialize value", ex);
         }
+    }
+    public Consumer<Parsable> getOnBeforeObjectSerialization() {
+        return this.onBeforeObjectSerialization;
+    }
+    public Consumer<Parsable> getOnAfterObjectSerialization() {
+        return this.onAfterObjectSerialization;
+    }
+    private Consumer<Parsable> onBeforeObjectSerialization;
+    public void setOnBeforeObjectSerialization(final Consumer<Parsable> value) {
+        this.onBeforeObjectSerialization = value;
+    }
+    private Consumer<Parsable> onAfterObjectSerialization;
+    public void setOnAfterObjectSerialization(final Consumer<Parsable> value) {
+        this.onAfterObjectSerialization = value;
     }
 }
