@@ -9,7 +9,7 @@ namespace Microsoft.Kiota.Abstractions.Store {
         string Subscribe(Action<string, object, object> callback);
         void Unsubscribe(string subscriptionId);
         void Clear();
-        bool InitilizationCompleted { get; set; }
+        bool InitializationCompleted { get; set; }
         bool ReturnOnlyChangedValues {get; set;}
     }
 }

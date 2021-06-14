@@ -21,7 +21,7 @@ namespace Microsoft.Kiota.Abstractions.Store {
             if(string.IsNullOrEmpty(key))
                 throw new ArgumentNullException(nameof(key));
 
-            var valueToAdd = new Tuple<bool, object>(InitilizationCompleted, value);
+            var valueToAdd = new Tuple<bool, object>(InitializationCompleted, value);
             Tuple<bool, object> oldValue = null;
             if(!store.TryAdd(key, valueToAdd)) {
                 oldValue = store[key];
@@ -45,7 +45,7 @@ namespace Microsoft.Kiota.Abstractions.Store {
         public void Clear() {
             store.Clear();
         }
-        public bool InitilizationCompleted { 
+        public bool InitializationCompleted { 
             get { return isInitializationComplete; } 
             set {
                 isInitializationComplete = value;

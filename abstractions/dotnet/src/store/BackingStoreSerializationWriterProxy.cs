@@ -13,7 +13,7 @@ namespace Microsoft.Kiota.Abstractions.Store {
             },(x) => {
                 if(x is IBackedModel backedModel && backedModel.BackingStore != null) {
                     backedModel.BackingStore.ReturnOnlyChangedValues = false;
-                    backedModel.BackingStore.InitilizationCompleted = true;
+                    backedModel.BackingStore.InitializationCompleted = true;
                 }
             }) {}
     }

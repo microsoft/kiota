@@ -5,11 +5,11 @@ namespace Microsoft.Kiota.Abstractions.Store {
             concrete,
             (x) => {
                 if(x is IBackedModel backedModel && backedModel.BackingStore != null)
-                    backedModel.BackingStore.InitilizationCompleted = false;
+                    backedModel.BackingStore.InitializationCompleted = false;
             },
             (x) => {
                 if(x is IBackedModel backedModel && backedModel.BackingStore != null)
-                    backedModel.BackingStore.InitilizationCompleted = true;
+                    backedModel.BackingStore.InitializationCompleted = true;
             }
         ) { }
     }
