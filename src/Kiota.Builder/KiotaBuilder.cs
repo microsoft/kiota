@@ -529,6 +529,7 @@ namespace Kiota.Builder
                 nParam.Type = new CodeType(nParam) {
                     Name = "binary",
                     IsExternal = true,
+                    IsNullable = false,
                 };
                 method.AddParameter(nParam);
             }
