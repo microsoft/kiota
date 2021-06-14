@@ -1,4 +1,4 @@
 module MicrosoftKiotaAbstractions
-    module ParseNode
-    end
+  module ParseNode
+  end
 end

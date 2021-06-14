@@ -1,4 +1,4 @@
 module MicrosoftKiotaAbstractions
-    module SerializationWriter
-    end
+  module SerializationWriter
+  end
 end
