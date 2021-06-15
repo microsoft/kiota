@@ -27,8 +27,10 @@ jobs:
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
           working-directory: ${{ env.relativePath }}
       - name: resolve rake and bundle for ruby version 2.7.0
-        if: ${{ matrix.version == '2.7'  || matrix.ruby-version == 'truffleruby' || matrix.ruby-version == 'truffleruby-head'}}
-        run: bundle uninstall rake
+        if: ${{ matrix.version == 2.7  || matrix.ruby-version == 'truffleruby' || matrix.ruby-version == 'truffleruby-head'}}
+        run: |
+          bundle update rake
+          bundle install
       - name: Run tests
         run: bundle exec rake
         working-directory: ${{ env.relativePath }}
