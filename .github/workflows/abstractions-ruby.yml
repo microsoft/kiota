@@ -36,7 +36,7 @@ jobs:
         run: bundle exec rake
         working-directory: ${{ env.relativePath }}
       - name: Upload artifacts for ruby version 3 and ubuntu
-        if: ${{ matrix.os == 'ubuntu-latest'  && matrix.ruby-version == '3.0'}}
+        if: ${{ matrix.os == 'ubuntu-latest'  && matrix.ruby-version == '2.7'}}
         uses: actions/upload-artifact@v2
         with:
           name: drop
