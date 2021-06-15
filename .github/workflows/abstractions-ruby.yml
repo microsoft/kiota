@@ -24,6 +24,7 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby-version }}
+          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
       - name: Install dependencies
         run: bundle install
       - name: Run tests
@@ -50,6 +51,7 @@ jobs:
         with:
            # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
           ruby-version: '3.0'
+          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
       - run: bundle install
       - run: bundle exec rake
       - name: Publish to GPR
