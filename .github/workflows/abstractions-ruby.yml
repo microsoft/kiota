@@ -28,7 +28,7 @@ jobs:
           working-directory: ${{ env.relativePath }}
       - name: Run tests
         run: |
-          gem update --system
+          bundle install
           bundle exec rake
         working-directory: ${{ env.relativePath }}
       - name: Upload artifacts for ruby version 3 and ubuntu
@@ -55,7 +55,9 @@ jobs:
           ruby-version: '3.0'
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
           working-directory: ${{ env.relativePath }}
-      - run: bundle exec rake
+      - run: |
+          bundle install
+          bundle exec rake
         working-directory: ${{ env.relativePath }}
       - name: Publish to GPR
         working-directory: ${{ env.relativePath }}
