@@ -1,0 +1,18 @@
+# frozen_string_literal: true
+
+require_relative "microsoft_kiota_abstractions/authentication_provider"
+require_relative "microsoft_kiota_abstractions/http_core"
+require_relative "microsoft_kiota_abstractions/http_method"
+require_relative "microsoft_kiota_abstractions/request_info"
+require_relative "microsoft_kiota_abstractions/response_handler"
+require_relative "microsoft_kiota_abstractions/version"
+require_relative "microsoft_kiota_abstractions/serialization/parsable"
+require_relative "microsoft_kiota_abstractions/serialization/parse_node"
+require_relative "microsoft_kiota_abstractions/serialization/parse_node_factory"
+require_relative "microsoft_kiota_abstractions/serialization/parse_node_factory_registry"
+require_relative "microsoft_kiota_abstractions/serialization/serialization_writer"
+require_relative "microsoft_kiota_abstractions/serialization/serialization_writer_factory"
+require_relative "microsoft_kiota_abstractions/serialization/serialization_writer_factory_registry"
+
+module MicrosoftKiotaAbstractions
+end
