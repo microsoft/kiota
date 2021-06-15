@@ -31,6 +31,7 @@ jobs:
         run: |
           bundle update rake
           bundle install
+        working-directory: ${{ env.relativePath }}
       - name: Run tests
         run: bundle exec rake
         working-directory: ${{ env.relativePath }}
