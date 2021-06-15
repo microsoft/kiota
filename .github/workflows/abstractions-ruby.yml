@@ -11,7 +11,7 @@ on:
 jobs:
   build:
     env:
-      relativePath: ./abstractions/ruby/microsoft_kiota_abstractions
+      relativePath: ./abstractions/ruby
     strategy:
       fail-fast: false
       matrix:
