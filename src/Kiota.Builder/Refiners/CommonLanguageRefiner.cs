@@ -26,7 +26,7 @@ namespace Kiota.Builder.Refiners {
             } else
                 return false;
         }
-        protected static void AddGetterAndSetterMethods(CodeElement current, bool removeProperty) {
+        protected static void AddGetterAndSetterMethods(CodeElement current, bool removeProperty, bool parameterAsOptional) {
             if(current is CodeProperty currentProperty &&
                 PropertyKindsToAddAccessors.Contains(currentProperty.PropertyKind) &&
                 current.Parent is CodeClass parentClass &&
@@ -62,12 +62,12 @@ namespace Kiota.Builder.Refiners {
                         Name = "value",
                         ParameterKind = CodeParameterKind.SetterValue,
                         Description = $"Value to set for the {current.Name} property.",
-                        Optional = false,
+                        Optional = parameterAsOptional,
                         Type = currentProperty.Type,
                     });
                 }
             }
-            CrawlTree(current, x => AddGetterAndSetterMethods(x , removeProperty));
+            CrawlTree(current, x => AddGetterAndSetterMethods(x , removeProperty, parameterAsOptional));
         }
         protected static void AddConstructorsForDefaultValues(CodeElement current, bool addIfInherited) {
             if(current is CodeClass currentClass && 

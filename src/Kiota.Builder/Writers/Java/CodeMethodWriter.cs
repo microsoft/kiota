@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers.Extensions;
 
 namespace Kiota.Builder.Writers.Java {
     public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionService>
@@ -15,7 +16,6 @@ namespace Kiota.Builder.Writers.Java {
             if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
 
             var returnType = conventions.GetTypeString(codeElement.ReturnType);
-            var parentClass = codeElement.Parent as CodeClass;
             WriteMethodDocumentation(codeElement, writer);
             if(returnType.Equals("void", StringComparison.OrdinalIgnoreCase))
             {
@@ -25,6 +25,8 @@ namespace Kiota.Builder.Writers.Java {
                 writer.WriteLine(codeElement.ReturnType.IsNullable && !codeElement.IsAsync ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
             WriteMethodPrototype(codeElement, writer, returnType);
             writer.IncreaseIndent();
+            var parentClass = codeElement.Parent as CodeClass;
+            var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
@@ -47,6 +49,15 @@ namespace Kiota.Builder.Writers.Java {
                 case CodeMethodKind.RequestExecutor:
                     WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, returnType, writer);
                 break;
+                case CodeMethodKind.Getter:
+                    WriteGetterBody(codeElement, writer, parentClass);
+                    break;
+                case CodeMethodKind.Setter:
+                    WriteSetterBody(codeElement, writer, parentClass);
+                    break;
+                case CodeMethodKind.Constructor:
+                    WriteConstructorBody(parentClass, writer, inherits);
+                    break;
                 case CodeMethodKind.AdditionalDataAccessor:
                     writer.WriteLine($"return {codeElement.Name.Substring(3).ToFirstCharacterLowerCase()};"); // 3 -> get prefix
                 break;
@@ -56,6 +67,43 @@ namespace Kiota.Builder.Writers.Java {
             }
             writer.DecreaseIndent();
             writer.WriteLine("}");
+        }
+        private static void WriteConstructorBody(CodeClass parentClass, LanguageWriter writer, bool inherits) {
+            if(inherits)
+                writer.WriteLine("super();");
+            foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData,
+                                                                            CodePropertyKind.BackingStore,
+                                                                            CodePropertyKind.RequestBuilder,
+                                                                            CodePropertyKind.PathSegment)
+                                            .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
+                                            .OrderByDescending(x => x.PropertyKind)
+                                            .ThenBy(x => x.Name)) {
+                writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
+            }
+        }
+        private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass) {
+            var backingStore = parentClass.GetBackingStoreProperty();
+            if(backingStore == null)
+                writer.WriteLine($"this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()} = value;");
+            else
+                writer.WriteLine($"this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.set(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\", value);");
+        }
+        private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass) {
+            var backingStore = parentClass.GetBackingStoreProperty();
+            if(backingStore == null)
+                writer.WriteLine($"return this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()};");
+            else 
+                if(!(codeElement.AccessedProperty?.Type?.IsNullable ?? true) && !string.IsNullOrEmpty(codeElement.AccessedProperty?.DefaultValue)) {
+                    writer.WriteLines($"{conventions.GetTypeString(codeElement.AccessedProperty.Type)} value = this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\");",
+                        "if(value == null) {");
+                    writer.IncreaseIndent();
+                    writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue};",
+                        $"this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()} = value;");
+                    writer.DecreaseIndent();
+                    writer.WriteLines("}", "return value;");
+                } else
+                    writer.WriteLine($"return this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\");");
+
         }
         private void WriteIndexerBody(CodeMethod codeElement, LanguageWriter writer, string returnType) {
             var pathSegment = codeElement.GenerationProperties.ContainsKey(conventions.PathSegmentPropertyName) ? codeElement.GenerationProperties[conventions.PathSegmentPropertyName] as string : string.Empty;
@@ -73,7 +121,7 @@ namespace Kiota.Builder.Writers.Java {
                 fieldToSerialize
                         .OrderBy(x => x.Name)
                         .Select(x => 
-                            $"this.put(\"{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}\", (o, n) -> {{ (({parentClass.Name.ToFirstCharacterUpperCase()})o).{x.Name.ToFirstCharacterLowerCase()} = {GetDeserializationMethodName(x.Type)}; }});")
+                            $"this.put(\"{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}\", (o, n) -> {{ (({parentClass.Name.ToFirstCharacterUpperCase()})o).set{x.Name.ToFirstCharacterUpperCase()}({GetDeserializationMethodName(x.Type)}); }});")
                         .ToList()
                         .ForEach(x => writer.WriteLine(x));
                 writer.DecreaseIndent();
@@ -153,20 +201,27 @@ namespace Kiota.Builder.Writers.Java {
                                             .OfType<CodeProperty>()
                                             .Where(x => x.IsOfKind(CodePropertyKind.Custom))
                                             .OrderBy(x => x.Name)) {
-                writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterLowerCase()});");
+                writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", this.get{otherProp.Name.ToFirstCharacterUpperCase()}());");
             }
             if(additionalDataProperty != null)
                 writer.WriteLine($"writer.writeAdditionalData(this.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
         }
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType) {
             var accessModifier = conventions.GetAccessModifier(code.Access);
-            var genericTypeParameterDeclaration = code.IsOfKind(CodeMethodKind.Deserializer) ? "<T> ": string.Empty;
-            var returnTypeAsyncPrefix = code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty;
-            var returnTypeAsyncSuffix = code.IsAsync ? ">" : string.Empty;
-            var methodName = code.Name.ToFirstCharacterLowerCase();
+            var genericTypeParameterDeclaration = code.IsOfKind(CodeMethodKind.Deserializer) ? " <T>": string.Empty;
+            var returnTypeAsyncPrefix = code.IsAsync ? " java.util.concurrent.CompletableFuture<" : string.Empty;
+            var returnTypeAsyncSuffix = code.IsAsync ? " >" : string.Empty;
+            var isConstructor = code.IsOfKind(CodeMethodKind.Constructor);
+            var methodName = (code.MethodKind switch {
+                (CodeMethodKind.Constructor) => code.Parent.Name.ToFirstCharacterUpperCase(),
+                (CodeMethodKind.Getter) => $"get{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
+                (CodeMethodKind.Setter) => $"set{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
+                _ => code.Name.ToFirstCharacterLowerCase()
+            });
             var parameters = string.Join(", ", code.Parameters.Select(p=> conventions.GetParameterSignature(p)).ToList());
             var throwableDeclarations = code.IsOfKind(CodeMethodKind.RequestGenerator) ? "throws URISyntaxException ": string.Empty;
-            writer.WriteLine($"{accessModifier} {genericTypeParameterDeclaration}{returnTypeAsyncPrefix}{returnType}{returnTypeAsyncSuffix} {methodName}({parameters}) {throwableDeclarations}{{");
+            var finalReturnType = isConstructor ? string.Empty : $" {returnType}";
+            writer.WriteLine($"{accessModifier}{genericTypeParameterDeclaration}{returnTypeAsyncPrefix}{finalReturnType}{returnTypeAsyncSuffix} {methodName}({parameters}) {throwableDeclarations}{{");
         }
         private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer) {
             var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);

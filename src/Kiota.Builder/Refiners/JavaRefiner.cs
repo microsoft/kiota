@@ -24,7 +24,7 @@ namespace Kiota.Builder.Refiners {
             ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
             AddEnumSetImport(generatedCode);
             ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
-            AddGetterAndSetterMethods(generatedCode, _configuration.UsesBackingStore);
+            AddGetterAndSetterMethods(generatedCode, _configuration.UsesBackingStore, true);
             AddConstructorsForDefaultValues(generatedCode, true);
         }
         private static void AddEnumSetImport(CodeElement currentElement) {
@@ -103,20 +103,6 @@ namespace Kiota.Builder.Refiners {
                         IsExternal = true,
                     };
                     (currentProperty.Parent as CodeClass).AddUsing(nUsing);
-                } else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
-                    currentProperty.Access = AccessModifier.Private;
-                    currentProperty.DefaultValue = "new HashMap<>()";
-                    currentProperty.Type.Name = "Map<String, Object>";
-                    var parentClass = currentElement.Parent as CodeClass;
-                    parentClass.AddMethod(new CodeMethod(parentClass) {
-                        Name = $"get{currentProperty.Name.ToFirstCharacterUpperCase()}",
-                        Access = AccessModifier.Public,
-                        Description = currentProperty.Description,
-                        MethodKind = CodeMethodKind.AdditionalDataAccessor,
-                        IsAsync = false,
-                        IsStatic = false,
-                        ReturnType = currentProperty.Type,
-                    });
                 }
             }
             if (currentElement is CodeMethod currentMethod) {
