@@ -11,7 +11,7 @@ on:
 jobs:
   build:
     env:
-      relativePath: ./abstractions/ruby
+      relativePath: ./abstractions/ruby/microsoft_kiota_abstractions
     strategy:
       fail-fast: false
       matrix:
@@ -25,8 +25,10 @@ jobs:
         with:
           ruby-version: ${{ matrix.ruby-version }}
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+          working-directory: ${{ env.relativePath }}
       - name: Run tests
         run: bundle exec rake
+        working-directory: ${{ env.relativePath }}
       - name: Upload artifacts for ruby version 3 and ubuntu
         if: ${{ matrix.os == 'ubuntu-latest'  && matrix.ruby-version == '3.0'}}
         uses: actions/upload-artifact@v2
@@ -50,8 +52,11 @@ jobs:
            # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
           ruby-version: '3.0'
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+          working-directory: ${{ env.relativePath }}
       - run: bundle exec rake
+        working-directory: ${{ env.relativePath }}
       - name: Publish to GPR
+        working-directory: ${{ env.relativePath }}
         run: |
           mkdir -p $HOME/.gem
           touch $HOME/.gem/credentials
