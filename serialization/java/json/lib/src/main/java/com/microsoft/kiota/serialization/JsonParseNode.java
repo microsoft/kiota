@@ -41,8 +41,8 @@ public class JsonParseNode implements ParseNode {
             final var onBefore = this.onBeforeAssignFieldValues;
             final var onAfter = this.onAfterAssignFieldValues;
             return new JsonParseNode(object.get(identifier)) {{
-                this.onBeforeAssignFieldValues = onBefore;
-                this.onAfterAssignFieldValues = onAfter;
+                this.setOnBeforeAssignFieldValues(onBefore);
+                this.setOnAfterAssignFieldValues(onAfter);
             }};
         } else throw new RuntimeException("invalid state expected to have an object node");
     }
@@ -72,6 +72,7 @@ public class JsonParseNode implements ParseNode {
         if(currentNode.isJsonArray()) {
             final JsonArray array = currentNode.getAsJsonArray();
             final Iterator<JsonElement> sourceIterator = array.iterator();
+            final var _this = this;
             return Lists.newArrayList(new Iterable<T>() {
                 @Override
                 public Iterator<T> iterator() {
@@ -84,11 +85,11 @@ public class JsonParseNode implements ParseNode {
                         @SuppressWarnings("unchecked")
                         public T next() {
                             final JsonElement item = sourceIterator.next();
-                            final var onBefore = this.onBeforeAssignFieldValues;
-                            final var onAfter = this.onAfterAssignFieldValues;
+                            final var onBefore = _this.getOnBeforeAssignFieldValues();
+                            final var onAfter = _this.getOnAfterAssignFieldValues();
                             final JsonParseNode itemNode = new JsonParseNode(item) {{
-                                this.onBeforeAssignFieldValues = onBefore;
-                                this.onAfterAssignFieldValues = onAfter;
+                                this.setOnBeforeAssignFieldValues(onBefore);
+                                this.setOnAfterAssignFieldValues(onAfter);
                             }};
                             if(targetClass == Boolean.class) {
                                 return (T)itemNode.getBooleanValue();
@@ -118,6 +119,7 @@ public class JsonParseNode implements ParseNode {
         if(currentNode.isJsonArray()) {
             final JsonArray array = currentNode.getAsJsonArray();
             final Iterator<JsonElement> sourceIterator = array.iterator();
+            final var _this = this;
             return Lists.newArrayList(new Iterable<T>() {
                 @Override
                 public Iterator<T> iterator() {
@@ -129,11 +131,11 @@ public class JsonParseNode implements ParseNode {
                         @Override
                         public T next() {
                             final JsonElement item = sourceIterator.next();
-                            final var onBefore = this.onBeforeAssignFieldValues;
-                            final var onAfter = this.onAfterAssignFieldValues;
+                            final var onBefore = _this.getOnBeforeAssignFieldValues();
+                            final var onAfter = _this.getOnAfterAssignFieldValues();
                             final JsonParseNode itemNode = new JsonParseNode(item) {{
-                                this.onBeforeAssignFieldValues = onBefore;
-                                this.onAfterAssignFieldValues = onAfter;
+                                this.setOnBeforeAssignFieldValues(onBefore);
+                                this.setOnAfterAssignFieldValues(onAfter);
                             }};
                             return itemNode.getObjectValue(targetClass);
                         }
@@ -199,8 +201,8 @@ public class JsonParseNode implements ParseNode {
                     final var onBefore = this.onBeforeAssignFieldValues;
                     final var onAfter = this.onAfterAssignFieldValues;
                     fieldDeserializer.accept(item, new JsonParseNode(fieldValue) {{
-                        this.onBeforeAssignFieldValues = onBefore;
-                        this.onAfterAssignFieldValues = onAfter;
+                        this.setOnBeforeAssignFieldValues(onBefore);
+                        this.setOnAfterAssignFieldValues(onAfter);
                     }});
                 }
                 else
