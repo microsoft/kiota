@@ -92,7 +92,7 @@ namespace Kiota.Builder.Writers.TypeScript {
                     writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue};",
                         $"this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()} = value;");
                     writer.DecreaseIndent();
-                    writer.WriteLines("}", "return value");
+                    writer.WriteLines("}", "return value;");
                 } else
                     writer.WriteLine($"return this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\");");
 
