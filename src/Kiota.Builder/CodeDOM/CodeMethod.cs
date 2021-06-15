@@ -43,7 +43,7 @@ namespace Kiota.Builder
         public string Description {get; set;}
         public CodeProperty AccessedProperty { get; set; }
         public bool IsOfKind(params CodeMethodKind[] kinds) {
-            return kinds?.Any(x => x == MethodKind) ?? false;
+            return kinds?.Contains(MethodKind) ?? false;
         }
         public bool IsAccessor { 
             get => IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter);

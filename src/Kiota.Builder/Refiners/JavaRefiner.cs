@@ -24,9 +24,11 @@ namespace Kiota.Builder.Refiners {
             ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
             AddEnumSetImport(generatedCode);
             ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
+            AddGetterAndSetterMethods(generatedCode, _configuration.UsesBackingStore);
+            AddConstructorsForDefaultValues(generatedCode, true);
         }
         private static void AddEnumSetImport(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model &&
+            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) &&
                 currentClass.GetChildElements(true).OfType<CodeProperty>().Any(x => x.Type is CodeType xType && xType.TypeDefinition is CodeEnum xEnumType && xEnumType.Flags)) {
                     var nUsing = new CodeUsing(currentClass) {
                         Name = "EnumSet",
@@ -38,7 +40,7 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(currentElement, AddEnumSetImport);
         }
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model) {
+            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
                 var declaration = currentClass.StartBlock as CodeClass.Declaration;
                 declaration.Implements.Add(new CodeType(currentClass) {
                     IsExternal = true,

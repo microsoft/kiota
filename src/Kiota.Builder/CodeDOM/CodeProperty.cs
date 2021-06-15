@@ -30,7 +30,7 @@ namespace Kiota.Builder
         public string SerializationName { get; set; }
         public string NamePrefix { get; set; }
         public bool IsOfKind(params CodePropertyKind[] kinds) {
-            return kinds?.Any(x => PropertyKind == x) ?? false;
+            return kinds?.Contains(PropertyKind) ?? false;
         }
     }
 }

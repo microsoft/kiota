@@ -38,7 +38,7 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(currentElement, DisambiguatePropertiesWithClassNames);
         }
         private static void MakeEnumPropertiesNullable(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model)
+            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model))
                 currentClass.GetChildElements(true)
                             .OfType<CodeProperty>()
                             .Where(x => x.Type is CodeType propType && propType.TypeDefinition is CodeEnum)
@@ -47,7 +47,7 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(currentElement, MakeEnumPropertiesNullable);
         }
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model) {
+            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
                 var declaration = currentClass.StartBlock as CodeClass.Declaration;
                 declaration.Implements.Add(new CodeType(currentClass) {
                     IsExternal = true,
@@ -64,7 +64,7 @@ namespace Kiota.Builder.Refiners {
         private static void AddDefaultImports(CodeElement current) {
             if(current is CodeClass currentClass) {
                 currentClass.AddUsing(defaultNamespacesForClasses.Select(x => new CodeUsing(currentClass) { Name = x }).ToArray());
-                if(currentClass.ClassKind == CodeClassKind.RequestBuilder)
+                if(currentClass.IsOfKind(CodeClassKind.RequestBuilder))
                     currentClass.AddUsing(defaultNamespacesForRequestBuilders.Select(x => new CodeUsing(currentClass) { Name = x }).ToArray());
             }
             CrawlTree(current, AddDefaultImports);

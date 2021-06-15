@@ -21,7 +21,7 @@ namespace Kiota.Builder.Refiners {
             AddConstructorsForDefaultValues(generatedCode, true);
         }
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model) {
+            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
                 var declaration = currentClass.StartBlock as CodeClass.Declaration;
                 declaration.Implements.Add(new CodeType(currentClass) {
                     IsExternal = true,
@@ -72,7 +72,7 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(currentElement, CorrectCoreType);
         }
         private static void CorrectCoreTypesForBackingStoreUsings(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model
+            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)
                 && currentClass.StartBlock is CodeClass.Declaration currentDeclaration) {
                 foreach(var backingStoreUsing in currentDeclaration.Usings.Where(x => "Microsoft.Kiota.Abstractions.Store".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase))) {
                     if(backingStoreUsing?.Declaration != null) {
