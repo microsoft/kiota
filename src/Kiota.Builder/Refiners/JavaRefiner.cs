@@ -24,8 +24,13 @@ namespace Kiota.Builder.Refiners {
             ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
             AddEnumSetImport(generatedCode);
             ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
-            AddGetterAndSetterMethods(generatedCode, _configuration.UsesBackingStore, true);
+            AddGetterAndSetterMethods(generatedCode, new() {
+                                                    CodePropertyKind.Custom,
+                                                    CodePropertyKind.AdditionalData,
+                                                    CodePropertyKind.BackingStore,
+                                                }, _configuration.UsesBackingStore, true);
             AddConstructorsForDefaultValues(generatedCode, true);
+            CorrectCoreTypesForBackingStoreUsings(generatedCode, "com.microsoft.kiota.store");
         }
         private static void AddEnumSetImport(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) &&

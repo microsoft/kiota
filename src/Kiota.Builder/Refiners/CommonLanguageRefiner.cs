@@ -12,10 +12,21 @@ namespace Kiota.Builder.Refiners {
         public abstract void Refine(CodeNamespace generatedCode);
         internal const string GetterPrefix = "get-";
         internal const string SetterPrefix = "set-";
-        internal static readonly HashSet<CodePropertyKind> PropertyKindsToAddAccessors = new() {
-            CodePropertyKind.Custom,
-            CodePropertyKind.AdditionalData,
-        };
+        protected static void CorrectCoreTypesForBackingStoreUsings(CodeElement currentElement, string storeNamespace) {
+            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)
+                && currentClass.StartBlock is CodeClass.Declaration currentDeclaration) {
+                foreach(var backingStoreUsing in currentDeclaration.Usings.Where(x => "Microsoft.Kiota.Abstractions.Store".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase))) {
+                    if(backingStoreUsing?.Declaration != null) {
+                        backingStoreUsing.Name = backingStoreUsing.Name.Substring(1); // removing the "I"
+                        backingStoreUsing.Declaration.Name = storeNamespace;
+                    }
+                }
+                var backedModelImplements = currentDeclaration.Implements.FirstOrDefault(x => "IBackedModel".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
+                if(backedModelImplements != null)
+                    backedModelImplements.Name = backedModelImplements.Name.Substring(1); //removing the "I"
+            }
+            CrawlTree(currentElement, (x) => CorrectCoreTypesForBackingStoreUsings(x, storeNamespace));
+        }
         private static bool DoesAnyParentHaveAPropertyWithDefaultValue(CodeClass current) {
             if(current.StartBlock is CodeClass.Declaration currentDeclaration &&
                 currentDeclaration.Inherits?.TypeDefinition is CodeClass parentClass) {
@@ -26,9 +37,10 @@ namespace Kiota.Builder.Refiners {
             } else
                 return false;
         }
-        protected static void AddGetterAndSetterMethods(CodeElement current, bool removeProperty, bool parameterAsOptional) {
+        protected static void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, bool removeProperty, bool parameterAsOptional) {
+            if(!(propertyKindsToAddAccessors?.Any() ?? true)) return;
             if(current is CodeProperty currentProperty &&
-                PropertyKindsToAddAccessors.Contains(currentProperty.PropertyKind) &&
+                propertyKindsToAddAccessors.Contains(currentProperty.PropertyKind) &&
                 current.Parent is CodeClass parentClass &&
                 !parentClass.IsOfKind(CodeClassKind.QueryParameters)) {
                 if(removeProperty && currentProperty.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.AdditionalData)) // we never want to remove backing stores
@@ -67,7 +79,7 @@ namespace Kiota.Builder.Refiners {
                     });
                 }
             }
-            CrawlTree(current, x => AddGetterAndSetterMethods(x , removeProperty, parameterAsOptional));
+            CrawlTree(current, x => AddGetterAndSetterMethods(x, propertyKindsToAddAccessors, removeProperty, parameterAsOptional));
         }
         protected static void AddConstructorsForDefaultValues(CodeElement current, bool addIfInherited) {
             if(current is CodeClass currentClass && 

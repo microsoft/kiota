@@ -11,13 +11,16 @@ namespace Kiota.Builder.Refiners {
             AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, "ById");
             CorrectCoreType(generatedCode);
-            CorrectCoreTypesForBackingStoreUsings(generatedCode);
+            CorrectCoreTypesForBackingStoreUsings(generatedCode, "@microsoft/kiota-abstractions");
             FixReferencesToEntityType(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
             AddParsableInheritanceForModelClasses(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "ReadableStream", "web-streams-polyfill/es2018", true);
             ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
-            AddGetterAndSetterMethods(generatedCode, _configuration.UsesBackingStore, false);
+            AddGetterAndSetterMethods(generatedCode, new() {
+                                                    CodePropertyKind.Custom,
+                                                    CodePropertyKind.AdditionalData,
+                                                }, _configuration.UsesBackingStore, false);
             AddConstructorsForDefaultValues(generatedCode, true);
         }
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
@@ -70,21 +73,6 @@ namespace Kiota.Builder.Refiners {
             
                 
             CrawlTree(currentElement, CorrectCoreType);
-        }
-        private static void CorrectCoreTypesForBackingStoreUsings(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)
-                && currentClass.StartBlock is CodeClass.Declaration currentDeclaration) {
-                foreach(var backingStoreUsing in currentDeclaration.Usings.Where(x => "Microsoft.Kiota.Abstractions.Store".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase))) {
-                    if(backingStoreUsing?.Declaration != null) {
-                        backingStoreUsing.Name = backingStoreUsing.Name.Substring(1); // removing the "I"
-                        backingStoreUsing.Declaration.Name = "@microsoft/kiota-abstractions";
-                    }
-                }
-                var backedModelImplements = currentDeclaration.Implements.FirstOrDefault(x => "IBackedModel".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
-                if(backedModelImplements != null)
-                    backedModelImplements.Name = backedModelImplements.Name.Substring(1); //removing the "I"
-            }
-            CrawlTree(currentElement, CorrectCoreTypesForBackingStoreUsings);
         }
         private static void PatchResponseHandlerType(CodeElement current) {
             if(current is CodeMethod currentMethod && currentMethod.Name.Equals("defaultResponseHandler", StringComparison.OrdinalIgnoreCase)) 
