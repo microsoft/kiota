@@ -85,7 +85,9 @@ namespace Kiota.Builder.Writers.TypeScript {
             if(backingStore == null)
                 writer.WriteLine($"return this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()};");
             else 
-                if(!(codeElement.AccessedProperty?.Type?.IsNullable ?? true) && !string.IsNullOrEmpty(codeElement.AccessedProperty?.DefaultValue)) {
+                if(!(codeElement.AccessedProperty?.Type?.IsNullable ?? true) &&
+                    !(codeElement.AccessedProperty?.ReadOnly ?? true) &&
+                    !string.IsNullOrEmpty(codeElement.AccessedProperty?.DefaultValue)) {
                     writer.WriteLines($"let value = this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.get<{conventions.GetTypeString(codeElement.AccessedProperty.Type)}>(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\");",
                         "if(!value) {");
                     writer.IncreaseIndent();
