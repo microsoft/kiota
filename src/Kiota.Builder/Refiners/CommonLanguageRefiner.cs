@@ -29,7 +29,8 @@ namespace Kiota.Builder.Refiners {
         protected static void AddGetterAndSetterMethods(CodeElement current, bool removeProperty) {
             if(current is CodeProperty currentProperty &&
                 PropertyKindsToAddAccessors.Contains(currentProperty.PropertyKind) &&
-                current.Parent is CodeClass parentClass) {
+                current.Parent is CodeClass parentClass &&
+                !parentClass.IsOfKind(CodeClassKind.QueryParameters)) {
                 if(removeProperty && currentProperty.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.AdditionalData)) // we never want to remove backing stores
                     parentClass.RemoveChildElement(currentProperty);
                 else {
@@ -101,7 +102,7 @@ namespace Kiota.Builder.Refiners {
 
         protected static void AddDefaultImports(CodeElement current, Tuple<string, string>[] defaultNamespaces, Tuple<string, string>[] defaultNamespacesForModels, Tuple<string, string>[] defaultNamespacesForRequestBuilders) {
             if(current is CodeClass currentClass) {
-                if(currentClass.ClassKind == CodeClassKind.Model)
+                if(currentClass.IsOfKind(CodeClassKind.Model))
                     currentClass.AddUsing(defaultNamespaces.Union(defaultNamespacesForModels)
                                             .Select(x => {
                                                             var nUsing = new CodeUsing(currentClass) { 
@@ -110,7 +111,7 @@ namespace Kiota.Builder.Refiners {
                                                             nUsing.Declaration = new CodeType(nUsing) { Name = x.Item2, IsExternal = true };
                                                             return nUsing;
                                                         }).ToArray());
-                if(currentClass.ClassKind == CodeClassKind.RequestBuilder)
+                if(currentClass.IsOfKind(CodeClassKind.RequestBuilder))
                     currentClass.AddUsing(defaultNamespaces.Union(defaultNamespacesForRequestBuilders)
                                             .Select(x => {
                                                             var nUsing = new CodeUsing(currentClass) { 
