@@ -58,9 +58,6 @@ namespace Kiota.Builder.Writers.Java {
                 case CodeMethodKind.Constructor:
                     WriteConstructorBody(parentClass, writer, inherits);
                     break;
-                case CodeMethodKind.AdditionalDataAccessor:
-                    writer.WriteLine($"return {codeElement.Name.Substring(3).ToFirstCharacterLowerCase()};"); // 3 -> get prefix
-                break;
                 default:
                     writer.WriteLine("return null;");
                 break;
@@ -204,7 +201,7 @@ namespace Kiota.Builder.Writers.Java {
                 writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", this.get{otherProp.Name.ToFirstCharacterUpperCase()}());");
             }
             if(additionalDataProperty != null)
-                writer.WriteLine($"writer.writeAdditionalData(this.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
+                writer.WriteLine($"writer.writeAdditionalData(this.get{additionalDataProperty.Name.ToFirstCharacterUpperCase()}());");
         }
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType) {
             var accessModifier = conventions.GetAccessModifier(code.Access);

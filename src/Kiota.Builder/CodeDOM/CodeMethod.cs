@@ -12,7 +12,6 @@ namespace Kiota.Builder
         RequestGenerator,
         Serializer,
         Deserializer,
-        AdditionalDataAccessor,
         Constructor,
         Getter,
         Setter
