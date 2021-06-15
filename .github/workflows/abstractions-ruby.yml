@@ -32,11 +32,11 @@ jobs:
       - name: Upload artifacts for ruby version 3 and ubuntu
         if: ${{ matrix.os == 'ubuntu-latest'  && matrix.ruby-version == '3.0'}}
         uses: actions/upload-artifact@v2
-          with:
-            name: drop
-            path: |
-              ${{ env.relativePath }}/Gemfile.lock
-              ${{ env.relativePath }}/README.md
+        with:
+          name: drop
+          path: |
+            ${{ env.relativePath }}/Gemfile.lock
+            ${{ env.relativePath }}/README.md
   deploy:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     environment:
