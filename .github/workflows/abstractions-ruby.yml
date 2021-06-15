@@ -21,22 +21,22 @@ jobs:
         ruby-version: [2.5.x, 2.6.x, 2.7.x, '3.0', head, jruby, jruby-head, truffleruby, truffleruby-head]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v2
-    - uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: ${{ matrix.ruby-version }}
-      - name: Install dependencies
-        run: bundle install
-      - name: Run tests
-        run: bundle exec rake
-    - name: Upload artifacts for ruby version 3 and ubuntu
-      if: ${{ matrix.os == 'ubuntu-latest'  && matrix.ruby-version == '3.0'}}
-      uses: actions/upload-artifact@v2
+      - uses: actions/checkout@v2
+      - uses: ruby/setup-ruby@v1
         with:
-          name: drop
-          path: |
-            ${{ env.relativePath }}/Gemfile.lock
-            ${{ env.relativePath }}/README.md
+          ruby-version: ${{ matrix.ruby-version }}
+        - name: Install dependencies
+          run: bundle install
+        - name: Run tests
+          run: bundle exec rake
+      - name: Upload artifacts for ruby version 3 and ubuntu
+        if: ${{ matrix.os == 'ubuntu-latest'  && matrix.ruby-version == '3.0'}}
+        uses: actions/upload-artifact@v2
+          with:
+            name: drop
+            path: |
+              ${{ env.relativePath }}/Gemfile.lock
+              ${{ env.relativePath }}/README.md
   deploy:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     environment:
