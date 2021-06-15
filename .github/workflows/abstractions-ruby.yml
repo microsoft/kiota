@@ -26,10 +26,11 @@ jobs:
           ruby-version: ${{ matrix.ruby-version }}
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
           working-directory: ${{ env.relativePath }}
+      - name: resolve rake and bundle for ruby version 2.7.0
+        if: ${{ matrix.version == '2.7'  || matrix.ruby-version == 'truffleruby' || matrix.ruby-version == 'truffleruby-head' ]}}
+        run: bundle uninstall rake
       - name: Run tests
-        run: |
-          bundle install
-          bundle exec rake
+        run: bundle exec rake
         working-directory: ${{ env.relativePath }}
       - name: Upload artifacts for ruby version 3 and ubuntu
         if: ${{ matrix.os == 'ubuntu-latest'  && matrix.ruby-version == '3.0'}}
@@ -55,9 +56,7 @@ jobs:
           ruby-version: '3.0'
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
           working-directory: ${{ env.relativePath }}
-      - run: |
-          bundle install
-          bundle exec rake
+      - run: bundle exec rake
         working-directory: ${{ env.relativePath }}
       - name: Publish to GPR
         working-directory: ${{ env.relativePath }}
