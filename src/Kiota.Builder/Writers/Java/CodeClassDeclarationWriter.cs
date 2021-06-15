@@ -22,7 +22,7 @@ namespace Kiota.Builder.Writers.Java {
                     .ForEach(x => writer.WriteLine(x));
             }
             var derivation = (codeElement.Inherits == null ? string.Empty : $" extends {codeElement.Inherits.Name.ToFirstCharacterUpperCase()}") +
-                            (!codeElement.Implements.Any() ? string.Empty : $" implements {codeElement.Implements.Select(x => x.Name).Aggregate((x,y) => x + " ," + y)}");
+                            (!codeElement.Implements.Any() ? string.Empty : $" implements {codeElement.Implements.Select(x => x.Name).Aggregate((x,y) => x + ", " + y)}");
             conventions.WriteShortDescription((codeElement.Parent as CodeClass)?.Description, writer);
             writer.WriteLine($"public class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation} {{");
             writer.IncreaseIndent();
