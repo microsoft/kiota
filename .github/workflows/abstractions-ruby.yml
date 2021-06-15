@@ -30,7 +30,9 @@ jobs:
         run: bundle install
       - name: Run tests
         run: bundle exec rake
-    - uses: actions/upload-artifact@v2
+    - name: Upload artifacts for ruby version 3 and ubuntu
+      if: ${{ matrix.os == 'ubuntu-latest'  && matrix.ruby-version == '3.0'}}
+      uses: actions/upload-artifact@v2
         with:
           name: drop
           path: |
@@ -43,23 +45,16 @@ jobs:
     runs-on: ubuntu-latest
     env:
       relativePath: ./abstractions/ruby
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
-        ruby-version: [2.5.x, 2.6.x, 2.7.x, '3.0', head, jruby, jruby-head, truffleruby, truffleruby-head]
-    runs-on: ${{ matrix.os }}
     needs: [build]
     steps:
       - uses: actions/checkout@v2
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: ${{ matrix.ruby-version }}
+           # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
+          ruby-version: '3.0'
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
       - run: bundle install
       - run: bundle exec rake
-
       - name: Publish to GPR
         run: |
           mkdir -p $HOME/.gem
@@ -71,14 +66,32 @@ jobs:
         env:
           GEM_HOST_API_KEY: "Bearer ${{secrets.PUBLISH_GH_TOKEN}}"
           OWNER: ${{ github.repository_owner }}
+  # deploy_prod:
+  #   if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+  #   environment:
+  #     name: production_feeds
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     relativePath: ./abstractions/ruby
+  #   needs: [build]
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - uses: ruby/setup-ruby@v1
+  #       with:
+  #          # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
+  #         ruby-version: '3.0'
+  #         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+  #     - run: bundle install
+  #     - run: bundle exec rake
+  #     - name: Publish to RubyGems
+  #       run: |
+  #         mkdir -p $HOME/.gem
+  #         touch $HOME/.gem/credentials
+  #         chmod 0600 $HOME/.gem/credentials
+  #         printf -- "---\n:rubygems_api_key: ${GEM_HOST_API_KEY}\n" > $HOME/.gem/credentials
+  #         gem build *.gemspec
+  #         gem push *.gem
+  #       env:
+  #         GEM_HOST_API_KEY: "${{secrets.RUBYGEMS_AUTH_TOKEN}}" TODO: Token for rubyGems.org
 
-      # - name: Publish to RubyGems TODO:
-      #   run: |
-      #     mkdir -p $HOME/.gem
-      #     touch $HOME/.gem/credentials
-      #     chmod 0600 $HOME/.gem/credentials
-      #     printf -- "---\n:rubygems_api_key: ${GEM_HOST_API_KEY}\n" > $HOME/.gem/credentials
-      #     gem build *.gemspec
-      #     gem push *.gem
-      #   env:
-      #     GEM_HOST_API_KEY: "${{secrets.RUBYGEMS_AUTH_TOKEN}}" TODO: Token for rubyGems.org
+    
