@@ -89,9 +89,11 @@ namespace Kiota.Builder.Refiners {
         };
         private static void CorrectCoreType(CodeElement currentElement) {
             if (currentElement is CodeProperty currentProperty && currentProperty.Type != null) {
-                if("IHttpCore".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase))
+                if(currentProperty.IsOfKind(CodePropertyKind.HttpCore))
                     currentProperty.Type.Name = "HttpCore";
-                else if(currentProperty.Name.Equals("serializerFactory", StringComparison.OrdinalIgnoreCase))
+                else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
+                    currentProperty.Type.Name = currentProperty.Type.Name.Substring(1); // removing the "I"
+                else if(currentProperty.IsOfKind(CodePropertyKind.SerializerFactory))
                     currentProperty.Type.Name = "SerializationWriterFactory";
                 else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase)) {
                     currentProperty.Type.Name = $"OffsetDateTime";
@@ -103,6 +105,9 @@ namespace Kiota.Builder.Refiners {
                         IsExternal = true,
                     };
                     (currentProperty.Parent as CodeClass).AddUsing(nUsing);
+                } else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
+                    currentProperty.Type.Name = "Map<String, Object>";
+                    currentProperty.DefaultValue = "new HashMap<>()";
                 }
             }
             if (currentElement is CodeMethod currentMethod) {
