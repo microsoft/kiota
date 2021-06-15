@@ -10,7 +10,6 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
     env:
       relativePath: ./abstractions/ruby/microsoft_kiota_abstractions
     strategy:
