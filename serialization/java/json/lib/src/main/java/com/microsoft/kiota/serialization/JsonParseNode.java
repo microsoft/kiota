@@ -197,7 +197,9 @@ public class JsonParseNode implements ParseNode {
                 final String fieldKey = fieldEntry.getKey();
                 final BiConsumer<? super T, ParseNode> fieldDeserializer = fieldDeserializers.get(fieldKey);
                 final JsonElement fieldValue = fieldEntry.getValue();
-                if(fieldDeserializer != null && !fieldValue.isJsonNull()) {
+                if(fieldValue.isJsonNull())
+                    continue;
+                if(fieldDeserializer != null) {
                     final var onBefore = this.onBeforeAssignFieldValues;
                     final var onAfter = this.onAfterAssignFieldValues;
                     fieldDeserializer.accept(item, new JsonParseNode(fieldValue) {{
