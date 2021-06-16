@@ -27,10 +27,8 @@ jobs:
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
           bundler: 'latest'
           cache-version: 1
-          working-directory: ${{ env.relativePath }}
       - name: Run tests
         run: bundle exec rake
-        working-directory: ${{ env.relativePath }}
       - name: Upload artifacts for ruby version 3 and ubuntu
         if: ${{ matrix.os == 'ubuntu-latest'  && matrix.ruby-version == '3.0'}}
         uses: actions/upload-artifact@v2
