@@ -58,7 +58,6 @@ jobs:
       - run: bundle exec rake
         working-directory: ${{ env.relativePath }}
       - name: Publish to GPR
-        working-directory: ${{ env.relativePath }}
         run: |
           mkdir -p $HOME/.gem
           touch $HOME/.gem/credentials
@@ -66,6 +65,7 @@ jobs:
           printf -- "---\n:github: ${GEM_HOST_API_KEY}\n" > $HOME/.gem/credentials
           gem build *.gemspec
           gem push --KEY github --host https://rubygems.pkg.github.com/${OWNER} *.gem
+        working-directory: ${{ env.relativePath }}
         env:
           GEM_HOST_API_KEY: "Bearer ${{secrets.PUBLISH_GH_TOKEN}}"
           OWNER: ${{ github.repository_owner }}
