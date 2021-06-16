@@ -18,8 +18,10 @@ public class InMemoryBackingStore implements BackingStore {
     private final Map<String, TriConsumer<String, Object, Object>> subscriptionStore = new HashMap<>();
     public void setIsInitializationCompleted(final boolean value) {
         this.isInitializationCompleted = value;
-        for(final Pair<Boolean, Object> wrapper : this.store.values()) {
-            wrapper.setAt0(Boolean.valueOf(!value));
+        for(final Map.Entry<String, Pair<Boolean, Object>> entry : this.store.entrySet()) {
+            final var wrapper = entry.getValue();
+            final var updatedValue = wrapper.setAt0(Boolean.valueOf(!value));
+            entry.setValue(updatedValue);
         }
     }
     public boolean getIsInitializationCompleted() {

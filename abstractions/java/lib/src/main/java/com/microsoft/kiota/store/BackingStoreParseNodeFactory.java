@@ -12,16 +12,18 @@ public class BackingStoreParseNodeFactory extends ParseNodeProxyFactory {
             (x) -> {
                 if(x instanceof BackedModel) {
                     final BackedModel backedModel = (BackedModel)x;
-                    if(backedModel.getBackingStore() != null) {
-                        backedModel.getBackingStore().setIsInitializationCompleted(false);
+                    final BackingStore backingStore = backedModel.getBackingStore();
+                    if(backingStore != null) {
+                        backingStore.setIsInitializationCompleted(false);
                     }
                 }
             },
             (x) -> {
                 if(x instanceof BackedModel) {
                     final BackedModel backedModel = (BackedModel)x;
-                    if(backedModel.getBackingStore() != null) {
-                        backedModel.getBackingStore().setIsInitializationCompleted(true);
+                    final BackingStore backingStore = backedModel.getBackingStore();
+                    if(backingStore != null) {
+                        backingStore.setIsInitializationCompleted(true);
                     }
                 }
             }
