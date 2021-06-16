@@ -10,7 +10,6 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
     env:
       relativePath: ./abstractions/ruby/microsoft_kiota_abstractions
     strategy:
@@ -18,21 +17,23 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
-        ruby-version: [2.5.x, 2.6.x, 2.7.x, '3.0', head, jruby, jruby-head, truffleruby, truffleruby-head]
+        ruby-version: [2.5, 2.6, 2.7, '3.0', head, jruby, jruby-head, truffleruby, truffleruby-head]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
-    - uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: ${{ matrix.ruby-version }}
-        bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-      - name: Install dependencies
-        run: bundle install
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+          bundler: 'latest'
+          cache-version: 1
+          working-directory: ${{ env.relativePath }}
       - name: Run tests
         run: bundle exec rake
-    - name: Upload artifacts for ruby version 3 and ubuntu
-      if: ${{ matrix.os == 'ubuntu-latest'  && matrix.ruby-version == '3.0'}}
-      uses: actions/upload-artifact@v2
+        working-directory: ${{ env.relativePath }}
+      - name: Upload artifacts for ruby version 3 and ubuntu
+        if: ${{ matrix.os == 'ubuntu-latest'  && matrix.ruby-version == '3.0'}}
+        uses: actions/upload-artifact@v2
         with:
           name: drop
           path: |
@@ -53,8 +54,11 @@ jobs:
            # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
           ruby-version: '3.0'
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-      - run: bundle install
+          bundler: 'latest'
+          cache-version: 1
+          working-directory: ${{ env.relativePath }}
       - run: bundle exec rake
+        working-directory: ${{ env.relativePath }}
       - name: Publish to GPR
         run: |
           mkdir -p $HOME/.gem
@@ -63,6 +67,7 @@ jobs:
           printf -- "---\n:github: ${GEM_HOST_API_KEY}\n" > $HOME/.gem/credentials
           gem build *.gemspec
           gem push --KEY github --host https://rubygems.pkg.github.com/${OWNER} *.gem
+        working-directory: ${{ env.relativePath }}
         env:
           GEM_HOST_API_KEY: "Bearer ${{secrets.PUBLISH_GH_TOKEN}}"
           OWNER: ${{ github.repository_owner }}
@@ -81,7 +86,6 @@ jobs:
   #          # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
   #         ruby-version: '3.0'
   #         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-  #     - run: bundle install
   #     - run: bundle exec rake
   #     - name: Publish to RubyGems
   #       run: |

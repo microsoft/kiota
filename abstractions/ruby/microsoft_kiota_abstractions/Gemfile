@@ -9,6 +9,4 @@ gem 'rake', '~> 13.0'
 
 gem 'rspec', '~> 3.0'
 
-gem 'uri'
-
 gem 'rubocop', require: false
