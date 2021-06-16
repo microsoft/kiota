@@ -40,7 +40,7 @@ jobs:
             ${{ env.relativePath }}/Gemfile.lock
             ${{ env.relativePath }}/README.md
   deploy:
-    # if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     environment:
       name: staging_feeds
     runs-on: ubuntu-latest
