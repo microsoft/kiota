@@ -29,7 +29,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
             switch(codeElement.MethodKind) {
                 case CodeMethodKind.IndexerBackwardCompatibility:
-                    var pathSegment = codeElement.GenerationProperties.ContainsKey(localConventions.PathSegmentPropertyName) ? codeElement.GenerationProperties[localConventions.PathSegmentPropertyName] as string : string.Empty;
+                    var pathSegment = codeElement.PathSegment;
                     localConventions.AddRequestBuilderBody(returnType, writer, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
                     break;
                 case CodeMethodKind.Deserializer:

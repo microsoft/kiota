@@ -37,6 +37,7 @@ namespace Kiota.Builder
         public AccessModifier Access {get;set;} = AccessModifier.Public;
         public CodeTypeBase ReturnType {get;set;}
         public List<CodeParameter> Parameters {get;set;} = new List<CodeParameter>();
+        public string PathSegment { get; set; }
         public bool IsStatic {get;set;} = false;
         public bool IsAsync {get;set;} = true;
         public string Description {get; set;}
@@ -63,9 +64,9 @@ namespace Kiota.Builder
                 Access = Access,
                 IsStatic = IsStatic,
                 Description = Description?.Clone() as string,
-                GenerationProperties = new (GenerationProperties),
                 ContentType = ContentType?.Clone() as string,
                 AccessedProperty = AccessedProperty,
+                PathSegment = PathSegment?.Clone() as string,
             };
         }
 

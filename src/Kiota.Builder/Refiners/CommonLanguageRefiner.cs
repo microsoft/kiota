@@ -264,7 +264,7 @@ namespace Kiota.Builder.Refiners {
                     TypeDefinition = indexerClass,
                     Name = indexerClass.Name,
                 };
-                method.GenerationProperties.Add(pathSegmentPropertyName, pathSegment);
+                method.PathSegment = pathSegment;
                 var parameter = new CodeParameter(method) {
                     Name = "id",
                     Optional = false,
