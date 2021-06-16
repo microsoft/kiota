@@ -35,14 +35,6 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             tw?.Dispose();
         }
         [Fact]
-        public void WritesDefaultValue() {
-            var defaultValue = "someDefaultValue";
-            property.DefaultValue = defaultValue;
-            writer.Write(property);
-            var result = tw.ToString();
-            Assert.Contains(defaultValue, result);
-        }
-        [Fact]
         public void WritesRequestBuilder() {
             property.PropertyKind = CodePropertyKind.RequestBuilder;
             writer.Write(property);

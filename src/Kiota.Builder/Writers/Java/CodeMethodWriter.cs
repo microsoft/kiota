@@ -204,8 +204,8 @@ namespace Kiota.Builder.Writers.Java {
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType) {
             var accessModifier = conventions.GetAccessModifier(code.Access);
             var genericTypeParameterDeclaration = code.IsOfKind(CodeMethodKind.Deserializer) ? " <T>": string.Empty;
-            var returnTypeAsyncPrefix = code.IsAsync ? " java.util.concurrent.CompletableFuture<" : string.Empty;
-            var returnTypeAsyncSuffix = code.IsAsync ? " >" : string.Empty;
+            var returnTypeAsyncPrefix = code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty;
+            var returnTypeAsyncSuffix = code.IsAsync ? ">" : string.Empty;
             var isConstructor = code.IsOfKind(CodeMethodKind.Constructor);
             var methodName = (code.MethodKind switch {
                 (CodeMethodKind.Constructor) => code.Parent.Name.ToFirstCharacterUpperCase(),
@@ -215,8 +215,8 @@ namespace Kiota.Builder.Writers.Java {
             });
             var parameters = string.Join(", ", code.Parameters.Select(p=> conventions.GetParameterSignature(p)).ToList());
             var throwableDeclarations = code.IsOfKind(CodeMethodKind.RequestGenerator) ? "throws URISyntaxException ": string.Empty;
-            var finalReturnType = isConstructor ? string.Empty : $" {returnType}";
-            writer.WriteLine($"{accessModifier}{genericTypeParameterDeclaration}{returnTypeAsyncPrefix}{finalReturnType}{returnTypeAsyncSuffix} {methodName}({parameters}) {throwableDeclarations}{{");
+            var finalReturnType = isConstructor ? string.Empty : $" {returnTypeAsyncPrefix}{returnType}{returnTypeAsyncSuffix}";
+            writer.WriteLine($"{accessModifier}{genericTypeParameterDeclaration}{finalReturnType} {methodName}({parameters}) {throwableDeclarations}{{");
         }
         private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer) {
             var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);

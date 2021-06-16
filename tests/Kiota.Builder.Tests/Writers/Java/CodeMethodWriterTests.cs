@@ -216,7 +216,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             Assert.Contains("writeCollectionOfPrimitiveValues", result);
             Assert.Contains("writeCollectionOfObjectValues", result);
             Assert.Contains("writeEnumValue", result);
-            Assert.Contains("writeAdditionalData(this.additionalData);", result);
+            Assert.Contains("writeAdditionalData(this.getAdditionalData());", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]

@@ -81,14 +81,6 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             };
         }
         [Fact]
-        public void WritesDefaultValue() {
-            var defaultValue = "someDefaultValue";
-            property.DefaultValue = defaultValue;
-            writer.Write(property);
-            var result = tw.ToString();
-            Assert.Contains(defaultValue, result);
-        }
-        [Fact]
         public void WritesRequestBuilder() {
             property.PropertyKind = CodePropertyKind.RequestBuilder;
             writer.Write(property);

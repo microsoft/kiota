@@ -98,10 +98,9 @@ namespace Kiota.Builder.Refiners.Tests {
                 },
             });
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
-            Assert.Single(requestBuilder.GetChildElements(true));
-            Assert.True(requestBuilder.GetChildElements(true).First() is CodeProperty);
-            Assert.Equal(2, collectionRequestBuilder.GetChildElements(true).Count());
-            Assert.Single(collectionRequestBuilder.GetChildElements(true).OfType<CodeMethod>());
+            Assert.Single(requestBuilder.GetChildElements(true).OfType<CodeProperty>());
+            Assert.Empty(requestBuilder.GetChildElements(true).OfType<CodeIndexer>());
+            Assert.Single(collectionRequestBuilder.GetChildElements(true).OfType<CodeMethod>().Where(x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)));
             Assert.Single(collectionRequestBuilder.GetChildElements(true).OfType<CodeProperty>());
         }
         [Fact]
@@ -183,16 +182,19 @@ namespace Kiota.Builder.Refiners.Tests {
             }).First();
             model.AddProperty(new (model) {
                 Name = "core",
+                PropertyKind = CodePropertyKind.HttpCore,
                 Type = new CodeType(model) {
                     Name = httpCoreDefaultName
                 }
             }, new (model) {
                 Name = "serializerFactory",
+                PropertyKind = CodePropertyKind.SerializerFactory,
                 Type = new CodeType(model) {
                     Name = factoryDefaultName,
                 }
             }, new (model) {
                 Name = "someDate",
+                PropertyKind = CodePropertyKind.Custom,
                 Type = new CodeType(model) {
                     Name = dateTimeOffsetDefaultName,
                 }
@@ -220,6 +222,7 @@ namespace Kiota.Builder.Refiners.Tests {
             }).First();
             executorMethod.AddParameter(new (executorMethod) {
                 Name = "handler",
+                ParameterKind = CodeParameterKind.ResponseHandler,
                 Type = new CodeType(executorMethod) {
                     Name = handlerDefaultName,
                 }
@@ -240,6 +243,7 @@ namespace Kiota.Builder.Refiners.Tests {
             }).First();
             serializationMethod.AddParameter(new CodeParameter(serializationMethod) {
                 Name = "handler",
+                ParameterKind = CodeParameterKind.ResponseHandler,
                 Type = new CodeType(executorMethod) {
                     Name = serializerDefaultName,
                 }

@@ -29,16 +29,19 @@ namespace Kiota.Builder.Refiners.Tests {
             }).First();
             model.AddProperty(new (model) {
                 Name = "core",
+                PropertyKind = CodePropertyKind.HttpCore,
                 Type = new CodeType(model) {
                     Name = httpCoreDefaultName
                 }
             }, new (model) {
                 Name = "serializerFactory",
+                PropertyKind = CodePropertyKind.SerializerFactory,
                 Type = new CodeType(model) {
                     Name = factoryDefaultName,
                 }
             }, new (model) {
                 Name = "someDate",
+                PropertyKind = CodePropertyKind.Custom,
                 Type = new CodeType(model) {
                     Name = dateTimeOffsetDefaultName,
                 }
@@ -58,6 +61,7 @@ namespace Kiota.Builder.Refiners.Tests {
             }).First();
             executorMethod.AddParameter(new CodeParameter(executorMethod) {
                 Name = "handler",
+                ParameterKind = CodeParameterKind.ResponseHandler,
                 Type = new CodeType(executorMethod) {
                     Name = handlerDefaultName,
                 }
@@ -72,6 +76,7 @@ namespace Kiota.Builder.Refiners.Tests {
             }).First();
             serializationMethod.AddParameter(new CodeParameter(serializationMethod) {
                 Name = "handler",
+                ParameterKind = CodeParameterKind.ResponseHandler,
                 Type = new CodeType(executorMethod) {
                     Name = serializerDefaultName,
                 }
