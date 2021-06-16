@@ -45,7 +45,7 @@ jobs:
       name: staging_feeds
     runs-on: ubuntu-latest
     env:
-      relativePath: relativePath: ./abstractions/ruby/microsoft_kiota_abstractions
+      relativePath: ./abstractions/ruby/microsoft_kiota_abstractions
     needs: [build]
     steps:
       - uses: actions/checkout@v2
