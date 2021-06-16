@@ -28,11 +28,11 @@ jobs:
           bundler: 'latest'
           cache-version: 1
           working-directory: ${{ env.relativePath }}
+      - name: fixing paths for ruby version 2.7.0
+        if: ${{ matrix.ruby-version == '2.7'}}
+        run: bundle install --path vendor/bundle/ruby/2.7.0/bin
       - name: Run tests
-        run: |
-          bundle clean --force
-          bundle install
-          bundle exec rake
+        run: bundle exec rake
         working-directory: ${{ env.relativePath }}
       - name: Upload artifacts for ruby version 3 and ubuntu
         if: ${{ matrix.os == 'ubuntu-latest'  && matrix.ruby-version == '3.0'}}
