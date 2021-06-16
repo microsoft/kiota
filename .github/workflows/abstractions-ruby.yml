@@ -54,6 +54,8 @@ jobs:
            # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
           ruby-version: '3.0'
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+          bundler: 'latest'
+          cache-version: 1
           working-directory: ${{ env.relativePath }}
       - run: bundle exec rake
         working-directory: ${{ env.relativePath }}
