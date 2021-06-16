@@ -25,6 +25,7 @@ jobs:
         with:
           ruby-version: ${{ matrix.ruby-version }}
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+          bundler: 'latest'
           cache-version: 1
           working-directory: ${{ env.relativePath }}
       - name: Run tests
