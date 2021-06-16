@@ -29,7 +29,10 @@ jobs:
           cache-version: 1
           working-directory: ${{ env.relativePath }}
       - name: Run tests
-        run: bundle exec rake
+        run: |
+          bundle clean --force
+          bundle install
+          bundle exec rake
         working-directory: ${{ env.relativePath }}
       - name: Upload artifacts for ruby version 3 and ubuntu
         if: ${{ matrix.os == 'ubuntu-latest'  && matrix.ruby-version == '3.0'}}
