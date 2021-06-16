@@ -33,6 +33,7 @@ jobs:
         run: |
           bundle config set --local path 'vendor/bundle/ruby/2.7.0/bin'
           bundle install
+        working-directory: ${{ env.relativePath }}
       - name: Run tests
         run: bundle exec rake
         working-directory: ${{ env.relativePath }}
