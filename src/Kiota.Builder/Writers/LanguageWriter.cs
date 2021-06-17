@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.IO;
 using Kiota.Builder.Writers.CSharp;
 using Kiota.Builder.Writers.Java;
+using Kiota.Builder.Writers.Ruby;
 using Kiota.Builder.Writers.TypeScript;
 
 namespace Kiota.Builder.Writers
