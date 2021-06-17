@@ -24,7 +24,7 @@
   "homepage": "https://github.com/microsoft/kiota#readme",
   "devDependencies": {
     "@types/node": "^15.12.2",
-    "typescript": "^4.3.2"
+    "typescript": "^4.3.3"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
