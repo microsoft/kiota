@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Tests;
 using Xunit;
 
@@ -313,6 +314,67 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             var result = tw.ToString();
             Assert.Contains("protected ", result);
             AssertExtensions.CurlyBracesAreClosed(result);
+        }
+        [Fact]
+        public void WritesIndexer() {
+            method.MethodKind = CodeMethodKind.IndexerBackwardCompatibility;
+            method.PathSegment = "somePath";
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("builder.httpCore = ", result);
+            Assert.Contains("builder.serializerFactory", result);
+            Assert.Contains("builder.currentPath", result);
+            Assert.Contains("const builder = new", result);
+            Assert.Contains(method.PathSegment, result);
+        }
+        [Fact]
+        public void WritesGetterToBackingStore() {
+            parentClass.AddBackingStoreProperty();
+            method.AddAccessedProperty();
+            method.MethodKind = CodeMethodKind.Getter;
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("this.backingStore.get(\"someProperty\")", result);
+        }
+        [Fact]
+        public void WritesSetterToBackingStore() {
+            parentClass.AddBackingStoreProperty();
+            method.AddAccessedProperty();
+            method.MethodKind = CodeMethodKind.Setter;
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("this.backingStore.set(\"someProperty\", value)", result);
+        }
+        [Fact]
+        public void WritesGetterToField() {
+            method.AddAccessedProperty();
+            method.MethodKind = CodeMethodKind.Getter;
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("this.someProperty", result);
+        }
+        [Fact]
+        public void WritesSetterToField() {
+            method.AddAccessedProperty();
+            method.MethodKind = CodeMethodKind.Setter;
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("this.someProperty = value", result);
+        }
+        [Fact]
+        public void WritesConstructor() {
+            method.MethodKind = CodeMethodKind.Constructor;
+            method.IsAsync = false;
+            var defaultValue = "someVal";
+            var propName = "propWithDefaultValue";
+            parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = propName,
+                DefaultValue = defaultValue,
+                PropertyKind = CodePropertyKind.PathSegment,
+            });
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains($"this.{propName} = {defaultValue}", result);
         }
     }
 }

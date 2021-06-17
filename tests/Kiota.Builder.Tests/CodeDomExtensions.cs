@@ -6,5 +6,11 @@ namespace Kiota.Builder.Tests {
                 PropertyKind = CodePropertyKind.BackingStore
             });
         }
+        public static void AddAccessedProperty(this CodeMethod codeMethod) {
+            codeMethod.AccessedProperty = new CodeProperty(codeMethod.Parent) {
+                Name = "someProperty"
+            };
+            (codeMethod.Parent as CodeClass)?.AddProperty(codeMethod.AccessedProperty);
+        }
     }
 }
