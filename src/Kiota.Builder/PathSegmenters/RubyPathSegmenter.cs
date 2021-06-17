@@ -1,5 +1,4 @@
 using System;
-using System.Text;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder {
@@ -10,8 +9,4 @@ namespace Kiota.Builder {
         public override string NormalizeFileName(string elementName) => elementName.ToSnakeCase();
         public override string NormalizeNamespaceSegment(string segmentName) => segmentName.ToSnakeCase();
     }
-
-    
-
-    
 }
