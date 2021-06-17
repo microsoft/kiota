@@ -23,5 +23,15 @@ namespace Kiota.Builder.Extensions {
             original?.Replace("$value", "Content");
         public static string TrimQuotes(this string original) =>
             original?.Trim('\'', '"');
+        
+        public static string ToSnakeCase(this string name)
+        {
+            if(string.IsNullOrEmpty(name)) return name;
+            var chunks = name.Split("-", StringSplitOptions.RemoveEmptyEntries);
+            var identifier = String.Join("_", chunks.Take(1)
+                                                  .Union(chunks.Skip(1)
+                                                                .Select(s => ToFirstCharacterLowerCase(s))));
+            return identifier;
+        }
     }
 }
