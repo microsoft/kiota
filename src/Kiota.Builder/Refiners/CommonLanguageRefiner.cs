@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using Kiota.Builder.Extensions;
 using static Kiota.Builder.CodeClass;
 
 namespace Kiota.Builder.Refiners {
@@ -341,6 +343,76 @@ namespace Kiota.Builder.Refiners {
                     currentClass.AddUsing(usingsToAdd);
             }
             CrawlTree(current, (x) => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration));
+        }
+        protected static void ReplaceRelativeImportsByImportPath(CodeElement currentElement, char namespaceNameSeparator) {
+            if(currentElement is CodeClass currentClass && currentClass.StartBlock is CodeClass.Declaration currentDeclaration
+                && currentElement.Parent is CodeNamespace currentNamespace) {
+                currentDeclaration.Usings.RemoveAll(x => currentDeclaration.Name.Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase));
+                foreach(var codeUsing in currentDeclaration.Usings
+                                            .Where(x => (!x.Declaration?.IsExternal) ?? true)) {
+                    var relativeImportPath = GetRelativeImportPathForUsing(codeUsing, currentNamespace, namespaceNameSeparator);
+                    codeUsing.Name = $"{codeUsing.Declaration?.Name?.ToFirstCharacterUpperCase() ?? codeUsing.Name}";
+                    codeUsing.Declaration = new CodeType(codeUsing) {
+                        Name = $"{relativeImportPath}{(string.IsNullOrEmpty(relativeImportPath) ? codeUsing.Name : codeUsing.Declaration.Name.ToFirstCharacterLowerCase())}",
+                        IsExternal = false,
+                    };
+                }
+            }
+
+            CrawlTree(currentElement, x => ReplaceRelativeImportsByImportPath(x, namespaceNameSeparator));
+        }
+        private static string GetRelativeImportPathForUsing(CodeUsing codeUsing, CodeNamespace currentNamespace, char namespaceNameSeparator) {
+            if(codeUsing.Declaration == null)
+                return string.Empty;//it's an external import, add nothing
+            var typeDef = codeUsing.Declaration.TypeDefinition;
+
+            if(typeDef == null)
+                return "./"; // it's relative to the folder, with no declaration (default failsafe)
+            else
+                return GetImportRelativePathFromNamespaces(currentNamespace, 
+                                                        typeDef.GetImmediateParentOfType<CodeNamespace>(), namespaceNameSeparator);
+        }
+        private static string GetImportRelativePathFromNamespaces(CodeNamespace currentNamespace, CodeNamespace importNamespace, char namespaceNameSeparator) {
+            if(currentNamespace == null)
+                throw new ArgumentNullException(nameof(currentNamespace));
+            else if (importNamespace == null)
+                throw new ArgumentNullException(nameof(importNamespace));
+            else if(currentNamespace.Name.Equals(importNamespace.Name, StringComparison.OrdinalIgnoreCase)) // we're in the same namespace
+                return "./";
+            else
+                return GetRelativeImportPathFromSegments(currentNamespace, importNamespace, namespaceNameSeparator);                
+        }
+        private static string GetRelativeImportPathFromSegments(CodeNamespace currentNamespace, CodeNamespace importNamespace, char namespaceNameSeparator) {
+            var currentNamespaceSegements = currentNamespace
+                                    .Name
+                                    .Split(namespaceNameSeparator, StringSplitOptions.RemoveEmptyEntries);
+            var importNamespaceSegments = importNamespace
+                                .Name
+                                .Split(namespaceNameSeparator, StringSplitOptions.RemoveEmptyEntries);
+            var importNamespaceSegmentsCount = importNamespaceSegments.Length;
+            var currentNamespaceSegementsCount = currentNamespaceSegements.Length;
+            var deeperMostSegmentIndex = 0;
+            while(deeperMostSegmentIndex < Math.Min(importNamespaceSegmentsCount, currentNamespaceSegementsCount)) {
+                if(currentNamespaceSegements.ElementAt(deeperMostSegmentIndex).Equals(importNamespaceSegments.ElementAt(deeperMostSegmentIndex), StringComparison.OrdinalIgnoreCase))
+                    deeperMostSegmentIndex++;
+                else
+                    break;
+            }
+            if (deeperMostSegmentIndex == currentNamespaceSegementsCount) { // we're in a parent namespace and need to import with a relative path
+                return "./" + GetRemainingImportPath(importNamespaceSegments.Skip(deeperMostSegmentIndex));
+            } else { // we're in a sub namespace and need to go "up" with dot dots
+                var upMoves = currentNamespaceSegementsCount - deeperMostSegmentIndex;
+                var upMovesBuilder = new StringBuilder();
+                for(var i = 0; i < upMoves; i++)
+                    upMovesBuilder.Append("../");
+                return upMovesBuilder.ToString() + GetRemainingImportPath(importNamespaceSegments.Skip(deeperMostSegmentIndex));
+            }
+        }
+        private static string GetRemainingImportPath(IEnumerable<string> remainingSegments) {
+            if(remainingSegments.Any())
+                return remainingSegments.Select(x => x.ToFirstCharacterLowerCase()).Aggregate((x, y) => $"{x}/{y}") + '/';
+            else
+                return string.Empty;
         }
         protected static void CrawlTree(CodeElement currentElement, Action<CodeElement> function) {
             foreach(var childElement in currentElement.GetChildElements())
