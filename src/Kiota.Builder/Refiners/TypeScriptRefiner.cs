@@ -8,7 +8,7 @@ namespace Kiota.Builder.Refiners {
         public override void Refine(CodeNamespace generatedCode)
         {
             PatchResponseHandlerType(generatedCode);
-            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
+            AddDefaultImports(generatedCode, Array.Empty<Tuple<string, string>>(), defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, "ById");
             CorrectCoreType(generatedCode);
             CorrectCoreTypesForBackingStoreUsings(generatedCode, "@microsoft/kiota-abstractions");
@@ -39,8 +39,6 @@ namespace Kiota.Builder.Refiners {
             new ("RequestInfo", "@microsoft/kiota-abstractions"),
             new ("ResponseHandler", "@microsoft/kiota-abstractions"),
             new ("SerializationWriterFactory", "@microsoft/kiota-abstractions"),
-        };
-        private static readonly Tuple<string, string>[] defaultNamespaces = new Tuple<string, string>[] { 
         };
         private static readonly Tuple<string, string>[] defaultNamespacesForModels = new Tuple<string, string>[] { 
             new ("SerializationWriter", "@microsoft/kiota-abstractions"),
