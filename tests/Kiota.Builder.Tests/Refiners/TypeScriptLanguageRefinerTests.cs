@@ -3,7 +3,74 @@ using Xunit;
 
 namespace Kiota.Builder.Refiners.Tests {
     public class TypeScriptLanguageRefinerTests {
-        private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
+        private readonly CodeNamespace root;
+        private readonly CodeNamespace graphNS;
+        private readonly CodeClass parentClass;
+        public TypeScriptLanguageRefinerTests() {
+            root = CodeNamespace.InitRootNamespace();
+            graphNS = root.AddNamespace("graph");
+            parentClass = new (graphNS) {
+                Name = "parentClass"
+            };
+            graphNS.AddClass(parentClass);
+        }
+#region common
+        [Fact]
+        public void ReplacesImportsSubNamespace() {
+            var rootNS = parentClass.Parent as CodeNamespace;
+            rootNS.RemoveChildElement(parentClass);
+            graphNS.AddClass(parentClass);
+            var declaration = parentClass.StartBlock as CodeClass.Declaration;
+            var subNS = graphNS.AddNamespace($"{graphNS.Name}.messages");
+            var messageClassDef = new CodeClass(subNS) {
+                Name = "Message",
+            };
+            declaration.Usings.Add(new (parentClass) {
+                Name = "graph",
+                Declaration = new(parentClass) {
+                    Name = "Message",
+                    TypeDefinition = messageClassDef,
+                }
+            });
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+            Assert.Equal("./messages/message", declaration.Usings.First().Declaration.Name);
+        }
+        [Fact]
+        public void ReplacesImportsParentNamespace() {
+            var declaration = parentClass.StartBlock as CodeClass.Declaration;
+            var subNS = root.AddNamespace("messages");
+            var messageClassDef = new CodeClass(subNS) {
+                Name = "Message",
+            };
+            subNS.AddClass(messageClassDef);
+            declaration.Usings.Add(new (parentClass) {
+                Name = "messages",
+                Declaration = new(parentClass) {
+                    Name = "Message",
+                    TypeDefinition = messageClassDef,
+                }
+            });
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+            Assert.Equal("../messages/message", declaration.Usings.First().Declaration.Name);
+        }
+        [Fact]
+        public void ReplacesImportsSameNamespace() {
+            var declaration = parentClass.StartBlock as CodeClass.Declaration;
+            var messageClassDef = new CodeClass(graphNS) {
+                Name = "Message",
+            };
+            declaration.Usings.Add(new (parentClass) {
+                Name = "graph",
+                Declaration = new(parentClass) {
+                    Name = "Message",
+                    TypeDefinition = messageClassDef,
+                }
+            });
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+            Assert.Equal("./message", declaration.Usings.First().Declaration.Name);
+        }
+#endregion
+#region typescript
         private const string httpCoreDefaultName = "IHttpCore";
         private const string factoryDefaultName = "ISerializationWriterFactory";
         private const string deserializeDefaultName = "IDictionary<string, Action<Model, IParseNode>>";
@@ -111,4 +178,5 @@ namespace Kiota.Builder.Refiners.Tests {
             Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => streamDefaultName.Equals(x.Type.Name)));
         }
     }
+#endregion
 }
