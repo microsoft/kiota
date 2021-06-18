@@ -22,6 +22,7 @@ namespace Kiota.Builder.Refiners {
                                                     CodePropertyKind.AdditionalData,
                                                 }, _configuration.UsesBackingStore, false);
             AddConstructorsForDefaultValues(generatedCode, true);
+            ReplaceRelativeImportsByImportPath(generatedCode, '.');
         }
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
