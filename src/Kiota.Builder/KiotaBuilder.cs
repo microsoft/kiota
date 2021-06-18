@@ -65,7 +65,7 @@ namespace Kiota.Builder
 
             // Step 5 - RefineByLanguage
             sw.Start();
-            ApplyLanguageRefinement(config.Language, generatedCode);
+            ApplyLanguageRefinement(config, generatedCode);
             StopLogAndReset(sw, "step 5 - refine by language - took");
 
             // Step 6 - Write language source 
@@ -178,14 +178,14 @@ namespace Kiota.Builder
         /// <summary>
         /// Manipulate CodeDOM for language specific issues
         /// </summary>
-        /// <param name="language"></param>
+        /// <param name="config"></param>
         /// <param name="generatedCode"></param>
-        public void ApplyLanguageRefinement(GenerationLanguage language, CodeNamespace generatedCode)
+        public void ApplyLanguageRefinement(GenerationConfiguration config, CodeNamespace generatedCode)
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            ILanguageRefiner.Refine(language, generatedCode);
+            ILanguageRefiner.Refine(config, generatedCode);
 
             stopwatch.Stop();
             logger.LogDebug("{timestamp}ms: Language refinement applied", stopwatch.ElapsedMilliseconds);
@@ -284,7 +284,8 @@ namespace Kiota.Builder
                 Name = "pathSegment",
                 DefaultValue = isRootClientClass ? $"\"{this.config.ApiRootUrl}\"" : (currentNode.IsParameter() ? "\"\"" : $"\"/{currentNode.Segment}\""),
                 ReadOnly = true,
-                Description = "Path segment to use to build the URL for the current request builder"
+                Description = "Path segment to use to build the URL for the current request builder",
+                PropertyKind = CodePropertyKind.PathSegment
             };
             pathProperty.Type = new CodeType(pathProperty) {
                 Name = "string",
@@ -295,7 +296,8 @@ namespace Kiota.Builder
 
             var currentPathProperty = new CodeProperty(currentClass) {
                 Name = "currentPath",
-                Description = "Current path for the request"
+                Description = "Current path for the request",
+                PropertyKind = CodePropertyKind.CurrentPath
             };
             currentPathProperty.Type = new CodeType(currentPathProperty) {
                 Name = "string",
@@ -305,7 +307,8 @@ namespace Kiota.Builder
 
             var httpCoreProperty = new CodeProperty(currentClass) {
                 Name = "httpCore",
-                Description = "Core service to use to execute the requests"
+                Description = "Core service to use to execute the requests",
+                PropertyKind = CodePropertyKind.HttpCore
             };
             httpCoreProperty.Type = new CodeType(httpCoreProperty) {
                 Name = "IHttpCore",
@@ -315,7 +318,8 @@ namespace Kiota.Builder
 
             var serializerFactoryProperty = new CodeProperty(currentClass) {
                 Name = "serializerFactory",
-                Description = "Factory to use to get a serializer for payload serialization"
+                Description = "Factory to use to get a serializer for payload serialization",
+                PropertyKind = CodePropertyKind.SerializerFactory
             };
             serializerFactoryProperty.Type = new CodeType(serializerFactoryProperty) {
                 Name = "ISerializationWriterFactory",
@@ -340,7 +344,7 @@ namespace Kiota.Builder
 
             var unmappedRequestBuilderTypes = unmappedTypesWithName
                                     .Where(x => 
-                                    x.Parent is CodeProperty property && property.PropertyKind == CodePropertyKind.RequestBuilder || x.Parent is CodeIndexer)
+                                    x.Parent is CodeProperty property && property.IsOfKind(CodePropertyKind.RequestBuilder) || x.Parent is CodeIndexer)
                                     .ToList();
             
             Parallel.ForEach(unmappedRequestBuilderTypes, x => {
@@ -525,6 +529,7 @@ namespace Kiota.Builder
                 nParam.Type = new CodeType(nParam) {
                     Name = "binary",
                     IsExternal = true,
+                    IsNullable = false,
                 };
                 method.AddParameter(nParam);
             }
@@ -713,7 +718,11 @@ namespace Kiota.Builder
         private const string fieldDeserializersMethodName = "GetFieldDeserializers<T>";
         private const string serializeMethodName = "Serialize";
         private const string additionalDataPropName = "AdditionalData";
-        private static void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties) {
+        private const string backingStorePropertyName = "BackingStore";
+        private const string backingStoreInterface = "IBackingStore";
+        private const string backedModelInterface = "IBackedModel";
+        private const string storeNamespaceName = "Microsoft.Kiota.Abstractions.Store";
+        private void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties) {
             var serializationPropsType = $"IDictionary<string, Action<T, IParseNode>>";
             if(!model.ContainsMember(fieldDeserializersMethodName)) {
                 var deserializeProp = new CodeMethod(model) {
@@ -735,14 +744,14 @@ namespace Kiota.Builder
                     Name = serializeMethodName,
                     MethodKind = CodeMethodKind.Serializer,
                     IsAsync = false,
-                    Description = $"Serialiazes information the current object",
+                    Description = $"Serializes information the current object",
                 };
                 serializeMethod.ReturnType = new CodeType(serializeMethod) { Name = "void", IsNullable = false, IsExternal = true };
                 var parameter = new CodeParameter(serializeMethod) {
                     Name = "writer",
                     Description = "Serialization writer to use to serialize this model"
                 };
-                parameter.Type = new CodeType(parameter) { Name = "ISerializationWriter", IsExternal = true };
+                parameter.Type = new CodeType(parameter) { Name = "ISerializationWriter", IsExternal = true, IsNullable = false };
                 serializeMethod.AddParameter(parameter);
                 
                 model.AddMethod(serializeMethod);
@@ -757,7 +766,6 @@ namespace Kiota.Builder
                     DefaultValue = "new Dictionary<string, object>()",
                     PropertyKind = CodePropertyKind.AdditionalData,
                     Description = "Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.",
-                    ReadOnly = true,
                 };
                 additionalDataProp.Type = new CodeType(additionalDataProp) {
                     Name = "IDictionary<string, object>",
@@ -765,6 +773,52 @@ namespace Kiota.Builder
                     IsExternal = true,
                 };
                 model.AddProperty(additionalDataProp);
+            }
+            if(!model.ContainsMember(backingStorePropertyName) &&
+               config.UsesBackingStore &&
+               !(model.GetGreatestGrandparent(model)?.ContainsMember(backingStorePropertyName) ?? false)) {
+                var storeImplFragments = config.BackingStore.Split('.');
+                var storeImplClassName = storeImplFragments.Last();
+                var backingStoreProperty = new CodeProperty(model) {
+                    Name = backingStorePropertyName,
+                    Access = AccessModifier.Public,
+                    DefaultValue = $"new {storeImplClassName}()",
+                    PropertyKind = CodePropertyKind.BackingStore,
+                    Description = "Stores model information.",
+                    ReadOnly = true,
+                };
+                var storeType = new CodeType(backingStoreProperty) {
+                    Name = backingStoreInterface,
+                    IsNullable = false,
+                    IsExternal = true,
+                };
+                backingStoreProperty.Type = storeType;
+                model.AddProperty(backingStoreProperty);
+                var backingStoreUsing = new CodeUsing(model) {
+                    Name = backingStoreInterface,
+                };
+                backingStoreUsing.Declaration = new CodeType(backingStoreUsing) {
+                    Name = storeNamespaceName,
+                    IsExternal = true
+                };
+                var backedModelUsing = new CodeUsing(model) {
+                    Name = backedModelInterface,
+                };
+                backedModelUsing.Declaration = new CodeType(backedModelUsing) {
+                    Name = storeNamespaceName,
+                    IsExternal = true
+                };
+                var storeImplUsing = new CodeUsing(model) {
+                    Name = storeImplClassName,
+                };
+                storeImplUsing.Declaration = new CodeType(storeImplUsing) {
+                    Name = storeImplFragments.SkipLast(1).Aggregate((x, y) => $"{x}.{y}"),
+                    IsExternal = true,
+                };
+                model.AddUsing(backingStoreUsing, backedModelUsing, storeImplUsing);
+                (model.StartBlock as CodeClass.Declaration).Implements.Add(new CodeType(model) {
+                    Name = backedModelInterface,
+                });
             }
         }
         private CodeClass CreateOperationParameter(OpenApiUrlTreeNode node, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)

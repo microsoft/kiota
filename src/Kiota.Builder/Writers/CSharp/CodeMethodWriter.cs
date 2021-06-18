@@ -16,19 +16,17 @@ namespace Kiota.Builder.Writers.CSharp {
 
             var returnType = conventions.GetTypeString(codeElement.ReturnType);
             var parentClass = codeElement.Parent as CodeClass;
-            var shouldHide = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null && 
-                            (codeElement.MethodKind == CodeMethodKind.Serializer ||
-                            codeElement.MethodKind == CodeMethodKind.Deserializer);
+            var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
             var isVoid = conventions.VoidTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
             WriteMethodDocumentation(codeElement, writer);
-            WriteMethodPrototype(codeElement, writer, returnType, shouldHide, isVoid);
+            WriteMethodPrototype(codeElement, writer, returnType, inherits, isVoid);
             writer.IncreaseIndent();
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
             switch(codeElement.MethodKind) {
                 case CodeMethodKind.Serializer:
-                    WriteSerializerBody(shouldHide, parentClass, writer);
+                    WriteSerializerBody(inherits, parentClass, writer);
                 break;
                 case CodeMethodKind.RequestGenerator:
                     WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, writer);
@@ -39,12 +37,28 @@ namespace Kiota.Builder.Writers.CSharp {
                 case CodeMethodKind.Deserializer:
                     WriteDeserializerBody(codeElement, parentClass, writer);
                     break;
+                case CodeMethodKind.Constructor:
+                    WriteConstructorBody(parentClass, writer);
+                    break;
+                case CodeMethodKind.Getter:
+                case CodeMethodKind.Setter:
+                    throw new InvalidOperationException("getters and setters are automatically added on fields in dotnet");
                 default:
                     writer.WriteLine("return null;");
                 break;
             }
             writer.DecreaseIndent();
             writer.WriteLine("}");
+        }
+        private static void WriteConstructorBody(CodeClass parentClass, LanguageWriter writer) {
+            foreach(var propWithDefault in parentClass
+                                            .GetChildElements(true)
+                                            .OfType<CodeProperty>()
+                                            .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
+                                            .OrderByDescending(x => x.PropertyKind)
+                                            .ThenBy(x => x.Name)) {
+                writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterUpperCase()} = {propWithDefault.DefaultValue};");
+            }
         }
         private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
             var hideParentMember = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
@@ -54,7 +68,7 @@ namespace Kiota.Builder.Writers.CSharp {
             foreach(var otherProp in parentClass
                                             .GetChildElements(true)
                                             .OfType<CodeProperty>()
-                                            .Where(x => x.PropertyKind == CodePropertyKind.Custom)
+                                            .Where(x => x.IsOfKind(CodePropertyKind.Custom))
                                             .OrderBy(x => x.Name)) {
                 writer.WriteLine($"{{\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", (o,n) => {{ (o as {parentClass.Name.ToFirstCharacterUpperCase()}).{otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type)}(); }} }},");
             }
@@ -93,7 +107,7 @@ namespace Kiota.Builder.Writers.CSharp {
             var generatorMethodName = (codeElement.Parent as CodeClass)
                                                 .GetChildElements(true)
                                                 .OfType<CodeMethod>()
-                                                .FirstOrDefault(x => x.MethodKind == CodeMethodKind.RequestGenerator && x.HttpMethod == codeElement.HttpMethod)
+                                                .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
                                                 ?.Name;
                     writer.WriteLine($"var requestInfo = {generatorMethodName}(");
                     writer.IncreaseIndent();
@@ -134,13 +148,13 @@ namespace Kiota.Builder.Writers.CSharp {
             }
         }
         private void WriteSerializerBody(bool shouldHide, CodeClass parentClass, LanguageWriter writer) {
-            var additionalDataProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.PropertyKind == CodePropertyKind.AdditionalData);
+            var additionalDataProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.AdditionalData));
             if(shouldHide)
                 writer.WriteLine("base.Serialize(writer);");
             foreach(var otherProp in parentClass
                                             .GetChildElements(true)
                                             .OfType<CodeProperty>()
-                                            .Where(x => x.PropertyKind == CodePropertyKind.Custom)
+                                            .Where(x => x.IsOfKind(CodePropertyKind.Custom))
                                             .OrderBy(x => x.Name)) {
                 writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
             }
@@ -164,15 +178,24 @@ namespace Kiota.Builder.Writers.CSharp {
                 writer.WriteLine($"{conventions.DocCommentPrefix}</summary>");
             }
         }
-        private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool shouldHide, bool isVoid) {
+        private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool inherits, bool isVoid) {
             var staticModifier = code.IsStatic ? "static " : string.Empty;
-            var hideModifier = shouldHide ? "new " : string.Empty;
+            var hideModifier = inherits && code.IsSerializationMethod ? "new " : string.Empty;
             var genericTypePrefix = isVoid ? string.Empty : "<";
             var genricTypeSuffix = code.IsAsync && !isVoid ? ">": string.Empty;
+            var isConstructor = code.IsOfKind(CodeMethodKind.Constructor);
+            var asyncPrefix = code.IsAsync ? "async Task" + genericTypePrefix : string.Empty;
+            var voidCorrectedTaskReturnType = code.IsAsync && isVoid ? string.Empty : returnType;
             // TODO: Task type should be moved into the refiner
-            var completeReturnType = $"{(code.IsAsync ? "async Task" + genericTypePrefix : string.Empty)}{(code.IsAsync && isVoid ? string.Empty : returnType)}{genricTypeSuffix}";
+            var completeReturnType = isConstructor ?
+                string.Empty :
+                $"{asyncPrefix}{voidCorrectedTaskReturnType}{genricTypeSuffix} ";
+            var baseSuffix = string.Empty;
+            if(isConstructor && inherits)
+                baseSuffix = " : base()";
             var parameters = string.Join(", ", code.Parameters.Select(p=> conventions.GetParameterSignature(p)).ToList());
-            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType} {code.Name}({parameters}) {{");
+            var methodName = isConstructor ? code.Parent.Name.ToFirstCharacterUpperCase() : code.Name;
+            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({parameters}){baseSuffix} {{");
         }
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;

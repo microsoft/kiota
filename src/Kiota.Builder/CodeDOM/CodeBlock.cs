@@ -60,14 +60,13 @@ namespace Kiota.Builder
         private static CodeElement HandleDuplicatedExceptions(ConcurrentDictionary<string, CodeElement> innerChildElements, CodeElement element, CodeElement returnedValue) {
             var added = returnedValue == element;
             if(!added && element is CodeMethod currentMethod)
-                if(currentMethod.MethodKind == CodeMethodKind.IndexerBackwardCompatibility &&
+                if(currentMethod.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) &&
                     returnedValue is CodeProperty cProp &&
-                    cProp.PropertyKind == CodePropertyKind.RequestBuilder) {
+                    cProp.IsOfKind(CodePropertyKind.RequestBuilder)) {
                     // indexer retrofited to method in the parent request builder on the path and conflicting with the collection request builder propeerty
                     returnedValue = innerChildElements.GetOrAdd($"{element.Name}-indexerbackcompat", element);
                     added = true;
-                } else if(currentMethod.MethodKind == CodeMethodKind.RequestExecutor ||
-                        currentMethod.MethodKind == CodeMethodKind.RequestGenerator) {
+                } else if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
                     // allows for methods overload
                     var methodOverloadNameSuffix = currentMethod.Parameters.Any() ? currentMethod.Parameters.Select(x => x.Name).OrderBy(x => x).Aggregate((x, y) => x + y) : "1";
                     returnedValue = innerChildElements.GetOrAdd($"{element.Name}-{methodOverloadNameSuffix}", element);

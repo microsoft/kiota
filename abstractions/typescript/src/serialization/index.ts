@@ -5,3 +5,5 @@ export * from './serializationWriterFactory';
 export * from './parseNodeFactory';
 export * from './parseNodeFactoryRegistry';
 export * from './serializationWriterFactoryRegistry';
+export * from './parseNodeProxyFactory';
+export * from './serializationWriterProxyFactory';

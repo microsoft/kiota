@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace Kiota.Builder
 {
@@ -6,7 +7,12 @@ namespace Kiota.Builder
     {
         Custom,
         RequestBuilder,
-        AdditionalData
+        AdditionalData,
+        BackingStore,
+        PathSegment,
+        CurrentPath,
+        HttpCore,
+        SerializerFactory
     }
 
     public class CodeProperty : CodeTerminal, IDocumentedElement
@@ -22,5 +28,9 @@ namespace Kiota.Builder
         public string DefaultValue {get;set;}
         public string Description {get; set;}
         public string SerializationName { get; set; }
+        public string NamePrefix { get; set; }
+        public bool IsOfKind(params CodePropertyKind[] kinds) {
+            return kinds?.Contains(PropertyKind) ?? false;
+        }
     }
 }

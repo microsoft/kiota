@@ -1,25 +1,30 @@
 using System.Linq;
-using System.Collections.Generic;
 using System;
-using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners {
     public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
+        public TypeScriptRefiner(GenerationConfiguration configuration) : base(configuration) {}
         public override void Refine(CodeNamespace generatedCode)
         {
             PatchResponseHandlerType(generatedCode);
-            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
+            AddDefaultImports(generatedCode, Array.Empty<Tuple<string, string>>(), defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, "ById");
             CorrectCoreType(generatedCode);
+            CorrectCoreTypesForBackingStoreUsings(generatedCode, "@microsoft/kiota-abstractions");
             FixReferencesToEntityType(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
             AddParsableInheritanceForModelClasses(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "ReadableStream", "web-streams-polyfill/es2018", true);
             ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
+            AddGetterAndSetterMethods(generatedCode, new() {
+                                                    CodePropertyKind.Custom,
+                                                    CodePropertyKind.AdditionalData,
+                                                }, _configuration.UsesBackingStore, false);
+            AddConstructorsForDefaultValues(generatedCode, true);
         }
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model) {
+            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
                 var declaration = currentClass.StartBlock as CodeClass.Declaration;
                 declaration.Implements.Add(new CodeType(currentClass) {
                     IsExternal = true,
@@ -35,8 +40,6 @@ namespace Kiota.Builder.Refiners {
             new ("ResponseHandler", "@microsoft/kiota-abstractions"),
             new ("SerializationWriterFactory", "@microsoft/kiota-abstractions"),
         };
-        private static readonly Tuple<string, string>[] defaultNamespaces = new Tuple<string, string>[] { 
-        };
         private static readonly Tuple<string, string>[] defaultNamespacesForModels = new Tuple<string, string>[] { 
             new ("SerializationWriter", "@microsoft/kiota-abstractions"),
             new ("ParseNode", "@microsoft/kiota-abstractions"),
@@ -44,25 +47,29 @@ namespace Kiota.Builder.Refiners {
         };
         private static void CorrectCoreType(CodeElement currentElement) {
             if (currentElement is CodeProperty currentProperty) {
-                if ("IHttpCore".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase))
+                if(currentProperty.IsOfKind(CodePropertyKind.HttpCore))
                     currentProperty.Type.Name = "HttpCore";
-                else if(currentProperty.Name.Equals("serializerFactory", StringComparison.OrdinalIgnoreCase))
+                else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
+                    currentProperty.Type.Name = currentProperty.Type.Name.Substring(1); // removing the "I"
+                else if(currentProperty.IsOfKind(CodePropertyKind.SerializerFactory))
                     currentProperty.Type.Name = "SerializationWriterFactory";
                 else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase))
                     currentProperty.Type.Name = $"Date";
-                else if(currentProperty.PropertyKind == CodePropertyKind.AdditionalData) {
+                else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
                     currentProperty.Type.Name = "Map<string, unknown>";
                     currentProperty.DefaultValue = "new Map<string, unknown>()";
                 }
             }
             if (currentElement is CodeMethod currentMethod) {
-                if(currentMethod.MethodKind == CodeMethodKind.RequestExecutor)
+                if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
                     currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x => x.Type.Name = "ResponseHandler");
-                else if(currentMethod.MethodKind == CodeMethodKind.Serializer)
+                else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
                     currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
-                else if(currentMethod.MethodKind == CodeMethodKind.Deserializer)
+                else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer))
                     currentMethod.ReturnType.Name = $"Map<string, (item: T, node: ParseNode) => void>";
             }
+            
+                
             CrawlTree(currentElement, CorrectCoreType);
         }
         private static void PatchResponseHandlerType(CodeElement current) {

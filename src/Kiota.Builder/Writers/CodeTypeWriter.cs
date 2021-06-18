@@ -1,4 +1,4 @@
-namespace  Kiota.Builder.Writers {
+namespace Kiota.Builder.Writers {
     public class CodeTypeWriter : BaseElementWriter<CodeType, ILanguageConventionService>
     {
         public CodeTypeWriter(ILanguageConventionService conventionService) : base(conventionService){}

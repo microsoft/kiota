@@ -15,5 +15,7 @@ namespace Microsoft.Kiota.Abstractions.Serialization {
         IEnumerable<T> GetCollectionOfObjectValues<T>() where T: IParsable;
         T? GetEnumValue<T>() where T: struct, Enum;
         T GetObjectValue<T>() where T: IParsable;
+        Action<IParsable> OnBeforeAssignFieldValues { get; set; }
+        Action<IParsable> OnAfterAssignFieldValues { get; set; }
     }
 }

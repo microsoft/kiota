@@ -6,6 +6,6 @@ namespace Microsoft.Kiota.Abstractions.Serialization {
         IDictionary<string, Action<T, IParseNode>> GetFieldDeserializers<T>();
         void Serialize(ISerializationWriter writer);
 
-        IDictionary<string, object> AdditionalData { get; }
+        IDictionary<string, object> AdditionalData { get; set; }
     }
 }

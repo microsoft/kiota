@@ -28,6 +28,8 @@ dependencies {
 
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation 'com.google.guava:guava:30.1.1-jre'
+
+    implementation 'org.javatuples:javatuples:1.2'
 }
 
 publishing {
@@ -44,7 +46,7 @@ publishing {
     publications {
         gpr(MavenPublication) {
             artifactId 'kiota-abstractions'
-            version '1.0.11'
+            version '1.0.12'
             from(components.java)
         }
     }

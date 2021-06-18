@@ -7,18 +7,19 @@ namespace Kiota.Builder.Writers.CSharp {
     public class CodeClassDeclarationWriter : BaseElementWriter<CodeClass.Declaration, CSharpConventionService>
     {
         public CodeClassDeclarationWriter(CSharpConventionService conventionService): base(conventionService) { }
+        private static string NormalizeNameSpaceName(string original) => 
+        original.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z,y) => z + "." + y);
         public override void WriteCodeElement(CodeClass.Declaration codeElement, LanguageWriter writer)
         {
-            foreach (var codeUsing in codeElement.Usings.Where(x => !string.IsNullOrEmpty(x.Name) && x.Declaration == null)
-                                                .Select(x => x.Name)
-                                                .Distinct()
-                                                .OrderBy(x => x))
-                writer.WriteLine($"using {codeUsing};");
-            foreach (var codeUsing in codeElement.Usings.Where(x => !string.IsNullOrEmpty(x.Name) && x.Declaration != null)
-                                                .Select(x => x.Name)
-                                                .Distinct()
-                                                .OrderBy(x => x))
-                writer.WriteLine($"using {codeUsing.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((x,y) => x + "." + y)};");
+            codeElement.Usings
+                    .Where(x => (x.Declaration?.IsExternal ?? true) || !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)) // needed for circular requests patterns like message folder
+                    .Select(x => x.Declaration?.IsExternal ?? false ?
+                                     $"using {NormalizeNameSpaceName(x.Declaration.Name)};" :
+                                     $"using {NormalizeNameSpaceName(x.Name)};")
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList()
+                    .ForEach(x => writer.WriteLine(x));
             if(codeElement?.Parent?.Parent is CodeNamespace) {
                 writer.WriteLine($"namespace {codeElement.Parent.Parent.Name} {{");
                 writer.IncreaseIndent();

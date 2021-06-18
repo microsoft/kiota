@@ -10,5 +10,9 @@ namespace Kiota.Builder {
         public string ApiRootUrl { get; set; } = "https://graph.microsoft.com/v1.0";
         public List<string> PropertiesPrefixToStrip { get; set; } = new() { "@odata."};
         public HashSet<string> IgnoredRequestContentTypes { get; set; } = new();
+        public string BackingStore { get; set; } = string.Empty;
+        public bool UsesBackingStore {
+            get => !string.IsNullOrEmpty(BackingStore);
+        }
     }
 }

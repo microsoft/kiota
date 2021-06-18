@@ -12,7 +12,9 @@ namespace Kiota.Builder
         RequestGenerator,
         Serializer,
         Deserializer,
-        AdditionalDataAccessor
+        Constructor,
+        Getter,
+        Setter
     }
     public enum HttpMethod {
         Get,
@@ -35,10 +37,20 @@ namespace Kiota.Builder
         public AccessModifier Access {get;set;} = AccessModifier.Public;
         public CodeTypeBase ReturnType {get;set;}
         public List<CodeParameter> Parameters {get;set;} = new List<CodeParameter>();
+        public string PathSegment { get; set; }
         public bool IsStatic {get;set;} = false;
         public bool IsAsync {get;set;} = true;
         public string Description {get; set;}
-
+        public CodeProperty AccessedProperty { get; set; }
+        public bool IsOfKind(params CodeMethodKind[] kinds) {
+            return kinds?.Contains(MethodKind) ?? false;
+        }
+        public bool IsAccessor { 
+            get => IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter);
+        }
+        public bool IsSerializationMethod {
+            get => IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer);
+        }
 
         public object Clone()
         {
@@ -52,8 +64,9 @@ namespace Kiota.Builder
                 Access = Access,
                 IsStatic = IsStatic,
                 Description = Description?.Clone() as string,
-                GenerationProperties = new (GenerationProperties),
                 ContentType = ContentType?.Clone() as string,
+                AccessedProperty = AccessedProperty,
+                PathSegment = PathSegment?.Clone() as string,
             };
         }
 

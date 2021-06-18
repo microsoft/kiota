@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import com.microsoft.kiota.serialization.ParseNode;
 import com.microsoft.kiota.serialization.Parsable;
@@ -37,7 +38,12 @@ public class JsonParseNode implements ParseNode {
         Objects.requireNonNull(identifier, "identifier parameter is required");
         if(currentNode.isJsonObject()) {
             final JsonObject object = currentNode.getAsJsonObject();
-            return new JsonParseNode(object.get(identifier));
+            final var onBefore = this.onBeforeAssignFieldValues;
+            final var onAfter = this.onAfterAssignFieldValues;
+            return new JsonParseNode(object.get(identifier)) {{
+                this.setOnBeforeAssignFieldValues(onBefore);
+                this.setOnAfterAssignFieldValues(onAfter);
+            }};
         } else throw new RuntimeException("invalid state expected to have an object node");
     }
     public String getStringValue() {
@@ -66,6 +72,7 @@ public class JsonParseNode implements ParseNode {
         if(currentNode.isJsonArray()) {
             final JsonArray array = currentNode.getAsJsonArray();
             final Iterator<JsonElement> sourceIterator = array.iterator();
+            final var _this = this;
             return Lists.newArrayList(new Iterable<T>() {
                 @Override
                 public Iterator<T> iterator() {
@@ -78,7 +85,12 @@ public class JsonParseNode implements ParseNode {
                         @SuppressWarnings("unchecked")
                         public T next() {
                             final JsonElement item = sourceIterator.next();
-                            final JsonParseNode itemNode = new JsonParseNode(item);
+                            final var onBefore = _this.getOnBeforeAssignFieldValues();
+                            final var onAfter = _this.getOnAfterAssignFieldValues();
+                            final JsonParseNode itemNode = new JsonParseNode(item) {{
+                                this.setOnBeforeAssignFieldValues(onBefore);
+                                this.setOnAfterAssignFieldValues(onAfter);
+                            }};
                             if(targetClass == Boolean.class) {
                                 return (T)itemNode.getBooleanValue();
                             } else if(targetClass == String.class) {
@@ -107,6 +119,7 @@ public class JsonParseNode implements ParseNode {
         if(currentNode.isJsonArray()) {
             final JsonArray array = currentNode.getAsJsonArray();
             final Iterator<JsonElement> sourceIterator = array.iterator();
+            final var _this = this;
             return Lists.newArrayList(new Iterable<T>() {
                 @Override
                 public Iterator<T> iterator() {
@@ -118,7 +131,12 @@ public class JsonParseNode implements ParseNode {
                         @Override
                         public T next() {
                             final JsonElement item = sourceIterator.next();
-                            final JsonParseNode itemNode = new JsonParseNode(item);
+                            final var onBefore = _this.getOnBeforeAssignFieldValues();
+                            final var onAfter = _this.getOnAfterAssignFieldValues();
+                            final JsonParseNode itemNode = new JsonParseNode(item) {{
+                                this.setOnBeforeAssignFieldValues(onBefore);
+                                this.setOnAfterAssignFieldValues(onAfter);
+                            }};
                             return itemNode.getObjectValue(targetClass);
                         }
                     };
@@ -172,14 +190,28 @@ public class JsonParseNode implements ParseNode {
     }
     private <T extends Parsable> void assignFieldValues(final T item, final Map<String, BiConsumer<T, ParseNode>> fieldDeserializers) {
         if(currentNode.isJsonObject()) {
+            if(this.onBeforeAssignFieldValues != null) {
+                this.onBeforeAssignFieldValues.accept(item);
+            }
             for (final Map.Entry<String, JsonElement> fieldEntry : currentNode.getAsJsonObject().entrySet()) {
                 final String fieldKey = fieldEntry.getKey();
                 final BiConsumer<? super T, ParseNode> fieldDeserializer = fieldDeserializers.get(fieldKey);
                 final JsonElement fieldValue = fieldEntry.getValue();
-                if(fieldDeserializer != null && !fieldValue.isJsonNull())
-                    fieldDeserializer.accept(item, new JsonParseNode(fieldValue));
+                if(fieldValue.isJsonNull())
+                    continue;
+                if(fieldDeserializer != null) {
+                    final var onBefore = this.onBeforeAssignFieldValues;
+                    final var onAfter = this.onAfterAssignFieldValues;
+                    fieldDeserializer.accept(item, new JsonParseNode(fieldValue) {{
+                        this.setOnBeforeAssignFieldValues(onBefore);
+                        this.setOnAfterAssignFieldValues(onAfter);
+                    }});
+                }
                 else
                     item.getAdditionalData().put(fieldKey, this.tryGetAnything(fieldValue));
+            }
+            if(this.onAfterAssignFieldValues != null) {
+                this.onAfterAssignFieldValues.accept(item);
             }
         }
     }
@@ -200,5 +232,19 @@ public class JsonParseNode implements ParseNode {
             return element;
         else
             throw new RuntimeException("Could not get the value during deserialization, unknown primitive type");
+    }
+    public Consumer<Parsable> getOnBeforeAssignFieldValues() {
+        return this.onBeforeAssignFieldValues;
+    }
+    public Consumer<Parsable> getOnAfterAssignFieldValues() {
+        return this.onAfterAssignFieldValues;
+    }
+    private Consumer<Parsable> onBeforeAssignFieldValues;
+    public void setOnBeforeAssignFieldValues(final Consumer<Parsable> value) {
+        this.onBeforeAssignFieldValues = value;
+    }
+    private Consumer<Parsable> onAfterAssignFieldValues;
+    public void setOnAfterAssignFieldValues(final Consumer<Parsable> value) {
+        this.onAfterAssignFieldValues = value;
     }
 }

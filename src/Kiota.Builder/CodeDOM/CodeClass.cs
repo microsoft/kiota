@@ -93,6 +93,10 @@ namespace Kiota.Builder
                 return parentClass.GetGreatestGrandparent(startClassToSkip);
         }
 
+        public bool IsOfKind(params CodeClassKind[] kinds) {
+            return kinds?.Contains(ClassKind) ?? false;
+        }
+
     public class Declaration : BlockDeclaration
         {
             public Declaration(CodeElement parent):base(parent)

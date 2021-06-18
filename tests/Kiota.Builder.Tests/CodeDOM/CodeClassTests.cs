@@ -5,6 +5,30 @@ using Xunit;
 namespace Kiota.Builder.Tests {
     public class CodeClassTests {
         [Fact]
+        public void Defensive() {
+            var root = CodeNamespace.InitRootNamespace();
+            var codeClass = new CodeClass(root) {
+                Name = "class",
+            };
+            Assert.False(codeClass.IsOfKind((CodeClassKind[])null));
+            Assert.False(codeClass.IsOfKind(new CodeClassKind[] { }));
+
+            codeClass.StartBlock = new CodeBlock.BlockDeclaration(codeClass);
+            Assert.Null(codeClass.GetParentClass());
+        }
+        [Fact]
+        public void IsOfKind() {
+            var root = CodeNamespace.InitRootNamespace();
+            var codeClass = new CodeClass(root) {
+                Name = "class",
+            };
+            Assert.False(codeClass.IsOfKind(CodeClassKind.Model));
+            codeClass.ClassKind = CodeClassKind.RequestBuilder;
+            Assert.True(codeClass.IsOfKind(CodeClassKind.RequestBuilder));
+            Assert.True(codeClass.IsOfKind(CodeClassKind.RequestBuilder, CodeClassKind.QueryParameters));
+            Assert.False(codeClass.IsOfKind(CodeClassKind.QueryParameters));
+        }
+        [Fact]
         public void SetsIndexer() {
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(CodeNamespaceTests.childName);

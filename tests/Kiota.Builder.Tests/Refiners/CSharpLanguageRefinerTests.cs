@@ -11,7 +11,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 Name = "break",
                 ClassKind = CodeClassKind.Model
             }).First();
-            ILanguageRefiner.Refine(GenerationLanguage.CSharp, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
             Assert.NotEqual("break", model.Name);
             Assert.Contains("@", model.Name);
         }
@@ -48,7 +48,7 @@ namespace Kiota.Builder.Refiners.Tests {
             };
             model.SetIndexer(indexer);
             method.AddParameter(parameter);
-            ILanguageRefiner.Refine(GenerationLanguage.CSharp, root); //using CSharp so the indexer doesn't get removed
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root); //using CSharp so the indexer doesn't get removed
             Assert.True(property.Type is CodeType);
             Assert.True(parameter.Type is CodeType);
             Assert.True(method.ReturnType is CodeType);
@@ -62,7 +62,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 Name = "model",
                 ClassKind = CodeClassKind.Model
             }).First();
-            ILanguageRefiner.Refine(GenerationLanguage.CSharp, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
             Assert.Single(root.GetChildElements(true));
             Assert.Single(graphNS.GetChildElements(true));
             Assert.Single(modelNS.GetChildElements(true));
@@ -82,7 +82,7 @@ namespace Kiota.Builder.Refiners.Tests {
                     Name = "string"
                 }
             }).First();
-            ILanguageRefiner.Refine(GenerationLanguage.CSharp, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
             Assert.Equal("model_prop", propToAdd.Name);
             Assert.Equal("model", propToAdd.SerializationName);
         }
@@ -100,7 +100,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 },
                 SerializationName = serializationName,
             }).First();
-            ILanguageRefiner.Refine(GenerationLanguage.CSharp, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
             Assert.Equal(serializationName, propToAdd.SerializationName);
         }
         #endregion

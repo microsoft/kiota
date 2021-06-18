@@ -19,11 +19,11 @@ namespace Kiota.Builder.Writers.Java {
                     writer.WriteLine("}");
                 break;
                 default:
-                    var defaultValue = string.IsNullOrEmpty(codeElement.DefaultValue) ? string.Empty : $" = {codeElement.DefaultValue}";
                     if(codeElement.Type is CodeType currentType && currentType.TypeDefinition is CodeEnum enumType && enumType.Flags)
                         returnType = $"EnumSet<{returnType}>";
-                    writer.WriteLine(codeElement.Type.IsNullable ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
-                    writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{(codeElement.ReadOnly ? " final " : " ")}{returnType} {codeElement.Name.ToFirstCharacterLowerCase()}{defaultValue};");
+                    if(codeElement.Access != AccessModifier.Private)
+                        writer.WriteLine(codeElement.Type.IsNullable ? "@javax.annotation.Nullable" : "@javax.annotation.Nonnull");
+                    writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{(codeElement.ReadOnly ? " final " : " ")}{returnType} {codeElement.NamePrefix}{codeElement.Name.ToFirstCharacterLowerCase()};");
                 break;
             }
 

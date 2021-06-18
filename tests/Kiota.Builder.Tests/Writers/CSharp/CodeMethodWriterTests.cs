@@ -244,6 +244,12 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             var codeMethodWriter = new CodeMethodWriter(new CSharpConventionService());
             Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(null, writer));
             Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(method, null));
+            var originalParent = method.Parent;
+            method.Parent = CodeNamespace.InitRootNamespace();
+            Assert.Throws<InvalidOperationException>(() => codeMethodWriter.WriteCodeElement(method, writer));
+            method.Parent = originalParent;
+            method.ReturnType = null;
+            Assert.Throws<InvalidOperationException>(() => codeMethodWriter.WriteCodeElement(method, writer));
         }
         [Fact]
         public void ThrowsIfParentIsNotClass() {

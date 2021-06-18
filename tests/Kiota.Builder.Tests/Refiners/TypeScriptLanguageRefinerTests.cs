@@ -16,7 +16,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 Name = "break",
                 ClassKind = CodeClassKind.Model
             }).First();
-            ILanguageRefiner.Refine(GenerationLanguage.TypeScript, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
             Assert.NotEqual("break", model.Name);
             Assert.Contains("escaped", model.Name);
         }
@@ -29,16 +29,19 @@ namespace Kiota.Builder.Refiners.Tests {
             }).First();
             model.AddProperty(new (model) {
                 Name = "core",
+                PropertyKind = CodePropertyKind.HttpCore,
                 Type = new CodeType(model) {
                     Name = httpCoreDefaultName
                 }
             }, new (model) {
                 Name = "serializerFactory",
+                PropertyKind = CodePropertyKind.SerializerFactory,
                 Type = new CodeType(model) {
                     Name = factoryDefaultName,
                 }
             }, new (model) {
                 Name = "someDate",
+                PropertyKind = CodePropertyKind.Custom,
                 Type = new CodeType(model) {
                     Name = dateTimeOffsetDefaultName,
                 }
@@ -58,6 +61,7 @@ namespace Kiota.Builder.Refiners.Tests {
             }).First();
             executorMethod.AddParameter(new CodeParameter(executorMethod) {
                 Name = "handler",
+                ParameterKind = CodeParameterKind.ResponseHandler,
                 Type = new CodeType(executorMethod) {
                     Name = handlerDefaultName,
                 }
@@ -72,6 +76,7 @@ namespace Kiota.Builder.Refiners.Tests {
             }).First();
             serializationMethod.AddParameter(new CodeParameter(serializationMethod) {
                 Name = "handler",
+                ParameterKind = CodeParameterKind.ResponseHandler,
                 Type = new CodeType(executorMethod) {
                     Name = serializerDefaultName,
                 }
@@ -95,7 +100,7 @@ namespace Kiota.Builder.Refiners.Tests {
                     Name = streamDefaultName
                 }
             });
-            ILanguageRefiner.Refine(GenerationLanguage.TypeScript, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration{ Language = GenerationLanguage.TypeScript }, root);
             Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => httpCoreDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => factoryDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));

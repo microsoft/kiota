@@ -17,5 +17,7 @@ namespace Microsoft.Kiota.Abstractions.Serialization {
         void WriteEnumValue<T>(string key, T? value) where T : struct, Enum;
         void WriteAdditionalData(IDictionary<string, object> value);
         Stream GetSerializedContent();
+        Action<IParsable> OnBeforeObjectSerialization { get; set; }
+        Action<IParsable> OnAfterObjectSerialization { get; set; }
     }
 }

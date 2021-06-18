@@ -5,6 +5,27 @@ using Xunit;
 namespace Kiota.Builder.Tests {
     public class CodeMethodTests {
         [Fact]
+        public void Defensive() {
+            var root = CodeNamespace.InitRootNamespace();
+            var method = new CodeMethod(root) {
+                Name = "class",
+            };
+            Assert.False(method.IsOfKind((CodeMethodKind[])null));
+            Assert.False(method.IsOfKind(new CodeMethodKind[] { }));
+        }
+        [Fact]
+        public void IsOfKind() {
+            var root = CodeNamespace.InitRootNamespace();
+            var method = new CodeMethod(root) {
+                Name = "class",
+            };
+            Assert.False(method.IsOfKind(CodeMethodKind.Constructor));
+            method.MethodKind = CodeMethodKind.Deserializer;
+            Assert.True(method.IsOfKind(CodeMethodKind.Deserializer));
+            Assert.True(method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Getter));
+            Assert.False(method.IsOfKind(CodeMethodKind.Getter));
+        }
+        [Fact]
         public void AddsParameter() {
             var root = CodeNamespace.InitRootNamespace();
             var method = new CodeMethod(root) {

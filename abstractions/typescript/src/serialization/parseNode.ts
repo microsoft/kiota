@@ -12,4 +12,6 @@ export interface ParseNode {
     getObjectValue<T extends Parsable>(type: new() => T): T;
     getEnumValues<T>(type: any): T[];
     getEnumValue<T>(type: any): T | undefined;
+    onBeforeAssignFieldValues: ((value: Parsable) => void) | undefined;
+    onAfterAssignFieldValues: ((value: Parsable) => void) | undefined;
 }

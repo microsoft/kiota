@@ -34,15 +34,19 @@ namespace Kiota {
             var descriptionOption = new Option("--openapi", "The path to the OpenAPI description file used to generate the code files.") {Argument = new Argument<string>(() => "openapi.yml")};
             descriptionOption.AddAlias("-d");
 
+            var backingStoreOption = new Option("--backing-store", "The fully qualified name for the backing store class to use.") {Argument = new Argument<string>()};
+            backingStoreOption.AddAlias("-b");
+
             var command = new RootCommand {
                 outputOption,
                 languageOption,
                 descriptionOption,
+                backingStoreOption,
                 classOption,
                 logLevelOption,
                 namespaceOption,
             };
-            command.Handler = CommandHandler.Create<string, GenerationLanguage?, string, string, LogLevel, string>(async (output, language, openapi, classname, loglevel, namespacename) =>
+            command.Handler = CommandHandler.Create<string, GenerationLanguage?, string, string, string, LogLevel, string>(async (output, language, openapi, backingstore, classname, loglevel, namespacename) =>
             {
                 if (!string.IsNullOrEmpty(output))
                     configuration.OutputPath = output;
@@ -54,6 +58,8 @@ namespace Kiota {
                     configuration.ClientNamespaceName = namespacename;
                 if (language.HasValue)
                     configuration.Language = language.Value;
+                if(!string.IsNullOrEmpty(backingstore))
+                    configuration.BackingStore = backingstore.Trim('\'', '"'); //npm modules can start with @ which prompts some terminals to read response files and quotes are not automatically trimmed by the framework
 
                 #if DEBUG
                 loglevel = loglevel > LogLevel.Debug ? LogLevel.Debug : loglevel;

@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- Initial ruby abstractions 
+- Initial ruby abstractions #212
+- Backing store support #223
 
 ## [0.0.5] - 2021-06-10
 

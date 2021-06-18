@@ -15,6 +15,8 @@ namespace Microsoft.Kiota.Serialization.Json {
         {
             writer = new Utf8JsonWriter(stream);
         }
+        public Action<IParsable> OnBeforeObjectSerialization { get; set; }
+        public Action<IParsable> OnAfterObjectSerialization { get; set; }
         public Stream GetSerializedContent() {
             writer.Flush();
             stream.Position = 0;
@@ -75,20 +77,19 @@ namespace Microsoft.Kiota.Serialization.Json {
             if(values != null) { //empty array is meaningful
                 if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
                 writer.WriteStartArray();
-                foreach(var item in values.Where(x => x != null)) {
-                    writer.WriteStartObject();
-                    item.Serialize(this);
-                    writer.WriteEndObject();
-                }
+                foreach(var item in values)
+                    WriteObjectValue<T>(null, item);
                 writer.WriteEndArray();
             }
         }
         public void WriteObjectValue<T>(string key, T value) where T : IParsable {
             if(value != null) {
                 if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
+                OnBeforeObjectSerialization?.Invoke(value);
                 writer.WriteStartObject();
                 value.Serialize(this);
                 writer.WriteEndObject();
+                OnAfterObjectSerialization?.Invoke(value);
             }
         }
         public void WriteAdditionalData(IDictionary<string, object> value) {

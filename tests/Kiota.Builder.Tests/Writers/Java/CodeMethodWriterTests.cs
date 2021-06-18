@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Tests;
 using Xunit;
 
@@ -216,7 +217,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             Assert.Contains("writeCollectionOfPrimitiveValues", result);
             Assert.Contains("writeCollectionOfObjectValues", result);
             Assert.Contains("writeEnumValue", result);
-            Assert.Contains("writeAdditionalData(this.additionalData);", result);
+            Assert.Contains("writeAdditionalData(this.getAdditionalData());", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
@@ -265,6 +266,12 @@ namespace Kiota.Builder.Writers.Java.Tests {
             var codeMethodWriter = new CodeMethodWriter(new JavaConventionService());
             Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(null, writer));
             Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(method, null));
+            var originalParent = method.Parent;
+            method.Parent = CodeNamespace.InitRootNamespace();
+            Assert.Throws<InvalidOperationException>(() => codeMethodWriter.WriteCodeElement(method, writer));
+            method.Parent = originalParent;
+            method.ReturnType = null;
+            Assert.Throws<InvalidOperationException>(() => codeMethodWriter.WriteCodeElement(method, writer));
         }
         [Fact]
         public void ThrowsIfParentIsNotClass() {
@@ -315,6 +322,82 @@ namespace Kiota.Builder.Writers.Java.Tests {
             Assert.Contains("protected ", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
+        [Fact]
+        public void WritesIndexer() {
+            method.MethodKind = CodeMethodKind.IndexerBackwardCompatibility;
+            method.PathSegment = "somePath";
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("final HttpCore parentCore", result);
+            Assert.Contains("final SerializationWriterFactory parentSerializationFactory", result);
+            Assert.Contains("final String parentPath", result);
+            Assert.Contains("return new", result);
+            Assert.Contains(method.PathSegment, result);
+        }
+        [Fact]
+        public void WritesGetterToBackingStore() {
+            parentClass.AddBackingStoreProperty();
+            method.AddAccessedProperty();
+            method.MethodKind = CodeMethodKind.Getter;
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("this.getBackingStore().get(\"someProperty\")", result);
+        }
+        [Fact]
+        public void WritesGetterToBackingStoreWithNonnullProperty() {
+            method.AddAccessedProperty();
+            parentClass.AddBackingStoreProperty();
+            method.AccessedProperty.Type = new CodeType(method.AccessedProperty) {
+                Name = "string",
+                IsNullable = false,
+            };
+            var defaultValue = "someDefaultValue";
+            method.AccessedProperty.DefaultValue = defaultValue; 
+            method.MethodKind = CodeMethodKind.Getter;
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("if(value == null)", result);
+            Assert.Contains(defaultValue, result);
+        }
+        [Fact]
+        public void WritesSetterToBackingStore() {
+            parentClass.AddBackingStoreProperty();
+            method.AddAccessedProperty();
+            method.MethodKind = CodeMethodKind.Setter;
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("this.getBackingStore().set(\"someProperty\", value)", result);
+        }
+        [Fact]
+        public void WritesGetterToField() {
+            method.AddAccessedProperty();
+            method.MethodKind = CodeMethodKind.Getter;
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("this.someProperty", result);
+        }
+        [Fact]
+        public void WritesSetterToField() {
+            method.AddAccessedProperty();
+            method.MethodKind = CodeMethodKind.Setter;
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("this.someProperty = value", result);
+        }
+        [Fact]
+        public void WritesConstructor() {
+            method.MethodKind = CodeMethodKind.Constructor;
+            var defaultValue = "someVal";
+            var propName = "propWithDefaultValue";
+            parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = propName,
+                DefaultValue = defaultValue,
+                PropertyKind = CodePropertyKind.PathSegment,
+            });
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+            Assert.Contains($"this.{propName} = {defaultValue}", result);
+        }
     }
-    
 }

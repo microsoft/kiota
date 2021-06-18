@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using Kiota.Builder.Tests;
 using Xunit;
 
 namespace Kiota.Builder.Writers.CSharp.Tests {
@@ -81,14 +82,6 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             };
         }
         [Fact]
-        public void WritesDefaultValue() {
-            var defaultValue = "someDefaultValue";
-            property.DefaultValue = defaultValue;
-            writer.Write(property);
-            var result = tw.ToString();
-            Assert.Contains(defaultValue, result);
-        }
-        [Fact]
         public void WritesRequestBuilder() {
             property.PropertyKind = CodePropertyKind.RequestBuilder;
             writer.Write(property);
@@ -114,6 +107,24 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains("get; private set;", result);
+        }
+        [Fact]
+        public void MapsCustomPropertiesToBackingStore() {
+            parentClass.AddBackingStoreProperty();
+            property.PropertyKind = CodePropertyKind.Custom;
+            writer.Write(property);
+            var result = tw.ToString();
+            Assert.Contains("get { return BackingStore?.Get<Somecustomtype>(nameof(PropertyName)); }", result);
+            Assert.Contains("set { BackingStore?.Set(nameof(PropertyName), value);", result);
+        }
+        [Fact]
+        public void MapsAdditionalDataPropertiesToBackingStore() {
+            parentClass.AddBackingStoreProperty();
+            property.PropertyKind = CodePropertyKind.AdditionalData;
+            writer.Write(property);
+            var result = tw.ToString();
+            Assert.Contains("get { return BackingStore?.Get<Somecustomtype>(nameof(PropertyName)); }", result);
+            Assert.Contains("set { BackingStore?.Set(nameof(PropertyName), value);", result);
         }
     }
 }

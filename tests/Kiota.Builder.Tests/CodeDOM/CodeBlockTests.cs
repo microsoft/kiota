@@ -1,9 +1,60 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 
 namespace Kiota.Builder.Tests {
     public class CodeBlockTests {
+        [Fact]
+        public void Defensive() {
+            var root = CodeNamespace.InitRootNamespace();
+            var child = new NeverBlock(root);
+            child.AddRange();
+            Assert.Empty(child.GetChildElements(true));
+        }
+        class NeverBlock : CodeBlock
+        {
+            public void AddRange() {
+                base.AddRange((CodeClass[]) null);
+            }
+            public NeverBlock(CodeElement parent) : base(parent){
+            }
+
+            public override string Name
+            {
+                get => base.Name;
+                set => base.Name = value;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return base.Equals(obj);
+            }
+
+            public override IEnumerable<CodeElement> GetChildElements(bool innerOnly = false)
+            {
+                return base.GetChildElements(innerOnly);
+            }
+
+            public override int GetHashCode()
+            {
+                return base.GetHashCode();
+            }
+
+            public override string ToString()
+            {
+                return base.ToString();
+            }
+        }
+        [Fact]
+        public void FindInChildElements() {
+            var grandChildName = "child1.grandchild1";
+            var root = CodeNamespace.InitRootNamespace();
+            var child = root.AddNamespace("child1");
+            var grandChild = child.AddNamespace(grandChildName);
+            Assert.NotNull(root.FindChildByName<CodeNamespace>(grandChildName));
+            Assert.Null(root.FindChildByName<CodeNamespace>("child2"));
+        }
         [Fact]
         public void RemovesElements() {
             var root = CodeNamespace.InitRootNamespace();

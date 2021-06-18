@@ -6,6 +6,7 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Refiners {
     public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
+        public JavaRefiner(GenerationConfiguration configuration) : base(configuration) {}
         public override void Refine(CodeNamespace generatedCode)
         {
             AddInnerClasses(generatedCode);
@@ -23,9 +24,16 @@ namespace Kiota.Builder.Refiners {
             ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
             AddEnumSetImport(generatedCode);
             ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
+            AddGetterAndSetterMethods(generatedCode, new() {
+                                                    CodePropertyKind.Custom,
+                                                    CodePropertyKind.AdditionalData,
+                                                    CodePropertyKind.BackingStore,
+                                                }, _configuration.UsesBackingStore, true);
+            AddConstructorsForDefaultValues(generatedCode, true);
+            CorrectCoreTypesForBackingStoreUsings(generatedCode, "com.microsoft.kiota.store");
         }
         private static void AddEnumSetImport(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model &&
+            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) &&
                 currentClass.GetChildElements(true).OfType<CodeProperty>().Any(x => x.Type is CodeType xType && xType.TypeDefinition is CodeEnum xEnumType && xEnumType.Flags)) {
                     var nUsing = new CodeUsing(currentClass) {
                         Name = "EnumSet",
@@ -37,7 +45,7 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(currentElement, AddEnumSetImport);
         }
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass && currentClass.ClassKind == CodeClassKind.Model) {
+            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
                 var declaration = currentClass.StartBlock as CodeClass.Declaration;
                 declaration.Implements.Add(new CodeType(currentClass) {
                     IsExternal = true,
@@ -86,9 +94,11 @@ namespace Kiota.Builder.Refiners {
         };
         private static void CorrectCoreType(CodeElement currentElement) {
             if (currentElement is CodeProperty currentProperty && currentProperty.Type != null) {
-                if("IHttpCore".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase))
+                if(currentProperty.IsOfKind(CodePropertyKind.HttpCore))
                     currentProperty.Type.Name = "HttpCore";
-                else if(currentProperty.Name.Equals("serializerFactory", StringComparison.OrdinalIgnoreCase))
+                else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
+                    currentProperty.Type.Name = currentProperty.Type.Name.Substring(1); // removing the "I"
+                else if(currentProperty.IsOfKind(CodePropertyKind.SerializerFactory))
                     currentProperty.Type.Name = "SerializationWriterFactory";
                 else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase)) {
                     currentProperty.Type.Name = $"OffsetDateTime";
@@ -100,28 +110,17 @@ namespace Kiota.Builder.Refiners {
                         IsExternal = true,
                     };
                     (currentProperty.Parent as CodeClass).AddUsing(nUsing);
-                } else if (currentProperty.PropertyKind == CodePropertyKind.AdditionalData) {
-                    currentProperty.Access = AccessModifier.Private;
-                    currentProperty.DefaultValue = "new HashMap<>()";
+                } else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
                     currentProperty.Type.Name = "Map<String, Object>";
-                    var parentClass = currentElement.Parent as CodeClass;
-                    parentClass.AddMethod(new CodeMethod(parentClass) {
-                        Name = $"get{currentProperty.Name.ToFirstCharacterUpperCase()}",
-                        Access = AccessModifier.Public,
-                        Description = currentProperty.Description,
-                        MethodKind = CodeMethodKind.AdditionalDataAccessor,
-                        IsAsync = false,
-                        IsStatic = false,
-                        ReturnType = currentProperty.Type,
-                    });
+                    currentProperty.DefaultValue = "new HashMap<>()";
                 }
             }
             if (currentElement is CodeMethod currentMethod) {
-                if(currentMethod.MethodKind == CodeMethodKind.RequestExecutor)
+                if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
                     currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x => x.Type.Name = "ResponseHandler");
-                else if(currentMethod.MethodKind == CodeMethodKind.Serializer)
+                else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
                     currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
-                else if(currentMethod.MethodKind == CodeMethodKind.Deserializer) {
+                else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer)) {
                     currentMethod.ReturnType.Name = $"Map<String, BiConsumer<T, ParseNode>>";
                     currentMethod.Name = "getFieldDeserializers";
                 }
@@ -146,7 +145,7 @@ namespace Kiota.Builder.Refiners {
             if(currentElement is CodeClass currentClass) {
                 var codeMethods = currentClass.GetChildElements(true).OfType<CodeMethod>();
                 if(codeMethods.Any()) {
-                    var originalExecutorMethods = codeMethods.Where(x => x.MethodKind == CodeMethodKind.RequestExecutor);
+                    var originalExecutorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
                     var executorMethodsToAdd = originalExecutorMethods
                                         .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter))
                                         .Union(originalExecutorMethods
@@ -154,7 +153,7 @@ namespace Kiota.Builder.Refiners {
                                         .Union(originalExecutorMethods
                                                 .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers, CodeParameterKind.ResponseHandler)))
                                         .Where(x => x != null);
-                    var originalGeneratorMethods = codeMethods.Where(x => x.MethodKind == CodeMethodKind.RequestGenerator);
+                    var originalGeneratorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestGenerator));
                     var generatorMethodsToAdd = originalGeneratorMethods
                                         .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter))
                                         .Union(originalGeneratorMethods

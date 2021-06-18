@@ -56,9 +56,9 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         public void WritesImports() {
             var declaration = parentClass.StartBlock as CodeClass.Declaration;
             declaration.Usings.Add(new (parentClass) {
-                Name = "system.util",
+                Name = "Objects",
                 Declaration = new(parentClass) {
-                    Name = "Objects",
+                    Name = "system.util",
                     IsExternal = true,
                 }
             });

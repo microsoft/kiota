@@ -1,7 +1,7 @@
 using System.Linq;
 using Kiota.Builder.Extensions;
 
-namespace  Kiota.Builder.Writers.TypeScript {
+namespace Kiota.Builder.Writers.TypeScript {
     public class CodeEnumWriter : BaseElementWriter<CodeEnum, TypeScriptConventionService>
     {
         public CodeEnumWriter(TypeScriptConventionService conventionService) : base(conventionService){}
