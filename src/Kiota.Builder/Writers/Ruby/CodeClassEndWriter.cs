@@ -1,10 +1,15 @@
-namespace  Kiota.Builder.Writers.Ruby {
-    public class CodeClassEndWriter : ICodeElementWriter<CodeClass.End>
+namespace Kiota.Builder.Writers.Ruby {
+    public class CodeClassEndWriter : BaseElementWriter<CodeClass.End, RubyConventionService>
     {
-        public void WriteCodeElement(CodeClass.End codeElement, LanguageWriter writer)
+        public CodeClassEndWriter(RubyConventionService conventionService):base(conventionService){}
+        public override void WriteCodeElement(CodeClass.End codeElement, LanguageWriter writer)
         {
             writer.DecreaseIndent();
             writer.WriteLine("end");
+            if(codeElement?.Parent?.Parent is CodeNamespace) {
+                writer.DecreaseIndent();
+                writer.WriteLine("end");
+            }
         }
     }
 }
