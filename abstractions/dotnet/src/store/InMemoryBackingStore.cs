@@ -36,8 +36,15 @@ namespace Microsoft.Kiota.Abstractions.Store {
         }
         public string Subscribe(Action<string, object, object> callback) {
             var id = Guid.NewGuid().ToString();
-            subscriptions.Add(id, callback);
+            Subscribe(callback, id);
             return id;
+        }
+        public void Subscribe(Action<string, object, object> callback, string subscriptionId) {
+            if(string.IsNullOrEmpty(subscriptionId))
+                throw new ArgumentNullException(nameof(subscriptionId));
+            if(callback == null)
+                throw new ArgumentNullException(nameof(callback));
+            subscriptions.Add(subscriptionId, callback);
         }
         public void Unsubscribe(string subscriptionId) {
             store.Remove(subscriptionId);

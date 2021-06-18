@@ -23,9 +23,10 @@ export interface BackingStore {
     /**
     * Creates a subscription to any data change happening.
     * @param callback Callback to be invoked on data changes where the first parameter is the data key, the second the previous value and the third the new value.
+    * @param subscriptionId The subscription Id to use.
     * @return The subscription Id to use when removing the subscription
     */
-    subscribe(callback:() => {key: string, previousValue: unknown, newValue: unknown}): string;
+    subscribe(callback:() => {key: string, previousValue: unknown, newValue: unknown}, subscriptionId?: string | undefined): string;
     /**
     * Removes a subscription from the store based on its subscription id.
     * @param subscriptionId The Id of the subscription to remove.

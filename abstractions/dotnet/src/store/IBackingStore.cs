@@ -27,6 +27,12 @@ namespace Microsoft.Kiota.Abstractions.Store {
         /// <returns>The subscription Id to use when removing the subscription</returns>
         string Subscribe(Action<string, object, object> callback);
         /// <summary>
+        /// Creates a subscription to any data change happening, allowing to specify the subscription Id.
+        /// </summary>
+        /// <param name="callback">Callback to be invoked on data changes where the first parameter is the data key, the second the previous value and the third the new value.</param>
+        /// <param name="subscriptionId">The subscription Id to use.</param>
+        void Subscribe(Action<string, object, object> callback, string subscriptionId);
+        /// <summary>
         /// Removes a subscription from the store based on its subscription id.
         /// </summary>
         /// <param name="subscriptionId">The Id of the subscription to remove.</param>

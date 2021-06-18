@@ -39,6 +39,12 @@ public interface BackingStore {
     @Nonnull
     String subscribe(@Nonnull final TriConsumer<String, Object, Object> callback);
     /**
+    * Creates a subscription to any data change happening, allowing to specify the subscription Id.
+    * @param callback Callback to be invoked on data changes where the first parameter is the data key, the second the previous value and the third the new value.
+    * @param subscriptionId The subscription Id to use.
+    */
+    void subscribe(@Nonnull final TriConsumer<String, Object, Object> callback, @Nonnull final String subscriptionId);
+    /**
     * Removes a subscription from the store based on its subscription id.
     * @param subscriptionId The Id of the subscription to remove.
     */

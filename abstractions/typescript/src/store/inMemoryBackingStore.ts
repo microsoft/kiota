@@ -7,7 +7,7 @@ type subscriptionCallback = (key: string, previousValue: unknown, newValue: unkn
 type storeEntry = {key: string, value: unknown};
 
 export class InMemoryBackingStore implements BackingStore {
-    get<T>(key: string): T | undefined {
+    public get<T>(key: string): T | undefined {
         const wrapper = this.store.get(key);
         if(wrapper && 
             (this.returnOnlyChangedValues && wrapper.changed || 
@@ -16,7 +16,7 @@ export class InMemoryBackingStore implements BackingStore {
         }
         return undefined;
     }
-    set<T>(key: string, value: T): void {
+    public set<T>(key: string, value: T): void {
         var oldValueWrapper = this.store.get(key);
         var oldValue = oldValueWrapper?.value;
         if(oldValueWrapper) {
@@ -32,21 +32,23 @@ export class InMemoryBackingStore implements BackingStore {
             sub(key, oldValue, value);
         });
     }
-    enumerate(): storeEntry[] {
+    public enumerate(): storeEntry[] {
         return _.map(this.returnOnlyChangedValues ? 
                         _.filter(this.store, (_, k) => this.store.get(k)?.changed ?? false) : 
                         this.store, 
             (_, k) => { return { key: k, value: this.store.get(k)?.value}});
     }
-    subscribe(callback: subscriptionCallback): string {
-        const subscriptionId = uuidv4();
+    public subscribe(callback: subscriptionCallback, subscriptionId?: string | undefined): string {
+        if(!callback)
+            throw new Error("callback cannot be undefined");
+        subscriptionId = subscriptionId ?? uuidv4();
         this.subscriptions.set(subscriptionId, callback);
         return subscriptionId;
     }
-    unsubscribe(subscriptionId: string): void {
+    public unsubscribe(subscriptionId: string): void {
         this.subscriptions.delete(subscriptionId);
     }
-    clear(): void {
+    public clear(): void {
         this.store.clear();
     }
     private readonly subscriptions: Map<string, subscriptionCallback> = new Map<string, subscriptionCallback>();
