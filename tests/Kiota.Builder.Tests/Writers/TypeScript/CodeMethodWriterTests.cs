@@ -337,6 +337,22 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             Assert.Contains("this.backingStore.get(\"someProperty\")", result);
         }
         [Fact]
+        public void WritesGetterToBackingStoreWithNonnullProperty() {
+            method.AddAccessedProperty();
+            parentClass.AddBackingStoreProperty();
+            method.AccessedProperty.Type = new CodeType(method.AccessedProperty) {
+                Name = "string",
+                IsNullable = false,
+            };
+            var defaultValue = "someDefaultValue";
+            method.AccessedProperty.DefaultValue = defaultValue; 
+            method.MethodKind = CodeMethodKind.Getter;
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("if(!value)", result);
+            Assert.Contains(defaultValue, result);
+        }
+        [Fact]
         public void WritesSetterToBackingStore() {
             parentClass.AddBackingStoreProperty();
             method.AddAccessedProperty();
