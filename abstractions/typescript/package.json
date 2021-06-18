@@ -24,7 +24,7 @@
   "homepage": "https://github.com/microsoft/kiota#readme",
   "devDependencies": {
     "@types/lodash": "^4.14.170",
-    "@types/node": "^15.12.2",
+    "@types/node": "^15.12.3",
     "@types/uuid": "^8.3.0",
     "typescript": "^4.3.3"
   },
