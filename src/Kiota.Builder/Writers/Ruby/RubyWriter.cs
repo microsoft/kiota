@@ -7,12 +7,12 @@ namespace Kiota.Builder.Writers.Ruby
             PathSegmenter = new RubyPathSegmenter(rootPath, clientNamespaceName);
             var conventionService = new RubyConventionService();
             AddCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
-            AddCodeElementWriter(new CodeClassEndWriter());
+            AddCodeElementWriter(new CodeClassEndWriter(conventionService));
             //TODO: No Enum in Ruby
-            //AddCodeElementWriter(new CodeEnumWriter(conventionService));
+            // AddCodeElementWriter(new CodeEnumWriter(conventionService));
             AddCodeElementWriter(new CodeMethodWriter(conventionService));
             AddCodeElementWriter(new CodePropertyWriter(conventionService));
-            AddCodeElementWriter(new CodeTypeWriter(conventionService));
+            //AddCodeElementWriter(new CodeTypeWriter(conventionService));
         }
     }
 }
