@@ -5,6 +5,9 @@ using Microsoft.Kiota.Abstractions;
 
 namespace Microsoft.Kiota.Abstractions.Serialization {
     public class ParseNodeFactoryRegistry : IParseNodeFactory {
+        public string ValidContentType { get {
+            throw new InvalidOperationException("The registry supports multiple content types. Get the registered factory instead.");
+        }}
         public static readonly ParseNodeFactoryRegistry DefaultInstance = new();
         public Dictionary<string, IParseNodeFactory> ContentTypeAssociatedFactories {get; set;} = new Dictionary<string, IParseNodeFactory>();
         public IParseNode GetRootParseNode(string contentType, Stream content) {

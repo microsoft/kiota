@@ -2,6 +2,7 @@ using System;
 
 namespace Microsoft.Kiota.Abstractions.Serialization {
     public class SerializationWriterProxyFactory : ISerializationWriterFactory {
+        public string ValidContentType { get { return _concrete.ValidContentType; }}
         private readonly ISerializationWriterFactory _concrete;
         private readonly Action<IParsable> _onBefore;
         private readonly Action<IParsable> _onAfter;
