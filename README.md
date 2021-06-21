@@ -77,7 +77,7 @@ You can either clone the repository and [build Kiota locally](#building-kiota), 
 1. Execute the following command to login to the registry.
 
     ```Shell
-    echo "<the personal access token>" | docker login https://docker.pkg.github.com/microsoft/kiota/generator -u baywet --password-stdin
+    echo "<the personal access token>" | docker login "https://docker.pkg.github.com/microsoft/kiota/generator" -u "<your github username>" --password-stdin
     ```
 
 1. Execute the following command to start generating SDKs
