@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace Microsoft.Kiota.Abstractions.Serialization {
     public class SerializationWriterFactoryRegistry : ISerializationWriterFactory {
+        public static readonly SerializationWriterFactoryRegistry DefaultInstance = new();
         public Dictionary<string, ISerializationWriterFactory> ContentTypeAssociatedFactories { get; set; } = new Dictionary<string, ISerializationWriterFactory>();
         public ISerializationWriter GetSerializationWriter(string contentType) {
             if(string.IsNullOrEmpty(contentType))
