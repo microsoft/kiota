@@ -19,7 +19,7 @@ namespace Microsoft.Kiota.Http.HttpClient
         {
             authProvider = authenticationProvider ?? throw new ArgumentNullException(nameof(authenticationProvider));
             client = httpClient ?? new System.Net.Http.HttpClient();
-            pNodeFactory = parseNodeFactory ?? new ParseNodeFactoryRegistry() {};
+            pNodeFactory = parseNodeFactory ?? ParseNodeFactoryRegistry.DefaultInstance;
         }
         public async Task<ModelType> SendAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = null) where ModelType : IParsable
         {
