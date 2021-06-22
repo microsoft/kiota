@@ -24,6 +24,9 @@ namespace Kiota.Builder.Writers.CSharp {
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
+            foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
+                writer.WriteLine($"_ = {parameter.Name} ?? throw new ArgumentNullException(nameof({parameter.Name}));");
+            }
             switch(codeElement.MethodKind) {
                 case CodeMethodKind.Serializer:
                     WriteSerializerBody(inherits, parentClass, writer);

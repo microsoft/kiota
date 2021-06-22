@@ -27,6 +27,10 @@ namespace Kiota.Builder.Writers.TypeScript {
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
+            if(!codeElement.IsOfKind(CodeMethodKind.Setter))
+                foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
+                    writer.WriteLine($"if(!{parameter.Name}) throw new Error(\"{parameter.Name} cannot be undefined\");");
+                }
             switch(codeElement.MethodKind) {
                 case CodeMethodKind.IndexerBackwardCompatibility:
                     var pathSegment = codeElement.PathSegment;
