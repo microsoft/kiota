@@ -241,7 +241,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         }
         [Fact]
         public void Defensive() {
-            var codeMethodWriter = new CodeMethodWriter(new CSharpConventionService());
+            var codeMethodWriter = new CodeMethodWriter(new CSharpConventionService(), false);
             Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(null, writer));
             Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(method, null));
             var originalParent = method.Parent;

@@ -6,7 +6,10 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.CSharp {
     public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionService>
     {
-        public CodeMethodWriter(CSharpConventionService conventionService): base(conventionService) { }
+        private readonly bool _usesBackingStore;
+        public CodeMethodWriter(CSharpConventionService conventionService, bool usesBackingStore): base(conventionService) {
+            _usesBackingStore = usesBackingStore;
+        }
         public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
             if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
@@ -40,6 +43,10 @@ namespace Kiota.Builder.Writers.CSharp {
                 case CodeMethodKind.Deserializer:
                     WriteDeserializerBody(codeElement, parentClass, writer);
                     break;
+                case CodeMethodKind.ClientConstructor:
+                    WriteConstructorBody(parentClass, writer);
+                    WriteApiConstructorBody(parentClass, codeElement, writer);
+                    break;
                 case CodeMethodKind.Constructor:
                     WriteConstructorBody(parentClass, writer);
                     break;
@@ -52,6 +59,21 @@ namespace Kiota.Builder.Writers.CSharp {
             }
             writer.DecreaseIndent();
             writer.WriteLine("}");
+        }
+        private void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
+            var httpCoreProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
+            var httpCoreParameter = method.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.HttpCore);
+            var serializationFactoryProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.SerializerFactory));
+            var serializationFactoryParameter = method.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.SerializationFactory);
+            var serializationFactoryPropertyName = serializationFactoryProperty.Name.ToFirstCharacterUpperCase();
+            writer.WriteLine($"{httpCoreProperty.Name.ToFirstCharacterUpperCase()} = {httpCoreParameter.Name};");
+            foreach(var serializationModule in method.SerializerModules)
+                writer.WriteLine($"ApiClientBuilder.RegisterDefaultSerializers(\"{serializationModule}\");");
+            writer.WriteLines($"if({serializationFactoryParameter.Name} == default && !SerializationWriterFactoryRegistry.DefaultInstance.ContentTypeAssociatedFactories.Any()) throw new InvalidOperationException(\"The Serialization Writer factory has not been initialized for this client.\");",
+                            $"if({serializationFactoryParameter.Name} == default && !ParseNodeFactoryRegistry.DefaultInstance.ContentTypeAssociatedFactories.Any()) throw new InvalidOperationException(\"The Parse Node factory has not been initialized for this client.\");",
+                            $"{serializationFactoryPropertyName} = {serializationFactoryParameter.Name} ?? SerializationWriterFactoryRegistry.DefaultInstance;");
+            if(_usesBackingStore)
+                writer.WriteLine($"{serializationFactoryPropertyName} = ApiClientBuilder.EnableBackingStore({serializationFactoryPropertyName});");
         }
         private static void WriteConstructorBody(CodeClass parentClass, LanguageWriter writer) {
             foreach(var propWithDefault in parentClass
@@ -186,7 +208,7 @@ namespace Kiota.Builder.Writers.CSharp {
             var hideModifier = inherits && code.IsSerializationMethod ? "new " : string.Empty;
             var genericTypePrefix = isVoid ? string.Empty : "<";
             var genricTypeSuffix = code.IsAsync && !isVoid ? ">": string.Empty;
-            var isConstructor = code.IsOfKind(CodeMethodKind.Constructor);
+            var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor);
             var asyncPrefix = code.IsAsync ? "async Task" + genericTypePrefix : string.Empty;
             var voidCorrectedTaskReturnType = code.IsAsync && isVoid ? string.Empty : returnType;
             // TODO: Task type should be moved into the refiner

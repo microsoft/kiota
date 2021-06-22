@@ -199,7 +199,7 @@ namespace Kiota.Builder
 
         public async Task CreateLanguageSourceFilesAsync(GenerationLanguage language, CodeNamespace generatedCode)
         {
-            var languageWriter = LanguageWriter.GetLanguageWriter(language, this.config.OutputPath, this.config.ClientNamespaceName);
+            var languageWriter = LanguageWriter.GetLanguageWriter(language, this.config.OutputPath, this.config.ClientNamespaceName, this.config.UsesBackingStore);
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             await CodeRenderer.RenderCodeNamespaceToFilePerClassAsync(languageWriter, generatedCode);
@@ -207,6 +207,46 @@ namespace Kiota.Builder
             logger.LogTrace("{timestamp}ms: Files written to {path}", stopwatch.ElapsedMilliseconds, config.OutputPath);
         }
         private static readonly string requestBuilderSuffix = "RequestBuilder";
+        private static readonly string voidType = "void";
+        private CodeClass AddApiClientClass(CodeNamespace targetNS) {
+            var codeClass = targetNS.AddClass(new CodeClass(targetNS) { 
+                Name = config.ClientClassName,
+                ClassKind = CodeClassKind.RequestBuilder,
+                Description = "The main entry point of the SDK, exposes the configuration and the fluent API."
+            }).First();
+            var constructor = codeClass.AddMethod(new CodeMethod(codeClass) {
+                IsAsync = false,
+                Name = "constructor",
+                Access = AccessModifier.Public,
+                Description = "Instantiates a new Api client and sets the default values.",
+                IsStatic = false,
+                MethodKind = CodeMethodKind.ClientConstructor,
+                SerializerModules = config.Serializers
+            }).First();
+            constructor.ReturnType = new CodeType(constructor) { Name = voidType, IsExternal = true };
+            var httpCoreParameter = new CodeParameter(constructor) {
+                Name = "httpCore",
+                Description = "The http core service to use to execute the requests.",
+                Optional = false,
+                ParameterKind = CodeParameterKind.HttpCore,
+            };
+            httpCoreParameter.Type = new CodeType(httpCoreParameter) {
+                Name = coreInterfaceType,
+                IsExternal = true,
+            };
+            var serializationWriterParameter = new CodeParameter(constructor) {
+                Name = "serializationWriterFactory",
+                Description = "Factory to use to get a serializer for payload serialization.",
+                Optional = true,
+                ParameterKind = CodeParameterKind.SerializationFactory,
+            };
+            serializationWriterParameter.Type = new CodeType(serializationWriterParameter) {
+                Name = serializationFactoryInterfaceType,
+                IsExternal = true,
+            };
+            constructor.AddParameter(httpCoreParameter, serializationWriterParameter);
+            return codeClass;
+        }
 
         /// <summary>
         /// Create a CodeClass instance that is a request builder class for the OpenApiUrlTreeNode
@@ -217,24 +257,17 @@ namespace Kiota.Builder
             CodeClass codeClass;
             var isRootClientClass = currentNode == rootNode;
             if (isRootClientClass)
-            {
-                codeClass = new CodeClass(currentNamespace) { 
-                    Name = this.config.ClientClassName,
-                    ClassKind = CodeClassKind.RequestBuilder,
-                    Description = "The main entry point of the SDK, exposes the configuration and the fluent API."
-                };
-            }
+                codeClass = AddApiClientClass(currentNamespace);
             else
             {
+                var targetNS = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNamespace.EnsureItemNamespace() : currentNamespace;
                 var className = currentNode.GetClassName(requestBuilderSuffix);
-                codeClass = new CodeClass((currentNode.DoesNodeBelongToItemSubnamespace() ? currentNamespace.EnsureItemNamespace() : currentNamespace)) {
+                codeClass = targetNS.AddClass(new CodeClass((currentNode.DoesNodeBelongToItemSubnamespace() ? currentNamespace.EnsureItemNamespace() : currentNamespace)) {
                     Name = className, 
                     ClassKind = CodeClassKind.RequestBuilder,
                     Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel, $"Builds and executes requests for operations under {currentNode.Path}"),
-                };
+                }).First();
             }
-            var targetNS = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNamespace.EnsureItemNamespace() : currentNamespace;
-            codeClass = targetNS.AddClass(codeClass).First();
 
             logger.LogTrace("Creating class {class}", codeClass.Name);
 
@@ -277,7 +310,8 @@ namespace Kiota.Builder
                 CreateRequestBuilderClass(targetNamespace, childNode, rootNode);
             });
         }
-
+        private static readonly string coreInterfaceType = "IHttpCore";
+        private static readonly string serializationFactoryInterfaceType = "ISerializationWriterFactory";
         private void CreatePathManagement(CodeClass currentClass, OpenApiUrlTreeNode currentNode, bool isRootClientClass) {
             var pathProperty = new CodeProperty(currentClass) {
                 Access = AccessModifier.Private,
@@ -311,7 +345,7 @@ namespace Kiota.Builder
                 PropertyKind = CodePropertyKind.HttpCore
             };
             httpCoreProperty.Type = new CodeType(httpCoreProperty) {
-                Name = "IHttpCore",
+                Name = coreInterfaceType,
                 IsExternal = true,
             };
             currentClass.AddProperty(httpCoreProperty);
@@ -322,7 +356,7 @@ namespace Kiota.Builder
                 PropertyKind = CodePropertyKind.SerializerFactory
             };
             serializerFactoryProperty.Type = new CodeType(serializerFactoryProperty) {
-                Name = "ISerializationWriterFactory",
+                Name = serializationFactoryInterfaceType,
                 IsExternal = true,
             };
             currentClass.AddProperty(serializerFactoryProperty);
@@ -472,7 +506,7 @@ namespace Kiota.Builder
                 var returnType = CreateModelDeclarations(currentNode, schema, operation, executorMethod);
                 executorMethod.ReturnType = returnType ?? throw new InvalidOperationException("Could not resolve return type for operation");
             } else {
-                var returnType = "void";
+                var returnType = voidType;
                 if(operation.Responses.Any(x => x.Value.Content.Keys.Contains(requestBodyBinaryContentType)))
                     returnType = "binary";
                 else if(!operation.Responses.Any(x => noContentStatusCodes.Contains(x.Key)))
@@ -746,7 +780,7 @@ namespace Kiota.Builder
                     IsAsync = false,
                     Description = $"Serializes information the current object",
                 };
-                serializeMethod.ReturnType = new CodeType(serializeMethod) { Name = "void", IsNullable = false, IsExternal = true };
+                serializeMethod.ReturnType = new CodeType(serializeMethod) { Name = voidType, IsNullable = false, IsExternal = true };
                 var parameter = new CodeParameter(serializeMethod) {
                     Name = "writer",
                     Description = "Serialization writer to use to serialize this model"
