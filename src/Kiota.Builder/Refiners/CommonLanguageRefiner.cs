@@ -86,7 +86,8 @@ namespace Kiota.Builder.Refiners {
         protected static void AddConstructorsForDefaultValues(CodeElement current, bool addIfInherited) {
             if(current is CodeClass currentClass && 
                 (currentClass.GetChildElements(true).OfType<CodeProperty>().Any(x => !string.IsNullOrEmpty(x.DefaultValue)) ||
-                addIfInherited && DoesAnyParentHaveAPropertyWithDefaultValue(currentClass)))
+                addIfInherited && DoesAnyParentHaveAPropertyWithDefaultValue(currentClass)) &&
+                !currentClass.GetChildElements(true).OfType<CodeMethod>().Any(x => x.IsOfKind(CodeMethodKind.ClientConstructor)))
                 currentClass.AddMethod(new CodeMethod(current) {
                     Name = "constructor",
                     MethodKind = CodeMethodKind.Constructor,

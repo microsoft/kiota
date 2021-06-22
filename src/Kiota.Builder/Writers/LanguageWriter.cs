@@ -107,10 +107,10 @@ namespace Kiota.Builder.Writers
             Writers.Add(typeof(T), writer);
         }
         private readonly Dictionary<Type, object> Writers = new(); // we have to type as object because dotnet doesn't have type capture i.e eq for `? extends CodeElement`
-        public static LanguageWriter GetLanguageWriter(GenerationLanguage language, string outputPath, string clientNamespaceName) {
+        public static LanguageWriter GetLanguageWriter(GenerationLanguage language, string outputPath, string clientNamespaceName, bool usesBackingStore = false) {
             return language switch
             {
-                GenerationLanguage.CSharp => new CSharpWriter(outputPath, clientNamespaceName),
+                GenerationLanguage.CSharp => new CSharpWriter(outputPath, clientNamespaceName, usesBackingStore),
                 GenerationLanguage.Java => new JavaWriter(outputPath, clientNamespaceName),
                 GenerationLanguage.TypeScript => new TypeScriptWriter(outputPath, clientNamespaceName),
                 _ => throw new InvalidEnumArgumentException($"{language} language currently not supported."),

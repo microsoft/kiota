@@ -14,7 +14,8 @@ namespace Kiota.Builder
         Deserializer,
         Constructor,
         Getter,
-        Setter
+        Setter,
+        ClientConstructor
     }
     public enum HttpMethod {
         Get,
@@ -51,6 +52,7 @@ namespace Kiota.Builder
         public bool IsSerializationMethod {
             get => IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer);
         }
+        public List<string> SerializerModules { get; set; }
 
         public object Clone()
         {
@@ -67,6 +69,7 @@ namespace Kiota.Builder
                 ContentType = ContentType?.Clone() as string,
                 AccessedProperty = AccessedProperty,
                 PathSegment = PathSegment?.Clone() as string,
+                SerializerModules = SerializerModules == null ? null : new (SerializerModules),
             };
         }
 

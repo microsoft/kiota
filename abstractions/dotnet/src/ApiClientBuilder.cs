@@ -30,20 +30,41 @@ namespace Microsoft.Kiota.Abstractions {
                 register.Invoke(instance);
             }
         }
-        public static void EnableBackingStore() {
-            foreach(var entry in SerializationWriterFactoryRegistry
-                                    .DefaultInstance
-                                    .ContentTypeAssociatedFactories
-                                    .Where(x => !(x.Value is BackingStoreSerializationWriterProxyFactory || 
-                                                    x.Value is SerializationWriterFactoryRegistry))) {
-                SerializationWriterFactoryRegistry.DefaultInstance.ContentTypeAssociatedFactories[entry.Key] = new BackingStoreSerializationWriterProxyFactory(entry.Value);
-            }
-            foreach(var entry in ParseNodeFactoryRegistry
-                                    .DefaultInstance
+        public static ISerializationWriterFactory EnableBackingStore(ISerializationWriterFactory original) {
+            ISerializationWriterFactory result = null;
+            if(result is SerializationWriterFactoryRegistry registry) {
+                EnableBackingStoreForSerializationRegistry(registry);
+                result = registry;
+            } else if(original != null)
+                result = new BackingStoreSerializationWriterProxyFactory(original);
+            EnableBackingStoreForSerializationRegistry(SerializationWriterFactoryRegistry.DefaultInstance);
+            EnableBackingStoreForParseNodeRegistry(ParseNodeFactoryRegistry.DefaultInstance);
+            return result;
+        }
+        public static IParseNodeFactory EnableBackingStoreForParseNodeFactory(IParseNodeFactory original) {
+            IParseNodeFactory result = null;
+            if(result is ParseNodeFactoryRegistry registry) {
+                EnableBackingStoreForParseNodeRegistry(registry);
+                result = registry;
+            } else if(original != null)
+                result = new BackingStoreParseNodeFactory(original);
+            EnableBackingStoreForParseNodeRegistry(ParseNodeFactoryRegistry.DefaultInstance);
+            return result;
+        }
+        private static void EnableBackingStoreForParseNodeRegistry(ParseNodeFactoryRegistry registry) {
+            foreach(var entry in registry
                                     .ContentTypeAssociatedFactories
                                     .Where(x => !(x.Value is BackingStoreParseNodeFactory || 
                                                     x.Value is ParseNodeFactoryRegistry))) {
-                ParseNodeFactoryRegistry.DefaultInstance.ContentTypeAssociatedFactories[entry.Key] = new BackingStoreParseNodeFactory(entry.Value);
+                registry.ContentTypeAssociatedFactories[entry.Key] = new BackingStoreParseNodeFactory(entry.Value);
+            }
+        }
+        private static void EnableBackingStoreForSerializationRegistry(SerializationWriterFactoryRegistry registry) {
+            foreach(var entry in registry
+                                    .ContentTypeAssociatedFactories
+                                    .Where(x => !(x.Value is BackingStoreSerializationWriterProxyFactory || 
+                                                    x.Value is SerializationWriterFactoryRegistry))) {
+                registry.ContentTypeAssociatedFactories[entry.Key] = new BackingStoreSerializationWriterProxyFactory(entry.Value);
             }
         }
     }
