@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO;
@@ -37,6 +38,9 @@ namespace Kiota {
             var backingStoreOption = new Option("--backing-store", "The fully qualified name for the backing store class to use.") {Argument = new Argument<string>()};
             backingStoreOption.AddAlias("-b");
 
+            var serializerOption = new Option<List<String>>("--serializer", "The module name to search serializers in.") { Argument = new Argument<List<string>>(() => new List<string> {"Microsoft.Kiota.Serialization.Json"}) };
+            serializerOption.AddAlias("-s");
+
             var command = new RootCommand {
                 outputOption,
                 languageOption,
@@ -45,8 +49,9 @@ namespace Kiota {
                 classOption,
                 logLevelOption,
                 namespaceOption,
+                serializerOption,
             };
-            command.Handler = CommandHandler.Create<string, GenerationLanguage?, string, string, string, LogLevel, string>(async (output, language, openapi, backingstore, classname, loglevel, namespacename) =>
+            command.Handler = CommandHandler.Create<string, GenerationLanguage?, string, string, string, LogLevel, string, List<string>>(async (output, language, openapi, backingstore, classname, loglevel, namespacename, serializer) =>
             {
                 if (!string.IsNullOrEmpty(output))
                     configuration.OutputPath = output;
@@ -59,7 +64,9 @@ namespace Kiota {
                 if (language.HasValue)
                     configuration.Language = language.Value;
                 if(!string.IsNullOrEmpty(backingstore))
-                    configuration.BackingStore = backingstore.Trim('\'', '"'); //npm modules can start with @ which prompts some terminals to read response files and quotes are not automatically trimmed by the framework
+                    configuration.BackingStore = backingstore.TrimQuotes(); //npm modules can start with @ which prompts some terminals to read response files and quotes are not automatically trimmed by the framework
+                if(serializer?.Any() ?? false)
+                    configuration.Serializers.AddRange(serializer.Select(x => x.TrimQuotes()));
 
                 #if DEBUG
                 loglevel = loglevel > LogLevel.Debug ? LogLevel.Debug : loglevel;
@@ -114,6 +121,8 @@ namespace Kiota {
         }
 
         private static string GetAbsolutePath(string source) => Path.IsPathRooted(source) || source.StartsWith("http") ? source : Path.Combine(Directory.GetCurrentDirectory(), source);
+        private static string TrimQuotes(this string original) =>
+            original?.Trim('\'', '"');
 
     }
     

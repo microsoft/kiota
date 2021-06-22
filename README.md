@@ -125,6 +125,7 @@ Kiota accepts the following parameters during the generation:
 | namespace-name | n | no | The namespace name to use the for main entry point. | Valid namespace/module name according to target language specifications. | ApiClient |
 | openapi | d | no | URI or Path to the OpenAPI description (JSON or YAML) to use to generate the SDK. | A valid URI pointing to an HTTP document or a file on the local file-system. | ./openapi.yml |
 | output | o | no | The output path of the folder the code will be generated in. The folders will be created during the generation if they don't already exist. | A valid path to a folder. | ./output |
+| serializer | s | no | The module name to search serializers in. | This parameter can be passed multiple values. A module name like `Microsoft.Kiota.Serialization.Json` that contains implementations for `IParseNodeFactory` or `ISerializationWriterFactory`. | `Microsoft.Kiota.Serialization.Json` |
 
 ### Debugging
 
