@@ -3,6 +3,9 @@ import { ParseNode } from "./parseNode";
 import { ParseNodeFactory } from "./parseNodeFactory";
 
 export abstract class ParseNodeProxyFactory implements ParseNodeFactory {
+    public getValidContentType(): string {
+        return this._concrete.getValidContentType();
+    }
     constructor(private readonly _concrete: ParseNodeFactory,
         private readonly _onBefore: (value: Parsable) => void,
         private readonly _onAfter: (value: Parsable) => void) {
