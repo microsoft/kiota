@@ -8,5 +8,7 @@ namespace Kiota.Builder {
         public override string FileSuffix => ".rb";
         public override string NormalizeFileName(string elementName) => elementName.ToSnakeCase();
         public override string NormalizeNamespaceSegment(string segmentName) => segmentName.ToSnakeCase();
+
+        
     }
 }
