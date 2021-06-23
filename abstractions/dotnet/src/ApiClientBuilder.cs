@@ -32,7 +32,7 @@ namespace Microsoft.Kiota.Abstractions {
         }
         public static ISerializationWriterFactory EnableBackingStore(ISerializationWriterFactory original) {
             ISerializationWriterFactory result = null;
-            if(result is SerializationWriterFactoryRegistry registry) {
+            if(original is SerializationWriterFactoryRegistry registry) {
                 EnableBackingStoreForSerializationRegistry(registry);
                 result = registry;
             } else if(original != null)
