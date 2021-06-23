@@ -57,28 +57,27 @@ namespace Kiota {
                 await HandleCommandCall(output, language, openapi, backingstore, classname, loglevel, namespacename, serializer));
             return command;
         }
+        private void AssignIfNotNullOrEmpty(string input, Action<GenerationConfiguration, string> assignment) {
+            if (!string.IsNullOrEmpty(input))
+                assignment.Invoke(Configuration, input);
+        }
         private async Task HandleCommandCall(string output, GenerationLanguage? language, string openapi, string backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer) {
-            if (!string.IsNullOrEmpty(output))
-                configuration.OutputPath = output;
-            if (!string.IsNullOrEmpty(openapi))
-                configuration.OpenAPIFilePath = openapi;
-            if (!string.IsNullOrEmpty(classname))
-                configuration.ClientClassName = classname;
-            if (!string.IsNullOrEmpty(namespacename))
-                configuration.ClientNamespaceName = namespacename;
+            AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
+            AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
+            AssignIfNotNullOrEmpty(classname, (c, s) => c.ClientClassName = s);
+            AssignIfNotNullOrEmpty(namespacename, (c, s) => c.ClientNamespaceName = s);
+            AssignIfNotNullOrEmpty(backingstore, (c, s) => c.BackingStore = s.TrimQuotes()); //npm modules can start with @ which prompts some terminals to read response files and quotes are not automatically trimmed by the framework
             if (language.HasValue)
-                configuration.Language = language.Value;
-            if(!string.IsNullOrEmpty(backingstore))
-                configuration.BackingStore = backingstore.TrimQuotes(); //npm modules can start with @ which prompts some terminals to read response files and quotes are not automatically trimmed by the framework
+                Configuration.Language = language.Value;
             if(serializer?.Any() ?? false)
-                configuration.Serializers.AddRange(serializer.Select(x => x.TrimQuotes()));
+                Configuration.Serializers.AddRange(serializer.Select(x => x.TrimQuotes()));
 
             #if DEBUG
             loglevel = loglevel > LogLevel.Debug ? LogLevel.Debug : loglevel;
             #endif
 
-            configuration.OpenAPIFilePath = GetAbsolutePath(configuration.OpenAPIFilePath);
-            configuration.OutputPath = GetAbsolutePath(configuration.OutputPath);
+            Configuration.OpenAPIFilePath = GetAbsolutePath(Configuration.OpenAPIFilePath);
+            Configuration.OutputPath = GetAbsolutePath(Configuration.OutputPath);
 
             var logger = LoggerFactory.Create((builder) => {
                 builder
@@ -89,9 +88,9 @@ namespace Kiota {
                     .SetMinimumLevel(loglevel);
             }).CreateLogger<KiotaBuilder>();
 
-            logger.LogTrace($"configuration: {JsonSerializer.Serialize(configuration)}");
+            logger.LogTrace($"configuration: {JsonSerializer.Serialize(Configuration)}");
 
-            await new KiotaBuilder(logger, configuration).GenerateSDK();
+            await new KiotaBuilder(logger, Configuration).GenerateSDK();
         }
         private static void AddStringRegexValidator(Argument argument, string pattern, string parameterName) {
             var validator = new Regex(pattern);
@@ -112,8 +111,8 @@ namespace Kiota {
                 return null;
             });
         }
-        private GenerationConfiguration configuration { get => ConfigurationFactory.Value; }
-        private Lazy<GenerationConfiguration> ConfigurationFactory = new (() => {
+        private GenerationConfiguration Configuration { get => ConfigurationFactory.Value; }
+        private readonly Lazy<GenerationConfiguration> ConfigurationFactory = new (() => {
             var builder = new ConfigurationBuilder();
             var configuration = builder.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                     .AddEnvironmentVariables(prefix: "KIOTA_")
