@@ -21,5 +21,7 @@ namespace Kiota.Builder.Extensions {
                                                                             .Select(s => ToFirstCharacterUpperCase(s)));
         public static string ReplaceValueIdentifier(this string original) =>
             original?.Replace("$value", "Content");
+        public static string TrimQuotes(this string original) =>
+            original?.Trim('\'', '"');
     }
 }
