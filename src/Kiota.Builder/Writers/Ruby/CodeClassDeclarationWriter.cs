@@ -6,10 +6,8 @@ namespace  Kiota.Builder.Writers.Ruby {
     {
         public CodeClassDeclarationWriter(RubyConventionService conventionService) : base(conventionService){}
         
-        // TODO
         public override void WriteCodeElement(CodeClass.Declaration codeElement, LanguageWriter writer)
         {
-
             foreach (var codeUsing in codeElement.Usings
                                         .Where(x => x.Declaration.IsExternal)
                                         .Distinct()
@@ -33,7 +31,6 @@ namespace  Kiota.Builder.Writers.Ruby {
             writer.IncreaseIndent();
             var mixins = (!codeElement.Implements.Any() ? string.Empty : $"include {codeElement.Implements.Select(x => x.Name).Aggregate((x,y) => x + ", " + y)}");
             writer.WriteLine($"{mixins}");
-                            
         }
     }
 }
