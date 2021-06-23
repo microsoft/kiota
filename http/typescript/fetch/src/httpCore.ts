@@ -7,7 +7,7 @@ export class HttpCore implements IHttpCore {
     /**
      *
      */
-    public constructor(public readonly authenticationProvider: AuthenticationProvider, public readonly parseNodeFactory: ParseNodeFactory = new ParseNodeFactoryRegistry()) {
+    public constructor(public readonly authenticationProvider: AuthenticationProvider, public readonly parseNodeFactory: ParseNodeFactory = ParseNodeFactoryRegistry.defaultInstance) {
         if(!authenticationProvider) {
             throw new Error('authentication provider cannot be null');
         }

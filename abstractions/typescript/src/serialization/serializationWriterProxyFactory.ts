@@ -3,6 +3,9 @@ import { SerializationWriter } from "./serializationWriter";
 import { SerializationWriterFactory } from "./serializationWriterFactory";
 
 export abstract class SerializationWriterProxyFactory implements SerializationWriterFactory {
+    public getValidContentType(): string {
+        return this._concrete.getValidContentType();
+    }
     constructor(private readonly _concrete: SerializationWriterFactory,
         private readonly _onBefore: (value: Parsable) => void,
         private readonly _onAfter: (value: Parsable) => void) {
