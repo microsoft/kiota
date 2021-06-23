@@ -43,7 +43,7 @@ namespace Microsoft.Kiota.Abstractions {
         }
         public static IParseNodeFactory EnableBackingStoreForParseNodeFactory(IParseNodeFactory original) {
             IParseNodeFactory result = null;
-            if(result is ParseNodeFactoryRegistry registry) {
+            if(original is ParseNodeFactoryRegistry registry) {
                 EnableBackingStoreForParseNodeRegistry(registry);
                 result = registry;
             } else if(original != null)
