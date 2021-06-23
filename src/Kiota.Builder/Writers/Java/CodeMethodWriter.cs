@@ -147,7 +147,7 @@ namespace Kiota.Builder.Writers.Java {
             }
             writer.WriteLine(");");
             var sendMethodName = conventions.PrimitiveTypes.Contains(returnType) ? "sendPrimitiveAsync" : "sendAsync";
-            if(codeElement.Parameters.Any(x => x.ParameterKind == CodeParameterKind.ResponseHandler))
+            if(codeElement.Parameters.Any(x => x.IsOfKind(CodeParameterKind.ResponseHandler)))
                 writer.WriteLine($"return this.httpCore.{sendMethodName}(requestInfo, {returnType}.class, responseHandler);");
             else
                 writer.WriteLine($"return this.httpCore.{sendMethodName}(requestInfo, {returnType}.class, null);");
