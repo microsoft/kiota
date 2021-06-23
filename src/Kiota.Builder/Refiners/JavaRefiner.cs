@@ -16,7 +16,7 @@ namespace Kiota.Builder.Refiners {
             AddRequireNonNullImports(generatedCode);
             FixReferencesToEntityType(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
-            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
+            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders, defaultSymbolsForApiClient);
             CorrectCoreType(generatedCode);
             PatchHeaderParametersType(generatedCode);
             AddListImport(generatedCode);
@@ -92,12 +92,18 @@ namespace Kiota.Builder.Refiners {
             new ("Map", "java.util"),
             new ("HashMap", "java.util"),
         };
+        private static readonly Tuple<string, string>[] defaultSymbolsForApiClient = new Tuple<string, string>[] { 
+            new ("registerDefaultSerializers", "@microsoft/kiota-abstractions"),
+            new ("enableBackingStore", "@microsoft/kiota-abstractions"),
+            new ("SerializationWriterFactoryRegistry", "@microsoft/kiota-abstractions"),
+            new ("ParseNodeFactoryRegistry", "@microsoft/kiota-abstractions"),
+        };
         private static void CorrectCoreType(CodeElement currentElement) {
             if (currentElement is CodeProperty currentProperty && currentProperty.Type != null) {
                 if(currentProperty.IsOfKind(CodePropertyKind.HttpCore))
                     currentProperty.Type.Name = "HttpCore";
                 else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
-                    currentProperty.Type.Name = currentProperty.Type.Name.Substring(1); // removing the "I"
+                    currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
                 else if(currentProperty.IsOfKind(CodePropertyKind.SerializerFactory))
                     currentProperty.Type.Name = "SerializationWriterFactory";
                 else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase)) {
@@ -167,8 +173,8 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(currentElement, AndInsertOverrideMethodForRequestExecutorsAndBuilders);
         }
         private static void PatchHeaderParametersType(CodeElement currentElement) {
-            if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => x.ParameterKind == CodeParameterKind.Headers))
-                currentMethod.Parameters.Where(x => x.ParameterKind == CodeParameterKind.Headers)
+            if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Headers)))
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Headers))
                                         .ToList()
                                         .ForEach(x => x.Type.Name = "Map<String, String>");
             CrawlTree(currentElement, PatchHeaderParametersType);

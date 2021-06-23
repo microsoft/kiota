@@ -19,13 +19,13 @@ namespace Kiota.Builder.Refiners {
                 && currentClass.StartBlock is CodeClass.Declaration currentDeclaration) {
                 foreach(var backingStoreUsing in currentDeclaration.Usings.Where(x => "Microsoft.Kiota.Abstractions.Store".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase))) {
                     if(backingStoreUsing?.Declaration != null) {
-                        backingStoreUsing.Name = backingStoreUsing.Name.Substring(1); // removing the "I"
+                        backingStoreUsing.Name = backingStoreUsing.Name[1..]; // removing the "I"
                         backingStoreUsing.Declaration.Name = storeNamespace;
                     }
                 }
                 var backedModelImplements = currentDeclaration.Implements.FirstOrDefault(x => "IBackedModel".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
                 if(backedModelImplements != null)
-                    backedModelImplements.Name = backedModelImplements.Name.Substring(1); //removing the "I"
+                    backedModelImplements.Name = backedModelImplements.Name[1..]; //removing the "I"
             }
             CrawlTree(currentElement, (x) => CorrectCoreTypesForBackingStoreUsings(x, storeNamespace));
         }
@@ -115,28 +115,26 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement));
         }
 
-        protected static void AddDefaultImports(CodeElement current, Tuple<string, string>[] defaultNamespaces, Tuple<string, string>[] defaultNamespacesForModels, Tuple<string, string>[] defaultNamespacesForRequestBuilders) {
+        protected static void AddDefaultImports(CodeElement current, Tuple<string, string>[] defaultNamespaces, Tuple<string, string>[] defaultNamespacesForModels, Tuple<string, string>[] defaultNamespacesForRequestBuilders, Tuple<string, string>[] defaultSymbolsForApiClient) {
             if(current is CodeClass currentClass) {
+                Func<Tuple<string, string>, CodeUsing> usingSelector = x => {
+                                                            var nUsing = new CodeUsing(currentClass) { 
+                                                                Name = x.Item1,
+                                                            };
+                                                            nUsing.Declaration = new CodeType(nUsing) { Name = x.Item2, IsExternal = true };
+                                                            return nUsing;
+                                                        };
                 if(currentClass.IsOfKind(CodeClassKind.Model))
                     currentClass.AddUsing(defaultNamespaces.Union(defaultNamespacesForModels)
-                                            .Select(x => {
-                                                            var nUsing = new CodeUsing(currentClass) { 
-                                                                Name = x.Item1,
-                                                            };
-                                                            nUsing.Declaration = new CodeType(nUsing) { Name = x.Item2, IsExternal = true };
-                                                            return nUsing;
-                                                        }).ToArray());
-                if(currentClass.IsOfKind(CodeClassKind.RequestBuilder))
-                    currentClass.AddUsing(defaultNamespaces.Union(defaultNamespacesForRequestBuilders)
-                                            .Select(x => {
-                                                            var nUsing = new CodeUsing(currentClass) { 
-                                                                Name = x.Item1,
-                                                            };
-                                                            nUsing.Declaration = new CodeType(nUsing) { Name = x.Item2, IsExternal = true };
-                                                            return nUsing;
-                                                        }).ToArray());
+                                            .Select(usingSelector).ToArray());
+                if(currentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
+                    var usingsToAdd = defaultNamespaces.Union(defaultNamespacesForRequestBuilders);
+                    if(currentClass.GetChildElements(true).OfType<CodeMethod>().Any(x => x.IsOfKind(CodeMethodKind.ClientConstructor)))
+                        usingsToAdd = usingsToAdd.Union(defaultSymbolsForApiClient);
+                    currentClass.AddUsing(usingsToAdd.Select(usingSelector).ToArray());
+                }
             }
-            CrawlTree(current, c => AddDefaultImports(c, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders));
+            CrawlTree(current, c => AddDefaultImports(c, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders, defaultSymbolsForApiClient));
         }
         private const string binaryType = "binary";
         protected static void ReplaceBinaryByNativeType(CodeElement currentElement, string symbol, string ns, bool addDeclaration = false) {
@@ -286,7 +284,7 @@ namespace Kiota.Builder.Refiners {
         }
         internal void AddInnerClasses(CodeElement current) {
             if(current is CodeClass currentClass) {
-                foreach(var parameter in currentClass.GetChildElements(true).OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf && x.ParameterKind == CodeParameterKind.QueryParameter)) 
+                foreach(var parameter in currentClass.GetChildElements(true).OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.QueryParameter))) 
                     foreach(var returnType in parameter.Type.AllTypes) {
                         var innerClass = returnType.TypeDefinition as CodeClass;
                         if(innerClass == null)
@@ -320,7 +318,7 @@ namespace Kiota.Builder.Refiners {
                                     .Distinct();
                 var methodsParametersTypes = methods
                                     .SelectMany(x => x.Parameters)
-                                    .Where(x => x.ParameterKind == CodeParameterKind.Custom)
+                                    .Where(x => x.IsOfKind(CodeParameterKind.Custom))
                                     .Select(x => x.Type)
                                     .Distinct();
                 var indexerTypes = currentClass
