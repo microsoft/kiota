@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace Kiota.Builder
 {
@@ -24,6 +25,9 @@ namespace Kiota.Builder
         public CodeTypeBase Type {get;set;}
         public bool Optional {get;set;}= false;
         public string Description {get; set;}
+        public bool IsOfKind(params CodeParameterKind[] kinds) {
+            return kinds?.Contains(ParameterKind) ?? false;
+        }
         public object Clone()
         {
             return new CodeParameter(Parent) {
