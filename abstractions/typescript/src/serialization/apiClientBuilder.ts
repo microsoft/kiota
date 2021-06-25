@@ -6,7 +6,8 @@ import { SerializationWriterFactoryRegistry } from "./serializationWriterFactory
 
 export async function registerDefaultSerializers(moduleName: string): Promise<void> {
     const module = await import(moduleName);
-    console.log(module); //TODO scan for interfaces implementations
+    const serializer = new module() as SerializationWriterFactory;
+    console.log(serializer); //TODO scan for interfaces implementations
 };
 export function enableBackingStore(original: SerializationWriterFactory): SerializationWriterFactory {
     let result: SerializationWriterFactory | undefined = undefined;
