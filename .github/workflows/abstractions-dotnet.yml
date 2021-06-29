@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2.3.4
       - name: Setup .NET
-        uses: actions/setup-dotnet@v1.8.0
+        uses: actions/setup-dotnet@v1.8.1
         with:
           dotnet-version: 5.0.x
       - name: Restore dependencies
@@ -48,7 +48,7 @@ jobs:
     needs: [build]
     steps:
       - name: Setup .NET
-        uses: actions/setup-dotnet@v1.8.0
+        uses: actions/setup-dotnet@v1.8.1
         with:
           dotnet-version: 5.0.x
       - uses: actions/download-artifact@v2
