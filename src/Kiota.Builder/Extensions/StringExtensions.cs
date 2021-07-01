@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using System.Text;
+
 
 namespace Kiota.Builder.Extensions {
     public static class StringExtensions {
@@ -28,10 +30,24 @@ namespace Kiota.Builder.Extensions {
         {
             if(string.IsNullOrEmpty(name)) return name;
             var chunks = name.Split("-", StringSplitOptions.RemoveEmptyEntries);
-            var identifier = String.Join("_", chunks.Take(1)
+            var identifier = String.Join("", chunks.Take(1)
                                                   .Union(chunks.Skip(1)
                                                                 .Select(s => ToFirstCharacterLowerCase(s))));
-            return identifier;
+            if(identifier.Length < 2) {
+                return identifier;
+            }
+            var sb = new StringBuilder();
+            sb.Append(char.ToLowerInvariant(identifier[0]));
+            for(int i = 1; i < identifier.Length; ++i) {
+                char c = identifier[i];
+                if(char.IsUpper(c)) {
+                    sb.Append('_');
+                    sb.Append(char.ToLowerInvariant(c));
+                } else {
+                    sb.Append(c);
+                }
+            }
+            return sb.ToString();
         }
     }
 }
