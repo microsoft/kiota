@@ -1,6 +1,7 @@
 {
    "version": "0.2.0",
    "configurations": [
+        
         {
             "name": "Launch TypeScript",
             "type": "coreclr",
@@ -51,6 +52,24 @@
                  "${workspaceFolder}/samples/msgraph-mail/dotnet",
                  "-n",
                  "Graphdotnetv4" ],
+            "cwd": "${workspaceFolder}/src/kiota",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Launch Ruby",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/kiota/bin/Debug/net5.0/kiota.dll",
+            "args": ["--openapi",
+                 "${workspaceFolder}/../msgraph-sdk-powershell/openApiDocs/v1.0/mail.yml",
+                 "--language",
+                 "ruby",
+                 "-o",
+                 "${workspaceFolder}/samples/msgraph-mail/ruby",
+                 "-n",
+                 "graphrubyv4.utilities" ],
             "cwd": "${workspaceFolder}/src/kiota",
             "console": "internalConsole",
             "stopAtEntry": false
