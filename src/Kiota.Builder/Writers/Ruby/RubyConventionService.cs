@@ -7,19 +7,18 @@ namespace Kiota.Builder.Writers.Ruby {
     {
         public string SerializerFactoryPropertyName => "serializer_factory";
         // TODO: no types in ruby
-        private const string _streamTypeName = "stdin";
-        public string StreamTypeName => _streamTypeName;
+        public string StreamTypeName => "stdin";
         private const string _voidTypeName = "nil";
         public string VoidTypeName => _voidTypeName;
-        public string DocCommentPrefix => " # ";
+        public string DocCommentPrefix => "## ";
         public string PathSegmentPropertyName => "path_segment";
         public string CurrentPathPropertyName => "current_path";
         public string HttpCorePropertyName => "http_core";
         // TODO: No types in ruby
         //internal HashSet<string> PrimitiveTypes = new() {"String", "Boolean", "Integer", "Float", "Long", "Guid", "OffsetDateTime", _voidTypeName, _streamTypeName };
         public string ParseNodeInterfaceName => "parse_node";
-        internal string DocCommentStart = "=begin";
-        internal string DocCommentEnd = " =end";
+        internal string DocCommentStart = "## ";
+        internal string DocCommentEnd = "## ";
         public string GetAccessModifier(AccessModifier access)
         {
             return (access) switch {
@@ -31,28 +30,32 @@ namespace Kiota.Builder.Writers.Ruby {
 
         public string GetParameterSignature(CodeParameter parameter)
         {
-            return $"@{parameter.Name}";
+            return $"{parameter.Name}";
         }
 
         
         public string GetTypeString(CodeTypeBase code)
         {
-            // TODO: NO types
+            // // TODO: NO types
             throw new InvalidOperationException($"No ruby types");
         }
 
         public string TranslateType(string typeName)
         {
-            // TODO: NO types
-            return typeName;
+            // // TODO: NO types
+            // return typeName;
+            return string.Empty;
         }
 
         public void WriteShortDescription(string description, LanguageWriter writer)
         {
-            //TODO
+            if(!string.IsNullOrEmpty(description))
+                writer.WriteLine($"{DocCommentPrefix}");
+                writer.WriteLine($"# {description}");
         }
+        internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "#");
         internal void AddRequestBuilderBody(string returnType, LanguageWriter writer, string suffix = default) {
-            // TODO
+            // TODO: 
         }
     }
 }
