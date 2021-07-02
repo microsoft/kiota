@@ -47,7 +47,12 @@ namespace Kiota.Builder.Extensions {
                     sb.Append(c);
                 }
             }
-            return sb.ToString();
+            var output = sb.ToString();
+            int index = output.IndexOf("<");
+            if (index >= 0)
+                output = output.Substring(0, index);
+            
+            return output.ToString();
         }
     }
 }
