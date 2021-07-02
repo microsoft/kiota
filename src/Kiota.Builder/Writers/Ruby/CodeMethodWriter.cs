@@ -117,25 +117,13 @@ namespace Kiota.Builder.Writers.Ruby {
 
         private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
-            
             writer.WriteLines("request_info = RequestInfo.new()",
                                 $"request_info.URI = {conventions.CurrentPathPropertyName} + {conventions.PathSegmentPropertyName}",
                                 $"request_info.http_method = :{codeElement.HttpMethod?.ToString().ToUpperInvariant()}");
             if(headersParam != null)
                 writer.WriteLine($"request_info.set_headers_from_raw_object(h)");
-
-                
             if(queryStringParam != null)
                 writer.WriteLines($"request_info.set_query_string_parameters_from_raw_object(q)");
-
-                // var httpMethodPrefix = codeElement.HttpMethod.ToString().ToFirstCharacterUpperCase();
-                // writer.WriteLine($"if ({queryStringParam.Name.ToSnakeCase()} != null)");
-                // writer.IncreaseIndent();
-                // writer.WriteLines($"q_params = {httpMethodPrefix}_query_parameters.new()",
-                //             $"{queryStringParam.Name.ToSnakeCase()}.accept(q_params)",
-                //             "q_params.add_query_parameters(request_info.query_parameters)");
-                // writer.DecreaseIndent();
-                // writer.WriteLine("end");
             if(requestBodyParam != null) {
                 if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"request_info.set_stream_content({requestBodyParam.Name})");
