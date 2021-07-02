@@ -5,6 +5,8 @@ namespace  Kiota.Builder.Writers.Ruby {
     public class CodeClassDeclarationWriter : BaseElementWriter<CodeClass.Declaration, RubyConventionService>
     {
         public CodeClassDeclarationWriter(RubyConventionService conventionService) : base(conventionService){}
+        private static string NormalizeNameSpaceName(string original) => 
+        original.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z,y) => z + "::" + y);
         
         public override void WriteCodeElement(CodeClass.Declaration codeElement, LanguageWriter writer)
         {
@@ -22,7 +24,7 @@ namespace  Kiota.Builder.Writers.Ruby {
                 writer.WriteLine($"require_relative '{codeUsing.Key.ToSnakeCase()}'");
             writer.WriteLine();
             if(codeElement?.Parent?.Parent is CodeNamespace) {
-                writer.WriteLine($"module {codeElement.Parent.Parent.Name.ToCamelCase()}");
+                writer.WriteLine($"module {NormalizeNameSpaceName(codeElement.Parent.Parent.Name)}");
                 writer.IncreaseIndent();
             }
             var derivation = (codeElement.Inherits == null ? string.Empty : $" < {codeElement.Inherits.Name.ToFirstCharacterUpperCase()}");
