@@ -78,7 +78,9 @@ namespace Kiota.Builder.Writers.TypeScript {
             var serializationFactoryParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.SerializationFactory));
             var serializationFactoryPropertyName = $"this.{serializationFactoryProperty.NamePrefix}{serializationFactoryProperty.Name.ToFirstCharacterLowerCase()}";
             writer.WriteLine($"{httpCoreProperty.Name.ToFirstCharacterLowerCase()} = {httpCoreParameter.Name};");
-            writer.WriteLine("Promise.all([" + method.SerializerModules.Select(x => $"registerDefaultSerializers(\"{x}\")").Aggregate((x, y) => $"{x}, {y}") + "]).then(() => {");
+            var serializationModules = method.SerializerModules == null ? string.Empty : 
+                                        method.SerializerModules.Select(x => $"registerDefaultSerializers(\"{x}\")").Aggregate((x, y) => $"{x}, {y}");
+            writer.WriteLine($"Promise.all([{serializationModules}]).then(() => {{");
             writer.IncreaseIndent();
             writer.WriteLines($"if(!{serializationFactoryParameter.Name} && SerializationWriterFactoryRegistry.defaultInstance.contentTypeAssociatedFactories.size === 0) throw new Error(\"The Serialization Writer factory has not been initialized for this client.\");",
                             $"if(!{serializationFactoryParameter.Name} && ParseNodeFactoryRegistry.defaultInstance.contentTypeAssociatedFactories.size === 0) throw new Error(\"The Parse Node factory has not been initialized for this client.\");",
