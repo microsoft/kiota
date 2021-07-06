@@ -67,8 +67,9 @@ namespace Kiota.Builder.Writers.CSharp {
             var serializationFactoryParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.SerializationFactory));
             var serializationFactoryPropertyName = serializationFactoryProperty.Name.ToFirstCharacterUpperCase();
             writer.WriteLine($"{httpCoreProperty.Name.ToFirstCharacterUpperCase()} = {httpCoreParameter.Name};");
-            foreach(var serializationModule in method.SerializerModules)
-                writer.WriteLine($"ApiClientBuilder.RegisterDefaultSerializers(\"{serializationModule}\");");
+            if(method.SerializerModules != null)
+                foreach(var serializationModule in method.SerializerModules)
+                    writer.WriteLine($"ApiClientBuilder.RegisterDefaultSerializers(\"{serializationModule}\");");
             writer.WriteLines($"if({serializationFactoryParameter.Name} == default && !SerializationWriterFactoryRegistry.DefaultInstance.ContentTypeAssociatedFactories.Any()) throw new InvalidOperationException(\"The Serialization Writer factory has not been initialized for this client.\");",
                             $"if({serializationFactoryParameter.Name} == default && !ParseNodeFactoryRegistry.DefaultInstance.ContentTypeAssociatedFactories.Any()) throw new InvalidOperationException(\"The Parse Node factory has not been initialized for this client.\");",
                             $"{serializationFactoryPropertyName} = {serializationFactoryParameter.Name} ?? SerializationWriterFactoryRegistry.DefaultInstance;");
