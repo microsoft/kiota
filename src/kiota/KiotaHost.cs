@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.CommandLine;
-using System.CommandLine.Invocation;
+using System.CommandLine.Binding;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -52,15 +52,14 @@ namespace Kiota {
                 namespaceOption,
                 serializerOption,
             };
-            command.Handler = CommandHandler.Create<string, GenerationLanguage?, string, string, string, LogLevel, string, List<string>>(
-                async (output, language, openapi, backingstore, classname, loglevel, namespacename, serializer) =>
-                await HandleCommandCall(output, language, openapi, backingstore, classname, loglevel, namespacename, serializer));
+            command.Handler = HandlerDescriptor.FromDelegate(new HandleCommandCallDel(HandleCommandCall)).GetCommandHandler();
             return command;
         }
         private void AssignIfNotNullOrEmpty(string input, Action<GenerationConfiguration, string> assignment) {
             if (!string.IsNullOrEmpty(input))
                 assignment.Invoke(Configuration, input);
         }
+        private delegate Task HandleCommandCallDel(string output, GenerationLanguage? language, string openapi, string backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer);
         private async Task HandleCommandCall(string output, GenerationLanguage? language, string openapi, string backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer) {
             AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
             AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
