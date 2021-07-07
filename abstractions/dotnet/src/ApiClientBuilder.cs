@@ -6,37 +6,17 @@ using Microsoft.Kiota.Abstractions.Store;
 
 namespace Microsoft.Kiota.Abstractions {
     public static class ApiClientBuilder {
-        /// <summary>
-        /// loads an assembly by its given name
-        /// </summary>
-        private static Assembly LoadAssembly(string assemblyName) {
-            if(string.IsNullOrEmpty(assemblyName))
-                throw new ArgumentNullException(nameof(assemblyName));
-            return Assembly.Load(assemblyName);
+        public static void RegisterDefaultSerializers<T>() where T: ISerializationWriterFactory, new() {
+            var serializationWriterFactory = new T();
+            SerializationWriterFactoryRegistry.DefaultInstance
+                                            .ContentTypeAssociatedFactories
+                                            .TryAdd(serializationWriterFactory.ValidContentType, serializationWriterFactory);
         }
-        public static void RegisterDefaultSerializers(string assemblyName) {
-            var assembly = LoadAssembly(assemblyName);
-            LoadClassesFromAssembly<ISerializationWriterFactory>(assembly, x => {
-                SerializationWriterFactoryRegistry.DefaultInstance
-                                                .ContentTypeAssociatedFactories
-                                                .TryAdd(x.ValidContentType, x);
-            });
-        }
-        public static void RegisterDefaultDeserializers(string assemblyName) {
-            var assembly = LoadAssembly(assemblyName);
-            LoadClassesFromAssembly<IParseNodeFactory>(assembly, x => {
-                ParseNodeFactoryRegistry.DefaultInstance
-                                        .ContentTypeAssociatedFactories
-                                        .TryAdd(x.ValidContentType, x);
-            });
-        }
-        private static void LoadClassesFromAssembly<T>(Assembly assembly, Action<T> register) {
-            var lookupType = typeof(T);
-            foreach(var implementation in assembly.GetTypes().Where(x => lookupType.IsAssignableFrom(x) && !x.IsAbstract && x.IsClass)) {
-                var constructor = implementation.GetConstructor(Array.Empty<Type>());
-                var instance = (T)constructor.Invoke(Array.Empty<Object>());
-                register.Invoke(instance);
-            }
+        public static void RegisterDefaultDeserializers<T>() where T: IParseNodeFactory, new() {
+            var deserializerFactory = new T();
+            ParseNodeFactoryRegistry.DefaultInstance
+                                    .ContentTypeAssociatedFactories
+                                    .TryAdd(deserializerFactory.ValidContentType, deserializerFactory);
         }
         public static ISerializationWriterFactory EnableBackingStore(ISerializationWriterFactory original) {
             ISerializationWriterFactory result = null;
