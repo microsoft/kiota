@@ -75,10 +75,10 @@ namespace Kiota.Builder.Writers.CSharp {
             if(_usesBackingStore)
                 writer.WriteLine($"{serializationFactoryPropertyName} = ApiClientBuilder.EnableBackingStore({serializationFactoryPropertyName});");
         }
-        private static void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, string methodName) {
-            if(serializationModules == null) return;
-            foreach(var serializationModule in serializationModules)
-                writer.WriteLine($"ApiClientBuilder.{methodName}(\"{serializationModule}\");");
+        private static void WriteSerializationRegistration(List<string> serializationClassNames, LanguageWriter writer, string methodName) {
+            if(serializationClassNames != null)
+                foreach(var serializationClassName in serializationClassNames)
+                    writer.WriteLine($"ApiClientBuilder.{methodName}<{serializationClassName}>();");
         }
         private static void WriteConstructorBody(CodeClass parentClass, LanguageWriter writer) {
             foreach(var propWithDefault in parentClass

@@ -39,10 +39,10 @@ namespace Kiota {
             var backingStoreOption = new Option("--backing-store", "The fully qualified name for the backing store class to use.") {Argument = new Argument<string>()};
             backingStoreOption.AddAlias("-b");
 
-            var serializerOption = new Option<List<String>>("--serializer", "The module name to search serializers in.") { Argument = new Argument<List<string>>(() => new List<string> {"Microsoft.Kiota.Serialization.Json"}) };
+            var serializerOption = new Option<List<String>>("--serializer", "The fully qualified class names for serializers.") { Argument = new Argument<List<string>>(() => new List<string> {"Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory"}) };
             serializerOption.AddAlias("-s");
 
-            var deserializerOption = new Option<List<String>>("--deserializer", "The module name to search deserializers in.") { Argument = new Argument<List<string>>(() => new List<string> {"Microsoft.Kiota.Serialization.Json"}) };
+            var deserializerOption = new Option<List<String>>("--deserializer", "The fully qualified class names for deserializers.") { Argument = new Argument<List<string>>(() => new List<string> {"Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory"}) };
             deserializerOption.AddAlias("--ds");
 
             var command = new RootCommand {
