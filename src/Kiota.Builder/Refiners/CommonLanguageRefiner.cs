@@ -12,6 +12,25 @@ namespace Kiota.Builder.Refiners {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
         public abstract void Refine(CodeNamespace generatedCode);
+        protected void AddSerializationModulesImport(CodeElement generatedCode) {
+            if(generatedCode is CodeMethod currentMethod &&
+                currentMethod.IsOfKind(CodeMethodKind.ClientConstructor) &&
+                currentMethod.Parent is CodeClass currentClass &&
+                currentClass.StartBlock is CodeClass.Declaration declaration) {
+                    var cumulatedSymbols = currentMethod.DeserializerModules.Union(currentMethod.SerializerModules).ToList();
+                    currentMethod.DeserializerModules = currentMethod.DeserializerModules.Select(x => x.Split('.').Last()).ToList();
+                    currentMethod.SerializerModules = currentMethod.SerializerModules.Select(x => x.Split('.').Last()).ToList();
+                    declaration.Usings.AddRange(cumulatedSymbols.Select(x => new CodeUsing(currentClass){
+                        Name = x.Split('.').Last(),
+                        Declaration = new CodeType(currentClass) {
+                            Name = x.Split('.').SkipLast(1).Aggregate((x, y) => $"{x}.{y}"),
+                            IsExternal = true,
+                        }
+                    }));
+                    return;
+                }
+            CrawlTree(generatedCode, AddSerializationModulesImport);
+        }
         public void ReplaceDefaultSerializationModules(CodeElement generatedCode, params string[] moduleNames) {
             if(generatedCode is CodeMethod currentMethod &&
                 currentMethod.IsOfKind(CodeMethodKind.ClientConstructor) &&

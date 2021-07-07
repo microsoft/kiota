@@ -1,14 +1,12 @@
 import { BackingStoreParseNodeFactory, BackingStoreSerializationWriterProxyFactory } from "./store";
 import { ParseNodeFactory, ParseNodeFactoryRegistry, SerializationWriterFactory, SerializationWriterFactoryRegistry } from "./serialization";
 
-export async function registerDefaultSerializers(moduleName: string): Promise<void> {
-    const module = await import(moduleName);
-    const serializer = new module() as SerializationWriterFactory;
+export function registerDefaultSerializers(type: new() => SerializationWriterFactory): void {
+    const serializer = new type();
     SerializationWriterFactoryRegistry.defaultInstance.contentTypeAssociatedFactories.set(serializer.getValidContentType(), serializer);
 }
-export async function registerDefaultDeserializers(moduleName: string): Promise<void> {
-    const module = await import(moduleName);
-    const deserializer = new module() as ParseNodeFactory;
+export function registerDefaultDeserializers(type: new() => ParseNodeFactory): void {
+    const deserializer = new type();
     ParseNodeFactoryRegistry.defaultInstance.contentTypeAssociatedFactories.set(deserializer.getValidContentType(), deserializer);
 }
 export function enableBackingStore(original: SerializationWriterFactory): SerializationWriterFactory {
