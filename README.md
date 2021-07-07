@@ -120,13 +120,13 @@ Kiota accepts the following parameters during the generation:
 | ---- | --------- | -------- | ----------- | --------------- | ------------- |
 | backing-store | b | no | The fully qualified name for the backing store class to use. | A fully qualified class name like `Microsoft.Kiota.Abstractions.Store.InMemoryBackingStore` (CSharp), `com.microsoft.kiota.store.InMemoryBackingStore` (Java), `@microsoft/kiota-abstractions.InMemoryBackingStore` (TypeScript) | Empty string |
 | class-name | c | no | The class name to use the for main entry point | A valid class name according to the target language specification. | ApiClient |
-| deserializer | ds | no | The module name to search deserializers in. | This parameter can be passed multiple values. A module name like `Microsoft.Kiota.Serialization.Json` that contains implementations for `IParseNodeFactory`. | `Microsoft.Kiota.Serialization.Json` (csharp), `@microsoft/kiota-serialization-json/JsonSerializationWriterFactory` (typescript) |
+| deserializer | ds | no | The module name to search deserializers in. | This parameter can be passed multiple values. A module name like `Microsoft.Kiota.Serialization.Json` that contains implementations for `IParseNodeFactory`. | `Microsoft.Kiota.Serialization.Json` (csharp), `@microsoft/kiota-serialization-json.JsonSerializationWriterFactory` (typescript) |
 | language | l | no | The programming language to generate the SDK in. | csharp, java, or typescript | csharp |
 | loglevel | ll | no | The log level to use when logging events to the main output. | Microsoft.Extensions.Logging.LogLevel values | Warning |
 | namespace-name | n | no | The namespace name to use the for main entry point. | Valid namespace/module name according to target language specifications. | ApiClient |
 | openapi | d | no | URI or Path to the OpenAPI description (JSON or YAML) to use to generate the SDK. | A valid URI pointing to an HTTP document or a file on the local file-system. | ./openapi.yml |
 | output | o | no | The output path of the folder the code will be generated in. The folders will be created during the generation if they don't already exist. | A valid path to a folder. | ./output |
-| serializer | s | no | The module name to search serializers in. | This parameter can be passed multiple values. A module name like `Microsoft.Kiota.Serialization.Json` that contains implementations for `ISerializationWriterFactory`. | `Microsoft.Kiota.Serialization.Json` (csharp), `@microsoft/kiota-serialization-json/JsonParseNodeFactory` (typescript) |
+| serializer | s | no | The module name to search serializers in. | This parameter can be passed multiple values. A module name like `Microsoft.Kiota.Serialization.Json` that contains implementations for `ISerializationWriterFactory`. | `Microsoft.Kiota.Serialization.Json` (csharp), `@microsoft/kiota-serialization-json.JsonParseNodeFactory` (typescript) |
 
 ### Debugging
 

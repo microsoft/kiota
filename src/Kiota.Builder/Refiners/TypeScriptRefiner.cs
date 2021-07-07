@@ -23,27 +23,9 @@ namespace Kiota.Builder.Refiners {
                                                 }, _configuration.UsesBackingStore, false);
             AddConstructorsForDefaultValues(generatedCode, true);
             ReplaceRelativeImportsByImportPath(generatedCode, '.');
-            ReplaceDefaultSerializationModules(generatedCode, "@microsoft/kiota-serialization-json/JsonSerializationWriterFactory");
-            ReplaceDefaultDeserializationModules(generatedCode, "@microsoft/kiota-serialization-json/JsonParseNodeFactory");
-            AddRegistrationMemoize(generatedCode);
-        }
-        private static void AddRegistrationMemoize(CodeElement codeElement) {
-            if(codeElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder)
-            && currentClass.GetChildElements(true).OfType<CodeMethod>().Any(x => x.IsOfKind(CodeMethodKind.ClientConstructor))) {
-                var property = currentClass.AddProperty(new CodeProperty(currentClass) {
-                    Name = "registrationMemoize",
-                    ReadOnly = true,
-                    Access = AccessModifier.Public,
-                    PropertyKind = CodePropertyKind.RegistrationMemoize,
-                    Description = "Promise to await/call then on for client initialization to be completed."
-                }).First();
-                property.Type = new CodeType(property) {
-                    Name = "Promise<void>",
-                    IsNullable = false,
-                };
-                return;
-            }
-            CrawlTree(codeElement, AddRegistrationMemoize);
+            ReplaceDefaultSerializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory");
+            ReplaceDefaultDeserializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonParseNodeFactory");
+            AddSerializationModulesImport(generatedCode);
         }
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
