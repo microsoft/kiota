@@ -7,7 +7,12 @@ import { SerializationWriterFactoryRegistry } from "./serializationWriterFactory
 export async function registerDefaultSerializers(moduleName: string): Promise<void> {
     const module = await import(moduleName);
     const serializer = new module() as SerializationWriterFactory;
-    console.log(serializer); //TODO scan for interfaces implementations
+    SerializationWriterFactoryRegistry.defaultInstance.contentTypeAssociatedFactories.set(serializer.getValidContentType(), serializer);
+};
+export async function registerDefaultDeserializers(moduleName: string): Promise<void> {
+    const module = await import(moduleName);
+    const deserializer = new module() as ParseNodeFactory;
+    ParseNodeFactoryRegistry.defaultInstance.contentTypeAssociatedFactories.set(deserializer.getValidContentType(), deserializer);
 };
 export function enableBackingStore(original: SerializationWriterFactory): SerializationWriterFactory {
     let result: SerializationWriterFactory | undefined = undefined;

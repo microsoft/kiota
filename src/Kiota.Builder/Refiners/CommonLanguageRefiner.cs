@@ -12,6 +12,28 @@ namespace Kiota.Builder.Refiners {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
         public abstract void Refine(CodeNamespace generatedCode);
+        public void ReplaceDefaultSerializationModules(CodeElement generatedCode, params string[] moduleNames) {
+            if(generatedCode is CodeMethod currentMethod &&
+                currentMethod.IsOfKind(CodeMethodKind.ClientConstructor) &&
+                currentMethod.SerializerModules.Count == 1 &&
+                currentMethod.SerializerModules.Any(x => "Microsoft.Kiota.Serialization.Json".Equals(x, StringComparison.OrdinalIgnoreCase))) {
+                currentMethod.SerializerModules.Clear();
+                currentMethod.SerializerModules.AddRange(moduleNames);
+                return;
+            }
+            CrawlTree(generatedCode, (x) => ReplaceDefaultSerializationModules(x, moduleNames));
+        }
+        public void ReplaceDefaultDeserializationModules(CodeElement generatedCode, params string[] moduleNames) {
+            if(generatedCode is CodeMethod currentMethod &&
+                currentMethod.IsOfKind(CodeMethodKind.ClientConstructor) &&
+                currentMethod.DeserializerModules.Count == 1 &&
+                currentMethod.DeserializerModules.Any(x => "Microsoft.Kiota.Serialization.Json".Equals(x, StringComparison.OrdinalIgnoreCase))) {
+                currentMethod.DeserializerModules.Clear();
+                currentMethod.DeserializerModules.AddRange(moduleNames);
+                return;
+            }
+            CrawlTree(generatedCode, (x) => ReplaceDefaultDeserializationModules(x, moduleNames));
+        }
         internal const string GetterPrefix = "get-";
         internal const string SetterPrefix = "set-";
         protected static void CorrectCoreTypesForBackingStoreUsings(CodeElement currentElement, string storeNamespace) {

@@ -12,7 +12,8 @@ namespace Kiota.Builder
         PathSegment,
         CurrentPath,
         HttpCore,
-        SerializerFactory
+        SerializerFactory,
+        RegistrationMemoize
     }
 
     public class CodeProperty : CodeTerminal, IDocumentedElement
