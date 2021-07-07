@@ -78,9 +78,9 @@ namespace Kiota.Builder.Writers.TypeScript {
             var serializationFactoryParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.SerializationFactory));
             var serializationFactoryPropertyName = $"this.{serializationFactoryProperty.NamePrefix}{serializationFactoryProperty.Name.ToFirstCharacterLowerCase()}";
             writer.WriteLine($"{httpCoreProperty.Name.ToFirstCharacterLowerCase()} = {httpCoreParameter.Name};");
-            var serializationModules = method.SerializerModules == null ? string.Empty : 
-                                        method.SerializerModules.Select(x => $"registerDefaultSerializers(\"{x}\")").Aggregate((x, y) => $"{x}, {y}");
-            writer.WriteLine($"Promise.all([{serializationModules}]).then(() => {{");
+            var serializationModules = WriteSerializationRegistration(method.SerializerModules, "registerDefaultSerializers");
+            var deserializationModules = WriteSerializationRegistration(method.DeserializerModules, "registerDefaultDeserializers");
+            writer.WriteLine($"this.registrationMemoize = {serializationModules}.then(() => {deserializationModules}).then(() => {{");
             writer.IncreaseIndent();
             writer.WriteLines($"if(!{serializationFactoryParameter.Name} && SerializationWriterFactoryRegistry.defaultInstance.contentTypeAssociatedFactories.size === 0) throw new Error(\"The Serialization Writer factory has not been initialized for this client.\");",
                             $"if(!{serializationFactoryParameter.Name} && ParseNodeFactoryRegistry.defaultInstance.contentTypeAssociatedFactories.size === 0) throw new Error(\"The Parse Node factory has not been initialized for this client.\");",
@@ -89,6 +89,10 @@ namespace Kiota.Builder.Writers.TypeScript {
                 writer.WriteLine($"{serializationFactoryPropertyName} = enableBackingStore({serializationFactoryPropertyName});");
             writer.DecreaseIndent();
             writer.WriteLine("});");
+        }
+        private static string WriteSerializationRegistration(List<string> serializationModules, string methodName) {
+            if(serializationModules == null) return string.Empty;
+            return "Promise.all([" + serializationModules.Select(x => $"{methodName}(\"{x}\")").Aggregate((x, y) => $"{x}, {y}") + "])";
         }
         private static void WriteConstructorBody(CodeClass parentClass, LanguageWriter writer, bool inherits) {
             if(inherits)
