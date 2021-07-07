@@ -42,6 +42,9 @@ namespace Kiota {
             var serializerOption = new Option<List<String>>("--serializer", "The module name to search serializers in.") { Argument = new Argument<List<string>>(() => new List<string> {"Microsoft.Kiota.Serialization.Json"}) };
             serializerOption.AddAlias("-s");
 
+            var deserializerOption = new Option<List<String>>("--deserializer", "The module name to search deserializers in.") { Argument = new Argument<List<string>>(() => new List<string> {"Microsoft.Kiota.Serialization.Json"}) };
+            deserializerOption.AddAlias("--ds");
+
             var command = new RootCommand {
                 outputOption,
                 languageOption,
@@ -51,6 +54,7 @@ namespace Kiota {
                 logLevelOption,
                 namespaceOption,
                 serializerOption,
+                deserializerOption,
             };
             command.Handler = HandlerDescriptor.FromDelegate(new HandleCommandCallDel(HandleCommandCall)).GetCommandHandler();
             return command;
@@ -59,8 +63,8 @@ namespace Kiota {
             if (!string.IsNullOrEmpty(input))
                 assignment.Invoke(Configuration, input);
         }
-        private delegate Task HandleCommandCallDel(string output, GenerationLanguage? language, string openapi, string backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer);
-        private async Task HandleCommandCall(string output, GenerationLanguage? language, string openapi, string backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer) {
+        private delegate Task HandleCommandCallDel(string output, GenerationLanguage? language, string openapi, string backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer, List<string> deserializer);
+        private async Task HandleCommandCall(string output, GenerationLanguage? language, string openapi, string backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer, List<string> deserializer) {
             AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
             AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
             AssignIfNotNullOrEmpty(classname, (c, s) => c.ClientClassName = s);
@@ -70,6 +74,8 @@ namespace Kiota {
                 Configuration.Language = language.Value;
             if(serializer?.Any() ?? false)
                 Configuration.Serializers.AddRange(serializer.Select(x => x.TrimQuotes()));
+            if(deserializer?.Any() ?? false)
+                Configuration.Deserializers.AddRange(deserializer.Select(x => x.TrimQuotes()));
 
             #if DEBUG
             loglevel = loglevel > LogLevel.Debug ? LogLevel.Debug : loglevel;

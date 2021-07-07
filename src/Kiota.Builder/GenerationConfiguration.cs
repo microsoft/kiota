@@ -15,5 +15,6 @@ namespace Kiota.Builder {
         public bool UsesBackingStore {
             get => !string.IsNullOrEmpty(BackingStore);
         }
+        public List<string> Deserializers { get; set; } = new();
     }
 }

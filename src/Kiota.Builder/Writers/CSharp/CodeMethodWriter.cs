@@ -67,14 +67,18 @@ namespace Kiota.Builder.Writers.CSharp {
             var serializationFactoryParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.SerializationFactory));
             var serializationFactoryPropertyName = serializationFactoryProperty.Name.ToFirstCharacterUpperCase();
             writer.WriteLine($"{httpCoreProperty.Name.ToFirstCharacterUpperCase()} = {httpCoreParameter.Name};");
-            if(method.SerializerModules != null)
-                foreach(var serializationModule in method.SerializerModules)
-                    writer.WriteLine($"ApiClientBuilder.RegisterDefaultSerializers(\"{serializationModule}\");");
+            WriteSerializationRegistration(method.SerializerModules, writer, "RegisterDefaultSerializers");
+            WriteSerializationRegistration(method.DeserializerModules, writer, "RegisterDefaultDeSerializers");
             writer.WriteLines($"if({serializationFactoryParameter.Name} == default && !SerializationWriterFactoryRegistry.DefaultInstance.ContentTypeAssociatedFactories.Any()) throw new InvalidOperationException(\"The Serialization Writer factory has not been initialized for this client.\");",
                             $"if({serializationFactoryParameter.Name} == default && !ParseNodeFactoryRegistry.DefaultInstance.ContentTypeAssociatedFactories.Any()) throw new InvalidOperationException(\"The Parse Node factory has not been initialized for this client.\");",
                             $"{serializationFactoryPropertyName} = {serializationFactoryParameter.Name} ?? SerializationWriterFactoryRegistry.DefaultInstance;");
             if(_usesBackingStore)
                 writer.WriteLine($"{serializationFactoryPropertyName} = ApiClientBuilder.EnableBackingStore({serializationFactoryPropertyName});");
+        }
+        private static void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, string methodName) {
+            if(serializationModules == null) return;
+            foreach(var serializationModule in serializationModules)
+                writer.WriteLine($"ApiClientBuilder.{methodName}(\"{serializationModule}\");");
         }
         private static void WriteConstructorBody(CodeClass parentClass, LanguageWriter writer) {
             foreach(var propWithDefault in parentClass
