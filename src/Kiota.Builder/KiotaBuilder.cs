@@ -221,7 +221,8 @@ namespace Kiota.Builder
                 Description = "Instantiates a new Api client and sets the default values.",
                 IsStatic = false,
                 MethodKind = CodeMethodKind.ClientConstructor,
-                SerializerModules = config.Serializers
+                SerializerModules = config.Serializers,
+                DeserializerModules = config.Deserializers,
             }).First();
             constructor.ReturnType = new CodeType(constructor) { Name = voidType, IsExternal = true };
             var httpCoreParameter = new CodeParameter(constructor) {

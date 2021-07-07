@@ -6,16 +6,24 @@ using Microsoft.Kiota.Abstractions.Store;
 
 namespace Microsoft.Kiota.Abstractions {
     public static class ApiClientBuilder {
-        public static void RegisterDefaultSerializers(string assemblyName) {
+        /// <summary>
+        /// loads an assembly by its given name
+        /// </summary>
+        private static Assembly LoadAssembly(string assemblyName) {
             if(string.IsNullOrEmpty(assemblyName))
                 throw new ArgumentNullException(nameof(assemblyName));
-            var assembly = Assembly.Load(assemblyName);
-
+            return Assembly.Load(assemblyName);
+        }
+        public static void RegisterDefaultSerializers(string assemblyName) {
+            var assembly = LoadAssembly(assemblyName);
             LoadClassesFromAssembly<ISerializationWriterFactory>(assembly, x => {
                 SerializationWriterFactoryRegistry.DefaultInstance
                                                 .ContentTypeAssociatedFactories
                                                 .TryAdd(x.ValidContentType, x);
             });
+        }
+        public static void RegisterDefaultDeserializers(string assemblyName) {
+            var assembly = LoadAssembly(assemblyName);
             LoadClassesFromAssembly<IParseNodeFactory>(assembly, x => {
                 ParseNodeFactoryRegistry.DefaultInstance
                                         .ContentTypeAssociatedFactories

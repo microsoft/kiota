@@ -53,6 +53,7 @@ namespace Kiota.Builder
             get => IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer);
         }
         public List<string> SerializerModules { get; set; }
+        public List<string> DeserializerModules { get; set; }
 
         public object Clone()
         {
@@ -70,6 +71,7 @@ namespace Kiota.Builder
                 AccessedProperty = AccessedProperty,
                 PathSegment = PathSegment?.Clone() as string,
                 SerializerModules = SerializerModules == null ? null : new (SerializerModules),
+                DeserializerModules = DeserializerModules == null ? null : new (DeserializerModules),
             };
         }
 
