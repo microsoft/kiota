@@ -56,6 +56,7 @@ namespace Kiota.Builder.Writers.Ruby {
         }
         internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "#");
         internal void AddRequestBuilderBody(LanguageWriter writer, string suffix = default) {
+            // TODO: will need this for handeling indexers, which is a dotnet specific concept. This will be used by refiner, look at java for exambple of how this is done. Not needed for now, come back to this during refiner stage.
         }
     }
 }
