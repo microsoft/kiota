@@ -7,7 +7,12 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 
 public class ParseNodeFactoryRegistry implements ParseNodeFactory {
+    // default instance
+    public static final ParseNodeFactoryRegistry defaultInstance = new ParseNodeFactoryRegistry();
     public HashMap<String, ParseNodeFactory> contentTypeAssociatedFactories = new HashMap<>();
+    public String getValidContentType() {
+        throw new UnsupportedOperationException("The registry supports multiple content types. Get the registered factory instead.");
+    }
     @Override
     @Nonnull
     public ParseNode getParseNode(@Nonnull final String contentType, @Nonnull final InputStream rawResponse) {

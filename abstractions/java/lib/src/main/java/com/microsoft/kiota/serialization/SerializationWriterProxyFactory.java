@@ -7,6 +7,9 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public abstract class SerializationWriterProxyFactory implements SerializationWriterFactory {
+    public String getValidContentType() {
+        return _concrete.getValidContentType();
+    }
     private final SerializationWriterFactory _concrete;
     private final Consumer<Parsable> _onBefore;
     private final Consumer<Parsable> _onAfter;
