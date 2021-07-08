@@ -7,7 +7,10 @@ using Kiota.Builder.Writers.Extensions;
 namespace Kiota.Builder.Writers.Java {
     public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionService>
     {
-        public CodeMethodWriter(JavaConventionService conventionService) : base(conventionService){}
+        private readonly bool _usesBackingStore;
+        public CodeMethodWriter(JavaConventionService conventionService, bool usesBackingStore) : base(conventionService){
+            _usesBackingStore = usesBackingStore;
+        }
         public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
             if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
@@ -55,6 +58,10 @@ namespace Kiota.Builder.Writers.Java {
                 case CodeMethodKind.Setter:
                     WriteSetterBody(codeElement, writer, parentClass);
                     break;
+                case CodeMethodKind.ClientConstructor:
+                    WriteConstructorBody(parentClass, writer, inherits);
+                    WriteApiConstructorBody(parentClass, codeElement, writer);
+                break;
                 case CodeMethodKind.Constructor:
                     WriteConstructorBody(parentClass, writer, inherits);
                     break;
@@ -64,6 +71,29 @@ namespace Kiota.Builder.Writers.Java {
             }
             writer.DecreaseIndent();
             writer.WriteLine("}");
+        }
+        private void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
+            var httpCoreProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
+            var httpCoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.HttpCore));
+            var serializationFactoryProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.SerializerFactory));
+            var serializationFactoryParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.SerializationFactory));
+            var serializationFactoryPropertyName = $"this.{serializationFactoryProperty.NamePrefix}{serializationFactoryProperty.Name.ToFirstCharacterLowerCase()}";
+            var httpCorePropertyName = httpCoreProperty.Name.ToFirstCharacterLowerCase();
+            writer.WriteLine($"this.{httpCorePropertyName} = {httpCoreParameter.Name};");
+            WriteSerializationRegistration(method.SerializerModules, writer, "registerDefaultSerializers");
+            WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializers");
+            writer.WriteLines($"if({serializationFactoryParameter.Name} == null && SerializationWriterFactoryRegistry.defaultInstance.contentTypeAssociatedFactories.isEmpty()) throw new RuntimeException(\"The Serialization Writer factory has not been initialized for this client.\");",
+                            $"if(ParseNodeFactoryRegistry.defaultInstance.contentTypeAssociatedFactories.isEmpty()) throw new RuntimeException(\"The Parse Node factory has not been initialized for this client.\");",
+                            $"{serializationFactoryPropertyName} = ({serializationFactoryParameter.Name} != null ? {serializationFactoryParameter.Name} : SerializationWriterFactoryRegistry.defaultInstance);");
+            if(_usesBackingStore) {
+                writer.WriteLine($"this.{serializationFactoryPropertyName} = ApiClientBuilder.enableBackingStoreForSerializationWriterFactory(this.{serializationFactoryPropertyName});");
+                writer.WriteLine($"this.{httpCorePropertyName}.enableBackingStore();");
+            }
+        }
+        private static void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, string methodName) {
+            if(serializationModules != null)
+                foreach(var module in serializationModules)
+                    writer.WriteLine($"ApiClientBuilder.{methodName}({module}.class);");
         }
         private static void WriteConstructorBody(CodeClass parentClass, LanguageWriter writer, bool inherits) {
             if(inherits)
@@ -206,9 +236,9 @@ namespace Kiota.Builder.Writers.Java {
             var genericTypeParameterDeclaration = code.IsOfKind(CodeMethodKind.Deserializer) ? " <T>": string.Empty;
             var returnTypeAsyncPrefix = code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty;
             var returnTypeAsyncSuffix = code.IsAsync ? ">" : string.Empty;
-            var isConstructor = code.IsOfKind(CodeMethodKind.Constructor);
+            var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor);
             var methodName = (code.MethodKind switch {
-                (CodeMethodKind.Constructor) => code.Parent.Name.ToFirstCharacterUpperCase(),
+                (CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor) => code.Parent.Name.ToFirstCharacterUpperCase(),
                 (CodeMethodKind.Getter) => $"get{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
                 (CodeMethodKind.Setter) => $"set{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
                 _ => code.Name.ToFirstCharacterLowerCase()

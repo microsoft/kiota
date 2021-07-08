@@ -111,7 +111,7 @@ namespace Kiota.Builder.Writers
             return language switch
             {
                 GenerationLanguage.CSharp => new CSharpWriter(outputPath, clientNamespaceName, usesBackingStore),
-                GenerationLanguage.Java => new JavaWriter(outputPath, clientNamespaceName),
+                GenerationLanguage.Java => new JavaWriter(outputPath, clientNamespaceName, usesBackingStore),
                 GenerationLanguage.TypeScript => new TypeScriptWriter(outputPath, clientNamespaceName, usesBackingStore),
                 _ => throw new InvalidEnumArgumentException($"{language} language currently not supported."),
             };
