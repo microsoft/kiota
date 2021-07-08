@@ -8,6 +8,9 @@ import com.microsoft.kiota.serialization.SerializationWriter;
 import com.microsoft.kiota.serialization.SerializationWriterFactory;
 
 public class JsonSerializationWriterFactory implements SerializationWriterFactory {
+    public String getValidContentType() {
+        return validContentType;
+    }
     private static final String validContentType = "application/json";
     @Override
     @Nonnull
