@@ -37,7 +37,8 @@ namespace Kiota.Builder.Writers.Ruby {
         public string GetTypeString(CodeTypeBase code)
         {
             // // TODO: NO types
-            throw new InvalidOperationException($"No ruby types");
+            //throw new InvalidOperationException($"No ruby types");
+            return string.Empty;
         }
 
         public string TranslateType(string typeName)
@@ -54,8 +55,7 @@ namespace Kiota.Builder.Writers.Ruby {
                 writer.WriteLine($"# {description}");
         }
         internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "#");
-        internal void AddRequestBuilderBody(string returnType, LanguageWriter writer, string suffix = default) {
-            // TODO: 
+        internal void AddRequestBuilderBody(LanguageWriter writer, string suffix = default) {
         }
     }
 }

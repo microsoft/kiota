@@ -27,6 +27,9 @@ namespace  Kiota.Builder.Writers.Ruby {
                 writer.WriteLine($"module {NormalizeNameSpaceName(codeElement.Parent.Parent.Name)}");
                 writer.IncreaseIndent();
             }
+            if (codeElement?.Inherits?.Name.ToFirstCharacterUpperCase() == "Entity"){
+                codeElement.Inherits.Name = "Graphrubyv4::Utilities::Users::Entity";
+            }
             var derivation = (codeElement.Inherits == null ? string.Empty : $" < {codeElement.Inherits.Name.ToFirstCharacterUpperCase()}");
             conventions.WriteShortDescription((codeElement.Parent as CodeClass).Description, writer);
             writer.WriteLine($"class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation}");

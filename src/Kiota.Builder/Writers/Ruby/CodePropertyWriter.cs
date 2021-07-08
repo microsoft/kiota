@@ -8,12 +8,11 @@ namespace Kiota.Builder.Writers.Ruby {
         public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
         {
             conventions.WriteShortDescription(codeElement.Description, writer);
-            var returnType = conventions.GetTypeString(codeElement.Type);
             switch(codeElement.PropertyKind) {
                 case CodePropertyKind.RequestBuilder:
                     writer.WriteLine($"def {codeElement.Name.ToSnakeCase()}()");
                     writer.IncreaseIndent();
-                    conventions.AddRequestBuilderBody(returnType, writer);
+                    conventions.AddRequestBuilderBody(writer);
                     writer.DecreaseIndent();
                     writer.WriteLine("end");
                 break;
