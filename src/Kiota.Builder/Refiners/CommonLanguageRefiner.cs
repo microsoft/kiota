@@ -35,7 +35,7 @@ namespace Kiota.Builder.Refiners {
             if(generatedCode is CodeMethod currentMethod &&
                 currentMethod.IsOfKind(CodeMethodKind.ClientConstructor) &&
                 currentMethod.SerializerModules.Count == 1 &&
-                currentMethod.SerializerModules.Any(x => "Microsoft.Kiota.Serialization.Json".Equals(x, StringComparison.OrdinalIgnoreCase))) {
+                currentMethod.SerializerModules.Any(x => "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory".Equals(x, StringComparison.OrdinalIgnoreCase))) {
                 currentMethod.SerializerModules.Clear();
                 currentMethod.SerializerModules.AddRange(moduleNames);
                 return;
@@ -46,7 +46,7 @@ namespace Kiota.Builder.Refiners {
             if(generatedCode is CodeMethod currentMethod &&
                 currentMethod.IsOfKind(CodeMethodKind.ClientConstructor) &&
                 currentMethod.DeserializerModules.Count == 1 &&
-                currentMethod.DeserializerModules.Any(x => "Microsoft.Kiota.Serialization.Json".Equals(x, StringComparison.OrdinalIgnoreCase))) {
+                currentMethod.DeserializerModules.Any(x => "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory".Equals(x, StringComparison.OrdinalIgnoreCase))) {
                 currentMethod.DeserializerModules.Clear();
                 currentMethod.DeserializerModules.AddRange(moduleNames);
                 return;
