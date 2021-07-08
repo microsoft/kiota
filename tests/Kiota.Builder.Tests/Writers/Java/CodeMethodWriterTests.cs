@@ -263,7 +263,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
         }
         [Fact]
         public void Defensive() {
-            var codeMethodWriter = new CodeMethodWriter(new JavaConventionService());
+            var codeMethodWriter = new CodeMethodWriter(new JavaConventionService(), false);
             Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(null, writer));
             Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(method, null));
             var originalParent = method.Parent;

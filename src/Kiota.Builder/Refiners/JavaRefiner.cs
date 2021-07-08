@@ -31,6 +31,9 @@ namespace Kiota.Builder.Refiners {
                                                 }, _configuration.UsesBackingStore, true);
             AddConstructorsForDefaultValues(generatedCode, true);
             CorrectCoreTypesForBackingStoreUsings(generatedCode, "com.microsoft.kiota.store");
+            ReplaceDefaultSerializationModules(generatedCode, "com.microsoft.kiota.serialization.JsonSerializationWriterFactory");
+            ReplaceDefaultDeserializationModules(generatedCode, "com.microsoft.kiota.serialization.JsonParseNodeFactory");
+            AddSerializationModulesImport(generatedCode);
         }
         private static void AddEnumSetImport(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) &&
@@ -93,10 +96,9 @@ namespace Kiota.Builder.Refiners {
             new ("HashMap", "java.util"),
         };
         private static readonly Tuple<string, string>[] defaultSymbolsForApiClient = new Tuple<string, string>[] { 
-            new ("registerDefaultSerializers", "@microsoft/kiota-abstractions"),
-            new ("enableBackingStore", "@microsoft/kiota-abstractions"),
-            new ("SerializationWriterFactoryRegistry", "@microsoft/kiota-abstractions"),
-            new ("ParseNodeFactoryRegistry", "@microsoft/kiota-abstractions"),
+            new ("ApiClientBuilder", "com.microsoft.kiota"),
+            new ("SerializationWriterFactoryRegistry", "com.microsoft.kiota.serialization"),
+            new ("ParseNodeFactoryRegistry", "com.microsoft.kiota.serialization"),
         };
         private static void CorrectCoreType(CodeElement currentElement) {
             if (currentElement is CodeProperty currentProperty && currentProperty.Type != null) {
@@ -130,6 +132,8 @@ namespace Kiota.Builder.Refiners {
                     currentMethod.ReturnType.Name = $"Map<String, BiConsumer<T, ParseNode>>";
                     currentMethod.Name = "getFieldDeserializers";
                 }
+                else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
+                    currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore, CodeParameterKind.SerializationFactory)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
             }
             CrawlTree(currentElement, CorrectCoreType);
         }

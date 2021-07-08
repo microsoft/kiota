@@ -16,6 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import com.microsoft.kiota.ApiClientBuilder;
 import com.microsoft.kiota.RequestInfo;
 import com.microsoft.kiota.ResponseHandler;
 import com.microsoft.kiota.AuthenticationProvider;
@@ -36,7 +37,7 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
     private final static String contentTypeHeaderKey = "Content-Type";
     private final OkHttpClient client;
     private final AuthenticationProvider authProvider;
-    private final ParseNodeFactory pNodeFactory;
+    private ParseNodeFactory pNodeFactory;
     public HttpCore(@Nonnull final AuthenticationProvider authenticationProvider){
         this(authenticationProvider, null, null);
     }
@@ -52,11 +53,14 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
             this.client = client;
         }
         if(parseNodeFactory == null) {
-            pNodeFactory = new ParseNodeFactoryRegistry();
+            pNodeFactory = ParseNodeFactoryRegistry.defaultInstance;
         } else {
             pNodeFactory = parseNodeFactory;
         }
 
+    }
+    public void enableBackingStore() {
+        this.pNodeFactory = Objects.requireNonNull(ApiClientBuilder.enableBackingStoreForParseNodeFactory(pNodeFactory));
     }
     @Nonnull
     public <ModelType extends Parsable> CompletableFuture<ModelType> sendAsync(@Nonnull final RequestInfo requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {

@@ -40,22 +40,22 @@ public class ApiClientBuilder {
             throw new RuntimeException(e);
         }
     }
-    @Nullable
-    public static SerializationWriterFactory enableBackingStoreForSerializationWriterFactory(@Nullable final SerializationWriterFactory original) {
-        SerializationWriterFactory result = original;
+    @Nonnull
+    public static SerializationWriterFactory enableBackingStoreForSerializationWriterFactory(@Nonnull final SerializationWriterFactory original) {
+        SerializationWriterFactory result = Objects.requireNonNull(original);
         if(original instanceof SerializationWriterFactoryRegistry)
             enableBackingStoreForSerializationWriterRegistry((SerializationWriterFactoryRegistry) original);
-        else if (original != null)
+        else
             result = new BackingStoreSerializationWriterProxyFactory(original);
         enableBackingStoreForSerializationWriterRegistry(SerializationWriterFactoryRegistry.defaultInstance);
         return result;
     }
-    @Nullable
-    public static ParseNodeFactory enableBackingStoreForParseNodeFactory(@Nullable final ParseNodeFactory original) {
-        ParseNodeFactory result = original;
+    @Nonnull
+    public static ParseNodeFactory enableBackingStoreForParseNodeFactory(@Nonnull final ParseNodeFactory original) {
+        ParseNodeFactory result = Objects.requireNonNull(original);
         if(original instanceof ParseNodeFactoryRegistry)
             enableBackingStoreForParseNodeRegistry((ParseNodeFactoryRegistry) original);
-        else if (original != null)
+        else
             result = new BackingStoreParseNodeFactory(original);
         enableBackingStoreForParseNodeRegistry(ParseNodeFactoryRegistry.defaultInstance);
         return result;
