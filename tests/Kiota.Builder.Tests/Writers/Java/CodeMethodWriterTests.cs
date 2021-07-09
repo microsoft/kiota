@@ -329,7 +329,6 @@ namespace Kiota.Builder.Writers.Java.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("final HttpCore parentCore", result);
-            Assert.Contains("final SerializationWriterFactory parentSerializationFactory", result);
             Assert.Contains("final String parentPath", result);
             Assert.Contains("return new", result);
             Assert.Contains(method.PathSegment, result);

@@ -328,7 +328,6 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("builder.httpCore = ", result);
-            Assert.Contains("builder.serializerFactory", result);
             Assert.Contains("builder.currentPath", result);
             Assert.Contains("const builder = new", result);
             Assert.Contains(method.PathSegment, result);
