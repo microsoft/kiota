@@ -397,5 +397,51 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             var result = tw.ToString();
             Assert.Contains($"this.{propName} = {defaultValue}", result);
         }
+        [Fact]
+        public void WritesApiConstructor() {
+            method.MethodKind = CodeMethodKind.ClientConstructor;
+            var coreProp = parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = "core",
+                PropertyKind = CodePropertyKind.HttpCore,
+            }).First();
+            coreProp.Type = new CodeType(coreProp) {
+                Name = "HttpCore",
+                IsExternal = true,
+            };
+            method.AddParameter(new CodeParameter(method) {
+                Name = "core",
+                ParameterKind = CodeParameterKind.HttpCore,
+                Type = coreProp.Type,
+            });
+            method.DeserializerModules = new() {"com.microsoft.kiota.serialization.Deserializer"};
+            method.SerializerModules = new() {"com.microsoft.kiota.serialization.Serializer"};
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+            Assert.Contains("registerDefaultSerializer", result);
+            Assert.Contains("registerDefaultDeserializer", result);
+        }
+        [Fact]
+        public void WritesApiConstructorWithBackingStore() {
+            method.MethodKind = CodeMethodKind.ClientConstructor;
+            var coreProp = parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = "core",
+                PropertyKind = CodePropertyKind.HttpCore,
+            }).First();
+            coreProp.Type = new CodeType(coreProp) {
+                Name = "HttpCore",
+                IsExternal = true,
+            };
+            method.AddParameter(new CodeParameter(method) {
+                Name = "core",
+                ParameterKind = CodeParameterKind.HttpCore,
+                Type = coreProp.Type,
+            });
+            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, defaultPath, defaultName, true);
+            tempWriter.SetTextWriter(tw);
+            tempWriter.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("enableBackingStore", result);
+        }
     }
 }
