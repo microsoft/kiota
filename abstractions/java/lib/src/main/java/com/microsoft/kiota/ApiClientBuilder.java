@@ -20,7 +20,7 @@ import javax.annotation.Nullable;
 public class ApiClientBuilder {
     // private constructor to prevent instantiation
     private ApiClientBuilder() { }
-    public static void registerDefaultSerializers(@Nonnull final Class<? extends SerializationWriterFactory> factoryClass) {
+    public static void registerDefaultSerializer(@Nonnull final Class<? extends SerializationWriterFactory> factoryClass) {
         Objects.requireNonNull(factoryClass);
         try {
             final SerializationWriterFactory factory = factoryClass.getConstructor().newInstance();
@@ -30,7 +30,7 @@ public class ApiClientBuilder {
             throw new RuntimeException(e);
         }
     }
-    public static void registerDefaultDeserializers(@Nonnull final Class<? extends ParseNodeFactory> factoryClass) {
+    public static void registerDefaultDeserializer(@Nonnull final Class<? extends ParseNodeFactory> factoryClass) {
         Objects.requireNonNull(factoryClass);
         try {
             final ParseNodeFactory factory = factoryClass.getConstructor().newInstance();

@@ -77,14 +77,17 @@ namespace Kiota.Builder.Writers.TypeScript {
             var serializationFactoryProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.SerializerFactory));
             var serializationFactoryParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.SerializationFactory));
             var serializationFactoryPropertyName = $"this.{serializationFactoryProperty.NamePrefix}{serializationFactoryProperty.Name.ToFirstCharacterLowerCase()}";
-            writer.WriteLine($"this.{httpCoreProperty.Name.ToFirstCharacterLowerCase()} = {httpCoreParameter.Name};");
-            WriteSerializationRegistration(method.SerializerModules, writer, "registerDefaultSerializers");
-            WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializers");
+            var httpCorePropertyName = httpCoreProperty.Name.ToFirstCharacterLowerCase();
+            writer.WriteLine($"this.{httpCorePropertyName} = {httpCoreParameter.Name};");
+            WriteSerializationRegistration(method.SerializerModules, writer, "registerDefaultSerializer");
+            WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializer");
             writer.WriteLines($"if(!{serializationFactoryParameter.Name} && SerializationWriterFactoryRegistry.defaultInstance.contentTypeAssociatedFactories.size === 0) throw new Error(\"The Serialization Writer factory has not been initialized for this client.\");",
-                            $"if(!{serializationFactoryParameter.Name} && ParseNodeFactoryRegistry.defaultInstance.contentTypeAssociatedFactories.size === 0) throw new Error(\"The Parse Node factory has not been initialized for this client.\");",
+                            $"if(ParseNodeFactoryRegistry.defaultInstance.contentTypeAssociatedFactories.size === 0) throw new Error(\"The Parse Node factory has not been initialized for this client.\");",
                             $"{serializationFactoryPropertyName} = {serializationFactoryParameter.Name} ?? SerializationWriterFactoryRegistry.defaultInstance;");
-            if(_usesBackingStore)
-                writer.WriteLine($"{serializationFactoryPropertyName} = enableBackingStore({serializationFactoryPropertyName});");
+            if(_usesBackingStore) {
+                writer.WriteLine($"{serializationFactoryPropertyName} = enableBackingStoreForSerializationWriterFactory({serializationFactoryPropertyName});");
+                writer.WriteLine($"this.{httpCorePropertyName}.enableBackingStore();");
+            }
         }
         private static void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, string methodName) {
             if(serializationModules != null)

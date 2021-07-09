@@ -6,35 +6,32 @@ using Microsoft.Kiota.Abstractions.Store;
 
 namespace Microsoft.Kiota.Abstractions {
     public static class ApiClientBuilder {
-        public static void RegisterDefaultSerializers<T>() where T: ISerializationWriterFactory, new() {
+        public static void RegisterDefaultSerializer<T>() where T: ISerializationWriterFactory, new() {
             var serializationWriterFactory = new T();
             SerializationWriterFactoryRegistry.DefaultInstance
                                             .ContentTypeAssociatedFactories
                                             .TryAdd(serializationWriterFactory.ValidContentType, serializationWriterFactory);
         }
-        public static void RegisterDefaultDeserializers<T>() where T: IParseNodeFactory, new() {
+        public static void RegisterDefaultDeserializer<T>() where T: IParseNodeFactory, new() {
             var deserializerFactory = new T();
             ParseNodeFactoryRegistry.DefaultInstance
                                     .ContentTypeAssociatedFactories
                                     .TryAdd(deserializerFactory.ValidContentType, deserializerFactory);
         }
-        public static ISerializationWriterFactory EnableBackingStore(ISerializationWriterFactory original) {
-            ISerializationWriterFactory result = null;
-            if(original is SerializationWriterFactoryRegistry registry) {
+        public static ISerializationWriterFactory EnableBackingStoreForSerializationWriterFactory(ISerializationWriterFactory original) {
+            ISerializationWriterFactory result = original ?? throw new ArgumentNullException(nameof(original));
+            if(original is SerializationWriterFactoryRegistry registry)
                 EnableBackingStoreForSerializationRegistry(registry);
-                result = registry;
-            } else if(original != null)
+            else
                 result = new BackingStoreSerializationWriterProxyFactory(original);
             EnableBackingStoreForSerializationRegistry(SerializationWriterFactoryRegistry.DefaultInstance);
-            EnableBackingStoreForParseNodeRegistry(ParseNodeFactoryRegistry.DefaultInstance);
             return result;
         }
         public static IParseNodeFactory EnableBackingStoreForParseNodeFactory(IParseNodeFactory original) {
-            IParseNodeFactory result = null;
-            if(original is ParseNodeFactoryRegistry registry) {
+            IParseNodeFactory result = original ?? throw new ArgumentNullException(nameof(original));
+            if(original is ParseNodeFactoryRegistry registry)
                 EnableBackingStoreForParseNodeRegistry(registry);
-                result = registry;
-            } else if(original != null)
+            else
                 result = new BackingStoreParseNodeFactory(original);
             EnableBackingStoreForParseNodeRegistry(ParseNodeFactoryRegistry.DefaultInstance);
             return result;
