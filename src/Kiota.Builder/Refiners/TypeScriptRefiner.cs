@@ -42,7 +42,6 @@ namespace Kiota.Builder.Refiners {
             new ("HttpMethod", "@microsoft/kiota-abstractions"),
             new ("RequestInfo", "@microsoft/kiota-abstractions"),
             new ("ResponseHandler", "@microsoft/kiota-abstractions"),
-            new ("SerializationWriterFactory", "@microsoft/kiota-abstractions"),
         };
         private static readonly Tuple<string, string>[] defaultNamespacesForModels = new Tuple<string, string>[] { 
             new ("SerializationWriter", "@microsoft/kiota-abstractions"),
@@ -62,8 +61,6 @@ namespace Kiota.Builder.Refiners {
                     currentProperty.Type.Name = "HttpCore";
                 else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
                     currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
-                else if(currentProperty.IsOfKind(CodePropertyKind.SerializerFactory))
-                    currentProperty.Type.Name = "SerializationWriterFactory";
                 else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase))
                     currentProperty.Type.Name = $"Date";
                 else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
@@ -79,7 +76,7 @@ namespace Kiota.Builder.Refiners {
                 else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer))
                     currentMethod.ReturnType.Name = $"Map<string, (item: T, node: ParseNode) => void>";
                 else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
-                    currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore, CodeParameterKind.SerializationFactory)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
+                    currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
             }
             
                 

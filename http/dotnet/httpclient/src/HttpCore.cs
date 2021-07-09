@@ -15,14 +15,25 @@ namespace Microsoft.Kiota.Http.HttpClient
         private readonly System.Net.Http.HttpClient client;
         private readonly IAuthenticationProvider authProvider;
         private IParseNodeFactory pNodeFactory;
+        private ISerializationWriterFactory sWriterFactory;
         private readonly bool createdClient;
-        public HttpCore(IAuthenticationProvider authenticationProvider, IParseNodeFactory parseNodeFactory = null, System.Net.Http.HttpClient httpClient = null)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HttpCore"/> class.
+        /// <param name="authProvider">The authentication provider.</param>
+        /// <param name="pNodeFactory">The parse node factory.</param>
+        /// <param name="sWriterFactory">The serialization writer factory.</param>
+        /// <param name="client">The native HTTP client.</param>
+        /// </summary>
+        public HttpCore(IAuthenticationProvider authenticationProvider, IParseNodeFactory parseNodeFactory = null, ISerializationWriterFactory serializationWriterFactory = null, System.Net.Http.HttpClient httpClient = null)
         {
             authProvider = authenticationProvider ?? throw new ArgumentNullException(nameof(authenticationProvider));
             createdClient = httpClient == null;
             client = httpClient ?? new System.Net.Http.HttpClient();
             pNodeFactory = parseNodeFactory ?? ParseNodeFactoryRegistry.DefaultInstance;
+            sWriterFactory = serializationWriterFactory ?? SerializationWriterFactoryRegistry.DefaultInstance;
         }
+        /// <summary>Factory to use to get a serializer for payload serialization</summary>
+        public ISerializationWriterFactory SerializationWriterFactory { get { return sWriterFactory; } }
         public async Task<ModelType> SendAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = null) where ModelType : IParsable
         {
             var response = await GetHttpResponseMessage(requestInfo);
@@ -126,8 +137,12 @@ namespace Microsoft.Kiota.Http.HttpClient
             }
             return message;
         }
+        /// <summary>
+        /// Enables the backing store for the registered serialization and parse node factories
+        /// </summary>
         public void EnableBackingStore() {
             pNodeFactory = ApiClientBuilder.EnableBackingStoreForParseNodeFactory(pNodeFactory) ?? throw new InvalidOperationException("Could not enable backing store for the parse node factory");
+            sWriterFactory = ApiClientBuilder.EnableBackingStoreForSerializationWriterFactory(sWriterFactory) ?? throw new InvalidOperationException("Could not enable backing store for the serializer writer factory");
         }
         public void Dispose() {
             if(createdClient)

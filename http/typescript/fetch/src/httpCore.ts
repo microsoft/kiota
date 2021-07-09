@@ -1,16 +1,21 @@
-import { AuthenticationProvider, HttpCore as IHttpCore, Parsable, ParseNodeFactory, RequestInfo, ResponseHandler, ParseNodeFactoryRegistry, enableBackingStoreForParseNodeFactory } from '@microsoft/kiota-abstractions';
+import { AuthenticationProvider, HttpCore as IHttpCore, Parsable, ParseNodeFactory, RequestInfo, ResponseHandler, ParseNodeFactoryRegistry, enableBackingStoreForParseNodeFactory, SerializationWriterFactoryRegistry, enableBackingStoreForSerializationWriterFactory, SerializationWriterFactory } from '@microsoft/kiota-abstractions';
 import { fetch, Headers as FetchHeadersCtor } from 'cross-fetch';
 import { ReadableStream } from 'web-streams-polyfill';
 import { URLSearchParams } from 'url';
 export class HttpCore implements IHttpCore {
+    private _serializationWriterFactory: SerializationWriterFactory;
+    public getSerializationWriterFactory(): SerializationWriterFactory {
+        return this._serializationWriterFactory;
+    }
     private static readonly authorizationHeaderKey = "Authorization";
     /**
      *
      */
-    public constructor(public readonly authenticationProvider: AuthenticationProvider, private parseNodeFactory: ParseNodeFactory = ParseNodeFactoryRegistry.defaultInstance) {
+    public constructor(public readonly authenticationProvider: AuthenticationProvider, private parseNodeFactory: ParseNodeFactory = ParseNodeFactoryRegistry.defaultInstance, serializationWriterFactory: SerializationWriterFactory = SerializationWriterFactoryRegistry.defaultInstance) {
         if(!authenticationProvider) {
             throw new Error('authentication provider cannot be null');
         }
+        this._serializationWriterFactory = serializationWriterFactory;
     }
     private getResponseContentType = (response: Response): string | undefined => {
         const header = response.headers.get("content-type")?.toLowerCase();
@@ -102,7 +107,8 @@ export class HttpCore implements IHttpCore {
     }
     public enableBackingStore = (): void => {
         this.parseNodeFactory = enableBackingStoreForParseNodeFactory(this.parseNodeFactory);
-        if(!this.parseNodeFactory)
+        this._serializationWriterFactory = enableBackingStoreForSerializationWriterFactory(this._serializationWriterFactory);
+        if(!this._serializationWriterFactory || !this.parseNodeFactory)
             throw new Error("unable to enable backing store");
     }
     private addBearerIfNotPresent = async (requestInfo: RequestInfo): Promise<void> => {

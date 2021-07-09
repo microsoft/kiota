@@ -78,7 +78,6 @@ namespace Kiota.Builder.Refiners {
             new ("RequestInfo", "com.microsoft.kiota"),
             new ("ResponseHandler", "com.microsoft.kiota"),
             new ("QueryParametersBase", "com.microsoft.kiota"),
-            new ("SerializationWriterFactory", "com.microsoft.kiota.serialization"),
             new ("Map", "java.util"),
             new ("URI", "java.net"),
             new ("URISyntaxException", "java.net"),
@@ -106,8 +105,6 @@ namespace Kiota.Builder.Refiners {
                     currentProperty.Type.Name = "HttpCore";
                 else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
                     currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
-                else if(currentProperty.IsOfKind(CodePropertyKind.SerializerFactory))
-                    currentProperty.Type.Name = "SerializationWriterFactory";
                 else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase)) {
                     currentProperty.Type.Name = $"OffsetDateTime";
                     var nUsing = new CodeUsing(currentProperty.Parent) {
@@ -133,7 +130,7 @@ namespace Kiota.Builder.Refiners {
                     currentMethod.Name = "getFieldDeserializers";
                 }
                 else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
-                    currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore, CodeParameterKind.SerializationFactory)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
+                    currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
             }
             CrawlTree(currentElement, CorrectCoreType);
         }

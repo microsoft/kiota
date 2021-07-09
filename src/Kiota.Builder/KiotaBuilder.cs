@@ -235,17 +235,7 @@ namespace Kiota.Builder
                 Name = coreInterfaceType,
                 IsExternal = true,
             };
-            var serializationWriterParameter = new CodeParameter(constructor) {
-                Name = "serializationWriterFactory",
-                Description = "Factory to use to get a serializer for payload serialization.",
-                Optional = true,
-                ParameterKind = CodeParameterKind.SerializationFactory,
-            };
-            serializationWriterParameter.Type = new CodeType(serializationWriterParameter) {
-                Name = serializationFactoryInterfaceType,
-                IsExternal = true,
-            };
-            constructor.AddParameter(httpCoreParameter, serializationWriterParameter);
+            constructor.AddParameter(httpCoreParameter);
             return codeClass;
         }
 
@@ -312,7 +302,6 @@ namespace Kiota.Builder
             });
         }
         private static readonly string coreInterfaceType = "IHttpCore";
-        private static readonly string serializationFactoryInterfaceType = "ISerializationWriterFactory";
         private void CreatePathManagement(CodeClass currentClass, OpenApiUrlTreeNode currentNode, bool isRootClientClass) {
             var pathProperty = new CodeProperty(currentClass) {
                 Access = AccessModifier.Private,
@@ -350,17 +339,6 @@ namespace Kiota.Builder
                 IsExternal = true,
             };
             currentClass.AddProperty(httpCoreProperty);
-
-            var serializerFactoryProperty = new CodeProperty(currentClass) {
-                Name = "serializerFactory",
-                Description = "Factory to use to get a serializer for payload serialization",
-                PropertyKind = CodePropertyKind.SerializerFactory
-            };
-            serializerFactoryProperty.Type = new CodeType(serializerFactoryProperty) {
-                Name = serializationFactoryInterfaceType,
-                IsExternal = true,
-            };
-            currentClass.AddProperty(serializerFactoryProperty);
         }
         private static Func<CodeClass, int> shortestNamespaceOrder = (x) => x.Parent.Name.Split('.').Length;
         /// <summary>

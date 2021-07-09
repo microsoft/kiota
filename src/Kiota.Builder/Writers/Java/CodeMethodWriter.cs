@@ -75,20 +75,12 @@ namespace Kiota.Builder.Writers.Java {
         private void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
             var httpCoreProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
             var httpCoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.HttpCore));
-            var serializationFactoryProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.SerializerFactory));
-            var serializationFactoryParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.SerializationFactory));
-            var serializationFactoryPropertyName = $"this.{serializationFactoryProperty.NamePrefix}{serializationFactoryProperty.Name.ToFirstCharacterLowerCase()}";
             var httpCorePropertyName = httpCoreProperty.Name.ToFirstCharacterLowerCase();
             writer.WriteLine($"this.{httpCorePropertyName} = {httpCoreParameter.Name};");
             WriteSerializationRegistration(method.SerializerModules, writer, "registerDefaultSerializer");
             WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializer");
-            writer.WriteLines($"if({serializationFactoryParameter.Name} == null && SerializationWriterFactoryRegistry.defaultInstance.contentTypeAssociatedFactories.isEmpty()) throw new RuntimeException(\"The Serialization Writer factory has not been initialized for this client.\");",
-                            "if(ParseNodeFactoryRegistry.defaultInstance.contentTypeAssociatedFactories.isEmpty()) throw new RuntimeException(\"The Parse Node factory has not been initialized for this client.\");",
-                            $"{serializationFactoryPropertyName} = ({serializationFactoryParameter.Name} != null ? {serializationFactoryParameter.Name} : SerializationWriterFactoryRegistry.defaultInstance);");
-            if(_usesBackingStore) {
-                writer.WriteLine($"this.{serializationFactoryPropertyName} = ApiClientBuilder.enableBackingStoreForSerializationWriterFactory(this.{serializationFactoryPropertyName});");
+            if(_usesBackingStore)
                 writer.WriteLine($"this.{httpCorePropertyName}.enableBackingStore();");
-            }
         }
         private static void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, string methodName) {
             if(serializationModules != null)
@@ -201,7 +193,7 @@ namespace Kiota.Builder.Writers.Java {
                 if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"requestInfo.setStreamContent({requestBodyParam.Name});");
                 else
-                    writer.WriteLine($"requestInfo.setContentFromParsable({requestBodyParam.Name}, {conventions.SerializerFactoryPropertyName}, \"{codeElement.ContentType}\");");
+                    writer.WriteLine($"requestInfo.setContentFromParsable({requestBodyParam.Name}, {conventions.HttpCorePropertyName}, \"{codeElement.ContentType}\");");
             if(queryStringParam != null) {
                 var httpMethodPrefix = codeElement.HttpMethod.ToString().ToFirstCharacterUpperCase();
                 writer.WriteLine($"if ({queryStringParam.Name} != null) {{");
