@@ -400,6 +400,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         [Fact]
         public void WritesApiConstructor() {
             method.MethodKind = CodeMethodKind.ClientConstructor;
+            method.IsAsync = false;
             var coreProp = parentClass.AddProperty(new CodeProperty(parentClass) {
                 Name = "core",
                 PropertyKind = CodePropertyKind.HttpCore,
@@ -417,7 +418,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             method.SerializerModules = new() {"com.microsoft.kiota.serialization.Serializer"};
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+            Assert.Contains("constructor", result);
             Assert.Contains("registerDefaultSerializer", result);
             Assert.Contains("registerDefaultDeserializer", result);
         }
