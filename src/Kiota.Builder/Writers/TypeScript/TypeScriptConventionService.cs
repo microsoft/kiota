@@ -10,8 +10,6 @@ namespace Kiota.Builder.Writers.TypeScript {
             writer = languageWriter;
         }
         private readonly LanguageWriter writer;
-        public string SerializerFactoryPropertyName => "serializerFactory";
-
         public string StreamTypeName => "ReadableStream";
 
         public string VoidTypeName => throw new System.NotImplementedException();
@@ -32,7 +30,6 @@ namespace Kiota.Builder.Writers.TypeScript {
             writer.WriteLines($"const builder = new {returnType}();",
                     $"builder.{CurrentPathPropertyName} = (this.{CurrentPathPropertyName} ?? '') + this.{PathSegmentPropertyName}{suffix};",
                     $"builder.{HttpCorePropertyName} = this.{HttpCorePropertyName};",
-                    $"builder.{SerializerFactoryPropertyName} = this.{SerializerFactoryPropertyName};",
                     "return builder;");
         }
 

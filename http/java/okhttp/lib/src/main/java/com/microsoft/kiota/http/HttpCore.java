@@ -24,6 +24,8 @@ import com.microsoft.kiota.serialization.ParseNodeFactoryRegistry;
 import com.microsoft.kiota.serialization.Parsable;
 import com.microsoft.kiota.serialization.ParseNode;
 import com.microsoft.kiota.serialization.ParseNodeFactory;
+import com.microsoft.kiota.serialization.SerializationWriterFactory;
+import com.microsoft.kiota.serialization.SerializationWriterFactoryRegistry;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -38,14 +40,19 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
     private final OkHttpClient client;
     private final AuthenticationProvider authProvider;
     private ParseNodeFactory pNodeFactory;
+    private SerializationWriterFactory sWriterFactory;
     public HttpCore(@Nonnull final AuthenticationProvider authenticationProvider){
-        this(authenticationProvider, null, null);
+        this(authenticationProvider, null, null, null);
     }
     public HttpCore(@Nonnull final AuthenticationProvider authenticationProvider, @Nonnull final ParseNodeFactory parseNodeFactory) {
-        this(authenticationProvider, parseNodeFactory, null);
+        this(authenticationProvider, parseNodeFactory, null, null);
         Objects.requireNonNull(parseNodeFactory, "parameter parseNodeFactory cannot be null");
     }
-    public HttpCore(@Nonnull final AuthenticationProvider authenticationProvider, @Nullable final ParseNodeFactory parseNodeFactory, @Nullable final OkHttpClient client) {
+    public HttpCore(@Nonnull final AuthenticationProvider authenticationProvider, @Nonnull final ParseNodeFactory parseNodeFactory, @Nullable final SerializationWriterFactory serializationWriterFactory) {
+        this(authenticationProvider, parseNodeFactory, serializationWriterFactory, null);
+        Objects.requireNonNull(serializationWriterFactory, "parameter serializationWriterFactory cannot be null");
+    }
+    public HttpCore(@Nonnull final AuthenticationProvider authenticationProvider, @Nullable final ParseNodeFactory parseNodeFactory, @Nullable final SerializationWriterFactory serializationWriterFactory, @Nullable final OkHttpClient client) {
         this.authProvider = Objects.requireNonNull(authenticationProvider, "parameter authenticationProvider cannot be null");
         if(client == null) {
             this.client = new OkHttpClient.Builder().build();
@@ -58,9 +65,18 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
             pNodeFactory = parseNodeFactory;
         }
 
+        if(serializationWriterFactory == null) {
+            sWriterFactory = SerializationWriterFactoryRegistry.defaultInstance;
+        } else {
+            sWriterFactory = serializationWriterFactory;
+        }
+    }
+    public SerializationWriterFactory getSerializationWriterFactory() {
+        return sWriterFactory;
     }
     public void enableBackingStore() {
         this.pNodeFactory = Objects.requireNonNull(ApiClientBuilder.enableBackingStoreForParseNodeFactory(pNodeFactory));
+        this.sWriterFactory = Objects.requireNonNull(ApiClientBuilder.enableBackingStoreForSerializationWriterFactory(sWriterFactory));
     }
     @Nonnull
     public <ModelType extends Parsable> CompletableFuture<ModelType> sendAsync(@Nonnull final RequestInfo requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {

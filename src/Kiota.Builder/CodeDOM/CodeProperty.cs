@@ -11,8 +11,7 @@ namespace Kiota.Builder
         BackingStore,
         PathSegment,
         CurrentPath,
-        HttpCore,
-        SerializerFactory
+        HttpCore
     }
 
     public class CodeProperty : CodeTerminal, IDocumentedElement

@@ -11,8 +11,7 @@ namespace Kiota.Builder
         ResponseHandler,
         RequestBody,
         SetterValue,
-        HttpCore,
-        SerializationFactory
+        HttpCore
     }
 
     public class CodeParameter : CodeTerminal, ICloneable, IDocumentedElement
