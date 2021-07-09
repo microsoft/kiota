@@ -31,5 +31,13 @@ namespace Kiota.Tests
         public async Task ThrowsOnInvalidClassName() {
             await new KiotaHost().GetRootCommand().InvokeAsync(new string[] { "-c", ".Graph" });
         }
+        [Fact]
+        public async Task AcceptsDeserializers() {
+            await new KiotaHost().GetRootCommand().InvokeAsync(new string[] { "--ds", "Kiota.Tests.TestData.TestDeserializer" });
+        }
+        [Fact]
+        public async Task AcceptsSerializers() {
+            await new KiotaHost().GetRootCommand().InvokeAsync(new string[] { "-s", "Kiota.Tests.TestData.TestSerializer" });
+        }
     }
 }
