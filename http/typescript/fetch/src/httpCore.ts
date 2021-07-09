@@ -1,4 +1,4 @@
-import { AuthenticationProvider, HttpCore as IHttpCore, Parsable, ParseNodeFactory, RequestInfo, ResponseHandler, ParseNodeFactoryRegistry } from '@microsoft/kiota-abstractions';
+import { AuthenticationProvider, HttpCore as IHttpCore, Parsable, ParseNodeFactory, RequestInfo, ResponseHandler, ParseNodeFactoryRegistry, enableBackingStoreForParseNodeFactory } from '@microsoft/kiota-abstractions';
 import { fetch, Headers as FetchHeadersCtor } from 'cross-fetch';
 import { ReadableStream } from 'web-streams-polyfill';
 import { URLSearchParams } from 'url';
@@ -7,7 +7,7 @@ export class HttpCore implements IHttpCore {
     /**
      *
      */
-    public constructor(public readonly authenticationProvider: AuthenticationProvider, public readonly parseNodeFactory: ParseNodeFactory = ParseNodeFactoryRegistry.defaultInstance) {
+    public constructor(public readonly authenticationProvider: AuthenticationProvider, private parseNodeFactory: ParseNodeFactory = ParseNodeFactoryRegistry.defaultInstance) {
         if(!authenticationProvider) {
             throw new Error('authentication provider cannot be null');
         }
@@ -99,6 +99,11 @@ export class HttpCore implements IHttpCore {
         if(responseHandler) {
             return await responseHandler.handleResponseAsync(response);
         }
+    }
+    public enableBackingStore = (): void => {
+        this.parseNodeFactory = enableBackingStoreForParseNodeFactory(this.parseNodeFactory);
+        if(!this.parseNodeFactory)
+            throw new Error("unable to enable backing store");
     }
     private addBearerIfNotPresent = async (requestInfo: RequestInfo): Promise<void> => {
         if(!requestInfo.URI) {

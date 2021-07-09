@@ -14,7 +14,7 @@ namespace Microsoft.Kiota.Http.HttpClient
         private const string authorizationHeaderKey = "Authorization";
         private readonly System.Net.Http.HttpClient client;
         private readonly IAuthenticationProvider authProvider;
-        private readonly IParseNodeFactory pNodeFactory;
+        private IParseNodeFactory pNodeFactory;
         private readonly bool createdClient;
         public HttpCore(IAuthenticationProvider authenticationProvider, IParseNodeFactory parseNodeFactory = null, System.Net.Http.HttpClient httpClient = null)
         {
@@ -125,6 +125,9 @@ namespace Microsoft.Kiota.Http.HttpClient
                     message.Content.Headers.ContentType = new MediaTypeHeaderValue(requestInfo.Headers[contentTypeHeaderName]);
             }
             return message;
+        }
+        public void EnableBackingStore() {
+            pNodeFactory = ApiClientBuilder.EnableBackingStoreForParseNodeFactory(pNodeFactory) ?? throw new InvalidOperationException("Could not enable backing store for the parse node factory");
         }
         public void Dispose() {
             if(createdClient)

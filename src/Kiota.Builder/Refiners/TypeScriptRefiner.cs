@@ -50,9 +50,9 @@ namespace Kiota.Builder.Refiners {
             new ("Parsable", "@microsoft/kiota-abstractions"),
         };
         private static readonly Tuple<string, string>[] defaultSymbolsForApiClient = new Tuple<string, string>[] { 
-            new ("registerDefaultSerializers", "@microsoft/kiota-abstractions"),
-            new ("registerDefaultDeserializers", "@microsoft/kiota-abstractions"),
-            new ("enableBackingStore", "@microsoft/kiota-abstractions"),
+            new ("registerDefaultSerializer", "@microsoft/kiota-abstractions"),
+            new ("registerDefaultDeserializer", "@microsoft/kiota-abstractions"),
+            new ("enableBackingStoreForSerializationWriterFactory", "@microsoft/kiota-abstractions"),
             new ("SerializationWriterFactoryRegistry", "@microsoft/kiota-abstractions"),
             new ("ParseNodeFactoryRegistry", "@microsoft/kiota-abstractions"),
         };
