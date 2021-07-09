@@ -9,15 +9,17 @@ using Microsoft.Kiota.Abstractions.Serialization;
 
 namespace Microsoft.Kiota.Http.HttpClient
 {
-    public class HttpCore : IHttpCore
+    public class HttpCore : IHttpCore, IDisposable
     {
         private const string authorizationHeaderKey = "Authorization";
         private readonly System.Net.Http.HttpClient client;
         private readonly IAuthenticationProvider authProvider;
         private readonly IParseNodeFactory pNodeFactory;
+        private readonly bool createdClient;
         public HttpCore(IAuthenticationProvider authenticationProvider, IParseNodeFactory parseNodeFactory = null, System.Net.Http.HttpClient httpClient = null)
         {
             authProvider = authenticationProvider ?? throw new ArgumentNullException(nameof(authenticationProvider));
+            createdClient = httpClient == null;
             client = httpClient ?? new System.Net.Http.HttpClient();
             pNodeFactory = parseNodeFactory ?? ParseNodeFactoryRegistry.DefaultInstance;
         }
@@ -123,6 +125,10 @@ namespace Microsoft.Kiota.Http.HttpClient
                     message.Content.Headers.ContentType = new MediaTypeHeaderValue(requestInfo.Headers[contentTypeHeaderName]);
             }
             return message;
+        }
+        public void Dispose() {
+            if(createdClient)
+                client?.Dispose();
         }
     }
 }
