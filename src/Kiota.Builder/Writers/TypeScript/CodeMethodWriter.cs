@@ -213,7 +213,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             var accessModifier = localConventions.GetAccessModifier(code.Access);
             var methodName = (code.IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter) ?
                 code.AccessedProperty?.Name :
-                code.Name
+                (code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor) ? "constructor" : code.Name)
             ).ToFirstCharacterLowerCase();
             var asyncPrefix = code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? " async ": string.Empty;
             var parameters = string.Join(", ", code.Parameters.Select(p=> localConventions.GetParameterSignature(p)).ToList());
