@@ -131,7 +131,8 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(current, x => AddGetterAndSetterMethods(x, propertyKindsToAddAccessors, removeProperty, parameterAsOptional));
         }
         protected static void AddConstructorsForDefaultValues(CodeElement current, bool addIfInherited) {
-            if(current is CodeClass currentClass && 
+            if(current is CodeClass currentClass &&
+                !currentClass.IsOfKind(CodeClassKind.RequestBuilder, CodeClassKind.QueryParameters) &&
                 (currentClass.GetChildElements(true).OfType<CodeProperty>().Any(x => !string.IsNullOrEmpty(x.DefaultValue)) ||
                 addIfInherited && DoesAnyParentHaveAPropertyWithDefaultValue(currentClass)) &&
                 !currentClass.GetChildElements(true).OfType<CodeMethod>().Any(x => x.IsOfKind(CodeMethodKind.ClientConstructor)))
