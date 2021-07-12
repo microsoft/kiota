@@ -304,6 +304,7 @@ namespace Kiota.Builder
             httpCoreProperty.Type = new CodeType(httpCoreProperty) {
                 Name = coreInterfaceType,
                 IsExternal = true,
+                IsNullable = false,
             };
             currentClass.AddProperty(httpCoreProperty);
             var constructor = currentClass.AddMethod(new CodeMethod(currentClass) {
@@ -329,6 +330,7 @@ namespace Kiota.Builder
                 currentPathProperty.Type = new CodeType(currentPathProperty) {
                     Name = "string",
                     IsExternal = true,
+                    IsNullable = false,
                 };
                 currentClass.AddProperty(currentPathProperty);
                 constructor.AddParameter(new CodeParameter(constructor) {
