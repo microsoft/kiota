@@ -28,7 +28,10 @@ namespace Kiota.Builder.Writers.CSharp {
             var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
             foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
-                writer.WriteLine($"_ = {parameter.Name} ?? throw new ArgumentNullException(nameof({parameter.Name}));");
+                if(nameof(String).Equals(parameter.Type.Name, StringComparison.OrdinalIgnoreCase))
+                    writer.WriteLine($"if(string.IsNullOrEmpty({parameter.Name})) throw new ArgumentNullException(nameof({parameter.Name}));");
+                else
+                    writer.WriteLine($"_ = {parameter.Name} ?? throw new ArgumentNullException(nameof({parameter.Name}));");
             }
             switch(codeElement.MethodKind) {
                 case CodeMethodKind.Serializer:
@@ -44,11 +47,11 @@ namespace Kiota.Builder.Writers.CSharp {
                     WriteDeserializerBody(codeElement, parentClass, writer);
                     break;
                 case CodeMethodKind.ClientConstructor:
-                    WriteConstructorBody(parentClass, writer);
+                    WriteConstructorBody(parentClass, codeElement, writer);
                     WriteApiConstructorBody(parentClass, codeElement, writer);
                     break;
                 case CodeMethodKind.Constructor:
-                    WriteConstructorBody(parentClass, writer);
+                    WriteConstructorBody(parentClass, codeElement, writer);
                     break;
                 case CodeMethodKind.Getter:
                 case CodeMethodKind.Setter:
@@ -75,7 +78,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 foreach(var serializationClassName in serializationClassNames)
                     writer.WriteLine($"ApiClientBuilder.{methodName}<{serializationClassName}>();");
         }
-        private static void WriteConstructorBody(CodeClass parentClass, LanguageWriter writer) {
+        private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer) {
             foreach(var propWithDefault in parentClass
                                             .GetChildElements(true)
                                             .OfType<CodeProperty>()
@@ -83,6 +86,17 @@ namespace Kiota.Builder.Writers.CSharp {
                                             .OrderByDescending(x => x.PropertyKind)
                                             .ThenBy(x => x.Name)) {
                 writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterUpperCase()} = {propWithDefault.DefaultValue};");
+            }
+            if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.HttpCore, CodePropertyKind.HttpCore, writer);
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.CurrentPath, CodePropertyKind.CurrentPath, writer);
+            }
+        }
+        private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
+            var property = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(propertyKind));
+            var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
+            if(property != null && parameter != null) {
+                writer.WriteLine($"{property.Name.ToFirstCharacterUpperCase()} = {parameter.Name};");
             }
         }
         private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
