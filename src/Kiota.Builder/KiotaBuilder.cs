@@ -294,19 +294,6 @@ namespace Kiota.Builder
             };
             currentClass.AddProperty(pathProperty);
 
-            var currentPathProperty = new CodeProperty(currentClass) {
-                Name = currentPathParameterName,
-                Description = "Current path for the request",
-                PropertyKind = CodePropertyKind.CurrentPath,
-                Access = AccessModifier.Private,
-                ReadOnly = true,
-            };
-            currentPathProperty.Type = new CodeType(currentPathProperty) {
-                Name = "string",
-                IsExternal = true,
-            };
-            currentClass.AddProperty(currentPathProperty);
-
             var httpCoreProperty = new CodeProperty(currentClass) {
                 Name = httpCoreParameterName,
                 Description = "The http core service to use to execute the requests.",
@@ -331,8 +318,19 @@ namespace Kiota.Builder
             if(isRootClientClass) {
                 constructor.SerializerModules = config.Serializers;
                 constructor.DeserializerModules = config.Deserializers;
-            }
-            else
+            } else {
+                var currentPathProperty = new CodeProperty(currentClass) {
+                    Name = currentPathParameterName,
+                    Description = "Current path for the request",
+                    PropertyKind = CodePropertyKind.CurrentPath,
+                    Access = AccessModifier.Private,
+                    ReadOnly = true,
+                };
+                currentPathProperty.Type = new CodeType(currentPathProperty) {
+                    Name = "string",
+                    IsExternal = true,
+                };
+                currentClass.AddProperty(currentPathProperty);
                 constructor.AddParameter(new CodeParameter(constructor) {
                     Name = currentPathParameterName,
                     Type = currentPathProperty.Type,
@@ -340,6 +338,7 @@ namespace Kiota.Builder
                     Description = currentPathProperty.Description,
                     ParameterKind = CodeParameterKind.CurrentPath,
                 });
+            }
             constructor.AddParameter(new CodeParameter(constructor) {
                 Name = httpCoreParameterName,
                 Type = httpCoreProperty.Type,

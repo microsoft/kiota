@@ -59,11 +59,11 @@ namespace Kiota.Builder.Writers.Java {
                     WriteSetterBody(codeElement, writer, parentClass);
                     break;
                 case CodeMethodKind.ClientConstructor:
-                    WriteConstructorBody(parentClass, writer, inherits);
+                    WriteConstructorBody(parentClass, codeElement, writer, inherits);
                     WriteApiConstructorBody(parentClass, codeElement, writer);
                 break;
                 case CodeMethodKind.Constructor:
-                    WriteConstructorBody(parentClass, writer, inherits);
+                    WriteConstructorBody(parentClass, codeElement, writer, inherits);
                     break;
                 default:
                     writer.WriteLine("return null;");
@@ -87,7 +87,7 @@ namespace Kiota.Builder.Writers.Java {
                 foreach(var module in serializationModules)
                     writer.WriteLine($"ApiClientBuilder.{methodName}({module}.class);");
         }
-        private static void WriteConstructorBody(CodeClass parentClass, LanguageWriter writer, bool inherits) {
+        private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
             if(inherits)
                 writer.WriteLine("super();");
             foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
@@ -101,6 +101,17 @@ namespace Kiota.Builder.Writers.Java {
                                             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
                                             .OrderBy(x => x.Name)) {
                 writer.WriteLine($"this.set{propWithDefault.Name.ToFirstCharacterUpperCase()}({propWithDefault.DefaultValue});");
+            }
+            if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.HttpCore, CodePropertyKind.HttpCore, writer);
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.CurrentPath, CodePropertyKind.CurrentPath, writer);
+            }
+        }
+        private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
+            var property = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(propertyKind));
+            var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
+            if(property != null && parameter != null) {
+                writer.WriteLine($"this.{property.Name.ToFirstCharacterLowerCase()} = {parameter.Name};");
             }
         }
         private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass) {
@@ -130,8 +141,9 @@ namespace Kiota.Builder.Writers.Java {
 
         }
         private void WriteIndexerBody(CodeMethod codeElement, LanguageWriter writer, string returnType) {
+            var currentPathProperty = codeElement.Parent.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
             var pathSegment = codeElement.PathSegment;
-            conventions.AddRequestBuilderBody(returnType, writer, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
+            conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
         }
         private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
             var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
