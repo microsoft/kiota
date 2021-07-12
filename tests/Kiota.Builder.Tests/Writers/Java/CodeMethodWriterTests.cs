@@ -328,8 +328,9 @@ namespace Kiota.Builder.Writers.Java.Tests {
             method.PathSegment = "somePath";
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("final HttpCore parentCore", result);
-            Assert.Contains("final String parentPath", result);
+            Assert.Contains("httpCore", result);
+            Assert.Contains("pathSegment", result);
+            Assert.Contains("+ id", result);
             Assert.Contains("return new", result);
             Assert.Contains(method.PathSegment, result);
         }

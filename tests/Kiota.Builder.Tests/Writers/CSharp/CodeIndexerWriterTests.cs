@@ -39,8 +39,8 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         public void WritesIndexer() {
             writer.Write(indexer);
             var result = tw.ToString();
-            Assert.Contains("HttpCore = HttpCore", result);
-            Assert.Contains("CurrentPath = CurrentPath + PathSegment", result);
+            Assert.Contains("HttpCore", result);
+            Assert.Contains("PathSegment", result);
             Assert.Contains("+ position", result);
             Assert.Contains("public SomeRequestBuilder this[string position]", result);
             AssertExtensions.CurlyBracesAreClosed(result);

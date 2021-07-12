@@ -39,9 +39,9 @@ namespace Kiota.Builder.Writers.Java.Tests {
             property.PropertyKind = CodePropertyKind.RequestBuilder;
             writer.Write(property);
             var result = tw.ToString();
-            Assert.Contains($"new {typeName}", result);
-            Assert.Contains("HttpCore parentCore = httpCore", result);
-            Assert.Contains("String parentPath =", result);
+            Assert.Contains($"return new {typeName}", result);
+            Assert.Contains("httpCore", result);
+            Assert.Contains("pathSegment", result);
         }
         [Fact]
         public void WritesCustomProperty() {
