@@ -32,19 +32,19 @@ namespace Kiota.Builder.Extensions {
             var chunks = name.Split("-", StringSplitOptions.RemoveEmptyEntries);
             var identifier = String.Join("", chunks.Take(1)
                                                   .Union(chunks.Skip(1)
-                                                                .Select(s => ToFirstCharacterLowerCase(s))));
+                                                                .Select(s => ToFirstCharacterUpperCase(s))));
             if(identifier.Length < 2) {
                 return identifier;
             }
             var sb = new StringBuilder();
             sb.Append(char.ToLowerInvariant(identifier[0]));
-            for(int i = 1; i < identifier.Length; ++i) {
-                char c = identifier[i];
-                if(char.IsUpper(c)) {
+            foreach (var item in identifier.Substring(1))
+            {
+                if(char.IsUpper(item)) {
                     sb.Append('_');
-                    sb.Append(char.ToLowerInvariant(c));
+                    sb.Append(char.ToLowerInvariant(item));
                 } else {
-                    sb.Append(c);
+                    sb.Append(item);
                 }
             }
             var output = sb.ToString();
