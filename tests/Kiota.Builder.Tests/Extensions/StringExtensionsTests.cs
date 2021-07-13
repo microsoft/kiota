@@ -44,7 +44,6 @@ namespace Kiota.Builder.Extensions.Tests {
             string nString = null;
             Assert.Null(nString.ToSnakeCase());
             Assert.Equal(string.Empty, string.Empty.ToSnakeCase());
-            System.Console.WriteLine("Microsoft.graph.message.content".ToSnakeCase());
             Assert.Equal("toto", "Toto".ToSnakeCase());
             Assert.Equal("microsoft_graph_message_content", "microsoft-Graph-Message-Content".ToSnakeCase());
             Assert.Equal("microsoft_graph_message_content", "microsoftGraphMessageContent".ToSnakeCase());
