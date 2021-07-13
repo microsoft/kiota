@@ -1,0 +1,20 @@
+{
+    "name": "microsoft/kiota-abstractions",
+    "description": "Abstractions for Kiota",
+    "type": "library",
+    "license": "MIT",
+    "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {
+            "Microsoft\\Kiota\\Abstractions\\": "./src"
+        }
+    },
+    "require": {
+        "php": "^7.4 || ^8.0",
+        "php-http/promise": "^1.1.0",
+        "php-http/message-factory": "^1.0.2"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^0.12.92"
+    }
+}
