@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 
 namespace Microsoft.Kiota.Abstractions.Serialization {
+    /// <summary>
+    /// Interface for a deserialization node in a parse tree. This interace provides an abstraction layer over serialiation formats, libararies and implementations.
+    /// </summary>
     public interface IParseNode {
         /// <summary>
         ///  Gets the string value of the node.

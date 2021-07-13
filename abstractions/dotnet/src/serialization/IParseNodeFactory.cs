@@ -6,7 +6,7 @@ namespace Microsoft.Kiota.Abstractions.Serialization {
     /// </summary>
     public interface IParseNodeFactory {
         /// <summary>
-        /// Return the content type this factory's parse nodes can deserialize.
+        /// Returns the content type this factory's parse nodes can deserialize.
         /// </summary>
         string ValidContentType { get; }
         /// <summary>
