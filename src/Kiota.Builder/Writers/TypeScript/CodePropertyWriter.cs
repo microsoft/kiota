@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
 
@@ -13,9 +14,10 @@ namespace Kiota.Builder.Writers.TypeScript {
             conventions.WriteShortDescription(codeElement.Description, writer);
             switch(codeElement.PropertyKind) {
                 case CodePropertyKind.RequestBuilder:
+                    var currentPathProperty = codeElement.Parent.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
                     writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} get {codeElement.Name.ToFirstCharacterLowerCase()}(): {returnType} {{");
                     writer.IncreaseIndent();
-                    conventions.AddRequestBuilderBody(returnType, writer);
+                    conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer);
                     writer.DecreaseIndent();
                     writer.WriteLine("}");
                 break;

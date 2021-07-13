@@ -88,8 +88,8 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             var result = tw.ToString();
             Assert.Contains("get =>", result);
             Assert.Contains($"new {typeName}", result);
-            Assert.Contains("HttpCore = HttpCore", result);
-            Assert.Contains("CurrentPath = CurrentPath + PathSegment", result);
+            Assert.Contains("HttpCore", result);
+            Assert.Contains("PathSegment", result);
         }
         [Fact]
         public void WritesCustomProperty() {

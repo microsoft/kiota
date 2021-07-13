@@ -37,7 +37,8 @@ namespace Kiota.Builder.Writers.TypeScript {
             switch(codeElement.MethodKind) {
                 case CodeMethodKind.IndexerBackwardCompatibility:
                     var pathSegment = codeElement.PathSegment;
-                    localConventions.AddRequestBuilderBody(returnType, writer, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
+                    var currentPathProperty = codeElement.Parent.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
+                    localConventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
                     break;
                 case CodeMethodKind.Deserializer:
                     WriteDeserializerBody(codeElement, parentClass, writer);
@@ -58,11 +59,11 @@ namespace Kiota.Builder.Writers.TypeScript {
                     WriteSetterBody(codeElement, writer, parentClass);
                     break;
                 case CodeMethodKind.ClientConstructor:
-                    WriteConstructorBody(parentClass, writer, inherits);
+                    WriteConstructorBody(parentClass, codeElement, writer, inherits);
                     WriteApiConstructorBody(parentClass, codeElement, writer);
                 break;
                 case CodeMethodKind.Constructor:
-                    WriteConstructorBody(parentClass, writer, inherits);
+                    WriteConstructorBody(parentClass, codeElement, writer, inherits);
                     break;
                 default:
                     WriteDefaultMethodBody(codeElement, writer);
@@ -86,7 +87,7 @@ namespace Kiota.Builder.Writers.TypeScript {
                 foreach(var module in serializationModules)
                     writer.WriteLine($"{methodName}({module});");
         }
-        private static void WriteConstructorBody(CodeClass parentClass, LanguageWriter writer, bool inherits) {
+        private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
             if(inherits)
                 writer.WriteLine("super();");
             foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData,
@@ -97,6 +98,17 @@ namespace Kiota.Builder.Writers.TypeScript {
                                             .OrderByDescending(x => x.PropertyKind)
                                             .ThenBy(x => x.Name)) {
                 writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
+            }
+            if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.HttpCore, CodePropertyKind.HttpCore, writer);
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.CurrentPath, CodePropertyKind.CurrentPath, writer);
+            }
+        }
+        private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
+            var property = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(propertyKind));
+            var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
+            if(property != null && parameter != null) {
+                writer.WriteLine($"this.{property.Name.ToFirstCharacterLowerCase()} = {parameter.Name};");
             }
         }
         private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass) {

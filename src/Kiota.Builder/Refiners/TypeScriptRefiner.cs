@@ -76,7 +76,10 @@ namespace Kiota.Builder.Refiners {
                 else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer))
                     currentMethod.ReturnType.Name = $"Map<string, (item: T, node: ParseNode) => void>";
                 else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
-                    currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
+                    currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore))
+                        .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
+                        .ToList()
+                        .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
             }
             
                 
