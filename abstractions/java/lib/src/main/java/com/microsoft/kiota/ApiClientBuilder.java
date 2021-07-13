@@ -16,10 +16,14 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-
+/** Provides a builder for creating an ApiClient and register the default serializers/deserializers. */
 public class ApiClientBuilder {
     // private constructor to prevent instantiation
     private ApiClientBuilder() { }
+    /**
+     * Registers the default serializer to the registry.
+     * @param factoryClass the class of the factory to be registered.
+     */
     public static void registerDefaultSerializer(@Nonnull final Class<? extends SerializationWriterFactory> factoryClass) {
         Objects.requireNonNull(factoryClass);
         try {
@@ -30,6 +34,10 @@ public class ApiClientBuilder {
             throw new RuntimeException(e);
         }
     }
+    /**
+     * Registers the default deserializer to the registry.
+     * @param factoryClass the class of the factory to be registered.
+     */
     public static void registerDefaultDeserializer(@Nonnull final Class<? extends ParseNodeFactory> factoryClass) {
         Objects.requireNonNull(factoryClass);
         try {
@@ -40,6 +48,11 @@ public class ApiClientBuilder {
             throw new RuntimeException(e);
         }
     }
+    /**
+     * Enables the backing store on default serialization writers and the given serialization writer.
+     * @param original The serialization writer to enable the backing store on.
+     * @return A new serialization writer with the backing store enabled.
+     */
     @Nonnull
     public static SerializationWriterFactory enableBackingStoreForSerializationWriterFactory(@Nonnull final SerializationWriterFactory original) {
         SerializationWriterFactory result = Objects.requireNonNull(original);
@@ -50,6 +63,11 @@ public class ApiClientBuilder {
         enableBackingStoreForSerializationWriterRegistry(SerializationWriterFactoryRegistry.defaultInstance);
         return result;
     }
+    /**
+     * Enables the backing store on default parse node factories and the given parse node factory.
+     * @param original The parse node factory to enable the backing store on.
+     * @return A new parse node factory with the backing store enabled.
+     */
     @Nonnull
     public static ParseNodeFactory enableBackingStoreForParseNodeFactory(@Nonnull final ParseNodeFactory original) {
         ParseNodeFactory result = Objects.requireNonNull(original);
