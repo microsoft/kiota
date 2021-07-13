@@ -4,7 +4,13 @@ using System.Collections.Generic;
 using System.IO;
 
 namespace Microsoft.Kiota.Abstractions.Store {
+    /// <summary>
+    /// Proxy implementation of <see cref="ISerializationWriterFactory"/> for the <see cref="IBackingStore">backing store</see> that automatically sets the state of the backing store when serializing.
+    /// </summary>
     public class BackingStoreSerializationWriterProxyFactory : SerializationWriterProxyFactory {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BackingStoreSerializationWriterFactory"/> class given a concrete implementation of <see cref="ISerializationWriterFactory"/>.
+        /// </summary>
         public BackingStoreSerializationWriterProxyFactory(ISerializationWriterFactory concrete) : base(
             concrete,
             (x) => {

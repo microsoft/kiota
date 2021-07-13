@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Microsoft.Kiota.Abstractions.Store {
+    /// <summary>
+    ///     In-memory implementation of the backing store. Allows for dirty tracking of changes.
+    /// </summary>
     public class InMemoryBackingStore : IBackingStore {
         private bool isInitializationComplete = true;
         public bool ReturnOnlyChangedValues {get; set;}
