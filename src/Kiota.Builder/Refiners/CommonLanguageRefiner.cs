@@ -35,17 +35,17 @@ namespace Kiota.Builder.Refiners {
                 }
             CrawlTree(generatedCode, AddSerializationModulesImport);
         }
-        public void ReplaceDefaultSerializationModules(CodeElement generatedCode, params string[] moduleNames) {
+        protected static void ReplaceDefaultSerializationModules(CodeElement generatedCode, params string[] moduleNames) {
             if(ReplaceSerializationModules(generatedCode, x => x.SerializerModules, "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory", moduleNames))
                 return;
             CrawlTree(generatedCode, (x) => ReplaceDefaultSerializationModules(x, moduleNames));
         }
-        public void ReplaceDefaultDeserializationModules(CodeElement generatedCode, params string[] moduleNames) {
+        protected static void ReplaceDefaultDeserializationModules(CodeElement generatedCode, params string[] moduleNames) {
             if(ReplaceSerializationModules(generatedCode, x => x.DeserializerModules, "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory", moduleNames))
                 return;
             CrawlTree(generatedCode, (x) => ReplaceDefaultDeserializationModules(x, moduleNames));
         }
-        private bool ReplaceSerializationModules(CodeElement generatedCode, Func<CodeMethod, List<string>> propertyGetter, string initialName, params string[] moduleNames) {
+        private static bool ReplaceSerializationModules(CodeElement generatedCode, Func<CodeMethod, List<string>> propertyGetter, string initialName, params string[] moduleNames) {
             if(generatedCode is CodeMethod currentMethod &&
                 currentMethod.IsOfKind(CodeMethodKind.ClientConstructor)) {
                     var modules = propertyGetter.Invoke(currentMethod);
