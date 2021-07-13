@@ -4,8 +4,11 @@ import com.microsoft.kiota.serialization.SerializationWriterFactory;
 import com.microsoft.kiota.serialization.SerializationWriterProxyFactory;
 
 import javax.annotation.Nonnull;
-
+/**Proxy implementation of SerializationWriterFactory for the backing store that automatically sets the state of the backing store when serializing. */
 public class BackingStoreSerializationWriterProxyFactory extends SerializationWriterProxyFactory {
+    /**
+     * Initializes a new instance of the BackingStoreSerializationWriterProxyFactory class given a concrete implementation of SerializationWriterFactory.
+     */
     public BackingStoreSerializationWriterProxyFactory(@Nonnull final SerializationWriterFactory concrete) {
         super(concrete,
         (x) -> {
