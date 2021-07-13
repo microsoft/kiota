@@ -12,6 +12,10 @@ namespace Kiota.Builder.Refiners {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
         public abstract void Refine(CodeNamespace generatedCode);
+        /// <summary>
+        ///     This method adds the imports for the default serializers and deserializers to the api client class.
+        ///     It also updates the module names to replace the fully qualified class name by the class name without the namespace.
+        /// </summary>
         protected void AddSerializationModulesImport(CodeElement generatedCode) {
             if(generatedCode is CodeMethod currentMethod &&
                 currentMethod.IsOfKind(CodeMethodKind.ClientConstructor) &&
@@ -32,26 +36,28 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(generatedCode, AddSerializationModulesImport);
         }
         public void ReplaceDefaultSerializationModules(CodeElement generatedCode, params string[] moduleNames) {
-            if(generatedCode is CodeMethod currentMethod &&
-                currentMethod.IsOfKind(CodeMethodKind.ClientConstructor) &&
-                currentMethod.SerializerModules.Count == 1 &&
-                currentMethod.SerializerModules.Any(x => "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory".Equals(x, StringComparison.OrdinalIgnoreCase))) {
-                currentMethod.SerializerModules.Clear();
-                currentMethod.SerializerModules.AddRange(moduleNames);
+            if(ReplaceSerializationModules(generatedCode, x => x.SerializerModules, "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory", moduleNames))
                 return;
-            }
             CrawlTree(generatedCode, (x) => ReplaceDefaultSerializationModules(x, moduleNames));
         }
         public void ReplaceDefaultDeserializationModules(CodeElement generatedCode, params string[] moduleNames) {
-            if(generatedCode is CodeMethod currentMethod &&
-                currentMethod.IsOfKind(CodeMethodKind.ClientConstructor) &&
-                currentMethod.DeserializerModules.Count == 1 &&
-                currentMethod.DeserializerModules.Any(x => "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory".Equals(x, StringComparison.OrdinalIgnoreCase))) {
-                currentMethod.DeserializerModules.Clear();
-                currentMethod.DeserializerModules.AddRange(moduleNames);
+            if(ReplaceSerializationModules(generatedCode, x => x.DeserializerModules, "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory", moduleNames))
                 return;
-            }
             CrawlTree(generatedCode, (x) => ReplaceDefaultDeserializationModules(x, moduleNames));
+        }
+        private bool ReplaceSerializationModules(CodeElement generatedCode, Func<CodeMethod, List<string>> propertyGetter, string initialName, params string[] moduleNames) {
+            if(generatedCode is CodeMethod currentMethod &&
+                currentMethod.IsOfKind(CodeMethodKind.ClientConstructor)) {
+                    var modules = propertyGetter.Invoke(currentMethod);
+                    if(modules.Count == 1 &&
+                        modules.Any(x => initialName.Equals(x, StringComparison.OrdinalIgnoreCase))) {
+                        modules.Clear();
+                        modules.AddRange(moduleNames);
+                        return true;
+                }
+            }
+
+            return false;
         }
         internal const string GetterPrefix = "get-";
         internal const string SetterPrefix = "set-";
