@@ -7,7 +7,10 @@ using Kiota.Builder.Writers.Extensions;
 namespace Kiota.Builder.Writers.Java {
     public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionService>
     {
-        public CodeMethodWriter(JavaConventionService conventionService) : base(conventionService){}
+        private readonly bool _usesBackingStore;
+        public CodeMethodWriter(JavaConventionService conventionService, bool usesBackingStore) : base(conventionService){
+            _usesBackingStore = usesBackingStore;
+        }
         public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
             if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
@@ -55,6 +58,10 @@ namespace Kiota.Builder.Writers.Java {
                 case CodeMethodKind.Setter:
                     WriteSetterBody(codeElement, writer, parentClass);
                     break;
+                case CodeMethodKind.ClientConstructor:
+                    WriteConstructorBody(parentClass, writer, inherits);
+                    WriteApiConstructorBody(parentClass, codeElement, writer);
+                break;
                 case CodeMethodKind.Constructor:
                     WriteConstructorBody(parentClass, writer, inherits);
                     break;
@@ -64,6 +71,21 @@ namespace Kiota.Builder.Writers.Java {
             }
             writer.DecreaseIndent();
             writer.WriteLine("}");
+        }
+        private void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
+            var httpCoreProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
+            var httpCoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.HttpCore));
+            var httpCorePropertyName = httpCoreProperty.Name.ToFirstCharacterLowerCase();
+            writer.WriteLine($"this.{httpCorePropertyName} = {httpCoreParameter.Name};");
+            WriteSerializationRegistration(method.SerializerModules, writer, "registerDefaultSerializer");
+            WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializer");
+            if(_usesBackingStore)
+                writer.WriteLine($"this.{httpCorePropertyName}.enableBackingStore();");
+        }
+        private static void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, string methodName) {
+            if(serializationModules != null)
+                foreach(var module in serializationModules)
+                    writer.WriteLine($"ApiClientBuilder.{methodName}({module}.class);");
         }
         private static void WriteConstructorBody(CodeClass parentClass, LanguageWriter writer, bool inherits) {
             if(inherits)
@@ -147,7 +169,7 @@ namespace Kiota.Builder.Writers.Java {
             }
             writer.WriteLine(");");
             var sendMethodName = conventions.PrimitiveTypes.Contains(returnType) ? "sendPrimitiveAsync" : "sendAsync";
-            if(codeElement.Parameters.Any(x => x.ParameterKind == CodeParameterKind.ResponseHandler))
+            if(codeElement.Parameters.Any(x => x.IsOfKind(CodeParameterKind.ResponseHandler)))
                 writer.WriteLine($"return this.httpCore.{sendMethodName}(requestInfo, {returnType}.class, responseHandler);");
             else
                 writer.WriteLine($"return this.httpCore.{sendMethodName}(requestInfo, {returnType}.class, null);");
@@ -171,7 +193,7 @@ namespace Kiota.Builder.Writers.Java {
                 if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"requestInfo.setStreamContent({requestBodyParam.Name});");
                 else
-                    writer.WriteLine($"requestInfo.setContentFromParsable({requestBodyParam.Name}, {conventions.SerializerFactoryPropertyName}, \"{codeElement.ContentType}\");");
+                    writer.WriteLine($"requestInfo.setContentFromParsable({requestBodyParam.Name}, {conventions.HttpCorePropertyName}, \"{codeElement.ContentType}\");");
             if(queryStringParam != null) {
                 var httpMethodPrefix = codeElement.HttpMethod.ToString().ToFirstCharacterUpperCase();
                 writer.WriteLine($"if ({queryStringParam.Name} != null) {{");
@@ -206,9 +228,9 @@ namespace Kiota.Builder.Writers.Java {
             var genericTypeParameterDeclaration = code.IsOfKind(CodeMethodKind.Deserializer) ? " <T>": string.Empty;
             var returnTypeAsyncPrefix = code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty;
             var returnTypeAsyncSuffix = code.IsAsync ? ">" : string.Empty;
-            var isConstructor = code.IsOfKind(CodeMethodKind.Constructor);
+            var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor);
             var methodName = (code.MethodKind switch {
-                (CodeMethodKind.Constructor) => code.Parent.Name.ToFirstCharacterUpperCase(),
+                (CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor) => code.Parent.Name.ToFirstCharacterUpperCase(),
                 (CodeMethodKind.Getter) => $"get{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
                 (CodeMethodKind.Setter) => $"set{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
                 _ => code.Name.ToFirstCharacterLowerCase()

@@ -18,11 +18,11 @@ namespace Microsoft.Kiota.Abstractions
             Content = content;
             Headers.Add(contentTypeHeader, binaryContentType);
         }
-        public void SetContentFromParsable<T>(T item, ISerializationWriterFactory writerFactory, string contentType) where T : IParsable {
+        public void SetContentFromParsable<T>(T item, IHttpCore coreService, string contentType) where T : IParsable {
             if(string.IsNullOrEmpty(contentType)) throw new ArgumentNullException(nameof(contentType));
-            if(writerFactory == null) throw new ArgumentNullException(nameof(writerFactory));
+            if(coreService == null) throw new ArgumentNullException(nameof(coreService));
 
-            using var writer = writerFactory.GetSerializationWriter(contentType);
+            using var writer = coreService.SerializationWriterFactory.GetSerializationWriter(contentType);
             writer.WriteObjectValue(null, item);
             Headers.Add(contentTypeHeader, contentType);
             Content = writer.GetSerializedContent();

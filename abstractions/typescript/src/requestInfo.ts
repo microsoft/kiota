@@ -1,6 +1,7 @@
 import { HttpMethod } from "./httpMethod";
 import { ReadableStream } from 'web-streams-polyfill/es2018';
-import { Parsable, SerializationWriterFactory } from "./serialization";
+import { Parsable } from "./serialization";
+import { HttpCore } from "./httpCore";
 
 export class RequestInfo {
     public URI?: string;
@@ -10,11 +11,11 @@ export class RequestInfo {
     public headers: Map<string, string> = new Map<string, string>();
     private static binaryContentType = "application/octet-stream";
     private static contentTypeHeader = "Content-Type";
-    public setContentFromParsable = <T extends Parsable>(value?: T | undefined, serializerFactory?: SerializationWriterFactory | undefined, contentType?: string | undefined): void => {
-        if(!serializerFactory) throw new Error("serializerFactory cannot be undefined");
+    public setContentFromParsable = <T extends Parsable>(value?: T | undefined, httpCore?: HttpCore | undefined, contentType?: string | undefined): void => {
+        if(!httpCore) throw new Error("httpCore cannot be undefined");
         if(!contentType) throw new Error("contentType cannot be undefined");
 
-        const writer = serializerFactory.getSerializationWriter(contentType);
+        const writer = httpCore.getSerializationWriterFactory().getSerializationWriter(contentType);
         this.headers.set(RequestInfo.contentTypeHeader, contentType);
         writer.writeObjectValue(undefined, value);
         this.content = writer.getSerializedContent();

@@ -41,7 +41,6 @@ namespace Kiota.Builder.Writers.Java.Tests {
             var result = tw.ToString();
             Assert.Contains($"new {typeName}", result);
             Assert.Contains("HttpCore parentCore = httpCore", result);
-            Assert.Contains("SerializationWriterFactory parentSerializationFactory = serializerFactory", result);
             Assert.Contains("String parentPath =", result);
         }
         [Fact]

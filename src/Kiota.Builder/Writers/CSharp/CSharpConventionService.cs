@@ -5,7 +5,6 @@ using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.CSharp {
     public class CSharpConventionService : ILanguageConventionService {
-        public string SerializerFactoryPropertyName => "SerializerFactory";
         public string StreamTypeName => "stream";
         public string VoidTypeName => "void";
         public string DocCommentPrefix => "/// ";
@@ -28,7 +27,7 @@ namespace Kiota.Builder.Writers.CSharp {
             };
         }
         internal void AddRequestBuilderBody(string returnType, LanguageWriter writer, string suffix = default, string prefix = default) {
-            writer.WriteLine($"{prefix}new {returnType} {{ {HttpCorePropertyName} = {HttpCorePropertyName}, {SerializerFactoryPropertyName} = {SerializerFactoryPropertyName}, {CurrentPathPropertyName} = {CurrentPathPropertyName} + {PathSegmentPropertyName} {suffix}}};");
+            writer.WriteLine($"{prefix}new {returnType} {{ {HttpCorePropertyName} = {HttpCorePropertyName}, {CurrentPathPropertyName} = {CurrentPathPropertyName} + {PathSegmentPropertyName} {suffix}}};");
         }
         internal bool ShouldTypeHaveNullableMarker(CodeTypeBase propType, string propTypeName) {
             return propType.IsNullable && (NullableTypes.Contains(propTypeName) || (propType is CodeType codeType && codeType.TypeDefinition is CodeEnum));

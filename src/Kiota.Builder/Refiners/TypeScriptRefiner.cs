@@ -8,7 +8,7 @@ namespace Kiota.Builder.Refiners {
         public override void Refine(CodeNamespace generatedCode)
         {
             PatchResponseHandlerType(generatedCode);
-            AddDefaultImports(generatedCode, Array.Empty<Tuple<string, string>>(), defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
+            AddDefaultImports(generatedCode, Array.Empty<Tuple<string, string>>(), defaultNamespacesForModels, defaultNamespacesForRequestBuilders, defaultSymbolsForApiClient);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, "ById");
             CorrectCoreType(generatedCode);
             CorrectCoreTypesForBackingStoreUsings(generatedCode, "@microsoft/kiota-abstractions");
@@ -23,6 +23,9 @@ namespace Kiota.Builder.Refiners {
                                                 }, _configuration.UsesBackingStore, false);
             AddConstructorsForDefaultValues(generatedCode, true);
             ReplaceRelativeImportsByImportPath(generatedCode, '.');
+            ReplaceDefaultSerializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory");
+            ReplaceDefaultDeserializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonParseNodeFactory");
+            AddSerializationModulesImport(generatedCode);
         }
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
@@ -39,21 +42,25 @@ namespace Kiota.Builder.Refiners {
             new ("HttpMethod", "@microsoft/kiota-abstractions"),
             new ("RequestInfo", "@microsoft/kiota-abstractions"),
             new ("ResponseHandler", "@microsoft/kiota-abstractions"),
-            new ("SerializationWriterFactory", "@microsoft/kiota-abstractions"),
         };
         private static readonly Tuple<string, string>[] defaultNamespacesForModels = new Tuple<string, string>[] { 
             new ("SerializationWriter", "@microsoft/kiota-abstractions"),
             new ("ParseNode", "@microsoft/kiota-abstractions"),
             new ("Parsable", "@microsoft/kiota-abstractions"),
         };
+        private static readonly Tuple<string, string>[] defaultSymbolsForApiClient = new Tuple<string, string>[] { 
+            new ("registerDefaultSerializer", "@microsoft/kiota-abstractions"),
+            new ("registerDefaultDeserializer", "@microsoft/kiota-abstractions"),
+            new ("enableBackingStoreForSerializationWriterFactory", "@microsoft/kiota-abstractions"),
+            new ("SerializationWriterFactoryRegistry", "@microsoft/kiota-abstractions"),
+            new ("ParseNodeFactoryRegistry", "@microsoft/kiota-abstractions"),
+        };
         private static void CorrectCoreType(CodeElement currentElement) {
             if (currentElement is CodeProperty currentProperty) {
                 if(currentProperty.IsOfKind(CodePropertyKind.HttpCore))
                     currentProperty.Type.Name = "HttpCore";
                 else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
-                    currentProperty.Type.Name = currentProperty.Type.Name.Substring(1); // removing the "I"
-                else if(currentProperty.IsOfKind(CodePropertyKind.SerializerFactory))
-                    currentProperty.Type.Name = "SerializationWriterFactory";
+                    currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
                 else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase))
                     currentProperty.Type.Name = $"Date";
                 else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
@@ -68,6 +75,8 @@ namespace Kiota.Builder.Refiners {
                     currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
                 else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer))
                     currentMethod.ReturnType.Name = $"Map<string, (item: T, node: ParseNode) => void>";
+                else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
+                    currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
             }
             
                 

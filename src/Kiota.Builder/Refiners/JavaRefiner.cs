@@ -16,7 +16,7 @@ namespace Kiota.Builder.Refiners {
             AddRequireNonNullImports(generatedCode);
             FixReferencesToEntityType(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
-            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
+            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders, defaultSymbolsForApiClient);
             CorrectCoreType(generatedCode);
             PatchHeaderParametersType(generatedCode);
             AddListImport(generatedCode);
@@ -31,6 +31,9 @@ namespace Kiota.Builder.Refiners {
                                                 }, _configuration.UsesBackingStore, true);
             AddConstructorsForDefaultValues(generatedCode, true);
             CorrectCoreTypesForBackingStoreUsings(generatedCode, "com.microsoft.kiota.store");
+            ReplaceDefaultSerializationModules(generatedCode, "com.microsoft.kiota.serialization.JsonSerializationWriterFactory");
+            ReplaceDefaultDeserializationModules(generatedCode, "com.microsoft.kiota.serialization.JsonParseNodeFactory");
+            AddSerializationModulesImport(generatedCode);
         }
         private static void AddEnumSetImport(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) &&
@@ -75,7 +78,6 @@ namespace Kiota.Builder.Refiners {
             new ("RequestInfo", "com.microsoft.kiota"),
             new ("ResponseHandler", "com.microsoft.kiota"),
             new ("QueryParametersBase", "com.microsoft.kiota"),
-            new ("SerializationWriterFactory", "com.microsoft.kiota.serialization"),
             new ("Map", "java.util"),
             new ("URI", "java.net"),
             new ("URISyntaxException", "java.net"),
@@ -92,14 +94,17 @@ namespace Kiota.Builder.Refiners {
             new ("Map", "java.util"),
             new ("HashMap", "java.util"),
         };
+        private static readonly Tuple<string, string>[] defaultSymbolsForApiClient = new Tuple<string, string>[] { 
+            new ("ApiClientBuilder", "com.microsoft.kiota"),
+            new ("SerializationWriterFactoryRegistry", "com.microsoft.kiota.serialization"),
+            new ("ParseNodeFactoryRegistry", "com.microsoft.kiota.serialization"),
+        };
         private static void CorrectCoreType(CodeElement currentElement) {
             if (currentElement is CodeProperty currentProperty && currentProperty.Type != null) {
                 if(currentProperty.IsOfKind(CodePropertyKind.HttpCore))
                     currentProperty.Type.Name = "HttpCore";
                 else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
-                    currentProperty.Type.Name = currentProperty.Type.Name.Substring(1); // removing the "I"
-                else if(currentProperty.IsOfKind(CodePropertyKind.SerializerFactory))
-                    currentProperty.Type.Name = "SerializationWriterFactory";
+                    currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
                 else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase)) {
                     currentProperty.Type.Name = $"OffsetDateTime";
                     var nUsing = new CodeUsing(currentProperty.Parent) {
@@ -124,6 +129,8 @@ namespace Kiota.Builder.Refiners {
                     currentMethod.ReturnType.Name = $"Map<String, BiConsumer<T, ParseNode>>";
                     currentMethod.Name = "getFieldDeserializers";
                 }
+                else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
+                    currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
             }
             CrawlTree(currentElement, CorrectCoreType);
         }
@@ -167,8 +174,8 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(currentElement, AndInsertOverrideMethodForRequestExecutorsAndBuilders);
         }
         private static void PatchHeaderParametersType(CodeElement currentElement) {
-            if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => x.ParameterKind == CodeParameterKind.Headers))
-                currentMethod.Parameters.Where(x => x.ParameterKind == CodeParameterKind.Headers)
+            if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Headers)))
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Headers))
                                         .ToList()
                                         .ForEach(x => x.Type.Name = "Map<String, String>");
             CrawlTree(currentElement, PatchHeaderParametersType);

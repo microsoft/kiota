@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
 
 import com.microsoft.kiota.serialization.Parsable;
 import com.microsoft.kiota.serialization.SerializationWriter;
-import com.microsoft.kiota.serialization.SerializationWriterFactory;
+import com.microsoft.kiota.HttpCore;
 
 public class RequestInfo {
     @Nullable
@@ -32,11 +32,11 @@ public class RequestInfo {
         this.content = value;
         headers.put(contentTypeHeader, binaryContentType);
     }
-    public <T extends Parsable> void setContentFromParsable(@Nonnull final T value, @Nonnull final SerializationWriterFactory serializerFactory, @Nonnull final String contentType) {
-        Objects.requireNonNull(serializerFactory);
+    public <T extends Parsable> void setContentFromParsable(@Nonnull final T value, @Nonnull final HttpCore httpCore, @Nonnull final String contentType) {
+        Objects.requireNonNull(httpCore);
         Objects.requireNonNull(value);
         Objects.requireNonNull(contentType);
-        try(final SerializationWriter writer = serializerFactory.getSerializationWriter(contentType)) {
+        try(final SerializationWriter writer = httpCore.getSerializationWriterFactory().getSerializationWriter(contentType)) {
             headers.put(contentTypeHeader, contentType);
             writer.writeObjectValue(null, value);
             this.content = writer.getSerializedContent();

@@ -101,12 +101,6 @@ namespace Kiota.Builder.Refiners.Tests {
                     Name = httpCoreDefaultName
                 }
             }, new (model) {
-                Name = "serializerFactory",
-                PropertyKind = CodePropertyKind.SerializerFactory,
-                Type = new CodeType(model) {
-                    Name = factoryDefaultName,
-                }
-            }, new (model) {
                 Name = "someDate",
                 PropertyKind = CodePropertyKind.Custom,
                 Type = new CodeType(model) {

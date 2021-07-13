@@ -4,9 +4,9 @@ using System.Linq;
 namespace Kiota.Builder.Extensions {
     public static class StringExtensions {
         public static string ToFirstCharacterLowerCase(this string input)
-            => string.IsNullOrEmpty(input) ? input : $"{char.ToLowerInvariant(input.FirstOrDefault())}{input.Substring(1)}";
+            => string.IsNullOrEmpty(input) ? input : $"{char.ToLowerInvariant(input.FirstOrDefault())}{input[1..]}";
         public static string ToFirstCharacterUpperCase(this string input)
-            => string.IsNullOrEmpty(input) ? input : Char.ToUpperInvariant(input.FirstOrDefault()) + input.Substring(1);
+            => string.IsNullOrEmpty(input) ? input : Char.ToUpperInvariant(input.FirstOrDefault()) + input[1..];
         public static string ToCamelCase(this string name)
         {
             if(string.IsNullOrEmpty(name)) return name;
@@ -21,5 +21,7 @@ namespace Kiota.Builder.Extensions {
                                                                             .Select(s => ToFirstCharacterUpperCase(s)));
         public static string ReplaceValueIdentifier(this string original) =>
             original?.Replace("$value", "Content");
+        public static string TrimQuotes(this string original) =>
+            original?.Trim('\'', '"');
     }
 }

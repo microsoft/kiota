@@ -89,7 +89,6 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             Assert.Contains("get =>", result);
             Assert.Contains($"new {typeName}", result);
             Assert.Contains("HttpCore = HttpCore", result);
-            Assert.Contains("SerializerFactory = SerializerFactory", result);
             Assert.Contains("CurrentPath = CurrentPath + PathSegment", result);
         }
         [Fact]

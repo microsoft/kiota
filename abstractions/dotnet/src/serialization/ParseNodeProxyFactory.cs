@@ -3,6 +3,7 @@ using System.IO;
 
 namespace Microsoft.Kiota.Abstractions.Serialization {
     public abstract class ParseNodeProxyFactory : IParseNodeFactory {
+        public string ValidContentType { get { return _concrete.ValidContentType; }}
         private readonly IParseNodeFactory _concrete;
         private readonly Action<IParsable> _onBefore;
         private readonly Action<IParsable> _onAfter;

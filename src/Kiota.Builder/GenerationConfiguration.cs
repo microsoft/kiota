@@ -11,8 +11,10 @@ namespace Kiota.Builder {
         public List<string> PropertiesPrefixToStrip { get; set; } = new() { "@odata."};
         public HashSet<string> IgnoredRequestContentTypes { get; set; } = new();
         public string BackingStore { get; set; } = string.Empty;
+        public List<string> Serializers { get; set; } = new();
         public bool UsesBackingStore {
             get => !string.IsNullOrEmpty(BackingStore);
         }
+        public List<string> Deserializers { get; set; } = new();
     }
 }

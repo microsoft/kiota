@@ -14,6 +14,9 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 public class JsonParseNodeFactory implements ParseNodeFactory {
+    public String getValidContentType() {
+        return validContentType;
+    }
     private final static String validContentType = "application/json";
     @Override
     @Nonnull

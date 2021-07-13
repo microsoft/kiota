@@ -1,19 +1,21 @@
 using System;
+using System.Collections.Generic;
 using System.CommandLine;
-using System.CommandLine.Invocation;
+using System.CommandLine.Binding;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Kiota.Builder;
+using Kiota.Builder.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Kiota {
-    public static class KiotaHost {
-        public static RootCommand GetRootCommand()
+    public class KiotaHost {
+        public RootCommand GetRootCommand()
         {
-            var configuration = LoadDefaultConfiguration();
             var outputOption = new Option("--output", "The output directory path for the generated code files.") { Argument = new Argument<string>(() => "./output") };
             outputOption.AddAlias("-o");
             
@@ -37,6 +39,12 @@ namespace Kiota {
             var backingStoreOption = new Option("--backing-store", "The fully qualified name for the backing store class to use.") {Argument = new Argument<string>()};
             backingStoreOption.AddAlias("-b");
 
+            var serializerOption = new Option<List<String>>("--serializer", "The fully qualified class names for serializers.") { Argument = new Argument<List<string>>(() => new List<string> {"Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory"}) };
+            serializerOption.AddAlias("-s");
+
+            var deserializerOption = new Option<List<String>>("--deserializer", "The fully qualified class names for deserializers.") { Argument = new Argument<List<string>>(() => new List<string> {"Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory"}) };
+            deserializerOption.AddAlias("--ds");
+
             var command = new RootCommand {
                 outputOption,
                 languageOption,
@@ -45,44 +53,49 @@ namespace Kiota {
                 classOption,
                 logLevelOption,
                 namespaceOption,
+                serializerOption,
+                deserializerOption,
             };
-            command.Handler = CommandHandler.Create<string, GenerationLanguage?, string, string, string, LogLevel, string>(async (output, language, openapi, backingstore, classname, loglevel, namespacename) =>
-            {
-                if (!string.IsNullOrEmpty(output))
-                    configuration.OutputPath = output;
-                if (!string.IsNullOrEmpty(openapi))
-                    configuration.OpenAPIFilePath = openapi;
-                if (!string.IsNullOrEmpty(classname))
-                    configuration.ClientClassName = classname;
-                if (!string.IsNullOrEmpty(namespacename))
-                    configuration.ClientNamespaceName = namespacename;
-                if (language.HasValue)
-                    configuration.Language = language.Value;
-                if(!string.IsNullOrEmpty(backingstore))
-                    configuration.BackingStore = backingstore.Trim('\'', '"'); //npm modules can start with @ which prompts some terminals to read response files and quotes are not automatically trimmed by the framework
-
-                #if DEBUG
-                loglevel = loglevel > LogLevel.Debug ? LogLevel.Debug : loglevel;
-                #endif
-
-                configuration.OpenAPIFilePath = GetAbsolutePath(configuration.OpenAPIFilePath);
-                configuration.OutputPath = GetAbsolutePath(configuration.OutputPath);
-
-                var logger = LoggerFactory.Create((builder) => {
-                    builder
-                        .AddConsole()
-#if DEBUG
-                        .AddDebug()
-#endif
-                        .SetMinimumLevel(loglevel);
-                }).CreateLogger<KiotaBuilder>();
-
-                logger.LogTrace($"configuration: {JsonSerializer.Serialize(configuration)}");
-
-                await new KiotaBuilder(logger, configuration).GenerateSDK();
-
-            });
+            command.Handler = HandlerDescriptor.FromDelegate(new HandleCommandCallDel(HandleCommandCall)).GetCommandHandler();
             return command;
+        }
+        private void AssignIfNotNullOrEmpty(string input, Action<GenerationConfiguration, string> assignment) {
+            if (!string.IsNullOrEmpty(input))
+                assignment.Invoke(Configuration, input);
+        }
+        private delegate Task HandleCommandCallDel(string output, GenerationLanguage? language, string openapi, string backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer, List<string> deserializer);
+        private async Task HandleCommandCall(string output, GenerationLanguage? language, string openapi, string backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer, List<string> deserializer) {
+            AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
+            AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
+            AssignIfNotNullOrEmpty(classname, (c, s) => c.ClientClassName = s);
+            AssignIfNotNullOrEmpty(namespacename, (c, s) => c.ClientNamespaceName = s);
+            AssignIfNotNullOrEmpty(backingstore, (c, s) => c.BackingStore = s.TrimQuotes()); //npm modules can start with @ which prompts some terminals to read response files and quotes are not automatically trimmed by the framework
+            if (language.HasValue)
+                Configuration.Language = language.Value;
+            if(serializer?.Any() ?? false)
+                Configuration.Serializers.AddRange(serializer.Select(x => x.TrimQuotes()));
+            if(deserializer?.Any() ?? false)
+                Configuration.Deserializers.AddRange(deserializer.Select(x => x.TrimQuotes()));
+
+            #if DEBUG
+            loglevel = loglevel > LogLevel.Debug ? LogLevel.Debug : loglevel;
+            #endif
+
+            Configuration.OpenAPIFilePath = GetAbsolutePath(Configuration.OpenAPIFilePath);
+            Configuration.OutputPath = GetAbsolutePath(Configuration.OutputPath);
+
+            var logger = LoggerFactory.Create((builder) => {
+                builder
+                    .AddConsole()
+#if DEBUG
+                    .AddDebug()
+#endif
+                    .SetMinimumLevel(loglevel);
+            }).CreateLogger<KiotaBuilder>();
+
+            logger.LogTrace($"configuration: {JsonSerializer.Serialize(Configuration)}");
+
+            await new KiotaBuilder(logger, Configuration).GenerateSDK();
         }
         private static void AddStringRegexValidator(Argument argument, string pattern, string parameterName) {
             var validator = new Regex(pattern);
@@ -103,7 +116,8 @@ namespace Kiota {
                 return null;
             });
         }
-        private static GenerationConfiguration LoadDefaultConfiguration() {
+        private GenerationConfiguration Configuration { get => ConfigurationFactory.Value; }
+        private readonly Lazy<GenerationConfiguration> ConfigurationFactory = new (() => {
             var builder = new ConfigurationBuilder();
             var configuration = builder.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                     .AddEnvironmentVariables(prefix: "KIOTA_")
@@ -111,10 +125,8 @@ namespace Kiota {
             var configObject = new GenerationConfiguration();
             configuration.Bind(configObject);
             return configObject;
-        }
-
+        });
         private static string GetAbsolutePath(string source) => Path.IsPathRooted(source) || source.StartsWith("http") ? source : Path.Combine(Directory.GetCurrentDirectory(), source);
-
     }
     
 }
