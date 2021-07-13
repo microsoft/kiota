@@ -9,7 +9,7 @@ namespace Microsoft.Kiota.Abstractions.Store {
     /// </summary>
     public class BackingStoreSerializationWriterProxyFactory : SerializationWriterProxyFactory {
         /// <summary>
-        /// Initializes a new instance of the <see cref="BackingStoreSerializationWriterFactory"/> class given a concrete implementation of <see cref="ISerializationWriterFactory"/>.
+        /// Initializes a new instance of the <see cref="BackingStoreSerializationWriterProxyFactory"/> class given a concrete implementation of <see cref="ISerializationWriterFactory"/>.
         /// </summary>
         public BackingStoreSerializationWriterProxyFactory(ISerializationWriterFactory concrete) : base(
             concrete,
