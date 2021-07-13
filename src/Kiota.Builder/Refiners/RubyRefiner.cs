@@ -13,7 +13,7 @@ namespace Kiota.Builder.Refiners {
             AddParsableInheritanceForModelClasses(generatedCode);
             AddInheritedAndMethodTypesImports(generatedCode);
             AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
-            AddGetterAndSetterMethodsRuby(generatedCode, new() {
+            AddGetterAndSetterMethods(generatedCode, new() {
                                                     CodePropertyKind.Custom,
                                                     CodePropertyKind.AdditionalData,
                                                     CodePropertyKind.BackingStore,
@@ -53,51 +53,6 @@ namespace Kiota.Builder.Refiners {
                 }
             }
             CrawlTree(currentElement, (x) => AddInheritedAndMethodTypesImports(x));
-        }
-
-        private static void AddGetterAndSetterMethodsRuby(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, bool removeProperty, bool parameterAsOptional) {
-            if(!(propertyKindsToAddAccessors?.Any() ?? true)) return;
-            if(current is CodeProperty currentProperty &&
-                propertyKindsToAddAccessors.Contains(currentProperty.PropertyKind) &&
-                current.Parent is CodeClass parentClass &&
-                !parentClass.IsOfKind(CodeClassKind.QueryParameters)) {
-                if(removeProperty && currentProperty.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.AdditionalData)) // we never want to remove backing stores
-                    parentClass.RemoveChildElement(currentProperty);
-                else {
-                    currentProperty.Access = AccessModifier.Private;
-                    currentProperty.NamePrefix = "_";
-                }
-                parentClass.AddMethod(new CodeMethod(parentClass) {
-                    Name = $"{GetterPrefix}{current.Name}",
-                    Access = AccessModifier.Public,
-                    IsAsync = false,
-                    MethodKind = CodeMethodKind.Getter,
-                    ReturnType = currentProperty.Type,
-                    Description = $"Gets the {current.Name} property value. {currentProperty.Description}",
-                    AccessedProperty = currentProperty,
-                });
-                if(!currentProperty.ReadOnly) {
-                    var setter = parentClass.AddMethod(new CodeMethod(parentClass) {
-                        Name = $"{SetterPrefix}{current.Name}",
-                        Access = AccessModifier.Public,
-                        IsAsync = false,
-                        MethodKind = CodeMethodKind.Setter,
-                        Description = $"Sets the {current.Name} property value. {currentProperty.Description}",
-                        AccessedProperty = currentProperty,
-                    }).First();
-                    setter.ReturnType = new CodeType(setter) {
-                        Name = "void"
-                    };
-                    setter.Parameters.Add(new(setter) {
-                        Name = "value",
-                        ParameterKind = CodeParameterKind.SetterValue,
-                        Description = $"Value to set for the {current.Name} property.",
-                        Optional = parameterAsOptional,
-                        Type = currentProperty.Type,
-                    });
-                }
-            }
-            CrawlTree(current, x => AddGetterAndSetterMethods(x, propertyKindsToAddAccessors, removeProperty, parameterAsOptional));
         }
     }
 }
