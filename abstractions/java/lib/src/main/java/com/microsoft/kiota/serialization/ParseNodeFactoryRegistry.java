@@ -6,9 +6,13 @@ import java.util.Objects;
 
 import javax.annotation.Nonnull;
 
+/**
+ * This factory holds a list of all the registered factories for the various types of nodes.
+ */
 public class ParseNodeFactoryRegistry implements ParseNodeFactory {
-    // default instance
+    /** Default singleton instance of the registry to be used when registring new factories that should be available by default. */
     public static final ParseNodeFactoryRegistry defaultInstance = new ParseNodeFactoryRegistry();
+    /** List of factories that are registered by content type. */
     public HashMap<String, ParseNodeFactory> contentTypeAssociatedFactories = new HashMap<>();
     public String getValidContentType() {
         throw new UnsupportedOperationException("The registry supports multiple content types. Get the registered factory instead.");

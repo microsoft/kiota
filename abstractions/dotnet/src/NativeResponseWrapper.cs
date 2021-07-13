@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Microsoft.Kiota.Abstractions {
+    /// <summary>
+    /// This class can be used to wrap a request using the fluent API and get the native response object in return.
+    /// </summary>
     public class NativeResponseWrapper {
         public static async Task<NativeResponseType> CallAndGetNativeType<ModelType, NativeResponseType, QueryParametersType>(
                 Func<Action<QueryParametersType>, Action<IDictionary<string, string>>, IResponseHandler, Task<ModelType>> originalCall,
