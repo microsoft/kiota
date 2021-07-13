@@ -208,6 +208,7 @@ namespace Kiota.Builder
         }
         private static readonly string requestBuilderSuffix = "RequestBuilder";
         private static readonly string voidType = "void";
+        private static readonly string coreInterfaceType = "IHttpCore";
         private CodeClass AddApiClientClass(CodeNamespace targetNS) {
             var codeClass = targetNS.AddClass(new CodeClass(targetNS) { 
                 Name = config.ClientClassName,
@@ -301,7 +302,6 @@ namespace Kiota.Builder
                 CreateRequestBuilderClass(targetNamespace, childNode, rootNode);
             });
         }
-        private static readonly string coreInterfaceType = "IHttpCore";
         private void CreatePathManagement(CodeClass currentClass, OpenApiUrlTreeNode currentNode, bool isRootClientClass) {
             var pathProperty = new CodeProperty(currentClass) {
                 Access = AccessModifier.Private,
