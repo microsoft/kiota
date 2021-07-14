@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -128,6 +129,8 @@ namespace Microsoft.Kiota.Http.HttpClient
                                             string.Empty)),
                 
             };
+            if(requestInfo.MiddlewareOptions.Any())
+                requestInfo.MiddlewareOptions.ToList().ForEach(x => message.Options.Set(new HttpRequestOptionsKey<IMiddlewareOption>(x.GetType().FullName), x));
             if(requestInfo.Headers?.Any() ?? false)
                 requestInfo.Headers.Where(x => !contentTypeHeaderName.Equals(x.Key, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => message.Headers.Add(x.Key, x.Value));
             if(requestInfo.Content != null) {
