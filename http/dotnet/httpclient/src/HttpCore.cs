@@ -28,7 +28,7 @@ namespace Microsoft.Kiota.Http.HttpClient
         {
             authProvider = authenticationProvider ?? throw new ArgumentNullException(nameof(authenticationProvider));
             createdClient = httpClient == null;
-            client = httpClient ?? new System.Net.Http.HttpClient();
+            client = httpClient ?? HttpClientBuilder.Create(authProvider);
             pNodeFactory = parseNodeFactory ?? ParseNodeFactoryRegistry.DefaultInstance;
             sWriterFactory = serializationWriterFactory ?? SerializationWriterFactoryRegistry.DefaultInstance;
         }
