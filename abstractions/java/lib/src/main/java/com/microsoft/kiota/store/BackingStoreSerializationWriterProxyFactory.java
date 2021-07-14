@@ -8,6 +8,7 @@ import javax.annotation.Nonnull;
 public class BackingStoreSerializationWriterProxyFactory extends SerializationWriterProxyFactory {
     /**
      * Initializes a new instance of the BackingStoreSerializationWriterProxyFactory class given a concrete implementation of SerializationWriterFactory.
+     * @param concrete a concrete implementation of SerializationWriterFactory to wrap.
      */
     public BackingStoreSerializationWriterProxyFactory(@Nonnull final SerializationWriterFactory concrete) {
         super(concrete,

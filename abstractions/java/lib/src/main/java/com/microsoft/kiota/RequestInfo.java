@@ -35,7 +35,7 @@ public class RequestInfo {
     private static String contentTypeHeader = "Content-Type";
     /**
      * Sets the request body to be a binary stream.
-     * @param content the binary stream
+     * @param value the binary stream
      */
     public void setStreamContent(@Nonnull final InputStream value) {
         Objects.requireNonNull(value);

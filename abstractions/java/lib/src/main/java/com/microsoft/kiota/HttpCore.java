@@ -23,7 +23,8 @@ public interface HttpCore {
      * @param requestInfo the request info to execute.
      * @param responseHandler The response handler to use for the HTTP request instead of the default handler.
      * @param targetClass the class of the response model to deserialize the response into.
-     * @return a CompletableFuture with the deserialized response model.
+     * @param <ModelType> the type of the response model to deserialize the response into.
+     * @return a {@link CompletableFuture} with the deserialized response model.
      */
     <ModelType extends Parsable> CompletableFuture<ModelType> sendAsync(@Nonnull final RequestInfo requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler);
     /**
@@ -31,7 +32,8 @@ public interface HttpCore {
      * @param requestInfo the request info to execute.
      * @param responseHandler The response handler to use for the HTTP request instead of the default handler.
      * @param targetClass the class of the response model to deserialize the response into.
-     * @return a CompletableFuture with the deserialized primitive response model.
+     * @param <ModelType> the type of the response model to deserialize the response into.
+     * @return a {@link CompletableFuture} with the deserialized primitive response model.
      */
     <ModelType> CompletableFuture<ModelType> sendPrimitiveAsync(@Nonnull final RequestInfo requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler);
 }
