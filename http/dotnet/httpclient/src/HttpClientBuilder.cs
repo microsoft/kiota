@@ -15,7 +15,7 @@ namespace Microsoft.Kiota.Http.HttpClient {
         /// <returns>The <see cref="HttpClient"/> with the default middlewares.</returns>
         public static System.Net.Http.HttpClient Create(IAuthenticationProvider authenticationProvider = default) {
             var defaultHandlers = CreateDefaultHandlers(authenticationProvider);
-            var handler = CreateMainHandlerFromHandlersCollection(defaultHandlers.ToArray());
+            var handler = ChainHandlersCollectionAndGetFirstLink(defaultHandlers.ToArray());
             return handler != null ? new System.Net.Http.HttpClient(handler) : new System.Net.Http.HttpClient(); //TODO configure the default client options
         }
         /// <summary>
@@ -32,7 +32,7 @@ namespace Microsoft.Kiota.Http.HttpClient {
         /// </summary>
         /// <param name="handlers">The <see cref="DelegatingHandler"/> instances to create the <see cref="DelegatingHandler"/> from.</param>
         /// <returns>The created <see cref="DelegatingHandler"/>.</returns>
-        public static DelegatingHandler CreateMainHandlerFromHandlersCollection(params DelegatingHandler[] handlers) {
+        public static DelegatingHandler ChainHandlersCollectionAndGetFirstLink(params DelegatingHandler[] handlers) {
             if(handlers == null || !handlers.Any()) return default;
             var handlersAsList = handlers.ToList();
             handlersAsList.ForEach(h => {
