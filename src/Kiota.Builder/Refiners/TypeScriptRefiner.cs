@@ -42,6 +42,7 @@ namespace Kiota.Builder.Refiners {
             new ("HttpMethod", "@microsoft/kiota-abstractions"),
             new ("RequestInfo", "@microsoft/kiota-abstractions"),
             new ("ResponseHandler", "@microsoft/kiota-abstractions"),
+            new ("MiddlewareOption", "@microsoft/kiota-abstractions"),
         };
         private static readonly Tuple<string, string>[] defaultNamespacesForModels = new Tuple<string, string>[] { 
             new ("SerializationWriter", "@microsoft/kiota-abstractions"),
@@ -69,10 +70,13 @@ namespace Kiota.Builder.Refiners {
                 }
             }
             if (currentElement is CodeMethod currentMethod) {
-                if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
-                    currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x => x.Type.Name = "ResponseHandler");
+                if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
+                    if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
+                        currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ResponseHandler) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
+                    currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => x.Type.Name = "MiddlewareOption[]");
+                }
                 else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
-                    currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
+                    currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
                 else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer))
                     currentMethod.ReturnType.Name = $"Map<string, (item: T, node: ParseNode) => void>";
                 else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
