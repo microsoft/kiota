@@ -6,8 +6,11 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 
 public class SerializationWriterFactoryRegistry implements SerializationWriterFactory {
+    public final static SerializationWriterFactoryRegistry defaultInstance = new SerializationWriterFactoryRegistry();
     public HashMap<String, SerializationWriterFactory> contentTypeAssociatedFactories = new HashMap<>();
-
+    public String getValidContentType() {
+        throw new UnsupportedOperationException("The registry supports multiple content types. Get the registered factory instead.");
+    }
     @Override
     @Nonnull
     public SerializationWriter getSerializationWriter(@Nonnull final String contentType) {

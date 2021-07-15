@@ -15,7 +15,7 @@ namespace Kiota.Builder.Tests
             var myClass = new CodeClass(myNamespace) { Name = "bar"};
             myNamespace.AddClass(myClass);
 
-            var outputCode = CodeRenderer.RenderCodeAsString(new CSharpWriter(Path.GetRandomFileName(), "foo"),myNamespace);
+            var outputCode = CodeRenderer.RenderCodeAsString(new CSharpWriter(Path.GetRandomFileName(), "foo", false),myNamespace);
 
             Assert.Equal(@"namespace foo {
     public class Bar {

@@ -41,7 +41,6 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             var result = tw.ToString();
             Assert.Contains($"new {typeName}", result);
             Assert.Contains("builder.httpCore = this.httpCore", result);
-            Assert.Contains("builder.serializerFactory = this.serializerFactory", result);
             Assert.Contains("builder.currentPath = (this.currentPath ?? '') + this.pathSegment", result);
             Assert.Contains("return builder", result);
         }

@@ -40,7 +40,6 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             writer.Write(indexer);
             var result = tw.ToString();
             Assert.Contains("HttpCore = HttpCore", result);
-            Assert.Contains("SerializerFactory = SerializerFactory", result);
             Assert.Contains("CurrentPath = CurrentPath + PathSegment", result);
             Assert.Contains("+ position", result);
             Assert.Contains("public SomeRequestBuilder this[string position]", result);

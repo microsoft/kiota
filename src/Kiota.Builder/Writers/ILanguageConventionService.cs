@@ -2,7 +2,6 @@ namespace Kiota.Builder.Writers {
     public interface ILanguageConventionService
     {
         string GetAccessModifier(AccessModifier access);
-        string SerializerFactoryPropertyName {get; }
         string StreamTypeName {get; }
         string VoidTypeName {get; }
         string DocCommentPrefix {get; }

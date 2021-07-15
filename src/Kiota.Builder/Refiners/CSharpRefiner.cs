@@ -21,6 +21,7 @@ namespace Kiota.Builder.Refiners {
             ReplaceReservedNames(generatedCode, new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}");
             DisambiguatePropertiesWithClassNames(generatedCode);
             AddConstructorsForDefaultValues(generatedCode, false);
+            AddSerializationModulesImport(generatedCode);
         }
         private static void DisambiguatePropertiesWithClassNames(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass) {

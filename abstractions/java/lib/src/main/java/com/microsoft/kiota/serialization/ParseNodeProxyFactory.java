@@ -9,6 +9,9 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public abstract class ParseNodeProxyFactory implements ParseNodeFactory {
+    public String getValidContentType() {
+        return _concrete.getValidContentType();
+    }
     private final ParseNodeFactory _concrete;
     private final Consumer<Parsable> _onBefore;
     private final Consumer<Parsable> _onAfter;
