@@ -41,7 +41,7 @@ namespace Microsoft.Kiota.Abstractions
         /// </summary>
         /// <param name="middlewareOption">The middleware option to add.</param>
         public void AddMiddlewareOptions(params IMiddlewareOption[] options) {
-            if(!options?.Any() ?? false) throw new ArgumentNullException(nameof(options));
+            if(!options?.Any() ?? false) return; // it's a no-op if there are no options and this avoid having to check in the code gen.
             foreach(var option in options.Where(x => x != null))
                 if(!_middlewareOptions.TryAdd(option.GetType().FullName, option))
                     _middlewareOptions[option.GetType().FullName] = option;
