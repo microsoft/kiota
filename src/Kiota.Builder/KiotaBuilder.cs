@@ -278,11 +278,11 @@ namespace Kiota.Builder
             });
         }
         private static readonly string currentPathParameterName = "currentPath";
-        private void CreatePathManagement(CodeClass currentClass, OpenApiUrlTreeNode currentNode, bool isRootClientClass) {
+        private void CreatePathManagement(CodeClass currentClass, OpenApiUrlTreeNode currentNode, bool isApiClientClass) {
             var pathProperty = new CodeProperty(currentClass) {
                 Access = AccessModifier.Private,
                 Name = "pathSegment",
-                DefaultValue = isRootClientClass ? $"\"{this.config.ApiRootUrl}\"" : (currentNode.IsParameter() ? "\"\"" : $"\"/{currentNode.Segment}\""),
+                DefaultValue = isApiClientClass ? $"\"{this.config.ApiRootUrl}\"" : (currentNode.IsParameter() ? "\"\"" : $"\"/{currentNode.Segment}\""),
                 ReadOnly = true,
                 Description = "Path segment to use to build the URL for the current request builder",
                 PropertyKind = CodePropertyKind.PathSegment
@@ -309,14 +309,14 @@ namespace Kiota.Builder
             currentClass.AddProperty(httpCoreProperty);
             var constructor = currentClass.AddMethod(new CodeMethod(currentClass) {
                 Name = constructorMethodName,
-                MethodKind = isRootClientClass ? CodeMethodKind.ClientConstructor : CodeMethodKind.Constructor,
+                MethodKind = isApiClientClass ? CodeMethodKind.ClientConstructor : CodeMethodKind.Constructor,
                 IsAsync = false,
                 IsStatic = false,
                 Description = $"Instantiates a new {currentClass.Name} and sets the default values.",
                 Access = AccessModifier.Public,
             }).First();
             constructor.ReturnType = new CodeType(constructor) { Name = voidType, IsExternal = true };
-            if(isRootClientClass) {
+            if(isApiClientClass) {
                 constructor.SerializerModules = config.Serializers;
                 constructor.DeserializerModules = config.Deserializers;
             } else {
