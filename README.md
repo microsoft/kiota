@@ -120,11 +120,13 @@ Kiota accepts the following parameters during the generation:
 | ---- | --------- | -------- | ----------- | --------------- | ------------- |
 | backing-store | b | no | The fully qualified name for the backing store class to use. | A fully qualified class name like `Microsoft.Kiota.Abstractions.Store.InMemoryBackingStore` (CSharp), `com.microsoft.kiota.store.InMemoryBackingStore` (Java), `@microsoft/kiota-abstractions.InMemoryBackingStore` (TypeScript) | Empty string |
 | class-name | c | no | The class name to use the for main entry point | A valid class name according to the target language specification. | ApiClient |
+| deserializer | ds | no | The fully qualified class names for deserializers. | This parameter can be passed multiple values. A module name like `Microsoft.Kiota.Serialization.Json` that implementats `IParseNodeFactory`. | `Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory` (csharp), `@microsoft/kiota-serialization-json.JsonParseNodeFactory` (typescript), `com.microsoft.kiota.serialization.JsonParseNodeFactory` (java) |
 | language | l | no | The programming language to generate the SDK in. | csharp, java, or typescript | csharp |
 | loglevel | ll | no | The log level to use when logging events to the main output. | Microsoft.Extensions.Logging.LogLevel values | Warning |
 | namespace-name | n | no | The namespace name to use the for main entry point. | Valid namespace/module name according to target language specifications. | ApiClient |
 | openapi | d | no | URI or Path to the OpenAPI description (JSON or YAML) to use to generate the SDK. | A valid URI pointing to an HTTP document or a file on the local file-system. | ./openapi.yml |
 | output | o | no | The output path of the folder the code will be generated in. The folders will be created during the generation if they don't already exist. | A valid path to a folder. | ./output |
+| serializer | s | no | The fully qualified class names for serializers. | This parameter can be passed multiple values. A class name like `Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory` that implementats `ISerializationWriterFactory`. | `Microsoft.Kiota.Serialization.Json` (csharp), `@microsoft/kiota-serialization-json.JsonSerializationWriterFactory` (typescript), `com.microsoft.kiota.serialization.JsonSerializationWriterFactory` (java) |
 
 ### Debugging
 

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Tests;
 using Xunit;
 
@@ -241,7 +242,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         }
         [Fact]
         public void Defensive() {
-            var codeMethodWriter = new CodeMethodWriter(new CSharpConventionService());
+            var codeMethodWriter = new CodeMethodWriter(new CSharpConventionService(), false);
             Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(null, writer));
             Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(method, null));
             var originalParent = method.Parent;
@@ -307,6 +308,67 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             var result = tw.ToString();
             Assert.Contains("protected ", result);
             AssertExtensions.CurlyBracesAreClosed(result);
+        }
+        [Fact]
+        public void WritesConstructor() {
+            method.MethodKind = CodeMethodKind.Constructor;
+            var defaultValue = "someVal";
+            var propName = "propWithDefaultValue";
+            parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = propName,
+                DefaultValue = defaultValue,
+                PropertyKind = CodePropertyKind.PathSegment,
+            });
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+            Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = {defaultValue}", result);
+        }
+        [Fact]
+        public void WritesApiConstructor() {
+            method.MethodKind = CodeMethodKind.ClientConstructor;
+            var coreProp = parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = "core",
+                PropertyKind = CodePropertyKind.HttpCore,
+            }).First();
+            coreProp.Type = new CodeType(coreProp) {
+                Name = "HttpCore",
+                IsExternal = true,
+            };
+            method.AddParameter(new CodeParameter(method) {
+                Name = "core",
+                ParameterKind = CodeParameterKind.HttpCore,
+                Type = coreProp.Type,
+            });
+            method.DeserializerModules = new() {"com.microsoft.kiota.serialization.Deserializer"};
+            method.SerializerModules = new() {"com.microsoft.kiota.serialization.Serializer"};
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+            Assert.Contains("RegisterDefaultSerializer", result);
+            Assert.Contains("RegisterDefaultDeserializer", result);
+        }
+        [Fact]
+        public void WritesApiConstructorWithBackingStore() {
+            method.MethodKind = CodeMethodKind.ClientConstructor;
+            var coreProp = parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = "core",
+                PropertyKind = CodePropertyKind.HttpCore,
+            }).First();
+            coreProp.Type = new CodeType(coreProp) {
+                Name = "HttpCore",
+                IsExternal = true,
+            };
+            method.AddParameter(new CodeParameter(method) {
+                Name = "core",
+                ParameterKind = CodeParameterKind.HttpCore,
+                Type = coreProp.Type,
+            });
+            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, defaultPath, defaultName, true);
+            tempWriter.SetTextWriter(tw);
+            tempWriter.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("EnableBackingStore", result);
         }
     }    
 }

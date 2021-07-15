@@ -1,6 +1,6 @@
 {
   "name": "@microsoft/kiota-serialization-json",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Implementation of Kiota Serialization interfaces for JSON",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -27,14 +27,14 @@
   },
   "homepage": "https://github.com/microsoft/kiota#readme",
   "devDependencies": {
-    "@types/node": "^16.3.1",
+    "@types/node": "^16.3.2",
     "typescript": "^4.3.5"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
   "dependencies": {
-    "@microsoft/kiota-abstractions": "^1.0.12",
+    "@microsoft/kiota-abstractions": "^1.0.13",
     "web-streams-polyfill": "^3.0.3"
   }
 }

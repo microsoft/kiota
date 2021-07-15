@@ -7,8 +7,11 @@ using Kiota.Builder.Writers.Extensions;
 namespace Kiota.Builder.Writers.TypeScript {
     public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventionService>
     {
-        public CodeMethodWriter(TypeScriptConventionService conventionService) : base(conventionService){}
+        public CodeMethodWriter(TypeScriptConventionService conventionService, bool usesBackingStore) : base(conventionService){
+            _usesBackingStore = usesBackingStore;
+        }
         private TypeScriptConventionService localConventions;
+        private readonly bool _usesBackingStore;
         public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
             if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
@@ -27,6 +30,10 @@ namespace Kiota.Builder.Writers.TypeScript {
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
+            if(!codeElement.IsOfKind(CodeMethodKind.Setter))
+                foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
+                    writer.WriteLine($"if(!{parameter.Name}) throw new Error(\"{parameter.Name} cannot be undefined\");");
+                }
             switch(codeElement.MethodKind) {
                 case CodeMethodKind.IndexerBackwardCompatibility:
                     var pathSegment = codeElement.PathSegment;
@@ -50,6 +57,10 @@ namespace Kiota.Builder.Writers.TypeScript {
                 case CodeMethodKind.Setter:
                     WriteSetterBody(codeElement, writer, parentClass);
                     break;
+                case CodeMethodKind.ClientConstructor:
+                    WriteConstructorBody(parentClass, writer, inherits);
+                    WriteApiConstructorBody(parentClass, codeElement, writer);
+                break;
                 case CodeMethodKind.Constructor:
                     WriteConstructorBody(parentClass, writer, inherits);
                     break;
@@ -59,6 +70,21 @@ namespace Kiota.Builder.Writers.TypeScript {
             }
             writer.DecreaseIndent();
             writer.WriteLine("};");
+        }
+        private void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
+            var httpCoreProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
+            var httpCoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.HttpCore));
+            var httpCorePropertyName = httpCoreProperty.Name.ToFirstCharacterLowerCase();
+            writer.WriteLine($"this.{httpCorePropertyName} = {httpCoreParameter.Name};");
+            WriteSerializationRegistration(method.SerializerModules, writer, "registerDefaultSerializer");
+            WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializer");
+            if(_usesBackingStore)
+                writer.WriteLine($"this.{httpCorePropertyName}.enableBackingStore();");
+        }
+        private static void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, string methodName) {
+            if(serializationModules != null)
+                foreach(var module in serializationModules)
+                    writer.WriteLine($"{methodName}({module});");
         }
         private static void WriteConstructorBody(CodeClass parentClass, LanguageWriter writer, bool inherits) {
             if(inherits)
@@ -151,7 +177,7 @@ namespace Kiota.Builder.Writers.TypeScript {
                 if(requestBodyParam.Type.Name.Equals(localConventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"requestInfo.setStreamContent({requestBodyParam.Name});");
                 else
-                    writer.WriteLine($"requestInfo.setContentFromParsable({requestBodyParam.Name}, this.{localConventions.SerializerFactoryPropertyName}, \"{codeElement.ContentType}\");");
+                    writer.WriteLine($"requestInfo.setContentFromParsable({requestBodyParam.Name}, this.{localConventions.HttpCorePropertyName}, \"{codeElement.ContentType}\");");
             }
             writer.WriteLine("return requestInfo;");
         }
@@ -185,10 +211,11 @@ namespace Kiota.Builder.Writers.TypeScript {
         }
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid) {
             var accessModifier = localConventions.GetAccessModifier(code.Access);
-            var methodName = (code.IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter) ?
-                code.AccessedProperty?.Name :
-                code.Name
-            ).ToFirstCharacterLowerCase();
+            var methodName = (code.MethodKind switch {
+                (CodeMethodKind.Getter or CodeMethodKind.Setter) => code.AccessedProperty?.Name,
+                (CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor) => "constructor",
+                _ => code.Name,
+            })?.ToFirstCharacterLowerCase();
             var asyncPrefix = code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? " async ": string.Empty;
             var parameters = string.Join(", ", code.Parameters.Select(p=> localConventions.GetParameterSignature(p)).ToList());
             var asyncReturnTypePrefix = code.IsAsync ? "Promise<": string.Empty;
@@ -199,7 +226,8 @@ namespace Kiota.Builder.Writers.TypeScript {
                     CodeMethodKind.Setter => "set ",
                     _ => string.Empty
                 };
-            var shouldHaveTypeSuffix = !code.IsAccessor && code.MethodKind != CodeMethodKind.Constructor;
+            var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor);
+            var shouldHaveTypeSuffix = !code.IsAccessor && !isConstructor;
             var returnTypeSuffix = shouldHaveTypeSuffix ? $" : {asyncReturnTypePrefix}{returnType}{nullableSuffix}{asyncReturnTypeSuffix}" : string.Empty;
             writer.WriteLine($"{accessModifier} {accessorPrefix}{methodName}{asyncPrefix}({parameters}){returnTypeSuffix} {{");
         }

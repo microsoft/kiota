@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+/** This class can be used to wrap a request using the fluent API and get the native response object in return. */
 public class NativeResponseWrapper {
     @SuppressWarnings("unchecked")
     @Nonnull

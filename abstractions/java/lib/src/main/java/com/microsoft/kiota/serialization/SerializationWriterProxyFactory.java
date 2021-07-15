@@ -6,10 +6,20 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+/** Proxy factory that allows the composition of before and after callbacks on existing factories. */
 public abstract class SerializationWriterProxyFactory implements SerializationWriterFactory {
+    public String getValidContentType() {
+        return _concrete.getValidContentType();
+    }
     private final SerializationWriterFactory _concrete;
     private final Consumer<Parsable> _onBefore;
     private final Consumer<Parsable> _onAfter;
+    /**
+     * Creates a new proxy factory that wraps the specified concrete factory while composing the before and after callbacks.
+     * @param concreteFactory the concrete factory to wrap
+     * @param onBefore the callback to invoke before the serialization of any model object.
+     * @param onAfter the callback to invoke after the serialization of any model object.
+     */
     public SerializationWriterProxyFactory(@Nonnull final SerializationWriterFactory concrete,
         @Nullable final Consumer<Parsable> onBeforeSerialization, @Nullable final Consumer<Parsable> onAfterSerialization) {
         _concrete = Objects.requireNonNull(concrete);

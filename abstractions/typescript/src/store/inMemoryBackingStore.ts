@@ -6,6 +6,7 @@ type storeEntryWrapper = {changed: boolean, value: unknown};
 type subscriptionCallback = (key: string, previousValue: unknown, newValue: unknown) => void;
 type storeEntry = {key: string, value: unknown};
 
+/** In-memory implementation of the backing store. Allows for dirty tracking of changes. */
 export class InMemoryBackingStore implements BackingStore {
     public get<T>(key: string): T | undefined {
         const wrapper = this.store.get(key);

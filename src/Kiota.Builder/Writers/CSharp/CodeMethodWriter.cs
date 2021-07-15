@@ -6,7 +6,10 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.CSharp {
     public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionService>
     {
-        public CodeMethodWriter(CSharpConventionService conventionService): base(conventionService) { }
+        private readonly bool _usesBackingStore;
+        public CodeMethodWriter(CSharpConventionService conventionService, bool usesBackingStore): base(conventionService) {
+            _usesBackingStore = usesBackingStore;
+        }
         public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
             if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
@@ -24,6 +27,9 @@ namespace Kiota.Builder.Writers.CSharp {
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
+            foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
+                writer.WriteLine($"_ = {parameter.Name} ?? throw new ArgumentNullException(nameof({parameter.Name}));");
+            }
             switch(codeElement.MethodKind) {
                 case CodeMethodKind.Serializer:
                     WriteSerializerBody(inherits, parentClass, writer);
@@ -37,6 +43,10 @@ namespace Kiota.Builder.Writers.CSharp {
                 case CodeMethodKind.Deserializer:
                     WriteDeserializerBody(codeElement, parentClass, writer);
                     break;
+                case CodeMethodKind.ClientConstructor:
+                    WriteConstructorBody(parentClass, writer);
+                    WriteApiConstructorBody(parentClass, codeElement, writer);
+                    break;
                 case CodeMethodKind.Constructor:
                     WriteConstructorBody(parentClass, writer);
                     break;
@@ -49,6 +59,21 @@ namespace Kiota.Builder.Writers.CSharp {
             }
             writer.DecreaseIndent();
             writer.WriteLine("}");
+        }
+        private void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
+            var httpCoreProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
+            var httpCoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.HttpCore));
+            var httpCorePropertyName = httpCoreProperty.Name.ToFirstCharacterUpperCase();
+            writer.WriteLine($"{httpCorePropertyName} = {httpCoreParameter.Name};");
+            WriteSerializationRegistration(method.SerializerModules, writer, "RegisterDefaultSerializer");
+            WriteSerializationRegistration(method.DeserializerModules, writer, "RegisterDefaultDeserializer");
+            if(_usesBackingStore)
+                writer.WriteLine($"{httpCorePropertyName}.EnableBackingStore();");
+        }
+        private static void WriteSerializationRegistration(List<string> serializationClassNames, LanguageWriter writer, string methodName) {
+            if(serializationClassNames != null)
+                foreach(var serializationClassName in serializationClassNames)
+                    writer.WriteLine($"ApiClientBuilder.{methodName}<{serializationClassName}>();");
         }
         private static void WriteConstructorBody(CodeClass parentClass, LanguageWriter writer) {
             foreach(var propWithDefault in parentClass
@@ -131,7 +156,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"requestInfo.SetStreamContent({requestBodyParam.Name});");
                 else
-                    writer.WriteLine($"requestInfo.SetContentFromParsable({requestBodyParam.Name}, {conventions.SerializerFactoryPropertyName}, \"{codeElement.ContentType}\");");
+                    writer.WriteLine($"requestInfo.SetContentFromParsable({requestBodyParam.Name}, {conventions.HttpCorePropertyName}, \"{codeElement.ContentType}\");");
             }
             if(queryStringParam != null) {
                 writer.WriteLine($"if ({queryStringParam.Name} != null) {{");
@@ -183,7 +208,7 @@ namespace Kiota.Builder.Writers.CSharp {
             var hideModifier = inherits && code.IsSerializationMethod ? "new " : string.Empty;
             var genericTypePrefix = isVoid ? string.Empty : "<";
             var genricTypeSuffix = code.IsAsync && !isVoid ? ">": string.Empty;
-            var isConstructor = code.IsOfKind(CodeMethodKind.Constructor);
+            var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor);
             var asyncPrefix = code.IsAsync ? "async Task" + genericTypePrefix : string.Empty;
             var voidCorrectedTaskReturnType = code.IsAsync && isVoid ? string.Empty : returnType;
             // TODO: Task type should be moved into the refiner
