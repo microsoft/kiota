@@ -42,7 +42,7 @@ public class RequestInfo {
      * Adds a middleware option to this request.
      * @param option the middleware option to add.
      */
-    public void AddMiddlewareOptions(@Nullable final MiddlewareOption... options) { 
+    public void addMiddlewareOptions(@Nullable final MiddlewareOption... options) { 
         if(options == null || options.length == 0) return;
         for(final MiddlewareOption option : options) {
             _middlewareOptions.put(option.getClass().getCanonicalName(), option);
@@ -52,7 +52,7 @@ public class RequestInfo {
      * Removes a middleware option from this request.
      * @param option the middleware option to remove.
      */
-    public void RemoveMiddlewareOptions(@Nullable final MiddlewareOption... options) {
+    public void removeMiddlewareOptions(@Nullable final MiddlewareOption... options) {
         if(options == null || options.length == 0) return;
         for(final MiddlewareOption option : options) {
             _middlewareOptions.remove(option.getClass().getCanonicalName());

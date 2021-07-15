@@ -33,6 +33,7 @@ namespace Kiota.Builder.Writers.Java {
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
+            var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
             foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
                 writer.WriteLine($"Objects.requireNonNull({parameter.Name});");
             }
@@ -47,10 +48,10 @@ namespace Kiota.Builder.Writers.Java {
                     WriteIndexerBody(codeElement, writer, returnType);
                 break;
                 case CodeMethodKind.RequestGenerator:
-                    WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, writer);
+                    WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer);
                 break;
                 case CodeMethodKind.RequestExecutor:
-                    WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, returnType, writer);
+                    WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, returnType, writer);
                 break;
                 case CodeMethodKind.Getter:
                     WriteGetterBody(codeElement, writer, parentClass);
@@ -161,7 +162,7 @@ namespace Kiota.Builder.Writers.Java {
             }
             writer.WriteLine("}};");
         }
-        private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, string returnType, LanguageWriter writer) {
+        private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, string returnType, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
             var generatorMethodName = (codeElement.Parent as CodeClass)
@@ -173,7 +174,7 @@ namespace Kiota.Builder.Writers.Java {
             writer.WriteLine("try {");
             writer.IncreaseIndent();
             writer.WriteLine($"final RequestInfo requestInfo = {generatorMethodName}(");
-            var requestInfoParameters = new List<string> { requestBodyParam?.Name, queryStringParam?.Name, headersParam?.Name }.Where(x => x != null);
+            var requestInfoParameters = new List<string> { requestBodyParam?.Name, queryStringParam?.Name, headersParam?.Name, optionsParam?.Name }.Where(x => x != null);
             if(requestInfoParameters.Any()) {
                 writer.IncreaseIndent();
                 writer.WriteLine(requestInfoParameters.Aggregate((x,y) => $"{x}, {y}"));
@@ -192,7 +193,7 @@ namespace Kiota.Builder.Writers.Java {
             writer.DecreaseIndent();
             writer.WriteLine("}");
         }
-        private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, LanguageWriter writer) {
+        private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
             writer.WriteLine("final RequestInfo requestInfo = new RequestInfo() {{");
@@ -220,6 +221,13 @@ namespace Kiota.Builder.Writers.Java {
                 writer.WriteLine($"if ({headersParam.Name} != null) {{");
                 writer.IncreaseIndent();
                 writer.WriteLine($"{headersParam.Name}.accept(requestInfo.headers);");
+                writer.DecreaseIndent();
+                writer.WriteLine("}");
+            }
+            if(optionsParam != null) {
+                writer.WriteLine($"if ({optionsParam.Name} != null) {{");
+                writer.IncreaseIndent();
+                writer.WriteLine($"requestInfo.addMiddlewareOptions({optionsParam.Name}.toArray());");
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
             }

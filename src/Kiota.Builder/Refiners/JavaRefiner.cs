@@ -78,11 +78,13 @@ namespace Kiota.Builder.Refiners {
             new ("RequestInfo", "com.microsoft.kiota"),
             new ("ResponseHandler", "com.microsoft.kiota"),
             new ("QueryParametersBase", "com.microsoft.kiota"),
+            new ("MiddlewareOption", "com.microsoft.kiota"),
             new ("Map", "java.util"),
             new ("URI", "java.net"),
             new ("URISyntaxException", "java.net"),
             new ("InputStream", "java.io"),
             new ("Function", "java.util.function"),
+            new ("Collection", "java.util"),
         };
         private static readonly Tuple<string, string>[] defaultNamespaces = new Tuple<string, string>[] { 
             new ("SerializationWriter", "com.microsoft.kiota.serialization"),
@@ -121,10 +123,13 @@ namespace Kiota.Builder.Refiners {
                 }
             }
             if (currentElement is CodeMethod currentMethod) {
-                if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
-                    currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x => x.Type.Name = "ResponseHandler");
+                if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
+                    if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
+                        currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ResponseHandler) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
+                    currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => x.Type.Name = "Collection<MiddlewareOption>");
+                }
                 else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
-                    currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
+                    currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
                 else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer)) {
                     currentMethod.ReturnType.Name = $"Map<String, BiConsumer<T, ParseNode>>";
                     currentMethod.Name = "getFieldDeserializers";
@@ -157,17 +162,21 @@ namespace Kiota.Builder.Refiners {
                 if(codeMethods.Any()) {
                     var originalExecutorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
                     var executorMethodsToAdd = originalExecutorMethods
-                                        .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter))
+                                        .Select(x => GetMethodClone(x, CodeParameterKind.ResponseHandler))
                                         .Union(originalExecutorMethods
-                                                .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers)))
+                                                .Select(x => GetMethodClone(x, CodeParameterKind.Options, CodeParameterKind.ResponseHandler)))
                                         .Union(originalExecutorMethods
-                                                .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers, CodeParameterKind.ResponseHandler)))
+                                                .Select(x => GetMethodClone(x, CodeParameterKind.Headers, CodeParameterKind.Options, CodeParameterKind.ResponseHandler)))
+                                        .Union(originalExecutorMethods
+                                                .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers, CodeParameterKind.Options, CodeParameterKind.ResponseHandler)))
                                         .Where(x => x != null);
                     var originalGeneratorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestGenerator));
                     var generatorMethodsToAdd = originalGeneratorMethods
-                                        .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter))
+                                        .Select(x => GetMethodClone(x, CodeParameterKind.Options))
                                         .Union(originalGeneratorMethods
-                                                .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers)))
+                                                .Select(x => GetMethodClone(x, CodeParameterKind.Headers, CodeParameterKind.Options)))
+                                        .Union(originalGeneratorMethods
+                                                .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers, CodeParameterKind.Options)))
                                         .Where(x => x != null);
                     if(executorMethodsToAdd.Any() || generatorMethodsToAdd.Any())
                         currentClass.AddMethod(executorMethodsToAdd.Union(generatorMethodsToAdd).ToArray());
@@ -187,6 +196,7 @@ namespace Kiota.Builder.Refiners {
             if(currentMethod.Parameters.Any(x => parameterTypesToExclude.Contains(x.ParameterKind))) {
                 var cloneMethod = currentMethod.Clone() as CodeMethod;
                 cloneMethod.Parameters.RemoveAll(x => parameterTypesToExclude.Contains(x.ParameterKind));
+                cloneMethod.IsOverload = true;
                 return cloneMethod;
             }
             else return null;
