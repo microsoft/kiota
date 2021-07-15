@@ -3,6 +3,6 @@ namespace Microsoft\Kiota\Abstractions;
 
 use Http\Promise\Promise;
 
-interface AuthenticationProvider {
+interface AuthenticationProviderInterface {
     public function getAuthorizationToken(string $requestUrl): Promise;
 }

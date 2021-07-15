@@ -4,7 +4,7 @@ namespace Microsoft\Kiota\Abstractions\Serialization;
 use Psr\Http\Message\StreamInterface;
 
 use Closure;
-abstract class SerializationWriter {
+abstract class AbstractSerializationWriter {
     abstract public function writeStringValue(string $key, string $value): void;
     abstract public function writeBooleanValue(string $key, bool $value): void;
     abstract public function writeDecimalValue(string $key, float $value): void;

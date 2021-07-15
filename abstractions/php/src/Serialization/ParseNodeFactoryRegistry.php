@@ -4,17 +4,17 @@ namespace Microsoft\Kiota\Abstractions\Serialization;
 
 use Psr\Http\Message\StreamInterface;
 
-class ParseNodeFactoryRegistry implements ParseNodeFactory {
+class ParseNodeFactoryRegistry implements ParseNodeFactoryInterface {
 
     /**
-     * @var array<string, ParseNodeFactory>
+     * @var array<string, ParseNodeFactoryInterface>
      */
 
     public array $contentTypeAssociatedFactories = [];
 
-    public function getRootParseNode(string $contentType, StreamInterface $rawResponse): ParseNode {
+    public function getParseNode(string $contentType, StreamInterface $rawResponse): AbstractParseNode {
         if (array_key_exists($contentType, $this->contentTypeAssociatedFactories)) {
-            return $this->contentTypeAssociatedFactories[$contentType]->getRootParseNode($contentType, $rawResponse);
+            return $this->contentTypeAssociatedFactories[$contentType]->getParseNode($contentType, $rawResponse);
         }
         throw new \UnexpectedValueException('Content type ' . $contentType . ' does not have a factory to be parsed');
     }
