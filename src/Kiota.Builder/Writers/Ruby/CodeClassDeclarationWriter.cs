@@ -5,8 +5,7 @@ namespace  Kiota.Builder.Writers.Ruby {
     public class CodeClassDeclarationWriter : BaseElementWriter<CodeClass.Declaration, RubyConventionService>
     {
         public CodeClassDeclarationWriter(RubyConventionService conventionService) : base(conventionService){}
-        private static string NormalizeNameSpaceName(string original) => 
-        original.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z,y) => z + "::" + y);
+        
         
         public override void WriteCodeElement(CodeClass.Declaration codeElement, LanguageWriter writer)
         {
@@ -24,12 +23,17 @@ namespace  Kiota.Builder.Writers.Ruby {
                 writer.WriteLine($"require_relative '{codeUsing.Key.ToSnakeCase()}'");
             writer.WriteLine();
             if(codeElement?.Parent?.Parent is CodeNamespace) {
-                writer.WriteLine($"module {NormalizeNameSpaceName(codeElement.Parent.Parent.Name)}");
+                writer.WriteLine($"module {codeElement.Parent.Parent.Name.NormalizeNameSpaceName("::")}");
                 writer.IncreaseIndent();
             }
-            if ("entity".Equals(codeElement?.Inherits?.Name, StringComparison.OrdinalIgnoreCase)){
-                codeElement.Inherits.Name = "Graphrubyv4::Utilities::Users::Entity";
+            
+            if("entity".Equals(codeElement?.Inherits?.Name.ToFirstCharacterLowerCase())) {
+                int index = codeElement.Parent.Parent.Name.ToFirstCharacterLowerCase().LastIndexOf("users")+7;
+                if(index > 0){
+                    codeElement.Inherits.Name = codeElement.Parent.Parent.Name.NormalizeNameSpaceName("::").Substring(0, index)+"::Entity";
+                }
             }
+    
             var derivation = (codeElement.Inherits == null ? string.Empty : $" < {codeElement.Inherits.Name.ToFirstCharacterUpperCase()}");
             conventions.WriteShortDescription((codeElement.Parent as CodeClass).Description, writer);
             writer.WriteLine($"class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation}");
