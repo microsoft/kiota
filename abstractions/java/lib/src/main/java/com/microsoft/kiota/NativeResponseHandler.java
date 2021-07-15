@@ -5,7 +5,9 @@ import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+/** Default response handler to access the native response object. */
 public class NativeResponseHandler implements ResponseHandler {
+    /** Native response object as returned by the core service */
     @Nullable
     public Object value;
 

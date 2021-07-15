@@ -1,7 +1,12 @@
 import { SerializationWriterFactory, SerializationWriterProxyFactory } from "../serialization";
 import { BackedModel } from "./backedModel";
 
+/**Proxy implementation of SerializationWriterFactory for the backing store that automatically sets the state of the backing store when serializing. */
 export class BackingStoreSerializationWriterProxyFactory extends SerializationWriterProxyFactory {
+    /**
+     * Initializes a new instance of the BackingStoreSerializationWriterProxyFactory class given a concrete implementation of SerializationWriterFactory.
+     * @param concrete a concrete implementation of SerializationWriterFactory to wrap.
+     */
     public constructor(concrete: SerializationWriterFactory) {
         super(concrete,
             value => {

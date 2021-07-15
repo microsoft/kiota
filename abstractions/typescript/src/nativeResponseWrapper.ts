@@ -4,6 +4,7 @@ import { ResponseHandler } from "./responseHandler";
 type originalCallType<modelType, queryParametersType, headersType> = (q?: queryParametersType, h?: headersType, responseHandler?: ResponseHandler) => Promise<modelType>;
 type originalCallWithBodyType<modelType, queryParametersType, headersType, requestBodyType> = (requestBody: requestBodyType, q?: queryParametersType, h?: headersType, responseHandler?: ResponseHandler) => Promise<modelType>;
 
+/** This class can be used to wrap a request using the fluent API and get the native response object in return. */
 export class NativeResponseWrapper {
     public static CallAndGetNative = async <modelType, nativeResponseType, queryParametersType, headersType>(
         originalCall: originalCallType<modelType, queryParametersType, headersType>,
