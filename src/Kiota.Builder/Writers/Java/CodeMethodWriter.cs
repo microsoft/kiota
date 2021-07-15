@@ -47,7 +47,10 @@ namespace Kiota.Builder.Writers.Java {
                 case CodeMethodKind.IndexerBackwardCompatibility:
                     WriteIndexerBody(codeElement, writer, returnType);
                 break;
-                case CodeMethodKind.RequestGenerator:
+                case CodeMethodKind.RequestGenerator when codeElement.IsOverload:
+                    WriteGeneratorMethodCall(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer, "return ");
+                break;
+                case CodeMethodKind.RequestGenerator when !codeElement.IsOverload:
                     WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer);
                 break;
                 case CodeMethodKind.RequestExecutor:
@@ -164,23 +167,9 @@ namespace Kiota.Builder.Writers.Java {
         }
         private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, string returnType, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
-            
-            var generatorMethodName = (codeElement.Parent as CodeClass)
-                                                .GetChildElements(true)
-                                                .OfType<CodeMethod>()
-                                                .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
-                                                ?.Name
-                                                ?.ToFirstCharacterLowerCase();
             writer.WriteLine("try {");
             writer.IncreaseIndent();
-            writer.WriteLine($"final RequestInfo requestInfo = {generatorMethodName}(");
-            var requestInfoParameters = new List<string> { requestBodyParam?.Name, queryStringParam?.Name, headersParam?.Name, optionsParam?.Name }.Where(x => x != null);
-            if(requestInfoParameters.Any()) {
-                writer.IncreaseIndent();
-                writer.WriteLine(requestInfoParameters.Aggregate((x,y) => $"{x}, {y}"));
-                writer.DecreaseIndent();
-            }
-            writer.WriteLine(");");
+            WriteGeneratorMethodCall(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer, $"final RequestInfo {requestInfoVarName} = ");
             var sendMethodName = conventions.PrimitiveTypes.Contains(returnType) ? "sendPrimitiveAsync" : "sendAsync";
             if(codeElement.Parameters.Any(x => x.IsOfKind(CodeParameterKind.ResponseHandler)))
                 writer.WriteLine($"return this.httpCore.{sendMethodName}(requestInfo, {returnType}.class, responseHandler);");
@@ -193,10 +182,31 @@ namespace Kiota.Builder.Writers.Java {
             writer.DecreaseIndent();
             writer.WriteLine("}");
         }
+        private const string requestInfoVarName = "requestInfo";
+        private static void WriteGeneratorMethodCall(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, LanguageWriter writer, string prefix) {
+            var generatorMethodName = (codeElement.Parent as CodeClass)
+                                                .GetChildElements(true)
+                                                .OfType<CodeMethod>()
+                                                .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
+                                                ?.Name
+                                                ?.ToFirstCharacterLowerCase();
+            var paramsList = new List<CodeParameter> { requestBodyParam, queryStringParam, headersParam, optionsParam };
+            var requestInfoParameters = paramsList.Where(x => x != null)
+                                                .Select(x => x.Name)
+                                                .ToList();
+            var shouldSkipBodyParam = requestBodyParam == null && (codeElement.HttpMethod == HttpMethod.Get || codeElement.HttpMethod == HttpMethod.Delete);
+            var skipIndex = shouldSkipBodyParam ? 1 : 0;
+            if(codeElement.IsOverload && !codeElement.OriginalMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.QueryParameter)) || // we're on an overload and the original method has no query parameters
+                !codeElement.IsOverload && queryStringParam == null) // we're on the original method and there is no query string parameter
+                skipIndex++;// we skip the query string parameter null value
+            requestInfoParameters.AddRange(paramsList.Where(x => x == null).Skip(skipIndex).Select(x => "null"));
+            var paramsCall = requestInfoParameters.Any() ? requestInfoParameters.Aggregate((x,y) => $"{x}, {y}") : string.Empty;
+            writer.WriteLine($"{prefix}{generatorMethodName}({paramsCall});");
+        }
         private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
-            writer.WriteLine("final RequestInfo requestInfo = new RequestInfo() {{");
+            writer.WriteLine($"final RequestInfo {requestInfoVarName} = new RequestInfo() {{{{");
             writer.IncreaseIndent();
             writer.WriteLines($"uri = new URI({conventions.CurrentPathPropertyName} + {conventions.PathSegmentPropertyName});",
                         $"httpMethod = HttpMethod.{codeElement.HttpMethod?.ToString().ToUpperInvariant()};");
@@ -204,34 +214,34 @@ namespace Kiota.Builder.Writers.Java {
             writer.WriteLine("}};");
             if(requestBodyParam != null)
                 if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                    writer.WriteLine($"requestInfo.setStreamContent({requestBodyParam.Name});");
+                    writer.WriteLine($"{requestInfoVarName}.setStreamContent({requestBodyParam.Name});");
                 else
-                    writer.WriteLine($"requestInfo.setContentFromParsable({requestBodyParam.Name}, {conventions.HttpCorePropertyName}, \"{codeElement.ContentType}\");");
+                    writer.WriteLine($"{requestInfoVarName}.setContentFromParsable({requestBodyParam.Name}, {conventions.HttpCorePropertyName}, \"{codeElement.ContentType}\");");
             if(queryStringParam != null) {
                 var httpMethodPrefix = codeElement.HttpMethod.ToString().ToFirstCharacterUpperCase();
                 writer.WriteLine($"if ({queryStringParam.Name} != null) {{");
                 writer.IncreaseIndent();
                 writer.WriteLines($"final {httpMethodPrefix}QueryParameters qParams = new {httpMethodPrefix}QueryParameters();",
                             $"{queryStringParam.Name}.accept(qParams);",
-                            "qParams.AddQueryParameters(requestInfo.queryParameters);");
+                            $"qParams.AddQueryParameters({requestInfoVarName}.queryParameters);");
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
             }
             if(headersParam != null) {
                 writer.WriteLine($"if ({headersParam.Name} != null) {{");
                 writer.IncreaseIndent();
-                writer.WriteLine($"{headersParam.Name}.accept(requestInfo.headers);");
+                writer.WriteLine($"{headersParam.Name}.accept({requestInfoVarName}.headers);");
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
             }
             if(optionsParam != null) {
                 writer.WriteLine($"if ({optionsParam.Name} != null) {{");
                 writer.IncreaseIndent();
-                writer.WriteLine($"requestInfo.addMiddlewareOptions({optionsParam.Name}.toArray());");
+                writer.WriteLine($"{requestInfoVarName}.addMiddlewareOptions({optionsParam.Name}.toArray(new MiddlewareOption[0]));");
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
             }
-            writer.WriteLine("return requestInfo;");
+            writer.WriteLine($"return {requestInfoVarName};");
         }
         private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer) {
             var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();

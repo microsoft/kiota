@@ -780,7 +780,8 @@ namespace Kiota.Builder
                 serializeMethod.ReturnType = new CodeType(serializeMethod) { Name = voidType, IsNullable = false, IsExternal = true };
                 var parameter = new CodeParameter(serializeMethod) {
                     Name = "writer",
-                    Description = "Serialization writer to use to serialize this model"
+                    Description = "Serialization writer to use to serialize this model",
+                    ParameterKind = CodeParameterKind.Serializer,
                 };
                 parameter.Type = new CodeType(parameter) { Name = "ISerializationWriter", IsExternal = true, IsNullable = false };
                 serializeMethod.AddParameter(parameter);

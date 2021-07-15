@@ -129,14 +129,14 @@ namespace Kiota.Builder.Refiners {
                     currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => x.Type.Name = "Collection<MiddlewareOption>");
                 }
                 else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
-                    currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
+                    currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
                 else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer)) {
                     currentMethod.ReturnType.Name = $"Map<String, BiConsumer<T, ParseNode>>";
                     currentMethod.Name = "getFieldDeserializers";
                 }
                 else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
                     currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore))
-                        .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
+                        .Where(x => x.Type.Name.StartsWith("I", StringComparison.OrdinalIgnoreCase))
                         .ToList()
                         .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
             }
@@ -196,7 +196,7 @@ namespace Kiota.Builder.Refiners {
             if(currentMethod.Parameters.Any(x => parameterTypesToExclude.Contains(x.ParameterKind))) {
                 var cloneMethod = currentMethod.Clone() as CodeMethod;
                 cloneMethod.Parameters.RemoveAll(x => parameterTypesToExclude.Contains(x.ParameterKind));
-                cloneMethod.IsOverload = true;
+                cloneMethod.OriginalMethod = currentMethod;
                 return cloneMethod;
             }
             else return null;
