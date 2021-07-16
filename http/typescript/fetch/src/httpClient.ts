@@ -1,5 +1,6 @@
 import { Middleware } from "./middleware";
 import { fetch } from 'cross-fetch';
+import { MiddlewareOption } from "@microsoft/kiota-abstractions";
 
 /** Default fetch client with options and a middleware pipleline for requests execution. */
 export class HttpClient {
@@ -21,10 +22,10 @@ export class HttpClient {
      * @param options request options.
      * @returns the promise resolving the response.
      */
-    public fetch(url: string, options?: RequestInit): Promise<Response> {
+    public fetch(url: string, options?: RequestInit, middlewareOptions?: MiddlewareOption[]): Promise<Response> {
         const finalOptions = {...this.defaultRequestSettings, ...options} as RequestInit;
         if(this.middlewares.length > 0 && this.middlewares[0])
-            return this.middlewares[0].execute(url, finalOptions);
+            return this.middlewares[0].execute(url, finalOptions, middlewareOptions);
         else
             throw new Error("No middlewares found");
     }
@@ -46,7 +47,7 @@ export class HttpClient {
 /** Default middleware executing a request. Internal use only. */
 class FetchMiddleware implements Middleware {
     next: Middleware | undefined;
-    execute(url: string, req: RequestInit): Promise<Response> {
+    public execute(url: string, req: RequestInit, _?: MiddlewareOption[]): Promise<Response> {
         return fetch(url, req);
     }
 }
