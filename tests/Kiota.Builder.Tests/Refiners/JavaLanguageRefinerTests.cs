@@ -237,7 +237,7 @@ namespace Kiota.Builder.Refiners.Tests {
             }).First();
             serializationMethod.AddParameter(new CodeParameter(serializationMethod) {
                 Name = "handler",
-                ParameterKind = CodeParameterKind.ResponseHandler,
+                ParameterKind = CodeParameterKind.Serializer,
                 Type = new CodeType(executorMethod) {
                     Name = serializerDefaultName,
                 }
