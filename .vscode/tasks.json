@@ -51,18 +51,20 @@
         {
             "label": "coverage:global",
             "type": "process",
-            "command": "reportgenerator",
             "group": "test",
-            "args": [
-                "-reports:${workspaceFolder}\\tests\\**\\coverage.cobertura.xml",
-                "-targetdir:${workspaceFolder}\\reports\\coverage"
-            ],
             "linux":{
                 "command": "reportgenerator",
                 "args": [
                     "-reports:${workspaceFolder}/tests/**/coverage.cobertura.xml",
                     "-targetdir:${workspaceFolder}/reports/coverage"
                 ],
+            },
+            "windows": {
+                "command": "reportgenerator",
+                "args": [
+                    "-reports:${workspaceFolder}\\tests\\**\\coverage.cobertura.xml",
+                    "-targetdir:${workspaceFolder}\\reports\\coverage"
+                ]
             },
             "dependsOn": [
                 "coverage:clean",
@@ -73,7 +75,6 @@
         {
             "label": "coverage:unit",
             "type": "process",
-            
             "group": "test",
             "linux":{
                 "command": "reportgenerator",
@@ -98,7 +99,6 @@
         {
             "label": "coverage:launch",
             "type": "shell",
-            "command": "start",
             "linux": {
                 "command": "xdg-open",
                 "args": [
@@ -111,10 +111,13 @@
                     "${workspaceFolder}/reports/coverage/index.html"
                 ]
             },
+            "windows": {
+                "command": "start",
+                "args": [
+                    "${workspaceFolder}/reports/coverage/index.html"
+                ]
+            },
             "group": "test",
-            "args": [
-                "${workspaceFolder}/reports/coverage/index.html"
-            ],
         },
         {
             "label": "coverage:launch:global",
