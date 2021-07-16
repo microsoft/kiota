@@ -51,7 +51,7 @@ namespace Kiota.Builder.Writers.TypeScript {
                     WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer);
                 break;
                 case CodeMethodKind.RequestExecutor:
-                    WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, isVoid, returnType, writer);
+                    WriteRequestExecutorBody(codeElement, new List<CodeParameter> {requestBodyParam, queryStringParam, headersParam, optionsParam}, isVoid, returnType, writer);
                     break;
                 case CodeMethodKind.Getter:
                     WriteGetterBody(codeElement, writer, parentClass);
@@ -154,7 +154,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             writer.DecreaseIndent();
             writer.WriteLine("]);");
         }
-        private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, bool isVoid, string returnType, LanguageWriter writer) {
+        private void WriteRequestExecutorBody(CodeMethod codeElement, IEnumerable<CodeParameter> parameters, bool isVoid, string returnType, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
             var generatorMethodName = (codeElement.Parent as CodeClass)
@@ -164,7 +164,7 @@ namespace Kiota.Builder.Writers.TypeScript {
                                                 ?.Name
                                                 ?.ToFirstCharacterLowerCase();
             writer.WriteLine($"const requestInfo = this.{generatorMethodName}(");
-            var requestInfoParameters = new List<string> { requestBodyParam?.Name, queryStringParam?.Name, headersParam?.Name, optionsParam?.Name }.Where(x => x != null);
+            var requestInfoParameters = parameters.Select(x => x?.Name).Where(x => x != null);
             if(requestInfoParameters.Any()) {
                 writer.IncreaseIndent();
                 writer.WriteLine(requestInfoParameters.Aggregate((x,y) => $"{x}, {y}"));

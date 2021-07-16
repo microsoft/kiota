@@ -42,7 +42,7 @@ namespace Kiota.Builder.Writers.CSharp {
                     WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer);
                     break;
                 case CodeMethodKind.RequestExecutor:
-                    WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, isVoid, returnType, writer);
+                    WriteRequestExecutorBody(codeElement, new List<CodeParameter> { requestBodyParam, queryStringParam, headersParam, optionsParam }, isVoid, returnType, writer);
                     break;
                 case CodeMethodKind.Deserializer:
                     WriteDeserializerBody(codeElement, parentClass, writer);
@@ -140,7 +140,7 @@ namespace Kiota.Builder.Writers.CSharp {
                     return $"GetObjectValue<{propertyType.ToFirstCharacterUpperCase()}>";
             }
         }
-        private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, bool isVoid, string returnType, LanguageWriter writer) {
+        private void WriteRequestExecutorBody(CodeMethod codeElement, IEnumerable<CodeParameter> parameters, bool isVoid, string returnType, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
             var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
@@ -149,7 +149,7 @@ namespace Kiota.Builder.Writers.CSharp {
                                                 .OfType<CodeMethod>()
                                                 .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
                                                 ?.Name;
-            var parametersList = new List<string> { requestBodyParam?.Name, queryStringParam?.Name, headersParam?.Name, optionsParam?.Name }.Where(x => x != null).Aggregate((x,y) => $"{x}, {y}");
+            var parametersList = parameters.Select(x => x?.Name).Where(x => x != null).Aggregate((x,y) => $"{x}, {y}");
             writer.WriteLine($"var requestInfo = {generatorMethodName}({parametersList});");
             writer.WriteLine($"{(isVoid ? string.Empty : "return ")}await HttpCore.{GetSendRequestMethodName(isVoid, isStream, returnType)}(requestInfo, responseHandler);");
         }
