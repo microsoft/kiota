@@ -110,6 +110,11 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
                 ParameterKind = CodeParameterKind.ResponseHandler,
                 Type = stringType,
             });
+            method.AddParameter(new CodeParameter(method) {
+                Name = "o",
+                ParameterKind = CodeParameterKind.Options,
+                Type = stringType,
+            });
         }
         [Fact]
         public void WritesRequestBodiesThrowOnNullHttpMethod() {
@@ -143,6 +148,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             Assert.Contains("h?.Invoke", result);
             Assert.Contains("AddQueryParameters", result);
             Assert.Contains("SetContentFromParsable", result);
+            Assert.Contains("AddMiddlewareOptions", result);
             Assert.Contains("return requestInfo;", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
@@ -369,6 +375,16 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             tempWriter.Write(method);
             var result = tw.ToString();
             Assert.Contains("EnableBackingStore", result);
+        }
+        [Fact]
+        public void ThrowsOnGetter() {
+            method.MethodKind = CodeMethodKind.Getter;
+            Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+        }
+        [Fact]
+        public void ThrowsOnSetter() {
+            method.MethodKind = CodeMethodKind.Setter;
+            Assert.Throws<InvalidOperationException>(() => writer.Write(method));
         }
     }    
 }

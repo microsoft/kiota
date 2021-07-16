@@ -110,6 +110,11 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
                 ParameterKind = CodeParameterKind.ResponseHandler,
                 Type = stringType,
             });
+            method.AddParameter(new CodeParameter(method) {
+                Name = "o",
+                ParameterKind = CodeParameterKind.Options,
+                Type = stringType,
+            });
         }
         [Fact]
         public void WritesRequestBodiesThrowOnNullHttpMethod() {
@@ -142,6 +147,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             Assert.Contains("setHeadersFromRawObject", result);
             Assert.Contains("setQueryStringParametersFromRawObject", result);
             Assert.Contains("setContentFromParsable", result);
+            Assert.Contains("addMiddlewareOptions", result);
             Assert.Contains("return requestInfo;", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }

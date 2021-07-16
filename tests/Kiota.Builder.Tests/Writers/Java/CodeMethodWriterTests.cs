@@ -110,6 +110,11 @@ namespace Kiota.Builder.Writers.Java.Tests {
                 ParameterKind = CodeParameterKind.ResponseHandler,
                 Type = stringType,
             });
+            method.AddParameter(new CodeParameter(method) {
+                Name = "o",
+                ParameterKind = CodeParameterKind.Options,
+                Type = stringType,
+            });
         }
         [Fact]
         public void WritesNullableVoidTypeForExecutor(){
@@ -154,7 +159,26 @@ namespace Kiota.Builder.Writers.Java.Tests {
             Assert.Contains("h.accept(requestInfo.headers)", result);
             Assert.Contains("AddQueryParameters", result);
             Assert.Contains("setContentFromParsable", result);
+            Assert.Contains("addMiddlewareOptions", result);
             Assert.Contains("return requestInfo;", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
+        }
+        [Fact]
+        public void WritesRequestGeneratorOverloadBody() {
+            method.MethodKind = CodeMethodKind.RequestGenerator;
+            method.HttpMethod = HttpMethod.Get;
+            method.OriginalMethod = method;
+            AddRequestBodyParameters();
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.DoesNotContain("final RequestInfo requestInfo = new RequestInfo()", result);
+            Assert.DoesNotContain("httpMethod = HttpMethod.GET", result);
+            Assert.DoesNotContain("h.accept(requestInfo.headers)", result);
+            Assert.DoesNotContain("AddQueryParameters", result);
+            Assert.DoesNotContain("setContentFromParsable", result);
+            Assert.DoesNotContain("addMiddlewareOptions", result);
+            Assert.DoesNotContain("return requestInfo;", result);
+            Assert.Contains("return methodName(b, q, h, o)", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
