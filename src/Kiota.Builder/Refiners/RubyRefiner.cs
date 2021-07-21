@@ -45,7 +45,7 @@ namespace Kiota.Builder.Refiners {
             new ("ParseNodeFactoryRegistry", "microsoft_kiota_abstractions"),
         };
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
+            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) && currentClass.StartBlock is CodeClass.Declaration declaration) {
                 var declaration = currentClass.StartBlock as CodeClass.Declaration;
                 declaration.Implements.Add(new CodeType(currentClass) {
                     IsExternal = true,
