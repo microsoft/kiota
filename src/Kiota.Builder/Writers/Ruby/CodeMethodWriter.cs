@@ -27,7 +27,7 @@ namespace Kiota.Builder.Writers.Ruby {
                 break;
                 case CodeMethodKind.Deserializer:
                     WriteMethodPrototype(codeElement, writer);
-                    WriteDeserializerBody(codeElement, parentClass, writer);
+                    WriteDeserializerBody(parentClass, writer);
                 break;
                 case CodeMethodKind.RequestGenerator:
                     WriteMethodPrototype(codeElement, writer);
@@ -78,11 +78,9 @@ namespace Kiota.Builder.Writers.Ruby {
             writer.IncreaseIndent();
             writer.WriteLine($"return @{codeElement.AccessedProperty?.Name?.ToSnakeCase()}");
         }
-        private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
-            var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
+        private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer) {
             writer.WriteLine($"return {{");
             writer.IncreaseIndent();
-            var parentClassName = parentClass.Name.ToSnakeCase();
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
                 writer.WriteLine($"\"{otherProp.SerializationName ?? otherProp.Name.ToSnakeCase()}\" => lambda {{|o, n| o.{otherProp.Name.ToSnakeCase()} = n.{GetDeserializationMethodName(otherProp.Type)} }},");
             }
@@ -140,7 +138,6 @@ namespace Kiota.Builder.Writers.Ruby {
                 writer.WriteLine($"writer.write_additional_data(self.{additionalDataProperty.Name.ToSnakeCase()})");
         }
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer) {
-            var isConstructor = code.IsOfKind(CodeMethodKind.Constructor);
             var methodName = (code.IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter) ?
                 code.AccessedProperty?.Name :
                 code.Name

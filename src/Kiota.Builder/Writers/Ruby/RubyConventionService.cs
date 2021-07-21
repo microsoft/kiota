@@ -43,9 +43,10 @@ namespace Kiota.Builder.Writers.Ruby {
         }
         public void WriteShortDescription(string description, LanguageWriter writer)
         {
-            if(!string.IsNullOrEmpty(description))
+            if(!string.IsNullOrEmpty(description)) {
                 writer.WriteLine($"{DocCommentPrefix}");
                 writer.WriteLine($"# {description}");
+            }
         }
         internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "#");
         internal void AddRequestBuilderBody(string returnType, LanguageWriter writer, string suffix = default) {
