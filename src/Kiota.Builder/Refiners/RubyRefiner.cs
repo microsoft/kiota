@@ -45,8 +45,8 @@ namespace Kiota.Builder.Refiners {
             new ("ParseNodeFactoryRegistry", "microsoft_kiota_abstractions"),
         };
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) && currentClass.StartBlock is CodeClass.Declaration declaration) {
-                var declaration = currentClass.StartBlock as CodeClass.Declaration;
+            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
+                && currentClass.StartBlock is CodeClass.Declaration declaration) {
                 declaration.Implements.Add(new CodeType(currentClass) {
                     IsExternal = true,
                     Name = $"MicrosoftKiotaAbstractions::Parsable",
@@ -55,22 +55,18 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
         }
         protected static void AddInheritedAndMethodTypesImports(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
-                var declaration = currentClass.StartBlock as CodeClass.Declaration;
-                if(declaration.Inherits != null){
-                    currentClass.AddUsing(new CodeUsing(currentElement) { Name = declaration.Inherits.Name, Declaration = declaration.Inherits});
-                }
+            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
+                && currentClass.StartBlock is CodeClass.Declaration declaration && declaration.Inherits != null) {
+                currentClass.AddUsing(new CodeUsing(currentElement) { Name = declaration.Inherits.Name, Declaration = declaration.Inherits});
             }
             CrawlTree(currentElement, (x) => AddInheritedAndMethodTypesImports(x));
         }
 
         protected static void FixInheritedEntityType(CodeElement currentElement, CodeClass entityClass = null, string prefix = ""){
-            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
-                var declaration = currentClass.StartBlock as CodeClass.Declaration;
-                if("entity".Equals(declaration?.Inherits?.Name, StringComparison.OrdinalIgnoreCase)){
-                    if(declaration?.Inherits != null)
-                        declaration.Inherits.Name = prefix + declaration?.Inherits?.Name.ToFirstCharacterUpperCase();
-                }
+            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
+                && currentClass.StartBlock is CodeClass.Declaration declaration && declaration?.Inherits != null 
+                && "entity".Equals(declaration?.Inherits?.Name, StringComparison.OrdinalIgnoreCase)) {
+                declaration.Inherits.Name = prefix + declaration?.Inherits?.Name.ToFirstCharacterUpperCase();
             }
             CrawlTree(currentElement, (c) => FixInheritedEntityType(c, entityClass, prefix));
         }
