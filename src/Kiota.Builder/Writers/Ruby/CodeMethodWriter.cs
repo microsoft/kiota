@@ -8,11 +8,9 @@ namespace Kiota.Builder.Writers.Ruby {
     public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionService>
     {
         public CodeMethodWriter(RubyConventionService conventionService) : base(conventionService){
-            //TODO
         }
         public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
-            //TODO
             if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
             if(writer == null) throw new ArgumentNullException(nameof(writer));
             if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
@@ -40,10 +38,10 @@ namespace Kiota.Builder.Writers.Ruby {
                     WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, writer);
                 break;
                 case CodeMethodKind.Getter:
-                    WriteGetterBody(codeElement, writer, parentClass);
+                    WriteGetterBody(codeElement, writer);
                     break;
                 case CodeMethodKind.Setter:
-                    WriteSetterBody(codeElement, writer, parentClass);
+                    WriteSetterBody(codeElement, writer);
                     break;
                 case CodeMethodKind.Constructor:
                     WriteMethodPrototype(codeElement, writer);
@@ -70,12 +68,12 @@ namespace Kiota.Builder.Writers.Ruby {
                 writer.WriteLine($"@{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue}");
             }
         }
-        private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass) {
+        private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer) {
             writer.WriteLine($"def  {codeElement.AccessedProperty?.Name?.ToSnakeCase()}=({codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()})");
             writer.IncreaseIndent();
             writer.WriteLine($"@{codeElement.AccessedProperty?.Name?.ToSnakeCase()} = ({codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()})");
         }
-        private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass) {
+        private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer) {
             writer.WriteLine($"def  {codeElement.AccessedProperty?.Name?.ToSnakeCase()}");
             writer.IncreaseIndent();
             writer.WriteLine($"return @{codeElement.AccessedProperty?.Name?.ToSnakeCase()}");
