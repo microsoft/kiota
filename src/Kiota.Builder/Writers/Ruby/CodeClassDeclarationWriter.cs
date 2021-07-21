@@ -26,13 +26,6 @@ namespace  Kiota.Builder.Writers.Ruby {
                 writer.WriteLine($"module {codeElement.Parent.Parent.Name.NormalizeNameSpaceName("::")}");
                 writer.IncreaseIndent();
             }
-            
-            if("entity".Equals(codeElement?.Inherits?.Name.ToFirstCharacterLowerCase())) {
-                int index = codeElement.Parent.Parent.Name.ToFirstCharacterLowerCase().LastIndexOf("users")+7;
-                if(index > 0){
-                    codeElement.Inherits.Name = codeElement.Parent.Parent.Name.NormalizeNameSpaceName("::").Substring(0, index)+"::Entity";
-                }
-            }
     
             var derivation = (codeElement.Inherits == null ? string.Empty : $" < {codeElement.Inherits.Name.ToFirstCharacterUpperCase()}");
             conventions.WriteShortDescription((codeElement.Parent as CodeClass).Description, writer);
