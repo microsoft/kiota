@@ -1,12 +1,10 @@
 using System;
-using System.Collections.Generic;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Ruby {
     public class RubyConventionService : ILanguageConventionService
     {
         public string SerializerFactoryPropertyName => "serializer_factory";
-        // TODO: no types in ruby
         public string StreamTypeName => "stdin";
         private const string _voidTypeName = "nil";
         public string VoidTypeName => _voidTypeName;
@@ -14,8 +12,6 @@ namespace Kiota.Builder.Writers.Ruby {
         public string PathSegmentPropertyName => "path_segment";
         public string CurrentPathPropertyName => "current_path";
         public string HttpCorePropertyName => "http_core";
-        // TODO: No types in ruby
-        //internal HashSet<string> PrimitiveTypes = new() {"String", "Boolean", "Integer", "Float", "Long", "Guid", "OffsetDateTime", _voidTypeName, _streamTypeName };
         public string ParseNodeInterfaceName => "parse_node";
         internal string DocCommentStart = "## ";
         internal string DocCommentEnd = "## ";
@@ -27,27 +23,26 @@ namespace Kiota.Builder.Writers.Ruby {
                 _ => "private",
             };
         }
-
         public string GetParameterSignature(CodeParameter parameter)
         {
             return $"{parameter.Name}";
         }
-
-        
         public string GetTypeString(CodeTypeBase code)
         {
-            // // TODO: NO types
-            //throw new InvalidOperationException($"No ruby types");
-            return string.Empty;
+            if(code is CodeUnionType) 
+                throw new InvalidOperationException();
+            else if (code is CodeType currentType) {
+                return $"{TranslateType(currentType.Name)}";
+            }
+            else throw new InvalidOperationException();
         }
-
         public string TranslateType(string typeName)
         {
-            // // TODO: NO types
-            // return typeName;
-            return string.Empty;
+            return (typeName) switch {
+                ("void") => typeName.ToFirstCharacterLowerCase(),
+                _ => typeName.ToFirstCharacterUpperCase() ?? "Object",
+            };
         }
-
         public void WriteShortDescription(string description, LanguageWriter writer)
         {
             if(!string.IsNullOrEmpty(description))
@@ -55,8 +50,13 @@ namespace Kiota.Builder.Writers.Ruby {
                 writer.WriteLine($"# {description}");
         }
         internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "#");
-        internal void AddRequestBuilderBody(LanguageWriter writer, string suffix = default) {
-            // TODO: will need this for handeling indexers, which is a dotnet specific concept. This will be used by refiner, look at java for exambple of how this is done. Not needed for now, come back to this during refiner stage.
+        internal void AddRequestBuilderBody(string returnType, LanguageWriter writer, string suffix = default) {
+            writer.WriteLines($"parent_path = (@{CurrentPathPropertyName.ToSnakeCase()} == null ? \"\" : @{CurrentPathPropertyName.ToSnakeCase()}) + @{PathSegmentPropertyName.ToSnakeCase()}",
+                        $"parent_core = @{HttpCorePropertyName.ToSnakeCase()}",
+                        $"{returnType.ToSnakeCase()} = {returnType}.new",
+                        $"{returnType.ToSnakeCase()}.{CurrentPathPropertyName.ToSnakeCase()} = parent_path",
+                        $"{returnType.ToSnakeCase()}.{HttpCorePropertyName.ToSnakeCase()} = parent_core",
+                        $"return {returnType.ToSnakeCase()}");
         }
     }
 }
