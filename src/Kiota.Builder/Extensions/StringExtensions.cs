@@ -30,7 +30,7 @@ namespace Kiota.Builder.Extensions {
         {
             if(string.IsNullOrEmpty(name)) return name;
             var chunks = name.Split("-", StringSplitOptions.RemoveEmptyEntries);
-            var identifier = String.Join("", chunks.Take(1)
+            var identifier = String.Join(string.Empty, chunks.Take(1)
                                                   .Union(chunks.Skip(1)
                                                                 .Select(s => ToFirstCharacterUpperCase(s))));
             if(identifier.Length < 2) {
