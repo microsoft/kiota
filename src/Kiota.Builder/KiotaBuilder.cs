@@ -218,8 +218,8 @@ namespace Kiota.Builder
         {
             // Determine Class Name
             CodeClass codeClass;
-            var isRootClientClass = currentNode == rootNode;
-            if (isRootClientClass)
+            var isApiClientClass = currentNode == rootNode;
+            if (isApiClientClass)
                 codeClass = currentNamespace.AddClass(new CodeClass(currentNamespace) { 
                 Name = config.ClientClassName,
                 ClassKind = CodeClassKind.RequestBuilder,
@@ -268,7 +268,7 @@ namespace Kiota.Builder
                                         .Where(x => x.Value.RequestBody?.Content?.Any(y => !this.config.IgnoredRequestContentTypes.Contains(y.Key)) ?? true))
                     CreateOperationMethods(currentNode, operation.Key, operation.Value, codeClass);
             }
-            CreatePathManagement(codeClass, currentNode, isRootClientClass);
+            CreatePathManagement(codeClass, currentNode, isApiClientClass);
            
             Parallel.ForEach(currentNode.Children.Values, childNode =>
             {
