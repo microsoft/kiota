@@ -13,6 +13,8 @@
             AddCodeElementWriter(new CodeMethodWriter(conventionService, usesBackingStore));
             AddCodeElementWriter(new CodePropertyWriter(conventionService));
             AddCodeElementWriter(new CodeTypeWriter(conventionService));
+            AddCodeElementWriter(new CodeNamespaceWriter(conventionService));
+
         }
     }
 }

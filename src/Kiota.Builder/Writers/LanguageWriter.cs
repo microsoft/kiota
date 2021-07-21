@@ -95,9 +95,11 @@ namespace Kiota.Builder.Writers
                 case CodeType t:
                     ((ICodeElementWriter<CodeType>) elementWriter).WriteCodeElement(t, this);
                     break;
+                case CodeNamespace n:
+                    ((ICodeElementWriter<CodeNamespace>) elementWriter).WriteCodeElement(n, this);
+                    break;
                 case CodeNamespace.BlockDeclaration:
                 case CodeNamespace.BlockEnd:
-                case CodeNamespace:
                 case CodeClass:
                     break;
                 default:
