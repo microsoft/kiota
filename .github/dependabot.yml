@@ -20,6 +20,8 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
+  labels:
+    - CSharp
 - package-ecosystem: gradle
   directory: "/abstractions/java"
   schedule:
@@ -30,6 +32,8 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
+  labels:
+    - TypeScript
 - package-ecosystem: bundler
   directory: "/abstractions/ruby"
   schedule:
@@ -40,6 +44,8 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
+  labels:
+    - CSharp
 - package-ecosystem: gradle
   directory: "/authentication/java/azure"
   schedule:
@@ -50,11 +56,15 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
+  labels:
+    - TypeScript
 - package-ecosystem: nuget
   directory: "/serialization/dotnet/json"
   schedule:
     interval: daily
   open-pull-requests-limit: 10
+  labels:
+    - CSharp
 - package-ecosystem: gradle
   directory: "/serialization/java/json"
   schedule:
@@ -65,11 +75,15 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
+  labels:
+    - TypeScript
 - package-ecosystem: nuget
   directory: "/http/dotnet/httpclient"
   schedule:
     interval: daily
   open-pull-requests-limit: 10
+  labels:
+    - CSharp
 - package-ecosystem: gradle
   directory: "/http/java/okhttp"
   schedule:
@@ -80,3 +94,5 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
+  labels:
+    - TypeScript
