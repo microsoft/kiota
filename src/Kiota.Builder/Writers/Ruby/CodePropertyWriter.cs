@@ -6,7 +6,6 @@ namespace Kiota.Builder.Writers.Ruby {
         public CodePropertyWriter(RubyConventionService conventionService) : base(conventionService){}
         public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
         {
-            var accessModifier = conventions.GetAccessModifier(codeElement.Access);
             conventions.WriteShortDescription(codeElement.Description, writer);
             var returnType = conventions.GetTypeString(codeElement.Type);
             switch(codeElement.PropertyKind) {
