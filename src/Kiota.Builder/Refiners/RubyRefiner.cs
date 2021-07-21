@@ -69,7 +69,8 @@ namespace Kiota.Builder.Refiners {
                 var declaration = currentClass.StartBlock as CodeClass.Declaration;
                 if("entity".Equals(declaration?.Inherits?.Name, StringComparison.OrdinalIgnoreCase)){
                     // currentClass.AddUsing(new CodeUsing(currentElement) { Name = declaration.Inherits.Name, Declaration = declaration.Inherits});
-                    declaration.Inherits.Name = prefix + declaration.Inherits.Name.ToFirstCharacterUpperCase();
+                    var currentChild = declaration.Inherits as CodeType;
+                    currentChild.Name = prefix + declaration?.Inherits?.Name.ToFirstCharacterUpperCase();
                 }
             }
             CrawlTree(currentElement, (c) => FixInheritedEntityType(c, entityClass, prefix));
