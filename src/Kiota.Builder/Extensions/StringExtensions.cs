@@ -55,6 +55,6 @@ namespace Kiota.Builder.Extensions {
             return output.ToString();
         }
         public static string NormalizeNameSpaceName(this string original, string delimiter) => 
-            original.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z,y) => z + delimiter + y);
+            original?.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z,y) => z + delimiter + y);
     }
 }
