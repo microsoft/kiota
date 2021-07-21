@@ -49,3 +49,8 @@ jobs:
       if: contains(github.event.issue.labels.*.name, 'CSharp')
       with:
         project: 'https://github.com/microsoft/kiota/projects/5'
+    - name: Assign Generator issues to Generator project
+      uses: srggrs/assign-one-project-github-action@1.2.1
+      if: contains(github.event.issue.labels.*.name, 'generator')
+      with:
+        project: 'https://github.com/microsoft/kiota/projects/9'
