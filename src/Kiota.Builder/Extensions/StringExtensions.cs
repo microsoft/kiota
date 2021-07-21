@@ -52,7 +52,7 @@ namespace Kiota.Builder.Extensions {
             if (index >= 0)
                 output = output.Substring(0, index);
             
-            return output.ToString();
+            return output;
         }
         public static string NormalizeNameSpaceName(this string original, string delimiter) => 
             original?.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z,y) => z + delimiter + y);
