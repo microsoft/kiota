@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using Xunit;
 
-namespace Kiota.Builder.Writers.CSharp.Tests {
+namespace Kiota.Builder.Writers.Ruby.Tests {
     public class CodeClassDeclarationWriterTests : IDisposable
     {
         private const string defaultPath = "./";
@@ -13,8 +13,8 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         private readonly CodeClass parentClass;
 
         public CodeClassDeclarationWriterTests() {
-            codeElementWriter = new CodeClassDeclarationWriter(new CSharpConventionService());
-            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, defaultPath, defaultName);
+            codeElementWriter = new CodeClassDeclarationWriter(new RubyConventionService());
+            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Ruby, defaultPath, defaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
@@ -22,7 +22,6 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
                 Name = "parentClass"
             };
             root.AddClass(parentClass);
-            root.AddNamespace("test");
         }
         public void Dispose() {
             tw?.Dispose();
@@ -31,7 +30,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         public void WritesSimpleDeclaration() {
             codeElementWriter.WriteCodeElement(parentClass.StartBlock as CodeClass.Declaration, writer);
             var result = tw.ToString();
-            Assert.Contains("public class", result);
+            Assert.Contains("class", result);
         }
         [Fact]
         public void WritesImplementation() {
@@ -41,7 +40,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             });
             codeElementWriter.WriteCodeElement(declaration, writer);
             var result = tw.ToString();
-            Assert.Contains(":", result);
+            Assert.Contains("include", result);
         }
         [Fact]
         public void WritesInheritance() {
@@ -51,7 +50,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             };
             codeElementWriter.WriteCodeElement(declaration, writer);
             var result = tw.ToString();
-            Assert.Contains(":", result);
+            Assert.Contains("<", result);
         }
         [Fact]
         public void WritesImports() {
@@ -59,21 +58,32 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             declaration.Usings.Add(new (parentClass) {
                 Name = "Objects",
                 Declaration = new(parentClass) {
-                    Name = "system.util",
+                    Name = "util",
                     IsExternal = true,
                 }
             });
             declaration.Usings.Add(new (parentClass) {
-                Name = "project.graph",
+                Name = "project-graph",
                 Declaration = new(parentClass) {
                     Name = "Message",
                 }
             });
             codeElementWriter.WriteCodeElement(declaration, writer);
             var result = tw.ToString();
-            Assert.Contains("using", result);
-            Assert.Contains("Project.Graph", result);
-            Assert.Contains("System.Util", result);
+            Assert.Contains("require_relative", result);
+            Assert.Contains("message", result);
+            Assert.Contains("require", result);
+        }
+        [Fact]
+        public void WritesMixins() {
+            var declaration = parentClass.StartBlock as CodeClass.Declaration;
+            declaration.Implements.Add(new (parentClass) {
+                Name = "test"
+            });
+            codeElementWriter.WriteCodeElement(declaration, writer);
+            var result = tw.ToString();
+            Assert.Contains("include", result);
+            Assert.Contains("test", result);
         }
     }
 }
