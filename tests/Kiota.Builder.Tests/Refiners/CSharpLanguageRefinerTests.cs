@@ -73,7 +73,7 @@ namespace Kiota.Builder.Refiners.Tests {
         [Fact]
         public void DisambiguatePropertiesWithClassNames() {
             var model = root.AddClass(new CodeClass (root) {
-                Name = "model",
+                Name = "Model",
                 ClassKind = CodeClassKind.Model
             }).First();
             var propToAdd = model.AddProperty(new CodeProperty(model){
@@ -90,7 +90,7 @@ namespace Kiota.Builder.Refiners.Tests {
         public void DisambiguatePropertiesWithClassNames_DoesntReplaceSerializationName() {
             var serializationName = "serializationName";
             var model = root.AddClass(new CodeClass (root) {
-                Name = "model",
+                Name = "Model",
                 ClassKind = CodeClassKind.Model
             }).First();
             var propToAdd = model.AddProperty(new CodeProperty(model){
