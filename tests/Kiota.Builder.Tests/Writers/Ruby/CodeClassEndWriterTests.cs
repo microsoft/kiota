@@ -37,7 +37,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             }).First();
             codeElementWriter.WriteCodeElement(child.EndBlock as CodeClass.End, writer);
             var result = tw.ToString();
-            Assert.Equal(1, Regex.Matches(result, ".*end.*").Count());
+            Assert.Single(Regex.Matches(result, ".*end.*"));
         }
         [Fact]
         public void ClosesNonNestedClasses() {
