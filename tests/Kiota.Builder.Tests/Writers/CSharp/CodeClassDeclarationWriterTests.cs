@@ -22,7 +22,6 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
                 Name = "parentClass"
             };
             root.AddClass(parentClass);
-            root.AddNamespace("test");
         }
         public void Dispose() {
             tw?.Dispose();
