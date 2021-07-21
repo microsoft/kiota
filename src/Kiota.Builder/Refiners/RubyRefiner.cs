@@ -68,7 +68,7 @@ namespace Kiota.Builder.Refiners {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
                 var declaration = currentClass.StartBlock as CodeClass.Declaration;
                 if("entity".Equals(declaration?.Inherits?.Name, StringComparison.OrdinalIgnoreCase)){
-                    if(declaration.Inherits != null)
+                    if(declaration?.Inherits != null)
                         declaration.Inherits.Name = prefix + declaration?.Inherits?.Name.ToFirstCharacterUpperCase();
                 }
             }
