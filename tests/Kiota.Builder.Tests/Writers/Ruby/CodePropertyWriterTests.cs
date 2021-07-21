@@ -40,7 +40,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             property.PropertyKind = CodePropertyKind.RequestBuilder;
             writer.Write(property);
             var result = tw.ToString();
-            // Assert.Contains($"def {propertyName.ToSnakeCase()}", result);
+            Assert.Contains($"def {propertyName.ToSnakeCase()}", result);
             Assert.Contains("parent_core = @http_core", result);
             Assert.Contains("parent_path =", result);
         }
