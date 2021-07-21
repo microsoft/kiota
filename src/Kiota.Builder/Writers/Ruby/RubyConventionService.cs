@@ -29,9 +29,7 @@ namespace Kiota.Builder.Writers.Ruby {
         }
         public string GetTypeString(CodeTypeBase code)
         {
-            if(code is CodeUnionType) 
-                throw new InvalidOperationException();
-            else if (code is CodeType currentType) {
+            if (code is CodeType currentType) {
                 return $"{TranslateType(currentType.Name)}";
             }
             else throw new InvalidOperationException();
