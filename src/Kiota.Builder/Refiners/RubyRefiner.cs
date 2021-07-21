@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners {
     public class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
@@ -12,12 +13,15 @@ namespace Kiota.Builder.Refiners {
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddParsableInheritanceForModelClasses(generatedCode);
             AddInheritedAndMethodTypesImports(generatedCode);
-            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
+            FixReferencesToEntityType(generatedCode);
+            FixInheritedEntityType(generatedCode, null, "Graphrubyv4::Utilities::Users::");
+            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders, defaultSymbolsForApiClient);
             AddGetterAndSetterMethods(generatedCode, new() {
                                                     CodePropertyKind.Custom,
                                                     CodePropertyKind.AdditionalData,
                                                     CodePropertyKind.BackingStore,
                                                 }, _configuration.UsesBackingStore, true);
+            ReplaceReservedNames(generatedCode, new RubyReservedNamesProvider(), x => $"{x}_escaped");
             ReplaceRelativeImportsByImportPath(generatedCode, '.');
         }
         private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
@@ -34,6 +38,11 @@ namespace Kiota.Builder.Refiners {
         private static readonly Tuple<string, string>[] defaultNamespacesForModels = new Tuple<string, string>[] { 
             new ("ParseNode", "microsoft_kiota_abstractions"),
             new ("Parsable", "microsoft_kiota_abstractions"),
+        };
+        private static readonly Tuple<string, string>[] defaultSymbolsForApiClient = new Tuple<string, string>[] { 
+            new ("ApiClientBuilder", "microsoft_kiota_abstractions"),
+            new ("SerializationWriterFactoryRegistry", "microsoft_kiota_abstractions"),
+            new ("ParseNodeFactoryRegistry", "microsoft_kiota_abstractions"),
         };
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
@@ -53,6 +62,17 @@ namespace Kiota.Builder.Refiners {
                 }
             }
             CrawlTree(currentElement, (x) => AddInheritedAndMethodTypesImports(x));
+        }
+
+        protected static void FixInheritedEntityType(CodeElement currentElement, CodeClass entityClass = null, string prefix = ""){
+            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
+                var declaration = currentClass.StartBlock as CodeClass.Declaration;
+                if("entity".Equals(declaration?.Inherits?.Name, StringComparison.OrdinalIgnoreCase)){
+                    // currentClass.AddUsing(new CodeUsing(currentElement) { Name = declaration.Inherits.Name, Declaration = declaration.Inherits});
+                    declaration.Inherits.Name = prefix + declaration.Inherits.Name.ToFirstCharacterUpperCase();
+                }
+            }
+            CrawlTree(currentElement, (c) => FixInheritedEntityType(c, entityClass, prefix));
         }
     }
 }
