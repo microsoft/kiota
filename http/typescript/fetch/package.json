@@ -31,7 +31,7 @@
   "dependencies": {
     "@microsoft/kiota-abstractions": "^1.0.13",
     "cross-fetch": "^3.1.4",
-    "web-streams-polyfill": "^3.0.3"
+    "web-streams-polyfill": "^3.1.0"
   },
   "devDependencies": {
     "@types/node": "^16.4.0",
