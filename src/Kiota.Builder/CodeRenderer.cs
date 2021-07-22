@@ -20,7 +20,7 @@ namespace Kiota.Builder
             await sw.FlushAsync();
         }
         // We created barrells for codenamespaces. Skipping for empty namespaces, ones created for users, and ones with same namspace as class name.
-        public static async Task RenderCodeNamespaceToFilePerClassAsync(LanguageWriter writer, CodeNamespace root)
+        public static async Task RenderCodeNamespaceToFilePerClassAsync(LanguageWriter writer, CodeNamespace root, bool shouldWriteNamespaceIndices)
         {
             foreach (var codeElement in root.GetChildElements(true))
             {
@@ -30,13 +30,13 @@ namespace Kiota.Builder
                     await RenderCodeNamespaceToSingleFileAsync(writer, codeEnum, writer.PathSegmenter.GetPath(root, codeEnum));
                 else if(codeElement is CodeNamespace codeNamespace) {
                     
-                    if(!string.IsNullOrEmpty(codeNamespace.Name) && !string.IsNullOrEmpty(root.Name)) {
+                    if(!string.IsNullOrEmpty(codeNamespace.Name) && !string.IsNullOrEmpty(root.Name) && shouldWriteNamespaceIndices) {
                         var namespaceNameLastSegment = codeNamespace.Name.Split('.').Last().ToLowerInvariant();
                         // for ruby if the module already has a class with the same name, it's going to be declared automatically
                         if(codeNamespace.FindChildByName<CodeClass>(namespaceNameLastSegment, false) == null)
                             await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(root, codeNamespace));
                     }
-                    await RenderCodeNamespaceToFilePerClassAsync(writer, codeNamespace);
+                    await RenderCodeNamespaceToFilePerClassAsync(writer, codeNamespace, shouldWriteNamespaceIndices);
                 }
             }
         }
