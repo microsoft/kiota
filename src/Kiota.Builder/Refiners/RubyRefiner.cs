@@ -9,12 +9,10 @@ namespace Kiota.Builder.Refiners {
         public RubyRefiner(GenerationConfiguration configuration) : base(configuration) {}
         public override void Refine(CodeNamespace generatedCode)
         {
-            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddParsableInheritanceForModelClasses(generatedCode);
             AddInheritedAndMethodTypesImports(generatedCode);
-            FixReferencesToEntityType(generatedCode);
-            FixInheritedEntityType(generatedCode, null, "Graphrubyv4::Utilities::Users::");
+           
             AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders, defaultSymbolsForApiClient);
             AddGetterAndSetterMethods(generatedCode, new() {
                                                     CodePropertyKind.Custom,
@@ -23,6 +21,8 @@ namespace Kiota.Builder.Refiners {
                                                 }, _configuration.UsesBackingStore, true);
             ReplaceReservedNames(generatedCode, new RubyReservedNamesProvider(), x => $"{x}_escaped");
             ReplaceRelativeImportsByImportPath(generatedCode, '.');
+            FixReferencesToEntityType(generatedCode);
+            FixInheritedEntityType(generatedCode, null, "Graphrubyv4::Utilities::Users::");
         }
         private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
             new ("HttpCore", "microsoft_kiota_abstractions"),

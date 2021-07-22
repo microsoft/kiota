@@ -49,13 +49,9 @@ namespace Kiota.Builder.Writers.Ruby {
             }
         }
         internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "#");
-        internal void AddRequestBuilderBody(string returnType, LanguageWriter writer, string suffix = default) {
-            writer.WriteLines($"parent_path = (@{CurrentPathPropertyName.ToSnakeCase()} == null ? \"\" : @{CurrentPathPropertyName.ToSnakeCase()}) + @{PathSegmentPropertyName.ToSnakeCase()}",
-                        $"parent_core = @{HttpCorePropertyName.ToSnakeCase()}",
-                        $"{returnType.ToSnakeCase()} = {returnType}.new",
-                        $"{returnType.ToSnakeCase()}.{CurrentPathPropertyName.ToSnakeCase()} = parent_path",
-                        $"{returnType.ToSnakeCase()}.{HttpCorePropertyName.ToSnakeCase()} = parent_core",
-                        $"return {returnType.ToSnakeCase()}");
+        internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default, string prefix = default) {
+            var currentPath = addCurrentPath ? $"@{CurrentPathPropertyName} + " : string.Empty;
+            writer.WriteLine($"{prefix}{returnType.ToFirstCharacterUpperCase()}.new({currentPath}@{PathSegmentPropertyName} {suffix}, @{HttpCorePropertyName})");
         }
     }
 }

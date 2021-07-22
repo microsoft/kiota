@@ -43,9 +43,14 @@ namespace Kiota.Builder.Writers.Ruby {
                 case CodeMethodKind.Setter:
                     WriteSetterBody(codeElement, writer);
                     break;
+                case CodeMethodKind.ClientConstructor:
+                    WriteMethodPrototype(codeElement, writer);
+                    WriteConstructorBody(parentClass, codeElement, writer, inherits);
+                    WriteApiConstructorBody(parentClass, codeElement, writer);
+                break;
                 case CodeMethodKind.Constructor:
                     WriteMethodPrototype(codeElement, writer);
-                    WriteConstructorBody(parentClass, writer, inherits);
+                    WriteConstructorBody(parentClass, codeElement, writer, inherits);
                     break;
                 default:
                     WriteMethodPrototype(codeElement, writer);
@@ -55,17 +60,32 @@ namespace Kiota.Builder.Writers.Ruby {
             writer.DecreaseIndent();
             writer.WriteLine("end");
         }
-        private static void WriteConstructorBody(CodeClass parentClass, LanguageWriter writer, bool inherits) {
+        private void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
+            var httpCoreProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
+            var httpCoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.HttpCore));
+            var httpCorePropertyName = httpCoreProperty.Name.ToSnakeCase();
+            writer.WriteLine($"@{httpCorePropertyName} = {httpCoreParameter.Name}");
+        }
+        private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
             if(inherits)
                 writer.WriteLine("super()");
-            foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData,
-                                                                            CodePropertyKind.BackingStore,
+            foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
                                                                             CodePropertyKind.RequestBuilder,
                                                                             CodePropertyKind.PathSegment)
                                             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
-                                            .OrderByDescending(x => x.PropertyKind)
-                                            .ThenBy(x => x.Name)) {
-                writer.WriteLine($"@{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue}");
+                                            .OrderBy(x => x.Name)) {
+                writer.WriteLine($"@{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue.ToSnakeCase()}");
+            }
+            if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.HttpCore, CodePropertyKind.HttpCore, writer);
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.CurrentPath, CodePropertyKind.CurrentPath, writer);
+            }
+        }
+        private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
+            var property = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(propertyKind));
+            var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
+            if(property != null && parameter != null) {
+                writer.WriteLine($"@{property.Name.ToSnakeCase()} = {parameter.Name.ToSnakeCase()}");
             }
         }
         private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer) {
@@ -138,10 +158,13 @@ namespace Kiota.Builder.Writers.Ruby {
                 writer.WriteLine($"writer.write_additional_data(self.{additionalDataProperty.Name.ToSnakeCase()})");
         }
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer) {
-            var methodName = (code.IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter) ?
-                code.AccessedProperty?.Name :
-                code.Name
-            ).ToSnakeCase();
+            var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor);
+            var methodName = (code.MethodKind switch {
+                (CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor) => $"initialize",
+                (CodeMethodKind.Getter) => $"{code.AccessedProperty?.Name?.ToSnakeCase()}",
+                (CodeMethodKind.Setter) => $"{code.AccessedProperty?.Name?.ToSnakeCase()}",
+                _ => code.Name.ToSnakeCase()
+            });
             var parameters = string.Join(", ", code.Parameters.Select(p=> conventions.GetParameterSignature(p).ToSnakeCase()).ToList());
             writer.WriteLine($"def {methodName.ToSnakeCase()}({parameters}) ");
             writer.IncreaseIndent();

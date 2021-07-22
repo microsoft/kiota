@@ -36,13 +36,13 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             tw?.Dispose();
         }
         [Fact]
-        public void WritesRequestBuilder() {
-            property.PropertyKind = CodePropertyKind.RequestBuilder;
+        public void WritesRequestBuilder() {property.PropertyKind = CodePropertyKind.RequestBuilder;
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains($"def {propertyName.ToSnakeCase()}", result);
-            Assert.Contains("parent_core = @http_core", result);
-            Assert.Contains("parent_path =", result);
+            Assert.Contains($"{typeName}.new", result);
+            Assert.Contains("http_core", result);
+            Assert.Contains("path_segment", result);
         }
         [Fact]
         public void WritesCustomProperty() {

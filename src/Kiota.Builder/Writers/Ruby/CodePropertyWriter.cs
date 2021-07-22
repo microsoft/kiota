@@ -1,3 +1,4 @@
+using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Ruby {
@@ -8,11 +9,12 @@ namespace Kiota.Builder.Writers.Ruby {
         {
             conventions.WriteShortDescription(codeElement.Description, writer);
             var returnType = conventions.GetTypeString(codeElement.Type);
+            var currentPathProperty = codeElement.Parent.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
             switch(codeElement.PropertyKind) {
                 case CodePropertyKind.RequestBuilder:
                     writer.WriteLine($"def {codeElement.Name.ToSnakeCase()}()");
                     writer.IncreaseIndent();
-                    conventions.AddRequestBuilderBody(returnType, writer);
+                    conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer );
                     writer.DecreaseIndent();
                     writer.WriteLine("end");
                 break;

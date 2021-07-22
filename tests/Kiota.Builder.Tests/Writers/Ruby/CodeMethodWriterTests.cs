@@ -232,17 +232,6 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             Assert.DoesNotContain(taskPrefix, result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
-        // [Fact]
-        // public void WritesIndexer() {
-        //     method.MethodKind = CodeMethodKind.IndexerBackwardCompatibility;
-        //     method.PathSegment = "somePath";
-        //     writer.Write(method);
-        //     var result = tw.ToString();
-        //     Assert.Contains("final HttpCore parentCore", result);
-        //     Assert.Contains("final String parentPath", result);
-        //     Assert.Contains("return new", result);
-        //     Assert.Contains(method.PathSegment, result);
-        // }
         [Fact]
         public void WritesGetterToField() {
             method.AddAccessedProperty();

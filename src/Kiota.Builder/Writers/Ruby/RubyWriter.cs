@@ -10,6 +10,7 @@ namespace Kiota.Builder.Writers.Ruby
             AddCodeElementWriter(new CodeClassEndWriter(conventionService));
             AddCodeElementWriter(new CodeNamespaceWriter(conventionService));
             AddCodeElementWriter(new CodeEnumWriter(conventionService));
+            AddCodeElementWriter(new CodeIndexerWriter(conventionService));
             AddCodeElementWriter(new CodeMethodWriter(conventionService));
             AddCodeElementWriter(new CodePropertyWriter(conventionService));
         }
