@@ -158,7 +158,6 @@ namespace Kiota.Builder.Writers.Ruby {
                 writer.WriteLine($"writer.write_additional_data(self.{additionalDataProperty.Name.ToSnakeCase()})");
         }
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer) {
-            var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor);
             var methodName = (code.MethodKind switch {
                 (CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor) => $"initialize",
                 (CodeMethodKind.Getter) => $"{code.AccessedProperty?.Name?.ToSnakeCase()}",
