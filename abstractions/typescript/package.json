@@ -34,6 +34,6 @@
   "dependencies": {
     "lodash": "^4.17.21",
     "uuid": "^8.3.2",
-    "web-streams-polyfill": "^3.0.3"
+    "web-streams-polyfill": "^3.1.0"
   }
 }
