@@ -26,8 +26,9 @@ namespace Kiota.Builder.Writers.CSharp {
                 _ => "private",
             };
         }
-        internal void AddRequestBuilderBody(string returnType, LanguageWriter writer, string suffix = default, string prefix = default) {
-            writer.WriteLine($"{prefix}new {returnType} {{ {HttpCorePropertyName} = {HttpCorePropertyName}, {CurrentPathPropertyName} = {CurrentPathPropertyName} + {PathSegmentPropertyName} {suffix}}};");
+        internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default, string prefix = default) {
+            var currentPath = addCurrentPath ? $"{CurrentPathPropertyName} + " : string.Empty;
+            writer.WriteLine($"{prefix}new {returnType}({currentPath}{PathSegmentPropertyName} {suffix}, {HttpCorePropertyName});");
         }
         internal bool ShouldTypeHaveNullableMarker(CodeTypeBase propType, string propTypeName) {
             return propType.IsNullable && (NullableTypes.Contains(propTypeName) || (propType is CodeType codeType && codeType.TypeDefinition is CodeEnum));

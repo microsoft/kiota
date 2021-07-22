@@ -209,37 +209,8 @@ namespace Kiota.Builder
         private static readonly string requestBuilderSuffix = "RequestBuilder";
         private static readonly string voidType = "void";
         private static readonly string coreInterfaceType = "IHttpCore";
-        private CodeClass AddApiClientClass(CodeNamespace targetNS) {
-            var codeClass = targetNS.AddClass(new CodeClass(targetNS) { 
-                Name = config.ClientClassName,
-                ClassKind = CodeClassKind.RequestBuilder,
-                Description = "The main entry point of the SDK, exposes the configuration and the fluent API."
-            }).First();
-            var constructor = codeClass.AddMethod(new CodeMethod(codeClass) {
-                IsAsync = false,
-                Name = "constructor",
-                Access = AccessModifier.Public,
-                Description = "Instantiates a new Api client and sets the default values.",
-                IsStatic = false,
-                MethodKind = CodeMethodKind.ClientConstructor,
-                SerializerModules = config.Serializers,
-                DeserializerModules = config.Deserializers,
-            }).First();
-            constructor.ReturnType = new CodeType(constructor) { Name = voidType, IsExternal = true };
-            var httpCoreParameter = new CodeParameter(constructor) {
-                Name = "httpCore",
-                Description = "The http core service to use to execute the requests.",
-                Optional = false,
-                ParameterKind = CodeParameterKind.HttpCore,
-            };
-            httpCoreParameter.Type = new CodeType(httpCoreParameter) {
-                Name = coreInterfaceType,
-                IsExternal = true,
-            };
-            constructor.AddParameter(httpCoreParameter);
-            return codeClass;
-        }
-
+        private static readonly string httpCoreParameterName = "httpCore";
+        private static readonly string constructorMethodName = "constructor";
         /// <summary>
         /// Create a CodeClass instance that is a request builder class for the OpenApiUrlTreeNode
         /// </summary>
@@ -247,9 +218,13 @@ namespace Kiota.Builder
         {
             // Determine Class Name
             CodeClass codeClass;
-            var isRootClientClass = currentNode == rootNode;
-            if (isRootClientClass)
-                codeClass = AddApiClientClass(currentNamespace);
+            var isApiClientClass = currentNode == rootNode;
+            if (isApiClientClass)
+                codeClass = currentNamespace.AddClass(new CodeClass(currentNamespace) { 
+                Name = config.ClientClassName,
+                ClassKind = CodeClassKind.RequestBuilder,
+                Description = "The main entry point of the SDK, exposes the configuration and the fluent API."
+            }).First();
             else
             {
                 var targetNS = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNamespace.EnsureItemNamespace() : currentNamespace;
@@ -293,7 +268,7 @@ namespace Kiota.Builder
                                         .Where(x => x.Value.RequestBody?.Content?.Any(y => !this.config.IgnoredRequestContentTypes.Contains(y.Key)) ?? true))
                     CreateOperationMethods(currentNode, operation.Key, operation.Value, codeClass);
             }
-            CreatePathManagement(codeClass, currentNode, isRootClientClass);
+            CreatePathManagement(codeClass, currentNode, isApiClientClass);
            
             Parallel.ForEach(currentNode.Children.Values, childNode =>
             {
@@ -302,11 +277,12 @@ namespace Kiota.Builder
                 CreateRequestBuilderClass(targetNamespace, childNode, rootNode);
             });
         }
-        private void CreatePathManagement(CodeClass currentClass, OpenApiUrlTreeNode currentNode, bool isRootClientClass) {
+        private static readonly string currentPathParameterName = "currentPath";
+        private void CreatePathManagement(CodeClass currentClass, OpenApiUrlTreeNode currentNode, bool isApiClientClass) {
             var pathProperty = new CodeProperty(currentClass) {
                 Access = AccessModifier.Private,
                 Name = "pathSegment",
-                DefaultValue = isRootClientClass ? $"\"{this.config.ApiRootUrl}\"" : (currentNode.IsParameter() ? "\"\"" : $"\"/{currentNode.Segment}\""),
+                DefaultValue = isApiClientClass ? $"\"{this.config.ApiRootUrl}\"" : (currentNode.IsParameter() ? "\"\"" : $"\"/{currentNode.Segment}\""),
                 ReadOnly = true,
                 Description = "Path segment to use to build the URL for the current request builder",
                 PropertyKind = CodePropertyKind.PathSegment
@@ -318,27 +294,60 @@ namespace Kiota.Builder
             };
             currentClass.AddProperty(pathProperty);
 
-            var currentPathProperty = new CodeProperty(currentClass) {
-                Name = "currentPath",
-                Description = "Current path for the request",
-                PropertyKind = CodePropertyKind.CurrentPath
-            };
-            currentPathProperty.Type = new CodeType(currentPathProperty) {
-                Name = "string",
-                IsExternal = true,
-            };
-            currentClass.AddProperty(currentPathProperty);
-
             var httpCoreProperty = new CodeProperty(currentClass) {
-                Name = "httpCore",
-                Description = "Core service to use to execute the requests",
-                PropertyKind = CodePropertyKind.HttpCore
+                Name = httpCoreParameterName,
+                Description = "The http core service to use to execute the requests.",
+                PropertyKind = CodePropertyKind.HttpCore,
+                Access = AccessModifier.Private,
+                ReadOnly = true,
             };
             httpCoreProperty.Type = new CodeType(httpCoreProperty) {
                 Name = coreInterfaceType,
                 IsExternal = true,
+                IsNullable = false,
             };
             currentClass.AddProperty(httpCoreProperty);
+            var constructor = currentClass.AddMethod(new CodeMethod(currentClass) {
+                Name = constructorMethodName,
+                MethodKind = isApiClientClass ? CodeMethodKind.ClientConstructor : CodeMethodKind.Constructor,
+                IsAsync = false,
+                IsStatic = false,
+                Description = $"Instantiates a new {currentClass.Name} and sets the default values.",
+                Access = AccessModifier.Public,
+            }).First();
+            constructor.ReturnType = new CodeType(constructor) { Name = voidType, IsExternal = true };
+            if(isApiClientClass) {
+                constructor.SerializerModules = config.Serializers;
+                constructor.DeserializerModules = config.Deserializers;
+            } else {
+                var currentPathProperty = new CodeProperty(currentClass) {
+                    Name = currentPathParameterName,
+                    Description = "Current path for the request",
+                    PropertyKind = CodePropertyKind.CurrentPath,
+                    Access = AccessModifier.Private,
+                    ReadOnly = true,
+                };
+                currentPathProperty.Type = new CodeType(currentPathProperty) {
+                    Name = "string",
+                    IsExternal = true,
+                    IsNullable = false,
+                };
+                currentClass.AddProperty(currentPathProperty);
+                constructor.AddParameter(new CodeParameter(constructor) {
+                    Name = currentPathParameterName,
+                    Type = currentPathProperty.Type,
+                    Optional = false,
+                    Description = currentPathProperty.Description,
+                    ParameterKind = CodeParameterKind.CurrentPath,
+                });
+            }
+            constructor.AddParameter(new CodeParameter(constructor) {
+                Name = httpCoreParameterName,
+                Type = httpCoreProperty.Type,
+                Optional = false,
+                Description = httpCoreProperty.Description,
+                ParameterKind = CodeParameterKind.HttpCore,
+            });
         }
         private static Func<CodeClass, int> shortestNamespaceOrder = (x) => x.Parent.Name.Split('.').Length;
         /// <summary>

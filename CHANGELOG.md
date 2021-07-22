@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Backing store support #223
 - Better client configuration #268
 - Doc comments for abstractions libraries #324
+- Request builders constructors for data validation #322
 
 ## [0.0.5] - 2021-06-10
 

@@ -327,9 +327,10 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             method.PathSegment = "somePath";
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("builder.httpCore = ", result);
-            Assert.Contains("builder.currentPath", result);
-            Assert.Contains("const builder = new", result);
+            Assert.Contains("this.httpCore", result);
+            Assert.Contains("this.pathSegment", result);
+            Assert.Contains("+ id", result);
+            Assert.Contains("return new", result);
             Assert.Contains(method.PathSegment, result);
         }
         [Fact]
