@@ -64,9 +64,9 @@ namespace Kiota.Builder.Refiners {
 
         protected static void FixInheritedEntityType(CodeElement currentElement, CodeClass entityClass = null, string prefix = ""){
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
-                && currentClass.StartBlock is CodeClass.Declaration declaration && declaration?.Inherits != null 
+                && currentClass.StartBlock is CodeClass.Declaration declaration && declaration.Inherits != null 
                 && "entity".Equals(declaration?.Inherits?.Name, StringComparison.OrdinalIgnoreCase)) {
-                declaration.Inherits.Name = prefix + declaration?.Inherits?.Name.ToFirstCharacterUpperCase();
+                declaration.Inherits.Name = prefix + declaration.Inherits.Name.ToFirstCharacterUpperCase();
             }
             CrawlTree(currentElement, (c) => FixInheritedEntityType(c, entityClass, prefix));
         }
