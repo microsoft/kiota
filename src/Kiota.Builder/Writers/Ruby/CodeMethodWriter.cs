@@ -60,7 +60,7 @@ namespace Kiota.Builder.Writers.Ruby {
             writer.DecreaseIndent();
             writer.WriteLine("end");
         }
-        private void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
+        private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
             var httpCoreProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
             var httpCoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.HttpCore));
             var httpCorePropertyName = httpCoreProperty.Name.ToSnakeCase();
@@ -74,7 +74,7 @@ namespace Kiota.Builder.Writers.Ruby {
                                                                             CodePropertyKind.PathSegment)
                                             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
                                             .OrderBy(x => x.Name)) {
-                writer.WriteLine($"@{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue.ToSnakeCase()}");
+                writer.WriteLine($"@{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue}");
             }
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.HttpCore, CodePropertyKind.HttpCore, writer);
@@ -93,7 +93,7 @@ namespace Kiota.Builder.Writers.Ruby {
             writer.IncreaseIndent();
             writer.WriteLine($"@{codeElement.AccessedProperty?.Name?.ToSnakeCase()} = ({codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()})");
         }
-        private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer) {
+        private static void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer) {
             writer.WriteLine($"def  {codeElement.AccessedProperty?.Name?.ToSnakeCase()}");
             writer.IncreaseIndent();
             writer.WriteLine($"return @{codeElement.AccessedProperty?.Name?.ToSnakeCase()}");
@@ -143,7 +143,7 @@ namespace Kiota.Builder.Writers.Ruby {
                 if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"request_info.set_stream_content({requestBodyParam.Name})");
                 else
-                    writer.WriteLine($"request_info.set_content_from_parsable({requestBodyParam.Name}, self.{conventions.SerializerFactoryPropertyName}, \"{codeElement.ContentType}\")");
+                    writer.WriteLine($"request_info.set_content_from_parsable({requestBodyParam.Name}, self.{RubyConventionService.SerializerFactoryPropertyName}, \"{codeElement.ContentType}\")");
             }
             writer.WriteLine("return request_info;");
         }

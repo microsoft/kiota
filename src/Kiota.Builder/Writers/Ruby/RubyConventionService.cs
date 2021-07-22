@@ -4,7 +4,7 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.Ruby {
     public class RubyConventionService : ILanguageConventionService
     {
-        public string SerializerFactoryPropertyName => "serializer_factory";
+        public static string SerializerFactoryPropertyName => "serializer_factory";
         public string StreamTypeName => "stdin";
         private const string _voidTypeName = "nil";
         public string VoidTypeName => _voidTypeName;
