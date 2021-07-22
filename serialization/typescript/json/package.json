@@ -35,6 +35,6 @@
   },
   "dependencies": {
     "@microsoft/kiota-abstractions": "^1.0.13",
-    "web-streams-polyfill": "^3.0.3"
+    "web-streams-polyfill": "^3.1.0"
   }
 }
