@@ -14,13 +14,13 @@ The following table provides an overview of the languages supported by Kiota and
 
 | Language | Generation | Abstractions | Serialization | Authentication | HTTP | Required tools |
 | -------- | ---------- | ------------ | ------------- | -------------- | ---- | -------------- |
-| CSharp | [✔](https://github.com/microsoft/kiota/projects/5) | [✔](./abstractions/dotnet) | [JSON](./serialization/dotnet/json) | [Azure](./authentication/dotnet/azure) | [✔](./http/dotnet/httpclient) | [link](./requiredtools/dotnet) |
+| CSharp | [✔](https://github.com/microsoft/kiota/projects/5) | [✔](./abstractions/dotnet) | [JSON](./serialization/dotnet/json) | [Azure](./authentication/dotnet/azure) | [✔](./http/dotnet/httpclient) | [link](./requiredtools/dotnet.md) |
 | Go | [❌](https://github.com/microsoft/kiota/projects/8) | ❌ | ❌ | ❌ | ❌ |  |
-| Java | [✔](https://github.com/microsoft/kiota/projects/7) | [✔](./abstractions/java) | [JSON](./serialization/java/gson) | [Azure](./authentication/java/azure) | [✔](./http/java/okhttp) | [link](./requiredtools/java) |
+| Java | [✔](https://github.com/microsoft/kiota/projects/7) | [✔](./abstractions/java) | [JSON](./serialization/java/json) | [Azure](./authentication/java/azure) | [✔](./http/java/okhttp) | [link](./requiredtools/java.md) |
 | PHP | [❌](https://github.com/microsoft/kiota/projects/4) | [▶](https://github.com/microsoft/kiota/pull/321) | ❌ | ❌ | ❌ |  |
 | Python | [❌](https://github.com/microsoft/kiota/projects/3) | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Ruby | [▶](https://github.com/microsoft/kiota/pull/244) | [✔](./abstractions/ruby) | ❌ | ❌ | ❌ |  |
-| TypeScript/JavaScript | [✔](https://github.com/microsoft/kiota/projects/2) | [✔](./abstractions/typescript) | [JSON](./serialization/typescript/json) | [Azure](./authentication/typescript/azure) | [✔](./http/typescript/fetch) | [link](./requiredtools/typescript) |
+| TypeScript/JavaScript | [✔](https://github.com/microsoft/kiota/projects/2) | [✔](./abstractions/typescript) | [JSON](./serialization/typescript/json) | [Azure](./authentication/typescript/azure) | [✔](./http/typescript/fetch) | [link](./requiredtools/typescript.md) |
 
 > Legend: ✔ -> in preview, ❌ -> not started, ▶ -> in progress.
 
@@ -28,7 +28,7 @@ The following table provides an overview of the languages supported by Kiota and
 
 1. Install the pre-requisites for your language (refer to the [Supported Languages](#supported-languages) table)
 1. Intialize the target project and add the required dependencies (information found in the pre-requisites).
-1. Clone the repository and [build Kiota locally](./generator/build) **--or--** [download and run binaries](./generator/binaries) **--or--** [install and run the dotnet tool](./generator/tool) **--or--** [run the docker image](./generator/docker).
+1. Clone the repository and [build Kiota locally](./generator/build.md) **--or--** [download and run binaries](./generator/binaries.md) **--or--** [install and run the dotnet tool](./generator/tool.md) **--or--** [run the docker image](./generator/docker.md).
 
 #### Parameters reference
 
