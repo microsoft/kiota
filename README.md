@@ -18,7 +18,7 @@ The following table provides an overview of the languages supported by Kiota and
 | Go | [❌](https://github.com/microsoft/kiota/projects/8) | ❌ | ❌ | ❌ | ❌ |  |
 | Java | [✔](https://github.com/microsoft/kiota/projects/7) | [✔](./abstractions/java) | [JSON](./serialization/java/json) | [Azure](./authentication/java/azure) | [✔](./http/java/okhttp) | [link](./requiredtools/java.md) |
 | PHP | [❌](https://github.com/microsoft/kiota/projects/4) | [▶](https://github.com/microsoft/kiota/pull/321) | ❌ | ❌ | ❌ |  |
-| Python | [❌](https://github.com/microsoft/kiota/projects/3) | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Python | [❌](https://github.com/microsoft/kiota/projects/3) | ❌ | ❌ | ❌ | ❌ |  |
 | Ruby | [▶](https://github.com/microsoft/kiota/pull/244) | [✔](./abstractions/ruby) | ❌ | ❌ | ❌ |  |
 | TypeScript/JavaScript | [✔](https://github.com/microsoft/kiota/projects/2) | [✔](./abstractions/typescript) | [JSON](./serialization/typescript/json) | [Azure](./authentication/typescript/azure) | [✔](./http/typescript/fetch) | [link](./requiredtools/typescript.md) |
 
