@@ -66,9 +66,9 @@
                  "--language",
                  "ruby",
                  "-o",
-                 "${workspaceFolder}/samples/msgraph-mail/ruby",
+                 "${workspaceFolder}/samples/msgraph-mail/ruby/graphrubyv4",
                  "-n",
-                 "graphrubyv4.utilities" ],
+                 "graphrubyv4" ],
             "cwd": "${workspaceFolder}/src/kiota",
             "console": "internalConsole",
             "stopAtEntry": false

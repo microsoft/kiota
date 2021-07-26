@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
 
@@ -12,7 +11,6 @@ namespace Kiota.Builder.Refiners {
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddParsableInheritanceForModelClasses(generatedCode);
             AddInheritedAndMethodTypesImports(generatedCode);
-           
             AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders, defaultSymbolsForApiClient);
             AddGetterAndSetterMethods(generatedCode, new() {
                                                     CodePropertyKind.Custom,
@@ -21,8 +19,9 @@ namespace Kiota.Builder.Refiners {
                                                 }, _configuration.UsesBackingStore, true);
             ReplaceReservedNames(generatedCode, new RubyReservedNamesProvider(), x => $"{x}_escaped");
             ReplaceRelativeImportsByImportPath(generatedCode, '.');
+            AddNamespaceModuleImports(generatedCode , _configuration.ClientNamespaceName);
             FixReferencesToEntityType(generatedCode);
-            FixInheritedEntityType(generatedCode, null, "Graphrubyv4::Utilities::Users::");
+            FixInheritedEntityType(generatedCode, null, _configuration.ClientNamespaceName.NormalizeNameSpaceName("::") + "::Users::");
         }
         private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
             new ("HttpCore", "microsoft_kiota_abstractions"),
@@ -69,6 +68,26 @@ namespace Kiota.Builder.Refiners {
                 declaration.Inherits.Name = prefix + declaration.Inherits.Name.ToFirstCharacterUpperCase();
             }
             CrawlTree(currentElement, (c) => FixInheritedEntityType(c, entityClass, prefix));
+        }
+        protected void AddNamespaceModuleImports(CodeElement current, String clientNamespaceName) {
+            if(current is CodeClass currentClass) {
+                var Module = currentClass.GetImmediateParentOfType<CodeNamespace>();
+                if(!String.IsNullOrEmpty(Module.Name)){
+                    var modulesProperties = Module.Name.Replace(clientNamespaceName+".", string.Empty).Split(".");
+                    for (int i = modulesProperties.Length - 1; i >= 0; i--){
+                        var prefix = String.Concat(Enumerable.Repeat("../", modulesProperties.Length -i-1));
+                        var nUsing = new CodeUsing(Module) { 
+                            Name = modulesProperties[i].ToSnakeCase(), 
+                            Declaration = new CodeType(Module) {
+                                IsExternal = false,
+                            }
+                        };
+                        nUsing.Declaration.Name = $"{prefix}{(string.IsNullOrEmpty(prefix) ? "./" + nUsing.Name : nUsing.Name)}";
+                        currentClass.AddUsing(nUsing);
+                    }
+                }
+            }
+            CrawlTree(current, c => AddNamespaceModuleImports(c, clientNamespaceName));
         }
     }
 }

@@ -203,7 +203,7 @@ namespace Kiota.Builder
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             var shouldWriteNamespaceIndices = language == GenerationLanguage.Ruby;
-            await CodeRenderer.RenderCodeNamespaceToFilePerClassAsync(languageWriter, generatedCode, shouldWriteNamespaceIndices);
+            await CodeRenderer.RenderCodeNamespaceToFilePerClassAsync(languageWriter, generatedCode, shouldWriteNamespaceIndices, config.ClientNamespaceName);
             stopwatch.Stop();
             logger.LogTrace("{timestamp}ms: Files written to {path}", stopwatch.ElapsedMilliseconds, config.OutputPath);
         }

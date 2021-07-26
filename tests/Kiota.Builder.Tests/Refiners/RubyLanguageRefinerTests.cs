@@ -96,6 +96,51 @@ namespace Kiota.Builder.Refiners.Tests {
             Assert.NotEqual("break", model.Name);
             Assert.Contains("escaped", model.Name);
         }
+        [Fact]
+        public void AddInheritedAndMethodTypesImports() {
+            var model = root.AddClass(new CodeClass (root) {
+                Name = "model",
+                ClassKind = CodeClassKind.Model
+            }).First();
+            var declaration = model.StartBlock as CodeClass.Declaration;
+            declaration.Inherits = new (parentClass){
+                Name = "someInterface"
+            };
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+            Assert.Equal("./someInterface", declaration.Usings.First().Declaration.Name);
+        }
+        [Fact]
+        public void FixInheritedEntityType() {
+            var model = root.AddClass(new CodeClass (root) {
+                Name = "model",
+                ClassKind = CodeClassKind.Model
+            }).First();
+            var declaration = model.StartBlock as CodeClass.Declaration;
+            declaration.Inherits = new (parentClass){
+                Name = "entity"
+            };
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+            Assert.Equal("ApiClient::Users::Entity", declaration.Inherits.Name);
+        }
+        [Fact]
+        public void AddNamespaceModuleImports() {
+            var declaration = parentClass.StartBlock as CodeClass.Declaration;
+            var subNS = graphNS.AddNamespace("messages");
+            var messageClassDef = new CodeClass(subNS) {
+                Name = "Message",
+            };
+            subNS.AddClass(messageClassDef);
+            declaration.Usings.Add(new (parentClass) {
+                Name = "messages",
+                Declaration = new(parentClass) {
+                    Name = "Message",
+                    TypeDefinition = messageClassDef,
+                }
+            });
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+            Assert.Equal("../messages/message", declaration.Usings.First().Declaration.Name);
+            Assert.Equal("./graph", declaration.Usings.Last().Declaration.Name);
+        }
         #endregion
     }
 }
