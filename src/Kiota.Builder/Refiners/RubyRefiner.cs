@@ -82,7 +82,7 @@ namespace Kiota.Builder.Refiners {
                                 IsExternal = false,
                             }
                         };
-                        nUsing.Declaration.Name = $"{prefix}{(string.IsNullOrEmpty(prefix) ? "./" + nUsing.Name : nUsing.Name)}";
+                        nUsing.Declaration.Name = $"{(string.IsNullOrEmpty(prefix) ? "./" + prefix : string.Empty )}{nUsing.Name}";
                         currentClass.AddUsing(nUsing);
                     }
                 }
