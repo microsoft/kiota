@@ -84,9 +84,9 @@
                  "--language",
                  "go",
                  "-o",
-                 "${workspaceFolder}/samples/msgraph-mail/go",
+                 "${workspaceFolder}/samples/msgraph-mail/go/utilities",
                  "-n",
-                 "Graphgov4" ],
+                 "github.com/microsoft/kiota-samples/msgraph-mail/go/utilities" ],
             "cwd": "${workspaceFolder}/src/kiota",
             "console": "internalConsole",
             "stopAtEntry": false
