@@ -30,7 +30,7 @@ namespace Kiota.Builder
                     await RenderCodeNamespaceToSingleFileAsync(writer, codeEnum, writer.PathSegmenter.GetPath(root, codeEnum));
                 else if(codeElement is CodeNamespace codeNamespace) {
                     
-                    if(!string.IsNullOrEmpty(codeNamespace.Name) && !string.IsNullOrEmpty(root.Name) && shouldWriteNamespaceIndices && namespacePrefix !=  codeNamespace.Name) {
+                    if(!string.IsNullOrEmpty(codeNamespace.Name) && !string.IsNullOrEmpty(root.Name) && shouldWriteNamespaceIndices && !namespacePrefix.Contains(codeNamespace.Name, StringComparison.OrdinalIgnoreCase)) {
                         var namespaceNameLastSegment = codeNamespace.Name.Split('.').Last().ToLowerInvariant();
                         // for ruby if the module already has a class with the same name, it's going to be declared automatically
                         if(codeNamespace.FindChildByName<CodeClass>(namespaceNameLastSegment, false) == null)
