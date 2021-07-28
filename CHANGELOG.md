@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Ruby generation implemented #244
+
 ## [0.0.6] - 2021-07-26
 
 ### Added
@@ -19,7 +23,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Better client configuration #268
 - Request builders constructors for data validation #322
-- Ruby generation implemented
 
 ## [0.0.5] - 2021-06-10
 
