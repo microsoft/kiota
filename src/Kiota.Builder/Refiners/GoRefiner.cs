@@ -77,7 +77,7 @@ namespace Kiota.Builder.Refiners {
                     };
                     (currentProperty.Parent as CodeClass).AddUsing(nUsing);
                 } else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
-                    currentProperty.Type.Name = "Map<String, Object>";
+                    currentProperty.Type.Name = "map[string]interface{}";
                     currentProperty.DefaultValue = "new HashMap<>()";
                 }
             }

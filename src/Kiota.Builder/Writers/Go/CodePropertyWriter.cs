@@ -7,7 +7,7 @@ namespace Kiota.Builder.Writers.Go {
         public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
         {
             var propertyName = codeElement.Access == AccessModifier.Public ? codeElement.Name.ToFirstCharacterUpperCase() : codeElement.Name.ToFirstCharacterLowerCase();
-            var returnType = conventions.GetTypeString(codeElement.Type);
+            var returnType = conventions.GetTypeString(codeElement.Type, codeElement.Parent);
             writer.WriteLine($"{propertyName} {returnType};"); //TODO request builders with bodies
         }
     }

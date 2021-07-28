@@ -19,7 +19,7 @@ namespace Kiota.Builder {
         {
             switch(currentElement) {
                 case CodeNamespace ns:
-                    return new string[] { GetDefaultFileName(currentElement) }; // We put barrels inside namespace folders
+                    return new string[] { GetLastFileNameSegment(currentElement) }; // We put barrels inside namespace folders
                 default:
                     return Enumerable.Empty<string>();
             }
@@ -29,10 +29,9 @@ namespace Kiota.Builder {
                 case CodeNamespace ns:
                     return "go";
                 default:
-                    return GetDefaultFileName(currentElement);
+                    return GetLastFileNameSegment(currentElement).ToSnakeCase();
             }
         }
-        private string GetDefaultFileName(CodeElement currentElement) => GetLastFileNameSegment(currentElement).ToSnakeCase();
         public override string NormalizeNamespaceSegment(string segmentName) => segmentName.ToFirstCharacterLowerCase();
     }
 }
