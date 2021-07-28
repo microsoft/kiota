@@ -46,7 +46,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         }
         [Fact]
         public void WritesModule() {
-            var module = currentEnum?.Parent?.Parent as CodeNamespace;
+            var module = currentEnum?.Parent as CodeNamespace;
             module.Name = "testModule";
             const string optionName = "Option2";
             currentEnum.Options.Add(optionName);

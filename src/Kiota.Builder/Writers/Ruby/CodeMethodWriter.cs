@@ -91,7 +91,7 @@ namespace Kiota.Builder.Writers.Ruby {
         private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer) {
             writer.WriteLine($"def  {codeElement.AccessedProperty?.Name?.ToSnakeCase()}=({codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()})");
             writer.IncreaseIndent();
-            writer.WriteLine($"@{codeElement.AccessedProperty?.Name?.ToSnakeCase()} = ({codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()})");
+            writer.WriteLine($"@{codeElement.AccessedProperty?.Name?.ToSnakeCase()} = {codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}");
         }
         private static void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer) {
             writer.WriteLine($"def  {codeElement.AccessedProperty?.Name?.ToSnakeCase()}");

@@ -115,12 +115,16 @@ namespace Kiota.Builder.Refiners.Tests {
                 Name = "model",
                 ClassKind = CodeClassKind.Model
             }).First();
+            var entity = graphNS.AddClass(new CodeClass (root) {
+                Name = "entity",
+                ClassKind = CodeClassKind.Model
+            }).First();
             var declaration = model.StartBlock as CodeClass.Declaration;
-            declaration.Inherits = new (parentClass){
+            declaration.Inherits = new (entity){
                 Name = "entity"
             };
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
-            Assert.Equal("ApiClient::Users::Entity", declaration.Inherits.Name);
+            Assert.Equal("Graph::Entity", declaration.Inherits.Name);
         }
         [Fact]
         public void AddNamespaceModuleImports() {

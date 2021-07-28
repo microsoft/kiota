@@ -7,10 +7,10 @@ namespace Kiota.Builder.Writers.Ruby {
         public CodeEnumWriter(RubyConventionService conventionService) : base(conventionService){}
         public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer)
         {
-            if(!codeElement.Options.Any())
+            if(!(codeElement?.Options.Any() ?? false))
                 return;
-            if(codeElement?.Parent?.Parent is CodeNamespace) {
-                writer.WriteLine($"module {codeElement.Parent.Parent.Name.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z,y) => z + "::" + y)}");
+            if(codeElement.Parent is CodeNamespace ns) {
+                writer.WriteLine($"module {ns.Name.NormalizeNameSpaceName("::")}");
                 writer.IncreaseIndent();
             }
             conventions.WriteShortDescription(codeElement.Description, writer);

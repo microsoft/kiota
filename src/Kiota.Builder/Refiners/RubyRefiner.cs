@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
 
@@ -21,7 +22,7 @@ namespace Kiota.Builder.Refiners {
             ReplaceRelativeImportsByImportPath(generatedCode, '.');
             AddNamespaceModuleImports(generatedCode , _configuration.ClientNamespaceName);
             FixReferencesToEntityType(generatedCode);
-            FixInheritedEntityType(generatedCode, null, _configuration.ClientNamespaceName.NormalizeNameSpaceName("::") + "::Users::");
+            FixInheritedEntityType(generatedCode);
         }
         private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
             new ("HttpCore", "microsoft_kiota_abstractions"),
@@ -61,19 +62,36 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(currentElement, (x) => AddInheritedAndMethodTypesImports(x));
         }
 
-        protected static void FixInheritedEntityType(CodeElement currentElement, CodeClass entityClass = null, string prefix = ""){
+        protected static void FixInheritedEntityType(CodeElement currentElement, string prefix = ""){
+
+            var nameSpaceName = string.IsNullOrEmpty(prefix) ? FetchEntityNamespace(currentElement).NormalizeNameSpaceName("::") : prefix; 
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
                 && currentClass.StartBlock is CodeClass.Declaration declaration && declaration.Inherits != null 
                 && "entity".Equals(declaration.Inherits.Name, StringComparison.OrdinalIgnoreCase)) {
                 declaration.Inherits.Name = prefix + declaration.Inherits.Name.ToFirstCharacterUpperCase();
             }
-            CrawlTree(currentElement, (c) => FixInheritedEntityType(c, entityClass, prefix));
+            CrawlTree(currentElement, (c) => FixInheritedEntityType(c, nameSpaceName));
+        }
+        protected static string FetchEntityNamespace(CodeElement currentElement){
+            Queue<CodeElement> children = new Queue<CodeElement>();
+            children.Enqueue(currentElement);
+            while(children.Count > 0){
+                foreach(var childElement in children.Dequeue().GetChildElements())
+                    if(childElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
+                    && "entity".Equals(currentClass?.Name, StringComparison.OrdinalIgnoreCase)) {
+                        return string.IsNullOrEmpty(currentClass?.Parent?.Name) ? string.Empty : currentClass?.Parent?.Name + "::";
+                    } else {
+                        children.Enqueue(childElement);
+                    }
+            }
+            return null;
         }
         protected void AddNamespaceModuleImports(CodeElement current, String clientNamespaceName) {
+            const string dot = ".";
             if(current is CodeClass currentClass) {
                 var Module = currentClass.GetImmediateParentOfType<CodeNamespace>();
                 if(!String.IsNullOrEmpty(Module.Name)){
-                    var modulesProperties = Module.Name.Replace(clientNamespaceName+".", string.Empty).Split(".");
+                    var modulesProperties = Module.Name.Replace(clientNamespaceName+dot, string.Empty).Split(dot);
                     for (int i = modulesProperties.Length - 1; i >= 0; i--){
                         var prefix = String.Concat(Enumerable.Repeat("../", modulesProperties.Length -i-1));
                         var nUsing = new CodeUsing(Module) { 
@@ -82,10 +100,10 @@ namespace Kiota.Builder.Refiners {
                                 IsExternal = false,
                             }
                         };
-                        nUsing.Declaration.Name = $"{(string.IsNullOrEmpty(prefix) ? "./" + prefix : string.Empty )}{nUsing.Name}";
+                        nUsing.Declaration.Name = $"{(string.IsNullOrEmpty(prefix) ? "./" : prefix)}{nUsing.Name}";
                         currentClass.AddUsing(nUsing);
                     }
-                }
+                } 
             }
             CrawlTree(current, c => AddNamespaceModuleImports(c, clientNamespaceName));
         }

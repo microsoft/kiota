@@ -22,8 +22,8 @@ namespace  Kiota.Builder.Writers.Ruby {
                                         .OrderBy(x => x.Key))
                 writer.WriteLine($"require_relative '{codeUsing.Key.ToSnakeCase()}'");
             writer.WriteLine();
-            if(codeElement?.Parent?.Parent is CodeNamespace) {
-                writer.WriteLine($"module {codeElement.Parent.Parent.Name.NormalizeNameSpaceName("::")}");
+            if(codeElement?.Parent?.Parent is CodeNamespace ns) {
+                writer.WriteLine($"module {ns.Name.NormalizeNameSpaceName("::")}");
                 writer.IncreaseIndent();
             }
     
