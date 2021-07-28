@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.IO;
 using Kiota.Builder.Writers.CSharp;
 using Kiota.Builder.Writers.Java;
+using Kiota.Builder.Writers.Ruby;
 using Kiota.Builder.Writers.TypeScript;
 
 namespace Kiota.Builder.Writers
@@ -94,9 +95,11 @@ namespace Kiota.Builder.Writers
                 case CodeType t:
                     ((ICodeElementWriter<CodeType>) elementWriter).WriteCodeElement(t, this);
                     break;
+                case CodeNamespace n:
+                    ((ICodeElementWriter<CodeNamespace>) elementWriter).WriteCodeElement(n, this);
+                    break;
                 case CodeNamespace.BlockDeclaration:
                 case CodeNamespace.BlockEnd:
-                case CodeNamespace:
                 case CodeClass:
                     break;
                 default:
@@ -113,6 +116,7 @@ namespace Kiota.Builder.Writers
                 GenerationLanguage.CSharp => new CSharpWriter(outputPath, clientNamespaceName, usesBackingStore),
                 GenerationLanguage.Java => new JavaWriter(outputPath, clientNamespaceName, usesBackingStore),
                 GenerationLanguage.TypeScript => new TypeScriptWriter(outputPath, clientNamespaceName, usesBackingStore),
+                GenerationLanguage.Ruby => new RubyWriter(outputPath, clientNamespaceName),
                 _ => throw new InvalidEnumArgumentException($"{language} language currently not supported."),
             };
         }

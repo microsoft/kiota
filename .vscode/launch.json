@@ -56,6 +56,24 @@
             "stopAtEntry": false
         },
         {
+            "name": "Launch Ruby",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/kiota/bin/Debug/net5.0/kiota.dll",
+            "args": ["--openapi",
+                 "${workspaceFolder}/../msgraph-sdk-powershell/openApiDocs/v1.0/mail.yml",
+                 "--language",
+                 "ruby",
+                 "-o",
+                 "${workspaceFolder}/samples/msgraph-mail/ruby/graphrubyv4",
+                 "-n",
+                 "graphrubyv4" ],
+            "cwd": "${workspaceFolder}/src/kiota",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
             "name": ".NET Core Attach",
             "type": "coreclr",
             "request": "attach",

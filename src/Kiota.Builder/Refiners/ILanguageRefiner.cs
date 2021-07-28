@@ -15,6 +15,9 @@ namespace Kiota.Builder.Refiners
                 case GenerationLanguage.Java:
                     new JavaRefiner(config).Refine(generatedCode);
                     break;
+                case GenerationLanguage.Ruby:
+                    new RubyRefiner(config).Refine(generatedCode);
+                    break;
                 default:
                     break; //Do nothing
             }

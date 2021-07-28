@@ -14,15 +14,21 @@ namespace Kiota.Builder {
         public abstract string FileSuffix { get; }
         public abstract string NormalizeNamespaceSegment(string segmentName);
         public abstract string NormalizeFileName(string elementName);
+
+        // We wrote barrels inside namespace folders
         public string GetPath(CodeNamespace currentNamespace, CodeElement currentElement) {
-            var targetPath = Path.Combine(RootPath, 
-                                            currentNamespace.Name
+            var fileName = NormalizeFileName(currentElement.Name.Split('.').Last());
+            var namespaceAdditionalSegment = currentElement is CodeNamespace ? fileName : string.Empty;
+            var namespacePathSegments = currentNamespace.Name
                                             .Replace(ClientNamespaceName, string.Empty)
                                             .TrimStart('.')
                                             .Split('.')
-                                            .Select(x => NormalizeNamespaceSegment(x))
-                                            .Aggregate((x, y) => $"{x}{Path.DirectorySeparatorChar}{y}"),
-                                            NormalizeFileName(currentElement.Name) + FileSuffix);
+                                            .Union(new string[] { namespaceAdditionalSegment })
+                                            .Where(x => !string.IsNullOrEmpty(x))
+                                            .Select(x => NormalizeNamespaceSegment(x));
+            var targetPath = Path.Combine(RootPath, (namespacePathSegments.Any() ? namespacePathSegments                                           
+                                            .Aggregate((x, y) => $"{x}{Path.DirectorySeparatorChar}{y}") : string.Empty),
+                                            fileName + FileSuffix);
             var directoryPath = Path.GetDirectoryName(targetPath);
             Directory.CreateDirectory(directoryPath);
             return targetPath;

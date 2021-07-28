@@ -7,15 +7,13 @@ namespace Kiota.Builder.Writers.CSharp {
     public class CodeClassDeclarationWriter : BaseElementWriter<CodeClass.Declaration, CSharpConventionService>
     {
         public CodeClassDeclarationWriter(CSharpConventionService conventionService): base(conventionService) { }
-        private static string NormalizeNameSpaceName(string original) => 
-        original.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z,y) => z + "." + y);
         public override void WriteCodeElement(CodeClass.Declaration codeElement, LanguageWriter writer)
         {
             codeElement.Usings
                     .Where(x => (x.Declaration?.IsExternal ?? true) || !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)) // needed for circular requests patterns like message folder
                     .Select(x => x.Declaration?.IsExternal ?? false ?
-                                     $"using {NormalizeNameSpaceName(x.Declaration.Name)};" :
-                                     $"using {NormalizeNameSpaceName(x.Name)};")
+                                     $"using {x.Declaration.Name.NormalizeNameSpaceName(".")};" :
+                                     $"using {x.Name.NormalizeNameSpaceName(".")};")
                     .Distinct()
                     .OrderBy(x => x)
                     .ToList()
