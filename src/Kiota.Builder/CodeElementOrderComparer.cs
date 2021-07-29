@@ -18,25 +18,17 @@ namespace Kiota.Builder {
         }
         private static readonly int nameWeight = 10;
         private static readonly int typeWeight = 100;
-        private static int GetTypeFactor(CodeElement element) {
-            switch(element) {
-                case CodeUsing:
-                    return 1;
-                case CodeClass.Declaration:
-                    return 2;
-                case CodeProperty:
-                    return 3;
-                case CodeIndexer:
-                    return 4;
-                case CodeMethod:
-                    return 5;
-                case CodeClass:
-                    return 6;
-                case CodeClass.End:
-                    return 7;
-                default:
-                    return 0;
-            }
+        protected virtual int GetTypeFactor(CodeElement element) {
+            return (element) switch {
+                (CodeUsing) => 1,
+                (CodeClass.Declaration) => 2,
+                (CodeProperty) => 3,
+                (CodeIndexer) => 4,
+                (CodeMethod) => 5,
+                (CodeClass) => 6,
+                (CodeClass.End) => 7,
+                _ => 0,
+            };
         }
         private static readonly int parametersWeight = 1;
         private static int GetParametersFactor(CodeElement element) {

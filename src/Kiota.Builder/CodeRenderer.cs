@@ -9,9 +9,14 @@ namespace Kiota.Builder
     /// <summary>
     /// Convert CodeDOM classes to strings or files
     /// </summary>
-    public static class CodeRenderer
+    public class CodeRenderer
     {
-        public static async Task RenderCodeNamespaceToSingleFileAsync(LanguageWriter writer, CodeElement codeElement, string outputFile)
+        public CodeRenderer(GenerationConfiguration configuration)
+        {
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            rendererElementComparer = configuration.ShouldRenderMethodsOutsideOfClasses ? new CodeElementOrderComparerWithExternalMethods() : new CodeElementOrderComparer();
+        }
+        public async Task RenderCodeNamespaceToSingleFileAsync(LanguageWriter writer, CodeElement codeElement, string outputFile)
         {
             using var stream = new FileStream(outputFile, FileMode.Create);
 
@@ -21,7 +26,7 @@ namespace Kiota.Builder
             await sw.FlushAsync();
         }
         // We created barrells for codenamespaces. Skipping for empty namespaces, ones created for users, and ones with same namspace as class name.
-        public static async Task RenderCodeNamespaceToFilePerClassAsync(LanguageWriter writer, CodeNamespace root, GenerationConfiguration configuration)
+        public async Task RenderCodeNamespaceToFilePerClassAsync(LanguageWriter writer, CodeNamespace root)
         {
             foreach (var codeElement in root.GetChildElements(true))
             {
@@ -32,21 +37,22 @@ namespace Kiota.Builder
                 else if (codeElement is CodeNamespace codeNamespace)
                 {
                     if (!string.IsNullOrEmpty(codeNamespace.Name) && !string.IsNullOrEmpty(root.Name) &&
-                        configuration.ShouldWriteNamespaceIndices &&
-                        !configuration.ClientNamespaceName.Contains(codeNamespace.Name, StringComparison.OrdinalIgnoreCase))
+                        _configuration.ShouldWriteNamespaceIndices &&
+                        !_configuration.ClientNamespaceName.Contains(codeNamespace.Name, StringComparison.OrdinalIgnoreCase))
                     {
                         var namespaceNameLastSegment = codeNamespace.Name.Split('.').Last().ToLowerInvariant();
                         // if the module already has a class with the same name, it's going to be declared automatically
-                        if (configuration.ShouldWriteBarrelsIfClassExists ||
+                        if (_configuration.ShouldWriteBarrelsIfClassExists ||
                             codeNamespace.FindChildByName<CodeClass>(namespaceNameLastSegment, false) == null)
                             await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(root, codeNamespace));
                     }
-                    await RenderCodeNamespaceToFilePerClassAsync(writer, codeNamespace, configuration);
+                    await RenderCodeNamespaceToFilePerClassAsync(writer, codeNamespace);
                 }
             }
         }
-        private static readonly CodeElementOrderComparer rendererElementComparer = new CodeElementOrderComparer();
-        private static void RenderCode(LanguageWriter writer, CodeElement element)
+        private readonly CodeElementOrderComparer rendererElementComparer;
+        private readonly GenerationConfiguration _configuration;
+        private void RenderCode(LanguageWriter writer, CodeElement element)
         {
             writer.Write(element);
             if (!(element is CodeNamespace))
