@@ -32,6 +32,6 @@ namespace Kiota.Builder {
                     return GetLastFileNameSegment(currentElement).ToSnakeCase();
             }
         }
-        public override string NormalizeNamespaceSegment(string segmentName) => segmentName.ToFirstCharacterLowerCase();
+        public override string NormalizeNamespaceSegment(string segmentName) => segmentName.ToLowerInvariant();
     }
 }
