@@ -11,11 +11,11 @@ namespace Kiota.Builder.Writers.Go {
 
         public string DocCommentPrefix => string.Empty;
 
-        public string PathSegmentPropertyName => throw new NotImplementedException();
+        public string PathSegmentPropertyName => "pathSegment";
 
-        public string CurrentPathPropertyName => throw new NotImplementedException();
+        public string CurrentPathPropertyName => "currentPath";
 
-        public string HttpCorePropertyName => throw new NotImplementedException();
+        public string HttpCorePropertyName => "httpCore";
 
         public string ParseNodeInterfaceName => "ParseNode";
         internal string DocCommentStart = "/*";
@@ -58,7 +58,7 @@ namespace Kiota.Builder.Writers.Go {
         {
             if(typeName.StartsWith("map[")) return typeName; //casing hack
 
-            return (typeName) switch {//TODO we're probably missing a bunch of type mappings
+            return (typeName) switch {
                 "void" => string.Empty,
                 "string" => $"*string",
                 "float" => "*float32",
@@ -69,6 +69,7 @@ namespace Kiota.Builder.Writers.Go {
                 "guid" => "uuid.UUID",
                 "datetimeoffset" => "time.Time",
                 "binary" => "[]byte",
+                ("String") => TranslateType(typeName.ToFirstCharacterLowerCase()), //casing hack
                 _ => typeName.ToFirstCharacterUpperCase() ?? "Object",
             };
         }
@@ -105,6 +106,13 @@ namespace Kiota.Builder.Writers.Go {
         public void WriteShortDescription(string description, LanguageWriter writer)
         {
             throw new NotImplementedException();
+        }
+
+        internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default)
+        {
+            var currentPath = addCurrentPath ? $"m.{CurrentPathPropertyName} + " : string.Empty;
+            var constructorName = returnType.Split('.').Last().ToFirstCharacterUpperCase();
+            writer.WriteLines($"return {returnType}.New{constructorName}({currentPath}m.{PathSegmentPropertyName}{suffix}, m.{HttpCorePropertyName});");
         }
     }
 }

@@ -30,9 +30,9 @@ namespace Kiota.Builder.Writers.Go {
                 // case CodeMethodKind.Deserializer:
                 //     WriteDeserializerBody(codeElement, parentClass, writer);
                 // break;
-                // case CodeMethodKind.IndexerBackwardCompatibility:
-                //     WriteIndexerBody(codeElement, writer, returnType);
-                // break;
+                case CodeMethodKind.IndexerBackwardCompatibility:
+                    WriteIndexerBody(codeElement, writer, returnType);
+                break;
                 // case CodeMethodKind.RequestGenerator:
                 //     WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, writer);
                 // break;
@@ -79,7 +79,8 @@ namespace Kiota.Builder.Writers.Go {
             var errorDeclaration = code.IsOfKind(CodeMethodKind.ClientConstructor, 
                                                 CodeMethodKind.Constructor, 
                                                 CodeMethodKind.Getter, 
-                                                CodeMethodKind.Setter) || code.IsAsync ? 
+                                                CodeMethodKind.Setter,
+                                                CodeMethodKind.IndexerBackwardCompatibility) || code.IsAsync ? 
                                                     string.Empty :
                                                     "error";
             if(!string.IsNullOrEmpty(finalReturnType) && !string.IsNullOrEmpty(errorDeclaration))
@@ -111,6 +112,11 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLine($"m.{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()} = value");
             else //TODO implement backing store setter when definition available in abstractions
                 writer.WriteLine($"this.get{backingStore.Name.ToFirstCharacterUpperCase()}().set(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\", value);");
+        }
+        private void WriteIndexerBody(CodeMethod codeElement, LanguageWriter writer, string returnType) {
+            var currentPathProperty = codeElement.Parent.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
+            var pathSegment = codeElement.PathSegment;
+            conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
         }
     }
 }

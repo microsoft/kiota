@@ -19,6 +19,17 @@ namespace Kiota.Builder.Refiners {
                 true,
                 false,
                 true);
+            AddDefaultImports(
+                generatedCode,
+                defaultNamespaces,
+                defaultNamespacesForModels,
+                defaultNamespacesForRequestBuilders,
+                defaultSymbolsForApiClient);
+            CorrectCoreType(
+                generatedCode);
+            PatchHeaderParametersType(
+                generatedCode,
+                "map[string]string");
             AddGetterAndSetterMethods(
                 generatedCode, 
                 new () { 
@@ -27,15 +38,9 @@ namespace Kiota.Builder.Refiners {
                     CodePropertyKind.BackingStore }, 
                 _configuration.UsesBackingStore,
                 false);
-            AddDefaultImports(
+            AddConstructorsForDefaultValues(
                 generatedCode,
-                defaultNamespaces,
-                defaultNamespacesForModels,
-                defaultNamespacesForRequestBuilders,
-                defaultSymbolsForApiClient);
-            PatchHeaderParametersType(generatedCode, "map[string]string");
-            CorrectCoreType(
-                generatedCode);
+                true);
         }
         private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
             new ("HttpCore", "github.com/microsoft/kiota/abstractions/go"),
