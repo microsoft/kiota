@@ -25,10 +25,12 @@ namespace Kiota.Builder.Writers.Go {
         {
             throw new InvalidOperationException("go uses a naming convention for access modifiers");
         }
-
-        public string GetParameterSignature(CodeParameter parameter)
+        public string GetParameterSignature(CodeParameter parameter) {
+            throw new InvalidOperationException("go needs import symbols, use the local override instead");
+        }
+        public string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
         {
-            throw new NotImplementedException();
+            return $"{parameter.Name} {GetTypeString(parameter.Type, targetElement)}";
         }
         public string GetTypeString(CodeTypeBase code) => throw new InvalidOperationException("go needs import symbols, use the local override instead");
         public string GetTypeString(CodeTypeBase code, CodeElement targetElement)
@@ -54,6 +56,8 @@ namespace Kiota.Builder.Writers.Go {
 
         public string TranslateType(string typeName)
         {
+            if(typeName.StartsWith("map[")) return typeName; //casing hack
+
             return (typeName) switch {//TODO we're probably missing a bunch of type mappings
                 "void" => string.Empty,
                 "string" => $"*string",
@@ -64,7 +68,7 @@ namespace Kiota.Builder.Writers.Go {
                 "boolean" => "*bool",
                 "guid" => "uuid.UUID",
                 "datetimeoffset" => "time.Time",
-                "map[string]interface{}" => typeName, //casing hack
+                "binary" => "[]byte",
                 _ => typeName.ToFirstCharacterUpperCase() ?? "Object",
             };
         }
