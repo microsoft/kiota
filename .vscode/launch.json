@@ -86,7 +86,7 @@
                  "-o",
                  "${workspaceFolder}/samples/msgraph-mail/go/utilities",
                  "-n",
-                 "github.com/microsoft/kiota-samples/msgraph-mail/go/utilities" ],
+                 "github.com/microsoft/kiota-samples/msgraph-mail/go/utilities/" ],
             "cwd": "${workspaceFolder}/src/kiota",
             "console": "internalConsole",
             "stopAtEntry": false
