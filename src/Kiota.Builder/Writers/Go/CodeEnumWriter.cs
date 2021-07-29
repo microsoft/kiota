@@ -13,13 +13,11 @@ namespace Kiota.Builder.Writers.Go {
                             string.Empty,
                             "const (");
             writer.IncreaseIndent();
-            var isFirstOption = true;
+            var iotaSuffix = $" {typeName} = iota";
             foreach (var item in codeElement.Options) {
-                if (isFirstOption) {
-                    isFirstOption = false;
-                    writer.WriteLine($"{item.ToUpperInvariant()} {typeName} = iota");
-                } else 
-                    writer.WriteLine($"{item.ToUpperInvariant()}");
+                writer.WriteLine($"{item.ToUpperInvariant()}_{typeName.ToUpperInvariant()}{iotaSuffix}");
+                if (!string.IsNullOrEmpty(iotaSuffix))
+                    iotaSuffix = string.Empty;
             }
             writer.DecreaseIndent();
             writer.WriteLines(")",
