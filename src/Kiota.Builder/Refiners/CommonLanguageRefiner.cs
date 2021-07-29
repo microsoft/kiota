@@ -477,6 +477,13 @@ namespace Kiota.Builder.Refiners {
             else
                 return string.Empty;
         }
+        protected static void PatchHeaderParametersType(CodeElement currentElement, string newTypeName) {
+            if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Headers)))
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Headers))
+                                        .ToList()
+                                        .ForEach(x => x.Type.Name = newTypeName);
+            CrawlTree(currentElement, (x) => PatchHeaderParametersType(x, newTypeName));
+        }
         protected static void CrawlTree(CodeElement currentElement, Action<CodeElement> function) {
             foreach(var childElement in currentElement.GetChildElements())
                 function.Invoke(childElement);

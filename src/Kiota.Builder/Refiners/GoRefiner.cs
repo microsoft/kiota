@@ -33,6 +33,7 @@ namespace Kiota.Builder.Refiners {
                 defaultNamespacesForModels,
                 defaultNamespacesForRequestBuilders,
                 defaultSymbolsForApiClient);
+            PatchHeaderParametersType(generatedCode, "map[string]string");
             CorrectCoreType(
                 generatedCode);
         }
@@ -81,7 +82,7 @@ namespace Kiota.Builder.Refiners {
                     (currentProperty.Parent as CodeClass).AddUsing(nUsing);
                 } else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
                     currentProperty.Type.Name = "map[string]interface{}";
-                    currentProperty.DefaultValue = "new HashMap<>()";
+                    currentProperty.DefaultValue = $"make({currentProperty.Type.Name})";
                 }
             }
             if (currentElement is CodeMethod currentMethod) {
@@ -90,7 +91,7 @@ namespace Kiota.Builder.Refiners {
                 else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
                     currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
                 else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer)) {
-                    currentMethod.ReturnType.Name = $"Map<String, BiConsumer<T, ParseNode>>";
+                    currentMethod.ReturnType.Name = "map[string]func(interface{}, i04eb5309aeaafadd28374d79c8471df9b267510b4dc2e3144c378c50f6fd7b55.ParseNode)(error)";
                     currentMethod.Name = "getFieldDeserializers";
                 }
                 else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))

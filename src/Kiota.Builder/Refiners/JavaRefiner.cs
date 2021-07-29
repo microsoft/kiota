@@ -18,7 +18,7 @@ namespace Kiota.Builder.Refiners {
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders, defaultSymbolsForApiClient);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
-            PatchHeaderParametersType(generatedCode);
+            PatchHeaderParametersType(generatedCode, "Map<String, String>");
             AddListImport(generatedCode);
             AddParsableInheritanceForModelClasses(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
@@ -181,13 +181,6 @@ namespace Kiota.Builder.Refiners {
             }
             
             CrawlTree(currentElement, AndInsertOverrideMethodForRequestExecutorsAndBuilders);
-        }
-        private static void PatchHeaderParametersType(CodeElement currentElement) {
-            if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Headers)))
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Headers))
-                                        .ToList()
-                                        .ForEach(x => x.Type.Name = "Map<String, String>");
-            CrawlTree(currentElement, PatchHeaderParametersType);
         }
         private static CodeMethod GetMethodClone(CodeMethod currentMethod, params CodeParameterKind[] parameterTypesToExclude) {
             if(currentMethod.Parameters.Any(x => parameterTypesToExclude.Contains(x.ParameterKind))) {
