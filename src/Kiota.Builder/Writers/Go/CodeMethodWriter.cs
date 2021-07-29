@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers.Extensions;
 
 namespace Kiota.Builder.Writers.Go {
     public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionService>
@@ -38,12 +39,12 @@ namespace Kiota.Builder.Writers.Go {
                 // case CodeMethodKind.RequestExecutor:
                 //     WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, returnType, writer);
                 // break;
-                // case CodeMethodKind.Getter:
-                //     WriteGetterBody(codeElement, writer, parentClass);
-                //     break;
-                // case CodeMethodKind.Setter:
-                //     WriteSetterBody(codeElement, writer, parentClass);
-                //     break;
+                case CodeMethodKind.Getter:
+                    WriteGetterBody(codeElement, writer, parentClass);
+                    break;
+                case CodeMethodKind.Setter:
+                    WriteSetterBody(codeElement, writer, parentClass);
+                    break;
                 // case CodeMethodKind.ClientConstructor:
                 //     WriteConstructorBody(parentClass, codeElement, writer, inherits);
                 //     WriteApiConstructorBody(parentClass, codeElement, writer);
@@ -84,6 +85,32 @@ namespace Kiota.Builder.Writers.Go {
             if(!string.IsNullOrEmpty(finalReturnType) && !string.IsNullOrEmpty(errorDeclaration))
                 finalReturnType += ", ";
             writer.WriteLine($"func{associatedTypePrefix} {methodName}({parameters})({finalReturnType}{errorDeclaration}) {{");
+        }
+        private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass) {
+            var backingStore = parentClass.GetBackingStoreProperty();
+            if(backingStore == null || (codeElement.AccessedProperty?.IsOfKind(CodePropertyKind.BackingStore) ?? false))
+                writer.WriteLine($"return m.{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}");
+            else 
+                if(!(codeElement.AccessedProperty?.Type?.IsNullable ?? true) &&
+                   !(codeElement.AccessedProperty?.ReadOnly ?? true) && //TODO implement backing store getter when definition available in abstractions
+                    !string.IsNullOrEmpty(codeElement.AccessedProperty?.DefaultValue)) {
+                    writer.WriteLines($"{conventions.GetTypeString(codeElement.AccessedProperty.Type)} value = this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\");",
+                        "if(value == null) {");
+                    writer.IncreaseIndent();
+                    writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue};",
+                        $"this.set{codeElement.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}(value);");
+                    writer.DecreaseIndent();
+                    writer.WriteLines("}", "return value;");
+                } else
+                    writer.WriteLine($"return this.get{backingStore.Name.ToFirstCharacterUpperCase()}().get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\");");
+
+        }
+        private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass) {
+            var backingStore = parentClass.GetBackingStoreProperty();
+            if(backingStore == null)
+                writer.WriteLine($"m.{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()} = value");
+            else //TODO implement backing store setter when definition available in abstractions
+                writer.WriteLine($"this.get{backingStore.Name.ToFirstCharacterUpperCase()}().set(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\", value);");
         }
     }
 }
