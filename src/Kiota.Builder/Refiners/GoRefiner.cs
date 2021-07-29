@@ -11,6 +11,9 @@ namespace Kiota.Builder.Refiners {
             ReplaceIndexersByMethodsWithParameter(
                 generatedCode,
                 generatedCode);
+            MoveModelsInDedicatedNamespace(
+                generatedCode
+            );
             AddPropertiesAndMethodTypesImports(
                 generatedCode,
                 true,
@@ -97,6 +100,26 @@ namespace Kiota.Builder.Refiners {
                         .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
             }
             CrawlTree(currentElement, CorrectCoreType);
+        }
+        private static void MoveModelsInDedicatedNamespace(CodeElement currentElement, CodeNamespace targetNamespace = default) {
+            if(targetNamespace == default &&
+                currentElement is CodeNamespace currentNS &&
+                !string.IsNullOrEmpty(currentNS.Name) &&
+                currentNS.Name.Contains('/'))
+                    targetNamespace = currentNS.AddNamespace($"{currentNS.Name}.models");
+            if(currentElement.Parent is CodeNamespace parentNS) {
+                if(currentElement is CodeClass currentClass &&
+                    currentClass.IsOfKind(CodeClassKind.Model) &&
+                    !currentClass.Name.EndsWith("response", StringComparison.OrdinalIgnoreCase)) {
+                        targetNamespace.AddClass(currentClass);
+                        parentNS.RemoveChildElement(currentClass);
+                    }
+                if(currentElement is CodeEnum currentEnum) {
+                    targetNamespace.AddEnum(currentEnum);
+                    parentNS.RemoveChildElement(currentEnum);
+                }
+            }
+            CrawlTree(currentElement, (x) => MoveModelsInDedicatedNamespace(x, targetNamespace));
         }
     }
 }
