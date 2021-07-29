@@ -19,7 +19,6 @@ namespace Kiota.Builder.Writers.Go {
                                 .Union(codeElement
                                     .Usings
                                     .Where(x => x.Declaration.IsExternal)
-                                    .Where(x => !x.Declaration.Name.EndsWith("serialization")) //TODO remove when we have code method writer implemented
                                     .Select(i => i.Declaration.Name)
                                     .Distinct())
                                 .OrderBy(x => x.Count(y => y == '/'))
