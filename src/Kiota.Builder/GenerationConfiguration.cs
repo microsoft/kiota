@@ -17,11 +17,9 @@ namespace Kiota.Builder {
         public bool ShouldWriteBarrelsIfClassExists { get { return BarreledLanguagesWithConstantFileName.Contains(Language); } }
         private static HashSet<GenerationLanguage> BarreledLanguages = new () {
             GenerationLanguage.Ruby,
-            GenerationLanguage.Go,
             // TODO: add typescript once we have a barrel writer for it
         };
         private static HashSet<GenerationLanguage> BarreledLanguagesWithConstantFileName = new () {
-            GenerationLanguage.Go,
             //TODO: add typescript once we have a barrel writer for it
         };
     }

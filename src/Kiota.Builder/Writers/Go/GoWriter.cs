@@ -9,7 +9,6 @@ namespace Kiota.Builder.Writers.Go {
             AddCodeElementWriter(new CodePropertyWriter(conventionService));
             AddCodeElementWriter(new CodeEnumWriter(conventionService));
             AddCodeElementWriter(new CodeMethodWriter(conventionService, usesBackingStore));
-            AddCodeElementWriter(new CodeNamespaceWriter(conventionService));
         }
     }
 }
