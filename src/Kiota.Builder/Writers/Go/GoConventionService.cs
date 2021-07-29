@@ -5,7 +5,7 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.Go {
     public class GoConventionService : ILanguageConventionService
     {
-        public string StreamTypeName => throw new NotImplementedException();
+        public string StreamTypeName => "[]byte";
 
         public string VoidTypeName => string.Empty;
 
@@ -18,6 +18,8 @@ namespace Kiota.Builder.Writers.Go {
         public string HttpCorePropertyName => "httpCore";
 
         public string ParseNodeInterfaceName => "ParseNode";
+
+        public object AbstractionsHash => "ida96af0f171bb75f894a4013a6b3146a4397c58f11adb81a2b7cbea9314783a9";
         internal string DocCommentStart = "/*";
         internal string DocCommentEnd = " */";
 

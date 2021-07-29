@@ -21,8 +21,9 @@ namespace Kiota.Builder.Writers.Go {
             var returnType = conventions.GetTypeString(codeElement.ReturnType, parentClass);
             WriteMethodPrototype(codeElement, writer, returnType, parentClass);
             writer.IncreaseIndent();
-
-
+            var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
+            var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
+            var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
             switch(codeElement.MethodKind) {
                 // case CodeMethodKind.Serializer:
                 //     WriteSerializerBody(parentClass, writer);
@@ -33,9 +34,9 @@ namespace Kiota.Builder.Writers.Go {
                 case CodeMethodKind.IndexerBackwardCompatibility:
                     WriteIndexerBody(codeElement, writer, returnType);
                 break;
-                // case CodeMethodKind.RequestGenerator:
-                //     WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, writer);
-                // break;
+                case CodeMethodKind.RequestGenerator:
+                    WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, writer);
+                break;
                 // case CodeMethodKind.RequestExecutor:
                 //     WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, returnType, writer);
                 // break;
@@ -117,6 +118,37 @@ namespace Kiota.Builder.Writers.Go {
             var currentPathProperty = codeElement.Parent.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
             var pathSegment = codeElement.PathSegment;
             conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
+        }
+        private const string rInfoVarName = "requestInfo";
+        private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, LanguageWriter writer) {
+            if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
+            
+            writer.WriteLine($"{rInfoVarName} := new({conventions.AbstractionsHash}.RequestInfo)");
+            writer.WriteLines($"{rInfoVarName}.URI = new URI(m.{conventions.CurrentPathPropertyName} + m.{conventions.PathSegmentPropertyName});",
+                        $"{rInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod?.ToString().ToUpperInvariant()};");
+            if(requestBodyParam != null)
+                if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
+                    writer.WriteLine($"{rInfoVarName}.SetStreamContent({requestBodyParam.Name});");
+                else
+                    writer.WriteLine($"{rInfoVarName}.SetContentFromParsable({requestBodyParam.Name}, m.{conventions.HttpCorePropertyName}, \"{codeElement.ContentType}\");");
+            if(queryStringParam != null) {
+                var httpMethodPrefix = codeElement.HttpMethod.ToString().ToFirstCharacterUpperCase();
+                writer.WriteLine($"if {queryStringParam.Name} != nil {{");
+                writer.IncreaseIndent();
+                writer.WriteLines($"qParams := new {httpMethodPrefix}QueryParameters();",
+                            $"{queryStringParam.Name}.accept(qParams);",
+                            "qParams.AddQueryParameters(requestInfo.queryParameters);");
+                writer.DecreaseIndent();
+                writer.WriteLine("}");
+            }
+            if(headersParam != null) {
+                writer.WriteLine($"if {headersParam.Name} != nil {{");
+                writer.IncreaseIndent();
+                writer.WriteLine($"{headersParam.Name}.accept({rInfoVarName}.headers);");
+                writer.DecreaseIndent();
+                writer.WriteLine("}");
+            }
+            writer.WriteLine($"return {rInfoVarName}");
         }
     }
 }
