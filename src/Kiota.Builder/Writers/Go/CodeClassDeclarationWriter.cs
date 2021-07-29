@@ -9,24 +9,22 @@ namespace Kiota.Builder.Writers.Go {
 
         public override void WriteCodeElement(CodeClass.Declaration codeElement, LanguageWriter writer)
         {
-            var currentNamespaceSlashCount = 0;
-            if(codeElement?.Parent?.Parent is CodeNamespace ns) {
-                writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().ToLowerInvariant()}");
-                currentNamespaceSlashCount = ns.GetInternalNamespaceImport().Count(x => x == '/');
-            }
+            if(codeElement?.Parent?.Parent is CodeNamespace ns)
+                writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment()}");
             var importSegments = codeElement
                                 .Usings
                                 .Where(x => !x.Declaration.IsExternal)
                                 .Select(i => i.GetInternalNamespaceImport())
-                                .Where(x => x.Count(y => y == '/') != currentNamespaceSlashCount) // only the submoules or parent ones
                                 .Distinct()
-                                .ToList();
-            importSegments.AddRange(codeElement
+                                .Union(codeElement
                                     .Usings
                                     .Where(x => x.Declaration.IsExternal)
                                     .Where(x => !x.Declaration.Name.EndsWith("serialization")) //TODO remove when we have code method writer implemented
                                     .Select(i => i.Declaration.Name)
-                                    .Distinct());
+                                    .Distinct())
+                                .OrderBy(x => x.Count(y => y == '/'))
+                                .ThenBy(x => x)
+                                .ToList();
             if(importSegments.Any()) {
                 writer.WriteLines(string.Empty, "import (");
                 writer.IncreaseIndent();

@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -6,12 +7,14 @@ namespace Kiota.Builder.Writers.Go {
     public static class GoNamespaceExtensions {
         public static string GetLastNamespaceSegment(this string nsName) { 
             var urlPrefixIndex = nsName.LastIndexOf('/') + 1;
-            return nsName[urlPrefixIndex..].Split('.').Last();
+            var tentativeSegment = nsName[urlPrefixIndex..].Split('.', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
+            if(string.IsNullOrEmpty(tentativeSegment)) tentativeSegment = nsName.Split('/', StringSplitOptions.RemoveEmptyEntries).Last();
+            return tentativeSegment.ToLowerInvariant();
         }
         public static string GetInternalNamespaceImport(this CodeElement ns) {
             if(ns == null) return string.Empty;
             var urlPrefixIndex = ns.Name.LastIndexOf('/') + 1;
-            return ns.Name[0..urlPrefixIndex] + ns.Name[urlPrefixIndex..].Split('.').Aggregate((x, y) => $"{x}/{y}");
+            return (ns.Name[0..urlPrefixIndex] + ns.Name[urlPrefixIndex..].Split('.', StringSplitOptions.RemoveEmptyEntries).Aggregate((x, y) => $"{x}/{y}")).ToLowerInvariant();
         }
         public static string GetNamespaceImportSymbol(this CodeElement ns) {
             if(ns == null) return string.Empty;

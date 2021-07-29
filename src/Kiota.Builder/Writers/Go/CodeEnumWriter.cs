@@ -7,7 +7,7 @@ namespace Kiota.Builder.Writers.Go {
         public CodeEnumWriter(GoConventionService conventionService) : base(conventionService){}
         public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer) {
             if(codeElement?.Parent is CodeNamespace ns)
-                writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().ToLowerInvariant()}");
+                writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment()}");
             var typeName = codeElement.Name.ToFirstCharacterUpperCase();
             writer.WriteLines($"type {typeName} int",
                             string.Empty,
