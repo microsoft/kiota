@@ -18,4 +18,12 @@ class ParseNodeFactoryRegistry implements ParseNodeFactoryInterface {
         }
         throw new \UnexpectedValueException('Content type ' . $contentType . ' does not have a factory to be parsed');
     }
+
+    public static function getDefaultInstance(): ParseNodeFactoryRegistry {
+        return new self();
+    }
+
+    public function getValidContentType(): string {
+        throw new \RuntimeException('The registry supports multiple content types. Get the registered factory instead.');
+    }
 }

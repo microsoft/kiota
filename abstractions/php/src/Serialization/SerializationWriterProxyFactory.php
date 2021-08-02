@@ -11,21 +11,21 @@ abstract class SerializationWriterProxyFactory implements SerializationWriterFac
     private SerializationWriterFactoryInterface $concrete;
 
     /**
-     * @var Closure
+     * @var ?Closure $onBefore
      */
-    private Closure $onBefore;
+    private ?Closure $onBefore;
     /**
-     * @var Closure
+     * @var ?Closure $onAfter
      */
-    private Closure $onAfter;
+    private ?Closure $onAfter;
 
     /**
      * SerializationWriterProxyFactory constructor.
      * @param SerializationWriterFactoryInterface $concrete
-     * @param Closure $onBefore
-     * @param Closure $onAfter
+     * @param ?Closure $onBefore
+     * @param ?Closure $onAfter
      */
-    public function __construct(SerializationWriterFactoryInterface $concrete, Closure $onBefore, Closure $onAfter) {
+    public function __construct(SerializationWriterFactoryInterface $concrete, ?Closure $onBefore = null, ?Closure $onAfter = null) {
         $this->concrete = $concrete;
         $this->onBefore = $onBefore;
         $this->onAfter = $onAfter;
@@ -41,13 +41,17 @@ abstract class SerializationWriterProxyFactory implements SerializationWriterFac
         $originalAfter  = $writer->onAfterObjectSerialization;
 
         $writer->onBeforeObjectSerialization = function (AbstractParsable $x) use ($originalBefore) {
-            $this->onBefore->bindTo($x);
-            $originalBefore->bindTo($x);
+            $this->onBefore->call($x, $x);
+            $originalBefore->call($x, $x);
         };
         $writer->onAfterObjectSerialization = function (AbstractParsable $x) use ($originalAfter) {
-            $this->onAfter->bindTo($x);
-            $originalAfter->bindTo($x);
+            $this->onAfter->call($x, $x);
+            $originalAfter->call($x, $x);
         };
         return $writer;
+    }
+
+    public function getValidContentType(): string {
+        return $this->concrete->getValidContentType();
     }
 }

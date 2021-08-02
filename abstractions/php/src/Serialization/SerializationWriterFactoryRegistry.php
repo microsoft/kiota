@@ -28,4 +28,12 @@ class SerializationWriterFactoryRegistry implements SerializationWriterFactoryIn
         }
         throw new UnexpectedValueException('Content type ' . $contentType . ' does not have a factory to be parsed');
     }
+
+    public function getValidContentType(): string {
+        throw new \RuntimeException("The registry supports multiple content types. Get the registered factory instead.");
+    }
+
+    public static function getDefaultInstance(): SerializationWriterFactoryRegistry {
+        return new self();
+    }
 }

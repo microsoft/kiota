@@ -12,4 +12,5 @@ interface ParseNodeFactoryInterface {
      * @return AbstractParseNode
      */
     public function getParseNode(string $contentType, StreamInterface $rawResponse): AbstractParseNode;
+    public function getValidContentType(): string;
 }

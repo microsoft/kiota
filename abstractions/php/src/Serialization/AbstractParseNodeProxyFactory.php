@@ -61,4 +61,8 @@ abstract class AbstractParseNodeProxyFactory implements ParseNodeFactoryInterfac
         };
         return $node;
     }
+
+    public function getValidContentType(): string {
+        return $this->concrete->getValidContentType();
+    }
 }
