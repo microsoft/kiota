@@ -53,6 +53,9 @@ namespace Kiota.Builder.Writers.Go {
                 // case CodeMethodKind.Constructor:
                 //     WriteConstructorBody(parentClass, codeElement, writer, inherits);
                 //     break;
+                case CodeMethodKind.Deserializer:
+                    writer.WriteLine("return nil, nil");
+                    break;
                 default:
                     writer.WriteLine("return nil");
                 break;
@@ -74,7 +77,7 @@ namespace Kiota.Builder.Writers.Go {
                 _ => code.Name.ToFirstCharacterLowerCase()
             });
             var parameters = string.Join(", ", code.Parameters.Select(p => conventions.GetParameterSignature(p, parentClass)).ToList());
-            var classType = "*" + conventions.GetTypeString(new CodeType(parentClass) { Name = parentClass.Name, TypeDefinition = parentClass }, parentClass);
+            var classType = conventions.GetTypeString(new CodeType(parentClass) { Name = parentClass.Name, TypeDefinition = parentClass }, parentClass);
             var associatedTypePrefix = isConstructor ? string.Empty : $" (m {classType})";
             var finalReturnType = isConstructor ? classType : $"{returnTypeAsyncPrefix}{returnType}{returnTypeAsyncSuffix}";
             var errorDeclaration = code.IsOfKind(CodeMethodKind.ClientConstructor, 
@@ -124,31 +127,42 @@ namespace Kiota.Builder.Writers.Go {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
             writer.WriteLine($"{rInfoVarName} := new({conventions.AbstractionsHash}.RequestInfo)");
-            writer.WriteLines($"{rInfoVarName}.URI = new URI(m.{conventions.CurrentPathPropertyName} + m.{conventions.PathSegmentPropertyName});",
-                        $"{rInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod?.ToString().ToUpperInvariant()};");
+            writer.WriteLines($"uri, err := url.Parse(*m.{conventions.CurrentPathPropertyName} + *m.{conventions.PathSegmentPropertyName})",
+                        $"{rInfoVarName}.URI = *uri",
+                        $"{rInfoVarName}.Method = {conventions.AbstractionsHash}.{codeElement.HttpMethod?.ToString().ToUpperInvariant()}");
+            WriteReturnError(writer);
             if(requestBodyParam != null)
-                if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                    writer.WriteLine($"{rInfoVarName}.SetStreamContent({requestBodyParam.Name});");
+                if(requestBodyParam.Type.Name.Equals("binary", StringComparison.OrdinalIgnoreCase))
+                    writer.WriteLine($"{rInfoVarName}.SetStreamContent({requestBodyParam.Name})");
                 else
-                    writer.WriteLine($"{rInfoVarName}.SetContentFromParsable({requestBodyParam.Name}, m.{conventions.HttpCorePropertyName}, \"{codeElement.ContentType}\");");
+                    writer.WriteLine($"{rInfoVarName}.SetContentFromParsable({requestBodyParam.Name}, m.{conventions.HttpCorePropertyName}, \"{codeElement.ContentType}\")");
             if(queryStringParam != null) {
                 var httpMethodPrefix = codeElement.HttpMethod.ToString().ToFirstCharacterUpperCase();
                 writer.WriteLine($"if {queryStringParam.Name} != nil {{");
                 writer.IncreaseIndent();
-                writer.WriteLines($"qParams := new {httpMethodPrefix}QueryParameters();",
-                            $"{queryStringParam.Name}.accept(qParams);",
-                            "qParams.AddQueryParameters(requestInfo.queryParameters);");
+                writer.WriteLines($"qParams := new {httpMethodPrefix}QueryParameters()",
+                            $"err = {queryStringParam.Name}(qParams)");
+                WriteReturnError(writer);
+                writer.WriteLine("qParams.AddQueryParameters(requestInfo.QueryParameters)");
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
             }
             if(headersParam != null) {
                 writer.WriteLine($"if {headersParam.Name} != nil {{");
                 writer.IncreaseIndent();
-                writer.WriteLine($"{headersParam.Name}.accept({rInfoVarName}.headers);");
+                writer.WriteLine($"err = {headersParam.Name}({rInfoVarName}.Headers)");
+                WriteReturnError(writer);
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
             }
-            writer.WriteLine($"return {rInfoVarName}");
+            writer.WriteLine($"return {rInfoVarName}, err");
+        }
+        private void WriteReturnError(LanguageWriter writer) {
+            writer.WriteLine("if err != nil {");
+            writer.IncreaseIndent();
+            writer.WriteLine("return nil, err");
+            writer.DecreaseIndent();
+            writer.WriteLine("}");
         }
     }
 }

@@ -14,20 +14,21 @@ namespace Kiota.Builder.Writers.Go {
             var importSegments = codeElement
                                 .Usings
                                 .Where(x => !x.Declaration.IsExternal)
-                                .Select(i => i.GetInternalNamespaceImport())
+                                .Select(x => x.GetInternalNamespaceImport())
+                                .Select(x => new Tuple<string, string>(x.GetNamespaceImportSymbol(), x))
                                 .Distinct()
                                 .Union(codeElement
                                     .Usings
                                     .Where(x => x.Declaration.IsExternal)
-                                    .Select(i => i.Declaration.Name)
+                                    .Select(x => new Tuple<string, string>(x.Name.StartsWith("*") ? x.Name[1..] : x.Declaration.Name.GetNamespaceImportSymbol(), x.Declaration.Name))
                                     .Distinct())
-                                .OrderBy(x => x.Count(y => y == '/'))
+                                .OrderBy(x => x.Item2.Count(y => y == '/'))
                                 .ThenBy(x => x)
                                 .ToList();
             if(importSegments.Any()) {
                 writer.WriteLines(string.Empty, "import (");
                 writer.IncreaseIndent();
-                importSegments.ForEach(x => writer.WriteLine($"{x.GetNamespaceImportSymbol()} \"{x}\""));
+                importSegments.ForEach(x => writer.WriteLine($"{x.Item1} \"{x.Item2}\""));
                 writer.DecreaseIndent();
                 writer.WriteLines(")", string.Empty);
             }

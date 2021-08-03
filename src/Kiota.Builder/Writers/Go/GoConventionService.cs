@@ -44,14 +44,18 @@ namespace Kiota.Builder.Writers.Go {
                 if(!string.IsNullOrEmpty(importSymbol))
                     importSymbol += ".";
                 var typeName = TranslateType(currentType.Name);
+                var nullableSymbol = currentType.IsNullable &&
+                                    currentType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None &&
+                                    !IsScalarType(currentType.Name) ? "*"
+                                    : string.Empty;
                 var collectionPrefix = currentType.CollectionKind switch {
                     CodeType.CodeTypeCollectionKind.None => string.Empty,
                     _ => "[]",
                 };
                 if (currentType.ActionOf)
-                    return $"func (value {collectionPrefix}{importSymbol}{typeName}) (err error)";
+                    return $"func (value {nullableSymbol}{collectionPrefix}{importSymbol}{typeName}) (err error)";
                 else
-                    return $"{collectionPrefix}{importSymbol}{typeName}";
+                    return $"{nullableSymbol}{collectionPrefix}{importSymbol}{typeName}";
             }
             else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
@@ -79,6 +83,13 @@ namespace Kiota.Builder.Writers.Go {
             return typeName switch {
                 ("void" or "string" or "float" or "integer" or "long" or "double" or "boolean" or "guid" or "datetimeoffset") => true,
                 _ => false,
+            };
+        }
+        private static bool IsScalarType(string typeName) {
+            if(typeName.StartsWith("map[")) return true;
+            return typeName switch {
+                ("binary") => true,
+                _ => IsPrimitiveType(typeName),
             };
         }
         private string GetImportSymbol(CodeTypeBase currentBaseType, CodeElement targetElement) {
@@ -112,9 +123,9 @@ namespace Kiota.Builder.Writers.Go {
 
         internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default)
         {
-            var currentPath = addCurrentPath ? $"m.{CurrentPathPropertyName} + " : string.Empty;
+            var currentPath = addCurrentPath ? $"*m.{CurrentPathPropertyName} + " : string.Empty;
             var constructorName = returnType.Split('.').Last().ToFirstCharacterUpperCase();
-            writer.WriteLines($"return {returnType}.New{constructorName}({currentPath}m.{PathSegmentPropertyName}{suffix}, m.{HttpCorePropertyName});");
+            writer.WriteLines($"return {returnType}.New{constructorName}({currentPath}*m.{PathSegmentPropertyName}{suffix}, m.{HttpCorePropertyName});");
         }
     }
 }
