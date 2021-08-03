@@ -20,11 +20,11 @@ type RequestInfo struct {
 const contentTypeHeader = "Content-Type"
 const binaryContentType = "application/octet-steam"
 
-func SetStreamContent(request *RequestInfo, content []byte) {
+func (request *RequestInfo) SetStreamContent(content []byte) {
 	request.Content = content
 	request.Headers[contentTypeHeader] = binaryContentType
 }
-func SetContentFromParsable(request *RequestInfo, coreService HttpCore, item s.Parsable, contentType string) error {
+func (request *RequestInfo) SetContentFromParsable(coreService HttpCore, item s.Parsable, contentType string) error {
 	if contentType == "" {
 		return errors.New("content type cannot be empty")
 	} else if coreService == nil {
