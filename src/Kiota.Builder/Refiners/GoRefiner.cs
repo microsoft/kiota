@@ -49,7 +49,7 @@ namespace Kiota.Builder.Refiners {
             new ("ResponseHandler", "github.com/microsoft/kiota/abstractions/go"),
             // new ("QueryParametersBase", "github.com/microsoft/kiota/abstractions/go"),
             // new ("Map", "java.util"),
-            // new ("URI", "java.net"),
+            new ("*url", "net/url"),
             // new ("URISyntaxException", "java.net"),
             // new ("InputStream", "java.io"),
             // new ("Function", "java.util.function"),
@@ -98,12 +98,13 @@ namespace Kiota.Builder.Refiners {
                 else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer)) {
                     currentMethod.ReturnType.Name = "map[string]func(interface{}, i04eb5309aeaafadd28374d79c8471df9b267510b4dc2e3144c378c50f6fd7b55.ParseNode)(error)";
                     currentMethod.Name = "getFieldDeserializers";
-                }
-                else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
+                } else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
                     currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore))
                         .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                         .ToList()
                         .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
+                else if(currentMethod.IsOfKind(CodeMethodKind.RequestGenerator))
+                    currentMethod.ReturnType.IsNullable = true;
             }
             CrawlTree(currentElement, CorrectCoreType);
         }
