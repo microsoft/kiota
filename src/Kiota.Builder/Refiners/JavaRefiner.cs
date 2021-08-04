@@ -9,7 +9,7 @@ namespace Kiota.Builder.Refiners {
         public JavaRefiner(GenerationConfiguration configuration) : base(configuration) {}
         public override void Refine(CodeNamespace generatedCode)
         {
-            AddInnerClasses(generatedCode);
+            AddInnerClasses(generatedCode, false);
             AndInsertOverrideMethodForRequestExecutorsAndBuilders(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode);
             ConvertUnionTypesToWrapper(generatedCode);

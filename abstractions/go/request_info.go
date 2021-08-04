@@ -14,7 +14,7 @@ type RequestInfo struct {
 	URI             u.URL
 	Headers         map[string]string
 	QueryParameters map[string]string
-	Content         []byte
+	Content         []byte //TODO options + add/get methods
 }
 
 const contentTypeHeader = "Content-Type"

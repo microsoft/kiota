@@ -35,7 +35,7 @@ namespace Kiota.Builder.Writers.Go {
                     WriteIndexerBody(codeElement, writer, returnType);
                 break;
                 case CodeMethodKind.RequestGenerator:
-                    WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, writer);
+                    WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, writer, parentClass);
                 break;
                 // case CodeMethodKind.RequestExecutor:
                 //     WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, returnType, writer);
@@ -123,7 +123,7 @@ namespace Kiota.Builder.Writers.Go {
             conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
         }
         private const string rInfoVarName = "requestInfo";
-        private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, LanguageWriter writer) {
+        private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, LanguageWriter writer, CodeClass parentClass) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
             writer.WriteLine($"{rInfoVarName} := new({conventions.AbstractionsHash}.RequestInfo)");
@@ -140,7 +140,7 @@ namespace Kiota.Builder.Writers.Go {
                 var httpMethodPrefix = codeElement.HttpMethod.ToString().ToFirstCharacterUpperCase();
                 writer.WriteLine($"if {queryStringParam.Name} != nil {{");
                 writer.IncreaseIndent();
-                writer.WriteLines($"qParams := new {httpMethodPrefix}QueryParameters()",
+                writer.WriteLines($"qParams := new({parentClass.Name}{httpMethodPrefix}QueryParameters)",
                             $"err = {queryStringParam.Name}(qParams)");
                 WriteReturnError(writer);
                 writer.WriteLine("qParams.AddQueryParameters(requestInfo.QueryParameters)");

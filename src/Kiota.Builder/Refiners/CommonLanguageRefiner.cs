@@ -346,7 +346,7 @@ namespace Kiota.Builder.Refiners {
             }
             CrawlTree(currentElement, c => AddIndexerMethod(c, targetClass, indexerClass, pathSegment, methodNameSuffix, description));
         }
-        internal void AddInnerClasses(CodeElement current) {
+        internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName) {
             if(current is CodeClass currentClass) {
                 foreach(var parameter in currentClass.GetChildElements(true).OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.QueryParameter))) 
                     foreach(var returnType in parameter.Type.AllTypes) {
@@ -354,13 +354,18 @@ namespace Kiota.Builder.Refiners {
                         if(innerClass == null)
                             continue;
                             
-                        if(currentClass.FindChildByName<CodeClass>(returnType.TypeDefinition.Name) == null) {
+                        if(prefixClassNameWithParentName && !innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase)) {
+                            innerClass.Name = $"{currentClass.Name}{innerClass.Name}";
+                            innerClass.StartBlock.Name = innerClass.Name;
+                        }
+                        
+                        if(currentClass.FindChildByName<CodeClass>(innerClass.Name) == null) {
                             currentClass.AddInnerClass(innerClass);
                         }
                         (innerClass.StartBlock as Declaration).Inherits = new CodeType(returnType.TypeDefinition) { Name = "QueryParametersBase", IsExternal = true };
                     }
             }
-            CrawlTree(current, AddInnerClasses);
+            CrawlTree(current, x => AddInnerClasses(x, prefixClassNameWithParentName));
         }
         private static readonly CodeUsingComparer usingComparerWithDeclarations = new CodeUsingComparer(true);
         private static readonly CodeUsingComparer usingComparerWithoutDeclarations = new CodeUsingComparer(false);

@@ -8,6 +8,9 @@ namespace Kiota.Builder.Refiners {
         public GoRefiner(GenerationConfiguration configuration) : base(configuration) {}
         public override void Refine(CodeNamespace generatedCode)
         {
+            AddInnerClasses(
+                generatedCode,
+                true);
             ReplaceIndexersByMethodsWithParameter(
                 generatedCode,
                 generatedCode);
@@ -26,7 +29,9 @@ namespace Kiota.Builder.Refiners {
                 defaultNamespacesForRequestBuilders,
                 defaultSymbolsForApiClient);
             CorrectCoreType(
-                generatedCode);
+                generatedCode,
+                CorrectMethodType,
+                CorrectPropertyType);
             PatchHeaderParametersType(
                 generatedCode,
                 "map[string]string");
@@ -47,6 +52,7 @@ namespace Kiota.Builder.Refiners {
             new ("HttpMethod", "github.com/microsoft/kiota/abstractions/go"),
             new ("RequestInfo", "github.com/microsoft/kiota/abstractions/go"),
             new ("ResponseHandler", "github.com/microsoft/kiota/abstractions/go"),
+            new ("MiddlewareOption", "github.com/microsoft/kiota/abstractions/go"),
             // new ("QueryParametersBase", "github.com/microsoft/kiota/abstractions/go"),
             // new ("Map", "java.util"),
             new ("*url", "net/url"),
@@ -69,8 +75,33 @@ namespace Kiota.Builder.Refiners {
             // new ("SerializationWriterFactoryRegistry", "github.com/microsoft/kiota/abstractions/go/serialization"),
             // new ("ParseNodeFactoryRegistry", "github.com/microsoft/kiota/abstractions/go/serialization"),
         };
-        private static void CorrectCoreType(CodeElement currentElement) {
-            if (currentElement is CodeProperty currentProperty && currentProperty.Type != null) {
+        private static void CorrectMethodType(CodeMethod currentMethod) {
+            if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) &&
+                currentMethod.Parent is CodeClass parentClass) {
+                if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
+                    currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x => x.Type.Name = "ResponseHandler");
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => {
+                    x.Type.IsNullable = false;
+                    x.Type.Name = "MiddlewareOption";
+                    x.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
+                });
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.QueryParameter)).ToList().ForEach(x => x.Type.Name = $"{parentClass.Name}{x.Type.Name}");
+            }
+            else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
+                currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
+            else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer)) {
+                currentMethod.ReturnType.Name = "map[string]func(interface{}, i04eb5309aeaafadd28374d79c8471df9b267510b4dc2e3144c378c50f6fd7b55.ParseNode)(error)";
+                currentMethod.Name = "getFieldDeserializers";
+            } else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore))
+                    .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
+                    .ToList()
+                    .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
+            else if(currentMethod.IsOfKind(CodeMethodKind.RequestGenerator))
+                currentMethod.ReturnType.IsNullable = true;
+        }
+        private static void CorrectPropertyType(CodeProperty currentProperty) {
+            if (currentProperty.Type != null) {
                 if(currentProperty.IsOfKind(CodePropertyKind.HttpCore))
                     currentProperty.Type.Name = "HttpCore";
                 else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
@@ -90,23 +121,6 @@ namespace Kiota.Builder.Refiners {
                     currentProperty.DefaultValue = $"make({currentProperty.Type.Name})";
                 }
             }
-            if (currentElement is CodeMethod currentMethod) {
-                if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
-                    currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x => x.Type.Name = "ResponseHandler");
-                else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
-                    currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
-                else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer)) {
-                    currentMethod.ReturnType.Name = "map[string]func(interface{}, i04eb5309aeaafadd28374d79c8471df9b267510b4dc2e3144c378c50f6fd7b55.ParseNode)(error)";
-                    currentMethod.Name = "getFieldDeserializers";
-                } else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
-                    currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore))
-                        .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
-                        .ToList()
-                        .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
-                else if(currentMethod.IsOfKind(CodeMethodKind.RequestGenerator))
-                    currentMethod.ReturnType.IsNullable = true;
-            }
-            CrawlTree(currentElement, CorrectCoreType);
         }
         private static void MoveModelsInDedicatedNamespace(CodeElement currentElement, CodeNamespace targetNamespace = default) {
             if(targetNamespace == default &&
