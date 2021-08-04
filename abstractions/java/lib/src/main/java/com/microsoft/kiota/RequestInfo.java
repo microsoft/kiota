@@ -3,6 +3,7 @@ package com.microsoft.kiota;
 import java.net.URI;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.function.Function;
@@ -31,6 +32,32 @@ public class RequestInfo {
     /** The Request Body. */
     @Nullable
     public InputStream content;
+    private HashMap<String, MiddlewareOption> _middlewareOptions = new HashMap<>();
+    /**
+     * Gets the middleware options for this request. Options are unique by type. If an option of the same type is added twice, the last one wins.
+     * @return the middleware options for this request.
+     */
+    public Collection<MiddlewareOption> getMiddlewareOptions() { return _middlewareOptions.values(); }
+    /**
+     * Adds a middleware option to this request.
+     * @param option the middleware option to add.
+     */
+    public void addMiddlewareOptions(@Nullable final MiddlewareOption... options) { 
+        if(options == null || options.length == 0) return;
+        for(final MiddlewareOption option : options) {
+            _middlewareOptions.put(option.getClass().getCanonicalName(), option);
+        }
+    }
+    /**
+     * Removes a middleware option from this request.
+     * @param option the middleware option to remove.
+     */
+    public void removeMiddlewareOptions(@Nullable final MiddlewareOption... options) {
+        if(options == null || options.length == 0) return;
+        for(final MiddlewareOption option : options) {
+            _middlewareOptions.remove(option.getClass().getCanonicalName());
+        }
+    }
     private static String binaryContentType = "application/octet-stream";
     private static String contentTypeHeader = "Content-Type";
     /**

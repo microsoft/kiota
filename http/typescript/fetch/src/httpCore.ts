@@ -1,21 +1,33 @@
 import { AuthenticationProvider, HttpCore as IHttpCore, Parsable, ParseNodeFactory, RequestInfo, ResponseHandler, ParseNodeFactoryRegistry, enableBackingStoreForParseNodeFactory, SerializationWriterFactoryRegistry, enableBackingStoreForSerializationWriterFactory, SerializationWriterFactory } from '@microsoft/kiota-abstractions';
-import { fetch, Headers as FetchHeadersCtor } from 'cross-fetch';
+import { Headers as FetchHeadersCtor } from 'cross-fetch';
 import { ReadableStream } from 'web-streams-polyfill';
 import { URLSearchParams } from 'url';
+import { HttpClient } from './httpClient';
 export class HttpCore implements IHttpCore {
-    private _serializationWriterFactory: SerializationWriterFactory;
     public getSerializationWriterFactory(): SerializationWriterFactory {
-        return this._serializationWriterFactory;
+        return this.serializationWriterFactory;
     }
     private static readonly authorizationHeaderKey = "Authorization";
     /**
-     *
+     * Instantiates a new http core service
+     * @param authenticationProvider the authentication provider to use.
+     * @param parseNodeFactory the parse node factory to deserialize responses.
+     * @param serializationWriterFactory the serialization writer factory to use to serialize request bodies.
+     * @param httpClient the http client to use to execute requests.
      */
-    public constructor(public readonly authenticationProvider: AuthenticationProvider, private parseNodeFactory: ParseNodeFactory = ParseNodeFactoryRegistry.defaultInstance, serializationWriterFactory: SerializationWriterFactory = SerializationWriterFactoryRegistry.defaultInstance) {
+    public constructor(public readonly authenticationProvider: AuthenticationProvider, private parseNodeFactory: ParseNodeFactory = ParseNodeFactoryRegistry.defaultInstance, private serializationWriterFactory: SerializationWriterFactory = SerializationWriterFactoryRegistry.defaultInstance, private readonly httpClient: HttpClient = new HttpClient()) {
         if(!authenticationProvider) {
             throw new Error('authentication provider cannot be null');
         }
-        this._serializationWriterFactory = serializationWriterFactory;
+        if(!parseNodeFactory) {
+            throw new Error('parse node factory cannot be null');
+        }
+        if(!serializationWriterFactory) {
+            throw new Error('serialization writer factory cannot be null');
+        }
+        if(!httpClient) {
+            throw new Error('http client cannot be null');
+        }
     }
     private getResponseContentType = (response: Response): string | undefined => {
         const header = response.headers.get("content-type")?.toLowerCase();
@@ -31,7 +43,7 @@ export class HttpCore implements IHttpCore {
         await this.addBearerIfNotPresent(requestInfo);
         
         const request = this.getRequestFromRequestInfo(requestInfo);
-        const response = await fetch(this.getRequestUrl(requestInfo), request);
+        const response = await this.httpClient.fetch(this.getRequestUrl(requestInfo), request);
         if(responseHandler) {
             return await responseHandler.handleResponseAsync(response);
         } else {
@@ -52,7 +64,7 @@ export class HttpCore implements IHttpCore {
         await this.addBearerIfNotPresent(requestInfo);
         
         const request = this.getRequestFromRequestInfo(requestInfo);
-        const response = await fetch(this.getRequestUrl(requestInfo), request);
+        const response = await this.httpClient.fetch(this.getRequestUrl(requestInfo), request);
         if(responseHandler) {
             return await responseHandler.handleResponseAsync(response);
         } else {
@@ -100,15 +112,15 @@ export class HttpCore implements IHttpCore {
         await this.addBearerIfNotPresent(requestInfo);
         
         const request = this.getRequestFromRequestInfo(requestInfo);
-        const response = await fetch(this.getRequestUrl(requestInfo), request);
+        const response = await this.httpClient.fetch(this.getRequestUrl(requestInfo), request);
         if(responseHandler) {
             return await responseHandler.handleResponseAsync(response);
         }
     }
     public enableBackingStore = (): void => {
         this.parseNodeFactory = enableBackingStoreForParseNodeFactory(this.parseNodeFactory);
-        this._serializationWriterFactory = enableBackingStoreForSerializationWriterFactory(this._serializationWriterFactory);
-        if(!this._serializationWriterFactory || !this.parseNodeFactory)
+        this.serializationWriterFactory = enableBackingStoreForSerializationWriterFactory(this.serializationWriterFactory);
+        if(!this.serializationWriterFactory || !this.parseNodeFactory)
             throw new Error("unable to enable backing store");
     }
     private addBearerIfNotPresent = async (requestInfo: RequestInfo): Promise<void> => {

@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Better client configuration #268
 - Request builders constructors for data validation #322
+- Adds middleware support for http clients #330
 
 ## [0.0.5] - 2021-06-10
 

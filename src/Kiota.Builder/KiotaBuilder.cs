@@ -575,6 +575,14 @@ namespace Kiota.Builder
             };
             headersParam.Type = new CodeType(headersParam) { Name = "IDictionary<string, string>", ActionOf = true, IsExternal = true };
             method.AddParameter(headersParam);
+            var optionsParam = new CodeParameter(method) {
+                Name = "o",
+                Optional = true,
+                ParameterKind = CodeParameterKind.Options,
+                Description = "Request options for HTTP middlewares"
+            };
+            optionsParam.Type = new CodeType(optionsParam) { Name = "IEnumerable<IMiddlewareOption>", ActionOf = false, IsExternal = true };
+            method.AddParameter(optionsParam);
         }
         private IEnumerable<string> GetAllNamespaceNamesForModelByReferenceId(string referenceId) {
             if(string.IsNullOrEmpty(referenceId)) throw new ArgumentNullException(nameof(referenceId));
@@ -772,7 +780,8 @@ namespace Kiota.Builder
                 serializeMethod.ReturnType = new CodeType(serializeMethod) { Name = voidType, IsNullable = false, IsExternal = true };
                 var parameter = new CodeParameter(serializeMethod) {
                     Name = "writer",
-                    Description = "Serialization writer to use to serialize this model"
+                    Description = "Serialization writer to use to serialize this model",
+                    ParameterKind = CodeParameterKind.Serializer,
                 };
                 parameter.Type = new CodeType(parameter) { Name = "ISerializationWriter", IsExternal = true, IsNullable = false };
                 serializeMethod.AddParameter(parameter);

@@ -12,7 +12,9 @@ namespace Kiota.Builder
         RequestBody,
         SetterValue,
         HttpCore,
-        CurrentPath
+        CurrentPath,
+        Options,
+        Serializer
     }
 
     public class CodeParameter : CodeTerminal, ICloneable, IDocumentedElement

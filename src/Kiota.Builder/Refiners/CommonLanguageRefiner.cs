@@ -465,5 +465,16 @@ namespace Kiota.Builder.Refiners {
             foreach(var childElement in currentElement.GetChildElements())
                 function.Invoke(childElement);
         }
+        protected static void CorrectCoreType(CodeElement currentElement, Action<CodeMethod> correctMethodType, Action<CodeProperty> correctPropertyType) {
+            switch(currentElement) {
+                case CodeProperty property:
+                    correctPropertyType.Invoke(property);
+                    break;
+                case CodeMethod method:
+                    correctMethodType.Invoke(method);
+                    break;
+            }
+            CrawlTree(currentElement, x => CorrectCoreType(x, correctMethodType, correctPropertyType));
+        }
     }
 }
