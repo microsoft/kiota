@@ -34,14 +34,15 @@ namespace Microsoft.Kiota.Http.HttpClient {
         /// <returns>The created <see cref="DelegatingHandler"/>.</returns>
         public static DelegatingHandler ChainHandlersCollectionAndGetFirstLink(params DelegatingHandler[] handlers) {
             if(handlers == null || !handlers.Any()) return default;
-            var handlersAsList = handlers.ToList();
-            handlersAsList.ForEach(h => {
-                var previousItemIndex = handlersAsList.IndexOf(h) - 1;
+            var handlersCount = handlers.Count();
+            for(var i = 0; i < handlersCount; i++) {
+                var handler = handlers[i];
+                var previousItemIndex = i - 1;
                 if(previousItemIndex >= 0) {
-                    var previousItem = handlersAsList.ElementAt(previousItemIndex);
-                    previousItem.InnerHandler = h;
+                    var previousHandler = handlers[previousItemIndex];
+                    previousHandler.InnerHandler = handler;
                 }
-            });
+            }
             return handlers.First();
         }
     }
