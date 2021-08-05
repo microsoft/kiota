@@ -15,7 +15,7 @@ jobs:
       relativePath: ./serialization/typescript/json
     steps:
       - uses: actions/checkout@v2.3.4
-      - uses: actions/setup-node@v2.3.1
+      - uses: actions/setup-node@v2.3.2
         with:
           always-auth: true
           node-version: '14'
@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     steps:
-      - uses: actions/setup-node@v2.3.1
+      - uses: actions/setup-node@v2.3.2
         with:
           node-version: '14'
       - uses: actions/download-artifact@v2
