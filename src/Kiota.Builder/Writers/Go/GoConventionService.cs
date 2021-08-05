@@ -35,7 +35,7 @@ namespace Kiota.Builder.Writers.Go {
             return $"{parameter.Name} {GetTypeString(parameter.Type, targetElement)}";
         }
         public string GetTypeString(CodeTypeBase code) => throw new InvalidOperationException("go needs import symbols, use the local override instead");
-        public string GetTypeString(CodeTypeBase code, CodeElement targetElement)
+        public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool addPointerSymbol = true)
         {
             if(code is CodeUnionType) 
                 throw new InvalidOperationException($"Go does not support union types, the union type {code.Name} should have been filtered out by the refiner");
@@ -44,7 +44,8 @@ namespace Kiota.Builder.Writers.Go {
                 if(!string.IsNullOrEmpty(importSymbol))
                     importSymbol += ".";
                 var typeName = TranslateType(currentType.Name);
-                var nullableSymbol = currentType.IsNullable &&
+                var nullableSymbol = addPointerSymbol && 
+                                    currentType.IsNullable &&
                                     currentType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None &&
                                     !IsScalarType(currentType.Name) ? "*"
                                     : string.Empty;
@@ -85,7 +86,7 @@ namespace Kiota.Builder.Writers.Go {
                 _ => false,
             };
         }
-        private static bool IsScalarType(string typeName) {
+        public bool IsScalarType(string typeName) {
             if(typeName.StartsWith("map[")) return true;
             return typeName switch {
                 ("binary") => true,

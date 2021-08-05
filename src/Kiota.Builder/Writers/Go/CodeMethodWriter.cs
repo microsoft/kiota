@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Extensions;
@@ -24,6 +25,7 @@ namespace Kiota.Builder.Writers.Go {
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
+            var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
             switch(codeElement.MethodKind) {
                 // case CodeMethodKind.Serializer:
                 //     WriteSerializerBody(parentClass, writer);
@@ -35,11 +37,11 @@ namespace Kiota.Builder.Writers.Go {
                     WriteIndexerBody(codeElement, writer, returnType);
                 break;
                 case CodeMethodKind.RequestGenerator:
-                    WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, writer, parentClass);
+                    WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, writer, parentClass, returnType);
                 break;
-                // case CodeMethodKind.RequestExecutor:
-                //     WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, returnType, writer);
-                // break;
+                case CodeMethodKind.RequestExecutor:
+                    WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, returnType, writer);
+                break;
                 case CodeMethodKind.Getter:
                     WriteGetterBody(codeElement, writer, parentClass);
                     break;
@@ -74,7 +76,7 @@ namespace Kiota.Builder.Writers.Go {
                 (CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor) => $"New{code.Parent.Name.ToFirstCharacterUpperCase()}",
                 (CodeMethodKind.Getter) => $"get{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
                 (CodeMethodKind.Setter) => $"set{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
-                _ => code.Name.ToFirstCharacterLowerCase()
+                _ => code.Name.ToFirstCharacterUpperCase()
             });
             var parameters = string.Join(", ", code.Parameters.Select(p => conventions.GetParameterSignature(p, parentClass)).ToList());
             var classType = conventions.GetTypeString(new CodeType(parentClass) { Name = parentClass.Name, TypeDefinition = parentClass }, parentClass);
@@ -99,15 +101,15 @@ namespace Kiota.Builder.Writers.Go {
                 if(!(codeElement.AccessedProperty?.Type?.IsNullable ?? true) &&
                    !(codeElement.AccessedProperty?.ReadOnly ?? true) && //TODO implement backing store getter when definition available in abstractions
                     !string.IsNullOrEmpty(codeElement.AccessedProperty?.DefaultValue)) {
-                    writer.WriteLines($"{conventions.GetTypeString(codeElement.AccessedProperty.Type)} value = this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\");",
+                    writer.WriteLines($"{conventions.GetTypeString(codeElement.AccessedProperty.Type)} value = m.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\");",
                         "if(value == null) {");
                     writer.IncreaseIndent();
                     writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue};",
-                        $"this.set{codeElement.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}(value);");
+                        $"m.set{codeElement.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}(value);");
                     writer.DecreaseIndent();
                     writer.WriteLines("}", "return value;");
                 } else
-                    writer.WriteLine($"return this.get{backingStore.Name.ToFirstCharacterUpperCase()}().get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\");");
+                    writer.WriteLine($"return m.get{backingStore.Name.ToFirstCharacterUpperCase()}().get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\");");
 
         }
         private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass) {
@@ -115,22 +117,78 @@ namespace Kiota.Builder.Writers.Go {
             if(backingStore == null)
                 writer.WriteLine($"m.{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()} = value");
             else //TODO implement backing store setter when definition available in abstractions
-                writer.WriteLine($"this.get{backingStore.Name.ToFirstCharacterUpperCase()}().set(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\", value);");
+                writer.WriteLine($"m.get{backingStore.Name.ToFirstCharacterUpperCase()}().set(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\", value);");
         }
         private void WriteIndexerBody(CodeMethod codeElement, LanguageWriter writer, string returnType) {
             var currentPathProperty = codeElement.Parent.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
             var pathSegment = codeElement.PathSegment;
             conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
         }
+        private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, string returnType, LanguageWriter writer) {
+            if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
+            var sendMethodName = returnType switch {
+                "void" => "SendNoContentAsync",
+                _ when string.IsNullOrEmpty(returnType) => "SendNoContentAsync",
+                _ when conventions.IsScalarType(returnType) => "SendPrimitiveAsync",
+                _ => "SendAsync"
+            };
+            var responseHandlerParam = codeElement.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.ResponseHandler));
+            var typeShortName = returnType.Split('.').Last().ToFirstCharacterUpperCase();
+            var isVoid = string.IsNullOrEmpty(typeShortName);
+            WriteGeneratorMethodCall(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer, $"{rInfoVarName}, err := ");
+            WriteAsyncReturnError(writer, returnType);
+            var constructorFunction = isVoid ?
+                        string.Empty :
+                        $"{conventions.GetTypeString(codeElement.ReturnType, codeElement.Parent, false)}.New{typeShortName.Replace("*", string.Empty)}, ";
+            var returnTypeDeclaration = isVoid ?
+                        string.Empty :
+                        $"{returnType}, ";
+            writer.WriteLine($"return func() ({returnTypeDeclaration}error) {{");
+            writer.IncreaseIndent();
+            var assignmentPrefix = isVoid ?
+                        string.Empty :
+                        "res, ";
+            if(responseHandlerParam != null)
+                writer.WriteLine($"{assignmentPrefix}err := m.httpCore.{sendMethodName}(*{rInfoVarName}, {constructorFunction}*{responseHandlerParam.Name})()");
+            else
+                writer.WriteLine($"{assignmentPrefix}err := m.httpCore.{sendMethodName}(*{rInfoVarName}, {constructorFunction}nil)()");
+            WriteReturnError(writer, returnType);
+            var resultReturnCast = isVoid ?
+                        string.Empty :
+                        $"res.({returnType}), ";
+            writer.WriteLine($"return {resultReturnCast}nil");
+            writer.DecreaseIndent();
+            writer.WriteLine("}");
+        }
+        private static void WriteGeneratorMethodCall(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, LanguageWriter writer, string prefix) {
+            var generatorMethodName = (codeElement.Parent as CodeClass)
+                                                .GetChildElements(true)
+                                                .OfType<CodeMethod>()
+                                                .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
+                                                ?.Name
+                                                ?.ToFirstCharacterUpperCase();
+            var paramsList = new List<CodeParameter> { requestBodyParam, queryStringParam, headersParam, optionsParam };
+            var requestInfoParameters = paramsList.Where(x => x != null)
+                                                .Select(x => x.Name)
+                                                .ToList();
+            var shouldSkipBodyParam = requestBodyParam == null && (codeElement.HttpMethod == HttpMethod.Get || codeElement.HttpMethod == HttpMethod.Delete);
+            var skipIndex = shouldSkipBodyParam ? 1 : 0;
+            if(codeElement.IsOverload && !codeElement.OriginalMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.QueryParameter)) || // we're on an overload and the original method has no query parameters
+                !codeElement.IsOverload && queryStringParam == null) // we're on the original method and there is no query string parameter
+                skipIndex++;// we skip the query string parameter null value
+            requestInfoParameters.AddRange(paramsList.Where(x => x == null).Skip(skipIndex).Select(x => "null"));
+            var paramsCall = requestInfoParameters.Any() ? requestInfoParameters.Aggregate((x,y) => $"{x}, {y}") : string.Empty;
+            writer.WriteLine($"{prefix}m.{generatorMethodName}({paramsCall});");
+        }
         private const string rInfoVarName = "requestInfo";
-        private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, LanguageWriter writer, CodeClass parentClass) {
+        private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, LanguageWriter writer, CodeClass parentClass, string returnType) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
             writer.WriteLine($"{rInfoVarName} := new({conventions.AbstractionsHash}.RequestInfo)");
             writer.WriteLines($"uri, err := url.Parse(*m.{conventions.CurrentPathPropertyName} + *m.{conventions.PathSegmentPropertyName})",
                         $"{rInfoVarName}.URI = *uri",
                         $"{rInfoVarName}.Method = {conventions.AbstractionsHash}.{codeElement.HttpMethod?.ToString().ToUpperInvariant()}");
-            WriteReturnError(writer);
+            WriteReturnError(writer, returnType);
             if(requestBodyParam != null)
                 if(requestBodyParam.Type.Name.Equals("binary", StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{rInfoVarName}.SetStreamContent({requestBodyParam.Name})");
@@ -142,9 +200,9 @@ namespace Kiota.Builder.Writers.Go {
                 writer.IncreaseIndent();
                 writer.WriteLines($"qParams := new({parentClass.Name}{httpMethodPrefix}QueryParameters)",
                             $"err = {queryStringParam.Name}(qParams)");
-                WriteReturnError(writer);
+                WriteReturnError(writer, returnType);
                 writer.WriteLine("err := qParams.AddQueryParameters(requestInfo.QueryParameters)");
-                WriteReturnError(writer);
+                WriteReturnError(writer, returnType);
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
             }
@@ -152,16 +210,35 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLine($"if {headersParam.Name} != nil {{");
                 writer.IncreaseIndent();
                 writer.WriteLine($"err = {headersParam.Name}({rInfoVarName}.Headers)");
-                WriteReturnError(writer);
+                WriteReturnError(writer, returnType);
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
             }
             writer.WriteLine($"return {rInfoVarName}, err");
         }
-        private void WriteReturnError(LanguageWriter writer) {
+        private void WriteReturnError(LanguageWriter writer, params string[] returnTypes) {
             writer.WriteLine("if err != nil {");
             writer.IncreaseIndent();
-            writer.WriteLine("return nil, err");
+            var nilsPrefix = GetNilsErrorPrefix(returnTypes);
+            writer.WriteLine($"return {nilsPrefix}err");
+            writer.DecreaseIndent();
+            writer.WriteLine("}");
+        }
+        private static string GetNilsErrorPrefix(params string[] returnTypes) {
+            var sanitizedTypes = returnTypes.Where(x => !string.IsNullOrEmpty(x));
+            return !sanitizedTypes.Any() ?
+                            string.Empty :
+                            sanitizedTypes.Select(_ => "nil").Aggregate((x,y) => $"{x}, {y}") + ", ";
+        }
+        private void WriteAsyncReturnError(LanguageWriter writer, params string[] returnTypes) {
+            writer.WriteLine("if err != nil {");
+            writer.IncreaseIndent();
+            var sanitizedTypes = returnTypes.Where(x => !string.IsNullOrEmpty(x));
+            var typeDeclarationPrefix = !sanitizedTypes.Any() ?
+                            string.Empty :
+                            sanitizedTypes.Aggregate((x,y) => $"{x}, {y}") + ", ";
+            var nilsPrefix = GetNilsErrorPrefix(returnTypes);
+            writer.WriteLine($"return func() ({typeDeclarationPrefix}error) {{ return {nilsPrefix}err }}");
             writer.DecreaseIndent();
             writer.WriteLine("}");
         }
