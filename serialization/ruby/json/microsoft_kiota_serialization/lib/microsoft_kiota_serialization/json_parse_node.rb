@@ -72,8 +72,17 @@ module MicrosoftKiotaSerialization
                     
             end
         end
+        def get_enum_values(type)
+            raw_values = self.get_string_value(type)
+            return raw_values.split(",").map(&:strip) 
+        end
         def get_enum_value(type)
-            return @current_node.to_sym
+            items = self.get_enum_values(type)
+            if items.length > 0
+                return items[0]
+            else
+                return nil
+            end
         end
     end
 end
