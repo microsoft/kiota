@@ -143,7 +143,8 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLines($"qParams := new({parentClass.Name}{httpMethodPrefix}QueryParameters)",
                             $"err = {queryStringParam.Name}(qParams)");
                 WriteReturnError(writer);
-                writer.WriteLine("qParams.AddQueryParameters(requestInfo.QueryParameters)");
+                writer.WriteLine("err := qParams.AddQueryParameters(requestInfo.QueryParameters)");
+                WriteReturnError(writer);
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
             }

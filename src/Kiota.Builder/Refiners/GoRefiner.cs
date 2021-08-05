@@ -53,7 +53,7 @@ namespace Kiota.Builder.Refiners {
             new ("RequestInfo", "github.com/microsoft/kiota/abstractions/go"),
             new ("ResponseHandler", "github.com/microsoft/kiota/abstractions/go"),
             new ("MiddlewareOption", "github.com/microsoft/kiota/abstractions/go"),
-            // new ("QueryParametersBase", "github.com/microsoft/kiota/abstractions/go"),
+            new ("QueryParametersBase", "github.com/microsoft/kiota/abstractions/go"),
             // new ("Map", "java.util"),
             new ("*url", "net/url"),
             // new ("URISyntaxException", "java.net"),
@@ -80,6 +80,8 @@ namespace Kiota.Builder.Refiners {
                 currentMethod.Parent is CodeClass parentClass) {
                 if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
                     currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x => x.Type.Name = "ResponseHandler");
+                else if(currentMethod.IsOfKind(CodeMethodKind.RequestGenerator))
+                    currentMethod.ReturnType.IsNullable = true;
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => {
                     x.Type.IsNullable = false;
                     x.Type.Name = "MiddlewareOption";
