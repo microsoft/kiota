@@ -189,7 +189,7 @@ namespace Kiota.Builder.Writers.Go {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
             writer.WriteLine($"{rInfoVarName} := new({conventions.AbstractionsHash}.RequestInfo)");
-            writer.WriteLines($"uri, err := url.Parse(*m.{conventions.CurrentPathPropertyName} + *m.{conventions.PathSegmentPropertyName})",
+            writer.WriteLines($"uri, err := url.Parse(m.{conventions.CurrentPathPropertyName} + m.{conventions.PathSegmentPropertyName})",
                         $"{rInfoVarName}.URI = *uri",
                         $"{rInfoVarName}.Method = {conventions.AbstractionsHash}.{codeElement.HttpMethod?.ToString().ToUpperInvariant()}");
             WriteReturnError(writer, returnType);

@@ -47,6 +47,8 @@ namespace Kiota.Builder.Refiners {
             AddConstructorsForDefaultValues(
                 generatedCode,
                 true);
+            MakeModelPropertiesNullable(
+                generatedCode);
         }
         private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
             new ("HttpCore", "github.com/microsoft/kiota/abstractions/go"),

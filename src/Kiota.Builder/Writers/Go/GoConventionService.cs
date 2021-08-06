@@ -67,12 +67,12 @@ namespace Kiota.Builder.Writers.Go {
 
             return (typeName) switch {
                 "void" => string.Empty,
-                "string" => $"*string",
-                "float" => "*float32",
-                "integer" => "*int32",
-                "long" => "*int64",
-                "double" => "*float64",
-                "boolean" => "*bool",
+                "string" => $"string",
+                "float" => "float32",
+                "integer" => "int32",
+                "long" => "int64",
+                "double" => "float64",
+                "boolean" => "bool",
                 "guid" => "uuid.UUID",
                 "datetimeoffset" => "time.Time",
                 "binary" => "[]byte",
@@ -88,9 +88,9 @@ namespace Kiota.Builder.Writers.Go {
         }
         public bool IsScalarType(string typeName) {
             if(typeName.StartsWith("map[")) return true;
-            return typeName switch {
-                ("binary") => true,
-                _ => IsPrimitiveType(typeName),
+            return typeName.ToLowerInvariant() switch {
+                ("binary" or "void") => true,
+                _ => false,
             };
         }
         private string GetImportSymbol(CodeTypeBase currentBaseType, CodeElement targetElement) {
@@ -124,9 +124,9 @@ namespace Kiota.Builder.Writers.Go {
 
         internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default)
         {
-            var currentPath = addCurrentPath ? $"*m.{CurrentPathPropertyName} + " : string.Empty;
+            var currentPath = addCurrentPath ? $"m.{CurrentPathPropertyName} + " : string.Empty;
             var constructorName = returnType.Split('.').Last().ToFirstCharacterUpperCase();
-            writer.WriteLines($"return {returnType}.New{constructorName}({currentPath}*m.{PathSegmentPropertyName}{suffix}, m.{HttpCorePropertyName});");
+            writer.WriteLines($"return {returnType}.New{constructorName}({currentPath}m.{PathSegmentPropertyName}{suffix}, m.{HttpCorePropertyName});");
         }
     }
 }

@@ -504,5 +504,15 @@ namespace Kiota.Builder.Refiners {
             }
             CrawlTree(currentElement, x => CorrectCoreType(x, correctMethodType, correctPropertyType));
         }
+        protected static void MakeModelPropertiesNullable(CodeElement currentElement) {
+            if(currentElement is CodeClass currentClass &&
+                currentClass.IsOfKind(CodeClassKind.Model))
+                currentClass.GetChildElements(true)
+                            .OfType<CodeProperty>()
+                            .Where(x => x.IsOfKind(CodePropertyKind.Custom))
+                            .ToList()
+                            .ForEach(x => x.Type.IsNullable = true);
+            CrawlTree(currentElement, MakeModelPropertiesNullable);
+        }
     }
 }
