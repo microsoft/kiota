@@ -126,10 +126,11 @@ namespace Kiota.Builder.Writers.Go {
         }
         private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, string returnType, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
+            var isScalar = conventions.IsScalarType(returnType);
             var sendMethodName = returnType switch {
                 "void" => "SendNoContentAsync",
                 _ when string.IsNullOrEmpty(returnType) => "SendNoContentAsync",
-                _ when conventions.IsScalarType(returnType) => "SendPrimitiveAsync",
+                _ when isScalar => "SendPrimitiveAsync",
                 _ => "SendAsync"
             };
             var responseHandlerParam = codeElement.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.ResponseHandler));
@@ -141,9 +142,11 @@ namespace Kiota.Builder.Writers.Go {
                 Name = "Parsable",
                 IsExternal = true,
             };
-            var constructorFunction = isVoid ?
-                        string.Empty :
-                        $"func () {conventions.GetTypeString(parsableType, codeElement.Parent, false)} {{ return new({conventions.GetTypeString(codeElement.ReturnType, codeElement.Parent, false)}) }}, ";
+            var constructorFunction = returnType switch {
+                _ when isVoid => string.Empty,
+                _ when isScalar => $"\"{conventions.GetTypeString(codeElement.ReturnType, codeElement.Parent, false)}\", ",
+                _ => $"func () {conventions.GetTypeString(parsableType, codeElement.Parent, false)} {{ return new({conventions.GetTypeString(codeElement.ReturnType, codeElement.Parent, false)}) }}, ",
+            };
             var returnTypeDeclaration = isVoid ?
                         string.Empty :
                         $"{returnType}, ";

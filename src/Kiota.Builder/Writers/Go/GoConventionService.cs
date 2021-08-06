@@ -89,7 +89,7 @@ namespace Kiota.Builder.Writers.Go {
         public bool IsScalarType(string typeName) {
             if(typeName.StartsWith("map[")) return true;
             return typeName.ToLowerInvariant() switch {
-                ("binary" or "void") => true,
+                ("binary" or "void" or "[]byte") => true,
                 _ => false,
             };
         }
