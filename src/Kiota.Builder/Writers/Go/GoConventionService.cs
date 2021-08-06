@@ -125,8 +125,10 @@ namespace Kiota.Builder.Writers.Go {
         internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default)
         {
             var currentPath = addCurrentPath ? $"m.{CurrentPathPropertyName} + " : string.Empty;
-            var constructorName = returnType.Split('.').Last().ToFirstCharacterUpperCase();
-            writer.WriteLines($"return {returnType}.New{constructorName}({currentPath}m.{PathSegmentPropertyName}{suffix}, m.{HttpCorePropertyName});");
+            var splatImport = returnType.Split('.');
+            var constructorName = splatImport.Last().ToFirstCharacterUpperCase();
+            var moduleName = returnType.Count() > 1 ? splatImport.First() + "." : string.Empty;
+            writer.WriteLines($"return *{moduleName}New{constructorName}({currentPath}m.{PathSegmentPropertyName}{suffix}, m.{HttpCorePropertyName});");
         }
     }
 }
