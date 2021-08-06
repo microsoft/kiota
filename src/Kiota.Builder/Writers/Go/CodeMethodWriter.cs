@@ -19,6 +19,7 @@ namespace Kiota.Builder.Writers.Go {
             if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
             
             var parentClass = codeElement.Parent as CodeClass;
+            var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
             var returnType = conventions.GetTypeString(codeElement.ReturnType, parentClass);
             WriteMethodPrototype(codeElement, writer, returnType, parentClass);
             writer.IncreaseIndent();
@@ -52,10 +53,10 @@ namespace Kiota.Builder.Writers.Go {
                 //     WriteConstructorBody(parentClass, codeElement, writer, inherits);
                 //     WriteApiConstructorBody(parentClass, codeElement, writer);
                 // break;
-                // case CodeMethodKind.Constructor:
-                //     WriteConstructorBody(parentClass, codeElement, writer, inherits);
-                //     break;
-                case CodeMethodKind.Deserializer:
+                case CodeMethodKind.Constructor:
+                    WriteConstructorBody(parentClass, codeElement, writer, inherits);
+                    break;
+                case CodeMethodKind.Deserializer: //TODO: remove this case
                     writer.WriteLine("return nil, nil");
                     break;
                 default:
@@ -102,7 +103,7 @@ namespace Kiota.Builder.Writers.Go {
                    !(codeElement.AccessedProperty?.ReadOnly ?? true) && //TODO implement backing store getter when definition available in abstractions
                     !string.IsNullOrEmpty(codeElement.AccessedProperty?.DefaultValue)) {
                     writer.WriteLines($"{conventions.GetTypeString(codeElement.AccessedProperty.Type)} value = m.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\");",
-                        "if(value == null) {");
+                        "if value == nil {");
                     writer.IncreaseIndent();
                     writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue};",
                         $"m.set{codeElement.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}(value);");
@@ -111,6 +112,41 @@ namespace Kiota.Builder.Writers.Go {
                 } else
                     writer.WriteLine($"return m.get{backingStore.Name.ToFirstCharacterUpperCase()}().get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\");");
 
+        }
+        private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
+            writer.WriteLine($"m := &{parentClass.Name.ToFirstCharacterUpperCase()}{{");
+            if(inherits &&
+                parentClass.StartBlock is CodeClass.Declaration declaration) {
+                writer.IncreaseIndent();
+                var parentClassName = declaration.Inherits.Name.ToFirstCharacterUpperCase();
+                writer.WriteLine($"{parentClassName}: *New{parentClassName}(),");
+                writer.DecreaseIndent();
+            }
+            writer.WriteLine("}");
+            foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
+                                                                            CodePropertyKind.RequestBuilder,
+                                                                            CodePropertyKind.PathSegment)
+                                            .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
+                                            .OrderBy(x => x.Name)) {
+                writer.WriteLine($"m.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
+            }
+            foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData) //additional data and backing Store rely on accessors
+                                            .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
+                                            .OrderBy(x => x.Name)) {
+                writer.WriteLine($"m.set{propWithDefault.Name.ToFirstCharacterUpperCase()}({propWithDefault.DefaultValue});");
+            }
+            if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.HttpCore, CodePropertyKind.HttpCore, writer);
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.CurrentPath, CodePropertyKind.CurrentPath, writer);
+            }
+            writer.WriteLine($"return m");
+        }
+        private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
+            var property = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(propertyKind));
+            var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
+            if(property != null && parameter != null) {
+                writer.WriteLine($"m.{property.Name.ToFirstCharacterLowerCase()} = {parameter.Name};");
+            }
         }
         private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass) {
             var backingStore = parentClass.GetBackingStoreProperty();
