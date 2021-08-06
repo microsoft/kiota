@@ -75,8 +75,8 @@ namespace Kiota.Builder.Writers.Go {
             var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor);
             var methodName = (code.MethodKind switch {
                 (CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor) => $"New{code.Parent.Name.ToFirstCharacterUpperCase()}",
-                (CodeMethodKind.Getter) => $"get{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
-                (CodeMethodKind.Setter) => $"set{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
+                (CodeMethodKind.Getter) => $"Get{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
+                (CodeMethodKind.Setter) => $"Set{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
                 _ => code.Name.ToFirstCharacterUpperCase()
             });
             var parameters = string.Join(", ", code.Parameters.Select(p => conventions.GetParameterSignature(p, parentClass)).ToList());
@@ -133,7 +133,7 @@ namespace Kiota.Builder.Writers.Go {
             foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData) //additional data and backing Store rely on accessors
                                             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
                                             .OrderBy(x => x.Name)) {
-                writer.WriteLine($"m.set{propWithDefault.Name.ToFirstCharacterUpperCase()}({propWithDefault.DefaultValue});");
+                writer.WriteLine($"m.Set{propWithDefault.Name.ToFirstCharacterUpperCase()}({propWithDefault.DefaultValue});");
             }
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.HttpCore, CodePropertyKind.HttpCore, writer);
