@@ -28,9 +28,9 @@ namespace Kiota.Builder.Writers.Go {
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
             var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
             switch(codeElement.MethodKind) {
-                // case CodeMethodKind.Serializer:
-                //     WriteSerializerBody(parentClass, writer);
-                // break;
+                case CodeMethodKind.Serializer:
+                    WriteSerializerBody(parentClass, writer);
+                break;
                 // case CodeMethodKind.Deserializer:
                 //     WriteDeserializerBody(codeElement, parentClass, writer);
                 // break;
@@ -66,6 +66,27 @@ namespace Kiota.Builder.Writers.Go {
             writer.DecreaseIndent();
             writer.WriteLine("}");
         }
+        private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer) {
+            var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();
+            var shouldDeclareErrorVar = true;
+            if(parentClass.StartBlock is CodeClass.Declaration declaration &&
+                declaration.Inherits != null) {
+                writer.WriteLine($"err := m.{declaration.Inherits.Name.ToFirstCharacterUpperCase()}.Serialize(writer)");
+                WriteReturnError(writer);
+                shouldDeclareErrorVar = false;
+            }
+            foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
+                WriteSerializationMethodCall(otherProp.Type, parentClass, otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase(), $"m.Get{otherProp.Name.ToFirstCharacterUpperCase()}()", shouldDeclareErrorVar, writer);
+                if(shouldDeclareErrorVar)
+                    shouldDeclareErrorVar = false;
+            }
+            if(additionalDataProperty != null) {
+                writer.WriteLine($"err {errorVarDeclaration(shouldDeclareErrorVar)}= writer.WriteAdditionalData(m.Get{additionalDataProperty.Name.ToFirstCharacterUpperCase()}())");
+                WriteReturnError(writer);
+            }
+            writer.WriteLine("return nil");
+        }
+        private static string errorVarDeclaration(bool shouldDeclareErrorVar) => shouldDeclareErrorVar ? ":" : string.Empty;
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, CodeClass parentClass) {
             var genericTypeParameterDeclaration = code.IsOfKind(CodeMethodKind.Deserializer) ? " <T>": string.Empty;
             var returnTypeAsyncPrefix = code.IsAsync ? "func() (" : string.Empty;
@@ -284,6 +305,56 @@ namespace Kiota.Builder.Writers.Go {
             writer.WriteLine($"return func() ({typeDeclarationPrefix}error) {{ return {nilsPrefix}err }}");
             writer.DecreaseIndent();
             writer.WriteLine("}");
+        }
+        const string parsableConversionMethodName = "ConvertToArrayOfParsable";
+        const string primitiveConversionMethodName = "ConvertToArrayOfPrimitives";
+        private void WriteSerializationMethodCall(CodeTypeBase propType, CodeClass parentClass, string serializationKey, string valueGet, bool shouldDeclareErrorVar, LanguageWriter writer) {
+            serializationKey = $"\"{serializationKey}\"";
+            var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
+            var propertyType = conventions.TranslateType(propType.Name);
+            var errorPrefix = $"err {errorVarDeclaration(shouldDeclareErrorVar)}= writer.";
+            if(propType is CodeType currentType) {
+                if(isCollection) {
+                    if(currentType.TypeDefinition == null) {
+                        var conversionMethodImport = GetConversionHelperMethodImport(propType, parentClass, primitiveConversionMethodName);
+                        writer.WriteLine($"{errorPrefix}WriteCollectionOfPrimitiveValues({serializationKey}, {conversionMethodImport}({valueGet}))");
+                        WriteReturnError(writer);
+                    } else {
+                        var conversionMethodImport = GetConversionHelperMethodImport(propType, parentClass, parsableConversionMethodName);
+                        writer.WriteLine($"{errorPrefix}WriteCollectionOfObjectValues({serializationKey}, {conversionMethodImport}({valueGet}))");
+                        WriteReturnError(writer);
+                    }
+                    return;
+                } else if (currentType.TypeDefinition is CodeEnum currentEnum) {
+                    writer.WriteLine($"if {valueGet} != nil {{");
+                    writer.IncreaseIndent();
+                    writer.WriteLine($"{errorPrefix}WritePrimitiveValue({serializationKey}, {valueGet}.String())");
+                    WriteReturnError(writer);
+                    writer.DecreaseIndent();
+                    writer.WriteLine("}");
+                    return;
+                }
+            }
+            switch(propertyType) {
+                case "string":
+                case "bool":
+                case "int32":
+                case "float32":
+                case "int64":
+                case "UUID":
+                case "Time": 
+                    writer.WriteLine($"{errorPrefix}WritePrimitiveValue({serializationKey}, {valueGet})");
+                    WriteReturnError(writer);
+                break;
+                default:
+                    writer.WriteLine($"{errorPrefix}WriteObjectValue({serializationKey}, {valueGet})");
+                    WriteReturnError(writer);
+                break;
+            };
+        }
+        private string GetConversionHelperMethodImport(CodeTypeBase propType, CodeClass parentClass, string name) {
+            var conversionMethodType = new CodeType(propType) { Name = name, IsExternal = true };
+            return conventions.GetTypeString(conversionMethodType, parentClass, false);
         }
     }
 }

@@ -43,7 +43,7 @@ func (request *RequestInfo) SetContentFromParsable(item s.Parsable, coreService 
 		return errors.New("writer cannot be nil")
 	}
 	defer writer.Close()
-	writeErr := writer.WriterObjectValue("", item)
+	writeErr := writer.WriteObjectValue("", item)
 	if writeErr != nil {
 		return writeErr
 	}

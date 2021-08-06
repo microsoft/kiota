@@ -6,7 +6,25 @@ import (
 
 type SerializationWriter interface {
 	i.Closer
-	WriterObjectValue(key string, item Parsable) error
-	//TODO all the different data types
+	WritePrimitiveValue(key string, value interface{}) error
+	WriteObjectValue(key string, item Parsable) error
+	WriteCollectionOfObjectValues(key string, collection []Parsable) error
+	WriteCollectionOfPrimitiveValues(key string, collection []interface{}) error
 	GetSerializedContent() ([]byte, error)
+	WriteAdditionalData(map[string]interface{}) error
+}
+
+func ConvertToArrayOfParsable(params ...interface{}) []Parsable {
+	var result []Parsable
+	for _, param := range params {
+		result = append(result, param.(Parsable))
+	}
+	return result
+}
+func ConvertToArrayOfPrimitives(params ...interface{}) []interface{} {
+	var result []interface{}
+	for _, param := range params {
+		result = append(result, param)
+	}
+	return result
 }

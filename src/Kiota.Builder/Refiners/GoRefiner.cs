@@ -70,6 +70,8 @@ namespace Kiota.Builder.Refiners {
         private static readonly Tuple<string, string>[] defaultNamespacesForModels = new Tuple<string, string>[] { 
             new ("ParseNode", "github.com/microsoft/kiota/abstractions/go/serialization"),
             new ("Parsable", "github.com/microsoft/kiota/abstractions/go/serialization"),
+            new ("ConvertToArrayOfParsable", "github.com/microsoft/kiota/abstractions/go/serialization"),
+            new ("ConvertToArrayOfPrimitives", "github.com/microsoft/kiota/abstractions/go/serialization"),
             // new ("BiConsumer", "java.util.function"),
             // new ("Map", "java.util"),
             // new ("HashMap", "java.util"),
