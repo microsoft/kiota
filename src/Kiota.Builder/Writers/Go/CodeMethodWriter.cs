@@ -137,9 +137,13 @@ namespace Kiota.Builder.Writers.Go {
             var isVoid = string.IsNullOrEmpty(typeShortName);
             WriteGeneratorMethodCall(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer, $"{rInfoVarName}, err := ");
             WriteAsyncReturnError(writer, returnType);
+            var parsableType = new CodeType(codeElement) {
+                Name = "Parsable",
+                IsExternal = true,
+            };
             var constructorFunction = isVoid ?
                         string.Empty :
-                        $"{conventions.GetTypeString(codeElement.ReturnType, codeElement.Parent, false)}.New{typeShortName.Replace("*", string.Empty)}, ";
+                        $"func () {conventions.GetTypeString(parsableType, codeElement.Parent, false)} {{ return new({conventions.GetTypeString(codeElement.ReturnType, codeElement.Parent, false)}) }}, ";
             var returnTypeDeclaration = isVoid ?
                         string.Empty :
                         $"{returnType}, ";
