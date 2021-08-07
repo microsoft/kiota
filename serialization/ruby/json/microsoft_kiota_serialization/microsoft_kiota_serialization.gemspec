@@ -7,6 +7,7 @@ Gem::Specification.new do |spec|
   spec.version       = MicrosoftKiotaSerialization::VERSION
   spec.authors       = 'Microsoft Corporation'
   spec.email         = 'graphsdkpub@microsoft.com'
+  # TODO: Mention that this is for JSON implements abstractons and serialziation an deserializaiton package
   spec.description   = 'Microsoft Kiota Serialization - Ruby serialization for building library agnostic http client'
   # TODO: Write summary
   spec.summary       = "TODO: Write a short summary, because RubyGems requires one."

@@ -17,13 +17,17 @@ module MicrosoftKiotaSerialization
         def get_number_value()
             return @current_node.to_i
         end
+        def get_float_value()
+            return @current_node.to_f
+        end
         def get_guid_value()
             return UUIDTools::UUID.parse(@current_node)
         end
-        def get_date_value()
+        def get_Date_value()
             return Time.parse(@current_node)
         end
-        def get_collection_of_primitive_values()
+        # Todo: update try catchs to do type testing
+        def get_collection_of_primitive_values(type)
             return @current_node.map do |x|
                 current_parse_node = JsonParseNode.new(x)
                 begin
@@ -73,11 +77,11 @@ module MicrosoftKiotaSerialization
             end
         end
         def get_enum_values(type)
-            raw_values = self.get_string_value(type)
+            raw_values = self.get_string_value()
             return raw_values.split(",").map(&:strip) 
         end
         def get_enum_value(type)
-            items = self.get_enum_values(type)
+            items = self.get_enum_values(type).map{|x| x.to_sym}
             if items.length > 0
                 return items[0]
             else

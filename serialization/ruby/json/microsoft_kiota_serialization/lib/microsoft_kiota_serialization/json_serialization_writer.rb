@@ -31,6 +31,15 @@ module MicrosoftKiotaSerialization
             end
             @writer[key] = value
         end
+        def write_float_value(key, value)
+            if !key && !value
+                raise ArgumentError.new "no key or value included in write_float_value(key, value)"
+            end
+            if !key
+                return value
+            end
+            @writer[key] = value
+        end
         def write_guid_value(key, value)
             if !key && !value
                 raise ArgumentError.new "no key or value included in write_guid_value(key, value)"
@@ -109,6 +118,8 @@ module MicrosoftKiotaSerialization
                     return self.write_string_value(key, value)
                 elsif value.instance_of? Integer
                     return self.write_number_value(key, value)
+                elsif value.instance_of? Float
+                    return self.write_float_value(key, value)
                 elsif value.instance_of? Time
                     return self.write_date_value(key, value)
                 elsif value.instance_of? Array

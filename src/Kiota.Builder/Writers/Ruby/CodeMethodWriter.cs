@@ -191,7 +191,7 @@ namespace Kiota.Builder.Writers.Ruby {
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
-                        return $"get_collection_of_primitive_values";
+                        return $"get_collection_of_primitive_values({propertyType.ToFirstCharacterUpperCase()})";
                     else
                         return $"get_collection_of_object_values({propertyType.ToSnakeCase()})";
                 else if(currentType.TypeDefinition is CodeEnum currentEnum)
@@ -201,9 +201,12 @@ namespace Kiota.Builder.Writers.Ruby {
                 case "string":
                 case "boolean":
                 case "number":
+                case "float":
                 case "Guid":
-                case "Date":
                     return $"get_{propertyType.ToSnakeCase()}_value()";
+                case "DateTimeOffset":
+                case "Date":
+                    return $"get_Date_value()";
                 default:
                     return $"get_object_value({propertyType.ToSnakeCase()})";
             }

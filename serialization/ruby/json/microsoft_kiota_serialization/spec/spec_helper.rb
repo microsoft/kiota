@@ -1,8 +1,8 @@
 # frozen_string_literal: true
+require "microsoft_kiota_serialization"
+# require_relative "./../lib/microsoft_kiota_serialization"
 
-require 'microsoft_kiota_abstractions'
-
-Dir["#{File.dirname(__FILE__)}/./../lib/**/*.rb"].each { |f| load(f) }
+Dir["#{File.dirname(__FILE__)}/./../lib/*.rb"].each { |f| load(f) }
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
