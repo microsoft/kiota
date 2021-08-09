@@ -49,12 +49,14 @@ namespace Kiota.Builder.Writers.Go {
                 case CodeMethodKind.Setter:
                     WriteSetterBody(codeElement, writer, parentClass);
                     break;
-                // case CodeMethodKind.ClientConstructor:
-                //     WriteConstructorBody(parentClass, codeElement, writer, inherits);
-                //     WriteApiConstructorBody(parentClass, codeElement, writer);
-                // break;
+                case CodeMethodKind.ClientConstructor:
+                    WriteConstructorBody(parentClass, codeElement, writer, inherits);
+                    WriteApiConstructorBody(parentClass, codeElement, writer);
+                    writer.WriteLine("return m");
+                break;
                 case CodeMethodKind.Constructor:
                     WriteConstructorBody(parentClass, codeElement, writer, inherits);
+                    writer.WriteLine("return m");
                     break;
                 default:
                     writer.WriteLine("return nil");
@@ -125,12 +127,27 @@ namespace Kiota.Builder.Writers.Go {
                         "if value == nil {");
                     writer.IncreaseIndent();
                     writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue};",
-                        $"m.set{codeElement.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}(value);");
+                        $"m.Set{codeElement.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}(value);");
                     writer.DecreaseIndent();
                     writer.WriteLines("}", "return value;");
                 } else
-                    writer.WriteLine($"return m.get{backingStore.Name.ToFirstCharacterUpperCase()}().get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\");");
+                    writer.WriteLine($"return m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\");");
 
+        }
+        private void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
+            var httpCoreProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
+            var httpCoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.HttpCore));
+            var httpCorePropertyName = httpCoreProperty.Name.ToFirstCharacterLowerCase();
+            writer.WriteLine($"m.{httpCorePropertyName} = {httpCoreParameter.Name};");
+            WriteSerializationRegistration(method.SerializerModules, writer, "RegisterDefaultSerializer");
+            WriteSerializationRegistration(method.DeserializerModules, writer, "RegisterDefaultDeserializer");
+            if(_usesBackingStore)
+                writer.WriteLine($"m.{httpCorePropertyName}.EnableBackingStore();");
+        }
+        private static void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, string methodName) {
+            if(serializationModules != null)
+                foreach(var module in serializationModules)
+                    writer.WriteLine($"{methodName}(func() {{ return new({module}) }})");
         }
         private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
             writer.WriteLine($"m := &{parentClass.Name.ToFirstCharacterUpperCase()}{{");
@@ -158,7 +175,6 @@ namespace Kiota.Builder.Writers.Go {
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.HttpCore, CodePropertyKind.HttpCore, writer);
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.CurrentPath, CodePropertyKind.CurrentPath, writer);
             }
-            writer.WriteLine($"return m");
         }
         private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
             var property = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(propertyKind));
