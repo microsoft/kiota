@@ -9,4 +9,5 @@ type HttpCore interface {
 	SendPrimitiveAsync(requestInfo RequestInfo, typeName string, responseHandler ResponseHandler) func() (interface{}, error)
 	SendNoContentAsync(requestInfo RequestInfo, responseHandler ResponseHandler) func() error
 	GetSerializationWriterFactory() (s.SerializationWriterFactory, error)
+	EnableBackingStore()
 }
