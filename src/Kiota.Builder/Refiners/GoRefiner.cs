@@ -49,6 +49,16 @@ namespace Kiota.Builder.Refiners {
                 true);
             MakeModelPropertiesNullable(
                 generatedCode);
+            AddErrorImportForEnums(
+                generatedCode);
+        }
+        private static void AddErrorImportForEnums(CodeElement currentElement) {
+            if(currentElement is CodeEnum currentEnum) {
+                currentEnum.Usings.Add(new CodeUsing(currentElement) {
+                    Name = "errors",
+                });
+            }
+            CrawlTree(currentElement, AddErrorImportForEnums);
         }
         private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
             new ("HttpCore", "github.com/microsoft/kiota/abstractions/go"),

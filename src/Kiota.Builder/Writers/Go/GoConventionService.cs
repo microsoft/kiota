@@ -35,7 +35,7 @@ namespace Kiota.Builder.Writers.Go {
             return $"{parameter.Name} {GetTypeString(parameter.Type, targetElement)}";
         }
         public string GetTypeString(CodeTypeBase code) => throw new InvalidOperationException("go needs import symbols, use the local override instead");
-        public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool addPointerSymbol = true)
+        public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool addPointerSymbol = true, bool addCollectionSymbol = true)
         {
             if(code is CodeUnionType) 
                 throw new InvalidOperationException($"Go does not support union types, the union type {code.Name} should have been filtered out by the refiner");
@@ -50,8 +50,8 @@ namespace Kiota.Builder.Writers.Go {
                                     !IsScalarType(currentType.Name) ? "*"
                                     : string.Empty;
                 var collectionPrefix = currentType.CollectionKind switch {
-                    CodeType.CodeTypeCollectionKind.None => string.Empty,
-                    _ => "[]",
+                    (CodeType.CodeTypeCollectionKind.Array or CodeType.CodeTypeCollectionKind.Complex) when addCollectionSymbol => "[]",
+                    _ => string.Empty,
                 };
                 if (currentType.ActionOf)
                     return $"func (value {nullableSymbol}{collectionPrefix}{importSymbol}{typeName}) (err error)";
