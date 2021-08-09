@@ -7,23 +7,6 @@ namespace Kiota.Builder.Tests
 {
     public class CodeNamespaceTests
     {
-        [Fact]
-        public void CreateClassAndRender()
-        {
-            var rootNamespace = CodeNamespace.InitRootNamespace();
-            var myNamespace = rootNamespace.AddNamespace("foo");
-            var myClass = new CodeClass(myNamespace) { Name = "bar"};
-            myNamespace.AddClass(myClass);
-
-            var outputCode = CodeRenderer.RenderCodeAsString(new CSharpWriter(Path.GetRandomFileName(), "foo", false),myNamespace);
-
-            Assert.Equal(@"namespace foo {
-    public class Bar {
-    }
-}
-", outputCode);
-            
-        }
         public const string childName = "one.two.three";
         [Fact]
         public void DoesntThrowOnRootInitialization() {

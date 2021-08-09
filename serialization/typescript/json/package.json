@@ -27,7 +27,7 @@
   },
   "homepage": "https://github.com/microsoft/kiota#readme",
   "devDependencies": {
-    "@types/node": "^16.3.3",
+    "@types/node": "^16.4.13",
     "typescript": "^4.3.5"
   },
   "publishConfig": {
@@ -35,6 +35,6 @@
   },
   "dependencies": {
     "@microsoft/kiota-abstractions": "^1.0.13",
-    "web-streams-polyfill": "^3.0.3"
+    "web-streams-polyfill": "^3.1.0"
   }
 }

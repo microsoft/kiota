@@ -10,7 +10,7 @@ namespace Kiota.Builder.Refiners {
             PatchResponseHandlerType(generatedCode);
             AddDefaultImports(generatedCode, Array.Empty<Tuple<string, string>>(), defaultNamespacesForModels, defaultNamespacesForRequestBuilders, defaultSymbolsForApiClient);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, "ById");
-            CorrectCoreType(generatedCode);
+            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             CorrectCoreTypesForBackingStoreUsings(generatedCode, "@microsoft/kiota-abstractions");
             FixReferencesToEntityType(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
@@ -42,6 +42,7 @@ namespace Kiota.Builder.Refiners {
             new ("HttpMethod", "@microsoft/kiota-abstractions"),
             new ("RequestInfo", "@microsoft/kiota-abstractions"),
             new ("ResponseHandler", "@microsoft/kiota-abstractions"),
+            new ("MiddlewareOption", "@microsoft/kiota-abstractions"),
         };
         private static readonly Tuple<string, string>[] defaultNamespacesForModels = new Tuple<string, string>[] { 
             new ("SerializationWriter", "@microsoft/kiota-abstractions"),
@@ -55,32 +56,33 @@ namespace Kiota.Builder.Refiners {
             new ("SerializationWriterFactoryRegistry", "@microsoft/kiota-abstractions"),
             new ("ParseNodeFactoryRegistry", "@microsoft/kiota-abstractions"),
         };
-        private static void CorrectCoreType(CodeElement currentElement) {
-            if (currentElement is CodeProperty currentProperty) {
-                if(currentProperty.IsOfKind(CodePropertyKind.HttpCore))
-                    currentProperty.Type.Name = "HttpCore";
-                else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
-                    currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
-                else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase))
-                    currentProperty.Type.Name = $"Date";
-                else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
-                    currentProperty.Type.Name = "Map<string, unknown>";
-                    currentProperty.DefaultValue = "new Map<string, unknown>()";
-                }
+        private static void CorrectPropertyType(CodeProperty currentProperty) {
+            if(currentProperty.IsOfKind(CodePropertyKind.HttpCore))
+                currentProperty.Type.Name = "HttpCore";
+            else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
+                currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
+            else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase))
+                currentProperty.Type.Name = $"Date";
+            else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
+                currentProperty.Type.Name = "Map<string, unknown>";
+                currentProperty.DefaultValue = "new Map<string, unknown>()";
             }
-            if (currentElement is CodeMethod currentMethod) {
+        }
+        private static void CorrectMethodType(CodeMethod currentMethod) {
+            if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
                 if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
-                    currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x => x.Type.Name = "ResponseHandler");
-                else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
-                    currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
-                else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer))
-                    currentMethod.ReturnType.Name = $"Map<string, (item: T, node: ParseNode) => void>";
-                else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
-                    currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
+                    currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ResponseHandler) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => x.Type.Name = "MiddlewareOption[]");
             }
-            
-                
-            CrawlTree(currentElement, CorrectCoreType);
+            else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
+            else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer))
+                currentMethod.ReturnType.Name = $"Map<string, (item: T, node: ParseNode) => void>";
+            else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore))
+                    .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
+                    .ToList()
+                    .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
         }
         private static void PatchResponseHandlerType(CodeElement current) {
             if(current is CodeMethod currentMethod && currentMethod.Name.Equals("defaultResponseHandler", StringComparison.OrdinalIgnoreCase)) 

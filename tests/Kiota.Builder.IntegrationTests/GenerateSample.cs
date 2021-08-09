@@ -10,6 +10,7 @@ namespace Kiota.Builder.integrationtests
         [InlineData(GenerationLanguage.CSharp, null)]
         [InlineData(GenerationLanguage.Java, null)]
         [InlineData(GenerationLanguage.TypeScript, null)]
+        [InlineData(GenerationLanguage.Ruby, null)]
         [InlineData(GenerationLanguage.CSharp, "Microsoft.Kiota.Abstractions.Store.InMemoryBackingStore")]
         [InlineData(GenerationLanguage.Java, "com.microsoft.kiota.store.InMemoryBackingStore")]
         [InlineData(GenerationLanguage.TypeScript, "@microsoft/kiota-abstractions.InMemoryBackingStore")]

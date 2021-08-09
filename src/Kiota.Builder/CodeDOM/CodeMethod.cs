@@ -54,6 +54,14 @@ namespace Kiota.Builder
         }
         public List<string> SerializerModules { get; set; }
         public List<string> DeserializerModules { get; set; }
+        /// <summary>
+        /// Indicates whether this method is an overload for another method.
+        /// </summary>
+        public bool IsOverload { get { return OriginalMethod != null; } }
+        /// <summary>
+        /// Provides a reference to the original method that this method is an overload of.
+        /// </summary>
+        public CodeMethod OriginalMethod { get; set; }
 
         public object Clone()
         {
@@ -72,6 +80,7 @@ namespace Kiota.Builder
                 PathSegment = PathSegment?.Clone() as string,
                 SerializerModules = SerializerModules == null ? null : new (SerializerModules),
                 DeserializerModules = DeserializerModules == null ? null : new (DeserializerModules),
+                OriginalMethod = OriginalMethod
             };
         }
 

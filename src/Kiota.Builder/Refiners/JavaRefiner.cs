@@ -17,7 +17,7 @@ namespace Kiota.Builder.Refiners {
             FixReferencesToEntityType(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders, defaultSymbolsForApiClient);
-            CorrectCoreType(generatedCode);
+            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             PatchHeaderParametersType(generatedCode);
             AddListImport(generatedCode);
             AddParsableInheritanceForModelClasses(generatedCode);
@@ -78,11 +78,13 @@ namespace Kiota.Builder.Refiners {
             new ("RequestInfo", "com.microsoft.kiota"),
             new ("ResponseHandler", "com.microsoft.kiota"),
             new ("QueryParametersBase", "com.microsoft.kiota"),
+            new ("MiddlewareOption", "com.microsoft.kiota"),
             new ("Map", "java.util"),
             new ("URI", "java.net"),
             new ("URISyntaxException", "java.net"),
             new ("InputStream", "java.io"),
             new ("Function", "java.util.function"),
+            new ("Collection", "java.util"),
         };
         private static readonly Tuple<string, string>[] defaultNamespaces = new Tuple<string, string>[] { 
             new ("SerializationWriter", "com.microsoft.kiota.serialization"),
@@ -99,40 +101,43 @@ namespace Kiota.Builder.Refiners {
             new ("SerializationWriterFactoryRegistry", "com.microsoft.kiota.serialization"),
             new ("ParseNodeFactoryRegistry", "com.microsoft.kiota.serialization"),
         };
-        private static void CorrectCoreType(CodeElement currentElement) {
-            if (currentElement is CodeProperty currentProperty && currentProperty.Type != null) {
-                if(currentProperty.IsOfKind(CodePropertyKind.HttpCore))
+        private static void CorrectPropertyType(CodeProperty currentProperty) {
+            if(currentProperty.IsOfKind(CodePropertyKind.HttpCore))
                     currentProperty.Type.Name = "HttpCore";
-                else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
-                    currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
-                else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase)) {
-                    currentProperty.Type.Name = $"OffsetDateTime";
-                    var nUsing = new CodeUsing(currentProperty.Parent) {
-                        Name = "OffsetDateTime",
-                    };
-                    nUsing.Declaration = new CodeType(nUsing) {
-                        Name = "java.time",
-                        IsExternal = true,
-                    };
-                    (currentProperty.Parent as CodeClass).AddUsing(nUsing);
-                } else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
-                    currentProperty.Type.Name = "Map<String, Object>";
-                    currentProperty.DefaultValue = "new HashMap<>()";
-                }
+            else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
+                currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
+            else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase)) {
+                currentProperty.Type.Name = $"OffsetDateTime";
+                var nUsing = new CodeUsing(currentProperty.Parent) {
+                    Name = "OffsetDateTime",
+                };
+                nUsing.Declaration = new CodeType(nUsing) {
+                    Name = "java.time",
+                    IsExternal = true,
+                };
+                (currentProperty.Parent as CodeClass).AddUsing(nUsing);
+            } else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
+                currentProperty.Type.Name = "Map<String, Object>";
+                currentProperty.DefaultValue = "new HashMap<>()";
             }
-            if (currentElement is CodeMethod currentMethod) {
+        }
+        private static void CorrectMethodType(CodeMethod currentMethod) {
+            if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
                 if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
-                    currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x => x.Type.Name = "ResponseHandler");
-                else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
-                    currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
-                else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer)) {
-                    currentMethod.ReturnType.Name = $"Map<String, BiConsumer<T, ParseNode>>";
-                    currentMethod.Name = "getFieldDeserializers";
-                }
-                else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
-                    currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
+                    currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ResponseHandler) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => x.Type.Name = "Collection<MiddlewareOption>");
             }
-            CrawlTree(currentElement, CorrectCoreType);
+            else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
+            else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer)) {
+                currentMethod.ReturnType.Name = $"Map<String, BiConsumer<T, ParseNode>>";
+                currentMethod.Name = "getFieldDeserializers";
+            }
+            else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore))
+                    .Where(x => x.Type.Name.StartsWith("I", StringComparison.OrdinalIgnoreCase))
+                    .ToList()
+                    .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
         }
         private static void AddRequireNonNullImports(CodeElement currentElement) {
             if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => !x.Optional)) {
@@ -154,17 +159,21 @@ namespace Kiota.Builder.Refiners {
                 if(codeMethods.Any()) {
                     var originalExecutorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
                     var executorMethodsToAdd = originalExecutorMethods
-                                        .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter))
+                                        .Select(x => GetMethodClone(x, CodeParameterKind.ResponseHandler))
                                         .Union(originalExecutorMethods
-                                                .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers)))
+                                                .Select(x => GetMethodClone(x, CodeParameterKind.Options, CodeParameterKind.ResponseHandler)))
                                         .Union(originalExecutorMethods
-                                                .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers, CodeParameterKind.ResponseHandler)))
+                                                .Select(x => GetMethodClone(x, CodeParameterKind.Headers, CodeParameterKind.Options, CodeParameterKind.ResponseHandler)))
+                                        .Union(originalExecutorMethods
+                                                .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers, CodeParameterKind.Options, CodeParameterKind.ResponseHandler)))
                                         .Where(x => x != null);
                     var originalGeneratorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestGenerator));
                     var generatorMethodsToAdd = originalGeneratorMethods
-                                        .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter))
+                                        .Select(x => GetMethodClone(x, CodeParameterKind.Options))
                                         .Union(originalGeneratorMethods
-                                                .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers)))
+                                                .Select(x => GetMethodClone(x, CodeParameterKind.Headers, CodeParameterKind.Options)))
+                                        .Union(originalGeneratorMethods
+                                                .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers, CodeParameterKind.Options)))
                                         .Where(x => x != null);
                     if(executorMethodsToAdd.Any() || generatorMethodsToAdd.Any())
                         currentClass.AddMethod(executorMethodsToAdd.Union(generatorMethodsToAdd).ToArray());
@@ -184,6 +193,7 @@ namespace Kiota.Builder.Refiners {
             if(currentMethod.Parameters.Any(x => parameterTypesToExclude.Contains(x.ParameterKind))) {
                 var cloneMethod = currentMethod.Clone() as CodeMethod;
                 cloneMethod.Parameters.RemoveAll(x => parameterTypesToExclude.Contains(x.ParameterKind));
+                cloneMethod.OriginalMethod = currentMethod;
                 return cloneMethod;
             }
             else return null;

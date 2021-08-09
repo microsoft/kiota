@@ -17,9 +17,10 @@ namespace Kiota.Builder.Writers.CSharp {
             conventions.WriteShortDescription(codeElement.Description, writer);
             switch(codeElement.PropertyKind) {
                 case CodePropertyKind.RequestBuilder:
+                    var currentPathProperty = codeElement.Parent.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
                     writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ get =>");
                     writer.IncreaseIndent();
-                    conventions.AddRequestBuilderBody(propertyType, writer);
+                    conventions.AddRequestBuilderBody(currentPathProperty != null, propertyType, writer);
                     writer.DecreaseIndent();
                     writer.WriteLine("}");
                 break;

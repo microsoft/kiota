@@ -237,7 +237,7 @@ namespace Kiota.Builder.Refiners.Tests {
             }).First();
             serializationMethod.AddParameter(new CodeParameter(serializationMethod) {
                 Name = "handler",
-                ParameterKind = CodeParameterKind.ResponseHandler,
+                ParameterKind = CodeParameterKind.Serializer,
                 Type = new CodeType(executorMethod) {
                     Name = serializerDefaultName,
                 }
@@ -251,6 +251,76 @@ namespace Kiota.Builder.Refiners.Tests {
             Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => handlerDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => headersDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
+        }
+        [Fact]
+        public void AddsMethodsOverloads() {
+            var builder = root.AddClass(new CodeClass (root) {
+                Name = "model",
+                ClassKind = CodeClassKind.RequestBuilder
+            }).First();
+            var executor = builder.AddMethod(new CodeMethod(builder) {
+                Name = "executor",
+                MethodKind = CodeMethodKind.RequestExecutor,
+                ReturnType = new CodeType(builder) {
+                    Name = "string"
+                }
+            }).First();
+            executor.Parameters.Add(new CodeParameter(executor) {
+                Name = "handler",
+                ParameterKind = CodeParameterKind.ResponseHandler,
+                Type = new CodeType(executor) {
+                    Name = "string"
+                }
+            });
+            executor.AddParameter(new CodeParameter(executor) {
+                Name = "headers",
+                ParameterKind = CodeParameterKind.Headers,
+                Type = new CodeType(executor) {
+                    Name = "string"
+                }
+            });
+            executor.AddParameter(new CodeParameter(executor) {
+                Name = "query",
+                ParameterKind = CodeParameterKind.QueryParameter,
+                Type = new CodeType(executor) {
+                    Name = "string"
+                }
+            });
+            executor.AddParameter(new CodeParameter(executor) {
+                Name = "body",
+                ParameterKind = CodeParameterKind.RequestBody,
+                Type = new CodeType(executor) {
+                    Name = "string"
+                }
+            });
+            executor.AddParameter(new CodeParameter(executor) {
+                Name = "options",
+                ParameterKind = CodeParameterKind.Options,
+                Type = new CodeType(executor) {
+                    Name = "string"
+                }
+            });
+            var generator = builder.AddMethod(new CodeMethod(builder) {
+                Name = "generator",
+                MethodKind = CodeMethodKind.RequestGenerator,
+                ReturnType = new CodeType(builder) {
+                    Name = "string"
+                }
+            }).First();
+            generator.Parameters.AddRange(executor.Parameters.Where(x => !x.IsOfKind(CodeParameterKind.ResponseHandler)));
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+            var childMethods = builder.GetChildElements(true).OfType<CodeMethod>();
+            Assert.True(childMethods.Any(x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count == 1));//only the body
+            Assert.True(childMethods.Any(x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count == 1));//only the body
+            Assert.True(childMethods.Any(x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count == 2));// body + query params
+            Assert.True(childMethods.Any(x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count == 2));// body + query params
+            Assert.True(childMethods.Any(x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count == 3));// body + query params + headers
+            Assert.True(childMethods.Any(x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count == 3));// body + query params + headers
+            Assert.True(childMethods.Any(x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count == 4));// body + query params + headers + options
+            Assert.True(childMethods.Any(x => !x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count == 4));// body + query params + headers + options
+            Assert.True(childMethods.Any(x => !x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count == 5));// body + query params + headers + options + response handler
+            Assert.Equal(9, childMethods.Count());
+            Assert.Equal(7, childMethods.Count(x => x.IsOverload));
         }
         #endregion
     }

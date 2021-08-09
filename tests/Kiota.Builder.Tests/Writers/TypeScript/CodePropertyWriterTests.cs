@@ -39,10 +39,9 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             property.PropertyKind = CodePropertyKind.RequestBuilder;
             writer.Write(property);
             var result = tw.ToString();
-            Assert.Contains($"new {typeName}", result);
-            Assert.Contains("builder.httpCore = this.httpCore", result);
-            Assert.Contains("builder.currentPath = (this.currentPath ?? '') + this.pathSegment", result);
-            Assert.Contains("return builder", result);
+            Assert.Contains($"return new {typeName}", result);
+            Assert.Contains("this.httpCore", result);
+            Assert.Contains("this.pathSegment", result);
         }
         [Fact]
         public void WritesCustomProperty() {

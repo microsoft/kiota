@@ -17,7 +17,6 @@ export class JsonParseNode implements ParseNode {
     public getDateValue = (): Date => this._jsonNode as Date;
     public getCollectionOfPrimitiveValues = <T>(): T[] | undefined => {
         return (this._jsonNode as unknown[])
-            .map(x => new JsonParseNode(x))
             .map(x => {
                 const currentParseNode = new JsonParseNode(x);
                 if(x instanceof Boolean) {

@@ -131,7 +131,8 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(current, x => AddGetterAndSetterMethods(x, propertyKindsToAddAccessors, removeProperty, parameterAsOptional));
         }
         protected static void AddConstructorsForDefaultValues(CodeElement current, bool addIfInherited) {
-            if(current is CodeClass currentClass && 
+            if(current is CodeClass currentClass &&
+                !currentClass.IsOfKind(CodeClassKind.RequestBuilder, CodeClassKind.QueryParameters) &&
                 (currentClass.GetChildElements(true).OfType<CodeProperty>().Any(x => !string.IsNullOrEmpty(x.DefaultValue)) ||
                 addIfInherited && DoesAnyParentHaveAPropertyWithDefaultValue(currentClass)) &&
                 !currentClass.GetChildElements(true).OfType<CodeMethod>().Any(x => x.IsOfKind(CodeMethodKind.ClientConstructor)))
@@ -463,6 +464,17 @@ namespace Kiota.Builder.Refiners {
         protected static void CrawlTree(CodeElement currentElement, Action<CodeElement> function) {
             foreach(var childElement in currentElement.GetChildElements())
                 function.Invoke(childElement);
+        }
+        protected static void CorrectCoreType(CodeElement currentElement, Action<CodeMethod> correctMethodType, Action<CodeProperty> correctPropertyType) {
+            switch(currentElement) {
+                case CodeProperty property:
+                    correctPropertyType.Invoke(property);
+                    break;
+                case CodeMethod method:
+                    correctMethodType.Invoke(method);
+                    break;
+            }
+            CrawlTree(currentElement, x => CorrectCoreType(x, correctMethodType, correctPropertyType));
         }
     }
 }
