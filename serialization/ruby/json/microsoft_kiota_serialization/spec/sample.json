@@ -1,0 +1,73 @@
+{
+    "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users('607f7b25-541a-4af6-b2f6-562bdf65b448')/messages",
+    "@odata.nextLink": "https://graph.microsoft.com/v1.0/me/messages?$skip=10",
+    "numb": 22,
+    "primativeValues": ["a","b",1,2],
+    "value": [
+        {
+            "guidId": "093e9e30-440c-4374-84ea-a95821d7cb4c",
+            "@odata.etag": "W/\"CQAAABYAAABLW5j2RED8SKPe/uUseM8lAAAqleh7\"",
+            "id": "AAMkADY3ZWJmMDUzLWU5ZmQtNDU2ZS05MTk0LWMxNTg0OTQxNDA1ZgBGAAAAAABUU3b30v09Q7_8TGMESZIYBwBLW5j2RED8SKPe-uUseM8lAAAAAAEMAABLW5j2RED8SKPe-uUseM8lAAAqxrxGAAA=",
+            "createdDateTime": "2021-08-02T18:14:36Z",
+            "lastModifiedDateTime": "2021-08-02T18:14:38Z",
+            "changeKey": "CQAAABYAAABLW5j2RED8SKPe/uUseM8lAAAqleh7",
+            "categories": ["cat1", "cat2", "cat3"],
+            "receivedDateTime": "2021-08-02T18:14:37Z",
+            "sentDateTime": "2021-08-02T18:14:14Z",
+            "hasAttachments": false,
+            "internetMessageId": "<DM5PR00MB0309A13A7F35E878BDC0233EF2EF9@DM5PR00MB0309.namprd00.prod.outlook.com>",
+            "subject": "Re: Our processor does not receive events for Permanent Delete",
+            "bodyPreview": "Hi @Jun Cao,I want to get all deletes (soft + hard) for emails for which our other processors have processed data and patched a property. Our processors ingest and maintain secondary FileItems in the WorkingSet based on links and attachments shared in",
+            "importance": "normal",
+            "parentFolderId": "AQMkADY3ZWJmMDUzLWU5ZmQtNDU2ZS05MTk0LWMxNTg0OTQxNDA1ZgAuAAADVFN299L9PUO-vExjBEmSGAEAS1uY9kRA-Eij3v7lLHjPJQAAAgEMAAAA",
+            "conversationId": "AAQkADY3ZWJmMDUzLWU5ZmQtNDU2ZS05MTk0LWMxNTg0OTQxNDA1ZgAQAD4eTN3FHLlHh-j-zvIITkI=",
+            "conversationIndex": "AQHXhYCbPh5M3cUcuUeH+P/O8ghOQqtcA1OJgAAMjReAA9KG24AAb7pZgAAgpbCAAA6myw==",
+            "isDeliveryReceiptRequested": null,
+            "isReadReceiptRequested": false,
+            "isRead": false,
+            "isDraft": false,
+            "webLink": "https://outlook.office365.com/owa/",
+            "inferenceClassification": "focused",
+            "body": {
+                "contentType": "html",
+                "content": "<html></html>"
+            },
+            "sender": {
+                "emailAddress": {
+                    "name": "Kristian Elsebø",
+                    "address": "krelse@exchange.microsoft.com"
+                }
+            },
+            "from": {
+                "emailAddress": {
+                    "name": "Kristian Elsebø",
+                    "address": "krelse@exchange.microsoft.com"
+                }
+            },
+            "toRecipients": [
+                {
+                    "emailAddress": {
+                        "name": "Jun Cao",
+                        "address": "juncao@microsoft.com"
+                    }
+                },
+                {
+                    "emailAddress": {
+                        "name": "Martin Owen",
+                        "address": "mowen@microsoft.com"
+                    }
+                }
+            ],
+            "ccRecipients": [
+                {
+                    "emailAddress": {
+                        "name": "FAST Everything Shared",
+                        "address": "fastshared@microsoft.com"
+                    }
+                }
+            ],
+            "bccRecipients": [],
+            "replyTo": []
+        }
+    ]
+}

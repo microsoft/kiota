@@ -49,12 +49,12 @@ module Files
         ## @return a i_dictionary
         ## 
         def get_field_deserializers() 
-            return {
+            return super.merge({
                 "categories" => lambda {|o, n| o.categories = n.get_collection_of_primitive_values(String) },
                 "changeKey" => lambda {|o, n| o.change_key = n.get_string_value() },
-                "createdDateTime" => lambda {|o, n| o.created_date_time = n.get_Date_value() },
-                "lastModifiedDateTime" => lambda {|o, n| o.last_modified_date_time = n.get_Date_value() },
-            }
+                "createdDateTime" => lambda {|o, n| o.created_date_time = n.get_date_value() },
+                "lastModifiedDateTime" => lambda {|o, n| o.last_modified_date_time = n.get_date_value() },
+            })
         end
         ## 
         ## Serializes information the current object
@@ -62,11 +62,11 @@ module Files
         ## @return a void
         ## 
         def serialize(writer) 
-            super.serialize(writer)
+            super
             writer.write_collection_of_primitive_values("categories", @categories)
             writer.write_string_value("changeKey", @change_key)
-            writer.write_object_value("createdDateTime", @created_date_time)
-            writer.write_object_value("lastModifiedDateTime", @last_modified_date_time)
+            writer.write_date_value("createdDateTime", @created_date_time)
+            writer.write_date_value("lastModifiedDateTime", @last_modified_date_time)
         end
         ## 
         ## Sets the categories property value. The categories associated with the item

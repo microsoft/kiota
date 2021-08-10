@@ -299,7 +299,7 @@ module Files
         ## @return a i_dictionary
         ## 
         def get_field_deserializers() 
-            return {
+            return super.merge({
                 "guidId" => lambda {|o, n| o.guid_id = n.get_guid_value() },
                 "bccRecipients" => lambda {|o, n| o.bcc_recipients = n.get_collection_of_object_values(Files::Recipient) },
                 "body" => lambda {|o, n| o.body = n.get_object_value(Files::ItemBody) },
@@ -309,22 +309,21 @@ module Files
                 "conversationIndex" => lambda {|o, n| o.conversation_index = n.get_string_value() },
                 "from" => lambda {|o, n| o.from = n.get_object_value(Files::Recipient) },
                 "hasAttachments" => lambda {|o, n| o.has_attachments = n.get_boolean_value() },
-                "internetMessageHeaders" => lambda {|o, n| o.internet_message_headers = n.get_collection_of_object_values(Files::InternetMessageHeader) },
                 "internetMessageId" => lambda {|o, n| o.internet_message_id = n.get_string_value() },
                 "isDeliveryReceiptRequested" => lambda {|o, n| o.is_delivery_receipt_requested = n.get_boolean_value() },
                 "isDraft" => lambda {|o, n| o.is_draft = n.get_boolean_value() },
                 "isRead" => lambda {|o, n| o.is_read = n.get_boolean_value() },
                 "isReadReceiptRequested" => lambda {|o, n| o.is_read_receipt_requested = n.get_boolean_value() },
                 "parentFolderId" => lambda {|o, n| o.parent_folder_id = n.get_string_value() },
-                "receivedDateTime" => lambda {|o, n| o.received_date_time = n.get_Date_value() },
+                "receivedDateTime" => lambda {|o, n| o.received_date_time = n.get_date_value() },
                 "replyTo" => lambda {|o, n| o.reply_to = n.get_collection_of_object_values(Files::Recipient) },
                 "sender" => lambda {|o, n| o.sender = n.get_object_value(Files::Recipient) },
-                "sentDateTime" => lambda {|o, n| o.sent_date_time = n.get_Date_value() },
+                "sentDateTime" => lambda {|o, n| o.sent_date_time = n.get_date_value() },
                 "subject" => lambda {|o, n| o.subject = n.get_string_value() },
                 "toRecipients" => lambda {|o, n| o.to_recipients = n.get_collection_of_object_values(Files::Recipient) },
                 "uniqueBody" => lambda {|o, n| o.unique_body = n.get_object_value(Files::ItemBody) },
                 "webLink" => lambda {|o, n| o.web_link = n.get_string_value() },
-            }
+            })
         end
         ## 
         ## Serializes information the current object
@@ -332,7 +331,7 @@ module Files
         ## @return a void
         ## 
         def serialize(writer) 
-            super.serialize(writer)
+            super
             writer.write_guid_value("guidId", @guid_id)
             writer.write_collection_of_object_values("bccRecipients", @bcc_recipients)
             writer.write_object_value("body", @body)
@@ -340,25 +339,18 @@ module Files
             writer.write_collection_of_object_values("ccRecipients", @cc_recipients)
             writer.write_string_value("conversationId", @conversation_id)
             writer.write_string_value("conversationIndex", @conversation_index)
-            writer.write_collection_of_object_values("extensions", @extensions)
-            writer.write_object_value("flag", @flag)
             writer.write_object_value("from", @from)
             writer.write_boolean_value("hasAttachments", @has_attachments)
-            writer.write_enum_value("importance", @importance)
-            writer.write_enum_value("inferenceClassification", @inference_classification)
-            writer.write_collection_of_object_values("internetMessageHeaders", @internet_message_headers)
             writer.write_string_value("internetMessageId", @internet_message_id)
             writer.write_boolean_value("isDeliveryReceiptRequested", @is_delivery_receipt_requested)
             writer.write_boolean_value("isDraft", @is_draft)
             writer.write_boolean_value("isRead", @is_read)
             writer.write_boolean_value("isReadReceiptRequested", @is_read_receipt_requested)
-            writer.write_collection_of_object_values("multiValueExtendedProperties", @multi_value_extended_properties)
             writer.write_string_value("parentFolderId", @parent_folder_id)
-            writer.write_object_value("receivedDateTime", @received_date_time)
+            writer.write_date_value("receivedDateTime", @received_date_time)
             writer.write_collection_of_object_values("replyTo", @reply_to)
             writer.write_object_value("sender", @sender)
-            writer.write_object_value("sentDateTime", @sent_date_time)
-            writer.write_collection_of_object_values("singleValueExtendedProperties", @single_value_extended_properties)
+            writer.write_date_value("sentDateTime", @sent_date_time)
             writer.write_string_value("subject", @subject)
             writer.write_collection_of_object_values("toRecipients", @to_recipients)
             writer.write_object_value("uniqueBody", @unique_body)

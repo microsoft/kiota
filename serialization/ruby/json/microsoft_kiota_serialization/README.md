@@ -1,8 +1,8 @@
-# MicrosoftKiotaAbstractions
+# MicrosoftKiotaSerialization
 
-![Ruby](https://github.com/microsoft/kiota/actions/workflows/abstractions-ruby.yml/badge.svg)
+![Ruby](https://github.com/microsoft/kiota/actions/workflows/serialization-ruby-json.yml/badge.svg)
 
-## Using the abstractions
+## Using the Serialization JSON implementations
 
 Option 1: Bundler config
 
@@ -22,13 +22,14 @@ Option 2: Configuring `~/.gemrc` file
 :update_sources: true
 :verbose: true  
 ```
+
 ## Installation
 
 Add this line to your application's Gemfile:
 
 ```ruby
 source "https://rubygems.pkg.github.com/microsoft" do
-  gem "microsoft_kiota_abstractions", "0.1.1"
+  gem "microsoft_kiota_serialization", "0.1.0"
 end
 ```
 
@@ -40,9 +41,9 @@ bundle install
 
 Or install it yourself as:
 
- ```shell
- gem install microsoft_kiota_abstractions --version "0.1.1" --source "https://{USERNAME}{PASSWORD/TOKEN}rubygems.pkg.github.com/microsoft"
- ```
+```shell
+gem install microsoft_kiota_serialization --version "0.1.0" --source "https://{USERNAME}{PASSWORD/TOKEN}rubygems.pkg.github.com/microsoft"
+```
 
 ## Contributing
 

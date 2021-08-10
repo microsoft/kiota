@@ -1,5 +1,6 @@
 module MicrosoftKiotaAbstractions
   module HttpMethod
+
     HTTP_METHOD = {
       GET: :GET,
       POST: :POST,
@@ -11,5 +12,6 @@ module MicrosoftKiotaAbstractions
       TRACE: :TRACE,
       HEAD: :HEAD
     }
+    
     end 
   end

@@ -37,7 +37,7 @@ module Files
         ## 
         def serialize(writer) 
             writer.write_object_value("emailAddress", @email_address)
-            writer.write_additional_data(self.additional_data)
+            writer.write_additional_data(@additional_data)
         end
         ## 
         ## Sets the AdditionalData property value. Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.

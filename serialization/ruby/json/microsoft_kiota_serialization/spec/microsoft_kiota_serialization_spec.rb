@@ -58,8 +58,7 @@ RSpec.describe MicrosoftKiotaSerialization do
     ## Enum tests
     expect(object_value.value[0].body.content_type.instance_of? Symbol).to eq(true)
   end
-
-  # TODO: finish up the test for the serializer as well
+  
   it "can serialize payload" do
     file = File.open("#{File.dirname(__FILE__)}/sample.json")
     data = file.read #JSON.parse(file.read)
@@ -67,7 +66,7 @@ RSpec.describe MicrosoftKiotaSerialization do
     message_response = MicrosoftKiotaSerialization::JsonParseNodeFactory.new().get_parse_node("application/json", data)
     object_value = message_response.get_object_value(Files::MessagesResponse)
     serializer = MicrosoftKiotaSerialization::JsonSerializationWriterFactory.new().get_serialization_writer("application/json")
-    # serializer.write_object_value(nil, object_value)
-    expect(serializer).not_to be nil
+    object_value.serialize(serializer)
+    expect(object_value.value[0].id.to_s == serializer.writer["value"][0]["id"]).to eq(true)
   end
 end
