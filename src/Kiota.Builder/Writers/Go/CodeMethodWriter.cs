@@ -139,15 +139,20 @@ namespace Kiota.Builder.Writers.Go {
             var httpCoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.HttpCore));
             var httpCorePropertyName = httpCoreProperty.Name.ToFirstCharacterLowerCase();
             writer.WriteLine($"m.{httpCorePropertyName} = {httpCoreParameter.Name};");
-            WriteSerializationRegistration(method.SerializerModules, writer, "RegisterDefaultSerializer");
-            WriteSerializationRegistration(method.DeserializerModules, writer, "RegisterDefaultDeserializer");
+            WriteSerializationRegistration(method.SerializerModules, writer, parentClass, "RegisterDefaultSerializer", "SerializationWriterFactory");
+            WriteSerializationRegistration(method.DeserializerModules, writer, parentClass, "RegisterDefaultDeserializer", "ParseNodeFactory");
             if(_usesBackingStore)
                 writer.WriteLine($"m.{httpCorePropertyName}.EnableBackingStore();");
         }
-        private static void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, string methodName) {
+        private void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, CodeClass parentClass, string methodName, string interfaceName) {
+            var interfaceImportSymbol = conventions.GetTypeString(new CodeType(parentClass) { Name = interfaceName, IsExternal = true }, parentClass, false, false);
+            var methodImportSymbol = conventions.GetTypeString(new CodeType(parentClass) { Name = methodName, IsExternal = true }, parentClass, false, false);
             if(serializationModules != null)
-                foreach(var module in serializationModules)
-                    writer.WriteLine($"{methodName}(func() {{ return new({module}) }})");
+                foreach(var module in serializationModules) {
+                    var moduleImportSymbol = conventions.GetTypeString(new CodeType(parentClass) { Name = module, IsExternal = true }, parentClass, false, false);
+                    moduleImportSymbol = moduleImportSymbol.Split('.').First();
+                    writer.WriteLine($"{methodImportSymbol}(func() {interfaceImportSymbol} {{ return {moduleImportSymbol}.New{module}() }})");
+                }
         }
         private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
             writer.WriteLine($"m := &{parentClass.Name.ToFirstCharacterUpperCase()}{{");

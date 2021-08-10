@@ -16,12 +16,21 @@ namespace Kiota.Builder.Refiners {
         ///     This method adds the imports for the default serializers and deserializers to the api client class.
         ///     It also updates the module names to replace the fully qualified class name by the class name without the namespace.
         /// </summary>
-        protected void AddSerializationModulesImport(CodeElement generatedCode) {
+        protected void AddSerializationModulesImport(CodeElement generatedCode, string[] serializationWriterFactoryInterfaceAndRegistrationFullName = default, string[] parseNodeFactoryInterfaceAndRegistrationFullName = default) {
+            if(serializationWriterFactoryInterfaceAndRegistrationFullName == null)
+                serializationWriterFactoryInterfaceAndRegistrationFullName = new string[] {};
+            if(parseNodeFactoryInterfaceAndRegistrationFullName == null)
+                parseNodeFactoryInterfaceAndRegistrationFullName = new string[] {};
             if(generatedCode is CodeMethod currentMethod &&
                 currentMethod.IsOfKind(CodeMethodKind.ClientConstructor) &&
                 currentMethod.Parent is CodeClass currentClass &&
                 currentClass.StartBlock is CodeClass.Declaration declaration) {
-                    var cumulatedSymbols = currentMethod.DeserializerModules.Union(currentMethod.SerializerModules).ToList();
+                    var cumulatedSymbols = currentMethod.DeserializerModules
+                                                        .Union(currentMethod.SerializerModules)
+                                                        .Union(serializationWriterFactoryInterfaceAndRegistrationFullName)
+                                                        .Union(parseNodeFactoryInterfaceAndRegistrationFullName)
+                                                        .Where(x => !string.IsNullOrEmpty(x))
+                                                        .ToList();
                     currentMethod.DeserializerModules = currentMethod.DeserializerModules.Select(x => x.Split('.').Last()).ToList();
                     currentMethod.SerializerModules = currentMethod.SerializerModules.Select(x => x.Split('.').Last()).ToList();
                     declaration.Usings.AddRange(cumulatedSymbols.Select(x => new CodeUsing(currentClass){
@@ -33,7 +42,7 @@ namespace Kiota.Builder.Refiners {
                     }));
                     return;
                 }
-            CrawlTree(generatedCode, AddSerializationModulesImport);
+            CrawlTree(generatedCode, x => AddSerializationModulesImport(x, serializationWriterFactoryInterfaceAndRegistrationFullName, parseNodeFactoryInterfaceAndRegistrationFullName));
         }
         protected static void ReplaceDefaultSerializationModules(CodeElement generatedCode, params string[] moduleNames) {
             if(ReplaceSerializationModules(generatedCode, x => x.SerializerModules, "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory", moduleNames))

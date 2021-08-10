@@ -51,6 +51,16 @@ namespace Kiota.Builder.Refiners {
                 generatedCode);
             AddErrorImportForEnums(
                 generatedCode);
+            ReplaceDefaultSerializationModules(
+                generatedCode,
+                "github.com/microsoft/kiota/serialization/go/json.JsonSerializationWriterFactory");
+            ReplaceDefaultDeserializationModules(
+                generatedCode,
+                "github.com/microsoft/kiota/serialization/go/json.JsonParseNodeFactory");
+            AddSerializationModulesImport(
+                generatedCode,
+                new string[] {"github.com/microsoft/kiota/abstractions/go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota/abstractions/go.RegisterDefaultSerializer"},
+                new string[] {"github.com/microsoft/kiota/abstractions/go/serialization.ParseNodeFactory", "github.com/microsoft/kiota/abstractions/go.RegisterDefaultDeserializer"});
         }
         private static void AddErrorImportForEnums(CodeElement currentElement) {
             if(currentElement is CodeEnum currentEnum) {
