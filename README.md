@@ -15,7 +15,7 @@ The following table provides an overview of the languages supported by Kiota and
 | Language | Generation | Abstractions | Serialization | Authentication | HTTP | Required tools |
 | -------- | ---------- | ------------ | ------------- | -------------- | ---- | -------------- |
 | CSharp | [✔](https://github.com/microsoft/kiota/projects/5) | [✔](./abstractions/dotnet) | [JSON](./serialization/dotnet/json) | [Azure](./authentication/dotnet/azure) | [✔](./http/dotnet/httpclient) | [link](./requiredtools/dotnet.md) |
-| Go | [❌](https://github.com/microsoft/kiota/projects/8) | ❌ | ❌ | ❌ | ❌ |  |
+| Go | [✔](https://github.com/microsoft/kiota/projects/8) | [✔](./abstractions/go)  | ❌ | ❌ | ❌ |  |
 | Java | [✔](https://github.com/microsoft/kiota/projects/7) | [✔](./abstractions/java) | [JSON](./serialization/java/json) | [Azure](./authentication/java/azure) | [✔](./http/java/okhttp) | [link](./requiredtools/java.md) |
 | PHP | [❌](https://github.com/microsoft/kiota/projects/4) | [▶](https://github.com/microsoft/kiota/pull/321) | ❌ | ❌ | ❌ |  |
 | Python | [❌](https://github.com/microsoft/kiota/projects/3) | ❌ | ❌ | ❌ | ❌ |  |
