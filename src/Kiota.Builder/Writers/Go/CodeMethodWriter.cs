@@ -38,7 +38,7 @@ namespace Kiota.Builder.Writers.Go {
                     WriteIndexerBody(codeElement, writer, returnType);
                 break;
                 case CodeMethodKind.RequestGenerator:
-                    WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, writer, parentClass, returnType);
+                    WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer, parentClass, returnType);
                 break;
                 case CodeMethodKind.RequestExecutor:
                     WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, returnType, writer);
@@ -318,7 +318,7 @@ namespace Kiota.Builder.Writers.Go {
             writer.WriteLine($"{prefix}m.{generatorMethodName}({paramsCall});");
         }
         private const string rInfoVarName = "requestInfo";
-        private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, LanguageWriter writer, CodeClass parentClass, string returnType) {
+        private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, LanguageWriter writer, CodeClass parentClass, string returnType) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
             writer.WriteLine($"{rInfoVarName} := new({conventions.AbstractionsHash}.RequestInfo)");
@@ -347,6 +347,14 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLine($"if {headersParam.Name} != nil {{");
                 writer.IncreaseIndent();
                 writer.WriteLine($"err = {headersParam.Name}({rInfoVarName}.Headers)");
+                WriteReturnError(writer, returnType);
+                writer.DecreaseIndent();
+                writer.WriteLine("}");
+            }
+            if(optionsParam != null) {
+                writer.WriteLine($"if {optionsParam.Name} != nil {{");
+                writer.IncreaseIndent();
+                writer.WriteLine($"err = {rInfoVarName}.AddMiddlewareOptions({optionsParam.Name})");
                 WriteReturnError(writer, returnType);
                 writer.DecreaseIndent();
                 writer.WriteLine("}");

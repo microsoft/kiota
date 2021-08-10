@@ -2,6 +2,7 @@ package abstractions
 
 import (
 	"errors"
+	"reflect"
 
 	u "net/url"
 
@@ -14,7 +15,34 @@ type RequestInfo struct {
 	URI             u.URL
 	Headers         map[string]string
 	QueryParameters map[string]string
-	Content         []byte //TODO options + add/get methods
+	Content         []byte
+	options         map[string]MiddlewareOption
+}
+
+func (request *RequestInfo) AddMiddlewareOptions(options ...MiddlewareOption) error {
+	if options == nil {
+		return errors.New("MiddlewareOptions cannot be nil")
+	}
+	if request.options == nil {
+		request.options = make(map[string]MiddlewareOption, len(options))
+	}
+	for _, option := range options {
+		tp := reflect.TypeOf(option)
+		name := tp.Name()
+		request.options[name] = option
+	}
+	return nil
+}
+
+func (request *RequestInfo) GetMiddlewareOptions() []MiddlewareOption {
+	if request.options == nil {
+		return []MiddlewareOption{}
+	}
+	result := make([]MiddlewareOption, len(request.options))
+	for _, option := range request.options {
+		result = append(result, option)
+	}
+	return result
 }
 
 const contentTypeHeader = "Content-Type"
