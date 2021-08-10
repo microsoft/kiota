@@ -15,6 +15,9 @@ namespace Kiota.Builder.Refiners {
                 generatedCode,
                 generatedCode,
                 "ById");
+            ReplaceRequestBuilderPropertiesByMethods(
+                generatedCode
+            );
             MoveModelsInDedicatedNamespace(
                 generatedCode
             );
@@ -61,6 +64,23 @@ namespace Kiota.Builder.Refiners {
                 generatedCode,
                 new string[] {"github.com/microsoft/kiota/abstractions/go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota/abstractions/go.RegisterDefaultSerializer"},
                 new string[] {"github.com/microsoft/kiota/abstractions/go/serialization.ParseNodeFactory", "github.com/microsoft/kiota/abstractions/go.RegisterDefaultDeserializer"});
+        }
+        private static void ReplaceRequestBuilderPropertiesByMethods(CodeElement currentElement) {
+            if(currentElement is CodeProperty currentProperty &&
+                currentProperty.IsOfKind(CodePropertyKind.RequestBuilder) &&
+                currentElement.Parent is CodeClass parentClass) {
+                    parentClass.RemoveChildElement(currentProperty);
+                    currentProperty.Type.IsNullable = false;
+                    parentClass.AddMethod(new CodeMethod(parentClass) {
+                        Name = currentProperty.Name,
+                        ReturnType = currentProperty.Type,
+                        Access = AccessModifier.Public,
+                        Description = currentProperty.Description,
+                        IsAsync = false,
+                        MethodKind = CodeMethodKind.RequestBuilderBackwardCompatibility,
+                    });
+                }
+            CrawlTree(currentElement, ReplaceRequestBuilderPropertiesByMethods);
         }
         private static void AddErrorImportForEnums(CodeElement currentElement) {
             if(currentElement is CodeEnum currentEnum) {

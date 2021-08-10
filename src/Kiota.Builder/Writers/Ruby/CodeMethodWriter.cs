@@ -57,6 +57,8 @@ namespace Kiota.Builder.Writers.Ruby {
                     WriteMethodPrototype(codeElement, writer);
                     WriteConstructorBody(parentClass, codeElement, writer, inherits);
                     break;
+                case CodeMethodKind.RequestBuilderBackwardCompatibility:
+                    throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
                 default:
                     WriteMethodPrototype(codeElement, writer);
                     writer.WriteLine("return nil;");

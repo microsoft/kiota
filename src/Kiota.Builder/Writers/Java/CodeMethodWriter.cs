@@ -66,6 +66,8 @@ namespace Kiota.Builder.Writers.Java {
                 case CodeMethodKind.Constructor:
                     WriteConstructorBody(parentClass, codeElement, writer, inherits);
                     break;
+                case CodeMethodKind.RequestBuilderBackwardCompatibility:
+                    throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
                 default:
                     writer.WriteLine("return null;");
                 break;

@@ -1,3 +1,4 @@
+using System;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Go {
@@ -8,7 +9,13 @@ namespace Kiota.Builder.Writers.Go {
         {
             var propertyName = codeElement.Access == AccessModifier.Public ? codeElement.Name.ToFirstCharacterUpperCase() : codeElement.Name.ToFirstCharacterLowerCase();
             var returnType = conventions.GetTypeString(codeElement.Type, codeElement.Parent);
-            writer.WriteLine($"{propertyName} {returnType};"); //TODO request builders with bodies
+            switch(codeElement.PropertyKind) {
+                case CodePropertyKind.RequestBuilder:
+                    throw new InvalidOperationException("RequestBuilders are as properties are not supported in Go and should be replaced by methods by the refiner.");
+                default:
+                    writer.WriteLine($"{propertyName} {returnType};");
+                break;
+            }
         }
     }
 }

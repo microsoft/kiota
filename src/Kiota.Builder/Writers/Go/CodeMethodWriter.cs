@@ -58,6 +58,9 @@ namespace Kiota.Builder.Writers.Go {
                     WriteConstructorBody(parentClass, codeElement, writer, inherits);
                     writer.WriteLine("return m");
                     break;
+                case CodeMethodKind.RequestBuilderBackwardCompatibility:
+                    WriteRequestBuilderBody(parentClass, codeElement, writer);
+                    break;
                 default:
                     writer.WriteLine("return nil");
                 break;
@@ -65,6 +68,14 @@ namespace Kiota.Builder.Writers.Go {
             writer.DecreaseIndent();
             writer.WriteLine("}");
         }
+
+        private void WriteRequestBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
+        {
+            var importSymbol = conventions.GetTypeString(codeElement.ReturnType, parentClass);
+            var currentPathProperty = codeElement.Parent.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
+            conventions.AddRequestBuilderBody(currentPathProperty != null, importSymbol, writer);
+        }
+
         private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer) {
             var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();
             var shouldDeclareErrorVar = true;
@@ -108,7 +119,8 @@ namespace Kiota.Builder.Writers.Go {
                                                 CodeMethodKind.Getter, 
                                                 CodeMethodKind.Setter,
                                                 CodeMethodKind.IndexerBackwardCompatibility,
-                                                CodeMethodKind.Deserializer) || code.IsAsync ? 
+                                                CodeMethodKind.Deserializer,
+                                                CodeMethodKind.RequestBuilderBackwardCompatibility) || code.IsAsync ? 
                                                     string.Empty :
                                                     "error";
             if(!string.IsNullOrEmpty(finalReturnType) && !string.IsNullOrEmpty(errorDeclaration))
