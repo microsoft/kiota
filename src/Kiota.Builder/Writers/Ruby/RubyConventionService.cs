@@ -37,8 +37,9 @@ namespace Kiota.Builder.Writers.Ruby {
         public string TranslateType(string typeName)
         {
             return (typeName) switch {
-                ("void") => typeName.ToFirstCharacterLowerCase(),
-                _ => typeName.ToFirstCharacterUpperCase() ?? "Object",
+                "integer" => "number",
+                "float" or "string" or "object" or "boolean" or "void" => typeName, // little casing hack
+                _ => typeName.ToFirstCharacterUpperCase() ?? "object",
             };
         }
         public void WriteShortDescription(string description, LanguageWriter writer)

@@ -1,0 +1,101 @@
+name: Ruby serialization
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths: ['serialization/ruby/**', '.github/workflows/**']
+  pull_request:
+    paths: ['serialization/ruby/**', '.github/workflows/**']
+
+jobs:
+  build:
+    env:
+      relativePath: ./serialization/ruby/json/microsoft_kiota_serialization
+      BUNDLE_HTTPS://RUBYGEMS__PKG__GITHUB__COM/MICROSOFT/: "${{ secrets.PUBLISH_GH_USERNAME }}:${{ secrets.PUBLISH_GH_TOKEN }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
+        ruby-version: [2.5, 2.6, 2.7, '3.0', head, jruby, jruby-head, truffleruby, truffleruby-head]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+          bundler: 'latest'
+          cache-version: 1
+          working-directory: ${{ env.relativePath }}
+      - name: Run tests
+        run: bundle exec rake
+        working-directory: ${{ env.relativePath }}
+      - name: Upload artifacts for ruby version 3 and ubuntu
+        if: ${{ matrix.os == 'ubuntu-latest'  && matrix.ruby-version == '3.0'}}
+        uses: actions/upload-artifact@v2
+        with:
+          name: drop
+          path: |
+            ${{ env.relativePath }}/Gemfile.lock
+            ${{ env.relativePath }}/README.md
+  deploy:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    environment:
+      name: staging_feeds
+    runs-on: ubuntu-latest
+    env:
+      relativePath: ./serialization/ruby/json/microsoft_kiota_serialization
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ruby/setup-ruby@v1
+        with:
+           # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
+          ruby-version: '3.0'
+          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+          bundler: 'latest'
+          cache-version: 1
+          working-directory: ${{ env.relativePath }}
+      - run: bundle exec rake
+        working-directory: ${{ env.relativePath }}
+      - name: Publish to GPR
+        run: |
+          mkdir -p $HOME/.gem
+          touch $HOME/.gem/credentials
+          chmod 0600 $HOME/.gem/credentials
+          printf -- "---\n:github: ${GEM_HOST_API_KEY}\n" > $HOME/.gem/credentials
+          gem build *.gemspec
+          gem push --KEY github --host https://rubygems.pkg.github.com/${OWNER} *.gem
+        working-directory: ${{ env.relativePath }}
+        env:
+          GEM_HOST_API_KEY: "Bearer ${{secrets.PUBLISH_GH_TOKEN}}"
+          OWNER: ${{ github.repository_owner }}
+  # deploy_prod:
+  #   if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+  #   environment:
+  #     name: production_feeds
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     relativePath: ./abstractions/ruby
+  #   needs: [build]
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - uses: ruby/setup-ruby@v1
+  #       with:
+  #          # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
+  #         ruby-version: '3.0'
+  #         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+  #     - run: bundle exec rake
+  #     - name: Publish to RubyGems
+  #       run: |
+  #         mkdir -p $HOME/.gem
+  #         touch $HOME/.gem/credentials
+  #         chmod 0600 $HOME/.gem/credentials
+  #         printf -- "---\n:rubygems_api_key: ${GEM_HOST_API_KEY}\n" > $HOME/.gem/credentials
+  #         gem build *.gemspec
+  #         gem push *.gem
+  #       env:
+  #         GEM_HOST_API_KEY: "${{secrets.RUBYGEMS_AUTH_TOKEN}}" TODO: Token for rubyGems.org
+
