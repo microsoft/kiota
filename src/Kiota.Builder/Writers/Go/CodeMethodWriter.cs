@@ -107,7 +107,8 @@ namespace Kiota.Builder.Writers.Go {
                 (CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor) => $"New{code.Parent.Name.ToFirstCharacterUpperCase()}",
                 (CodeMethodKind.Getter) => $"Get{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
                 (CodeMethodKind.Setter) => $"Set{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
-                _ => code.Name.ToFirstCharacterUpperCase()
+                _ when code.Access == AccessModifier.Public => code.Name.ToFirstCharacterUpperCase(),
+                _ => code.Name.ToFirstCharacterLowerCase()
             });
             var parameters = string.Join(", ", code.Parameters.Select(p => conventions.GetParameterSignature(p, parentClass)).ToList());
             var classType = conventions.GetTypeString(new CodeType(parentClass) { Name = parentClass.Name, TypeDefinition = parentClass }, parentClass);
@@ -132,9 +133,9 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLine($"return m.{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}");
             else 
                 if(!(codeElement.AccessedProperty?.Type?.IsNullable ?? true) &&
-                   !(codeElement.AccessedProperty?.ReadOnly ?? true) && //TODO implement backing store getter when definition available in abstractions
+                   !(codeElement.AccessedProperty?.ReadOnly ?? true) &&
                     !string.IsNullOrEmpty(codeElement.AccessedProperty?.DefaultValue)) {
-                    writer.WriteLines($"{conventions.GetTypeString(codeElement.AccessedProperty.Type)} value = m.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\");",
+                    writer.WriteLines($"{conventions.GetTypeString(codeElement.AccessedProperty.Type, parentClass)} value = m.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.Get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\")",
                         "if value == nil {");
                     writer.IncreaseIndent();
                     writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue};",
@@ -203,8 +204,8 @@ namespace Kiota.Builder.Writers.Go {
             var backingStore = parentClass.GetBackingStoreProperty();
             if(backingStore == null)
                 writer.WriteLine($"m.{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()} = value");
-            else //TODO implement backing store setter when definition available in abstractions
-                writer.WriteLine($"m.get{backingStore.Name.ToFirstCharacterUpperCase()}().set(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\", value);");
+            else
+                writer.WriteLine($"m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Set(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\", value)");
         }
         private void WriteIndexerBody(CodeMethod codeElement, LanguageWriter writer, string returnType) {
             var currentPathProperty = codeElement.Parent.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
