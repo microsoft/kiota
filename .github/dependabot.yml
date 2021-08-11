@@ -43,6 +43,15 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
+  labels:
+    - Ruby
+- package-ecosystem: gomod
+  directory: "/abstractions/go"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  labels:
+    - Go
 - package-ecosystem: nuget
   directory: "/authentication/dotnet/azure"
   schedule:
