@@ -259,6 +259,7 @@ namespace Kiota.Builder.Writers.Go {
         }
         private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, string returnType, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
+            if(returnType == null) throw new InvalidOperationException("return type cannot be null"); // string.Empty is a valid return type
             var isScalar = conventions.IsScalarType(returnType);
             var sendMethodName = returnType switch {
                 "void" => "SendNoContentAsync",
