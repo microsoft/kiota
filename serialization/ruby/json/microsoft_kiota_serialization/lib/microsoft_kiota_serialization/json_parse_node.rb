@@ -52,8 +52,8 @@ module MicrosoftKiotaSerialization
         else
           current_parse_node.get_string_value
         end
-      rescue StandardError
-        raise StandardError, `one of these methods - #{type} failed`
+      rescue StandardError => e
+        raise e.class, `Failed to fetch #{type} type`
       end
     end
 
@@ -68,8 +68,8 @@ module MicrosoftKiotaSerialization
       item = type.new
       assign_field_values(item)
       item
-    rescue StandardError
-      raise StandardError, 'Error during deserialization'
+    rescue StandardError => e
+      raise e.class, 'Error during deserialization'
     end
 
     def assign_field_values(item)
