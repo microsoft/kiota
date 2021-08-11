@@ -117,6 +117,11 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             });
         }
         [Fact]
+        public void WritesRequestBuilder() {
+            method.MethodKind = CodeMethodKind.RequestBuilderBackwardCompatibility;
+            Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+        }
+        [Fact]
         public void WritesRequestBodiesThrowOnNullHttpMethod() {
             method.MethodKind = CodeMethodKind.RequestExecutor;
             Assert.Throws<InvalidOperationException>(() => writer.Write(method));
