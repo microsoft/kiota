@@ -51,5 +51,15 @@ namespace Kiota.Builder.Writers.Go.Tests {
             var result = tw.ToString();
             Assert.Empty(result);
         }
+        [Fact]
+        public void WritesUsing() {
+            currentEnum.Usings.Add(new CodeUsing(currentEnum) {
+                Name = "using1",
+            });
+            currentEnum.Options.Add("o");
+            writer.Write(currentEnum);
+            var result = tw.ToString();
+            Assert.Contains("using1", result);
+        }
     }
 }

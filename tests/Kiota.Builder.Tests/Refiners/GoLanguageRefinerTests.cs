@@ -42,7 +42,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 Name = "someModel",
                 ClassKind = CodeClassKind.Model
             }).First();
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, main);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
             Assert.Empty(main.GetChildElements(true).OfType<CodeClass>());
             var modelsNS = main.FindNamespaceByName("/main.models");
             Assert.NotNull(modelsNS);
