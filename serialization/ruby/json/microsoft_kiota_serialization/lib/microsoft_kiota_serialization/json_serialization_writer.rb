@@ -1,4 +1,7 @@
 require 'microsoft_kiota_abstractions'
+require 'time'
+require 'json'
+require "uuidtools"
 
 module MicrosoftKiotaSerialization
   class JsonSerializationWriter
