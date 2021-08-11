@@ -98,7 +98,6 @@ namespace Kiota.Builder.Writers.Go {
         }
         private static string errorVarDeclaration(bool shouldDeclareErrorVar) => shouldDeclareErrorVar ? ":" : string.Empty;
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, CodeClass parentClass) {
-            var genericTypeParameterDeclaration = code.IsOfKind(CodeMethodKind.Deserializer) ? " <T>": string.Empty;
             var returnTypeAsyncPrefix = code.IsAsync ? "func() (" : string.Empty;
             var returnTypeAsyncSuffix = code.IsAsync ? "error)" : string.Empty;
             if(!string.IsNullOrEmpty(returnType) && code.IsAsync)
@@ -361,7 +360,7 @@ namespace Kiota.Builder.Writers.Go {
             }
             writer.WriteLine($"return {rInfoVarName}, err");
         }
-        private void WriteReturnError(LanguageWriter writer, params string[] returnTypes) {
+        private static void WriteReturnError(LanguageWriter writer, params string[] returnTypes) {
             writer.WriteLine("if err != nil {");
             writer.IncreaseIndent();
             var nilsPrefix = GetNilsErrorPrefix(returnTypes);
@@ -375,7 +374,7 @@ namespace Kiota.Builder.Writers.Go {
                             string.Empty :
                             sanitizedTypes.Select(_ => "nil").Aggregate((x,y) => $"{x}, {y}") + ", ";
         }
-        private void WriteAsyncReturnError(LanguageWriter writer, params string[] returnTypes) {
+        private static void WriteAsyncReturnError(LanguageWriter writer, params string[] returnTypes) {
             writer.WriteLine("if err != nil {");
             writer.IncreaseIndent();
             var sanitizedTypes = returnTypes.Where(x => !string.IsNullOrEmpty(x));
@@ -459,7 +458,7 @@ namespace Kiota.Builder.Writers.Go {
                     writer.WriteLine($"{errorPrefix}WriteObjectValue({serializationKey}, {valueGet})");
                     WriteReturnError(writer);
                 break;
-            };
+            }
         }
         private string GetConversionHelperMethodImport(CodeElement parentForTemporaryType, CodeClass parentClass, string name) {
             var conversionMethodType = new CodeType(parentForTemporaryType) { Name = name, IsExternal = true };

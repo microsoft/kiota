@@ -8,7 +8,7 @@ namespace Kiota.Builder.Refiners {
         public override void Refine(CodeNamespace generatedCode)
         {
             PatchResponseHandlerType(generatedCode);
-            AddDefaultImports(generatedCode, Array.Empty<Tuple<string, string>>(), defaultNamespacesForModels, defaultNamespacesForRequestBuilders, defaultSymbolsForApiClient);
+            AddDefaultImports(generatedCode, Array.Empty<Tuple<string, string>>(), defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, "ById");
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             CorrectCoreTypesForBackingStore(generatedCode, "@microsoft/kiota-abstractions", "BackingStoreFactorySingleton.instance.createBackingStore()");
@@ -25,7 +25,12 @@ namespace Kiota.Builder.Refiners {
             ReplaceRelativeImportsByImportPath(generatedCode, '.');
             ReplaceDefaultSerializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory");
             ReplaceDefaultDeserializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonParseNodeFactory");
-            AddSerializationModulesImport(generatedCode);
+            AddSerializationModulesImport(generatedCode,
+                new[] { "@microsoft/kiota-abstractions.registerDefaultSerializer", 
+                        "@microsoft/kiota-abstractions.enableBackingStoreForSerializationWriterFactory",
+                        "@microsoft/kiota-abstractions.SerializationWriterFactoryRegistry"},
+                new[] { "@microsoft/kiota-abstractions.registerDefaultDeserializer",
+                        "@microsoft/kiota-abstractions.ParseNodeFactoryRegistry" });
         }
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
@@ -48,13 +53,6 @@ namespace Kiota.Builder.Refiners {
             new ("SerializationWriter", "@microsoft/kiota-abstractions"),
             new ("ParseNode", "@microsoft/kiota-abstractions"),
             new ("Parsable", "@microsoft/kiota-abstractions"),
-        };
-        private static readonly Tuple<string, string>[] defaultSymbolsForApiClient = new Tuple<string, string>[] { 
-            new ("registerDefaultSerializer", "@microsoft/kiota-abstractions"),
-            new ("registerDefaultDeserializer", "@microsoft/kiota-abstractions"),
-            new ("enableBackingStoreForSerializationWriterFactory", "@microsoft/kiota-abstractions"),
-            new ("SerializationWriterFactoryRegistry", "@microsoft/kiota-abstractions"),
-            new ("ParseNodeFactoryRegistry", "@microsoft/kiota-abstractions"),
         };
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if(currentProperty.IsOfKind(CodePropertyKind.HttpCore))

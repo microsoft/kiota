@@ -93,7 +93,7 @@ namespace Kiota.Builder.Writers.Go {
                 _ => false,
             };
         }
-        private string GetImportSymbol(CodeTypeBase currentBaseType, CodeElement targetElement) {
+        private static string GetImportSymbol(CodeTypeBase currentBaseType, CodeElement targetElement) {
             if(currentBaseType == null || IsPrimitiveType(currentBaseType.Name)) return string.Empty;
             var targetNamespace = targetElement.GetImmediateParentOfType<CodeNamespace>();
             if(currentBaseType is CodeType currentType) {
@@ -127,7 +127,7 @@ namespace Kiota.Builder.Writers.Go {
             var currentPath = addCurrentPath ? $"m.{CurrentPathPropertyName} + " : string.Empty;
             var splatImport = returnType.Split('.');
             var constructorName = splatImport.Last().ToFirstCharacterUpperCase();
-            var moduleName = returnType.Count() > 1 ? splatImport.First() + "." : string.Empty;
+            var moduleName = returnType.Length > 1 ? splatImport.First() + "." : string.Empty;
             writer.WriteLines($"return *{moduleName}New{constructorName}({currentPath}m.{PathSegmentPropertyName}{suffix}, m.{HttpCorePropertyName});");
         }
     }

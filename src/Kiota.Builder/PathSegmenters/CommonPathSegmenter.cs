@@ -16,7 +16,7 @@ namespace Kiota.Builder {
         public abstract string NormalizeNamespaceSegment(string segmentName);
         public abstract string NormalizeFileName(CodeElement currentElement);
         public virtual IEnumerable<string> GetAdditionalSegment(CodeElement currentElement, string fileName) => Enumerable.Empty<string>();
-        protected string GetLastFileNameSegment(CodeElement currentElement) => currentElement.Name.Split('.').Last();
+        protected static string GetLastFileNameSegment(CodeElement currentElement) => currentElement.Name.Split('.').Last();
         public string GetPath(CodeNamespace currentNamespace, CodeElement currentElement) {
             var fileName = NormalizeFileName(currentElement);
             var namespacePathSegments = currentNamespace.Name

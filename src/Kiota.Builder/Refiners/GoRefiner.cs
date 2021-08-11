@@ -30,8 +30,7 @@ namespace Kiota.Builder.Refiners {
                 generatedCode,
                 defaultNamespaces,
                 defaultNamespacesForModels,
-                defaultNamespacesForRequestBuilders,
-                defaultSymbolsForApiClient);
+                defaultNamespacesForRequestBuilders);
             CorrectCoreType(
                 generatedCode,
                 CorrectMethodType,
@@ -98,11 +97,7 @@ namespace Kiota.Builder.Refiners {
             new ("MiddlewareOption", "github.com/microsoft/kiota/abstractions/go"),
             new ("QueryParametersBase", "github.com/microsoft/kiota/abstractions/go"),
             new ("Parsable", "github.com/microsoft/kiota/abstractions/go/serialization"),
-            // new ("Map", "java.util"),
             new ("*url", "net/url"),
-            // new ("URISyntaxException", "java.net"),
-            // new ("InputStream", "java.io"),
-            // new ("Function", "java.util.function"),
         };
         private static readonly Tuple<string, string>[] defaultNamespaces = new Tuple<string, string>[] { 
             new ("SerializationWriter", "github.com/microsoft/kiota/abstractions/go/serialization"),
@@ -112,14 +107,6 @@ namespace Kiota.Builder.Refiners {
             new ("Parsable", "github.com/microsoft/kiota/abstractions/go/serialization"),
             new ("ConvertToArrayOfParsable", "github.com/microsoft/kiota/abstractions/go/serialization"),
             new ("ConvertToArrayOfPrimitives", "github.com/microsoft/kiota/abstractions/go/serialization"),
-            // new ("BiConsumer", "java.util.function"),
-            // new ("Map", "java.util"),
-            // new ("HashMap", "java.util"),
-        };
-        private static readonly Tuple<string, string>[] defaultSymbolsForApiClient = new Tuple<string, string>[] { 
-            // new ("ApiClientBuilder", "github.com/microsoft/kiota/abstractions/go"),
-            // new ("SerializationWriterFactoryRegistry", "github.com/microsoft/kiota/abstractions/go/serialization"),
-            // new ("ParseNodeFactoryRegistry", "github.com/microsoft/kiota/abstractions/go/serialization"),
         };
         private static void CorrectMethodType(CodeMethod currentMethod) {
             if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) &&

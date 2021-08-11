@@ -18,9 +18,9 @@ namespace Kiota.Builder.Refiners {
         /// </summary>
         protected void AddSerializationModulesImport(CodeElement generatedCode, string[] serializationWriterFactoryInterfaceAndRegistrationFullName = default, string[] parseNodeFactoryInterfaceAndRegistrationFullName = default) {
             if(serializationWriterFactoryInterfaceAndRegistrationFullName == null)
-                serializationWriterFactoryInterfaceAndRegistrationFullName = new string[] {};
+                serializationWriterFactoryInterfaceAndRegistrationFullName = Array.Empty<string>();
             if(parseNodeFactoryInterfaceAndRegistrationFullName == null)
-                parseNodeFactoryInterfaceAndRegistrationFullName = new string[] {};
+                parseNodeFactoryInterfaceAndRegistrationFullName = Array.Empty<string>();
             if(generatedCode is CodeMethod currentMethod &&
                 currentMethod.IsOfKind(CodeMethodKind.ClientConstructor) &&
                 currentMethod.Parent is CodeClass currentClass &&
@@ -187,8 +187,7 @@ namespace Kiota.Builder.Refiners {
 
             CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement));
         }
-
-        protected static void AddDefaultImports(CodeElement current, Tuple<string, string>[] defaultNamespaces, Tuple<string, string>[] defaultNamespacesForModels, Tuple<string, string>[] defaultNamespacesForRequestBuilders, Tuple<string, string>[] defaultSymbolsForApiClient) {
+        protected static void AddDefaultImports(CodeElement current, Tuple<string, string>[] defaultNamespaces, Tuple<string, string>[] defaultNamespacesForModels, Tuple<string, string>[] defaultNamespacesForRequestBuilders) {
             if(current is CodeClass currentClass) {
                 Func<Tuple<string, string>, CodeUsing> usingSelector = x => {
                                                             var nUsing = new CodeUsing(currentClass) { 
@@ -202,12 +201,10 @@ namespace Kiota.Builder.Refiners {
                                             .Select(usingSelector).ToArray());
                 if(currentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
                     var usingsToAdd = defaultNamespaces.Union(defaultNamespacesForRequestBuilders);
-                    if(currentClass.GetChildElements(true).OfType<CodeMethod>().Any(x => x.IsOfKind(CodeMethodKind.ClientConstructor)))
-                        usingsToAdd = usingsToAdd.Union(defaultSymbolsForApiClient);
                     currentClass.AddUsing(usingsToAdd.Select(usingSelector).ToArray());
                 }
             }
-            CrawlTree(current, c => AddDefaultImports(c, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders, defaultSymbolsForApiClient));
+            CrawlTree(current, c => AddDefaultImports(c, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders));
         }
         private const string binaryType = "binary";
         protected static void ReplaceBinaryByNativeType(CodeElement currentElement, string symbol, string ns, bool addDeclaration = false) {
@@ -357,22 +354,24 @@ namespace Kiota.Builder.Refiners {
         }
         internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName) {
             if(current is CodeClass currentClass) {
-                foreach(var parameter in currentClass.GetChildElements(true).OfType<CodeMethod>().SelectMany(x =>x.Parameters).Where(x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.QueryParameter))) 
-                    foreach(var returnType in parameter.Type.AllTypes) {
-                        var innerClass = returnType.TypeDefinition as CodeClass;
-                        if(innerClass == null)
-                            continue;
-                            
-                        if(prefixClassNameWithParentName && !innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase)) {
-                            innerClass.Name = $"{currentClass.Name}{innerClass.Name}";
-                            innerClass.StartBlock.Name = innerClass.Name;
-                        }
-                        
-                        if(currentClass.FindChildByName<CodeClass>(innerClass.Name) == null) {
-                            currentClass.AddInnerClass(innerClass);
-                        }
-                        (innerClass.StartBlock as Declaration).Inherits = new CodeType(returnType.TypeDefinition) { Name = "QueryParametersBase", IsExternal = true };
+                foreach(var innerClass in currentClass
+                                        .GetChildElements(true)
+                                        .OfType<CodeMethod>()
+                                        .SelectMany(x => x.Parameters)
+                                        .Where(x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.QueryParameter))
+                                        .SelectMany(x => x.Type.AllTypes)
+                                        .Select(x => x.TypeDefinition)
+                                        .OfType<CodeClass>()) {
+                    if(prefixClassNameWithParentName && !innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase)) {
+                        innerClass.Name = $"{currentClass.Name}{innerClass.Name}";
+                        innerClass.StartBlock.Name = innerClass.Name;
                     }
+                    
+                    if(currentClass.FindChildByName<CodeClass>(innerClass.Name) == null) {
+                        currentClass.AddInnerClass(innerClass);
+                    }
+                    (innerClass.StartBlock as Declaration).Inherits = new CodeType(innerClass) { Name = "QueryParametersBase", IsExternal = true };
+                }
             }
             CrawlTree(current, x => AddInnerClasses(x, prefixClassNameWithParentName));
         }
