@@ -203,6 +203,62 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
+        public void WritesTranslatedTypesDeSerializerBody() {
+            var dummyCollectionProp1 = parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = "guidId",
+            }).First();
+            dummyCollectionProp1.Type = new CodeType(dummyCollectionProp1) {
+                Name = "guid",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            };
+            var dummyCollectionProp2 = parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = "dateTime",
+            }).First();
+            dummyCollectionProp2.Type = new CodeType(dummyCollectionProp2) {
+                Name = "date",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            };
+            var dummyCollectionProp3 = parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = "isTrue",
+            }).First();
+            dummyCollectionProp3.Type = new CodeType(dummyCollectionProp3) {
+                Name = "boolean",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            };
+            var dummyCollectionProp4 = parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = "numberTest",
+            }).First();
+            dummyCollectionProp4.Type = new CodeType(dummyCollectionProp4) {
+                Name = "number",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            };
+            var dummyCollectionProp5 = parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = "DatetimeValueType",
+            }).First();
+            dummyCollectionProp5.Type = new CodeType(dummyCollectionProp5) {
+                Name = "dateTimeOffset",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            };
+            var dummyCollectionProp6 = parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = "messages",
+            }).First();
+            dummyCollectionProp6.Type = new CodeType(dummyCollectionProp6) {
+                Name = "NewObjectName",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            };
+            method.MethodKind = CodeMethodKind.Deserializer;
+            method.IsAsync = false;
+            AddSerializationProperties();
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("get_collection_of_primitive_values(String)", result);
+            Assert.Contains("get_collection_of_primitive_values(\"boolean\")", result);
+            Assert.Contains("get_collection_of_primitive_values(Integer)", result);
+            Assert.Contains("get_collection_of_primitive_values(Time)", result);
+            Assert.Contains("get_collection_of_primitive_values(UUIDTools::UUID)", result);
+            Assert.Contains("get_collection_of_primitive_values(NewObjectName)", result);
+        }
+        [Fact]
         public void WritesMethodSyncDescription() {
             
             method.Description = methodDescription;
