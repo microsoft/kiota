@@ -33,29 +33,34 @@ module MicrosoftKiotaSerialization
       Time.parse(@current_node)
     end
 
-    def get_collection_of_primitive_values(_type)
+    def get_collection_of_primitive_values(type)
       @current_node.map do |x|
         current_parse_node = JsonParseNode.new(x)
-        begin
-          date = current_parse_node.get_date_value
-          date
-        rescue ArgumentError
-          begin
-            guid = current_parse_node.get_guid_value
-            guid
-          rescue ArgumentError
-            val = current_parse_node.get_string_value
-            val
-          end
+        case type
+        when String
+          current_parse_node.get_string_value
+        when Float
+          current_parse_node.get_float_value
+        when Integer
+          current_parse_node.get_float_value
+        when "Boolean"
+          current_parse_node.get_float_value
+        when Time
+          current_parse_node.get_date_value
+        when UUIDTools::UUID
+          current_parse_node.get_guid_value
+        else
+          current_parse_node.get_string_value
         end
+      rescue StandardError
+        raise StandardError, `one of these methods - #{type} failed`
       end
     end
 
     def get_collection_of_object_values(type)
       @current_node.map do |x|
         current_parse_node = JsonParseNode.new(x)
-        val = current_parse_node.get_object_value(type)
-        val
+        current_parse_node.get_object_value(type)
       end
     end
 
