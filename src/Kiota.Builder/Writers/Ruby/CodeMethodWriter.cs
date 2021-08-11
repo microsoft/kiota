@@ -197,7 +197,7 @@ namespace Kiota.Builder.Writers.Ruby {
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
-                        return $"get_collection_of_primitive_values({propertyType.ToFirstCharacterUpperCase()})";
+                        return $"get_collection_of_primitive_values({TranslateObjectType(propertyType).ToFirstCharacterUpperCase()})";
                     else
                         return $"get_collection_of_object_values({(propType as CodeType).TypeDefinition.Parent.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase()}::{propertyType.ToFirstCharacterUpperCase()})";
                 else if(currentType.TypeDefinition is CodeEnum currentEnum)
@@ -216,6 +216,18 @@ namespace Kiota.Builder.Writers.Ruby {
                 default:
                     return $"get_object_value({(propType as CodeType).TypeDefinition.Parent.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase()}::{propertyType.ToFirstCharacterUpperCase()})";
             }
+        }
+        private string TranslateObjectType(string typeName)
+        {
+            return (typeName) switch {
+                "string" or "float" or "object" => typeName, 
+                "boolean" => "\"boolean\"",
+                "number" => "Integer",
+                "Guid" => "UUIDTools::UUID",
+                "Date" => "Time",
+                "DateTimeOffset" => "Time",
+                _ => typeName.ToFirstCharacterUpperCase() ?? "object",
+            };
         }
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;

@@ -143,6 +143,17 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             Assert.Contains("return request_info;", result);
         }
         [Fact]
+        public void WritesInheritedDeSerializerBody() {
+            method.MethodKind = CodeMethodKind.Deserializer;
+            method.IsAsync = false;
+            AddSerializationProperties();
+            AddInheritanceClass();
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("super.merge({", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
+        }
+        [Fact]
         public void WritesDeSerializerBody() {
             var parameter = new CodeParameter(method){
                 Description = paramDescription,
@@ -168,7 +179,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             AddInheritanceClass();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("super.serialize", result);
+            Assert.Contains("super", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]

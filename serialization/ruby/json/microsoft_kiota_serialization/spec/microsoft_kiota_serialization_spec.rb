@@ -61,7 +61,7 @@ RSpec.describe MicrosoftKiotaSerialization do
   
   it "can serialize payload" do
     file = File.open("#{File.dirname(__FILE__)}/sample.json")
-    data = file.read #JSON.parse(file.read)
+    data = file.read
     file.close
     message_response = MicrosoftKiotaSerialization::JsonParseNodeFactory.new().get_parse_node("application/json", data)
     object_value = message_response.get_object_value(Files::MessagesResponse)
