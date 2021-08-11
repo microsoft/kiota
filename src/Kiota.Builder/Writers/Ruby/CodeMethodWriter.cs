@@ -217,7 +217,7 @@ namespace Kiota.Builder.Writers.Ruby {
                     return $"get_object_value({(propType as CodeType).TypeDefinition.Parent.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase()}::{propertyType.ToFirstCharacterUpperCase()})";
             }
         }
-        private string TranslateObjectType(string typeName)
+        private static string TranslateObjectType(string typeName)
         {
             return (typeName) switch {
                 "string" or "float" or "object" => typeName, 
