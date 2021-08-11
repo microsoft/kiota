@@ -5,7 +5,8 @@ using System.Text;
 
 namespace Kiota.Builder.Writers.Go {
     public static class GoNamespaceExtensions {
-        public static string GetLastNamespaceSegment(this string nsName) { 
+        public static string GetLastNamespaceSegment(this string nsName) {
+            if(string.IsNullOrEmpty(nsName)) return string.Empty;
             var urlPrefixIndex = nsName.LastIndexOf('/') + 1;
             var tentativeSegment = nsName[urlPrefixIndex..].Split('.', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
             if(string.IsNullOrEmpty(tentativeSegment)) tentativeSegment = nsName.Split('/', StringSplitOptions.RemoveEmptyEntries).Last();

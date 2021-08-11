@@ -6,6 +6,7 @@ namespace Kiota.Builder.Writers.Go {
     {
         public CodeEnumWriter(GoConventionService conventionService) : base(conventionService){}
         public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer) {
+            if(!codeElement.Options.Any()) return;
             if(codeElement?.Parent is CodeNamespace ns)
                 writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment()}");
 
