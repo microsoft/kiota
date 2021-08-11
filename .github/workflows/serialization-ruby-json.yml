@@ -12,7 +12,6 @@ jobs:
   build:
     env:
       relativePath: ./serialization/ruby/json/microsoft_kiota_serialization
-      BUNDLE_HTTPS://RUBYGEMS__PKG__GITHUB__COM/MICROSOFT/: "${{ secrets.PUBLISH_GH_USERNAME }}:${{ secrets.PUBLISH_GH_TOKEN }}"
     strategy:
       fail-fast: false
       matrix:
@@ -25,10 +24,13 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby-version }}
-          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
           bundler: 'latest'
           cache-version: 1
           working-directory: ${{ env.relativePath }}
+      - name: Install dependencies
+        run: |
+         bundle config set --global rubygems.pkg.github.com ${{ github.repository_owner }}:${{secrets.PUBLISH_GH_TOKEN}}
+         bundle install
       - name: Run tests
         run: bundle exec rake
         working-directory: ${{ env.relativePath }}
@@ -54,10 +56,13 @@ jobs:
         with:
            # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
           ruby-version: '3.0'
-          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
           bundler: 'latest'
           cache-version: 1
           working-directory: ${{ env.relativePath }}
+      - name: Install dependencies
+        run: |
+         bundle config set --global rubygems.pkg.github.com ${{ github.repository_owner }}:${{secrets.PUBLISH_GH_TOKEN}}
+         bundle install
       - run: bundle exec rake
         working-directory: ${{ env.relativePath }}
       - name: Publish to GPR
@@ -86,7 +91,10 @@ jobs:
   #       with:
   #          # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
   #         ruby-version: '3.0'
-  #         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+  #     - name: Install dependencies
+  #       run: |
+  #        bundle config set --global rubygems.pkg.github.com ${{ github.repository_owner }}:${{secrets.PUBLISH_GH_TOKEN}}
+  #        bundle install
   #     - run: bundle exec rake
   #     - name: Publish to RubyGems
   #       run: |
