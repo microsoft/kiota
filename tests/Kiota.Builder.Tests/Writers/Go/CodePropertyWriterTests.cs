@@ -45,7 +45,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             property.PropertyKind = CodePropertyKind.Custom;
             writer.Write(property);
             var result = tw.ToString();
-            Assert.Contains($"{propertyName.ToFirstCharacterLowerCase()} *{typeName}", result);
+            Assert.Contains($"{propertyName.ToFirstCharacterUpperCase()} *{typeName}", result);
         }
         // [Fact]
         // public void WritesFlagEnums() {
