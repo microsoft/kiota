@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Ruby JSON serialization #429
+
 ## [0.0.7] - 2021-08-04
 
 ### Added
