@@ -16,7 +16,7 @@ namespace Kiota.Builder {
                     return GetDefaultFileName(currentElement);
             }
         }
-        private string GetDefaultFileName(CodeElement currentElement) => GetLastFileNameSegment(currentElement).ToFirstCharacterLowerCase();
+        private static string GetDefaultFileName(CodeElement currentElement) => GetLastFileNameSegment(currentElement).ToFirstCharacterLowerCase();
         public override string NormalizeNamespaceSegment(string segmentName) => segmentName.ToFirstCharacterLowerCase();
         public override IEnumerable<string> GetAdditionalSegment(CodeElement currentElement, string fileName)
         {

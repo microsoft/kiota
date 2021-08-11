@@ -163,7 +163,8 @@ namespace Kiota.Builder.Refiners {
                 !string.IsNullOrEmpty(currentNS.Name) &&
                 currentNS.Name.Contains('/'))
                     targetNamespace = currentNS.AddNamespace($"{currentNS.Name}.models");
-            if(currentElement.Parent is CodeNamespace parentNS) {
+            if(currentElement.Parent is CodeNamespace parentNS &&
+                targetNamespace != null) {
                 if(currentElement is CodeClass currentClass &&
                     currentClass.IsOfKind(CodeClassKind.Model) &&
                     !currentClass.Name.EndsWith("response", StringComparison.OrdinalIgnoreCase)) {

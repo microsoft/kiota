@@ -19,7 +19,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 IsExternal = false,
             };
             model.AddUsing(nUsing);
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
             Assert.NotEqual("break", nUsing.Declaration.Name);
             Assert.Contains("escaped", nUsing.Declaration.Name);
         }
