@@ -172,7 +172,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             }
             writer.WriteLine(");");
             var isStream = localConventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
-            var genericTypeForSendMethod = GetSendRequestMethodName(isVoid, isStream, returnType);
+            var genericTypeForSendMethod = GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnType);
             var newFactoryParameter = GetTypeFactory(isVoid, isStream, returnType);
             writer.WriteLine($"return this.httpCore?.{genericTypeForSendMethod}(requestInfo,{newFactoryParameter} responseHandler) ?? Promise.reject(new Error('http core is null'));");
         }
@@ -190,8 +190,10 @@ namespace Kiota.Builder.Writers.TypeScript {
             if(requestBodyParam != null) {
                 if(requestBodyParam.Type.Name.Equals(localConventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{requestInfoVarName}.setStreamContent({requestBodyParam.Name});");
-                else
-                    writer.WriteLine($"{requestInfoVarName}.setContentFromParsable({requestBodyParam.Name}, this.{localConventions.HttpCorePropertyName}, \"{codeElement.ContentType}\");");
+                else {
+                    var spreadOperator = requestBodyParam.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
+                    writer.WriteLine($"{requestInfoVarName}.setContentFromParsable(this.{localConventions.HttpCorePropertyName}, \"{codeElement.ContentType}\", {spreadOperator}{requestBodyParam.Name});");
+                }
             }
             if(optionsParam != null)
                 writer.WriteLine($"{optionsParam.Name} && {requestInfoVarName}.addMiddlewareOptions(...{optionsParam.Name});");
@@ -293,14 +295,15 @@ namespace Kiota.Builder.Writers.TypeScript {
                     return $"writeObjectValue<{propertyType.ToFirstCharacterUpperCase()}>";
             }
         }
-        private static string GetTypeFactory(bool isVoid, bool isStream, string returnType) {
+        private string GetTypeFactory(bool isVoid, bool isStream, string returnType) {
             if(isVoid) return string.Empty;
-            else if(isStream) return $" \"{returnType}\",";
-            else return $" {returnType},";
+            else if(isStream || conventions.IsPrimitiveType(returnType)) return $" \"{returnType}\",";
+            else return $" {returnType.StripArraySuffix()},";
         }
-        private static string GetSendRequestMethodName(bool isVoid, bool isStream, string returnType) {
+        private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType) {
             if(isVoid) return "sendNoResponseContentAsync";
-            else if(isStream) return $"sendPrimitiveAsync<{returnType}>";
+            else if(isStream || conventions.IsPrimitiveType(returnType)) return $"sendPrimitiveAsync<{returnType}>";
+            else if(isCollection) return $"sendCollectionAsync<{returnType.StripArraySuffix()}>";
             else return $"sendAsync<{returnType}>";
         }
     }
