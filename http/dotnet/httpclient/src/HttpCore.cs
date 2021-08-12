@@ -35,6 +35,17 @@ namespace Microsoft.Kiota.Http.HttpClient
         }
         /// <summary>Factory to use to get a serializer for payload serialization</summary>
         public ISerializationWriterFactory SerializationWriterFactory { get { return sWriterFactory; } }
+        public async Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = default) where ModelType : IParsable {
+            var response = await GetHttpResponseMessage(requestInfo);
+            requestInfo.Content?.Dispose();
+            if(responseHandler == null) {
+                var rootNode = await GetRootParseNode(response);
+                var result = rootNode.GetCollectionOfObjectValues<ModelType>();
+                return result;
+            }
+            else
+                return await responseHandler.HandleResponseAsync<HttpResponseMessage, IEnumerable<ModelType>>(response);
+        }
         public async Task<ModelType> SendAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = null) where ModelType : IParsable
         {
             var response = await GetHttpResponseMessage(requestInfo);
