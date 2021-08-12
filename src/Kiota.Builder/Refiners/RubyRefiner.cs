@@ -33,7 +33,7 @@ namespace Kiota.Builder.Refiners {
             new ("SerializationWriterFactory", "microsoft_kiota_abstractions"),
         };
         private static readonly Tuple<string, string>[] defaultNamespaces = new Tuple<string, string>[] { 
-            new ("SerializationWriter", "microsoft_kiota_serialization"),
+            new ("SerializationWriter", "microsoft_kiota_abstractions"),
         };
         private static readonly Tuple<string, string>[] defaultNamespacesForModels = new Tuple<string, string>[] { 
             new ("ParseNode", "microsoft_kiota_abstractions"),
@@ -41,8 +41,8 @@ namespace Kiota.Builder.Refiners {
         };
         private static readonly Tuple<string, string>[] defaultSymbolsForApiClient = new Tuple<string, string>[] { 
             new ("ApiClientBuilder", "microsoft_kiota_abstractions"),
-            new ("SerializationWriterFactoryRegistry", "microsoft_kiota_serialization"),
-            new ("ParseNodeFactoryRegistry", "microsoft_kiota_serialization"),
+            new ("SerializationWriterFactoryRegistry", "microsoft_kiota_abstractions"),
+            new ("ParseNodeFactoryRegistry", "microsoft_kiota_abstractions"),
         };
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
