@@ -168,7 +168,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{_requestInfoVarName}.SetStreamContent({requestBodyParam.Name});");
                 else
-                    writer.WriteLine($"{_requestInfoVarName}.SetContentFromParsable({requestBodyParam.Name}, {conventions.HttpCorePropertyName}, \"{codeElement.ContentType}\");");
+                    writer.WriteLine($"{_requestInfoVarName}.SetContentFromParsable({conventions.HttpCorePropertyName}, \"{codeElement.ContentType}\", {requestBodyParam.Name});");
             }
             if(queryStringParam != null) {
                 writer.WriteLine($"if ({queryStringParam.Name} != null) {{");

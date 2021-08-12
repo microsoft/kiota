@@ -69,15 +69,19 @@ namespace Microsoft.Kiota.Abstractions
         /// Sets the request body from a model with the specified content type.
         /// </summary>
         /// <param name="coreService">The core service to get the serialization writer from.</param>
-        /// <param name="item">The model to serialize.</param>
+        /// <param name="items">The models to serialize.</param>
         /// <param name="contentType">The content type to set.</param>
         /// <typeparam name="T">The model type to serialize.</typeparam>
-        public void SetContentFromParsable<T>(T item, IHttpCore coreService, string contentType) where T : IParsable {
+        public void SetContentFromParsable<T>(IHttpCore coreService, string contentType, params T[] items) where T : IParsable {
             if(string.IsNullOrEmpty(contentType)) throw new ArgumentNullException(nameof(contentType));
             if(coreService == null) throw new ArgumentNullException(nameof(coreService));
+            if(items == null || !items.Any()) throw new InvalidOperationException($"{nameof(items)} cannot be null or empty"); 
 
             using var writer = coreService.SerializationWriterFactory.GetSerializationWriter(contentType);
-            writer.WriteObjectValue(null, item);
+            if(items.Count() == 1)
+                writer.WriteObjectValue(null, items[0]);
+            else
+                writer.WriteCollectionOfObjectValues(null, items);
             Headers.Add(contentTypeHeader, contentType);
             Content = writer.GetSerializedContent();
         }
