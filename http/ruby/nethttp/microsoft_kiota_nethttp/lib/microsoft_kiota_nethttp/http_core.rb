@@ -10,7 +10,7 @@ module MicrosoftKiotaNethttp
 
     attr_accessor :authorization_header_key, :content_type_header_key, :parse_node_factory, :serialization_writer_factory, :client
 
-    def initialize(authentication_provider, parse_node_factory = MicrosoftKiotaAbstractions::JsonParseNodeFactory.new(), serialization_writer_factory = MicrosoftKiotaAbstractions::SerializationWriterFactory.new(), client = Net::HTTP)
+    def initialize(authentication_provider, parse_node_factory, serialization_writer_factory, client = Net::HTTP)
       if !authentication_provider
         raise StandardError , 'authentication provider cannot be null'
       end
