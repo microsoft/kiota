@@ -77,6 +77,33 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
         this.sWriterFactory = Objects.requireNonNull(ApiClientBuilder.enableBackingStoreForSerializationWriterFactory(sWriterFactory));
     }
     @Nonnull
+    public <ModelType extends Parsable> CompletableFuture<Iterable<ModelType>> sendCollectionAsync(@Nonnull final RequestInfo requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
+        Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
+
+        return addBearerIfNotPresent(requestInfo).thenCompose(x -> {
+            final HttpCoreCallbackFutureWrapper wrapper = new HttpCoreCallbackFutureWrapper();
+            this.client.newCall(getRequestFromRequestInfo(requestInfo)).enqueue(wrapper);
+            return wrapper.future;
+        }).thenCompose(response -> {
+            if(responseHandler == null) {
+                final ResponseBody body = response.body();
+                try {
+                    try (final InputStream rawInputStream = body.byteStream()) {
+                        final ParseNode rootNode = pNodeFactory.getParseNode(getMediaTypeAndSubType(body.contentType()), rawInputStream);
+                        final Iterable<ModelType> result = rootNode.getCollectionOfObjectValues(targetClass);
+                        return CompletableFuture.completedStage(result);
+                    }
+                } catch(IOException ex) {
+                    return CompletableFuture.failedFuture(new RuntimeException("failed to read the response body", ex));
+                } finally {
+                    response.close();
+                }
+            } else {
+                return responseHandler.handleResponseAsync(response);
+            }
+        });
+    }
+    @Nonnull
     public <ModelType extends Parsable> CompletableFuture<ModelType> sendAsync(@Nonnull final RequestInfo requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
 

@@ -3,6 +3,7 @@ package com.microsoft.kiota;
 import java.net.URI;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Objects;
@@ -71,18 +72,23 @@ public class RequestInfo {
     }
     /**
      * Sets the request body from a model with the specified content type.
-     * @param value the model.
+     * @param values the models.
      * @param contentType the content type.
      * @param httpCore The core service to get the serialization writer from.
      * @param <T> the model type.
      */
-    public <T extends Parsable> void setContentFromParsable(@Nonnull final T value, @Nonnull final HttpCore httpCore, @Nonnull final String contentType) {
+    public <T extends Parsable> void setContentFromParsable(@Nonnull final HttpCore httpCore, @Nonnull final String contentType, @Nonnull final T... values) {
         Objects.requireNonNull(httpCore);
-        Objects.requireNonNull(value);
+        Objects.requireNonNull(values);
         Objects.requireNonNull(contentType);
+        if(values.length == 0) throw new RuntimeException("values cannot be empty");
+
         try(final SerializationWriter writer = httpCore.getSerializationWriterFactory().getSerializationWriter(contentType)) {
             headers.put(contentTypeHeader, contentType);
-            writer.writeObjectValue(null, value);
+            if(values.length == 1) 
+                writer.writeObjectValue(null, values[0]);
+            else
+                writer.writeCollectionOfObjectValues(null, Arrays.asList(values));
             this.content = writer.getSerializedContent();
         } catch (IOException ex) {
             throw new RuntimeException("could not serialize payload", ex);
