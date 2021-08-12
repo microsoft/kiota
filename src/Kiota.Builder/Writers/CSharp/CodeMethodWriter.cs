@@ -151,7 +151,7 @@ namespace Kiota.Builder.Writers.CSharp {
                                                 ?.Name;
             var parametersList = parameters.Select(x => x?.Name).Where(x => x != null).Aggregate((x,y) => $"{x}, {y}");
             writer.WriteLine($"var requestInfo = {generatorMethodName}({parametersList});");
-            writer.WriteLine($"{(isVoid ? string.Empty : "return ")}await HttpCore.{GetSendRequestMethodName(isVoid, isStream, returnType)}(requestInfo, responseHandler);");
+            writer.WriteLine($"{(isVoid ? string.Empty : "return ")}await HttpCore.{GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnType)}(requestInfo, responseHandler);");
         }
         private const string _requestInfoVarName = "requestInfo";
         private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, LanguageWriter writer) {
@@ -199,9 +199,10 @@ namespace Kiota.Builder.Writers.CSharp {
             if(additionalDataProperty != null)
                 writer.WriteLine($"writer.WriteAdditionalData({additionalDataProperty.Name});");
         }
-        private string GetSendRequestMethodName(bool isVoid, bool isStream, string returnType) {
+        private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType) {
             if(isVoid) return "SendNoContentAsync";
             else if(isStream || conventions.IsPrimitiveType(returnType)) return $"SendPrimitiveAsync<{returnType}>";
+            else if(isCollection) return $"SendCollectionAsync<{returnType.StripArraySuffix()}>";
             else return $"SendAsync<{returnType}>";
         }
         private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer) {
@@ -220,14 +221,16 @@ namespace Kiota.Builder.Writers.CSharp {
             var staticModifier = code.IsStatic ? "static " : string.Empty;
             var hideModifier = inherits && code.IsSerializationMethod ? "new " : string.Empty;
             var genericTypePrefix = isVoid ? string.Empty : "<";
-            var genricTypeSuffix = code.IsAsync && !isVoid ? ">": string.Empty;
+            var genericTypeSuffix = code.IsAsync && !isVoid ? ">": string.Empty;
             var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor);
             var asyncPrefix = code.IsAsync ? "async Task" + genericTypePrefix : string.Empty;
             var voidCorrectedTaskReturnType = code.IsAsync && isVoid ? string.Empty : returnType;
+            if(code.ReturnType.IsArray && code.IsOfKind(CodeMethodKind.RequestExecutor))
+                voidCorrectedTaskReturnType = $"IEnumerable<{voidCorrectedTaskReturnType.StripArraySuffix()}>";
             // TODO: Task type should be moved into the refiner
             var completeReturnType = isConstructor ?
                 string.Empty :
-                $"{asyncPrefix}{voidCorrectedTaskReturnType}{genricTypeSuffix} ";
+                $"{asyncPrefix}{voidCorrectedTaskReturnType}{genericTypeSuffix} ";
             var baseSuffix = string.Empty;
             if(isConstructor && inherits)
                 baseSuffix = " : base()";
