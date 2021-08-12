@@ -199,9 +199,9 @@ namespace Kiota.Builder.Writers.CSharp {
             if(additionalDataProperty != null)
                 writer.WriteLine($"writer.WriteAdditionalData({additionalDataProperty.Name});");
         }
-        private static string GetSendRequestMethodName(bool isVoid, bool isStream, string returnType) {
+        private string GetSendRequestMethodName(bool isVoid, bool isStream, string returnType) {
             if(isVoid) return "SendNoContentAsync";
-            else if(isStream) return $"SendPrimitiveAsync<{returnType}>";
+            else if(isStream || conventions.IsPrimitiveType(returnType)) return $"SendPrimitiveAsync<{returnType}>";
             else return $"SendAsync<{returnType}>";
         }
         private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer) {
