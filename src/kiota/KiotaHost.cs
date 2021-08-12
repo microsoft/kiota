@@ -36,7 +36,7 @@ namespace Kiota {
             var descriptionOption = new Option("--openapi", "The path to the OpenAPI description file used to generate the code files.") {Argument = new Argument<string>(() => "openapi.yml")};
             descriptionOption.AddAlias("-d");
 
-            var backingStoreOption = new Option("--backing-store", "The fully qualified name for the backing store class to use.") {Argument = new Argument<string>()};
+            var backingStoreOption = new Option("--backing-store", "Enables backing store for models.") {Argument = new Argument<bool>()};
             backingStoreOption.AddAlias("-b");
 
             var serializerOption = new Option<List<String>>("--serializer", "The fully qualified class names for serializers.") { Argument = new Argument<List<string>>(() => new List<string> {"Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory"}) };
@@ -63,13 +63,13 @@ namespace Kiota {
             if (!string.IsNullOrEmpty(input))
                 assignment.Invoke(Configuration, input);
         }
-        private delegate Task HandleCommandCallDel(string output, GenerationLanguage? language, string openapi, string backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer, List<string> deserializer);
-        private async Task HandleCommandCall(string output, GenerationLanguage? language, string openapi, string backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer, List<string> deserializer) {
+        private delegate Task HandleCommandCallDel(string output, GenerationLanguage? language, string openapi, bool backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer, List<string> deserializer);
+        private async Task HandleCommandCall(string output, GenerationLanguage? language, string openapi, bool backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer, List<string> deserializer) {
             AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
             AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
             AssignIfNotNullOrEmpty(classname, (c, s) => c.ClientClassName = s);
             AssignIfNotNullOrEmpty(namespacename, (c, s) => c.ClientNamespaceName = s);
-            AssignIfNotNullOrEmpty(backingstore, (c, s) => c.BackingStore = s.TrimQuotes()); //npm modules can start with @ which prompts some terminals to read response files and quotes are not automatically trimmed by the framework
+            Configuration.UsesBackingStore = backingstore;
             if (language.HasValue)
                 Configuration.Language = language.Value;
             if(serializer?.Any() ?? false)

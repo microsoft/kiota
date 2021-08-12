@@ -10,7 +10,7 @@
             AddCodeElementWriter(new CodeClassEndWriter(conventionService));
             AddCodeElementWriter(new CodeEnumWriter(conventionService));
             AddCodeElementWriter(new CodeIndexerWriter(conventionService));
-            AddCodeElementWriter(new CodeMethodWriter(conventionService, usesBackingStore));
+            AddCodeElementWriter(new CodeMethodWriter(conventionService));
             AddCodeElementWriter(new CodePropertyWriter(conventionService));
             AddCodeElementWriter(new CodeTypeWriter(conventionService));
 

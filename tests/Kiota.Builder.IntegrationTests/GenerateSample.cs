@@ -11,21 +11,21 @@ namespace Kiota.Builder.integrationtests
         [InlineData(GenerationLanguage.Java, null)]
         [InlineData(GenerationLanguage.TypeScript, null)]
         [InlineData(GenerationLanguage.Ruby, null)]
-        [InlineData(GenerationLanguage.CSharp, "Microsoft.Kiota.Abstractions.Store.InMemoryBackingStore")]
-        [InlineData(GenerationLanguage.Java, "com.microsoft.kiota.store.InMemoryBackingStore")]
-        [InlineData(GenerationLanguage.TypeScript, "@microsoft/kiota-abstractions.InMemoryBackingStore")]
+        [InlineData(GenerationLanguage.CSharp, true)]
+        [InlineData(GenerationLanguage.Java, true)]
+        [InlineData(GenerationLanguage.TypeScript, true)]
         [Theory]
-        public async Task GeneratesTodo(GenerationLanguage language, string backingStore) {
+        public async Task GeneratesTodo(GenerationLanguage language, bool backingStore) {
             var logger = LoggerFactory.Create((builder) => {
             }).CreateLogger<KiotaBuilder>();
 
-            var backingStoreSuffix = string.IsNullOrEmpty(backingStore) ? string.Empty : "BackingStore";
+            var backingStoreSuffix = backingStore ? string.Empty : "BackingStore";
             var configuration = new GenerationConfiguration
             {
                 Language = GenerationLanguage.CSharp,
                 OpenAPIFilePath = "ToDoApi.yaml",
                 OutputPath = $".\\Generated\\{language}{backingStoreSuffix}",
-                BackingStore = backingStore,
+                UsesBackingStore = backingStore,
             };
             await new KiotaBuilder(logger, configuration).GenerateSDK();
         }

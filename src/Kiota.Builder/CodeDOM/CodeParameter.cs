@@ -14,7 +14,8 @@ namespace Kiota.Builder
         HttpCore,
         CurrentPath,
         Options,
-        Serializer
+        Serializer,
+        BackingStore
     }
 
     public class CodeParameter : CodeTerminal, ICloneable, IDocumentedElement
