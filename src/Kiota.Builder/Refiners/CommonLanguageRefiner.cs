@@ -366,7 +366,7 @@ namespace Kiota.Builder.Refiners {
                                     .Distinct();
                 var methodsParametersTypes = methods
                                     .SelectMany(x => x.Parameters)
-                                    .Where(x => x.IsOfKind(CodeParameterKind.Custom))
+                                    .Where(x => x.IsOfKind(CodeParameterKind.Custom, CodeParameterKind.RequestBody))
                                     .Select(x => x.Type)
                                     .Distinct();
                 var indexerTypes = currentClass
