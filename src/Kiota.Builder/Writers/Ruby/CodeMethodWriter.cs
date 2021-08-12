@@ -64,7 +64,7 @@ namespace Kiota.Builder.Writers.Ruby {
             var httpCoreProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
             var httpCoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.HttpCore));
             var httpCorePropertyName = httpCoreProperty.Name.ToSnakeCase();
-            writer.WriteLine($"@{httpCorePropertyName} = {httpCoreParameter.Name}");
+            writer.WriteLine($"@{httpCorePropertyName} = {httpCoreParameter.Name.ToSnakeCase()}");
         }
         private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
             if(inherits)

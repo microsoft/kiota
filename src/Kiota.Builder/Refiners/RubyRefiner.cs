@@ -23,10 +23,6 @@ namespace Kiota.Builder.Refiners {
             AddNamespaceModuleImports(generatedCode , _configuration.ClientNamespaceName);
             FixReferencesToEntityType(generatedCode);
             FixInheritedEntityType(generatedCode);
-            // TODO: add default registration for the factories
-            // ReplaceDefaultSerializationModules(generatedCode, "MicrosoftKiotaSerialization::JsonSerializationWriterFactory");
-            // ReplaceDefaultDeserializationModules(generatedCode, "MicrosoftKiotaSerialization::JsonParseNodeFactory");
-            // AddSerializationModulesImport(generatedCode);
         }
         private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
             new ("HttpCore", "microsoft_kiota_abstractions"),
