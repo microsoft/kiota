@@ -36,7 +36,7 @@ Kiota accepts the following parameters during the generation:
 
 | Name | Shorthand | Required | Description | Accepted values | Default Value |
 | ---- | --------- | -------- | ----------- | --------------- | ------------- |
-| backing-store | b | no | The fully qualified name for the backing store class to use. | A fully qualified class name like `Microsoft.Kiota.Abstractions.Store.InMemoryBackingStore` (CSharp), `com.microsoft.kiota.store.InMemoryBackingStore` (Java), `@microsoft/kiota-abstractions.InMemoryBackingStore` (TypeScript) | Empty string |
+| backing-store | b | no | Enables backing store for models. | Flag. N/A. | false |
 | class-name | c | no | The class name to use the for main entry point | A valid class name according to the target language specification. | ApiClient |
 | deserializer | ds | no | The fully qualified class names for deserializers. | This parameter can be passed multiple values. A module name like `Microsoft.Kiota.Serialization.Json` that implementats `IParseNodeFactory`. | `Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory` (csharp), `@microsoft/kiota-serialization-json.JsonParseNodeFactory` (typescript), `com.microsoft.kiota.serialization.JsonParseNodeFactory` (java) |
 | language | l | no | The programming language to generate the SDK in. | csharp, java, or typescript | csharp |
