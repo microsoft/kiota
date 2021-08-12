@@ -331,7 +331,7 @@ namespace Kiota.Builder.Writers.Go {
                 if(requestBodyParam.Type.Name.Equals("binary", StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{rInfoVarName}.SetStreamContent({requestBodyParam.Name})");
                 else
-                    writer.WriteLine($"{rInfoVarName}.SetContentFromParsable({requestBodyParam.Name}, m.{conventions.HttpCorePropertyName}, \"{codeElement.ContentType}\")");
+                    writer.WriteLine($"{rInfoVarName}.SetContentFromParsable(m.{conventions.HttpCorePropertyName}, \"{codeElement.ContentType}\", {requestBodyParam.Name})");
             if(queryStringParam != null) {
                 var httpMethodPrefix = codeElement.HttpMethod.ToString().ToFirstCharacterUpperCase();
                 writer.WriteLine($"if {queryStringParam.Name} != nil {{");

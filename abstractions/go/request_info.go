@@ -52,11 +52,13 @@ func (request *RequestInfo) SetStreamContent(content []byte) {
 	request.Content = content
 	request.Headers[contentTypeHeader] = binaryContentType
 }
-func (request *RequestInfo) SetContentFromParsable(item s.Parsable, coreService HttpCore, contentType string) error {
+func (request *RequestInfo) SetContentFromParsable(coreService HttpCore, contentType string, items ...s.Parsable) error {
 	if contentType == "" {
 		return errors.New("content type cannot be empty")
 	} else if coreService == nil {
 		return errors.New("coreService cannot be nil")
+	} else if items == nil || len(items) == 0 {
+		return errors.New("items cannot be nil or empty")
 	}
 	factory, err := coreService.GetSerializationWriterFactory()
 	if err != nil {
@@ -71,7 +73,12 @@ func (request *RequestInfo) SetContentFromParsable(item s.Parsable, coreService 
 		return errors.New("writer cannot be nil")
 	}
 	defer writer.Close()
-	writeErr := writer.WriteObjectValue("", item)
+	var writeErr error
+	if len(items) == 1 {
+		writeErr = writer.WriteObjectValue("", items[0])
+	} else {
+		writeErr = writer.WriteCollectionOfObjectValues("", items)
+	}
 	if writeErr != nil {
 		return writeErr
 	}
