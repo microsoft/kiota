@@ -485,6 +485,8 @@ namespace Kiota.Builder
         private static HashSet<string> typeNamesToSkip = new() {"object", "array"};
         private static CodeType GetPrimitiveType(CodeElement parent, OpenApiSchema typeSchema, string childType) {
             var typeNames = new List<string>{typeSchema?.Items?.Type, childType, typeSchema?.Type};
+            if(typeSchema?.AnyOf?.Any() ?? false)
+                typeNames.AddRange(typeSchema.AnyOf.Select(x => x.Type)); // double is sometimes an anyof string, number and enum
             // first value that's not null, and not "object" for primitive collections, the items type matters
             var typeName = typeNames.FirstOrDefault(x => !string.IsNullOrEmpty(x) && !typeNamesToSkip.Contains(x));
            
