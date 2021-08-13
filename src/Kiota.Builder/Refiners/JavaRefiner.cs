@@ -30,7 +30,7 @@ namespace Kiota.Builder.Refiners {
                                                     CodePropertyKind.BackingStore,
                                                 }, _configuration.UsesBackingStore, true);
             AddConstructorsForDefaultValues(generatedCode, true);
-            CorrectCoreTypesForBackingStoreUsings(generatedCode, "com.microsoft.kiota.store", "BackingStoreFactorySingleton.instance.createBackingStore()");
+            CorrectCoreTypesForBackingStore(generatedCode, "com.microsoft.kiota.store", "BackingStoreFactorySingleton.instance.createBackingStore()");
             ReplaceDefaultSerializationModules(generatedCode, "com.microsoft.kiota.serialization.JsonSerializationWriterFactory");
             ReplaceDefaultDeserializationModules(generatedCode, "com.microsoft.kiota.serialization.JsonParseNodeFactory");
             AddSerializationModulesImport(generatedCode);
