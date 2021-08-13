@@ -12,6 +12,8 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         private readonly LanguageWriter writer;
         private readonly CodeProperty property;
         private readonly CodeClass parentClass;
+        private readonly CodeClass EmptyClass;
+        private readonly CodeProperty emptyProperty;
         private const string propertyName = "propertyName";
         private const string propertyDescription = "some description";
         private const string typeName = "Somecustomtype";
@@ -20,6 +22,18 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Ruby, defaultPath, defaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
+            var emptyRoot = CodeNamespace.InitRootNamespace();
+            EmptyClass = new CodeClass(emptyRoot) {
+                Name = "emptyClass"
+            };
+            emptyProperty = new CodeProperty(EmptyClass) {
+                Name = propertyName,
+            };
+            emptyProperty.Type = new CodeType(emptyProperty) {
+                Name = typeName
+            };
+            EmptyClass.AddProperty(emptyProperty);
+            
             var root = CodeNamespace.InitRootNamespace();
             root.Name = rootNamespaceName;
             parentClass = new CodeClass(root) {
@@ -39,13 +53,25 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             tw?.Dispose();
         }
         [Fact]
-        public void WritesRequestBuilder() {property.PropertyKind = CodePropertyKind.RequestBuilder;
+        public void WritesRequestBuilder() {
+            property.PropertyKind = CodePropertyKind.RequestBuilder;
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains($"def {propertyName.ToSnakeCase()}", result);
             Assert.Contains($"{rootNamespaceName}::{typeName}.new", result);
             Assert.Contains("http_core", result);
             Assert.Contains("path_segment", result);
+        }
+        [Fact]
+        public void WritesRequestBuilderWithoutNamespace() {
+            emptyProperty.PropertyKind = CodePropertyKind.RequestBuilder;
+            writer.Write(emptyProperty);
+            var result = tw.ToString();
+            Assert.Contains($"def {propertyName.ToSnakeCase()}", result);
+            Assert.Contains($"{typeName}.new", result);
+            Assert.Contains("http_core", result);
+            Assert.Contains("path_segment", result);
+            Assert.DoesNotContain($"::{typeName}.new", result);
         }
         [Fact]
         public void WritesCustomProperty() {
