@@ -12,6 +12,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeMethod method;
+        private readonly CodeMethod voidMethod;
         private readonly CodeClass parentClass;
         private const string methodName = "methodName";
         private const string returnTypeName = "Somecustomtype";
@@ -34,6 +35,13 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             method.ReturnType = new CodeType(method) {
                 Name = returnTypeName
             };
+            voidMethod = new CodeMethod(parentClass) {
+                Name = methodName,
+            };
+            voidMethod.ReturnType = new CodeType(voidMethod) {
+                Name = "void"
+            };
+            parentClass.AddMethod(voidMethod);
             parentClass.AddMethod(method);
         }
         public void Dispose()
@@ -111,6 +119,31 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
                 Type = stringType,
             });
         }
+        private void AddVoidRequestBodyParameters() {
+            var stringType = new CodeType(voidMethod) {
+                Name = "string",
+            };
+            voidMethod.AddParameter(new CodeParameter(voidMethod) {
+                Name = "h",
+                ParameterKind = CodeParameterKind.Headers,
+                Type = stringType,
+            });
+            voidMethod.AddParameter(new CodeParameter(voidMethod){
+                Name = "q",
+                ParameterKind = CodeParameterKind.QueryParameter,
+                Type = stringType,
+            });
+            voidMethod.AddParameter(new CodeParameter(voidMethod){
+                Name = "b",
+                ParameterKind = CodeParameterKind.RequestBody,
+                Type = stringType,
+            });
+            voidMethod.AddParameter(new CodeParameter(voidMethod){
+                Name = "r",
+                ParameterKind = CodeParameterKind.ResponseHandler,
+                Type = stringType,
+            });
+        }
         [Fact]
         public void WritesRequestBodiesThrowOnNullHttpMethod() {
             method.MethodKind = CodeMethodKind.RequestExecutor;
@@ -127,6 +160,18 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             var result = tw.ToString();
             Assert.Contains("request_info", result);
             Assert.Contains("send_async", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
+        }
+        [Fact]
+        public void WritesRequestExecutorBodyWithNamespace() {
+            voidMethod.MethodKind = CodeMethodKind.RequestExecutor;
+            voidMethod.HttpMethod = HttpMethod.Get;
+            AddVoidRequestBodyParameters();
+            writer.Write(voidMethod);
+            var result = tw.ToString();
+            Assert.Contains("request_info", result);
+            Assert.Contains("send_async", result);
+            Assert.Contains("nil", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
