@@ -11,7 +11,7 @@ namespace Microsoft.Kiota.Abstractions {
         /// <summary>
         ///  Enables the backing store proxies for the SerializationWriters and ParseNodes in use.
         /// </summary>
-        /// <param name="backingStore">The backing store factory to use.</param>
+        /// <param name="backingStoreFactory">The backing store factory to use.</param>
         void EnableBackingStore(IBackingStoreFactory backingStoreFactory);
         /// <summary>
         /// Gets the serialization writer factory currently in use for the HTTP core service.

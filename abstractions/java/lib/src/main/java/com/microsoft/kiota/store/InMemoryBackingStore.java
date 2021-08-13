@@ -2,6 +2,8 @@ package com.microsoft.kiota.store;
 
 import java.lang.ClassCastException;
 
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Objects;
@@ -44,6 +46,17 @@ public class InMemoryBackingStore implements BackingStore {
 
             if(value != null) {
                 result.put(entry.getKey(), wrapper.getValue1());
+            }
+        }
+        return result;
+    }
+    public Iterable<String> enumerateKeysForValuesChangedToNull() {
+        final List<String> result = new ArrayList<>();
+        for(final Map.Entry<String, Pair<Boolean, Object>> entry : this.store.entrySet()) {
+            final Pair<Boolean, Object> wrapper = entry.getValue();
+            final Object value = wrapper.getValue1();
+            if(value == null && wrapper.getValue0()) {
+                result.add(entry.getKey());
             }
         }
         return result;

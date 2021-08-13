@@ -9,7 +9,7 @@ namespace Kiota.Builder.Writers.Java
             AddCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
             AddCodeElementWriter(new CodeClassEndWriter());
             AddCodeElementWriter(new CodeEnumWriter(conventionService));
-            AddCodeElementWriter(new CodeMethodWriter(conventionService, usesBackingStore));
+            AddCodeElementWriter(new CodeMethodWriter(conventionService));
             AddCodeElementWriter(new CodePropertyWriter(conventionService));
             AddCodeElementWriter(new CodeTypeWriter(conventionService));
         }

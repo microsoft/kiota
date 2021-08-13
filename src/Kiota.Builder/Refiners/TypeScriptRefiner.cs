@@ -11,7 +11,7 @@ namespace Kiota.Builder.Refiners {
             AddDefaultImports(generatedCode, Array.Empty<Tuple<string, string>>(), defaultNamespacesForModels, defaultNamespacesForRequestBuilders, defaultSymbolsForApiClient);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, "ById");
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
-            CorrectCoreTypesForBackingStoreUsings(generatedCode, "@microsoft/kiota-abstractions");
+            CorrectCoreTypesForBackingStoreUsings(generatedCode, "@microsoft/kiota-abstractions", null); //TODO
             FixReferencesToEntityType(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
             AddParsableInheritanceForModelClasses(generatedCode);

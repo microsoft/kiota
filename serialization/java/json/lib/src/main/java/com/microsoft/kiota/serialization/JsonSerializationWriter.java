@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -153,6 +154,9 @@ public class JsonSerializationWriter implements SerializationWriter {
                     onBeforeObjectSerialization.accept(value);
                 }
                 writer.beginObject();
+                if(onStartObjectSerialization != null) {
+                    onStartObjectSerialization.accept(value, this);
+                }
                 value.serialize(this);
                 writer.endObject();
                 if(onAfterObjectSerialization != null) {
@@ -174,6 +178,16 @@ public class JsonSerializationWriter implements SerializationWriter {
     public <T extends Enum<T>> void writeEnumValue(@Nullable final String key, @Nullable final T value) {
         if(value != null) {
             this.writeStringValue(key, getStringValueFromValuedEnum(value));
+        }
+    }
+    public void writeNullValue(@Nullable final String key) {
+        try {
+            if(key != null && !key.isEmpty()) {
+                writer.name(key);
+            }
+            writer.nullValue();
+        } catch (IOException ex) {
+            throw new RuntimeException("could not serialize value", ex);
         }
     }
     private <T extends Enum<T>> String getStringValueFromValuedEnum(final T value) {
@@ -242,6 +256,8 @@ public class JsonSerializationWriter implements SerializationWriter {
                     this.writeCollectionOfPrimitiveValues(key, (Iterable<?>)value);
                 else if(!valueClass.isPrimitive())
                     this.writeNonParsableObject(key, value);
+                else if(value == null)
+                    this.writeNullValue(key);
                 else
                     throw new RuntimeException("unknown type to serialize " + valueClass.getName());
             }
@@ -255,6 +271,9 @@ public class JsonSerializationWriter implements SerializationWriter {
     public Consumer<Parsable> getOnAfterObjectSerialization() {
         return this.onAfterObjectSerialization;
     }
+    public BiConsumer<Parsable, SerializationWriter> getOnStartObjectSerialization() {
+        return this.onStartObjectSerialization;
+    }
     private Consumer<Parsable> onBeforeObjectSerialization;
     public void setOnBeforeObjectSerialization(final Consumer<Parsable> value) {
         this.onBeforeObjectSerialization = value;
@@ -262,5 +281,9 @@ public class JsonSerializationWriter implements SerializationWriter {
     private Consumer<Parsable> onAfterObjectSerialization;
     public void setOnAfterObjectSerialization(final Consumer<Parsable> value) {
         this.onAfterObjectSerialization = value;
+    }
+    private BiConsumer<Parsable, SerializationWriter> onStartObjectSerialization;
+    public void setOnStartObjectSerialization(final BiConsumer<Parsable, SerializationWriter> value) {
+        this.onStartObjectSerialization = value;
     }
 }
