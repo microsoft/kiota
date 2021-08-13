@@ -7,7 +7,7 @@ gemspec
 git_source(:github) { |repo_name| 'https://rubygems.pkg.github.com/microsoft' }
 
 source 'https://rubygems.pkg.github.com/microsoft' do
-  gem 'microsoft_kiota_abstractions', '0.1.1'
+  gem 'microsoft_kiota_abstractions', '0.1.3'
 end
 
 gem 'rake', '~> 13.0'
@@ -15,7 +15,5 @@ gem 'rake', '~> 13.0'
 gem 'rspec', '~> 3.0'
 
 gem 'rubocop', require: false
-
-gem 'uuidtools'
 
 gem 'concurrent-ruby', '~> 1.1', '>= 1.1.9'

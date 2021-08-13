@@ -14,6 +14,7 @@ module MicrosoftKiotaNethttp
       if !authentication_provider
         raise StandardError , 'authentication provider cannot be null'
       end
+      @authentication_provider = authentication_provider
       @authorization_header_key = 'Authorization'
       @content_type_header_key = 'Content-Type'
       @parse_node_factory = parse_node_factory
@@ -21,10 +22,11 @@ module MicrosoftKiotaNethttp
       @client = client
     end
 
-    def sendAsync(request_info, type, response_handler)
+    def send_async(request_info, type, response_handler)
       if !request_info
         raise StandardError, 'requestInfo cannot be null'
       end
+
       self.await.add_bearer_if_not_present(request_info)
       uri = request_info.uri
       http = @client.new(uri.host, uri.port)
@@ -51,21 +53,20 @@ module MicrosoftKiotaNethttp
         raise StandardError, 'uri cannot be null'
       end
       if !request_info.headers.has_key?(@authorization_header_key) 
-        return self.authentication_provider.await.get_authorization_token(request_info.URI)
-        token = self.authentication_provider.await.get_authorization_token(request_info.URI)
+        token = @authentication_provider.await.get_authorization_token(request_info.uri).value
         if !token
           raise StandardError, 'Could not get an authorization token'
         end
         if !request_info.headers
           request_info.headers Hash.new()
         end
-        request_info.headers[@authorization_header_key] = `Bearer #{token}`
+        request_info.headers[@authorization_header_key] = 'Bearer ' + token
       end
     end
 
     def get_request_from_request_info(request_info)
       #TODO Add swtich using reequest_info.http_method for the different types of requests
-      request = @client::Get.new(uri.request_uri)
+      request = @client::Get.new(request_info.uri.request_uri)
       if request_info.headers.instance_of? Hash
         request_info.headers.select{|k,v| request[k] = v }
       end
