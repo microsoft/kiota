@@ -25,7 +25,7 @@ namespace Kiota.Builder.Writers.Ruby {
         }
         public string GetParameterSignature(CodeParameter parameter)
         {
-            return $"{parameter.Name}";
+            return $"{parameter.Name}{(parameter.Optional ? "=nil" : string.Empty)}";
         }
         public string GetTypeString(CodeTypeBase code)
         {

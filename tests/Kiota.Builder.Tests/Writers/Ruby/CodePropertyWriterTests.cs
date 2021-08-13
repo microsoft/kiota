@@ -15,11 +15,13 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         private const string propertyName = "propertyName";
         private const string propertyDescription = "some description";
         private const string typeName = "Somecustomtype";
+        private const string rootNamespaceName = "RootNamespace";
         public CodePropertyWriterTests() {
             writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Ruby, defaultPath, defaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
+            root.Name = rootNamespaceName;
             parentClass = new CodeClass(root) {
                 Name = "parentClass"
             };
@@ -28,7 +30,8 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
                 Name = propertyName,
             };
             property.Type = new CodeType(property) {
-                Name = typeName
+                Name = typeName,
+                TypeDefinition = parentClass
             };
             parentClass.AddProperty(property);
         }
@@ -40,7 +43,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains($"def {propertyName.ToSnakeCase()}", result);
-            Assert.Contains($"{typeName}.new", result);
+            Assert.Contains($"{rootNamespaceName}::{typeName}.new", result);
             Assert.Contains("http_core", result);
             Assert.Contains("path_segment", result);
         }

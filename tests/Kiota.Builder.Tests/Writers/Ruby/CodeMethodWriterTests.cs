@@ -136,7 +136,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("request_info = RequestInfo.new", result);
+            Assert.Contains("request_info = MicrosoftKiotaAbstractions::RequestInfo.new()", result);
             Assert.Contains("http_method = :GET", result);
             Assert.Contains("set_query_string_parameters_from_raw_object", result);
             Assert.Contains("set_content_from_parsable", result);
@@ -306,6 +306,18 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("@some_property", result);
+        }
+        [Fact]
+        public void WritesIndexer() {
+            method.MethodKind = CodeMethodKind.IndexerBackwardCompatibility;
+            method.PathSegment = "somePath";
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("http_core", result);
+            Assert.Contains("path_segment", result);
+            Assert.Contains("+ id", result);
+            Assert.Contains("return Somecustomtype.new", result);
+            Assert.Contains(method.PathSegment, result);
         }
         [Fact]
         public void WritesSetterToField() {

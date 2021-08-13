@@ -9,6 +9,7 @@ namespace Kiota.Builder.Refiners {
         public RubyRefiner(GenerationConfiguration configuration) : base(configuration) {}
         public override void Refine(CodeNamespace generatedCode)
         {
+            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, "_by_id");
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddParsableInheritanceForModelClasses(generatedCode);
             AddInheritedAndMethodTypesImports(generatedCode);
