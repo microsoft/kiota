@@ -1,6 +1,7 @@
 package com.microsoft.kiota;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.List;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -27,6 +28,15 @@ public interface HttpCore {
      * @return a {@link CompletableFuture} with the deserialized response model.
      */
     <ModelType extends Parsable> CompletableFuture<ModelType> sendAsync(@Nonnull final RequestInfo requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler);
+    /**
+     * Excutes the HTTP request specified by the given RequestInfo and returns the deserialized response model collection.
+     * @param requestInfo the request info to execute.
+     * @param responseHandler The response handler to use for the HTTP request instead of the default handler.
+     * @param targetClass the class of the response model to deserialize the response into.
+     * @param <ModelType> the type of the response model to deserialize the response into.
+     * @return a {@link CompletableFuture} with the deserialized response model collection.
+     */
+    <ModelType extends Parsable> CompletableFuture<Iterable<ModelType>> sendCollectionAsync(@Nonnull final RequestInfo requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler);
     /**
      * Excutes the HTTP request specified by the given RequestInfo and returns the deserialized primitive response model.
      * @param requestInfo the request info to execute.
