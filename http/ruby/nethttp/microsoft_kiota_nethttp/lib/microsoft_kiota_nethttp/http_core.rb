@@ -9,7 +9,8 @@ module MicrosoftKiotaNethttp
     include Concurrent::Async
 
     attr_accessor :authorization_header_key, :content_type_header_key, :parse_node_factory, :serialization_writer_factory, :client
-
+    
+    # TODO: When #478 is implemented then parse_node_factory and serialization_writer_factory should default to nil
     def initialize(authentication_provider, parse_node_factory, serialization_writer_factory, client = Net::HTTP)
       if !authentication_provider
         raise StandardError , 'authentication provider cannot be null'
@@ -17,7 +18,8 @@ module MicrosoftKiotaNethttp
       @authentication_provider = authentication_provider
       @authorization_header_key = 'Authorization'
       @content_type_header_key = 'Content-Type'
-      @parse_node_factory = parse_node_factory
+      # TODO: When #478 is implemented get the static factories if @parse_node_factory and @serialization_writer_factory are nil
+      @parse_node_factory = parse_node_factory 
       @serialization_writer_factory = serialization_writer_factory 
       @client = client
     end
@@ -65,11 +67,12 @@ module MicrosoftKiotaNethttp
     end
 
     def get_request_from_request_info(request_info)
-      #TODO Add swtich using reequest_info.http_method for the different types of requests
+      # TODO: Add switch case for other request types (GET, POST, ...)
       request = @client::Get.new(request_info.uri.request_uri)
       if request_info.headers.instance_of? Hash
         request_info.headers.select{|k,v| request[k] = v }
       end
+      # TODO: Add request Body depending on request types
       request
     end
 
