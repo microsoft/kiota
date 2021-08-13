@@ -5,7 +5,7 @@ module MicrosoftKiotaAbstractions
   module HttpCore
     include ResponseHandler
 
-    def sendAsync(request_info=RequestInfo.new, type, response_handler=ResponseHandler)
+    def sendAsync(request_info, type, response_handler)
       raise NotImplementedError.new
     end
 
