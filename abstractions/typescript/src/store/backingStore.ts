@@ -21,6 +21,11 @@ export interface BackingStore {
     */
     enumerate(): {key: string, value: unknown}[];
     /**
+    * Enumerates the keys for all values that changed to null.
+    * @return The keys for the values that changed to null.
+    */
+    enumerateKeysForValuesChangedToNull(): string[];
+    /**
     * Creates a subscription to any data change happening.
     * @param callback Callback to be invoked on data changes where the first parameter is the data key, the second the previous value and the third the new value.
     * @param subscriptionId The subscription Id to use.

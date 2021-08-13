@@ -11,7 +11,7 @@ namespace Kiota.Builder.Refiners {
             AddDefaultImports(generatedCode, Array.Empty<Tuple<string, string>>(), defaultNamespacesForModels, defaultNamespacesForRequestBuilders, defaultSymbolsForApiClient);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, "ById");
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
-            CorrectCoreTypesForBackingStore(generatedCode, "@microsoft/kiota-abstractions", null); //TODO
+            CorrectCoreTypesForBackingStore(generatedCode, "@microsoft/kiota-abstractions", "BackingStoreFactorySingleton.instance.createBackingStore()");
             FixReferencesToEntityType(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
             AddParsableInheritanceForModelClasses(generatedCode);
@@ -79,7 +79,7 @@ namespace Kiota.Builder.Refiners {
             else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer))
                 currentMethod.ReturnType.Name = $"Map<string, (item: T, node: ParseNode) => void>";
             else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore))
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore, CodeParameterKind.BackingStore))
                     .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                     .ToList()
                     .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"

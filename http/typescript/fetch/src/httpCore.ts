@@ -1,4 +1,4 @@
-import { AuthenticationProvider, HttpCore as IHttpCore, Parsable, ParseNodeFactory, RequestInfo, ResponseHandler, ParseNodeFactoryRegistry, enableBackingStoreForParseNodeFactory, SerializationWriterFactoryRegistry, enableBackingStoreForSerializationWriterFactory, SerializationWriterFactory } from '@microsoft/kiota-abstractions';
+import { AuthenticationProvider, BackingStoreFactory, BackingStoreFactorySingleton, HttpCore as IHttpCore, Parsable, ParseNodeFactory, RequestInfo, ResponseHandler, ParseNodeFactoryRegistry, enableBackingStoreForParseNodeFactory, SerializationWriterFactoryRegistry, enableBackingStoreForSerializationWriterFactory, SerializationWriterFactory } from '@microsoft/kiota-abstractions';
 import { Headers as FetchHeadersCtor } from 'cross-fetch';
 import { ReadableStream } from 'web-streams-polyfill';
 import { URLSearchParams } from 'url';
@@ -138,11 +138,14 @@ export class HttpCore implements IHttpCore {
             return await responseHandler.handleResponseAsync(response);
         }
     }
-    public enableBackingStore = (): void => {
+    public enableBackingStore = (backingStoreFactory?: BackingStoreFactory | undefined): void => {
         this.parseNodeFactory = enableBackingStoreForParseNodeFactory(this.parseNodeFactory);
         this.serializationWriterFactory = enableBackingStoreForSerializationWriterFactory(this.serializationWriterFactory);
         if(!this.serializationWriterFactory || !this.parseNodeFactory)
             throw new Error("unable to enable backing store");
+        if(backingStoreFactory) {
+            BackingStoreFactorySingleton.instance = backingStoreFactory;
+        }
     }
     private addBearerIfNotPresent = async (requestInfo: RequestInfo): Promise<void> => {
         if(!requestInfo.URI) {

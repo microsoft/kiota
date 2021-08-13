@@ -374,7 +374,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
                 IsExternal = true,
             };
             method.AddParameter(backingStoreParam);
-            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, defaultPath, defaultName, true);
+            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, defaultPath, defaultName);
             tempWriter.SetTextWriter(tw);
             tempWriter.Write(method);
             var result = tw.ToString();

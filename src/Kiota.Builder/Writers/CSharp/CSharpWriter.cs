@@ -2,7 +2,7 @@
 {
     public class CSharpWriter : LanguageWriter
     {
-        public CSharpWriter(string rootPath, string clientNamespaceName, bool usesBackingStore)
+        public CSharpWriter(string rootPath, string clientNamespaceName)
         {
             PathSegmenter = new CSharpPathSegmenter(rootPath, clientNamespaceName);
             var conventionService = new CSharpConventionService();

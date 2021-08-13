@@ -7,6 +7,7 @@ export class JsonSerializationWriter implements SerializationWriter {
     private static propertySeparator = `,`;
     public onBeforeObjectSerialization: ((value: Parsable) => void) | undefined;
     public onAfterObjectSerialization: ((value: Parsable) => void) | undefined;
+    public onStartObjectSerialization: ((value: Parsable, writer: SerializationWriter) => void) | undefined;
     public writeStringValue = (key?: string, value?: string): void => {
         key && value && this.writePropertyName(key);
         value && this.writer.push(`"${value}"`);
@@ -34,6 +35,11 @@ export class JsonSerializationWriter implements SerializationWriter {
         key && value && this.writePropertyName(key);
         value && this.writer.push(`"${value.toISOString()}"`);
         key && value && this.writer.push(JsonSerializationWriter.propertySeparator);
+    }
+    public writeNullValue = (key?: string): void => {
+        key && this.writePropertyName(key);
+        this.writer.push(`null`);
+        key && this.writer.push(JsonSerializationWriter.propertySeparator);
     }
     public writeCollectionOfPrimitiveValues = <T>(key?: string, values?: T[]): void => {
         if(values) {
@@ -67,8 +73,9 @@ export class JsonSerializationWriter implements SerializationWriter {
             if(key) {
                 this.writePropertyName(key);
             }
-            this.writer.push(`{`);
             this.onBeforeObjectSerialization && this.onBeforeObjectSerialization(value);
+            this.writer.push(`{`);
+            this.onStartObjectSerialization && this.onStartObjectSerialization(value, this);
             value.serialize(this);
             this.onAfterObjectSerialization && this.onAfterObjectSerialization(value);
             if(this.writer.length > 0 && this.writer[this.writer.length - 1] === JsonSerializationWriter.propertySeparator) { //removing the last separator
@@ -110,7 +117,9 @@ export class JsonSerializationWriter implements SerializationWriter {
     private writeAnyValue = (key?: string | undefined, value?: unknown | undefined) : void => {
         if(value) {
             const valueType = typeof value;
-            if(valueType === "boolean") {
+            if(!value) {
+                this.writeNullValue(key);
+            }else if(valueType === "boolean") {
                 this.writeBooleanValue(key, value as any as boolean);
             } else if (valueType === "string") {
                 this.writeStringValue(key, value as any as string);

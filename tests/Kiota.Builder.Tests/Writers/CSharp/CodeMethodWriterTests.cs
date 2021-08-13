@@ -390,7 +390,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
                 IsExternal = true,
             };
             method.AddParameter(backingStoreParam);
-            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, defaultPath, defaultName, true);
+            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, defaultPath, defaultName);
             tempWriter.SetTextWriter(tw);
             tempWriter.Write(method);
             var result = tw.ToString();

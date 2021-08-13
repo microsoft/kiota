@@ -2,7 +2,7 @@ namespace Kiota.Builder.Writers.Java
 {
     public class JavaWriter : LanguageWriter
     {
-        public JavaWriter(string rootPath, string clientNamespaceName, bool usesBackingStore)
+        public JavaWriter(string rootPath, string clientNamespaceName)
         {
             PathSegmenter = new JavaPathSegmenter(rootPath, clientNamespaceName);
             var conventionService = new JavaConventionService();

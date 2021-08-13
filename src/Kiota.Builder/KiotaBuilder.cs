@@ -199,7 +199,7 @@ namespace Kiota.Builder
 
         public async Task CreateLanguageSourceFilesAsync(GenerationLanguage language, CodeNamespace generatedCode)
         {
-            var languageWriter = LanguageWriter.GetLanguageWriter(language, this.config.OutputPath, this.config.ClientNamespaceName, this.config.UsesBackingStore);
+            var languageWriter = LanguageWriter.GetLanguageWriter(language, this.config.OutputPath, this.config.ClientNamespaceName);
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             var shouldWriteNamespaceIndices = language == GenerationLanguage.Ruby;
