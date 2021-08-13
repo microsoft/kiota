@@ -136,6 +136,17 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
+        public void WritesRequestExecutorBodyForCollections() {
+            method.MethodKind = CodeMethodKind.RequestExecutor;
+            method.HttpMethod = HttpMethod.Get;
+            method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
+            AddRequestBodyParameters();
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("sendCollectionAsync", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
+        }
+        [Fact]
         public void WritesRequestGeneratorBody() {
             method.MethodKind = CodeMethodKind.RequestGenerator;
             method.HttpMethod = HttpMethod.Get;

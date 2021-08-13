@@ -66,6 +66,11 @@ namespace Kiota.Builder.Writers.CSharp {
                 default: return typeName?.ToFirstCharacterUpperCase() ?? "object";
             }
         }
+        public bool IsPrimitiveType(string typeName) {
+            return !string.IsNullOrEmpty(typeName) &&
+                        (NullableTypes.Contains(typeName) ||
+                        "string".Equals(typeName, StringComparison.OrdinalIgnoreCase));
+        }
         public string GetParameterSignature(CodeParameter parameter)
         {
             var parameterType = GetTypeString(parameter.Type);

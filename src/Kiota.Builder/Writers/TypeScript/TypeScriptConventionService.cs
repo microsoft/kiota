@@ -90,7 +90,12 @@ namespace Kiota.Builder.Writers.TypeScript {
                 _ => typeName.ToFirstCharacterUpperCase() ?? "object",
             };
         }
-
+        public bool IsPrimitiveType(string typeName) {
+            return typeName switch {
+                ("number" or "string" or "byte[]" or "boolean" or "void") => true,
+                _ => false,
+            };
+        }
         internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
         public void WriteShortDescription(string description, LanguageWriter writer)
         {
