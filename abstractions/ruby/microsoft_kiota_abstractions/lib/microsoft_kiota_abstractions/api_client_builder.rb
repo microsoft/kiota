@@ -5,10 +5,6 @@ require_relative "serialization/serialization_writer_factory_registry"
 
 module MicrosoftKiotaAbstractions
     module ApiClientBuilder
-  
-      def get_authorization_token(request_url)
-        raise NotImplementedError.new
-      end
 
       #TODO: Implement default de/serializer registration in the api_client generation issue #478
       def register_default_serializer(factory_class)
