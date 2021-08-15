@@ -36,18 +36,22 @@ export class RequestInfo {
     private static contentTypeHeader = "Content-Type";
     /**
      * Sets the request body from a model with the specified content type.
-     * @param value the model.
+     * @param values the models.
      * @param contentType the content type.
      * @param httpCore The core service to get the serialization writer from.
      * @typeParam T the model type.
      */
-    public setContentFromParsable = <T extends Parsable>(value?: T | undefined, httpCore?: HttpCore | undefined, contentType?: string | undefined): void => {
+    public setContentFromParsable = <T extends Parsable>(httpCore?: HttpCore | undefined, contentType?: string | undefined, ...values: T[]): void => {
         if(!httpCore) throw new Error("httpCore cannot be undefined");
         if(!contentType) throw new Error("contentType cannot be undefined");
+        if(!values || values.length === 0) throw new Error("values cannot be undefined or empty");
 
         const writer = httpCore.getSerializationWriterFactory().getSerializationWriter(contentType);
         this.headers.set(RequestInfo.contentTypeHeader, contentType);
-        writer.writeObjectValue(undefined, value);
+        if(values.length === 1) 
+            writer.writeObjectValue(undefined, values[0]);
+        else
+            writer.writeCollectionOfObjectValues(undefined, values);
         this.content = writer.getSerializedContent();
     }
     /**

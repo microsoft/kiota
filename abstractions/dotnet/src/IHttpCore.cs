@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Kiota.Abstractions.Serialization;
 
@@ -21,6 +22,13 @@ namespace Microsoft.Kiota.Abstractions {
         /// <param name="responseHandler">The response handler to use for the HTTP request instead of the default handler.</param>
         /// <returns>The deserialized response model.</returns>
         Task<ModelType> SendAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = default) where ModelType : IParsable;
+        /// <summary>
+        /// Excutes the HTTP request specified by the given RequestInfo and returns the deserialized response model collection.
+        /// </summary>
+        /// <param name="requestInfo">The RequestInfo object to use for the HTTP request.</param>
+        /// <param name="responseHandler">The response handler to use for the HTTP request instead of the default handler.</param>
+        /// <returns>The deserialized response model collection.</returns>
+        Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = default) where ModelType : IParsable;
         /// <summary>
         /// Excutes the HTTP request specified by the given RequestInfo and returns the deserialized primitive response model.
         /// </summary>

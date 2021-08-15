@@ -19,6 +19,6 @@ module MicrosoftKiotaAbstractions
         raise Exception.new "Content type #{contentType} does not have a factory to be serialized"
       end
     end
-
+    
   end
 end

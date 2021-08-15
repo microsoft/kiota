@@ -68,7 +68,7 @@ namespace Kiota.Builder.Writers.Ruby {
         }
         private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
             if(inherits)
-                writer.WriteLine("super()");
+                writer.WriteLine("super");
             foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
                                                                             CodePropertyKind.RequestBuilder,
                                                                             CodePropertyKind.PathSegment)
@@ -99,13 +99,19 @@ namespace Kiota.Builder.Writers.Ruby {
             writer.WriteLine($"return @{codeElement.AccessedProperty?.Name?.ToSnakeCase()}");
         }
         private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer) {
-            writer.WriteLine($"return {{");
+            if((parentClass.StartBlock as CodeClass.Declaration).Inherits != null)
+                writer.WriteLine("return super.merge({");
+            else
+                writer.WriteLine($"return {{");
             writer.IncreaseIndent();
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
-                writer.WriteLine($"\"{otherProp.SerializationName ?? otherProp.Name.ToSnakeCase()}\" => lambda {{|o, n| o.{otherProp.Name.ToSnakeCase()} = n.{GetDeserializationMethodName(otherProp.Type)} }},");
+                writer.WriteLine($"\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\" => lambda {{|o, n| o.{otherProp.Name.ToSnakeCase()} = n.{GetDeserializationMethodName(otherProp.Type)} }},");
             }
             writer.DecreaseIndent();
-            writer.WriteLine("}");
+            if((parentClass.StartBlock as CodeClass.Declaration).Inherits != null)
+                writer.WriteLine("})");
+            else
+                writer.WriteLine("}");
         }
         private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam , LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
@@ -143,19 +149,19 @@ namespace Kiota.Builder.Writers.Ruby {
                 if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"request_info.set_stream_content({requestBodyParam.Name})");
                 else
-                    writer.WriteLine($"request_info.set_content_from_parsable({requestBodyParam.Name}, self.{RubyConventionService.SerializerFactoryPropertyName}, \"{codeElement.ContentType}\")");
+                    writer.WriteLine($"request_info.set_content_from_parsable(self.{RubyConventionService.SerializerFactoryPropertyName}, \"{codeElement.ContentType}\", {requestBodyParam.Name})");
             }
             writer.WriteLine("return request_info;");
         }
         private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer) {
             var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();
             if((parentClass.StartBlock as CodeClass.Declaration).Inherits != null)
-                writer.WriteLine("super.serialize(writer)");
+                writer.WriteLine("super");
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
-                writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToSnakeCase()}\", self.{otherProp.Name.ToSnakeCase()})");
+                writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", @{otherProp.Name.ToSnakeCase()})");
             }
             if(additionalDataProperty != null)
-                writer.WriteLine($"writer.write_additional_data(self.{additionalDataProperty.Name.ToSnakeCase()})");
+                writer.WriteLine($"writer.write_additional_data(@{additionalDataProperty.Name.ToSnakeCase()})");
         }
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer) {
             var methodName = (code.MethodKind switch {
@@ -191,22 +197,37 @@ namespace Kiota.Builder.Writers.Ruby {
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
-                        return $"get_collection_of_primitive_values";
+                        return $"get_collection_of_primitive_values({TranslateObjectType(propertyType.ToFirstCharacterUpperCase())})";
                     else
-                        return $"get_collection_of_object_values({propertyType.ToSnakeCase()})";
+                        return $"get_collection_of_object_values({(propType as CodeType).TypeDefinition.Parent.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase()}::{propertyType.ToFirstCharacterUpperCase()})";
                 else if(currentType.TypeDefinition is CodeEnum currentEnum)
-                    return $"get_enum_value{(currentEnum.Flags ? "s" : string.Empty)}({propertyType.ToSnakeCase()})";
+                    return $"get_enum_value{(currentEnum.Flags ? "s" : string.Empty)}({(propType as CodeType).TypeDefinition.Parent.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase()}::{propertyType.ToFirstCharacterUpperCase()})";
             }
             switch(propertyType) {
                 case "string":
                 case "boolean":
                 case "number":
+                case "float":
                 case "Guid":
-                case "Date":
                     return $"get_{propertyType.ToSnakeCase()}_value()";
+                case "DateTimeOffset":
+                case "Date":
+                    return $"get_date_value()";
                 default:
-                    return $"get_object_value({propertyType.ToSnakeCase()})";
+                    return $"get_object_value({(propType as CodeType).TypeDefinition.Parent.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase()}::{propertyType.ToFirstCharacterUpperCase()})";
             }
+        }
+        private static string TranslateObjectType(string typeName)
+        {
+            return (typeName) switch {
+                "String" or "Float" or "Object" => typeName, 
+                "Boolean" => "\"boolean\"",
+                "Number" => "Integer",
+                "Guid" => "UUIDTools::UUID",
+                "Date" => "Time",
+                "DateTimeOffset" => "Time",
+                _ => typeName.ToFirstCharacterUpperCase() ?? "Object",
+            };
         }
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
@@ -224,9 +245,12 @@ namespace Kiota.Builder.Writers.Ruby {
                 case "string":
                 case "boolean":
                 case "number":
+                case "float":
                 case "Guid":
-                case "Date":
                     return $"write_{propertyType.ToSnakeCase()}_value";
+                case "DateTimeOffset":
+                case "Date":
+                    return $"write_date_value";
                 default:
                     return $"write_object_value";
             }

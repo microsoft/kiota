@@ -36,6 +36,27 @@ export class HttpCore implements IHttpCore {
         if(segments.length === 0) return undefined;
         else return segments[0];
     }
+    public sendCollectionAsync = async <ModelType extends Parsable>(requestInfo: RequestInfo, type: new() => ModelType, responseHandler: ResponseHandler | undefined): Promise<ModelType[]> => {
+        if(!requestInfo) {
+            throw new Error('requestInfo cannot be null');
+        }
+        await this.addBearerIfNotPresent(requestInfo);
+        
+        const request = this.getRequestFromRequestInfo(requestInfo);
+        const response = await this.httpClient.fetch(this.getRequestUrl(requestInfo), request);
+        if(responseHandler) {
+            return await responseHandler.handleResponseAsync(response);
+        } else {
+            const payload = await response.arrayBuffer();
+            const responseContentType = this.getResponseContentType(response);
+            if(!responseContentType)
+                throw new Error("no response content type found for deserialization");
+            
+            const rootNode = this.parseNodeFactory.getRootParseNode(responseContentType, payload);
+            const result = rootNode.getCollectionOfObjectValues(type);
+            return result as unknown as ModelType[];
+        }
+    }
     public sendAsync = async <ModelType extends Parsable>(requestInfo: RequestInfo, type: new() => ModelType, responseHandler: ResponseHandler | undefined): Promise<ModelType> => {
         if(!requestInfo) {
             throw new Error('requestInfo cannot be null');

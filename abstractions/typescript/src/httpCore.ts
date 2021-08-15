@@ -19,6 +19,15 @@ export interface HttpCore {
      */
     sendAsync<ModelType extends Parsable>(requestInfo: RequestInfo, type: new() => ModelType, responseHandler: ResponseHandler | undefined): Promise<ModelType>;
     /**
+     * Excutes the HTTP request specified by the given RequestInfo and returns the deserialized response model collection.
+     * @param requestInfo the request info to execute.
+     * @param responseHandler The response handler to use for the HTTP request instead of the default handler.
+     * @param type the class of the response model to deserialize the response into.
+     * @typeParam ModelType the type of the response model to deserialize the response into.
+     * @return a {@link Promise} with the deserialized response model collection.
+     */
+    sendCollectionAsync<ModelType extends Parsable>(requestInfo: RequestInfo, type: new() => ModelType, responseHandler: ResponseHandler | undefined): Promise<ModelType[]>;
+    /**
      * Excutes the HTTP request specified by the given RequestInfo and returns the deserialized primitive response model.
      * @param requestInfo the request info to execute.
      * @param responseHandler The response handler to use for the HTTP request instead of the default handler.

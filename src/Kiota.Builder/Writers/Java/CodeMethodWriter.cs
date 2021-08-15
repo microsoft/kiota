@@ -170,7 +170,7 @@ namespace Kiota.Builder.Writers.Java {
             writer.WriteLine("try {");
             writer.IncreaseIndent();
             WriteGeneratorMethodCall(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer, $"final RequestInfo {requestInfoVarName} = ");
-            var sendMethodName = conventions.PrimitiveTypes.Contains(returnType) ? "sendPrimitiveAsync" : "sendAsync";
+            var sendMethodName = GetSendRequestMethodName(codeElement.ReturnType.IsCollection, returnType);
             if(codeElement.Parameters.Any(x => x.IsOfKind(CodeParameterKind.ResponseHandler)))
                 writer.WriteLine($"return this.httpCore.{sendMethodName}(requestInfo, {returnType}.class, responseHandler);");
             else
@@ -181,6 +181,11 @@ namespace Kiota.Builder.Writers.Java {
             writer.WriteLine("return java.util.concurrent.CompletableFuture.failedFuture(ex);");
             writer.DecreaseIndent();
             writer.WriteLine("}");
+        }
+        private string GetSendRequestMethodName(bool isCollection, string returnType) {
+            if(conventions.PrimitiveTypes.Contains(returnType)) return $"sendPrimitiveAsync";
+            else if(isCollection) return $"sendCollectionAsync";
+            else return $"sendAsync";
         }
         private const string requestInfoVarName = "requestInfo";
         private static void WriteGeneratorMethodCall(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, LanguageWriter writer, string prefix) {
@@ -216,7 +221,7 @@ namespace Kiota.Builder.Writers.Java {
                 if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{requestInfoVarName}.setStreamContent({requestBodyParam.Name});");
                 else
-                    writer.WriteLine($"{requestInfoVarName}.setContentFromParsable({requestBodyParam.Name}, {conventions.HttpCorePropertyName}, \"{codeElement.ContentType}\");");
+                    writer.WriteLine($"{requestInfoVarName}.setContentFromParsable({conventions.HttpCorePropertyName}, \"{codeElement.ContentType}\", {requestBodyParam.Name});");
             if(queryStringParam != null) {
                 var httpMethodPrefix = codeElement.HttpMethod.ToString().ToFirstCharacterUpperCase();
                 writer.WriteLine($"if ({queryStringParam.Name} != null) {{");
@@ -267,7 +272,10 @@ namespace Kiota.Builder.Writers.Java {
             });
             var parameters = string.Join(", ", code.Parameters.Select(p=> conventions.GetParameterSignature(p)).ToList());
             var throwableDeclarations = code.IsOfKind(CodeMethodKind.RequestGenerator) ? "throws URISyntaxException ": string.Empty;
-            var finalReturnType = isConstructor ? string.Empty : $" {returnTypeAsyncPrefix}{returnType}{returnTypeAsyncSuffix}";
+            var collectionCorrectedReturnType = code.ReturnType.IsArray && code.IsOfKind(CodeMethodKind.RequestExecutor) ?
+                                                $"Iterable<{returnType.StripArraySuffix()}>" :
+                                                returnType;
+            var finalReturnType = isConstructor ? string.Empty : $" {returnTypeAsyncPrefix}{collectionCorrectedReturnType}{returnTypeAsyncSuffix}";
             writer.WriteLine($"{accessModifier}{genericTypeParameterDeclaration}{finalReturnType} {methodName}({parameters}) {throwableDeclarations}{{");
         }
         private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer) {
