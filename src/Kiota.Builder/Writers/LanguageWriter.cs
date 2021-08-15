@@ -6,6 +6,7 @@ using Kiota.Builder.Writers.CSharp;
 using Kiota.Builder.Writers.Java;
 using Kiota.Builder.Writers.Ruby;
 using Kiota.Builder.Writers.TypeScript;
+using Kiota.Builder.Writers.Php;
 
 namespace Kiota.Builder.Writers
 {
@@ -78,7 +79,7 @@ namespace Kiota.Builder.Writers
                     ((ICodeElementWriter<CodeProperty>) elementWriter).WriteCodeElement(p, this);
                     break;
                 case CodeIndexer i:
-                    ((ICodeElementWriter<CodeIndexer>) elementWriter).WriteCodeElement(i, this);
+                    ((ICodeElementWriter<CodeIndexer>) elementWriter)?.WriteCodeElement(i, this);
                     break;
                 case CodeClass.Declaration d:
                     ((ICodeElementWriter<CodeClass.Declaration>) elementWriter).WriteCodeElement(d, this);
@@ -87,7 +88,7 @@ namespace Kiota.Builder.Writers
                     ((ICodeElementWriter<CodeClass.End>) elementWriter).WriteCodeElement(i, this);
                     break;
                 case CodeEnum e:
-                    ((ICodeElementWriter<CodeEnum>) elementWriter).WriteCodeElement(e, this);
+                    ((ICodeElementWriter<CodeEnum>) elementWriter)?.WriteCodeElement(e, this);
                     break;
                 case CodeMethod m:
                     ((ICodeElementWriter<CodeMethod>) elementWriter).WriteCodeElement(m, this);
@@ -117,6 +118,7 @@ namespace Kiota.Builder.Writers
                 GenerationLanguage.Java => new JavaWriter(outputPath, clientNamespaceName, usesBackingStore),
                 GenerationLanguage.TypeScript => new TypeScriptWriter(outputPath, clientNamespaceName, usesBackingStore),
                 GenerationLanguage.Ruby => new RubyWriter(outputPath, clientNamespaceName),
+                GenerationLanguage.PHP => new PhpWriter(outputPath, clientNamespaceName, usesBackingStore),
                 _ => throw new InvalidEnumArgumentException($"{language} language currently not supported."),
             };
         }
