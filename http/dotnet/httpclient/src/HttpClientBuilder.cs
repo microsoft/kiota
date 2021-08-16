@@ -6,6 +6,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Net.Http;
 using Microsoft.Kiota.Abstractions;
+using Microsoft.Kiota.Abstractions.Authentication;
 
 namespace Microsoft.Kiota.Http.HttpClient
 {

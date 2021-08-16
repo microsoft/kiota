@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Abstractions.Serialization;
 using Microsoft.Kiota.Abstractions.Store;
+using Microsoft.Kiota.Abstractions.Authentication;
 
 namespace Microsoft.Kiota.Http.HttpClient
 {
@@ -20,7 +21,6 @@ namespace Microsoft.Kiota.Http.HttpClient
     /// </summary>
     public class HttpCore : IHttpCore, IDisposable
     {
-        private const string AuthorizationHeaderKey = "Authorization";
         private readonly System.Net.Http.HttpClient client;
         private readonly IAuthenticationProvider authProvider;
         private IParseNodeFactory pNodeFactory;
@@ -141,23 +141,6 @@ namespace Microsoft.Kiota.Http.HttpClient
             else
                 return await responseHandler.HandleResponseAsync<HttpResponseMessage, ModelType>(response);
         }
-
-        private async Task AddBearerIfNotPresent(RequestInfo requestInfo)
-        {
-            if(!requestInfo.Headers.ContainsKey(AuthorizationHeaderKey))
-            {
-                var token = await authProvider.GetAuthorizationToken(requestInfo.URI);
-                if(string.IsNullOrEmpty(token))
-                    throw new InvalidOperationException("Could not get an authorization token");
-                requestInfo.Headers.Add(AuthorizationHeaderKey, $"Bearer {token}");
-            }
-        }
-        /// <summary>
-        /// Send a <see cref="RequestInfo"/> instance with no content.
-        /// </summary>
-        /// <param name="requestInfo">The <see cref="RequestInfo"/> instance to send</param>
-        /// <param name="responseHandler">The <see cref="IResponseHandler"/> to use with the response</param>
-        /// <returns></returns>
         public async Task SendNoContentAsync(RequestInfo requestInfo, IResponseHandler responseHandler = null)
         {
             var response = await GetHttpResponseMessage(requestInfo);
@@ -182,7 +165,7 @@ namespace Microsoft.Kiota.Http.HttpClient
             if(requestInfo == null)
                 throw new ArgumentNullException(nameof(requestInfo));
 
-            await AddBearerIfNotPresent(requestInfo);
+            await authProvider.AuthenticateRequest(requestInfo);
 
             using var message = GetRequestMessageFromRequestInfo(requestInfo);
             var response = await this.client.SendAsync(message);
