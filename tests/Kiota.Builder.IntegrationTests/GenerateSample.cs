@@ -7,10 +7,10 @@ namespace Kiota.Builder.integrationtests
 {
     public class GenerateSample
     {
-        [InlineData(GenerationLanguage.CSharp, null)]
-        [InlineData(GenerationLanguage.Java, null)]
-        [InlineData(GenerationLanguage.TypeScript, null)]
-        [InlineData(GenerationLanguage.Ruby, null)]
+        [InlineData(GenerationLanguage.CSharp, false)]
+        [InlineData(GenerationLanguage.Java, false)]
+        [InlineData(GenerationLanguage.TypeScript, false)]
+        [InlineData(GenerationLanguage.Ruby, false)]
         [InlineData(GenerationLanguage.CSharp, true)]
         [InlineData(GenerationLanguage.Java, true)]
         [InlineData(GenerationLanguage.TypeScript, true)]
