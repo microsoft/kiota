@@ -29,8 +29,9 @@ Current SDK tooling forces the API provider to make choices about the granularit
 Basic read and write syntax for a resource.
 
 ```csharp
-
-var client = new ApiClient();
+var authProvider = ; /** An authentication provider from the supported language table https://github.com/microsoft/kiota#supported-languages, or your own implementation **/
+var coreService = new HttpCore(authProvider);
+var client = new ApiClient(coreService);
 var user = await client.Users["bob@contoso.com"].GetAsync();
 
 var newUser = new User() {
@@ -45,8 +46,9 @@ await client.Users.PostAsync(newUser)
 Resources are accessed via relation properties starting from the client object.  Collections of resources can be accessed by an indexer and a parameter. Once the desired resource has been referenced, the supported HTTP methods are exposed by corresponding methors.  Deeply nested resource hierarchy can be accessed by continuing to traverse relationships.
 
 ```csharp
-
-var client = new ApiClient();
+var authProvider = ; /** An authentication provider from the supported language table https://github.com/microsoft/kiota#supported-languages, or your own implementation **/
+var coreService = new HttpCore(authProvider);
+var client = new ApiClient(coreService);
 var message = await client.Users["bob@contoso.com"]
                           .MailFolders["Inbox"]
                           .Messages[23242]
@@ -59,8 +61,9 @@ The client object is a "request builder" object, and forms the root of a hierarc
 Requests can be further refined by providing query parameters. Each HTTP operation method that supports query parameters accepts a lambda that can configure an object with the desired query parameters.
 
 ```csharp
-
-var client = new ApiClient();
+var authProvider = ; /** An authentication provider from the supported language table https://github.com/microsoft/kiota#supported-languages, or your own implementation **/
+var coreService = new HttpCore(authProvider);
+var client = new ApiClient(coreService);
 var message = await client.Users["bob@contoso.com"]
                           .Events
                           .GetAsync(q => {  q.StartDateTime = DateTime.Now;
