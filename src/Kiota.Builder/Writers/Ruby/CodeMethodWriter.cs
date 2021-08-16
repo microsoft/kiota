@@ -104,9 +104,7 @@ namespace Kiota.Builder.Writers.Ruby {
             writer.WriteLine($"return @{codeElement.AccessedProperty?.Name?.ToSnakeCase()}");
         }
         private void WriteIndexerBody(CodeMethod codeElement, LanguageWriter writer, string returnType) {
-            var prefix = string.Empty;
-            if(codeElement.ReturnType is CodeType xType && xType.TypeDefinition is CodeClass xCodeClass && xCodeClass?.Parent is CodeNamespace ns)
-                prefix = $"{ns.Name.NormalizeNameSpaceName("::")}::";
+            var prefix = conventions.GetNormalizedNamespacePrefixForType(codeElement.ReturnType);
             var currentPathProperty = codeElement.Parent.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
             var pathSegment = codeElement.PathSegment;
             conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id", $"return {prefix}");
