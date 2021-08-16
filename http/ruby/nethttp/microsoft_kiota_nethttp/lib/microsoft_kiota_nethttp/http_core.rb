@@ -67,12 +67,34 @@ module MicrosoftKiotaNethttp
     end
 
     def get_request_from_request_info(request_info)
-      # TODO: Add switch case for other request types (GET, POST, ...)
-      request = @client::Get.new(request_info.uri.request_uri)
+      case request_info.http_method
+        when :GET
+          request = @client::Get.new(request_info.uri.request_uri)
+        when :POST
+          request = @client::Post.new(request_info.uri.request_uri)
+        when :PATCH
+          request = @client::Patch.new(request_info.uri.request_uri)
+        when :DELETE
+          request = @client::Delete.new(request_info.uri.request_uri)
+        when :OPTIONS
+          request = @client::Options.new(request_info.uri.request_uri)
+        when :CONNECT
+          request = @client::Connect.new(request_info.uri.request_uri)
+        when :PUT
+          request = @client::Put.new(request_info.uri.request_uri)
+        when :TRACE
+          request = @client::Trace.new(request_info.uri.request_uri)
+        when :HEAD
+          request = @client::Head.new(request_info.uri.request_uri)
+        else
+          raise StandardError, 'unsupported http method'
+      end
       if request_info.headers.instance_of? Hash
         request_info.headers.select{|k,v| request[k] = v }
       end
-      # TODO: Add request Body depending on request types
+      if request_info.content != nil
+        request.body = request_info.content # the json serialization writer returns a string at the moment, change to body_stream when this is fixed
+      end
       request
     end
 
