@@ -18,6 +18,9 @@ namespace Kiota.Builder.Refiners
                 case GenerationLanguage.Ruby:
                     new RubyRefiner(config).Refine(generatedCode);
                     break;
+                case GenerationLanguage.PHP:
+                    new PhpRefiner(config).Refine(generatedCode);
+                    break;
                 default:
                     break; //Do nothing
             }

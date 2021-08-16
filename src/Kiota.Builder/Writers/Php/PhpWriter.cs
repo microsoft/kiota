@@ -12,6 +12,7 @@ namespace Kiota.Builder.Writers.Php
             AddCodeElementWriter(new CodePropertyWriter(conventionService));
             AddCodeElementWriter(new CodeMethodWriter(conventionService));
             AddCodeElementWriter(new CodeClassEndWriter());
+            AddCodeElementWriter(new CodeEnumWriter(conventionService));
         }
     }
 }

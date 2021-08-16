@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Diagnostics;
 using Kiota.Builder.Extensions;
-using Microsoft.OpenApi.Extensions;
-using Microsoft.VisualBasic;
 
 namespace Kiota.Builder.Writers.Php
 {
@@ -32,8 +29,8 @@ namespace Kiota.Builder.Writers.Php
 
         public string ParseNodeInterfaceName => "ParseNode";
 
-        private string DocCommentStart = "/**";
-        private string DocCommentEnd = "*/";
+        public string DocCommentStart = "/**";
+        public string DocCommentEnd = "*/";
 
         public string GetTypeString(CodeTypeBase code)
         {
@@ -60,11 +57,13 @@ namespace Kiota.Builder.Writers.Php
         private static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
         public void WriteShortDescription(string description, LanguageWriter writer)
         {
+            
             if (!String.IsNullOrEmpty(description))
             {
-                writer.WriteLines(DocCommentStart, 
-                    RemoveInvalidDescriptionCharacters(description), 
-                    DocCommentEnd);
+                writer.WriteLine(DocCommentStart);
+                writer.WriteLine(
+                    $"{DocCommentPrefix}{RemoveInvalidDescriptionCharacters(description)}");
+                writer.WriteLine(DocCommentEnd);
             }
         }
 
@@ -82,6 +81,38 @@ namespace Kiota.Builder.Writers.Php
             }
             
             return propertyName.Substring(1);
+        }
+
+        public void WritePhpDocumentStart(LanguageWriter writer)
+        {
+            writer.WriteLine("<?php");
+            writer.WriteLine("");
+        }
+
+        public void WriteCodeBlockEnd(LanguageWriter writer)
+        {
+            writer.DecreaseIndent();
+            writer.WriteLine("}");
+        }
+        
+        /**
+         * For Php strings, having double quotes around strings might cause an issue
+         * if the string contains valid variable name.
+         * For example $variable = "$value" will try too set the value of
+         * $variable to the variable named $value rather than the string '$value'
+         * around quotes as expected.
+         */
+        public string ReplaceDoubleQuoteWithSingleQuote(string current)
+        {
+            if (string.IsNullOrEmpty(current))
+            {
+                return current;
+            }
+            if (current.StartsWith("\"", StringComparison.OrdinalIgnoreCase))
+            {
+                return current.Replace('\"', '\'');
+            }
+            return current;
         }
     }
 }
