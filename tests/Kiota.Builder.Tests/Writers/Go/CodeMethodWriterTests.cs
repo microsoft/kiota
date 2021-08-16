@@ -265,7 +265,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
         }
         [Fact]
         public void Defensive() {
-            var codeMethodWriter = new CodeMethodWriter(new GoConventionService(), false);
+            var codeMethodWriter = new CodeMethodWriter(new GoConventionService());
             Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(null, writer));
             Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(method, null));
             var originalParent = method.Parent;
@@ -442,7 +442,16 @@ namespace Kiota.Builder.Writers.Go.Tests {
                 ParameterKind = CodeParameterKind.HttpCore,
                 Type = coreProp.Type,
             });
-            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, defaultPath, defaultName, true);
+            var backingStoreParam = new CodeParameter(method) {
+                Name = "backingStore",
+                ParameterKind = CodeParameterKind.BackingStore,
+            };
+            backingStoreParam.Type = new CodeType(backingStoreParam) {
+                Name = "IBackingStore",
+                IsExternal = true,
+            };
+            method.AddParameter(backingStoreParam);
+            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, defaultPath, defaultName);
             tempWriter.SetTextWriter(tw);
             tempWriter.Write(method);
             var result = tw.ToString();

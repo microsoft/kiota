@@ -1,6 +1,6 @@
 namespace Kiota.Builder.Writers.Go {
     public class GoWriter : LanguageWriter {
-        public GoWriter(string rootPath, string clientNamespaceName, bool usesBackingStore)
+        public GoWriter(string rootPath, string clientNamespaceName)
         {
             PathSegmenter = new GoPathSegmenter(rootPath, clientNamespaceName);
             var conventionService = new GoConventionService();
@@ -8,7 +8,7 @@ namespace Kiota.Builder.Writers.Go {
             AddCodeElementWriter(new CodeClassEndWriter());
             AddCodeElementWriter(new CodePropertyWriter(conventionService));
             AddCodeElementWriter(new CodeEnumWriter(conventionService));
-            AddCodeElementWriter(new CodeMethodWriter(conventionService, usesBackingStore));
+            AddCodeElementWriter(new CodeMethodWriter(conventionService));
         }
     }
 }

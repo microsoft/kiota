@@ -7,10 +7,7 @@ using Kiota.Builder.Writers.Extensions;
 namespace Kiota.Builder.Writers.Go {
     public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionService>
     {
-        private readonly bool _usesBackingStore;
-        public CodeMethodWriter(GoConventionService conventionService, bool usesBackingStore) : base(conventionService){
-            _usesBackingStore = usesBackingStore;
-        }
+        public CodeMethodWriter(GoConventionService conventionService) : base(conventionService){}
         public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
             if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
@@ -150,11 +147,12 @@ namespace Kiota.Builder.Writers.Go {
             var httpCoreProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
             var httpCoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.HttpCore));
             var httpCorePropertyName = httpCoreProperty.Name.ToFirstCharacterLowerCase();
+            var backingStoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.BackingStore));
             writer.WriteLine($"m.{httpCorePropertyName} = {httpCoreParameter.Name};");
             WriteSerializationRegistration(method.SerializerModules, writer, parentClass, "RegisterDefaultSerializer", "SerializationWriterFactory");
             WriteSerializationRegistration(method.DeserializerModules, writer, parentClass, "RegisterDefaultDeserializer", "ParseNodeFactory");
-            if(_usesBackingStore)
-                writer.WriteLine($"m.{httpCorePropertyName}.EnableBackingStore();");
+            if(backingStoreParameter != null)
+                writer.WriteLine($"m.{httpCorePropertyName}.EnableBackingStore({backingStoreParameter.Name});");
         }
         private void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, CodeClass parentClass, string methodName, string interfaceName) {
             var interfaceImportSymbol = conventions.GetTypeString(new CodeType(parentClass) { Name = interfaceName, IsExternal = true }, parentClass, false, false);
