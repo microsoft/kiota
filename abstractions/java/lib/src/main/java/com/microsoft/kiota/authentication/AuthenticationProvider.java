@@ -6,7 +6,7 @@ import java.util.concurrent.CompletableFuture;
 
 import javax.annotation.Nonnull;
 
-/** Authenticates the application and returns a token. */
+/** Authenticates the application request. */
 public interface AuthenticationProvider {
     /**
      * Authenticates the application request.

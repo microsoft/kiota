@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Kiota.Abstractions.Authentication {
     /// <summary>
-    /// Authenticates the application and returns a token.
+    /// Authenticates the application request.
     /// </summary>
     public interface IAuthenticationProvider {
         /// <summary>

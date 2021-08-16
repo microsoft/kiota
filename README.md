@@ -20,7 +20,7 @@ The following table provides an overview of the languages supported by Kiota and
 | PHP | [❌](https://github.com/microsoft/kiota/projects/4) | [▶](https://github.com/microsoft/kiota/pull/321) | ❌ | ❌ | ❌ |  |
 | Python | [❌](https://github.com/microsoft/kiota/projects/3) | ❌ | ❌ | ❌ | ❌ |  |
 | Ruby | [✔](https://github.com/microsoft/kiota/projects/6) | [✔](./abstractions/ruby) | [JSON](./serialization/ruby/json/microsoft_kiota_serialization) | [❌](https://github.com/microsoft/kiota/issues/421) | [✔](./http/ruby/nethttp/microsoft_kiota_nethttp)|  |
-| TypeScript/JavaScript | [✔](https://github.com/microsoft/kiota/projects/2) | [✔](./abstractions/typescript) | [JSON](./serialization/typescript/json) | [Azure](./authentication/typescript/azure) | [✔](./http/typescript/fetch) | [link](./requiredtools/typescript.md) |
+| TypeScript/JavaScript | [✔](https://github.com/microsoft/kiota/projects/2) | [✔](./abstractions/typescript) | [JSON](./serialization/typescript/json) | [Anonymous](./abstractions/typescript/src/authentication/anonymousAuthenticationProvider.ts)[Azure](./authentication/typescript/azure) | [✔](./http/typescript/fetch) | [link](./requiredtools/typescript.md) |
 
 > Legend: ✔ -> in preview, ❌ -> not started, ▶ -> in progress.
 
