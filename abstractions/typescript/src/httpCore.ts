@@ -1,6 +1,7 @@
 import { RequestInfo } from "./requestInfo";
 import { ResponseHandler } from "./responseHandler";
 import { Parsable, SerializationWriterFactory } from "./serialization";
+import { BackingStoreFactory } from "./store";
 
 /** Service responsible for translating abstract Request Info into concrete native HTTP requests. */
 export interface HttpCore {
@@ -43,6 +44,9 @@ export interface HttpCore {
      * @return a {@link Promise} of void.
      */
     sendNoResponseContentAsync(requestInfo: RequestInfo, responseHandler: ResponseHandler | undefined): Promise<void>;
-    /** Enables the backing store proxies for the SerializationWriters and ParseNodes in use. */
-    enableBackingStore(): void;
+    /**
+     * Enables the backing store proxies for the SerializationWriters and ParseNodes in use.
+     * @param backingStoreFactory the backing store factory to use.
+     */
+    enableBackingStore(backingStoreFactory?: BackingStoreFactory | undefined): void;
 }

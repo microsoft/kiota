@@ -37,6 +37,9 @@ namespace Microsoft.Kiota.Abstractions.Store {
             return (ReturnOnlyChangedValues ? store.Where(x => !x.Value.Item1) : store)
                 .Select(x => new KeyValuePair<string, object>(x.Key, x.Value.Item2));
         }
+        public IEnumerable<string> EnumerateKeysForValuesChangedToNull() {
+            return store.Where(x => x.Value.Item1 && x.Value.Item2 == null).Select(x => x.Key);
+        }
         public string Subscribe(Action<string, object, object> callback) {
             var id = Guid.NewGuid().ToString();
             Subscribe(callback, id);

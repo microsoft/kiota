@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Kiota.Abstractions.Serialization;
+using Microsoft.Kiota.Abstractions.Store;
 
 namespace Microsoft.Kiota.Abstractions {
     /// <summary>
@@ -10,7 +11,8 @@ namespace Microsoft.Kiota.Abstractions {
         /// <summary>
         ///  Enables the backing store proxies for the SerializationWriters and ParseNodes in use.
         /// </summary>
-        void EnableBackingStore();
+        /// <param name="backingStoreFactory">The backing store factory to use.</param>
+        void EnableBackingStore(IBackingStoreFactory backingStoreFactory);
         /// <summary>
         /// Gets the serialization writer factory currently in use for the HTTP core service.
         /// </summary>

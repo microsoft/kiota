@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a bug where raw collections requests would not be supported #467
+- Fixes a bug where in memory backing store would not return changed properties to null #243
+- Fixes a bug where generated models would be tied to a specific backing store implementation #400
 
 ## [0.0.7] - 2021-08-04
 

@@ -61,20 +61,36 @@ namespace Kiota.Builder.Refiners {
         }
         internal const string GetterPrefix = "get-";
         internal const string SetterPrefix = "set-";
-        protected static void CorrectCoreTypesForBackingStoreUsings(CodeElement currentElement, string storeNamespace) {
-            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)
+        protected static void CorrectCoreTypesForBackingStore(CodeElement currentElement, string storeNamespace, string defaultPropertyValue) {
+            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder)
                 && currentClass.StartBlock is CodeClass.Declaration currentDeclaration) {
-                foreach(var backingStoreUsing in currentDeclaration.Usings.Where(x => "Microsoft.Kiota.Abstractions.Store".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase))) {
-                    if(backingStoreUsing?.Declaration != null) {
-                        backingStoreUsing.Name = backingStoreUsing.Name[1..]; // removing the "I"
-                        backingStoreUsing.Declaration.Name = storeNamespace;
-                    }
-                }
+                CorrectCoreTypeForBackingStoreUsings(currentDeclaration, storeNamespace, defaultPropertyValue);
                 var backedModelImplements = currentDeclaration.Implements.FirstOrDefault(x => "IBackedModel".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
                 if(backedModelImplements != null)
                     backedModelImplements.Name = backedModelImplements.Name[1..]; //removing the "I"
+                var backingStoreProperty = currentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.BackingStore));
+                if(backingStoreProperty != null)
+                    backingStoreProperty.DefaultValue = defaultPropertyValue;
+                
             }
-            CrawlTree(currentElement, (x) => CorrectCoreTypesForBackingStoreUsings(x, storeNamespace));
+            CrawlTree(currentElement, (x) => CorrectCoreTypesForBackingStore(x, storeNamespace, defaultPropertyValue));
+        }
+        private static void CorrectCoreTypeForBackingStoreUsings(CodeClass.Declaration currentDeclaration, string storeNamespace, string defaultPropertyValue) {
+            foreach(var backingStoreUsing in currentDeclaration.Usings.Where(x => "Microsoft.Kiota.Abstractions.Store".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase))) {
+                if(backingStoreUsing?.Declaration != null) {
+                    if(backingStoreUsing.Name.StartsWith("I"))
+                        backingStoreUsing.Name = backingStoreUsing.Name[1..]; // removing the "I"
+                    backingStoreUsing.Declaration.Name = storeNamespace;
+                }
+            }
+            var defaultValueUsing = currentDeclaration
+                                        .Usings
+                                        .FirstOrDefault(x => "BackingStoreFactorySingleton".Equals(x.Name, StringComparison.OrdinalIgnoreCase) &&
+                                            x.Declaration != null &&
+                                            x.Declaration.IsExternal &&
+                                            x.Declaration.Name.Equals(storeNamespace, StringComparison.OrdinalIgnoreCase));
+            if(defaultValueUsing != null)
+                defaultValueUsing.Name = defaultPropertyValue.Split('.').First();
         }
         private static bool DoesAnyParentHaveAPropertyWithDefaultValue(CodeClass current) {
             if(current.StartBlock is CodeClass.Declaration currentDeclaration &&

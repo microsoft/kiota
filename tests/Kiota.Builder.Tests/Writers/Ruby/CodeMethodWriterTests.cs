@@ -365,7 +365,16 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
                 ParameterKind = CodeParameterKind.HttpCore,
                 Type = coreProp.Type,
             });
-            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, defaultPath, defaultName, true);
+            var backingStoreParam = new CodeParameter(method) {
+                Name = "backingStore",
+                ParameterKind = CodeParameterKind.BackingStore,
+            };
+            backingStoreParam.Type = new CodeType(backingStoreParam) {
+                Name = "BackingStore",
+                IsExternal = true,
+            };
+            method.AddParameter(backingStoreParam);
+            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, defaultPath, defaultName);
             tempWriter.SetTextWriter(tw);
             tempWriter.Write(method);
             var result = tw.ToString();

@@ -21,6 +21,12 @@ namespace Microsoft.Kiota.Abstractions.Store {
                     backedModel.BackingStore.ReturnOnlyChangedValues = false;
                     backedModel.BackingStore.InitializationCompleted = true;
                 }
+            },(x, y) => {
+                if(x is IBackedModel backedModel && backedModel.BackingStore != null) {
+                    var nullValues = backedModel.BackingStore.EnumerateKeysForValuesChangedToNull();
+                    foreach(var key in nullValues)
+                        y.WriteNullValue(key);
+                }
             }) {}
     }
 }

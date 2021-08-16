@@ -30,7 +30,7 @@ namespace Kiota.Builder.Refiners {
                                                     CodePropertyKind.BackingStore,
                                                 }, _configuration.UsesBackingStore, true);
             AddConstructorsForDefaultValues(generatedCode, true);
-            CorrectCoreTypesForBackingStoreUsings(generatedCode, "com.microsoft.kiota.store");
+            CorrectCoreTypesForBackingStore(generatedCode, "com.microsoft.kiota.store", "BackingStoreFactorySingleton.instance.createBackingStore()");
             ReplaceDefaultSerializationModules(generatedCode, "com.microsoft.kiota.serialization.JsonSerializationWriterFactory");
             ReplaceDefaultDeserializationModules(generatedCode, "com.microsoft.kiota.serialization.JsonParseNodeFactory");
             AddSerializationModulesImport(generatedCode);
@@ -134,7 +134,7 @@ namespace Kiota.Builder.Refiners {
                 currentMethod.Name = "getFieldDeserializers";
             }
             else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore))
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore, CodeParameterKind.BackingStore))
                     .Where(x => x.Type.Name.StartsWith("I", StringComparison.OrdinalIgnoreCase))
                     .ToList()
                     .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"

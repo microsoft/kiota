@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Abstractions.Serialization;
+using Microsoft.Kiota.Abstractions.Store;
 
 namespace Microsoft.Kiota.Http.HttpClient
 {
@@ -151,12 +152,11 @@ namespace Microsoft.Kiota.Http.HttpClient
             }
             return message;
         }
-        /// <summary>
-        /// Enables the backing store for the registered serialization and parse node factories
-        /// </summary>
-        public void EnableBackingStore() {
+        public void EnableBackingStore(IBackingStoreFactory backingStoreFactory) {
             pNodeFactory = ApiClientBuilder.EnableBackingStoreForParseNodeFactory(pNodeFactory) ?? throw new InvalidOperationException("Could not enable backing store for the parse node factory");
             sWriterFactory = ApiClientBuilder.EnableBackingStoreForSerializationWriterFactory(sWriterFactory) ?? throw new InvalidOperationException("Could not enable backing store for the serializer writer factory");
+            if(backingStoreFactory != null)
+                BackingStoreFactorySingleton.Instance = backingStoreFactory;
         }
         public void Dispose() {
             if(createdClient)

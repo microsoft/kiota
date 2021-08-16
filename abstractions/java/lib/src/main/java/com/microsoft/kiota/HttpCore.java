@@ -8,11 +8,15 @@ import javax.annotation.Nullable;
 
 import com.microsoft.kiota.serialization.Parsable;
 import com.microsoft.kiota.serialization.SerializationWriterFactory;
+import com.microsoft.kiota.store.BackingStoreFactory;
 
 /** Service responsible for translating abstract Request Info into concrete native HTTP requests. */
 public interface HttpCore {
-    /** Enables the backing store proxies for the SerializationWriters and ParseNodes in use. */
-    void enableBackingStore();
+    /**
+     * Enables the backing store proxies for the SerializationWriters and ParseNodes in use.
+     * @param backingStoreFactory The backing store factory to use.
+     */
+    void enableBackingStore(@Nullable final BackingStoreFactory backingStoreFactory);
     /**
      * Gets the serialization writer factory currently in use for the HTTP core service.
      * @return the serialization writer factory currently in use for the HTTP core service.

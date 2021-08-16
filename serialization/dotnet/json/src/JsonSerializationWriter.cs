@@ -17,6 +17,7 @@ namespace Microsoft.Kiota.Serialization.Json {
         }
         public Action<IParsable> OnBeforeObjectSerialization { get; set; }
         public Action<IParsable> OnAfterObjectSerialization { get; set; }
+        public Action<IParsable, ISerializationWriter> OnStartObjectSerialization { get; set; }
         public Stream GetSerializedContent() {
             writer.Flush();
             stream.Position = 0;
@@ -51,6 +52,10 @@ namespace Microsoft.Kiota.Serialization.Json {
         public void WriteDateTimeOffsetValue(string key, DateTimeOffset? value) {
             if(!string.IsNullOrEmpty(key) && value.HasValue) writer.WritePropertyName(key);
             if(value.HasValue) writer.WriteStringValue(value.Value);
+        }
+        public void WriteNullValue(string key) {
+            if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
+            writer.WriteNullValue();
         }
         public void WriteEnumValue<T>(string key, T? value) where T : struct, Enum {
             if(!string.IsNullOrEmpty(key) && value.HasValue) writer.WritePropertyName(key);
@@ -87,6 +92,7 @@ namespace Microsoft.Kiota.Serialization.Json {
                 if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
                 OnBeforeObjectSerialization?.Invoke(value);
                 writer.WriteStartObject();
+                OnStartObjectSerialization?.Invoke(value, this);
                 value.Serialize(this);
                 writer.WriteEndObject();
                 OnAfterObjectSerialization?.Invoke(value);
@@ -141,6 +147,9 @@ namespace Microsoft.Kiota.Serialization.Json {
                 break;
                 case object o:
                     WriteNonParsableObjectValue(key, o); // should we support parsables here too?
+                break;
+                case null:
+                    WriteNullValue(key);
                 break;
                 default:
                     throw new InvalidOperationException($"error serialization additional data value with key {key}, unknown type {value?.GetType()}");

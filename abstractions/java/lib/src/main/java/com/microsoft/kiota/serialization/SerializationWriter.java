@@ -8,6 +8,7 @@ import java.util.UUID;
 import java.util.EnumSet;
 import java.lang.Enum;
 import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -93,6 +94,11 @@ public interface SerializationWriter extends Closeable {
      */
     <T extends Enum<T>> void writeEnumValue(@Nullable final String key, @Nullable final T value);
     /**
+     * Writes a null value for the specified key.
+     * @param key the key to write the value with.
+     */
+    void writeNullValue(@Nullable final String key);
+    /**
      * Writes the specified additional data values to the stream with an optional given key.
      * @param value the values to write to the stream.
      */
@@ -110,6 +116,12 @@ public interface SerializationWriter extends Closeable {
     @Nullable
     Consumer<Parsable> getOnAfterObjectSerialization();
     /**
+     * Gets the callback called right after the serialization process starts.
+     * @return the callback called right after the serialization process starts.
+     */
+    @Nullable
+    BiConsumer<Parsable, SerializationWriter> getOnStartObjectSerialization();
+    /**
      * Sets the callback called before the objects gets serialized.
      * @param value the callback called before the objects gets serialized.
      */
@@ -119,4 +131,9 @@ public interface SerializationWriter extends Closeable {
      * @param value the callback called after the objects gets serialized.
      */
     void setOnAfterObjectSerialization(@Nullable final Consumer<Parsable> value);
+    /**
+     * Sets the callback called right after the serialization process starts.
+     * @param value the callback called right after the serialization process starts.
+     */
+    void setOnStartObjectSerialization(@Nullable final BiConsumer<Parsable, SerializationWriter> value);
 }

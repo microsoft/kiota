@@ -298,7 +298,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
         }
         [Fact]
         public void Defensive() {
-            var codeMethodWriter = new CodeMethodWriter(new JavaConventionService(), false);
+            var codeMethodWriter = new CodeMethodWriter(new JavaConventionService());
             Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(null, writer));
             Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(method, null));
             var originalParent = method.Parent;
@@ -474,7 +474,16 @@ namespace Kiota.Builder.Writers.Java.Tests {
                 ParameterKind = CodeParameterKind.HttpCore,
                 Type = coreProp.Type,
             });
-            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, defaultPath, defaultName, true);
+            var backingStoreParam = new CodeParameter(method) {
+                Name = "backingStore",
+                ParameterKind = CodeParameterKind.BackingStore,
+            };
+            backingStoreParam.Type = new CodeType(backingStoreParam) {
+                Name = "BackingStore",
+                IsExternal = true,
+            };
+            method.AddParameter(backingStoreParam);
+            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, defaultPath, defaultName);
             tempWriter.SetTextWriter(tw);
             tempWriter.Write(method);
             var result = tw.ToString();

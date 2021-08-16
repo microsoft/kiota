@@ -6,10 +6,7 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.CSharp {
     public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionService>
     {
-        private readonly bool _usesBackingStore;
-        public CodeMethodWriter(CSharpConventionService conventionService, bool usesBackingStore): base(conventionService) {
-            _usesBackingStore = usesBackingStore;
-        }
+        public CodeMethodWriter(CSharpConventionService conventionService): base(conventionService) { }
         public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
             if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
@@ -64,15 +61,16 @@ namespace Kiota.Builder.Writers.CSharp {
             writer.DecreaseIndent();
             writer.WriteLine("}");
         }
-        private void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
+        private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
             var httpCoreProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
             var httpCoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.HttpCore));
+            var backingStoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.BackingStore));
             var httpCorePropertyName = httpCoreProperty.Name.ToFirstCharacterUpperCase();
             writer.WriteLine($"{httpCorePropertyName} = {httpCoreParameter.Name};");
             WriteSerializationRegistration(method.SerializerModules, writer, "RegisterDefaultSerializer");
             WriteSerializationRegistration(method.DeserializerModules, writer, "RegisterDefaultDeserializer");
-            if(_usesBackingStore)
-                writer.WriteLine($"{httpCorePropertyName}.EnableBackingStore();");
+            if(backingStoreParameter != null)
+                writer.WriteLine($"{httpCorePropertyName}.EnableBackingStore({backingStoreParameter.Name});");
         }
         private static void WriteSerializationRegistration(List<string> serializationClassNames, LanguageWriter writer, string methodName) {
             if(serializationClassNames != null)

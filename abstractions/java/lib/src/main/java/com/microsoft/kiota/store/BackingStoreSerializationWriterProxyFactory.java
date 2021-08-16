@@ -15,16 +15,29 @@ public class BackingStoreSerializationWriterProxyFactory extends SerializationWr
         (x) -> {
             if(x instanceof BackedModel) {
                 final BackedModel backedModel = (BackedModel)x;
-                if(backedModel.getBackingStore() != null) {
-                    backedModel.getBackingStore().setReturnOnlyChangedValues(true);
+                final var backingStore = backedModel.getBackingStore();
+                if(backingStore != null) {
+                    backingStore.setReturnOnlyChangedValues(true);
                 }
             }
         },(x) -> {
             if(x instanceof BackedModel) {
                 final BackedModel backedModel = (BackedModel)x;
-                if(backedModel.getBackingStore() != null) {
-                    backedModel.getBackingStore().setReturnOnlyChangedValues(false);
-                    backedModel.getBackingStore().setIsInitializationCompleted(true);
+                final var backingStore = backedModel.getBackingStore();
+                if(backingStore != null) {
+                    backingStore.setReturnOnlyChangedValues(false);
+                    backingStore.setIsInitializationCompleted(true);
+                }
+            }
+        }, (x, y) -> {
+            if(x instanceof BackedModel) {
+                final BackedModel backedModel = (BackedModel)x;
+                final var backingStore = backedModel.getBackingStore();
+                if(backingStore != null) {
+                    final var keys = backingStore.enumerateKeysForValuesChangedToNull();
+                    for(final var key : keys) {
+                        y.writeNullValue(key);
+                    }
                 }
             }
         }); 
