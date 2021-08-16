@@ -25,7 +25,7 @@ namespace Kiota.Builder.Writers.Ruby {
         }
         public string GetParameterSignature(CodeParameter parameter)
         {
-            return $"{parameter.Name}";
+            return $"{parameter.Name}{(parameter.Optional ? "=nil" : string.Empty)}";
         }
         public string GetTypeString(CodeTypeBase code)
         {
@@ -48,6 +48,13 @@ namespace Kiota.Builder.Writers.Ruby {
                 writer.WriteLine($"{DocCommentPrefix}");
                 writer.WriteLine($"# {description}");
             }
+        }
+        public string GetNormalizedNamespacePrefixForType(CodeTypeBase type) {
+            if(type is CodeType xType && 
+                (xType.TypeDefinition is CodeClass || xType.TypeDefinition is CodeEnum) &&
+                xType.TypeDefinition.Parent is CodeNamespace ns)
+                return $"{ns.Name.NormalizeNameSpaceName("::")}::";
+            else return string.Empty;
         }
         internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "#");
         internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default, string prefix = default) {

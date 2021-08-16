@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
-require_relative "lib/microsoft_kiota_serialization/version"
+require_relative "lib/microsoft_kiota_nethttp/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "microsoft_kiota_serialization"
-  spec.version       = MicrosoftKiotaSerialization::VERSION
+  spec.name          = "microsoft_kiota_nethttp"
+  spec.version       = MicrosoftKiotaNethttp::VERSION
   spec.authors       = 'Microsoft Corporation'
   spec.email         = 'graphsdkpub@microsoft.com'
-  spec.description   = 'Implementation of Kiota Serialization interfaces for JSON'
-  spec.summary       = 'Microsoft Kiota Serialization - Ruby serialization for building library agnostic http client'
+  spec.description   = 'Kiota HttpCore implementation with net/http'
+  spec.summary       = "Microsoft Kiota nethttp - Kiota Ruby http core library for running requests"
   spec.homepage      = 'https://microsoft.github.io/kiota/'
   spec.license       = 'MIT'
   spec.metadata      = {
@@ -28,6 +28,6 @@ Gem::Specification.new do |spec|
   spec.bindir        = 'bin'
   spec.executables   = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
-
-  spec.add_dependency 'uuidtools'
+  
+  spec.add_dependency 'concurrent-ruby', '~> 1.1', '>= 1.1.9'
 end

@@ -14,6 +14,7 @@ namespace Kiota.Builder.Writers.Ruby {
             if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
             if(writer == null) throw new ArgumentNullException(nameof(writer));
             if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
+            var returnType = conventions.GetTypeString(codeElement.ReturnType);
             WriteMethodDocumentation(codeElement, writer);
             var parentClass = codeElement.Parent as CodeClass;
             var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
@@ -29,13 +30,17 @@ namespace Kiota.Builder.Writers.Ruby {
                     WriteMethodPrototype(codeElement, writer);
                     WriteDeserializerBody(parentClass, writer);
                 break;
+                case CodeMethodKind.IndexerBackwardCompatibility:
+                    WriteMethodPrototype(codeElement, writer);
+                    WriteIndexerBody(codeElement, writer, returnType);
+                break;
                 case CodeMethodKind.RequestGenerator:
                     WriteMethodPrototype(codeElement, writer);
                     WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, writer);
                 break;
                 case CodeMethodKind.RequestExecutor:
                     WriteMethodPrototype(codeElement, writer);
-                    WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, writer);
+                    WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, returnType, writer);
                 break;
                 case CodeMethodKind.Getter:
                     WriteGetterBody(codeElement, writer);
@@ -64,7 +69,7 @@ namespace Kiota.Builder.Writers.Ruby {
             var httpCoreProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
             var httpCoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.HttpCore));
             var httpCorePropertyName = httpCoreProperty.Name.ToSnakeCase();
-            writer.WriteLine($"@{httpCorePropertyName} = {httpCoreParameter.Name}");
+            writer.WriteLine($"@{httpCorePropertyName} = {httpCoreParameter.Name.ToSnakeCase()}");
         }
         private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
             if(inherits)
@@ -98,6 +103,12 @@ namespace Kiota.Builder.Writers.Ruby {
             writer.IncreaseIndent();
             writer.WriteLine($"return @{codeElement.AccessedProperty?.Name?.ToSnakeCase()}");
         }
+        private void WriteIndexerBody(CodeMethod codeElement, LanguageWriter writer, string returnType) {
+            var prefix = conventions.GetNormalizedNamespacePrefixForType(codeElement.ReturnType);
+            var currentPathProperty = codeElement.Parent.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
+            var pathSegment = codeElement.PathSegment;
+            conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id", $"return {prefix}");
+        }
         private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer) {
             if((parentClass.StartBlock as CodeClass.Declaration).Inherits != null)
                 writer.WriteLine("return super.merge({");
@@ -113,7 +124,14 @@ namespace Kiota.Builder.Writers.Ruby {
             else
                 writer.WriteLine("}");
         }
-        private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam , LanguageWriter writer) {
+        private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam , string returnType, LanguageWriter writer) {
+            if(returnType.Equals("void", StringComparison.OrdinalIgnoreCase))
+            {
+                if(codeElement.IsOfKind(CodeMethodKind.RequestExecutor))
+                    returnType = "nil"; //generic type for the future
+            } else {
+                returnType = $"{codeElement?.Parent?.Parent.Name.NormalizeNameSpaceName("::")}::{returnType}";
+            }
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
 
@@ -133,13 +151,13 @@ namespace Kiota.Builder.Writers.Ruby {
             writer.WriteLine(")");
             var isStream = conventions.StreamTypeName.Equals(StringComparison.OrdinalIgnoreCase);
             var genericTypeForSendMethod = GetSendRequestMethodName(isStream);
-            writer.WriteLine($"return self.http_core.{genericTypeForSendMethod}(request_info, response_handler)");
+            writer.WriteLine($"return @http_core.{genericTypeForSendMethod}(request_info, {returnType}, response_handler)");
         }
 
         private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
-            writer.WriteLines("request_info = RequestInfo.new()",
-                                $"request_info.URI = {conventions.CurrentPathPropertyName} + {conventions.PathSegmentPropertyName}",
+            writer.WriteLines("request_info = MicrosoftKiotaAbstractions::RequestInfo.new()",
+                                $"request_info.uri = @{conventions.CurrentPathPropertyName} + @{conventions.PathSegmentPropertyName}",
                                 $"request_info.http_method = :{codeElement.HttpMethod?.ToString().ToUpperInvariant()}");
             if(headersParam != null)
                 writer.WriteLine($"request_info.set_headers_from_raw_object(h)");
