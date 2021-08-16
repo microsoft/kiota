@@ -8,7 +8,7 @@ module MicrosoftKiotaNethttp
     include MicrosoftKiotaAbstractions::HttpCore
     include Concurrent::Async
 
-    attr_accessor :authorization_header_key, :content_type_header_key, :parse_node_factory, :serialization_writer_factory, :client
+    attr_accessor :content_type_header_key, :parse_node_factory, :serialization_writer_factory, :client
     
     # TODO: When #478 is implemented then parse_node_factory and serialization_writer_factory should default to nil
     def initialize(authentication_provider, parse_node_factory, serialization_writer_factory, client = Net::HTTP)
@@ -16,7 +16,6 @@ module MicrosoftKiotaNethttp
         raise StandardError , 'authentication provider cannot be null'
       end
       @authentication_provider = authentication_provider
-      @authorization_header_key = 'Authorization'
       @content_type_header_key = 'Content-Type'
       # TODO: When #478 is implemented get the static factories if @parse_node_factory and @serialization_writer_factory are nil
       @parse_node_factory = parse_node_factory 
@@ -29,7 +28,7 @@ module MicrosoftKiotaNethttp
         raise StandardError, 'requestInfo cannot be null'
       end
 
-      self.await.add_bearer_if_not_present(request_info)
+      self.await.authentication_provider.authenticate_request(request_info)
       uri = request_info.uri
       http = @client.new(uri.host, uri.port)
       http.use_ssl = true
@@ -47,22 +46,6 @@ module MicrosoftKiotaNethttp
         end
         root_node = @parse_node_factory.get_parse_node(response_content_type, payload)
         root_node.get_object_value(type)
-      end
-    end
-
-    def add_bearer_if_not_present(request_info)
-      if !request_info.uri
-        raise StandardError, 'uri cannot be null'
-      end
-      if !request_info.headers.has_key?(@authorization_header_key) 
-        token = @authentication_provider.await.get_authorization_token(request_info.uri).value
-        if !token
-          raise StandardError, 'Could not get an authorization token'
-        end
-        if !request_info.headers
-          request_info.headers Hash.new()
-        end
-        request_info.headers[@authorization_header_key] = 'Bearer ' + token
       end
     end
 

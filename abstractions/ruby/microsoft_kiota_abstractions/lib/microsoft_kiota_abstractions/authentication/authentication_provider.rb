@@ -1,7 +1,7 @@
 module MicrosoftKiotaAbstractions
   module AuthenticationProvider
 
-    def get_authorization_token(request_url)
+    def authenticate_request(request)
       raise NotImplementedError.new
     end
     
