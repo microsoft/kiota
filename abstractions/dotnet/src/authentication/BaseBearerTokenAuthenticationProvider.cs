@@ -20,7 +20,7 @@ namespace Microsoft.Kiota.Abstractions.Authentication {
         ///     This method is called by the <see cref="BaseBearerTokenAuthenticationProvider" /> class to authenticate the request via the returned access token.
         /// </summary>
         /// <param name="request">The request to authenticate.</param>
-        /// <returns>The access token to use for the request.</returns>
+        /// <returns>A Task that holds the access token to use for the request.</returns>
         public abstract Task<string> GetAuthorizationToken(RequestInfo request);
     }
 }

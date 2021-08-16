@@ -16,7 +16,7 @@ The following table provides an overview of the languages supported by Kiota and
 | -------- | ---------- | ------------ | ------------- | -------------- | ---- | -------------- |
 | CSharp | [✔](https://github.com/microsoft/kiota/projects/5) | [✔](./abstractions/dotnet) | [JSON](./serialization/dotnet/json) | [Anonymous](./abstractions/dotnet/src/authentication/AnonymousAuthenticationProvider.cs), [Azure](./authentication/dotnet/azure) | [✔](./http/dotnet/httpclient) | [link](./requiredtools/dotnet.md) |
 | Go | [✔](https://github.com/microsoft/kiota/projects/8) | [✔](./abstractions/go)  | ❌ | ❌ | ❌ |  |
-| Java | [✔](https://github.com/microsoft/kiota/projects/7) | [✔](./abstractions/java) | [JSON](./serialization/java/json) | [Azure](./authentication/java/azure) | [✔](./http/java/okhttp) | [link](./requiredtools/java.md) |
+| Java | [✔](https://github.com/microsoft/kiota/projects/7) | [✔](./abstractions/java) | [JSON](./serialization/java/json) | [Anonymous](./abstractions/java/lib/src/main/java/com/microsoft/kiota/authentication/AnonymousAuthenticationProvider.java), [Azure](./authentication/java/azure) | [✔](./http/java/okhttp) | [link](./requiredtools/java.md) |
 | PHP | [❌](https://github.com/microsoft/kiota/projects/4) | [▶](https://github.com/microsoft/kiota/pull/321) | ❌ | ❌ | ❌ |  |
 | Python | [❌](https://github.com/microsoft/kiota/projects/3) | ❌ | ❌ | ❌ | ❌ |  |
 | Ruby | [✔](https://github.com/microsoft/kiota/projects/6) | [✔](./abstractions/ruby) | [JSON](./serialization/ruby/json/microsoft_kiota_serialization) | [❌](https://github.com/microsoft/kiota/issues/421) | [✔](./http/ruby/nethttp/microsoft_kiota_nethttp)|  |
