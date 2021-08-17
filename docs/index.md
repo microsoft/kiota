@@ -82,5 +82,6 @@ For more information on the various components used by the Kiota SDK, see the fo
 - [Models](models)
 - [Abstractions](kiotaabstractions)
 - [Core Library](corelibrary)
+- [Authentication](./authentication)
 
 For an overview of how the code generation process works, see the [Design Overview](designoverview).  
