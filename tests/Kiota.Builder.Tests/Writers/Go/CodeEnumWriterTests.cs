@@ -41,7 +41,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             Assert.Contains($"func Parse", result);
             Assert.Contains($"(v string) (interface{{}}, error)", result);
             Assert.Contains($"switch v", result);
-            Assert.Contains($"return 0, errors.New(\"Unkown ", result);
+            Assert.Contains($"return 0, errors.New(\"Unknown ", result);
             AssertExtensions.CurlyBracesAreClosed(result);
             Assert.Contains(optionName.ToUpperInvariant(), result);
         }

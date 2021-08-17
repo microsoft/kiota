@@ -245,23 +245,22 @@ namespace Kiota.Builder.Writers.Go.Tests {
             Assert.Contains("WriteAdditionalData(m.GetAdditionalData())", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
-        [Fact]
+        [Fact(Skip = "descriptions are not supported")]
         public void WritesMethodSyncDescription() {
-            //TODO when descriptions are supported
-            // method.Description = methodDescription;
-            // method.IsAsync = false;
-            // var parameter = new CodeParameter(method){
-            //     Description = paramDescription,
-            //     Name = paramName
-            // };
-            // parameter.Type = new CodeType(parameter) {
-            //     Name = "string"
-            // };
-            // method.AddParameter(parameter);
-            // writer.Write(method);
-            // var result = tw.ToString();
-            // Assert.DoesNotContain("@return a CompletableFuture of", result);
-            // AssertExtensions.CurlyBracesAreClosed(result);
+            method.Description = methodDescription;
+            method.IsAsync = false;
+            var parameter = new CodeParameter(method){
+                Description = paramDescription,
+                Name = paramName
+            };
+            parameter.Type = new CodeType(parameter) {
+                Name = "string"
+            };
+            method.AddParameter(parameter);
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.DoesNotContain("@return a CompletableFuture of", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void Defensive() {

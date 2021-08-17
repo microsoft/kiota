@@ -20,9 +20,6 @@ namespace Kiota.Builder.Writers.Go {
         public string ParseNodeInterfaceName => "ParseNode";
 
         public object AbstractionsHash => "ida96af0f171bb75f894a4013a6b3146a4397c58f11adb81a2b7cbea9314783a9";
-        internal string DocCommentStart = "/*";
-        internal string DocCommentEnd = " */";
-
         public string GetAccessModifier(AccessModifier access)
         {
             throw new InvalidOperationException("go uses a naming convention for access modifiers");
@@ -67,7 +64,7 @@ namespace Kiota.Builder.Writers.Go {
 
             return (typeName) switch {
                 "void" => string.Empty,
-                "string" => $"string",
+                "string" => "string",
                 "float" => "float32",
                 "integer" => "int32",
                 "long" => "int64",

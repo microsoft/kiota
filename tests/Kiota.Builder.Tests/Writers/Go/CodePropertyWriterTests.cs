@@ -47,21 +47,20 @@ namespace Kiota.Builder.Writers.Go.Tests {
             var result = tw.ToString();
             Assert.Contains($"{propertyName.ToFirstCharacterUpperCase()} *{typeName}", result);
         }
-        // [Fact]
-        // public void WritesFlagEnums() {
-        //     property.PropertyKind = CodePropertyKind.Custom;
-        //     property.Type = new CodeType(property) {
-        //         Name = "customEnum",
-        //     };
-        //     (property.Type as CodeType).TypeDefinition = new CodeEnum(property.Type) {
-        //         Name = "customEnumType",
-        //         Flags = true,
-        //     };
-        //     writer.Write(property);
-        //     var result = tw.ToString();
-        //     Assert.Contains("EnumSet", result);
-        // }
-        //TODO: flag enum support needs to be added in Go
+        [Fact(Skip = "flag enum support needs to be added in Go")]
+        public void WritesFlagEnums() {
+            property.PropertyKind = CodePropertyKind.Custom;
+            property.Type = new CodeType(property) {
+                Name = "customEnum",
+            };
+            (property.Type as CodeType).TypeDefinition = new CodeEnum(property.Type) {
+                Name = "customEnumType",
+                Flags = true,
+            };
+            writer.Write(property);
+            var result = tw.ToString();
+            Assert.Contains("EnumSet", result);
+        }
         [Fact]
         public void WritesNonNull() {
             property.PropertyKind = CodePropertyKind.Custom;

@@ -14,7 +14,7 @@ namespace Kiota.Builder
         public CodeRenderer(GenerationConfiguration configuration)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            rendererElementComparer = configuration.ShouldRenderMethodsOutsideOfClasses ? new CodeElementOrderComparerWithExternalMethods() : new CodeElementOrderComparer();
+            _rendererElementComparer = configuration.ShouldRenderMethodsOutsideOfClasses ? new CodeElementOrderComparerWithExternalMethods() : new CodeElementOrderComparer();
         }
         public async Task RenderCodeNamespaceToSingleFileAsync(LanguageWriter writer, CodeElement codeElement, string outputFile)
         {
@@ -50,14 +50,14 @@ namespace Kiota.Builder
                 }
             }
         }
-        private readonly CodeElementOrderComparer rendererElementComparer;
+        private readonly CodeElementOrderComparer _rendererElementComparer;
         private readonly GenerationConfiguration _configuration;
         private void RenderCode(LanguageWriter writer, CodeElement element)
         {
             writer.Write(element);
             if (!(element is CodeNamespace))
                 foreach (var childElement in element.GetChildElements()
-                                                   .OrderBy(x => x, rendererElementComparer))
+                                                   .OrderBy(x => x, _rendererElementComparer))
                 {
                     RenderCode(writer, childElement);
                 }

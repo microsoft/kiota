@@ -50,7 +50,7 @@ namespace Kiota.Builder.Writers.Go {
             }
             writer.DecreaseIndent();
             writer.WriteLines("}",
-                            $"return 0, errors.New(\"Unkown {typeName} value: \" + v)");
+                            $"return 0, errors.New(\"Unknown {typeName} value: \" + v)");
             writer.DecreaseIndent();
             writer.WriteLine("}");
         }
