@@ -21,7 +21,7 @@ namespace Microsoft.Kiota.Serialization.Json
         /// <summary>
         /// The <see cref="JsonParseNode"/> constructor.
         /// </summary>
-        /// <param name="node"></param>
+        /// <param name="node">The JsonElement to intialize the node with</param>
         public JsonParseNode(JsonElement node)
         {
             _jsonNode = node;
