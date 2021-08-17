@@ -16,7 +16,7 @@ namespace Kiota.Builder {
                     return Enumerable.Empty<string>();
             }
         }
-        public override string GetFileSuffix(CodeElement currentElement) => ".rb";
+        public override string FileSuffix => ".rb";
         public override string NormalizeFileName(CodeElement currentElement) => GetLastFileNameSegment(currentElement).ToSnakeCase();
         public override string NormalizeNamespaceSegment(string segmentName) => segmentName.ToSnakeCase();
     }

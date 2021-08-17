@@ -6,7 +6,7 @@ namespace Kiota.Builder {
     public class GoPathSegmenter : CommonPathSegmenter
     {
         public GoPathSegmenter(string rootPath, string clientNamespaceName) : base(rootPath, clientNamespaceName) {}
-        public override string GetFileSuffix(CodeElement currentElement) => ".go";
+        public override string FileSuffix => ".go";
         public override IEnumerable<string> GetAdditionalSegment(CodeElement currentElement, string fileName)
         {
             switch(currentElement) {

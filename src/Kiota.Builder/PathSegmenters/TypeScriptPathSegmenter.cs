@@ -7,7 +7,7 @@ namespace Kiota.Builder {
     public class TypeScriptPathSegmenter : CommonPathSegmenter
     {
         public TypeScriptPathSegmenter(string rootPath, string clientNamespaceName) : base (rootPath, clientNamespaceName) { }
-        public override string GetFileSuffix(CodeElement currentElement) =>  ".ts";
+        public override string FileSuffix =>  ".ts";
         public override string NormalizeFileName(CodeElement currentElement) {
             switch(currentElement) {
                 case CodeNamespace ns:
