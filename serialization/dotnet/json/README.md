@@ -5,7 +5,7 @@
 - [ ] coverage code
 - [ ] analyzers
 - [ ] unit test project
-- [ ] docs comments
+- [x] docs comments
 
 ## Using the JSON Serialization implementations
 
