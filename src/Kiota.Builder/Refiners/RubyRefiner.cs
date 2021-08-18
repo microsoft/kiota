@@ -13,7 +13,7 @@ namespace Kiota.Builder.Refiners {
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddParsableInheritanceForModelClasses(generatedCode);
             AddInheritedAndMethodTypesImports(generatedCode);
-            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders, defaultSymbolsForApiClient);
+            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
             AddGetterAndSetterMethods(generatedCode, new() {
                                                     CodePropertyKind.Custom,
                                                     CodePropertyKind.AdditionalData,
@@ -24,6 +24,10 @@ namespace Kiota.Builder.Refiners {
             AddNamespaceModuleImports(generatedCode , _configuration.ClientNamespaceName);
             FixReferencesToEntityType(generatedCode);
             FixInheritedEntityType(generatedCode);
+            AddSerializationModulesImport(generatedCode,
+                                        new [] { "microsoft_kiota_abstractions.ApiClientBuilder",
+                                                "microsoft_kiota_abstractions.SerializationWriterFactoryRegistry" },
+                                        new [] { "microsoft_kiota_abstractions.ParseNodeFactoryRegistry" });
         }
         private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
             new ("HttpCore", "microsoft_kiota_abstractions"),
@@ -39,11 +43,6 @@ namespace Kiota.Builder.Refiners {
         private static readonly Tuple<string, string>[] defaultNamespacesForModels = new Tuple<string, string>[] { 
             new ("ParseNode", "microsoft_kiota_abstractions"),
             new ("Parsable", "microsoft_kiota_abstractions"),
-        };
-        private static readonly Tuple<string, string>[] defaultSymbolsForApiClient = new Tuple<string, string>[] { 
-            new ("ApiClientBuilder", "microsoft_kiota_abstractions"),
-            new ("SerializationWriterFactoryRegistry", "microsoft_kiota_abstractions"),
-            new ("ParseNodeFactoryRegistry", "microsoft_kiota_abstractions"),
         };
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 

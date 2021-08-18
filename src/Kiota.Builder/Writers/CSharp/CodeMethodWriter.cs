@@ -54,6 +54,8 @@ namespace Kiota.Builder.Writers.CSharp {
                 case CodeMethodKind.Getter:
                 case CodeMethodKind.Setter:
                     throw new InvalidOperationException("getters and setters are automatically added on fields in dotnet");
+                case CodeMethodKind.RequestBuilderBackwardCompatibility:
+                    throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
                 default:
                     writer.WriteLine("return null;");
                 break;

@@ -9,9 +9,14 @@ namespace Kiota.Builder
     /// <summary>
     /// Convert CodeDOM classes to strings or files
     /// </summary>
-    public static class CodeRenderer
+    public class CodeRenderer
     {
-        public static async Task RenderCodeNamespaceToSingleFileAsync(LanguageWriter writer, CodeElement codeElement, string outputFile)
+        public CodeRenderer(GenerationConfiguration configuration)
+        {
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _rendererElementComparer = configuration.ShouldRenderMethodsOutsideOfClasses ? new CodeElementOrderComparerWithExternalMethods() : new CodeElementOrderComparer();
+        }
+        public async Task RenderCodeNamespaceToSingleFileAsync(LanguageWriter writer, CodeElement codeElement, string outputFile)
         {
             using var stream = new FileStream(outputFile, FileMode.Create);
 
@@ -21,7 +26,7 @@ namespace Kiota.Builder
             await sw.FlushAsync();
         }
         // We created barrells for codenamespaces. Skipping for empty namespaces, ones created for users, and ones with same namspace as class name.
-        public static async Task RenderCodeNamespaceToFilePerClassAsync(LanguageWriter writer, CodeNamespace root, bool shouldWriteNamespaceIndices, string namespacePrefix)
+        public async Task RenderCodeNamespaceToFilePerClassAsync(LanguageWriter writer, CodeNamespace root)
         {
             foreach (var codeElement in root.GetChildElements(true))
             {
@@ -29,25 +34,30 @@ namespace Kiota.Builder
                     await RenderCodeNamespaceToSingleFileAsync(writer, codeClass, writer.PathSegmenter.GetPath(root, codeClass));
                 else if (codeElement is CodeEnum codeEnum)
                     await RenderCodeNamespaceToSingleFileAsync(writer, codeEnum, writer.PathSegmenter.GetPath(root, codeEnum));
-                else if(codeElement is CodeNamespace codeNamespace) {
-                    
-                    if(!string.IsNullOrEmpty(codeNamespace.Name) && !string.IsNullOrEmpty(root.Name) && shouldWriteNamespaceIndices && !namespacePrefix.Contains(codeNamespace.Name, StringComparison.OrdinalIgnoreCase)) {
+                else if (codeElement is CodeNamespace codeNamespace)
+                {
+                    if (!string.IsNullOrEmpty(codeNamespace.Name) && !string.IsNullOrEmpty(root.Name) &&
+                        _configuration.ShouldWriteNamespaceIndices &&
+                        !_configuration.ClientNamespaceName.Contains(codeNamespace.Name, StringComparison.OrdinalIgnoreCase))
+                    {
                         var namespaceNameLastSegment = codeNamespace.Name.Split('.').Last().ToLowerInvariant();
-                        // for ruby if the module already has a class with the same name, it's going to be declared automatically
-                        if(codeNamespace.FindChildByName<CodeClass>(namespaceNameLastSegment, false) == null)
+                        // if the module already has a class with the same name, it's going to be declared automatically
+                        if (_configuration.ShouldWriteBarrelsIfClassExists ||
+                            codeNamespace.FindChildByName<CodeClass>(namespaceNameLastSegment, false) == null)
                             await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(root, codeNamespace));
                     }
-                    await RenderCodeNamespaceToFilePerClassAsync(writer, codeNamespace, shouldWriteNamespaceIndices, namespacePrefix);
+                    await RenderCodeNamespaceToFilePerClassAsync(writer, codeNamespace);
                 }
             }
         }
-        private static readonly CodeElementOrderComparer rendererElementComparer = new CodeElementOrderComparer();
-        private static void RenderCode(LanguageWriter writer, CodeElement element)
+        private readonly CodeElementOrderComparer _rendererElementComparer;
+        private readonly GenerationConfiguration _configuration;
+        private void RenderCode(LanguageWriter writer, CodeElement element)
         {
             writer.Write(element);
-            if(!(element is CodeNamespace))
+            if (!(element is CodeNamespace))
                 foreach (var childElement in element.GetChildElements()
-                                                   .OrderBy(x => x, rendererElementComparer))
+                                                   .OrderBy(x => x, _rendererElementComparer))
                 {
                     RenderCode(writer, childElement);
                 }

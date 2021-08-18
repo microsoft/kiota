@@ -66,6 +66,8 @@ namespace Kiota.Builder.Writers.Java {
                 case CodeMethodKind.Constructor:
                     WriteConstructorBody(parentClass, codeElement, writer, inherits);
                     break;
+                case CodeMethodKind.RequestBuilderBackwardCompatibility:
+                    throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
                 default:
                     writer.WriteLine("return null;");
                 break;
@@ -169,10 +171,11 @@ namespace Kiota.Builder.Writers.Java {
             writer.IncreaseIndent();
             WriteGeneratorMethodCall(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer, $"final RequestInfo {requestInfoVarName} = ");
             var sendMethodName = GetSendRequestMethodName(codeElement.ReturnType.IsCollection, returnType);
+            var responseHandlerParam = codeElement.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.ResponseHandler));
             if(codeElement.Parameters.Any(x => x.IsOfKind(CodeParameterKind.ResponseHandler)))
-                writer.WriteLine($"return this.httpCore.{sendMethodName}(requestInfo, {returnType}.class, responseHandler);");
+                writer.WriteLine($"return this.httpCore.{sendMethodName}({requestInfoVarName}, {returnType}.class, {responseHandlerParam.Name});");
             else
-                writer.WriteLine($"return this.httpCore.{sendMethodName}(requestInfo, {returnType}.class, null);");
+                writer.WriteLine($"return this.httpCore.{sendMethodName}({requestInfoVarName}, {returnType}.class, null);");
             writer.DecreaseIndent();
             writer.WriteLine("} catch (URISyntaxException ex) {");
             writer.IncreaseIndent();

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder {
@@ -6,7 +7,7 @@ namespace Kiota.Builder {
     {
         public JavaPathSegmenter(string rootPath, string clientNamespaceName) : base(rootPath, clientNamespaceName) { }
         public override string FileSuffix => ".java";
-        public override string NormalizeFileName(string elementName) => elementName.ToFirstCharacterUpperCase();
+        public override string NormalizeFileName(CodeElement currentElement) => GetLastFileNameSegment(currentElement).ToFirstCharacterUpperCase();
         public override string NormalizeNamespaceSegment(string segmentName) => segmentName.ToFirstCharacterLowerCase();
     }
 }

@@ -10,6 +10,7 @@ namespace Kiota.Builder.integrationtests
         [InlineData(GenerationLanguage.CSharp, false)]
         [InlineData(GenerationLanguage.Java, false)]
         [InlineData(GenerationLanguage.TypeScript, false)]
+        [InlineData(GenerationLanguage.Go, false)]
         [InlineData(GenerationLanguage.Ruby, false)]
         [InlineData(GenerationLanguage.CSharp, true)]
         [InlineData(GenerationLanguage.Java, true)]

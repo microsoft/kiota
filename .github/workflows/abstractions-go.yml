@@ -1,0 +1,26 @@
+name: Go abstractions
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths: ['abstractions/go/**', '.github/workflows/**']
+  pull_request:
+    paths: ['abstractions/go/**', '.github/workflows/**']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      relativePath: ./abstractions/go
+    steps:
+      - uses: actions/checkout@v2.3.4
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.16.6'
+      - name: Install dependencies
+        run: go install
+        working-directory: ${{ env.relativePath }}
+      - name: Build SDK project
+        run: go build
+        working-directory: ${{ env.relativePath }}

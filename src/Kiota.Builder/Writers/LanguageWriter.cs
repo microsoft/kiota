@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using Kiota.Builder.Writers.CSharp;
+using Kiota.Builder.Writers.Go;
 using Kiota.Builder.Writers.Java;
 using Kiota.Builder.Writers.Ruby;
 using Kiota.Builder.Writers.TypeScript;
@@ -72,39 +73,35 @@ namespace Kiota.Builder.Writers
         /// <param name="code"></param>
         public void Write<T>(T code) where T : CodeElement
         {
-            _ = Writers.TryGetValue(code.GetType(), out var elementWriter);
-            switch(code) {
-                case CodeProperty p: // we have to do this triage because dotnet is limited in terms of covariance
-                    ((ICodeElementWriter<CodeProperty>) elementWriter).WriteCodeElement(p, this);
-                    break;
-                case CodeIndexer i:
-                    ((ICodeElementWriter<CodeIndexer>) elementWriter).WriteCodeElement(i, this);
-                    break;
-                case CodeClass.Declaration d:
-                    ((ICodeElementWriter<CodeClass.Declaration>) elementWriter).WriteCodeElement(d, this);
-                    break;
-                case CodeClass.End i:
-                    ((ICodeElementWriter<CodeClass.End>) elementWriter).WriteCodeElement(i, this);
-                    break;
-                case CodeEnum e:
-                    ((ICodeElementWriter<CodeEnum>) elementWriter).WriteCodeElement(e, this);
-                    break;
-                case CodeMethod m:
-                    ((ICodeElementWriter<CodeMethod>) elementWriter).WriteCodeElement(m, this);
-                    break;
-                case CodeType t:
-                    ((ICodeElementWriter<CodeType>) elementWriter).WriteCodeElement(t, this);
-                    break;
-                case CodeNamespace n:
-                    ((ICodeElementWriter<CodeNamespace>) elementWriter).WriteCodeElement(n, this);
-                    break;
-                case CodeNamespace.BlockDeclaration:
-                case CodeNamespace.BlockEnd:
-                case CodeClass:
-                    break;
-                default:
-                    throw new InvalidOperationException($"Dispatcher missing for type {code.GetType()}");
-            }
+            if(Writers.TryGetValue(code.GetType(), out var elementWriter))
+                switch(code) {
+                    case CodeProperty p: // we have to do this triage because dotnet is limited in terms of covariance
+                        ((ICodeElementWriter<CodeProperty>) elementWriter).WriteCodeElement(p, this);
+                        break;
+                    case CodeIndexer i:
+                        ((ICodeElementWriter<CodeIndexer>) elementWriter).WriteCodeElement(i, this);
+                        break;
+                    case CodeClass.Declaration d:
+                        ((ICodeElementWriter<CodeClass.Declaration>) elementWriter).WriteCodeElement(d, this);
+                        break;
+                    case CodeClass.End i:
+                        ((ICodeElementWriter<CodeClass.End>) elementWriter).WriteCodeElement(i, this);
+                        break;
+                    case CodeEnum e:
+                        ((ICodeElementWriter<CodeEnum>) elementWriter).WriteCodeElement(e, this);
+                        break;
+                    case CodeMethod m:
+                        ((ICodeElementWriter<CodeMethod>) elementWriter).WriteCodeElement(m, this);
+                        break;
+                    case CodeType t:
+                        ((ICodeElementWriter<CodeType>) elementWriter).WriteCodeElement(t, this);
+                        break;
+                    case CodeNamespace n:
+                        ((ICodeElementWriter<CodeNamespace>) elementWriter).WriteCodeElement(n, this);
+                        break;
+                }
+            else if(!(code is CodeClass) && !(code is CodeNamespace.BlockDeclaration) && !(code is CodeNamespace.BlockEnd))
+                throw new InvalidOperationException($"Dispatcher missing for type {code.GetType()}");
         }
         protected void AddCodeElementWriter<T>(ICodeElementWriter<T> writer) where T: CodeElement {
             Writers.Add(typeof(T), writer);
@@ -117,6 +114,7 @@ namespace Kiota.Builder.Writers
                 GenerationLanguage.Java => new JavaWriter(outputPath, clientNamespaceName),
                 GenerationLanguage.TypeScript => new TypeScriptWriter(outputPath, clientNamespaceName),
                 GenerationLanguage.Ruby => new RubyWriter(outputPath, clientNamespaceName),
+                GenerationLanguage.Go => new GoWriter(outputPath, clientNamespaceName),
                 _ => throw new InvalidEnumArgumentException($"{language} language currently not supported."),
             };
         }
