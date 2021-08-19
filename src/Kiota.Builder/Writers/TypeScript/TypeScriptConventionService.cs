@@ -24,11 +24,13 @@ namespace Kiota.Builder.Writers.TypeScript {
 
         public string ParseNodeInterfaceName => "ParseNode";
 
+        public object RawUrlPropertyName => "isRawUrl";
+
         internal string DocCommentStart = "/**";
         internal string DocCommentEnd = " */";
         internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default) {
             var currentPath = addCurrentPath ? $"this.{CurrentPathPropertyName} + " : string.Empty;
-            writer.WriteLines($"return new {returnType}({currentPath}this.{PathSegmentPropertyName}{suffix}, this.{HttpCorePropertyName});");
+            writer.WriteLines($"return new {returnType}({currentPath}this.{PathSegmentPropertyName}{suffix}, this.{HttpCorePropertyName}, false);");
         }
 
         public string GetAccessModifier(AccessModifier access)
@@ -42,7 +44,8 @@ namespace Kiota.Builder.Writers.TypeScript {
 
         public string GetParameterSignature(CodeParameter parameter)
         {
-            return $"{parameter.Name}{(parameter.Optional ? "?" : string.Empty)}: {GetTypeString(parameter.Type)}{(parameter.Type.IsNullable ? " | undefined": string.Empty)}";
+            var defaultValueSuffiix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue}";
+            return $"{parameter.Name}{(parameter.Optional && parameter.Type.IsNullable ? "?" : string.Empty)}: {GetTypeString(parameter.Type)}{(parameter.Type.IsNullable ? " | undefined": string.Empty)}{defaultValueSuffiix}";
         }
 
         public string GetTypeString(CodeTypeBase code)

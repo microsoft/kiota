@@ -103,6 +103,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.HttpCore, CodePropertyKind.HttpCore, writer);
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.CurrentPath, CodePropertyKind.CurrentPath, writer);
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RawUrl, CodePropertyKind.RawUrl, writer);
             }
         }
         private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
@@ -181,8 +182,8 @@ namespace Kiota.Builder.Writers.TypeScript {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
             writer.WriteLines($"const {requestInfoVarName} = new RequestInfo();",
-                                $"{requestInfoVarName}.URI = (this.{localConventions.CurrentPathPropertyName} ?? '') + this.{localConventions.PathSegmentPropertyName},",
-                                $"{requestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.ToString().ToUpperInvariant()},");
+                                $"{requestInfoVarName}.setUri(this.{localConventions.CurrentPathPropertyName}, this.{localConventions.PathSegmentPropertyName}, this.{localConventions.RawUrlPropertyName});",
+                                $"{requestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.ToString().ToUpperInvariant()};");
             if(headersParam != null)
                 writer.WriteLine($"{headersParam.Name} && {requestInfoVarName}.setHeadersFromRawObject(h);");
             if(queryStringParam != null)
@@ -227,6 +228,7 @@ namespace Kiota.Builder.Writers.TypeScript {
                 writer.WriteLine(localConventions.DocCommentEnd);
             }
         }
+        private static CodeParameterOrderComparer parameterOrderComparer = new CodeParameterOrderComparer();
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid) {
             var accessModifier = localConventions.GetAccessModifier(code.Access);
             var methodName = (code.MethodKind switch {
@@ -235,7 +237,7 @@ namespace Kiota.Builder.Writers.TypeScript {
                 _ => code.Name,
             })?.ToFirstCharacterLowerCase();
             var asyncPrefix = code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? " async ": string.Empty;
-            var parameters = string.Join(", ", code.Parameters.Select(p=> localConventions.GetParameterSignature(p)).ToList());
+            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> localConventions.GetParameterSignature(p)).ToList());
             var asyncReturnTypePrefix = code.IsAsync ? "Promise<": string.Empty;
             var asyncReturnTypeSuffix = code.IsAsync ? ">": string.Empty;
             var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? " | undefined" : string.Empty;

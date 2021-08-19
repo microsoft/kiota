@@ -8,12 +8,33 @@ import { MiddlewareOption } from "./middlewareOption";
 export class RequestInfo {
     /** The URI of the request. */
     public URI?: string;
+    public setUri(currentPath: string, pathSegment: string, isRawUrl: boolean) : void {
+        if(isRawUrl) {
+            const questionMarkSplat = currentPath.split('?');
+            const schemeHostAndPath = questionMarkSplat[0];
+            this.URI = schemeHostAndPath;
+            if(questionMarkSplat.length > 1) {
+                const queryString = questionMarkSplat[1];
+                queryString?.split('&').forEach(queryPair => {
+                    const keyValue = queryPair.split('=');
+                    if(keyValue.length > 1) {
+                        const key = keyValue[0];
+                        if(key) {
+                            this.queryParameters.set(key, keyValue[1]);
+                        }
+                    }
+                });
+            }
+        } else {
+            this.URI = currentPath + pathSegment;
+        }
+    }
     /** The HTTP method for the request */
     public httpMethod?: HttpMethod;
     /** The Request Body. */
     public content?: ReadableStream;
     /** The Query Parameters of the request. */
-    public queryParameters: Map<string, object> = new Map<string, object>(); //TODO: case insensitive
+    public queryParameters: Map<string, string | number | boolean | undefined> = new Map<string, string | number | boolean | undefined>(); //TODO: case insensitive
     /** The Request Headers. */
     public headers: Map<string, string> = new Map<string, string>(); //TODO: case insensitive
     private _middlewareOptions = new Map<string, MiddlewareOption>(); //TODO: case insensitive
