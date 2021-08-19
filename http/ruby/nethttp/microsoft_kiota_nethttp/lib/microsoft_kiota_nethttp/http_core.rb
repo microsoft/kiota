@@ -8,7 +8,7 @@ module MicrosoftKiotaNethttp
     include MicrosoftKiotaAbstractions::HttpCore
     include Concurrent::Async
 
-    attr_accessor :content_type_header_key, :parse_node_factory, :serialization_writer_factory, :client
+    attr_accessor :authentication_provider, :content_type_header_key, :parse_node_factory, :serialization_writer_factory, :client
     
     # TODO: When #478 is implemented then parse_node_factory and serialization_writer_factory should default to nil
     def initialize(authentication_provider, parse_node_factory, serialization_writer_factory, client = Net::HTTP)
@@ -28,7 +28,7 @@ module MicrosoftKiotaNethttp
         raise StandardError, 'requestInfo cannot be null'
       end
 
-      self.await.authentication_provider.authenticate_request(request_info)
+      self.authentication_provider.await.authenticate_request(request_info)
       uri = request_info.uri
       http = @client.new(uri.host, uri.port)
       http.use_ssl = true
