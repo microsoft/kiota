@@ -39,6 +39,15 @@ export class InMemoryBackingStore implements BackingStore {
                         this.store, 
             (_, k) => { return { key: k, value: this.store.get(k)?.value}});
     }
+    public enumerateKeysForValuesChangedToNull(): string[] {
+        const keys: string[] = [];
+        for(const [key, entry] of this.store) {
+            if(entry.changed && !entry.value) {
+                keys.push(key);
+            }
+        }
+        return keys;
+    }
     public subscribe(callback: subscriptionCallback, subscriptionId?: string | undefined): string {
         if(!callback)
             throw new Error("callback cannot be undefined");

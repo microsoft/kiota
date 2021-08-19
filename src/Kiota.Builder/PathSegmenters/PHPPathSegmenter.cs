@@ -7,6 +7,6 @@ namespace Kiota.Builder
         public PHPPathSegmenter(string rootPath, string clientNamespaceName) : base(rootPath, clientNamespaceName) { }
         public override string FileSuffix => ".php";
         public override string NormalizeNamespaceSegment(string segmentName) => segmentName.ToFirstCharacterUpperCase();
-        public override string NormalizeFileName(string elementName) => elementName.ToFirstCharacterUpperCase();
+        public override string NormalizeFileName(CodeElement currentElement) => currentElement.Name.ToFirstCharacterUpperCase();
     }
 }

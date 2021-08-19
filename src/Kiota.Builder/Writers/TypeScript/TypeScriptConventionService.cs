@@ -86,6 +86,7 @@ namespace Kiota.Builder.Writers.TypeScript {
         {
             return (typeName) switch  {//TODO we're probably missing a bunch of type mappings
                 "integer" => "number",
+                "double" => "number",
                 "string" or "object" or "boolean" or "void" => typeName, // little casing hack
                 _ => typeName.ToFirstCharacterUpperCase() ?? "object",
             };

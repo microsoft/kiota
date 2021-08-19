@@ -24,6 +24,8 @@ import com.microsoft.kiota.serialization.ParseNode;
 import com.microsoft.kiota.serialization.ParseNodeFactory;
 import com.microsoft.kiota.serialization.SerializationWriterFactory;
 import com.microsoft.kiota.serialization.SerializationWriterFactoryRegistry;
+import com.microsoft.kiota.store.BackingStoreFactory;
+import com.microsoft.kiota.store.BackingStoreFactorySingleton;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -72,9 +74,12 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
     public SerializationWriterFactory getSerializationWriterFactory() {
         return sWriterFactory;
     }
-    public void enableBackingStore() {
+    public void enableBackingStore(@Nullable final BackingStoreFactory backingStoreFactory) {
         this.pNodeFactory = Objects.requireNonNull(ApiClientBuilder.enableBackingStoreForParseNodeFactory(pNodeFactory));
         this.sWriterFactory = Objects.requireNonNull(ApiClientBuilder.enableBackingStoreForSerializationWriterFactory(sWriterFactory));
+        if(backingStoreFactory != null) {
+            BackingStoreFactorySingleton.instance = backingStoreFactory;
+        }
     }
     @Nonnull
     public <ModelType extends Parsable> CompletableFuture<Iterable<ModelType>> sendCollectionAsync(@Nonnull final RequestInfo requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {

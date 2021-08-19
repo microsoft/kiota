@@ -10,10 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Ruby JSON serialization #429
+- Ruby HTTP service #472
+- Go generation support & abstractions #413
 
 ### Changed
 
 - Fixed a bug where raw collections requests would not be supported #467
+- Fixes a bug where in memory backing store would not return changed properties to null #243
+- Fixes a bug where generated models would be tied to a specific backing store implementation #400
+- Fixed #428 a bug where inline double defintion would make code dom generation fail
 
 ## [0.0.7] - 2021-08-04
 

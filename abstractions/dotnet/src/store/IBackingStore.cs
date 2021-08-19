@@ -21,6 +21,11 @@ namespace Microsoft.Kiota.Abstractions.Store {
         /// <returns>The values available in the backing store.</returns>
         IEnumerable<KeyValuePair<string, object>> Enumerate();
         /// <summary>
+        /// Enumerates the keys for all values that changed to null.
+        /// </summary>
+        /// <returns>The keys for all values that changed to null.</returns>
+        IEnumerable<string> EnumerateKeysForValuesChangedToNull();
+        /// <summary>
         /// Creates a subscription to any data change happening.
         /// </summary>
         /// <param name="callback">Callback to be invoked on data changes where the first parameter is the data key, the second the previous value and the third the new value.</param>

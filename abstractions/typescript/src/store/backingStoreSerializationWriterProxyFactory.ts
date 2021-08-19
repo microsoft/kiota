@@ -20,6 +20,14 @@ export class BackingStoreSerializationWriterProxyFactory extends SerializationWr
                     backedModel.backingStore.returnOnlyChangedValues = false;
                     backedModel.backingStore.initializationCompleted = true;
                 }
+            },
+            (value, writer) => {
+                const backedModel = value as unknown as BackedModel;
+                if(backedModel && backedModel.backingStore) {
+                    const keys = backedModel.backingStore.enumerateKeysForValuesChangedToNull();
+                    for(const key of keys)
+                        writer.writeNullValue(key);
+                }
             });
     }
 }

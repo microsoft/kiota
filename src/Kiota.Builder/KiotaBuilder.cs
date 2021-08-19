@@ -199,11 +199,10 @@ namespace Kiota.Builder
 
         public async Task CreateLanguageSourceFilesAsync(GenerationLanguage language, CodeNamespace generatedCode)
         {
-            var languageWriter = LanguageWriter.GetLanguageWriter(language, this.config.OutputPath, this.config.ClientNamespaceName, this.config.UsesBackingStore);
+            var languageWriter = LanguageWriter.GetLanguageWriter(language, this.config.OutputPath, this.config.ClientNamespaceName);
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            var shouldWriteNamespaceIndices = language == GenerationLanguage.Ruby;
-            await CodeRenderer.RenderCodeNamespaceToFilePerClassAsync(languageWriter, generatedCode, shouldWriteNamespaceIndices, config.ClientNamespaceName);
+            await new CodeRenderer(config).RenderCodeNamespaceToFilePerClassAsync(languageWriter, generatedCode);
             stopwatch.Stop();
             logger.LogTrace("{timestamp}ms: Files written to {path}", stopwatch.ElapsedMilliseconds, config.OutputPath);
         }
@@ -349,6 +348,35 @@ namespace Kiota.Builder
                 Description = httpCoreProperty.Description,
                 ParameterKind = CodeParameterKind.HttpCore,
             });
+            if(isApiClientClass && config.UsesBackingStore) {
+                var backingStoreParam = new CodeParameter(constructor) {
+                    Name = "backingStore",
+                    Optional = true,
+                    Description = "The backing store to use for the models.",
+                    ParameterKind = CodeParameterKind.BackingStore,
+                };
+                var factoryInterfaceName = $"{backingStoreInterface}Factory";
+                backingStoreParam.Type = new CodeType(backingStoreParam) {
+                    Name = factoryInterfaceName,
+                    IsNullable = true,
+                };
+                constructor.AddParameter(backingStoreParam);
+                var backingStoreInterfaceUsing = new CodeUsing(currentClass) {
+                    Name = factoryInterfaceName,
+                };
+                backingStoreInterfaceUsing.Declaration = new CodeType(backingStoreInterfaceUsing) {
+                    Name = storeNamespaceName,
+                    IsExternal = true,
+                };
+                var backingStoreSingletonUsing = new CodeUsing(currentClass) {
+                    Name = backingStoreSingleton,
+                };
+                backingStoreSingletonUsing.Declaration = new CodeType(backingStoreSingletonUsing) {
+                    Name = storeNamespaceName,
+                    IsExternal = true,
+                };
+                currentClass.AddUsing(backingStoreInterfaceUsing, backingStoreSingletonUsing);
+            }
         }
         private static Func<CodeClass, int> shortestNamespaceOrder = (x) => x.Parent.Name.Split('.').Length;
         /// <summary>
@@ -456,6 +484,8 @@ namespace Kiota.Builder
         private static HashSet<string> typeNamesToSkip = new() {"object", "array"};
         private static CodeType GetPrimitiveType(CodeElement parent, OpenApiSchema typeSchema, string childType) {
             var typeNames = new List<string>{typeSchema?.Items?.Type, childType, typeSchema?.Type};
+            if(typeSchema?.AnyOf?.Any() ?? false)
+                typeNames.AddRange(typeSchema.AnyOf.Select(x => x.Type)); // double is sometimes an anyof string, number and enum
             // first value that's not null, and not "object" for primitive collections, the items type matters
             var typeName = typeNames.FirstOrDefault(x => !string.IsNullOrEmpty(x) && !typeNamesToSkip.Contains(x));
            
@@ -751,6 +781,7 @@ namespace Kiota.Builder
         private const string additionalDataPropName = "AdditionalData";
         private const string backingStorePropertyName = "BackingStore";
         private const string backingStoreInterface = "IBackingStore";
+        private const string backingStoreSingleton = "BackingStoreFactorySingleton";
         private const string backedModelInterface = "IBackedModel";
         private const string storeNamespaceName = "Microsoft.Kiota.Abstractions.Store";
         private void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties) {
@@ -809,12 +840,10 @@ namespace Kiota.Builder
             if(!model.ContainsMember(backingStorePropertyName) &&
                config.UsesBackingStore &&
                !(model.GetGreatestGrandparent(model)?.ContainsMember(backingStorePropertyName) ?? false)) {
-                var storeImplFragments = config.BackingStore.Split('.');
-                var storeImplClassName = storeImplFragments.Last();
                 var backingStoreProperty = new CodeProperty(model) {
                     Name = backingStorePropertyName,
                     Access = AccessModifier.Public,
-                    DefaultValue = $"new {storeImplClassName}()",
+                    DefaultValue = $"BackingStoreFactorySingleton.Instance.CreateBackingStore()",
                     PropertyKind = CodePropertyKind.BackingStore,
                     Description = "Stores model information.",
                     ReadOnly = true,
@@ -841,10 +870,10 @@ namespace Kiota.Builder
                     IsExternal = true
                 };
                 var storeImplUsing = new CodeUsing(model) {
-                    Name = storeImplClassName,
+                    Name = backingStoreSingleton,
                 };
                 storeImplUsing.Declaration = new CodeType(storeImplUsing) {
-                    Name = storeImplFragments.SkipLast(1).Aggregate((x, y) => $"{x}.{y}"),
+                    Name = storeNamespaceName,
                     IsExternal = true,
                 };
                 model.AddUsing(backingStoreUsing, backedModelUsing, storeImplUsing);

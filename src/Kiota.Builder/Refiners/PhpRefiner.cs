@@ -16,7 +16,6 @@ namespace Kiota.Builder.Refiners
             //AddInnerClasses(generatedCode);
             AddDefaultImports(generatedCode, defaultNamespaces, 
                 Array.Empty<Tuple<string, string>>(), 
-                Array.Empty<Tuple<string, string>>(),
                 Array.Empty<Tuple<string, string>>());
         }
     }

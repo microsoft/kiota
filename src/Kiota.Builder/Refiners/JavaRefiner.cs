@@ -9,16 +9,16 @@ namespace Kiota.Builder.Refiners {
         public JavaRefiner(GenerationConfiguration configuration) : base(configuration) {}
         public override void Refine(CodeNamespace generatedCode)
         {
-            AddInnerClasses(generatedCode);
+            AddInnerClasses(generatedCode, false);
             AndInsertOverrideMethodForRequestExecutorsAndBuilders(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode);
             ConvertUnionTypesToWrapper(generatedCode);
             AddRequireNonNullImports(generatedCode);
             FixReferencesToEntityType(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
-            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders, defaultSymbolsForApiClient);
+            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
-            PatchHeaderParametersType(generatedCode);
+            PatchHeaderParametersType(generatedCode, "Map<String, String>");
             AddListImport(generatedCode);
             AddParsableInheritanceForModelClasses(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
@@ -30,10 +30,13 @@ namespace Kiota.Builder.Refiners {
                                                     CodePropertyKind.BackingStore,
                                                 }, _configuration.UsesBackingStore, true);
             AddConstructorsForDefaultValues(generatedCode, true);
-            CorrectCoreTypesForBackingStoreUsings(generatedCode, "com.microsoft.kiota.store");
+            CorrectCoreTypesForBackingStore(generatedCode, "com.microsoft.kiota.store", "BackingStoreFactorySingleton.instance.createBackingStore()");
             ReplaceDefaultSerializationModules(generatedCode, "com.microsoft.kiota.serialization.JsonSerializationWriterFactory");
             ReplaceDefaultDeserializationModules(generatedCode, "com.microsoft.kiota.serialization.JsonParseNodeFactory");
-            AddSerializationModulesImport(generatedCode);
+            AddSerializationModulesImport(generatedCode,
+                                        new [] { "com.microsoft.kiota.ApiClientBuilder",
+                                                "com.microsoft.kiota.serialization.SerializationWriterFactoryRegistry" },
+                                        new [] { "com.microsoft.kiota.serialization.ParseNodeFactoryRegistry" });
         }
         private static void AddEnumSetImport(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) &&
@@ -96,11 +99,6 @@ namespace Kiota.Builder.Refiners {
             new ("Map", "java.util"),
             new ("HashMap", "java.util"),
         };
-        private static readonly Tuple<string, string>[] defaultSymbolsForApiClient = new Tuple<string, string>[] { 
-            new ("ApiClientBuilder", "com.microsoft.kiota"),
-            new ("SerializationWriterFactoryRegistry", "com.microsoft.kiota.serialization"),
-            new ("ParseNodeFactoryRegistry", "com.microsoft.kiota.serialization"),
-        };
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if(currentProperty.IsOfKind(CodePropertyKind.HttpCore))
                     currentProperty.Type.Name = "HttpCore";
@@ -134,7 +132,7 @@ namespace Kiota.Builder.Refiners {
                 currentMethod.Name = "getFieldDeserializers";
             }
             else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore))
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore, CodeParameterKind.BackingStore))
                     .Where(x => x.Type.Name.StartsWith("I", StringComparison.OrdinalIgnoreCase))
                     .ToList()
                     .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
@@ -181,13 +179,6 @@ namespace Kiota.Builder.Refiners {
             }
             
             CrawlTree(currentElement, AndInsertOverrideMethodForRequestExecutorsAndBuilders);
-        }
-        private static void PatchHeaderParametersType(CodeElement currentElement) {
-            if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Headers)))
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Headers))
-                                        .ToList()
-                                        .ForEach(x => x.Type.Name = "Map<String, String>");
-            CrawlTree(currentElement, PatchHeaderParametersType);
         }
         private static CodeMethod GetMethodClone(CodeMethod currentMethod, params CodeParameterKind[] parameterTypesToExclude) {
             if(currentMethod.Parameters.Any(x => parameterTypesToExclude.Contains(x.ParameterKind))) {

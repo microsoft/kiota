@@ -14,7 +14,8 @@ namespace Kiota.Builder.Writers.Ruby {
                 case CodePropertyKind.RequestBuilder:
                     writer.WriteLine($"def {codeElement.Name.ToSnakeCase()}()");
                     writer.IncreaseIndent();
-                    conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer );
+                    var prefix = conventions.GetNormalizedNamespacePrefixForType(codeElement.Type);
+                    conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer, null, $"return {prefix}");
                     writer.DecreaseIndent();
                     writer.WriteLine("end");
                 break;

@@ -43,5 +43,19 @@ module MicrosoftKiotaAbstractions
       end
     end
 
+    def set_headers_from_raw_object(h)
+      if !h
+        return
+      end
+      h.select{|x,y| @headers[x.to_s] = y.to_s}
+    end
+    
+    def set_query_string_parameters_from_raw_object(q)
+      if !q
+        return
+      end
+      q.select{|x,y| @query_parameters[x.to_s] = y.to_s}
+    end
+
   end
 end

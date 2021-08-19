@@ -136,7 +136,7 @@ module MicrosoftKiotaSerialization
     end
 
     def get_serialized_content()
-      return @writer.to_json
+      return @writer.to_json #TODO encode to byte array to stay content type agnostic
     end
 
     def write_additional_data(value)
