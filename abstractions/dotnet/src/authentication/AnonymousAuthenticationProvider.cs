@@ -6,7 +6,7 @@ namespace Microsoft.Kiota.Abstractions.Authentication {
     /// This authentication provider does not perform any authentication.
     /// </summary>
     public class AnonymousAuthenticationProvider : IAuthenticationProvider {
-        public Task AuthenticateRequest(RequestInfo request) {
+        public Task AuthenticateRequestAsync(RequestInfo request) {
             return Task.CompletedTask;
         }
     }

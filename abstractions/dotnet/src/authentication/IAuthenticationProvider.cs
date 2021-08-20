@@ -11,6 +11,6 @@ namespace Microsoft.Kiota.Abstractions.Authentication {
         /// </summary>
         /// <param name="request">The request to authenticate.</param>
         /// <returns>A task to await for the authentication to be completed.</returns>
-        Task AuthenticateRequest(RequestInfo request);
+        Task AuthenticateRequestAsync(RequestInfo request);
     }
 }

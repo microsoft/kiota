@@ -165,7 +165,7 @@ namespace Microsoft.Kiota.Http.HttpClient
             if(requestInfo == null)
                 throw new ArgumentNullException(nameof(requestInfo));
 
-            await authProvider.AuthenticateRequest(requestInfo);
+            await authProvider.AuthenticateRequestAsync(requestInfo);
 
             using var message = GetRequestMessageFromRequestInfo(requestInfo);
             var response = await this.client.SendAsync(message);
