@@ -14,13 +14,13 @@ The following table provides an overview of the languages supported by Kiota and
 
 | Language | Generation | Abstractions | Serialization | Authentication | HTTP | Required tools |
 | -------- | ---------- | ------------ | ------------- | -------------- | ---- | -------------- |
-| CSharp | [✔](https://github.com/microsoft/kiota/projects/5) | [✔](./abstractions/dotnet) | [JSON](./serialization/dotnet/json) | [Azure](./authentication/dotnet/azure) | [✔](./http/dotnet/httpclient) | [link](./requiredtools/dotnet.md) |
-| Go | [✔](https://github.com/microsoft/kiota/projects/8) | [✔](./abstractions/go)  | ❌ | ❌ | ❌ |  |
-| Java | [✔](https://github.com/microsoft/kiota/projects/7) | [✔](./abstractions/java) | [JSON](./serialization/java/json) | [Azure](./authentication/java/azure) | [✔](./http/java/okhttp) | [link](./requiredtools/java.md) |
+| CSharp | [✔](https://github.com/microsoft/kiota/projects/5) | [✔](./abstractions/dotnet) | [JSON](./serialization/dotnet/json) | [Anonymous](./abstractions/dotnet/src/authentication/AnonymousAuthenticationProvider.cs), [Azure](./authentication/dotnet/azure) | [✔](./http/dotnet/httpclient) | [link](./requiredtools/dotnet.md) |
+| Go | [✔](https://github.com/microsoft/kiota/projects/8) | [✔](./abstractions/go)  | ❌ | ❌ | ❌ | [link](./requiredtools/go.md) |
+| Java | [✔](https://github.com/microsoft/kiota/projects/7) | [✔](./abstractions/java) | [JSON](./serialization/java/json) | [Anonymous](./abstractions/java/lib/src/main/java/com/microsoft/kiota/authentication/AnonymousAuthenticationProvider.java), [Azure](./authentication/java/azure) | [✔](./http/java/okhttp) | [link](./requiredtools/java.md) |
 | PHP | [❌](https://github.com/microsoft/kiota/projects/4) | [▶](https://github.com/microsoft/kiota/pull/321) | ❌ | ❌ | ❌ |  |
 | Python | [❌](https://github.com/microsoft/kiota/projects/3) | ❌ | ❌ | ❌ | ❌ |  |
-| Ruby | [✔](https://github.com/microsoft/kiota/projects/6) | [✔](./abstractions/ruby) | [JSON](./serialization/ruby/json/microsoft_kiota_serialization) | [❌](https://github.com/microsoft/kiota/issues/421) | [✔](./http/ruby/nethttp/microsoft_kiota_nethttp)|  |
-| TypeScript/JavaScript | [✔](https://github.com/microsoft/kiota/projects/2) | [✔](./abstractions/typescript) | [JSON](./serialization/typescript/json) | [Azure](./authentication/typescript/azure) | [✔](./http/typescript/fetch) | [link](./requiredtools/typescript.md) |
+| Ruby | [✔](https://github.com/microsoft/kiota/projects/6) | [✔](./abstractions/ruby) | [JSON](./serialization/ruby/json/microsoft_kiota_serialization) | [Anonymous](./abstractions/ruby/microsoft_kiota_abstractions/lib/microsoft_kiota_abstractions/authentication/anonymous_authentication_provider.rb), [Azure ❌](https://github.com/microsoft/kiota/issues/421) | [✔](./http/ruby/nethttp/microsoft_kiota_nethttp)| [link](./requiredtools/ruby.md)  |
+| TypeScript/JavaScript | [✔](https://github.com/microsoft/kiota/projects/2) | [✔](./abstractions/typescript) | [JSON](./serialization/typescript/json) | [Anonymous](./abstractions/typescript/src/authentication/anonymousAuthenticationProvider.ts), [Azure](./authentication/typescript/azure) | [✔](./http/typescript/fetch) | [link](./requiredtools/typescript.md) |
 
 > Legend: ✔ -> in preview, ❌ -> not started, ▶ -> in progress.
 

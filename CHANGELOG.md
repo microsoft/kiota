@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug where in memory backing store would not return changed properties to null #243
 - Fixes a bug where generated models would be tied to a specific backing store implementation #400
 - Fixed #428 a bug where inline double defintion would make code dom generation fail
+- Revamped authentication provider interface to allow multiple authentication schemes #498
 
 ## [0.0.7] - 2021-08-04
 
