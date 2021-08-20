@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Php
@@ -51,9 +52,40 @@ namespace Kiota.Builder.Writers.Php
 
         public string GetParameterSignature(CodeParameter parameter)
         {
-            return $"{(parameter.Optional ? String.Empty : "?")}{GetTypeString(parameter.Type)} ${parameter.Name}";
+            
+            var typeString = GetTypeString(parameter.Type);
+            var parameterSuffix = parameter.ParameterKind switch
+            {
+                CodeParameterKind.Headers => "array $headers",
+                CodeParameterKind.RequestBody => $"{typeString} $body",
+                CodeParameterKind.HttpCore => "HttpCoreInterface $httpCore",
+                CodeParameterKind.Options => "array $options",
+                CodeParameterKind.ResponseHandler => "ResponseHandlerInterface $responseHandler",
+                _ => $"{GetTypeString(parameter.Type)} ${parameter.Name.ToFirstCharacterLowerCase()}"
+
+            };
+            return $"{(parameter.Optional ? String.Empty : "?")}{parameterSuffix}";
         }
-        
+
+        public string GetParameterSignature(CodeParameter parameter, CodeMethod codeMethod)
+        {
+            if (codeMethod?.AccessedProperty != null && codeMethod.AccessedProperty.IsOfKind(CodePropertyKind.AdditionalData))
+            {
+                return "array $value";
+            }
+            return GetParameterSignature(parameter);
+        }
+
+        public string GetParameterDocNullable(CodeParameter parameter)
+        {
+            var parameterSignature = GetParameterSignature(parameter).Trim().Split(' ');
+            return parameter.Optional switch
+            {
+                true => $"{parameterSignature[0]}|null {parameterSignature[1]}",
+                _ => string.Join(' ', parameterSignature)
+            };
+        }
+
         private static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
         public void WriteShortDescription(string description, LanguageWriter writer)
         {
@@ -73,20 +105,19 @@ namespace Kiota.Builder.Writers.Php
             writer.WriteLines($"return new {returnType}({currentPath}$this->{RemoveDollarSignFromPropertyName(PathSegmentPropertyName)}{suffix}, $this->{RemoveDollarSignFromPropertyName(HttpCorePropertyName)});");
         }
 
-        private string RemoveDollarSignFromPropertyName(string propertyName)
+        private static string RemoveDollarSignFromPropertyName(string propertyName)
         {
             if (string.IsNullOrEmpty(propertyName) || propertyName.Length < 2)
             {
                 throw new ArgumentException(nameof(propertyName) + " must not be null and have at least 2 characters.");
             }
             
-            return propertyName.Substring(1);
+            return propertyName[1..];
         }
 
         public void WritePhpDocumentStart(LanguageWriter writer)
         {
-            writer.WriteLine("<?php");
-            writer.WriteLine("");
+            writer.WriteLines("<?php", string.Empty);
         }
 
         public void WriteCodeBlockEnd(LanguageWriter writer)
@@ -113,6 +144,41 @@ namespace Kiota.Builder.Writers.Php
                 return current.Replace('\"', '\'');
             }
             return current;
+        }
+
+        public void WriteNamespaceAndImports(CodeClass.Declaration codeElement, LanguageWriter writer)
+        {
+            bool hasUse = false;
+            if (codeElement?.Parent?.Parent is CodeNamespace codeNamespace)
+            {
+                writer.WriteLine($"namespace {ReplaceDotsWithSlashInNamespaces(codeNamespace.Name)};");
+                writer.WriteLine();
+                codeElement.Usings?
+                    .Where(x => x.Declaration.IsExternal ||
+                                !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase))
+                    .Select(x =>
+                        x.Declaration.IsExternal
+                            ? $"use {ReplaceDotsWithSlashInNamespaces(x.Declaration.Name)}\\{ReplaceDotsWithSlashInNamespaces(x.Name)};"
+                            : $"use {ReplaceDotsWithSlashInNamespaces(x.Name)}\\{ReplaceDotsWithSlashInNamespaces(x.Declaration.Name)};")
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList()
+                    .ForEach(x =>
+                    {
+                        hasUse = true;
+                        writer.WriteLine(x);
+                    });
+            }
+            if (hasUse)
+            {
+                writer.WriteLine(string.Empty);
+            }
+        }
+
+        private static string ReplaceDotsWithSlashInNamespaces(string namespaced)
+        {
+            var parts = namespaced.Split('.');
+            return string.Join('\\', parts.Select(x => x.ToFirstCharacterUpperCase()));
         }
     }
 }

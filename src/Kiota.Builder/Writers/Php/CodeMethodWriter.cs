@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Extensions;
@@ -14,17 +16,29 @@ namespace Kiota.Builder.Writers.Php
 
             var parentClass = codeElement.Parent as CodeClass;
             var inherits = (parentClass?.StartBlock as CodeClass.Declaration)?.Inherits != null;
-            WriteMethodPhpDocs(codeElement, writer);
-            WriteMethodsAndParameters(codeElement, writer, codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor));
+            var orNullReturn = codeElement.ReturnType.IsNullable ? new[]{"?", "|null"} : new[] {string.Empty, string.Empty};
+            WriteMethodPhpDocs(codeElement, writer, orNullReturn);
+            WriteMethodsAndParameters(codeElement, writer, orNullReturn, codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor));
             switch (codeElement.MethodKind)
             {
                     case CodeMethodKind.Constructor: 
                         WriteConstructorBody(parentClass, codeElement, writer, inherits);
                         break;
+                    case CodeMethodKind.Serializer:
+                        WriteSerializerBody(parentClass, writer, inherits);
+                        break;
+                    case CodeMethodKind.Setter:
+                        WriteSetterBody(writer, codeElement);
+                        break;
+                    case CodeMethodKind.Getter:
+                        WriteGetterBody(writer, codeElement);
+                        break;
                     case CodeMethodKind.Deserializer:
+                        WriteDeserializerBody(writer, codeElement);
                         break;
             }
             conventions.WriteCodeBlockEnd(writer);
+            writer.WriteLine();
         }
         
         private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
@@ -52,28 +66,56 @@ namespace Kiota.Builder.Writers.Php
             }
         }
 
-        private void WriteMethodPhpDocs(CodeMethod codeMethod, LanguageWriter writer)
+        private void WriteMethodPhpDocs(CodeMethod codeMethod, LanguageWriter writer, IReadOnlyList<string> orNullReturn)
         {
             var methodDescription = codeMethod.Description ?? string.Empty;
 
             var hasMethodDescription = !string.IsNullOrEmpty(methodDescription.Trim(' '));
-            var parametersWithDescription = codeMethod.Parameters.Where(x => !string.IsNullOrEmpty(x.Description));
+            var parametersWithDescription = codeMethod.Parameters;
             if (!hasMethodDescription && !parametersWithDescription.Any())
             {
                 return;
             }
 
             writer.WriteLine(conventions.DocCommentStart);
+            var isVoidable = "void".Equals(conventions.GetTypeString(codeMethod.ReturnType),
+                StringComparison.OrdinalIgnoreCase);
             if(hasMethodDescription){
                 writer.WriteLine(
                     $"{conventions.DocCommentPrefix}{methodDescription}");
             }
 
-            foreach (var parameterWithDescription in parametersWithDescription)
+            var accessedProperty = codeMethod.AccessedProperty;
+            var isSetterForAdditionalData = (codeMethod.IsOfKind(CodeMethodKind.Setter) &&
+                                             accessedProperty.IsOfKind(CodePropertyKind.AdditionalData));
+            var isGetterForAdditionalData = (codeMethod.IsOfKind(CodeMethodKind.Getter) &&
+                                             accessedProperty.IsOfKind(CodePropertyKind.AdditionalData));
+            
+            
+            parametersWithDescription.Select(x =>
+                {
+                    return codeMethod.MethodKind switch
+                    {
+                        CodeMethodKind.Setter => $"{conventions.DocCommentPrefix} @param {(isSetterForAdditionalData ? "array<string,object> $value": conventions.GetParameterDocNullable(x))} {x?.Description}",
+                        _ => $"{conventions.DocCommentPrefix}@param {conventions.GetParameterDocNullable(x)} ${x.Name} {x.Description}"
+                    };
+                })
+                .ToList()
+                .ForEach(x => writer.WriteLine(x));
+            var returnDocString = codeMethod.MethodKind switch
+                {
+                    CodeMethodKind.Deserializer => "array<string, callable>",
+                    CodeMethodKind.Getter => isGetterForAdditionalData
+                        ? "array<string, object>"
+                        : conventions.GetTypeString(codeMethod.ReturnType),
+                    _ => conventions.GetTypeString(codeMethod.ReturnType)
+                };
+            if (!isVoidable)
             {
-                writer.WriteLine($"{conventions.DocCommentPrefix}@param {conventions.GetTypeString(parameterWithDescription.Type)} ${parameterWithDescription.Name} {parameterWithDescription.Description}");
+                writer.WriteLines(
+                    $"{conventions.DocCommentPrefix}@return {returnDocString}{orNullReturn[1]}"
+                    );
             }
-            writer.WriteLine($"{conventions.DocCommentPrefix}@return {conventions.GetTypeString(codeMethod.ReturnType)}");
             writer.WriteLine(conventions.DocCommentEnd);
         }
         
@@ -82,14 +124,95 @@ namespace Kiota.Builder.Writers.Php
          * for example this writes
          * function methodName(int $parameter, string $parameter2){
          */
-        private void WriteMethodsAndParameters(CodeMethod codeMethod, LanguageWriter writer, bool isConstructor = false)
+        private void WriteMethodsAndParameters(CodeMethod codeMethod, LanguageWriter writer, IReadOnlyList<string> orNullReturn, bool isConstructor = false)
         {
-            var methodParameters = string.Join(", ", codeMethod.Parameters.Select(x => conventions.GetParameterSignature(x)).ToList());
+            var methodParameters = string.Join(", ", codeMethod.Parameters.Select(x => conventions.GetParameterSignature(x, codeMethod)).ToList());
 
-            var methodName = isConstructor ? "__construct" : codeMethod.Name.ToFirstCharacterLowerCase();
-            writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodName}({methodParameters}) {{");
+            var methodName = codeMethod.MethodKind switch
+            {
+                (CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor) => "__construct",
+                (CodeMethodKind.Getter or CodeMethodKind.Setter) => codeMethod.AccessedProperty?.Name?.ToFirstCharacterUpperCase(),
+                _ => codeMethod.Name.ToFirstCharacterLowerCase()
+            };
+            var methodPrefix = codeMethod.MethodKind switch
+            {
+                CodeMethodKind.Getter => "get",
+                CodeMethodKind.Setter => "set",
+                _ => string.Empty
+            };
+            if(codeMethod.IsOfKind(CodeMethodKind.Deserializer))
+            {
+                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function getFieldDeserializers(): array {{");
+                writer.IncreaseIndent();
+                return;
+            }
+
+            if (codeMethod.IsOfKind(CodeMethodKind.Getter) && codeMethod.AccessedProperty.IsOfKind(CodePropertyKind.AdditionalData))
+            {
+                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodPrefix}{methodName}(): array {{");
+                writer.IncreaseIndent();
+                return;
+            }
+            var isVoidable = "void".Equals(conventions.GetTypeString(codeMethod.ReturnType),
+                StringComparison.OrdinalIgnoreCase);
+            var optionalCharacterReturn = isVoidable ? string.Empty : orNullReturn[0];
+            var returnValue = isConstructor
+                ? string.Empty
+                : $": {optionalCharacterReturn}{conventions.GetTypeString(codeMethod.ReturnType)}";
+            writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodPrefix}{methodName}({methodParameters}){returnValue} {{");
             writer.IncreaseIndent();
             
+        }
+
+        private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer, bool inherits)
+        {
+            var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();
+            if(inherits)
+                writer.WriteLine("parent::serialize($writer);");
+            var customProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
+            foreach(var otherProp in customProperties) {
+                writer.WriteLine($"$writer->{GetSerializationMethodName(otherProp.Type)}('{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}', $this->{otherProp.Name.ToFirstCharacterLowerCase()});");
+            }
+            if(additionalDataProperty != null)
+                writer.WriteLine($"$writer->writeAdditionalData($this->{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
+        }
+        
+        private string GetSerializationMethodName(CodeTypeBase propType) {
+            var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
+            var propertyType = conventions.TranslateType(propType.Name);
+            if(propType is CodeType currentType) {
+                if(isCollection) 
+                    return $"writeCollectionOfObjectValues";
+                else if(currentType.TypeDefinition is CodeEnum currentEnum)
+                    return "writeEnumValue";
+            }
+            switch(propertyType) {
+                case "string" or "Guid":
+                    return "writeStringValue";
+                case "bool":
+                    return "writeBooleanValue";
+                case "boolean" or "number" or "Date":
+                    return $"write{propertyType.ToFirstCharacterUpperCase()}Value";
+                default:
+                    return $"writeObjectValue";
+            }
+        }
+
+        private void WriteSetterBody(LanguageWriter writer, CodeMethod codeElement)
+        {
+            var propertyName = codeElement.AccessedProperty?.Name;
+            writer.WriteLine($"$this->{propertyName.ToFirstCharacterLowerCase()} = $value;");
+        }
+
+        private void WriteGetterBody(LanguageWriter writer, CodeMethod codeMethod)
+        {
+            var propertyName = codeMethod.AccessedProperty?.Name.ToFirstCharacterLowerCase();
+            writer.WriteLine($"return $this->{propertyName};");
+        }
+
+        private static void WriteDeserializerBody(LanguageWriter writer, CodeMethod codeMethod)
+        {
+            writer.WriteLine("echo('This is the body of the deserializer.');");
         }
     }
 }

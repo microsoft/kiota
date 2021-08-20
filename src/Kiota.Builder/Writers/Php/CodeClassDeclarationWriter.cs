@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection.Metadata;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Php
@@ -11,27 +12,20 @@ namespace Kiota.Builder.Writers.Php
 
         public override void WriteCodeElement(CodeClass.Declaration codeElement, LanguageWriter writer)
         {
-            writer.WriteLines("<?php", string.Empty); 
-            //writer.IncreaseIndent();
-            bool hasUse = false;
-            foreach (var codeUsing in codeElement.Usings
-                .Where(x => x.Declaration.IsExternal)
-                .Distinct()
-                .GroupBy(x => x.Declaration?.Name)
-                .OrderBy(x => x.Key)
-            )
+            conventions.WritePhpDocumentStart(writer);
+            
+            conventions.WriteNamespaceAndImports(codeElement, writer);
+            //TODO: There is bug on creating filenames that makes file class names have multiple dots.
+            // for example class user.LoginRequestBuilder 
+            // instead of classn LoginRequestBuilder {;
+
+            if (codeElement != null)
             {
-                hasUse = true;
-                writer.WriteLine($"use {codeUsing.Key.ToCamelCase()};");
+                var derivation = (codeElement?.Inherits == null ? string.Empty : $" extends {codeElement.Inherits.Name.ToFirstCharacterUpperCase()}") +
+                                 (!codeElement.Implements.Any() ? string.Empty : $" implements {codeElement.Implements.Select(x => x.Name).Aggregate((x,y) => x + ", " + y)}");
+                writer.WriteLine($"class {codeElement.Name.Split('.').Last().ToFirstCharacterUpperCase()}{derivation} ");
             }
 
-            if (hasUse)
-            {
-                writer.WriteLine(string.Empty);
-            }
-            var derivation = (codeElement.Inherits == null ? string.Empty : $" extends {codeElement.Inherits.Name.ToFirstCharacterUpperCase()}") +
-                             (!codeElement.Implements.Any() ? string.Empty : $" implements {codeElement.Implements.Select(x => x.Name).Aggregate((x,y) => x + ", " + y)}");
-            writer.WriteLine($"class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation} ");
             writer.WriteLine("{");
             writer.IncreaseIndent();
         }

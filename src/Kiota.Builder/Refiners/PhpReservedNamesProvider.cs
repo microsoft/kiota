@@ -57,6 +57,7 @@ namespace Kiota.Builder.Refiners
             "require_once",
             "return",
             "static",
+            "self",
             "switch",
             "throw",
             "trait",

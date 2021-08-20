@@ -6,7 +6,7 @@ namespace Kiota.Builder.Writers.Php
     {
         public PhpWriter(string rootPath, string clientNamespaceName, bool useBackingStore = false)
         {
-            PathSegmenter = new PHPPathSegmenter(rootPath, clientNamespaceName);
+            PathSegmenter = new PhpPathSegmenter(rootPath, clientNamespaceName);
             var conventionService = new PhpConventionService();
             AddCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
             AddCodeElementWriter(new CodePropertyWriter(conventionService));
