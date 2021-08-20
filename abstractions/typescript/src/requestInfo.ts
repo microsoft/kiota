@@ -23,10 +23,10 @@ export class RequestInfo {
                 const queryString = questionMarkSplat[1];
                 queryString?.split('&').forEach(queryPair => {
                     const keyValue = queryPair.split('=');
-                    if(keyValue.length > 1) {
+                    if(keyValue.length > 0) {
                         const key = keyValue[0];
                         if(key) {
-                            this.queryParameters.set(key, keyValue[1]);
+                            this.queryParameters.set(key, keyValue.length > 1 ? keyValue[1] : undefined);
                         }
                     }
                 });

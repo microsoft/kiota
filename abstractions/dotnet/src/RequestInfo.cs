@@ -30,10 +30,10 @@ namespace Microsoft.Kiota.Abstractions
                 if(string.IsNullOrEmpty(currentPath))
                     throw new ArgumentNullException(nameof(currentPath));
                 var parseUri = new Uri(currentPath);
-                foreach(var qsp in parseUri.Query.Split('&').Select(x => x.Split('='))) {
-                    QueryParameters.Add(qsp[0], qsp[1]);
+                foreach(var qsp in parseUri.Query.Split('&').Select(x => x.Split('=')).Where(x => !string.IsNullOrEmpty(x[0]))) {
+                    QueryParameters.Add(qsp[0], qsp.Length > 1 ? qsp[1] : null);
                 }
-                URI = new Uri($"{parseUri.Scheme}://{parseUri.Host}:{parseUri.Port}/{parseUri.PathAndQuery.Split('?').First()}");
+                URI = new Uri(parseUri.GetComponents(UriComponents.SchemeAndServer | UriComponents.Path, UriFormat.Unescaped));
             } else {
                 URI = new Uri(currentPath + pathSegment);
             }
