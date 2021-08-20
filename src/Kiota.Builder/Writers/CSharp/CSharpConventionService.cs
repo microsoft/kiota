@@ -14,6 +14,7 @@ namespace Kiota.Builder.Writers.CSharp {
         public HashSet<string> NullableTypes { get; } = new() { "int", "bool", "float", "double", "decimal", "Guid", "DateTimeOffset" };
         public static string NullableMarker => "?";
         public string ParseNodeInterfaceName => "IParseNode";
+        public object RawUrlPropertyName => "IsRawUrl";
         public void WriteShortDescription(string description, LanguageWriter writer) {
             if(!string.IsNullOrEmpty(description))
                 writer.WriteLine($"{DocCommentPrefix}<summary>{description}</summary>");
@@ -28,7 +29,7 @@ namespace Kiota.Builder.Writers.CSharp {
         }
         internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default, string prefix = default) {
             var currentPath = addCurrentPath ? $"{CurrentPathPropertyName} + " : string.Empty;
-            writer.WriteLine($"{prefix}new {returnType}({currentPath}{PathSegmentPropertyName} {suffix}, {HttpCorePropertyName});");
+            writer.WriteLine($"{prefix}new {returnType}({currentPath}{PathSegmentPropertyName} {suffix}, {HttpCorePropertyName}, false);");
         }
         internal bool ShouldTypeHaveNullableMarker(CodeTypeBase propType, string propTypeName) {
             return propType.IsNullable && (NullableTypes.Contains(propTypeName) || (propType is CodeType codeType && codeType.TypeDefinition is CodeEnum));
@@ -74,7 +75,12 @@ namespace Kiota.Builder.Writers.CSharp {
         public string GetParameterSignature(CodeParameter parameter)
         {
             var parameterType = GetTypeString(parameter.Type);
-            return $"{parameterType} {parameter.Name}{(parameter.Optional ? $" = default": string.Empty)}";
+            var defaultValue = (parameter) switch {
+                _ when !string.IsNullOrEmpty(parameter.DefaultValue) => $" = {parameter.DefaultValue}",
+                _ when parameter.Optional => " = default",
+                _ => string.Empty,
+            };
+            return $"{parameterType} {parameter.Name}{defaultValue}";
         }
     }
 }

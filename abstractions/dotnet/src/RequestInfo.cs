@@ -20,6 +20,25 @@ namespace Microsoft.Kiota.Abstractions
         /// </summary>
         public Uri URI { get; set; }
         /// <summary>
+        /// Sets the URI of the request.
+        /// </summary>
+        /// <param name="currentPath">the current path (scheme, host, port, path, query parameters) of the request.</param>
+        /// <param name="pathSegment">the segment to append to the current path.</param>
+        /// <param name="isRawUrl">whether the path segment is a raw url. When true, the segment is not happened and the current path is parsed for query parameters.</param>
+        public void SetURI(string currentPath, string pathSegment, bool isRawUrl) {
+            if (isRawUrl) {
+                if(string.IsNullOrEmpty(currentPath))
+                    throw new ArgumentNullException(nameof(currentPath));
+                var parseUri = new Uri(currentPath);
+                foreach(var qsp in parseUri.Query.Split('&').Select(x => x.Split('='))) {
+                    QueryParameters.Add(qsp[0], qsp[1]);
+                }
+                URI = new Uri($"{parseUri.Scheme}://{parseUri.Host}:{parseUri.Port}/{parseUri.PathAndQuery.Split('?').First()}");
+            } else {
+                URI = new Uri(currentPath + pathSegment);
+            }
+        }
+        /// <summary>
         ///  The <see cref="HttpMethod">HTTP method</see> of the request.
         /// </summary>
         public HttpMethod HttpMethod { get; set; }

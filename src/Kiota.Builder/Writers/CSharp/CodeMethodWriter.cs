@@ -91,6 +91,7 @@ namespace Kiota.Builder.Writers.CSharp {
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.HttpCore, CodePropertyKind.HttpCore, writer);
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.CurrentPath, CodePropertyKind.CurrentPath, writer);
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RawUrl, CodePropertyKind.RawUrl, writer);
             }
         }
         private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
@@ -160,10 +161,10 @@ namespace Kiota.Builder.Writers.CSharp {
             var operationName = codeElement.HttpMethod.ToString();
             writer.WriteLine($"var {_requestInfoVarName} = new RequestInfo {{");
             writer.IncreaseIndent();
-            writer.WriteLines($"HttpMethod = HttpMethod.{operationName?.ToUpperInvariant()},",
-                        $"URI = new Uri({conventions.CurrentPathPropertyName} + {conventions.PathSegmentPropertyName}),");
+            writer.WriteLine($"HttpMethod = HttpMethod.{operationName?.ToUpperInvariant()},");
             writer.DecreaseIndent();
-            writer.WriteLine("};");
+            writer.WriteLines("};",
+                        $"{_requestInfoVarName}.SetURI({conventions.CurrentPathPropertyName}, {conventions.PathSegmentPropertyName}, {conventions.RawUrlPropertyName});");
             if(requestBodyParam != null) {
                 if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{_requestInfoVarName}.SetStreamContent({requestBodyParam.Name});");
@@ -217,6 +218,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 writer.WriteLine($"{conventions.DocCommentPrefix}</summary>");
             }
         }
+        private static CodeParameterOrderComparer parameterOrderComparer = new CodeParameterOrderComparer();
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool inherits, bool isVoid) {
             var staticModifier = code.IsStatic ? "static " : string.Empty;
             var hideModifier = inherits && code.IsSerializationMethod ? "new " : string.Empty;
@@ -234,7 +236,7 @@ namespace Kiota.Builder.Writers.CSharp {
             var baseSuffix = string.Empty;
             if(isConstructor && inherits)
                 baseSuffix = " : base()";
-            var parameters = string.Join(", ", code.Parameters.Select(p=> conventions.GetParameterSignature(p)).ToList());
+            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> conventions.GetParameterSignature(p)).ToList());
             var methodName = isConstructor ? code.Parent.Name.ToFirstCharacterUpperCase() : code.Name;
             writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({parameters}){baseSuffix} {{");
         }
