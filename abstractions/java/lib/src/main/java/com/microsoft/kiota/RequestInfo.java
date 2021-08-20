@@ -1,6 +1,7 @@
 package com.microsoft.kiota;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -21,6 +22,41 @@ public class RequestInfo {
     /** The URI of the request. */
     @Nullable
     public URI uri;
+    /**
+     * Sets the URI of the request.
+     * @param currentPath the current path (scheme, host, port, path, query parameters) of the request.
+     * @param pathSegment the segment to append to the current path.
+     * @param isRawUrl whether the path segment is a raw url. When true, the segment is not happened and the current path is parsed for query parameters.
+     */
+    public void setUri(@Nullable final String currentPath, @Nullable final String pathSegment, final boolean isRawUrl) {
+        if (isRawUrl) {
+            if(currentPath == null || currentPath.isEmpty()) {
+                throw new IllegalArgumentException("currentPath cannot be null or empty");
+            }
+            final var questionMarkSplat = currentPath.split("?");
+            final var schemeHostAndPath = questionMarkSplat[0];
+            this.setUriFromString(schemeHostAndPath);
+            if (questionMarkSplat.length > 1) {
+                final var queryString = questionMarkSplat[1];
+                final var rawQueryParameters = queryString.split("&");
+                for (var queryParameter : rawQueryParameters) {
+                    final var queryParameterNameValue = queryParameter.split("=");
+                    if (!queryParameterNameValue[0].isEmpty()) {
+                        this.queryParameters.put(queryParameterNameValue[0], queryParameterNameValue.length > 1 ? queryParameterNameValue[1] : null);
+                    }
+                }
+            }
+        } else {
+            this.setUriFromString(currentPath + pathSegment);
+        }
+    }
+    private void setUriFromString(final String uriString) {
+        try {
+            this.uri = new URI(uriString);
+        } catch (final URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
     /** The HTTP method for the request */
     @Nullable
     public HttpMethod httpMethod;
