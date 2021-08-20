@@ -8,6 +8,12 @@ import { MiddlewareOption } from "./middlewareOption";
 export class RequestInfo {
     /** The URI of the request. */
     public URI?: string;
+    /**
+     * Sets the URI of the request.
+     * @param currentPath the current path (scheme, host, port, path, query parameters) of the request.
+     * @param pathSegment the segment to append to the current path.
+     * @param isRawUrl whether the path segment is a raw url. When true, the segment is not happened and the current path is parsed for query parameters.
+     */
     public setUri(currentPath: string, pathSegment: string, isRawUrl: boolean) : void {
         if(isRawUrl) {
             const questionMarkSplat = currentPath.split('?');
