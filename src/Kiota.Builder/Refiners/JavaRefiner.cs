@@ -153,7 +153,7 @@ namespace Kiota.Builder.Refiners {
                     .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
             else if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore, CodeParameterKind.CurrentPath)).ToList().ForEach(x => x.Type.IsNullable = true);
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I");
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I" 
             }
         }
         private static void AddRequireNonNullImports(CodeElement currentElement) {

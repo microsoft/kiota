@@ -4,22 +4,22 @@ using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.CSharp {
-    public class CSharpConventionService : ILanguageConventionService {
-        public string StreamTypeName => "stream";
-        public string VoidTypeName => "void";
-        public string DocCommentPrefix => "/// ";
-        public string PathSegmentPropertyName => "PathSegment";
-        public string CurrentPathPropertyName => "CurrentPath";
-        public string HttpCorePropertyName => "HttpCore";
+    public class CSharpConventionService : CommonLanguageConventionService {
+        public override string StreamTypeName => "stream";
+        public override string VoidTypeName => "void";
+        public override string DocCommentPrefix => "/// ";
+        public override string PathSegmentPropertyName => "PathSegment";
+        public override string CurrentPathPropertyName => "CurrentPath";
+        public override string HttpCorePropertyName => "HttpCore";
         public HashSet<string> NullableTypes { get; } = new() { "int", "bool", "float", "double", "decimal", "Guid", "DateTimeOffset" };
         public static string NullableMarker => "?";
-        public string ParseNodeInterfaceName => "IParseNode";
-        public string RawUrlPropertyName => "IsRawUrl";
-        public void WriteShortDescription(string description, LanguageWriter writer) {
+        public override string ParseNodeInterfaceName => "IParseNode";
+        public override string RawUrlPropertyName => "IsRawUrl";
+        public override void WriteShortDescription(string description, LanguageWriter writer) {
             if(!string.IsNullOrEmpty(description))
                 writer.WriteLine($"{DocCommentPrefix}<summary>{description}</summary>");
         }
-        public string GetAccessModifier(AccessModifier access)
+        public override string GetAccessModifier(AccessModifier access)
         {
             return (access) switch {
                 (AccessModifier.Public) => "public",
@@ -34,12 +34,12 @@ namespace Kiota.Builder.Writers.CSharp {
         internal bool ShouldTypeHaveNullableMarker(CodeTypeBase propType, string propTypeName) {
             return propType.IsNullable && (NullableTypes.Contains(propTypeName) || (propType is CodeType codeType && codeType.TypeDefinition is CodeEnum));
         }
-        public string GetTypeString(CodeTypeBase code)
+        public override string GetTypeString(CodeTypeBase code)
         {
             if(code is CodeUnionType) 
                 throw new InvalidOperationException($"CSharp does not support union types, the union type {code.Name} should have been filtered out by the refiner");
             else if (code is CodeType currentType) {
-                var typeName = TranslateType(currentType.Name);
+                var typeName = TranslateType(currentType);
                 var nullableSuffix = ShouldTypeHaveNullableMarker(code, typeName) ? NullableMarker : string.Empty;
                 var collectionPrefix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? "List<" : string.Empty;
                 var collectionSuffix = currentType.CollectionKind switch {
@@ -55,16 +55,16 @@ namespace Kiota.Builder.Writers.CSharp {
             else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
 
-        public string TranslateType(string typeName)
+        public override string TranslateType(CodeType type)
         {
-            switch (typeName)
+            switch (type.Name)
             {
                 case "integer": return "int";
                 case "boolean": return "bool";
                 case "string": return "string"; // little casing hack
                 case "object": return "object";
                 case "void": return "void";
-                default: return typeName?.ToFirstCharacterUpperCase() ?? "object";
+                default: return type.Name?.ToFirstCharacterUpperCase() ?? "object";
             }
         }
         public bool IsPrimitiveType(string typeName) {
@@ -72,7 +72,7 @@ namespace Kiota.Builder.Writers.CSharp {
                         (NullableTypes.Contains(typeName) ||
                         "string".Equals(typeName, StringComparison.OrdinalIgnoreCase));
         }
-        public string GetParameterSignature(CodeParameter parameter)
+        public override string GetParameterSignature(CodeParameter parameter)
         {
             var parameterType = GetTypeString(parameter.Type);
             var defaultValue = (parameter) switch {

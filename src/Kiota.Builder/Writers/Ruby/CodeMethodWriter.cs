@@ -213,7 +213,7 @@ namespace Kiota.Builder.Writers.Ruby {
         }
         private string GetDeserializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = conventions.TranslateType(propType.Name);
+            var propertyType = conventions.TranslateType(propType);
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
@@ -251,7 +251,7 @@ namespace Kiota.Builder.Writers.Ruby {
         }
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = conventions.TranslateType(propType.Name);
+            var propertyType = conventions.TranslateType(propType);
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)

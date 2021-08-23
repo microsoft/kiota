@@ -389,7 +389,7 @@ namespace Kiota.Builder.Writers.Go {
         }
         private string GetDeserializationMethodName(CodeTypeBase propType, CodeClass parentClass) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyTypeName = conventions.TranslateType(propType.AllTypes.First().Name);
+            var propertyTypeName = conventions.TranslateType(propType);
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
@@ -420,7 +420,7 @@ namespace Kiota.Builder.Writers.Go {
         private void WriteSerializationMethodCall(CodeTypeBase propType, CodeClass parentClass, string serializationKey, string valueGet, bool shouldDeclareErrorVar, LanguageWriter writer) {
             serializationKey = $"\"{serializationKey}\"";
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = conventions.TranslateType(propType.Name);
+            var propertyType = conventions.TranslateType(propType);
             var errorPrefix = $"err {errorVarDeclaration(shouldDeclareErrorVar)}= writer.";
             if(propType is CodeType currentType) {
                 if(isCollection) {

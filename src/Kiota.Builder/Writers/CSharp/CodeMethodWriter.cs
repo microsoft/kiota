@@ -118,7 +118,7 @@ namespace Kiota.Builder.Writers.CSharp {
         }
         private string GetDeserializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = conventions.TranslateType(propType.Name);
+            var propertyType = conventions.TranslateType(propType);
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
@@ -242,7 +242,7 @@ namespace Kiota.Builder.Writers.CSharp {
         }
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = conventions.TranslateType(propType.Name);
+            var propertyType = conventions.TranslateType(propType);
             var nullableSuffix = conventions.ShouldTypeHaveNullableMarker(propType, propertyType) ? CSharpConventionService.NullableMarker : string.Empty;
             if(propType is CodeType currentType) {
                 if(isCollection)

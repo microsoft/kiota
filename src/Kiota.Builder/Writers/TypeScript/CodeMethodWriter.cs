@@ -253,7 +253,7 @@ namespace Kiota.Builder.Writers.TypeScript {
         }
         private string GetDeserializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = localConventions.TranslateType(propType.Name);
+            var propertyType = localConventions.TranslateType(propType);
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
@@ -276,7 +276,7 @@ namespace Kiota.Builder.Writers.TypeScript {
         }
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = localConventions.TranslateType(propType.Name);
+            var propertyType = localConventions.TranslateType(propType);
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)

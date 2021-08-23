@@ -3,36 +3,36 @@ using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Go {
-    public class GoConventionService : ILanguageConventionService
+    public class GoConventionService : CommonLanguageConventionService
     {
-        public string StreamTypeName => "[]byte";
+        public override string StreamTypeName => "[]byte";
 
-        public string VoidTypeName => string.Empty;
+        public override string VoidTypeName => string.Empty;
 
-        public string DocCommentPrefix => string.Empty;
+        public override string DocCommentPrefix => string.Empty;
 
-        public string PathSegmentPropertyName => "pathSegment";
+        public override string PathSegmentPropertyName => "pathSegment";
 
-        public string CurrentPathPropertyName => "currentPath";
+        public override string CurrentPathPropertyName => "currentPath";
 
-        public string HttpCorePropertyName => "httpCore";
+        public override string HttpCorePropertyName => "httpCore";
 
-        public string ParseNodeInterfaceName => "ParseNode";
-        public string RawUrlPropertyName => "isRawUrl";
+        public override string ParseNodeInterfaceName => "ParseNode";
+        public override string RawUrlPropertyName => "isRawUrl";
 
         public object AbstractionsHash => "ida96af0f171bb75f894a4013a6b3146a4397c58f11adb81a2b7cbea9314783a9";
-        public string GetAccessModifier(AccessModifier access)
+        public override string GetAccessModifier(AccessModifier access)
         {
             throw new InvalidOperationException("go uses a naming convention for access modifiers");
         }
-        public string GetParameterSignature(CodeParameter parameter) {
+        public override string GetParameterSignature(CodeParameter parameter) {
             throw new InvalidOperationException("go needs import symbols, use the local override instead");
         }
         public string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
         {
             return $"{parameter.Name} {GetTypeString(parameter.Type, targetElement)}";
         }
-        public string GetTypeString(CodeTypeBase code) => throw new InvalidOperationException("go needs import symbols, use the local override instead");
+        public override string GetTypeString(CodeTypeBase code) => throw new InvalidOperationException("go needs import symbols, use the local override instead");
         public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool addPointerSymbol = true, bool addCollectionSymbol = true)
         {
             if(code is CodeUnionType) 
@@ -41,7 +41,7 @@ namespace Kiota.Builder.Writers.Go {
                 var importSymbol = GetImportSymbol(code, targetElement);
                 if(!string.IsNullOrEmpty(importSymbol))
                     importSymbol += ".";
-                var typeName = TranslateType(currentType.Name);
+                var typeName = TranslateType(currentType);
                 var nullableSymbol = addPointerSymbol && 
                                     currentType.IsNullable &&
                                     currentType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None &&
@@ -59,11 +59,11 @@ namespace Kiota.Builder.Writers.Go {
             else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
 
-        public string TranslateType(string typeName)
+        public override string TranslateType(CodeType type)
         {
-            if(typeName.StartsWith("map[")) return typeName; //casing hack
+            if(type.Name.StartsWith("map[")) return type.Name; //casing hack
 
-            return (typeName) switch {
+            return (type.Name) switch {
                 "void" => string.Empty,
                 "string" => "string",
                 "float" => "float32",
@@ -74,8 +74,8 @@ namespace Kiota.Builder.Writers.Go {
                 "guid" => "uuid.UUID",
                 "datetimeoffset" => "time.Time",
                 "binary" => "[]byte",
-                ("String") => TranslateType(typeName.ToFirstCharacterLowerCase()), //casing hack
-                _ => typeName.ToFirstCharacterUpperCase() ?? "Object",
+                ("String") => type.Name.ToFirstCharacterLowerCase(), //casing hack
+                _ => type.Name.ToFirstCharacterUpperCase() ?? "Object",
             };
         }
         private static bool IsPrimitiveType(string typeName) {
@@ -115,7 +115,7 @@ namespace Kiota.Builder.Writers.Go {
             return string.Empty;
         }
 
-        public void WriteShortDescription(string description, LanguageWriter writer)
+        public override void WriteShortDescription(string description, LanguageWriter writer)
         {
             throw new NotImplementedException();
         }

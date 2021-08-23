@@ -3,28 +3,28 @@ using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.TypeScript {
-    public class TypeScriptConventionService : ILanguageConventionService
+    public class TypeScriptConventionService : CommonLanguageConventionService
     {
         public TypeScriptConventionService(LanguageWriter languageWriter)
         {
             writer = languageWriter;
         }
         private readonly LanguageWriter writer;
-        public string StreamTypeName => "ReadableStream";
+        public override string StreamTypeName => "ReadableStream";
 
-        public string VoidTypeName => throw new System.NotImplementedException();
+        public override string VoidTypeName => throw new System.NotImplementedException();
 
-        public string DocCommentPrefix => " * ";
+        public override string DocCommentPrefix => " * ";
 
-        public string PathSegmentPropertyName => "pathSegment";
+        public override string PathSegmentPropertyName => "pathSegment";
 
-        public string CurrentPathPropertyName => "currentPath";
+        public override string CurrentPathPropertyName => "currentPath";
 
-        public string HttpCorePropertyName => "httpCore";
+        public override string HttpCorePropertyName => "httpCore";
 
-        public string ParseNodeInterfaceName => "ParseNode";
+        public override string ParseNodeInterfaceName => "ParseNode";
 
-        public string RawUrlPropertyName => "isRawUrl";
+        public override string RawUrlPropertyName => "isRawUrl";
 
         internal string DocCommentStart = "/**";
         internal string DocCommentEnd = " */";
@@ -33,7 +33,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             writer.WriteLines($"return new {returnType}({currentPath}this.{PathSegmentPropertyName}{suffix}, this.{HttpCorePropertyName}, false);");
         }
 
-        public string GetAccessModifier(AccessModifier access)
+        public override string GetAccessModifier(AccessModifier access)
         {
             return access switch {
                 AccessModifier.Public => "public",
@@ -42,19 +42,19 @@ namespace Kiota.Builder.Writers.TypeScript {
             };
         }
 
-        public string GetParameterSignature(CodeParameter parameter)
+        public override string GetParameterSignature(CodeParameter parameter)
         {
             var defaultValueSuffiix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue}";
             return $"{parameter.Name}{(parameter.Optional && parameter.Type.IsNullable ? "?" : string.Empty)}: {GetTypeString(parameter.Type)}{(parameter.Type.IsNullable ? " | undefined": string.Empty)}{defaultValueSuffiix}";
         }
 
-        public string GetTypeString(CodeTypeBase code)
+        public override string GetTypeString(CodeTypeBase code)
         {
             var collectionSuffix = code.CollectionKind == CodeType.CodeTypeCollectionKind.None ? string.Empty : "[]";
             if(code is CodeUnionType currentUnion && currentUnion.Types.Any())
                 return currentUnion.Types.Select(x => GetTypeString(x)).Aggregate((x, y) => $"{x} | {y}") + collectionSuffix;
             else if(code is CodeType currentType) {
-                var typeName = TranslateType(currentType.Name);
+                var typeName = TranslateType(currentType);
                 if (code.ActionOf)
                     return WriteInlineDeclaration(currentType);
                 else
@@ -85,13 +85,13 @@ namespace Kiota.Builder.Writers.TypeScript {
                 return $"{{{innerDeclaration}}}";
         }
 
-        public string TranslateType(string typeName)
+        public override string TranslateType(CodeType type)
         {
-            return (typeName) switch  {//TODO we're probably missing a bunch of type mappings
+            return (type.Name) switch  {//TODO we're probably missing a bunch of type mappings
                 "integer" => "number",
                 "double" => "number",
-                "string" or "object" or "boolean" or "void" => typeName, // little casing hack
-                _ => typeName.ToFirstCharacterUpperCase() ?? "object",
+                "string" or "object" or "boolean" or "void" => type.Name, // little casing hack
+                _ => type.Name.ToFirstCharacterUpperCase() ?? "object",
             };
         }
         public bool IsPrimitiveType(string typeName) {
@@ -101,7 +101,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             };
         }
         internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
-        public void WriteShortDescription(string description, LanguageWriter writer)
+        public override void WriteShortDescription(string description, LanguageWriter writer)
         {
             if(!string.IsNullOrEmpty(description))
                 writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)} {DocCommentEnd}");

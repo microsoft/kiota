@@ -31,10 +31,7 @@ namespace Kiota.Builder.Writers.Java {
             var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
             var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
-            if(!codeElement.IsOverload)
-                foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
-                    writer.WriteLine($"Objects.requireNonNull({parameter.Name});");
-                }
+            AddNullChecks(codeElement, writer);
             switch(codeElement.MethodKind) {
                 case CodeMethodKind.Serializer:
                     WriteSerializerBody(parentClass, writer);
@@ -65,7 +62,7 @@ namespace Kiota.Builder.Writers.Java {
                     WriteApiConstructorBody(parentClass, codeElement, writer);
                 break;
                 case CodeMethodKind.Constructor when codeElement.IsOverload && parentClass.IsOfKind(CodeClassKind.RequestBuilder):
-                    WriteRequestBuilderConstructorCall(parentClass, codeElement, writer);
+                    WriteRequestBuilderConstructorCall(codeElement, writer);
                 break;
                 case CodeMethodKind.Constructor:
                     WriteConstructorBody(parentClass, codeElement, writer, inherits);
@@ -79,7 +76,12 @@ namespace Kiota.Builder.Writers.Java {
             writer.DecreaseIndent();
             writer.WriteLine("}");
         }
-        private void WriteRequestBuilderConstructorCall(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
+        private static void AddNullChecks(CodeMethod codeElement, LanguageWriter writer) {
+            if(!codeElement.IsOverload)
+                foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name))
+                    writer.WriteLine($"Objects.requireNonNull({parameter.Name});");
+        }
+        private static void WriteRequestBuilderConstructorCall(CodeMethod codeElement, LanguageWriter writer)
         {
             var httpCoreParameter = codeElement.Parameters.OfKind(CodeParameterKind.HttpCore);
             var currentPathParameter = codeElement.Parameters.OfKind(CodeParameterKind.CurrentPath);
@@ -311,7 +313,7 @@ namespace Kiota.Builder.Writers.Java {
         }
         private string GetDeserializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = conventions.TranslateType(propType.Name, propType.IsNullable);
+            var propertyType = conventions.TranslateType(propType);
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
@@ -336,7 +338,7 @@ namespace Kiota.Builder.Writers.Java {
         }
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = conventions.TranslateType(propType.Name, propType.IsNullable);
+            var propertyType = conventions.TranslateType(propType);
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
