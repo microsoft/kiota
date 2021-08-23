@@ -31,9 +31,10 @@ namespace Kiota.Builder.Writers.Java {
             var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
             var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
-            foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
-                writer.WriteLine($"Objects.requireNonNull({parameter.Name});");
-            }
+            if(!codeElement.IsOverload)
+                foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
+                    writer.WriteLine($"Objects.requireNonNull({parameter.Name});");
+                }
             switch(codeElement.MethodKind) {
                 case CodeMethodKind.Serializer:
                     WriteSerializerBody(parentClass, writer);
@@ -63,6 +64,9 @@ namespace Kiota.Builder.Writers.Java {
                     WriteConstructorBody(parentClass, codeElement, writer, inherits);
                     WriteApiConstructorBody(parentClass, codeElement, writer);
                 break;
+                case CodeMethodKind.Constructor when codeElement.IsOverload && parentClass.IsOfKind(CodeClassKind.RequestBuilder):
+                    WriteRequestBuilderConstructorCall(parentClass, codeElement, writer);
+                break;
                 case CodeMethodKind.Constructor:
                     WriteConstructorBody(parentClass, codeElement, writer, inherits);
                     break;
@@ -74,6 +78,13 @@ namespace Kiota.Builder.Writers.Java {
             }
             writer.DecreaseIndent();
             writer.WriteLine("}");
+        }
+        private void WriteRequestBuilderConstructorCall(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
+        {
+            var httpCoreParameter = codeElement.Parameters.OfKind(CodeParameterKind.HttpCore);
+            var currentPathParameter = codeElement.Parameters.OfKind(CodeParameterKind.CurrentPath);
+            var originalRawUrlParameter = codeElement.OriginalMethod.Parameters.OfKind(CodeParameterKind.RawUrl);
+            writer.WriteLine($"this({currentPathParameter.Name}, {httpCoreParameter.Name}, {originalRawUrlParameter.DefaultValue});");
         }
         private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
             var httpCoreProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));

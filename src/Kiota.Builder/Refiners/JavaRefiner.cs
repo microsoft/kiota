@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Kiota.Builder.Extensions;
 
@@ -10,7 +11,7 @@ namespace Kiota.Builder.Refiners {
         public override void Refine(CodeNamespace generatedCode)
         {
             AddInnerClasses(generatedCode, false);
-            AndInsertOverrideMethodForRequestExecutorsAndBuilders(generatedCode);
+            InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);
             ConvertUnionTypesToWrapper(generatedCode);
             AddRequireNonNullImports(generatedCode);
@@ -29,7 +30,7 @@ namespace Kiota.Builder.Refiners {
                                                     CodePropertyKind.AdditionalData,
                                                     CodePropertyKind.BackingStore,
                                                 }, _configuration.UsesBackingStore, true);
-            SetParametersToNullable(generatedCode, new Tuple<CodeMethodKind, CodePropertyKind>(CodeMethodKind.Setter, CodePropertyKind.AdditionalData));
+            SetSetterParametersToNullable(generatedCode, new Tuple<CodeMethodKind, CodePropertyKind>(CodeMethodKind.Setter, CodePropertyKind.AdditionalData));
             AddConstructorsForDefaultValues(generatedCode, true);
             CorrectCoreTypesForBackingStore(generatedCode, "com.microsoft.kiota.store", "BackingStoreFactorySingleton.instance.createBackingStore()");
             ReplaceDefaultSerializationModules(generatedCode, "com.microsoft.kiota.serialization.JsonSerializationWriterFactory");
@@ -39,11 +40,11 @@ namespace Kiota.Builder.Refiners {
                                                 "com.microsoft.kiota.serialization.SerializationWriterFactoryRegistry" },
                                         new [] { "com.microsoft.kiota.serialization.ParseNodeFactoryRegistry" });
         }
-        private static void SetParametersToNullable(CodeElement currentElement, params Tuple<CodeMethodKind, CodePropertyKind>[] accessorPairs) {
+        private static void SetSetterParametersToNullable(CodeElement currentElement, params Tuple<CodeMethodKind, CodePropertyKind>[] accessorPairs) {
             if(currentElement is CodeMethod method &&
                 accessorPairs.Any(x => method.IsOfKind(x.Item1) && (method.AccessedProperty?.IsOfKind(x.Item2) ?? false))) 
                 method.Parameters.ForEach(x => x.Type.IsNullable = true);
-            CrawlTree(currentElement, element => SetParametersToNullable(element, accessorPairs));   
+            CrawlTree(currentElement, element => SetSetterParametersToNullable(element, accessorPairs));   
         }
         private static void AddEnumSetImport(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) &&
@@ -150,6 +151,10 @@ namespace Kiota.Builder.Refiners {
                     .Where(x => x.Type.Name.StartsWith("I", StringComparison.OrdinalIgnoreCase))
                     .ToList()
                     .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
+            else if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore, CodeParameterKind.CurrentPath)).ToList().ForEach(x => x.Type.IsNullable = true);
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I");
+            }
         }
         private static void AddRequireNonNullImports(CodeElement currentElement) {
             if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => !x.Optional)) {
@@ -165,7 +170,7 @@ namespace Kiota.Builder.Refiners {
             }
             CrawlTree(currentElement, AddRequireNonNullImports);
         }
-        private static void AndInsertOverrideMethodForRequestExecutorsAndBuilders(CodeElement currentElement) {
+        private static void InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass) {
                 var codeMethods = currentClass.GetChildElements(true).OfType<CodeMethod>();
                 if(codeMethods.Any()) {
@@ -187,17 +192,24 @@ namespace Kiota.Builder.Refiners {
                                         .Union(originalGeneratorMethods
                                                 .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers, CodeParameterKind.Options)))
                                         .Where(x => x != null);
-                    if(executorMethodsToAdd.Any() || generatorMethodsToAdd.Any())
-                        currentClass.AddMethod(executorMethodsToAdd.Union(generatorMethodsToAdd).ToArray());
+                    var originalConstructors = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.Constructor));
+                    var constructorsToAdd = originalConstructors
+                                            .Select(x => GetMethodClone(x, CodeParameterKind.RawUrl))
+                                            .Where(x => x != null);
+                    if(executorMethodsToAdd.Any() || generatorMethodsToAdd.Any() || constructorsToAdd.Any())
+                        currentClass.AddMethod(executorMethodsToAdd
+                                                .Union(generatorMethodsToAdd)
+                                                .Union(constructorsToAdd)
+                                                .ToArray());
                 }
             }
             
-            CrawlTree(currentElement, AndInsertOverrideMethodForRequestExecutorsAndBuilders);
+            CrawlTree(currentElement, InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors);
         }
         private static CodeMethod GetMethodClone(CodeMethod currentMethod, params CodeParameterKind[] parameterTypesToExclude) {
-            if(currentMethod.Parameters.Any(x => parameterTypesToExclude.Contains(x.ParameterKind))) {
+            if(currentMethod.Parameters.Any(x => x.IsOfKind(parameterTypesToExclude))) {
                 var cloneMethod = currentMethod.Clone() as CodeMethod;
-                cloneMethod.Parameters.RemoveAll(x => parameterTypesToExclude.Contains(x.ParameterKind));
+                cloneMethod.Parameters.RemoveAll(x => x.IsOfKind(parameterTypesToExclude));
                 cloneMethod.OriginalMethod = currentMethod;
                 return cloneMethod;
             }
