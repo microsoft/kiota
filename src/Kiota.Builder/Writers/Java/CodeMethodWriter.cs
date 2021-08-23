@@ -109,6 +109,7 @@ namespace Kiota.Builder.Writers.Java {
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.HttpCore, CodePropertyKind.HttpCore, writer);
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.CurrentPath, CodePropertyKind.CurrentPath, writer);
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RawUrl, CodePropertyKind.RawUrl, writer);
             }
         }
         private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
@@ -214,7 +215,7 @@ namespace Kiota.Builder.Writers.Java {
             
             writer.WriteLine($"final RequestInfo {requestInfoVarName} = new RequestInfo() {{{{");
             writer.IncreaseIndent();
-            writer.WriteLines($"uri = new URI({conventions.CurrentPathPropertyName} + {conventions.PathSegmentPropertyName});",
+            writer.WriteLines($"this.setUri({conventions.CurrentPathPropertyName}, {conventions.PathSegmentPropertyName}, {conventions.RawUrlPropertyName});",
                         $"httpMethod = HttpMethod.{codeElement.HttpMethod?.ToString().ToUpperInvariant()};");
             writer.DecreaseIndent();
             writer.WriteLine("}};");
@@ -259,6 +260,7 @@ namespace Kiota.Builder.Writers.Java {
             if(additionalDataProperty != null)
                 writer.WriteLine($"writer.writeAdditionalData(this.get{additionalDataProperty.Name.ToFirstCharacterUpperCase()}());");
         }
+        private static CodeParameterOrderComparer parameterOrderComparer = new CodeParameterOrderComparer();
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType) {
             var accessModifier = conventions.GetAccessModifier(code.Access);
             var genericTypeParameterDeclaration = code.IsOfKind(CodeMethodKind.Deserializer) ? " <T>": string.Empty;
@@ -271,7 +273,7 @@ namespace Kiota.Builder.Writers.Java {
                 (CodeMethodKind.Setter) => $"set{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
                 _ => code.Name.ToFirstCharacterLowerCase()
             });
-            var parameters = string.Join(", ", code.Parameters.Select(p=> conventions.GetParameterSignature(p)).ToList());
+            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> conventions.GetParameterSignature(p)).ToList());
             var throwableDeclarations = code.IsOfKind(CodeMethodKind.RequestGenerator) ? "throws URISyntaxException ": string.Empty;
             var collectionCorrectedReturnType = code.ReturnType.IsArray && code.IsOfKind(CodeMethodKind.RequestExecutor) ?
                                                 $"Iterable<{returnType.StripArraySuffix()}>" :
@@ -298,7 +300,7 @@ namespace Kiota.Builder.Writers.Java {
         }
         private string GetDeserializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = conventions.TranslateType(propType.Name);
+            var propertyType = conventions.TranslateType(propType.Name, propType.IsNullable);
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
@@ -323,7 +325,7 @@ namespace Kiota.Builder.Writers.Java {
         }
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = conventions.TranslateType(propType.Name);
+            var propertyType = conventions.TranslateType(propType.Name, propType.IsNullable);
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)

@@ -13,6 +13,7 @@ namespace Kiota.Builder.Writers.Java {
         public string PathSegmentPropertyName => "pathSegment";
         public string CurrentPathPropertyName => "currentPath";
         public string HttpCorePropertyName => "httpCore";
+        public string RawUrlPropertyName => "isRawUrl";
         internal HashSet<string> PrimitiveTypes = new() {"String", "Boolean", "Integer", "Float", "Long", "Guid", "OffsetDateTime", _voidTypeName, _streamTypeName };
         public string ParseNodeInterfaceName => "ParseNode";
         internal string DocCommentStart = "/**";
@@ -28,7 +29,8 @@ namespace Kiota.Builder.Writers.Java {
 
         public string GetParameterSignature(CodeParameter parameter)
         {
-            return $"@javax.annotation.{(parameter.Optional ? "Nullable" : "Nonnull")} final {GetTypeString(parameter.Type)} {parameter.Name}";
+            var nullAnnotation = parameter.Type.IsNullable ? $"@javax.annotation.{(parameter.Optional ? "Nullable" : "Nonnull")} " : string.Empty;
+            return $"{nullAnnotation}final {GetTypeString(parameter.Type)} {parameter.Name}";
         }
 
         public string GetTypeString(CodeTypeBase code)
@@ -36,7 +38,7 @@ namespace Kiota.Builder.Writers.Java {
             if(code is CodeUnionType) 
                 throw new InvalidOperationException($"Java does not support union types, the union type {code.Name} should have been filtered out by the refiner");
             else if (code is CodeType currentType) {
-                var typeName = TranslateType(currentType.Name);
+                var typeName = TranslateType(currentType.Name, currentType.IsNullable);
                 var collectionPrefix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? "List<" : string.Empty;
                 var collectionSuffix = currentType.CollectionKind switch {
                     CodeType.CodeTypeCollectionKind.Complex => ">",
@@ -50,11 +52,13 @@ namespace Kiota.Builder.Writers.Java {
             }
             else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
-
-        public string TranslateType(string typeName)
+        public string TranslateType(string typeName){
+            return TranslateType(typeName, false);
+        }
+        public string TranslateType(string typeName, bool isNullable)
         {
             return (typeName) switch {//TODO we're probably missing a bunch of type mappings
-                ("void") => typeName.ToFirstCharacterLowerCase(), //little casing hack
+                ("void" or "boolean") when !isNullable => typeName.ToFirstCharacterLowerCase(), //little casing hack
                 _ => typeName.ToFirstCharacterUpperCase() ?? "Object",
             };
         }
@@ -68,7 +72,7 @@ namespace Kiota.Builder.Writers.Java {
         internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default) {
             // because if currentPath is null it'll add "null" to the string...
             var currentPath = addCurrentPath ? $"{CurrentPathPropertyName} + " : string.Empty;
-            writer.WriteLines($"return new {returnType}({currentPath}{PathSegmentPropertyName}{suffix}, {HttpCorePropertyName});");
+            writer.WriteLines($"return new {returnType}({currentPath}{PathSegmentPropertyName}{suffix}, {HttpCorePropertyName}, false);");
         }
     }
 }

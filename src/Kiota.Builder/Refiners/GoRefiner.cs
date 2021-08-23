@@ -14,6 +14,7 @@ namespace Kiota.Builder.Refiners {
             ReplaceIndexersByMethodsWithParameter(
                 generatedCode,
                 generatedCode,
+                false,
                 "ById");
             ReplaceRequestBuilderPropertiesByMethods(
                 generatedCode
