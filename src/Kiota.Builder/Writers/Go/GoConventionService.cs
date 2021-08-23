@@ -18,6 +18,7 @@ namespace Kiota.Builder.Writers.Go {
         public string HttpCorePropertyName => "httpCore";
 
         public string ParseNodeInterfaceName => "ParseNode";
+        public string RawUrlPropertyName => "isRawUrl";
 
         public object AbstractionsHash => "ida96af0f171bb75f894a4013a6b3146a4397c58f11adb81a2b7cbea9314783a9";
         public string GetAccessModifier(AccessModifier access)
@@ -125,7 +126,7 @@ namespace Kiota.Builder.Writers.Go {
             var splatImport = returnType.Split('.');
             var constructorName = splatImport.Last().ToFirstCharacterUpperCase();
             var moduleName = returnType.Length > 1 ? splatImport.First() + "." : string.Empty;
-            writer.WriteLines($"return *{moduleName}New{constructorName}({currentPath}m.{PathSegmentPropertyName}{suffix}, m.{HttpCorePropertyName});");
+            writer.WriteLines($"return *{moduleName}New{constructorName}({currentPath}m.{PathSegmentPropertyName}{suffix}, m.{HttpCorePropertyName}, false);");
         }
     }
 }

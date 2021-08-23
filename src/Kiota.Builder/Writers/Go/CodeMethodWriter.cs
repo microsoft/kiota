@@ -94,6 +94,7 @@ namespace Kiota.Builder.Writers.Go {
             writer.WriteLine("return nil");
         }
         private static string errorVarDeclaration(bool shouldDeclareErrorVar) => shouldDeclareErrorVar ? ":" : string.Empty;
+        private static CodeParameterOrderComparer parameterOrderComparer = new CodeParameterOrderComparer();
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, CodeClass parentClass) {
             var returnTypeAsyncPrefix = code.IsAsync ? "func() (" : string.Empty;
             var returnTypeAsyncSuffix = code.IsAsync ? "error)" : string.Empty;
@@ -107,7 +108,7 @@ namespace Kiota.Builder.Writers.Go {
                 _ when code.Access == AccessModifier.Public => code.Name.ToFirstCharacterUpperCase(),
                 _ => code.Name.ToFirstCharacterLowerCase()
             });
-            var parameters = string.Join(", ", code.Parameters.Select(p => conventions.GetParameterSignature(p, parentClass)).ToList());
+            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p => conventions.GetParameterSignature(p, parentClass)).ToList());
             var classType = conventions.GetTypeString(new CodeType(parentClass) { Name = parentClass.Name, TypeDefinition = parentClass }, parentClass);
             var associatedTypePrefix = isConstructor ? string.Empty : $" (m {classType})";
             var finalReturnType = isConstructor ? classType : $"{returnTypeAsyncPrefix}{returnType}{returnTypeAsyncSuffix}";
@@ -189,6 +190,7 @@ namespace Kiota.Builder.Writers.Go {
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.HttpCore, CodePropertyKind.HttpCore, writer);
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.CurrentPath, CodePropertyKind.CurrentPath, writer);
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RawUrl, CodePropertyKind.RawUrl, writer);
             }
         }
         private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
@@ -320,9 +322,8 @@ namespace Kiota.Builder.Writers.Go {
         private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, LanguageWriter writer, CodeClass parentClass, string returnType) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
-            writer.WriteLine($"{rInfoVarName} := new({conventions.AbstractionsHash}.RequestInfo)");
-            writer.WriteLines($"uri, err := url.Parse(m.{conventions.CurrentPathPropertyName} + m.{conventions.PathSegmentPropertyName})",
-                        $"{rInfoVarName}.URI = *uri",
+            writer.WriteLine($"{rInfoVarName} := {conventions.AbstractionsHash}.NewRequestInfo()");
+            writer.WriteLines($"err := {rInfoVarName}.SetUri(m.{conventions.CurrentPathPropertyName}, m.{conventions.PathSegmentPropertyName}, m.{conventions.RawUrlPropertyName})",
                         $"{rInfoVarName}.Method = {conventions.AbstractionsHash}.{codeElement.HttpMethod?.ToString().ToUpperInvariant()}");
             WriteReturnError(writer, returnType);
             if(requestBodyParam != null)
