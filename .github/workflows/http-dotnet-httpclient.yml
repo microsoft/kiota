@@ -42,6 +42,7 @@ jobs:
           name: drop
           path: |
             ${{ env.relativePath }}/src/bin/Release/*.nupkg
+            ${{ env.relativePath }}/Microsoft.Kiota.Http.HttpClient.Tests/TestResults
       - run: git checkout ${{ env.relativePath }}/nuget.config
         if: always()
   deploy:
