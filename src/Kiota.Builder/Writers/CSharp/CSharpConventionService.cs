@@ -14,7 +14,7 @@ namespace Kiota.Builder.Writers.CSharp {
         public HashSet<string> NullableTypes { get; } = new() { "int", "bool", "float", "double", "decimal", "Guid", "DateTimeOffset" };
         public static string NullableMarker => "?";
         public string ParseNodeInterfaceName => "IParseNode";
-        public object RawUrlPropertyName => "IsRawUrl";
+        public string RawUrlPropertyName => "IsRawUrl";
         public void WriteShortDescription(string description, LanguageWriter writer) {
             if(!string.IsNullOrEmpty(description))
                 writer.WriteLine($"{DocCommentPrefix}<summary>{description}</summary>");

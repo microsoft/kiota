@@ -24,7 +24,7 @@ namespace Kiota.Builder.Writers.TypeScript {
 
         public string ParseNodeInterfaceName => "ParseNode";
 
-        public object RawUrlPropertyName => "isRawUrl";
+        public string RawUrlPropertyName => "isRawUrl";
 
         internal string DocCommentStart = "/**";
         internal string DocCommentEnd = " */";
