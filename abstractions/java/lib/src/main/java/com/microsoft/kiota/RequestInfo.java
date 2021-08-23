@@ -33,7 +33,7 @@ public class RequestInfo {
             if(currentPath == null || currentPath.isEmpty()) {
                 throw new IllegalArgumentException("currentPath cannot be null or empty");
             }
-            final var questionMarkSplat = currentPath.split("?");
+            final var questionMarkSplat = currentPath.split("\\?");
             final var schemeHostAndPath = questionMarkSplat[0];
             this.setUriFromString(schemeHostAndPath);
             if (questionMarkSplat.length > 1) {
