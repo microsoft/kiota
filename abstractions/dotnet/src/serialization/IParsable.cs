@@ -1,11 +1,17 @@
+// ------------------------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
+// ------------------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 
-namespace Microsoft.Kiota.Abstractions.Serialization {
+namespace Microsoft.Kiota.Abstractions.Serialization
+{
     /// <summary>
     ///     Defines a serializable model object.
     /// </summary>
-    public interface IParsable {
+    public interface IParsable
+    {
         /// <summary>
         ///   Gets the deserialization information for this object.
         /// </summary>
