@@ -141,6 +141,12 @@ namespace Microsoft.Kiota.Http.HttpClient
             else
                 return await responseHandler.HandleResponseAsync<HttpResponseMessage, ModelType>(response);
         }
+        /// <summary>
+        /// Send a <see cref="RequestInfo"/> instance with an empty request body
+        /// </summary>
+        /// <param name="requestInfo">The <see cref="RequestInfo"/> instance to send</param>
+        /// <param name="responseHandler">The <see cref="IResponseHandler"/> to use with the response</param>
+        /// <returns></returns>
         public async Task SendNoContentAsync(RequestInfo requestInfo, IResponseHandler responseHandler = null)
         {
             var response = await GetHttpResponseMessage(requestInfo);
