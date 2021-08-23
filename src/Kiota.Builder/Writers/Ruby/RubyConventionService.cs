@@ -26,7 +26,8 @@ namespace Kiota.Builder.Writers.Ruby {
         }
         public override string GetParameterSignature(CodeParameter parameter)
         {
-            return $"{parameter.Name}{(parameter.Optional ? "=nil" : string.Empty)}";
+            var defaultValue = parameter.Optional ? $"={(parameter.DefaultValue ?? "nil")}" : string.Empty;
+            return $"{parameter.Name}{defaultValue}";
         }
         public override string GetTypeString(CodeTypeBase code)
         {
@@ -60,7 +61,7 @@ namespace Kiota.Builder.Writers.Ruby {
         internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "#");
         internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default, string prefix = default) {
             var currentPath = addCurrentPath ? $"@{CurrentPathPropertyName} + " : string.Empty;
-            writer.WriteLine($"{prefix}{returnType.ToFirstCharacterUpperCase()}.new({currentPath}@{PathSegmentPropertyName} {suffix}, @{HttpCorePropertyName})");
+            writer.WriteLine($"{prefix}{returnType.ToFirstCharacterUpperCase()}.new({currentPath}@{PathSegmentPropertyName} {suffix}, @{HttpCorePropertyName}, false)");
         }
     }
 }
