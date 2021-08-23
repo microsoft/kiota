@@ -1,8 +1,14 @@
-namespace Microsoft.Kiota.Abstractions.Serialization {
+// ------------------------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
+// ------------------------------------------------------------------------------
+
+namespace Microsoft.Kiota.Abstractions.Serialization
+{
     /// <summary>
     ///     Defines the contract for a factory that creates <see cref="ISerializationWriter" /> instances.
     /// </summary>
-    public interface ISerializationWriterFactory {
+    public interface ISerializationWriterFactory
+    {
         /// <summary>
         /// Gets the content type this factory creates serialization writers for.
         /// </summary>
