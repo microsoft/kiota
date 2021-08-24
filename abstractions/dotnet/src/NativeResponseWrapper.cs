@@ -23,7 +23,7 @@ namespace Microsoft.Kiota.Abstractions
         /// <param name="o">Request options for HTTP middlewares</param>
         /// <returns></returns>
         public static async Task<NativeResponseType> CallAndGetNativeType<ModelType, NativeResponseType, QueryParametersType>(
-                Func<Action<QueryParametersType>, Action<IDictionary<string, string>>, IResponseHandler, Task<ModelType>> originalCall,
+                Func<Action<QueryParametersType>, Action<IDictionary<string, string>>, IEnumerable<IMiddlewareOption>, IResponseHandler, Task<ModelType>> originalCall,
                 Action<QueryParametersType> q = default,
                 Action<IDictionary<string, string>> h = default,
                 IEnumerable<IMiddlewareOption> o = default) where NativeResponseType : class
@@ -43,7 +43,7 @@ namespace Microsoft.Kiota.Abstractions
         /// <param name="h">The request headers of the request</param>
         /// <param name="o">Request options for HTTP middlewares</param>
         public static async Task<NativeResponseType> CallAndGetNativeType<ModelType, NativeResponseType, QueryParametersType, RequestBodyType>(
-                Func<RequestBodyType, Action<QueryParametersType>, Action<IDictionary<string, string>>, IResponseHandler, Task<ModelType>> originalCall,
+                Func<RequestBodyType, Action<QueryParametersType>, Action<IDictionary<string, string>>, IEnumerable<IMiddlewareOption>, IResponseHandler, Task<ModelType>> originalCall,
                 RequestBodyType requestBody,
                 Action<QueryParametersType> q = default,
                 Action<IDictionary<string, string>> h = default,
