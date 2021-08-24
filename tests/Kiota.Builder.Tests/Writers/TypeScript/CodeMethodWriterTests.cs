@@ -160,6 +160,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             var result = tw.ToString();
             Assert.Contains("const requestInfo = new RequestInfo()", result);
             Assert.Contains("requestInfo.httpMethod = HttpMethod", result);
+            Assert.Contains("requestInfo.setUri", result);
             Assert.Contains("setHeadersFromRawObject", result);
             Assert.Contains("setQueryStringParametersFromRawObject", result);
             Assert.Contains("setContentFromParsable", result);

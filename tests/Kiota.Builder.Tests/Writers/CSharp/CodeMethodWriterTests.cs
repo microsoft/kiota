@@ -161,6 +161,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             var result = tw.ToString();
             Assert.Contains("var requestInfo = new RequestInfo", result);
             Assert.Contains("HttpMethod = HttpMethod.GET", result);
+            Assert.Contains("requestInfo.SetURI", result);
             Assert.Contains("h?.Invoke", result);
             Assert.Contains("AddQueryParameters", result);
             Assert.Contains("SetContentFromParsable", result);
