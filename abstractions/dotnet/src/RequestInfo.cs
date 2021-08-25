@@ -25,8 +25,11 @@ namespace Microsoft.Kiota.Abstractions
         /// <param name="currentPath">the current path (scheme, host, port, path, query parameters) of the request.</param>
         /// <param name="pathSegment">the segment to append to the current path.</param>
         /// <param name="isRawUrl">whether the path segment is a raw url. When true, the segment is not happened and the current path is parsed for query parameters.</param>
-        public void SetURI(string currentPath, string pathSegment, bool isRawUrl) {
-            if (isRawUrl) {
+        /// <exception cref="UriFormatException">Thrown when the built URI is an invalid format.</exception>
+        public void SetURI(string currentPath, string pathSegment, bool isRawUrl)
+        {
+            if (isRawUrl)
+            {
                 if(string.IsNullOrEmpty(currentPath))
                     throw new ArgumentNullException(nameof(currentPath));
                 var parseUri = new Uri(currentPath);
@@ -34,7 +37,9 @@ namespace Microsoft.Kiota.Abstractions
                     QueryParameters.Add(qsp[0], qsp.Length > 1 ? qsp[1] : null);
                 }
                 URI = new Uri(parseUri.GetComponents(UriComponents.SchemeAndServer | UriComponents.Path, UriFormat.Unescaped));
-            } else {
+            }
+            else
+            {
                 URI = new Uri(currentPath + pathSegment);
             }
         }

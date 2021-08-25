@@ -24,9 +24,9 @@ namespace Kiota.Builder {
                 CodeParameterKind.ResponseHandler => 7,
                 CodeParameterKind.Serializer => 8,
                 CodeParameterKind.BackingStore => 9,
-                CodeParameterKind.Custom => 12,
-                CodeParameterKind.RequestBody => 11,
                 CodeParameterKind.SetterValue => 10,
+                CodeParameterKind.RequestBody => 11,
+                CodeParameterKind.Custom => 12,
                 _ => 13,
             };
         }
