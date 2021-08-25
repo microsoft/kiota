@@ -16,7 +16,7 @@ namespace Microsoft.Kiota.Serialization.Json
     /// <summary>
     /// The <see cref="ISerializationWriter"/> implementation for json content types.
     /// </summary>
-    public class JsonSerializationWriter : ISerializationWriter
+    public class JsonSerializationWriter : ISerializationWriter, IDisposable
     {
         private readonly MemoryStream _stream = new MemoryStream();
 
@@ -272,11 +272,11 @@ namespace Microsoft.Kiota.Serialization.Json
                 case IEnumerable<object> coll:
                     WriteCollectionOfPrimitiveValues(key, coll);
                     break;
+                case IParsable parseable:
+                    WriteObjectValue(key, parseable);
+                    break;
                 case object o:
-                    if(o is IParsable parseable)
-                        WriteObjectValue(key, parseable);
-                    else
-                        WriteNonParsableObjectValue(key, o);
+                    WriteNonParsableObjectValue(key, o);
                     break;
                 case null:
                     WriteNullValue(key);
