@@ -233,9 +233,7 @@ public class JsonSerializationWriter implements SerializationWriter {
     private void writeAnyValue(final String key, final Object value) {
         try {
             if(value == null) {
-                if(key != null && !key.isEmpty())
-                    this.writer.name(key);
-                this.writer.nullValue();
+                this.writeNullValue(key);
             } else {
                 final Class<?> valueClass = value.getClass();
                 if(valueClass.equals(String.class))
@@ -256,8 +254,6 @@ public class JsonSerializationWriter implements SerializationWriter {
                     this.writeCollectionOfPrimitiveValues(key, (Iterable<?>)value);
                 else if(!valueClass.isPrimitive())
                     this.writeNonParsableObject(key, value);
-                else if(value == null)
-                    this.writeNullValue(key);
                 else
                     throw new RuntimeException("unknown type to serialize " + valueClass.getName());
             }
