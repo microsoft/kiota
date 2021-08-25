@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [0.0.8] - 2021-08-25
+
+### Added
+
 - Ruby JSON serialization #429
 - Ruby HTTP service #472
 - Go generation support & abstractions #413
