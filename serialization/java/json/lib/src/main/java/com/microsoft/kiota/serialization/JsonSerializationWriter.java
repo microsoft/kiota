@@ -231,38 +231,30 @@ public class JsonSerializationWriter implements SerializationWriter {
         }
     }
     private void writeAnyValue(final String key, final Object value) {
-        try {
-            if(value == null) {
-                if(key != null && !key.isEmpty())
-                    this.writer.name(key);
-                this.writer.nullValue();
-            } else {
-                final Class<?> valueClass = value.getClass();
-                if(valueClass.equals(String.class))
-                    this.writeStringValue(key, (String)value);
-                else if(valueClass.equals(Boolean.class))
-                    this.writeBooleanValue(key, (Boolean)value);
-                else if(valueClass.equals(Float.class))
-                    this.writeFloatValue(key, (Float)value);
-                else if(valueClass.equals(Long.class))
-                    this.writeLongValue(key, (Long)value);
-                else if(valueClass.equals(Integer.class))
-                    this.writeIntegerValue(key, (Integer)value);
-                else if(valueClass.equals(UUID.class))
-                    this.writeUUIDValue(key, (UUID)value);
-                else if(valueClass.equals(OffsetDateTime.class))
-                    this.writeOffsetDateTimeValue(key, (OffsetDateTime)value);
-                else if(value instanceof Iterable<?>)
-                    this.writeCollectionOfPrimitiveValues(key, (Iterable<?>)value);
-                else if(!valueClass.isPrimitive())
-                    this.writeNonParsableObject(key, value);
-                else if(value == null)
-                    this.writeNullValue(key);
-                else
-                    throw new RuntimeException("unknown type to serialize " + valueClass.getName());
-            }
-        } catch (IOException ex) {
-            throw new RuntimeException("could not serialize value", ex);
+        if(value == null) {
+            this.writeNullValue(key);
+        } else {
+            final Class<?> valueClass = value.getClass();
+            if(valueClass.equals(String.class))
+                this.writeStringValue(key, (String)value);
+            else if(valueClass.equals(Boolean.class))
+                this.writeBooleanValue(key, (Boolean)value);
+            else if(valueClass.equals(Float.class))
+                this.writeFloatValue(key, (Float)value);
+            else if(valueClass.equals(Long.class))
+                this.writeLongValue(key, (Long)value);
+            else if(valueClass.equals(Integer.class))
+                this.writeIntegerValue(key, (Integer)value);
+            else if(valueClass.equals(UUID.class))
+                this.writeUUIDValue(key, (UUID)value);
+            else if(valueClass.equals(OffsetDateTime.class))
+                this.writeOffsetDateTimeValue(key, (OffsetDateTime)value);
+            else if(value instanceof Iterable<?>)
+                this.writeCollectionOfPrimitiveValues(key, (Iterable<?>)value);
+            else if(!valueClass.isPrimitive())
+                this.writeNonParsableObject(key, value);
+            else
+                throw new RuntimeException("unknown type to serialize " + valueClass.getName());
         }
     }
     public Consumer<Parsable> getOnBeforeObjectSerialization() {
