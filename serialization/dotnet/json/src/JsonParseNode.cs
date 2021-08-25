@@ -21,7 +21,7 @@ namespace Microsoft.Kiota.Serialization.Json
         /// <summary>
         /// The <see cref="JsonParseNode"/> constructor.
         /// </summary>
-        /// <param name="node">The JsonElement to intialize the node with</param>
+        /// <param name="node">The JsonElement to initialize the node with</param>
         public JsonParseNode(JsonElement node)
         {
             _jsonNode = node;
@@ -156,7 +156,6 @@ namespace Microsoft.Kiota.Serialization.Json
         /// The action to perform after assigning field values.
         /// </summary>
         public Action<IParsable> OnAfterAssignFieldValues { get; set; }
-        private static Type objectType = typeof(object);
 
         /// <summary>
         /// Get the object of type <typeparam name="T"/>from the json node

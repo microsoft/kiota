@@ -1,4 +1,4 @@
-// ------------------------------------------------------------------------------
+﻿// ------------------------------------------------------------------------------
 //  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
 // ------------------------------------------------------------------------------
 
@@ -16,7 +16,7 @@ namespace Microsoft.Kiota.Serialization.Json
     /// <summary>
     /// The <see cref="ISerializationWriter"/> implementation for json content types.
     /// </summary>
-    public class JsonSerializationWriter : ISerializationWriter, IDisposable
+    public class JsonSerializationWriter : ISerializationWriter
     {
         private readonly MemoryStream _stream = new MemoryStream();
 
@@ -66,7 +66,7 @@ namespace Microsoft.Kiota.Serialization.Json
         public void WriteStringValue(string key, string value)
         {
             if(value != null)
-            { // we want to keep empty string because they are meaningfull
+            { // we want to keep empty string because they are meaningful
                 if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
                 writer.WriteStringValue(value);
             }
@@ -246,12 +246,6 @@ namespace Microsoft.Kiota.Serialization.Json
         }
         private void WriteAnyValue<T>(string key, T value)
         {
-            if(value == null)
-            {
-                if(!string.IsNullOrEmpty(key))
-                    this.writer.WritePropertyName(key);
-                this.writer.WriteNullValue();
-            }
             switch(value)
             {
                 case string s:
@@ -276,10 +270,13 @@ namespace Microsoft.Kiota.Serialization.Json
                     WriteDateTimeOffsetValue(key, dto);
                     break;
                 case IEnumerable<object> coll:
-                    WriteCollectionOfPrimitiveValues(key, coll); // should we support collections of parsables here too?
+                    WriteCollectionOfPrimitiveValues(key, coll);
                     break;
                 case object o:
-                    WriteNonParsableObjectValue(key, o); // should we support parsables here too?
+                    if(o is IParsable parseable)
+                        WriteObjectValue(key, parseable);
+                    else
+                        WriteNonParsableObjectValue(key, o);
                     break;
                 case null:
                     WriteNullValue(key);
