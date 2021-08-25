@@ -9,7 +9,7 @@ namespace Kiota.Builder.Refiners {
         {
             PatchResponseHandlerType(generatedCode);
             AddDefaultImports(generatedCode, Array.Empty<Tuple<string, string>>(), defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
-            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, "ById");
+            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             CorrectCoreTypesForBackingStore(generatedCode, "@microsoft/kiota-abstractions", "BackingStoreFactorySingleton.instance.createBackingStore()");
             FixReferencesToEntityType(generatedCode);

@@ -23,6 +23,30 @@ module MicrosoftKiotaAbstractions
       @headers ||= Hash.new
     end
 
+    def set_uri(current_path, path_segment, is_raw_url)
+      if is_raw_url
+        if current_path.nil? || current_path.empty?
+          raise ArgumentError, 'current_path cannot be nil or empty'
+        end
+        question_mark_splat = current_path.split(/\?/)
+        scheme_host_and_path = question_mark_splat[0]
+        if question_mark_splat.length > 1
+          query_parameters = question_mark_splat[1]
+          query_parameters.split(/&/).each do |query_parameter|
+            key_value_pair = query_parameter.split(/=/)
+            if key_value_pair.length > 1
+              query_parameters[key_value_pair[0]] = key_value_pair[1]
+            elsif key_value_pair.length == 1
+              query_parameters[key_value_pair[0]] = nil
+            end
+          end
+        end          
+        @uri = URI(current_path)
+      else
+        @uri = URI(current_path + path_segment)
+      end
+    end
+
     def set_stream_content(value = $stdin)
       @content = value
       @headers[@@content_type_header] = @@binary_content_type

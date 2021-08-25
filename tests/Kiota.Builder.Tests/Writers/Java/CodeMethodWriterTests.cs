@@ -171,6 +171,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("final RequestInfo requestInfo = new RequestInfo()", result);
+            Assert.Contains("this.setUri", result);
             Assert.Contains("httpMethod = HttpMethod.GET", result);
             Assert.Contains("h.accept(requestInfo.headers)", result);
             Assert.Contains("AddQueryParameters", result);

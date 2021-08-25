@@ -7,8 +7,14 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RequestInfoTest {
-    @Test void testSomeLibraryMethod() {
-        RequestInfoTest classUnderTest = new RequestInfoTest();
-        assertNotNull(classUnderTest);
+    @Test
+    void setsRawUri() {
+        final var requestInfo = new RequestInfo();
+        requestInfo.setUri("https://graph.microsoft.com/test", null, true);
+        assertEquals("https://graph.microsoft.com/test", requestInfo.uri.toString());
+
+        requestInfo.setUri("https://graph.microsoft.com/test?qp=one", null, true);
+        assertEquals("https://graph.microsoft.com/test", requestInfo.uri.toString());
+        assertEquals("one", requestInfo.queryParameters.get("qp"));
     }
 }

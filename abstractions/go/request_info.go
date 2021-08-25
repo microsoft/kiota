@@ -3,7 +3,9 @@ package abstractions
 import (
 	"errors"
 	"reflect"
+	"strings"
 
+	"net/url"
 	u "net/url"
 
 	s "github.com/microsoft/kiota/abstractions/go/serialization"
@@ -17,6 +19,48 @@ type RequestInfo struct {
 	QueryParameters map[string]string
 	Content         []byte
 	options         map[string]MiddlewareOption
+}
+
+func NewRequestInfo() *RequestInfo {
+	return &RequestInfo{
+		URI:             u.URL{},
+		Headers:         make(map[string]string),
+		QueryParameters: make(map[string]string),
+		options:         make(map[string]MiddlewareOption),
+	}
+}
+
+func (request *RequestInfo) SetUri(currentPath string, pathSegment string, isRawUrl bool) error {
+	if isRawUrl {
+		if currentPath == "" {
+			return errors.New("current path cannot be empty")
+		}
+		questionMarkSplat := strings.Split(currentPath, "?")
+		schemeHostAndPath := questionMarkSplat[0]
+		uri, err := url.Parse(schemeHostAndPath)
+		if err != nil {
+			return err
+		}
+		request.URI = *uri
+		if len(questionMarkSplat) > 1 {
+			queryParameters := questionMarkSplat[1]
+			for _, queryParameter := range strings.Split(queryParameters, "&") {
+				keyValue := strings.Split(queryParameter, "=")
+				if len(keyValue) == 2 {
+					request.QueryParameters[keyValue[0]] = keyValue[1]
+				} else if len(keyValue) == 1 {
+					request.QueryParameters[keyValue[0]] = ""
+				}
+			}
+		}
+	} else {
+		uri, err := url.Parse(currentPath + pathSegment)
+		if err != nil {
+			return err
+		}
+		request.URI = *uri
+	}
+	return nil
 }
 
 func (request *RequestInfo) AddMiddlewareOptions(options ...MiddlewareOption) error {

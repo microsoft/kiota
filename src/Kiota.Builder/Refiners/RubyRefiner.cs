@@ -9,7 +9,7 @@ namespace Kiota.Builder.Refiners {
         public RubyRefiner(GenerationConfiguration configuration) : base(configuration) {}
         public override void Refine(CodeNamespace generatedCode)
         {
-            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, "_by_id");
+            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "_by_id");
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddParsableInheritanceForModelClasses(generatedCode);
             AddInheritedAndMethodTypesImports(generatedCode);
@@ -24,6 +24,8 @@ namespace Kiota.Builder.Refiners {
             AddNamespaceModuleImports(generatedCode , _configuration.ClientNamespaceName);
             FixReferencesToEntityType(generatedCode);
             FixInheritedEntityType(generatedCode);
+            ReplaceDefaultSerializationModules(generatedCode, "microsoft_kiota_serialization.JsonSerializationWriterFactory");
+            ReplaceDefaultDeserializationModules(generatedCode, "microsoft_kiota_serialization.JsonParseNodeFactory");
             AddSerializationModulesImport(generatedCode,
                                         new [] { "microsoft_kiota_abstractions.ApiClientBuilder",
                                                 "microsoft_kiota_abstractions.SerializationWriterFactoryRegistry" },
