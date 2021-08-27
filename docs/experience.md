@@ -10,7 +10,7 @@ var coreService = new HttpCore(authProvider);
 var client = new ApiClient(coreService);
 var user = await client.Users["bob@contoso.com"].GetAsync();
 
-var newUser = new User() {
+var newUser = new User {
     FirstName = "Bill",
     LastName = "Brown"
 }
