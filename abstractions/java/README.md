@@ -5,7 +5,6 @@
 - [ ] checkstyles
 - [ ] spotbugs
 - [ ] android api level linting
-- [ ] javadoc
 - [ ] cobertura
 
 ## Using the abstractions

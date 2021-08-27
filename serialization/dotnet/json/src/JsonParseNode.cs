@@ -1,42 +1,105 @@
+﻿// ------------------------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
+// ------------------------------------------------------------------------------
+
 using System;
 using System.Linq;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
 using Microsoft.Kiota.Abstractions.Serialization;
 
-namespace Microsoft.Kiota.Serialization.Json {
-    public class JsonParseNode : IParseNode {
+namespace Microsoft.Kiota.Serialization.Json
+{
+    /// <summary>
+    /// The <see cref="IParseNode"/> implementation for the json content type
+    /// </summary>
+    public class JsonParseNode : IParseNode
+    {
         private readonly JsonElement _jsonNode;
+        /// <summary>
+        /// The <see cref="JsonParseNode"/> constructor.
+        /// </summary>
+        /// <param name="node">The JsonElement to initialize the node with</param>
         public JsonParseNode(JsonElement node)
         {
             _jsonNode = node;
         }
+
+        /// <summary>
+        /// Get the string value from the json node
+        /// </summary>
+        /// <returns>A string value</returns>
         public string GetStringValue() => _jsonNode.GetString();
+
+        /// <summary>
+        /// Get the boolean value from the json node
+        /// </summary>
+        /// <returns>A boolean value</returns>
         public bool? GetBoolValue() => _jsonNode.GetBoolean();
+
+        /// <summary>
+        /// Get the int value from the json node
+        /// </summary>
+        /// <returns>A int value</returns>
         public int? GetIntValue() => _jsonNode.GetInt32();
+
+        /// <summary>
+        /// Get the float value from the json node
+        /// </summary>
+        /// <returns>A float value</returns>
         public decimal? GetFloatValue() => _jsonNode.GetDecimal();
+
+        /// <summary>
+        /// Get the double value from the json node
+        /// </summary>
+        /// <returns>A double value</returns>
         public double? GetDoubleValue() => _jsonNode.GetDouble();
+
+        /// <summary>
+        /// Get the guid value from the json node
+        /// </summary>
+        /// <returns>A guid value</returns>
         public Guid? GetGuidValue() => _jsonNode.GetGuid();
+
+        /// <summary>
+        /// Get the <see cref="DateTimeOffset"/> value from the json node
+        /// </summary>
+        /// <returns>A <see cref="DateTimeOffset"/> value</returns>
         public DateTimeOffset? GetDateTimeOffsetValue() => _jsonNode.GetDateTimeOffset();
-        public T? GetEnumValue<T>() where T: struct, Enum {
+
+        /// <summary>
+        /// Get the enumeration value of type <typeparam name="T"/>from the json node
+        /// </summary>
+        /// <returns>An enumeration value or null</returns>
+        public T? GetEnumValue<T>() where T : struct, Enum
+        {
             var rawValue = _jsonNode.GetString();
             if(string.IsNullOrEmpty(rawValue)) return default;
-            if(typeof(T).GetCustomAttributes<FlagsAttribute>().Any()) {
+            if(typeof(T).GetCustomAttributes<FlagsAttribute>().Any())
+            {
                 return (T)(object)rawValue
                     .Split(',')
                     .Select(x => Enum.Parse<T>(x, true))
                     .Select(x => (int)(object)x)
                     .Sum();
-            } else
+            }
+            else
                 return Enum.Parse<T>(rawValue, true);
         }
-        public IEnumerable<T> GetCollectionOfObjectValues<T>() where T: IParsable {
+
+        /// <summary>
+        /// Get the collection of type <typeparam name="T"/>from the json node
+        /// </summary>
+        /// <returns>A collection of objects</returns>
+        public IEnumerable<T> GetCollectionOfObjectValues<T>() where T : IParsable
+        {
             var enumerator = _jsonNode.EnumerateArray();
-            while(enumerator.MoveNext()) {
-                var currentParseNode = new JsonParseNode(enumerator.Current) {
+            while(enumerator.MoveNext())
+            {
+                var currentParseNode = new JsonParseNode(enumerator.Current)
+                {
                     OnAfterAssignFieldValues = OnAfterAssignFieldValues,
                     OnBeforeAssignFieldValues = OnBeforeAssignFieldValues
                 };
@@ -50,10 +113,18 @@ namespace Microsoft.Kiota.Serialization.Json {
         private static Type doubleType = typeof(double?);
         private static Type guidType = typeof(Guid?);
         private static Type dateTimeOffsetType = typeof(DateTimeOffset?);
-        public IEnumerable<T> GetCollectionOfPrimitiveValues<T>() {
+
+        /// <summary>
+        /// Get the collection of primitives of type <typeparam name="T"/>from the json node
+        /// </summary>
+        /// <returns>A collection of objects</returns>
+        public IEnumerable<T> GetCollectionOfPrimitiveValues<T>()
+        {
             var genericType = typeof(T);
-            foreach(var collectionValue in _jsonNode.EnumerateArray()) {
-                var currentParseNode = new JsonParseNode(collectionValue){
+            foreach(var collectionValue in _jsonNode.EnumerateArray())
+            {
+                var currentParseNode = new JsonParseNode(collectionValue)
+                {
                     OnBeforeAssignFieldValues = OnBeforeAssignFieldValues,
                     OnAfterAssignFieldValues = OnAfterAssignFieldValues
                 };
@@ -75,38 +146,59 @@ namespace Microsoft.Kiota.Serialization.Json {
                     throw new InvalidOperationException($"unknown type for deserialization {genericType.FullName}");
             }
         }
+
+        /// <summary>
+        /// The action to perform before assigning field values.
+        /// </summary>
         public Action<IParsable> OnBeforeAssignFieldValues { get; set; }
+
+        /// <summary>
+        /// The action to perform after assigning field values.
+        /// </summary>
         public Action<IParsable> OnAfterAssignFieldValues { get; set; }
-        private static Type objectType = typeof(object);
-        public T GetObjectValue<T>() where T: IParsable {
-            var item = (T)(typeof(T).GetConstructor(new Type[]{}).Invoke(new object[] {}));
+
+        /// <summary>
+        /// Get the object of type <typeparam name="T"/>from the json node
+        /// </summary>
+        /// <returns>A object of the specified type</returns>
+        public T GetObjectValue<T>() where T : IParsable
+        {
+            var item = (T)(typeof(T).GetConstructor(new Type[] { }).Invoke(new object[] { }));
             var fieldDeserializers = item.GetFieldDeserializers<T>();
             OnBeforeAssignFieldValues?.Invoke(item);
             AssignFieldValues(item, fieldDeserializers);
             OnAfterAssignFieldValues?.Invoke(item);
             return item;
         }
-        private void AssignFieldValues<T>(T item, IDictionary<string, Action<T, IParseNode>> fieldDeserializers) where T: IParsable {
+        private void AssignFieldValues<T>(T item, IDictionary<string, Action<T, IParseNode>> fieldDeserializers) where T : IParsable
+        {
             if(_jsonNode.ValueKind != JsonValueKind.Object) return;
             if(item.AdditionalData == null)
                 item.AdditionalData = new Dictionary<string, object>();
 
-            foreach(var fieldValue in _jsonNode.EnumerateObject().Where(x => x.Value.ValueKind != JsonValueKind.Null)) {
-                if(fieldDeserializers.ContainsKey(fieldValue.Name)) {
+            foreach(var fieldValue in _jsonNode.EnumerateObject().Where(x => x.Value.ValueKind != JsonValueKind.Null))
+            {
+                if(fieldDeserializers.ContainsKey(fieldValue.Name))
+                {
                     var fieldDeserializer = fieldDeserializers[fieldValue.Name];
                     Debug.WriteLine($"found property {fieldValue.Name} to deserialize");
-                    fieldDeserializer.Invoke(item, new JsonParseNode(fieldValue.Value) {
+                    fieldDeserializer.Invoke(item, new JsonParseNode(fieldValue.Value)
+                    {
                         OnBeforeAssignFieldValues = OnBeforeAssignFieldValues,
                         OnAfterAssignFieldValues = OnAfterAssignFieldValues
                     });
-                } else {
+                }
+                else
+                {
                     Debug.WriteLine($"found additional property {fieldValue.Name} to deserialize");
                     item.AdditionalData.TryAdd(fieldValue.Name, TryGetAnything(fieldValue.Value));
                 }
             }
         }
-        private object TryGetAnything(JsonElement element) {
-            switch(element.ValueKind) {
+        private object TryGetAnything(JsonElement element)
+        {
+            switch(element.ValueKind)
+            {
                 case JsonValueKind.Number:
                     if(element.TryGetDecimal(out var dec)) return dec;
                     else if(element.TryGetDouble(out var db)) return db;
@@ -137,7 +229,14 @@ namespace Microsoft.Kiota.Serialization.Json {
                     throw new InvalidOperationException($"unexpected additional value type during deserialization json kind : {element.ValueKind}");
             }
         }
-        public IParseNode GetChildNode(string identifier) => new JsonParseNode(_jsonNode.GetProperty(identifier ?? throw new ArgumentNullException(nameof(identifier)))) {
+
+        /// <summary>
+        /// Get the child node of the specified identifier
+        /// </summary>
+        /// <param name="identifier">The identifier of the child node</param>
+        /// <returns>An instance of <see cref="IParseNode"/></returns>
+        public IParseNode GetChildNode(string identifier) => new JsonParseNode(_jsonNode.GetProperty(identifier ?? throw new ArgumentNullException(nameof(identifier))))
+        {
             OnBeforeAssignFieldValues = OnBeforeAssignFieldValues,
             OnAfterAssignFieldValues = OnAfterAssignFieldValues
         };

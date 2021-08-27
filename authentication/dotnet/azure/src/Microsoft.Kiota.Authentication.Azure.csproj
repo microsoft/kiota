@@ -5,15 +5,16 @@
     <TargetFramework>net5.0</TargetFramework>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryUrl>https://github.com/microsoft/kiota</RepositoryUrl>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <!-- Enable this line once we go live to prevent breaking changes -->
     <!-- <PackageValidationBaselineVersion>1.0.0</PackageValidationBaselineVersion> -->
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Core" Version="1.17.0" />
-    <PackageReference Include="Microsoft.Kiota.Abstractions" Version="1.0.13" />
+    <PackageReference Include="Azure.Core" Version="1.18.0" />
+    <PackageReference Include="Microsoft.Kiota.Abstractions" Version="1.0.17" />
   </ItemGroup>
 
 </Project>

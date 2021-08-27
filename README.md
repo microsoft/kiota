@@ -14,13 +14,13 @@ The following table provides an overview of the languages supported by Kiota and
 
 | Language | Generation | Abstractions | Serialization | Authentication | HTTP | Required tools |
 | -------- | ---------- | ------------ | ------------- | -------------- | ---- | -------------- |
-| CSharp | [✔](https://github.com/microsoft/kiota/projects/5) | [✔](./abstractions/dotnet) | [JSON](./serialization/dotnet/json) | [Azure](./authentication/dotnet/azure) | [✔](./http/dotnet/httpclient) | [link](./requiredtools/dotnet.md) |
-| Go | [❌](https://github.com/microsoft/kiota/projects/8) | ❌ | ❌ | ❌ | ❌ |  |
-| Java | [✔](https://github.com/microsoft/kiota/projects/7) | [✔](./abstractions/java) | [JSON](./serialization/java/json) | [Azure](./authentication/java/azure) | [✔](./http/java/okhttp) | [link](./requiredtools/java.md) |
+| CSharp | [✔](https://github.com/microsoft/kiota/projects/5) | [✔](./abstractions/dotnet) | [JSON](./serialization/dotnet/json) | [Anonymous](./abstractions/dotnet/src/authentication/AnonymousAuthenticationProvider.cs), [Azure](./authentication/dotnet/azure) | [✔](./http/dotnet/httpclient) | [link](./requiredtools/dotnet.md) |
+| Go | [✔](https://github.com/microsoft/kiota/projects/8) | [✔](./abstractions/go)  | ❌ | ❌ | ❌ | [link](./requiredtools/go.md) |
+| Java | [✔](https://github.com/microsoft/kiota/projects/7) | [✔](./abstractions/java) | [JSON](./serialization/java/json) | [Anonymous](./abstractions/java/lib/src/main/java/com/microsoft/kiota/authentication/AnonymousAuthenticationProvider.java), [Azure](./authentication/java/azure) | [✔](./http/java/okhttp) | [link](./requiredtools/java.md) |
 | PHP | [❌](https://github.com/microsoft/kiota/projects/4) | [▶](https://github.com/microsoft/kiota/pull/321) | ❌ | ❌ | ❌ |  |
 | Python | [❌](https://github.com/microsoft/kiota/projects/3) | ❌ | ❌ | ❌ | ❌ |  |
-| Ruby | [✔](https://github.com/microsoft/kiota/projects/6) | [✔](./abstractions/ruby) | [JSON](./serialization/ruby/json/microsoft_kiota_serialization) | [❌](https://github.com/microsoft/kiota/issues/421) | [✔](./http/ruby/nethttp/microsoft_kiota_nethttp)|  |
-| TypeScript/JavaScript | [✔](https://github.com/microsoft/kiota/projects/2) | [✔](./abstractions/typescript) | [JSON](./serialization/typescript/json) | [Azure](./authentication/typescript/azure) | [✔](./http/typescript/fetch) | [link](./requiredtools/typescript.md) |
+| Ruby | [✔](https://github.com/microsoft/kiota/projects/6) | [✔](./abstractions/ruby) | [JSON](./serialization/ruby/json/microsoft_kiota_serialization) | [Anonymous](./abstractions/ruby/microsoft_kiota_abstractions/lib/microsoft_kiota_abstractions/authentication/anonymous_authentication_provider.rb), [Azure ❌](https://github.com/microsoft/kiota/issues/421) | [✔](./http/ruby/nethttp/microsoft_kiota_nethttp)| [link](./requiredtools/ruby.md)  |
+| TypeScript/JavaScript | [✔](https://github.com/microsoft/kiota/projects/2) | [✔](./abstractions/typescript) | [JSON](./serialization/typescript/json) | [Anonymous](./abstractions/typescript/src/authentication/anonymousAuthenticationProvider.ts), [Azure](./authentication/typescript/azure) | [✔](./http/typescript/fetch) | [link](./requiredtools/typescript.md) |
 
 > Legend: ✔ -> in preview, ❌ -> not started, ▶ -> in progress.
 
@@ -38,13 +38,13 @@ Kiota accepts the following parameters during the generation:
 | ---- | --------- | -------- | ----------- | --------------- | ------------- |
 | backing-store | b | no | Enables backing store for models. | Flag. N/A. | false |
 | class-name | c | no | The class name to use the for main entry point | A valid class name according to the target language specification. | ApiClient |
-| deserializer | ds | no | The fully qualified class names for deserializers. | This parameter can be passed multiple values. A module name like `Microsoft.Kiota.Serialization.Json` that implementats `IParseNodeFactory`. | `Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory` (csharp), `@microsoft/kiota-serialization-json.JsonParseNodeFactory` (typescript), `com.microsoft.kiota.serialization.JsonParseNodeFactory` (java) |
+| deserializer | ds | no | The fully qualified class names for deserializers. | This parameter can be passed multiple values. A module name like `Microsoft.Kiota.Serialization.Json` that implementats `IParseNodeFactory`. | `Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory` (csharp), `@microsoft/kiota-serialization-json.JsonParseNodeFactory` (typescript), `com.microsoft.kiota.serialization.JsonParseNodeFactory` (java), `github.com/microsoft/kiota/serialization/go/json.JsonParseNodeFactory` (go) |
 | language | l | no | The programming language to generate the SDK in. | csharp, java, or typescript | csharp |
 | loglevel | ll | no | The log level to use when logging events to the main output. | Microsoft.Extensions.Logging.LogLevel values | Warning |
 | namespace-name | n | no | The namespace name to use the for main entry point. | Valid namespace/module name according to target language specifications. | ApiClient |
 | openapi | d | no | URI or Path to the OpenAPI description (JSON or YAML) to use to generate the SDK. | A valid URI pointing to an HTTP document or a file on the local file-system. | ./openapi.yml |
 | output | o | no | The output path of the folder the code will be generated in. The folders will be created during the generation if they don't already exist. | A valid path to a folder. | ./output |
-| serializer | s | no | The fully qualified class names for serializers. | This parameter can be passed multiple values. A class name like `Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory` that implementats `ISerializationWriterFactory`. | `Microsoft.Kiota.Serialization.Json` (csharp), `@microsoft/kiota-serialization-json.JsonSerializationWriterFactory` (typescript), `com.microsoft.kiota.serialization.JsonSerializationWriterFactory` (java) |
+| serializer | s | no | The fully qualified class names for serializers. | This parameter can be passed multiple values. A class name like `Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory` that implementats `ISerializationWriterFactory`. | `Microsoft.Kiota.Serialization.Json` (csharp), `@microsoft/kiota-serialization-json.JsonSerializationWriterFactory` (typescript), `com.microsoft.kiota.serialization.JsonSerializationWriterFactory` (java), `github.com/microsoft/kiota/serialization/go/json.JsonSerializationWriterFactory` (go) |
 
 ### Debugging
 

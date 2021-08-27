@@ -1,10 +1,16 @@
+// ------------------------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
+// ------------------------------------------------------------------------------
+
 using System.Threading.Tasks;
 
-namespace Microsoft.Kiota.Abstractions {
+namespace Microsoft.Kiota.Abstractions
+{
     /// <summary>
     ///     Defines the contract for a response handler.
     /// </summary>
-    public interface IResponseHandler {
+    public interface IResponseHandler
+    {
         /// <summary>
         ///     Callback method that is invoked when a response is received.
         /// </summary>

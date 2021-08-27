@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Kiota.Builder.Extensions;
 
@@ -9,16 +10,16 @@ namespace Kiota.Builder.Refiners {
         public JavaRefiner(GenerationConfiguration configuration) : base(configuration) {}
         public override void Refine(CodeNamespace generatedCode)
         {
-            AddInnerClasses(generatedCode);
-            AndInsertOverrideMethodForRequestExecutorsAndBuilders(generatedCode);
-            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode);
+            AddInnerClasses(generatedCode, false);
+            InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
+            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);
             ConvertUnionTypesToWrapper(generatedCode);
             AddRequireNonNullImports(generatedCode);
             FixReferencesToEntityType(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
-            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders, defaultSymbolsForApiClient);
+            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
-            PatchHeaderParametersType(generatedCode);
+            PatchHeaderParametersType(generatedCode, "Map<String, String>");
             AddListImport(generatedCode);
             AddParsableInheritanceForModelClasses(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
@@ -29,11 +30,21 @@ namespace Kiota.Builder.Refiners {
                                                     CodePropertyKind.AdditionalData,
                                                     CodePropertyKind.BackingStore,
                                                 }, _configuration.UsesBackingStore, true);
+            SetSetterParametersToNullable(generatedCode, new Tuple<CodeMethodKind, CodePropertyKind>(CodeMethodKind.Setter, CodePropertyKind.AdditionalData));
             AddConstructorsForDefaultValues(generatedCode, true);
             CorrectCoreTypesForBackingStore(generatedCode, "com.microsoft.kiota.store", "BackingStoreFactorySingleton.instance.createBackingStore()");
             ReplaceDefaultSerializationModules(generatedCode, "com.microsoft.kiota.serialization.JsonSerializationWriterFactory");
             ReplaceDefaultDeserializationModules(generatedCode, "com.microsoft.kiota.serialization.JsonParseNodeFactory");
-            AddSerializationModulesImport(generatedCode);
+            AddSerializationModulesImport(generatedCode,
+                                        new [] { "com.microsoft.kiota.ApiClientBuilder",
+                                                "com.microsoft.kiota.serialization.SerializationWriterFactoryRegistry" },
+                                        new [] { "com.microsoft.kiota.serialization.ParseNodeFactoryRegistry" });
+        }
+        private static void SetSetterParametersToNullable(CodeElement currentElement, params Tuple<CodeMethodKind, CodePropertyKind>[] accessorPairs) {
+            if(currentElement is CodeMethod method &&
+                accessorPairs.Any(x => method.IsOfKind(x.Item1) && (method.AccessedProperty?.IsOfKind(x.Item2) ?? false))) 
+                method.Parameters.ForEach(x => x.Type.IsNullable = true);
+            CrawlTree(currentElement, element => SetSetterParametersToNullable(element, accessorPairs));   
         }
         private static void AddEnumSetImport(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) &&
@@ -80,7 +91,6 @@ namespace Kiota.Builder.Refiners {
             new ("QueryParametersBase", "com.microsoft.kiota"),
             new ("MiddlewareOption", "com.microsoft.kiota"),
             new ("Map", "java.util"),
-            new ("URI", "java.net"),
             new ("URISyntaxException", "java.net"),
             new ("InputStream", "java.io"),
             new ("Function", "java.util.function"),
@@ -96,14 +106,11 @@ namespace Kiota.Builder.Refiners {
             new ("Map", "java.util"),
             new ("HashMap", "java.util"),
         };
-        private static readonly Tuple<string, string>[] defaultSymbolsForApiClient = new Tuple<string, string>[] { 
-            new ("ApiClientBuilder", "com.microsoft.kiota"),
-            new ("SerializationWriterFactoryRegistry", "com.microsoft.kiota.serialization"),
-            new ("ParseNodeFactoryRegistry", "com.microsoft.kiota.serialization"),
-        };
         private static void CorrectPropertyType(CodeProperty currentProperty) {
-            if(currentProperty.IsOfKind(CodePropertyKind.HttpCore))
-                    currentProperty.Type.Name = "HttpCore";
+            if(currentProperty.IsOfKind(CodePropertyKind.HttpCore)) {
+                currentProperty.Type.Name = "HttpCore";
+                currentProperty.Type.IsNullable = true;
+            }
             else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
                 currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
             else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase)) {
@@ -119,7 +126,8 @@ namespace Kiota.Builder.Refiners {
             } else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
                 currentProperty.Type.Name = "Map<String, Object>";
                 currentProperty.DefaultValue = "new HashMap<>()";
-            }
+            } else if(currentProperty.IsOfKind(CodePropertyKind.PathSegment, CodePropertyKind.CurrentPath))
+                currentProperty.Type.IsNullable = true;
         }
         private static void CorrectMethodType(CodeMethod currentMethod) {
             if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
@@ -128,7 +136,12 @@ namespace Kiota.Builder.Refiners {
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => x.Type.Name = "Collection<MiddlewareOption>");
             }
             else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer)).ToList().ForEach(x => {
+                    x.Optional = false;
+                    x.Type.IsNullable = true;
+                    if(x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase))
+                        x.Type.Name = x.Type.Name[1..];
+                });
             else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer)) {
                 currentMethod.ReturnType.Name = $"Map<String, BiConsumer<T, ParseNode>>";
                 currentMethod.Name = "getFieldDeserializers";
@@ -138,6 +151,10 @@ namespace Kiota.Builder.Refiners {
                     .Where(x => x.Type.Name.StartsWith("I", StringComparison.OrdinalIgnoreCase))
                     .ToList()
                     .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
+            else if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore, CodeParameterKind.CurrentPath)).ToList().ForEach(x => x.Type.IsNullable = true);
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I" 
+            }
         }
         private static void AddRequireNonNullImports(CodeElement currentElement) {
             if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => !x.Optional)) {
@@ -153,7 +170,7 @@ namespace Kiota.Builder.Refiners {
             }
             CrawlTree(currentElement, AddRequireNonNullImports);
         }
-        private static void AndInsertOverrideMethodForRequestExecutorsAndBuilders(CodeElement currentElement) {
+        private static void InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass) {
                 var codeMethods = currentClass.GetChildElements(true).OfType<CodeMethod>();
                 if(codeMethods.Any()) {
@@ -175,24 +192,24 @@ namespace Kiota.Builder.Refiners {
                                         .Union(originalGeneratorMethods
                                                 .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers, CodeParameterKind.Options)))
                                         .Where(x => x != null);
-                    if(executorMethodsToAdd.Any() || generatorMethodsToAdd.Any())
-                        currentClass.AddMethod(executorMethodsToAdd.Union(generatorMethodsToAdd).ToArray());
+                    var originalConstructors = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.Constructor));
+                    var constructorsToAdd = originalConstructors
+                                            .Select(x => GetMethodClone(x, CodeParameterKind.RawUrl))
+                                            .Where(x => x != null);
+                    if(executorMethodsToAdd.Any() || generatorMethodsToAdd.Any() || constructorsToAdd.Any())
+                        currentClass.AddMethod(executorMethodsToAdd
+                                                .Union(generatorMethodsToAdd)
+                                                .Union(constructorsToAdd)
+                                                .ToArray());
                 }
             }
             
-            CrawlTree(currentElement, AndInsertOverrideMethodForRequestExecutorsAndBuilders);
-        }
-        private static void PatchHeaderParametersType(CodeElement currentElement) {
-            if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Headers)))
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Headers))
-                                        .ToList()
-                                        .ForEach(x => x.Type.Name = "Map<String, String>");
-            CrawlTree(currentElement, PatchHeaderParametersType);
+            CrawlTree(currentElement, InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors);
         }
         private static CodeMethod GetMethodClone(CodeMethod currentMethod, params CodeParameterKind[] parameterTypesToExclude) {
-            if(currentMethod.Parameters.Any(x => parameterTypesToExclude.Contains(x.ParameterKind))) {
+            if(currentMethod.Parameters.Any(x => x.IsOfKind(parameterTypesToExclude))) {
                 var cloneMethod = currentMethod.Clone() as CodeMethod;
-                cloneMethod.Parameters.RemoveAll(x => parameterTypesToExclude.Contains(x.ParameterKind));
+                cloneMethod.Parameters.RemoveAll(x => x.IsOfKind(parameterTypesToExclude));
                 cloneMethod.OriginalMethod = currentMethod;
                 return cloneMethod;
             }

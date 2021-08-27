@@ -31,9 +31,7 @@ namespace Kiota.Builder.Writers.Java {
             var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
             var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
-            foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
-                writer.WriteLine($"Objects.requireNonNull({parameter.Name});");
-            }
+            AddNullChecks(codeElement, writer);
             switch(codeElement.MethodKind) {
                 case CodeMethodKind.Serializer:
                     WriteSerializerBody(parentClass, writer);
@@ -63,15 +61,32 @@ namespace Kiota.Builder.Writers.Java {
                     WriteConstructorBody(parentClass, codeElement, writer, inherits);
                     WriteApiConstructorBody(parentClass, codeElement, writer);
                 break;
+                case CodeMethodKind.Constructor when codeElement.IsOverload && parentClass.IsOfKind(CodeClassKind.RequestBuilder):
+                    WriteRequestBuilderConstructorCall(codeElement, writer);
+                break;
                 case CodeMethodKind.Constructor:
                     WriteConstructorBody(parentClass, codeElement, writer, inherits);
                     break;
+                case CodeMethodKind.RequestBuilderBackwardCompatibility:
+                    throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
                 default:
                     writer.WriteLine("return null;");
                 break;
             }
             writer.DecreaseIndent();
             writer.WriteLine("}");
+        }
+        private static void AddNullChecks(CodeMethod codeElement, LanguageWriter writer) {
+            if(!codeElement.IsOverload)
+                foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name))
+                    writer.WriteLine($"Objects.requireNonNull({parameter.Name});");
+        }
+        private static void WriteRequestBuilderConstructorCall(CodeMethod codeElement, LanguageWriter writer)
+        {
+            var httpCoreParameter = codeElement.Parameters.OfKind(CodeParameterKind.HttpCore);
+            var currentPathParameter = codeElement.Parameters.OfKind(CodeParameterKind.CurrentPath);
+            var originalRawUrlParameter = codeElement.OriginalMethod.Parameters.OfKind(CodeParameterKind.RawUrl);
+            writer.WriteLine($"this({currentPathParameter.Name}, {httpCoreParameter.Name}, {originalRawUrlParameter.DefaultValue});");
         }
         private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
             var httpCoreProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
@@ -107,6 +122,7 @@ namespace Kiota.Builder.Writers.Java {
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.HttpCore, CodePropertyKind.HttpCore, writer);
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.CurrentPath, CodePropertyKind.CurrentPath, writer);
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RawUrl, CodePropertyKind.RawUrl, writer);
             }
         }
         private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
@@ -169,10 +185,11 @@ namespace Kiota.Builder.Writers.Java {
             writer.IncreaseIndent();
             WriteGeneratorMethodCall(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer, $"final RequestInfo {requestInfoVarName} = ");
             var sendMethodName = GetSendRequestMethodName(codeElement.ReturnType.IsCollection, returnType);
+            var responseHandlerParam = codeElement.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.ResponseHandler));
             if(codeElement.Parameters.Any(x => x.IsOfKind(CodeParameterKind.ResponseHandler)))
-                writer.WriteLine($"return this.httpCore.{sendMethodName}(requestInfo, {returnType}.class, responseHandler);");
+                writer.WriteLine($"return this.httpCore.{sendMethodName}({requestInfoVarName}, {returnType}.class, {responseHandlerParam.Name});");
             else
-                writer.WriteLine($"return this.httpCore.{sendMethodName}(requestInfo, {returnType}.class, null);");
+                writer.WriteLine($"return this.httpCore.{sendMethodName}({requestInfoVarName}, {returnType}.class, null);");
             writer.DecreaseIndent();
             writer.WriteLine("} catch (URISyntaxException ex) {");
             writer.IncreaseIndent();
@@ -211,7 +228,7 @@ namespace Kiota.Builder.Writers.Java {
             
             writer.WriteLine($"final RequestInfo {requestInfoVarName} = new RequestInfo() {{{{");
             writer.IncreaseIndent();
-            writer.WriteLines($"uri = new URI({conventions.CurrentPathPropertyName} + {conventions.PathSegmentPropertyName});",
+            writer.WriteLines($"this.setUri({conventions.CurrentPathPropertyName}, {conventions.PathSegmentPropertyName}, {conventions.RawUrlPropertyName});",
                         $"httpMethod = HttpMethod.{codeElement.HttpMethod?.ToString().ToUpperInvariant()};");
             writer.DecreaseIndent();
             writer.WriteLine("}};");
@@ -256,6 +273,7 @@ namespace Kiota.Builder.Writers.Java {
             if(additionalDataProperty != null)
                 writer.WriteLine($"writer.writeAdditionalData(this.get{additionalDataProperty.Name.ToFirstCharacterUpperCase()}());");
         }
+        private static CodeParameterOrderComparer parameterOrderComparer = new CodeParameterOrderComparer();
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType) {
             var accessModifier = conventions.GetAccessModifier(code.Access);
             var genericTypeParameterDeclaration = code.IsOfKind(CodeMethodKind.Deserializer) ? " <T>": string.Empty;
@@ -268,7 +286,7 @@ namespace Kiota.Builder.Writers.Java {
                 (CodeMethodKind.Setter) => $"set{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
                 _ => code.Name.ToFirstCharacterLowerCase()
             });
-            var parameters = string.Join(", ", code.Parameters.Select(p=> conventions.GetParameterSignature(p)).ToList());
+            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> conventions.GetParameterSignature(p)).ToList());
             var throwableDeclarations = code.IsOfKind(CodeMethodKind.RequestGenerator) ? "throws URISyntaxException ": string.Empty;
             var collectionCorrectedReturnType = code.ReturnType.IsArray && code.IsOfKind(CodeMethodKind.RequestExecutor) ?
                                                 $"Iterable<{returnType.StripArraySuffix()}>" :
@@ -295,7 +313,7 @@ namespace Kiota.Builder.Writers.Java {
         }
         private string GetDeserializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = conventions.TranslateType(propType.Name);
+            var propertyType = conventions.TranslateType(propType);
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
@@ -320,7 +338,7 @@ namespace Kiota.Builder.Writers.Java {
         }
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = conventions.TranslateType(propType.Name);
+            var propertyType = conventions.TranslateType(propType);
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)

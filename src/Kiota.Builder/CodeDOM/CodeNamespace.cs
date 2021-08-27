@@ -92,5 +92,11 @@ namespace Kiota.Builder
                 throw new ArgumentOutOfRangeException(nameof(enumDeclarations));
             return AddRange(enumDeclarations);
         }
+        public int Depth { 
+            get {
+                if (Parent is CodeNamespace n) return n.Depth + 1;
+                else return 0;
+            }
+        }
     }
 }

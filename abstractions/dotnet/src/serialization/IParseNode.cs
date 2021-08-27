@@ -1,11 +1,17 @@
+// ------------------------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
+// ------------------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 
-namespace Microsoft.Kiota.Abstractions.Serialization {
+namespace Microsoft.Kiota.Abstractions.Serialization
+{
     /// <summary>
     /// Interface for a deserialization node in a parse tree. This interace provides an abstraction layer over serialiation formats, libararies and implementations.
     /// </summary>
-    public interface IParseNode {
+    public interface IParseNode
+    {
         /// <summary>
         ///  Gets the string value of the node.
         /// </summary>
@@ -56,17 +62,17 @@ namespace Microsoft.Kiota.Abstractions.Serialization {
         /// Gets the collection of model objects values of the node.
         /// </summary>
         /// <returns>The collection of model objects values.</returns>
-        IEnumerable<T> GetCollectionOfObjectValues<T>() where T: IParsable;
+        IEnumerable<T> GetCollectionOfObjectValues<T>() where T : IParsable;
         /// <summary>
         /// Gets the enum value of the node.
         /// </summary>
         /// <returns>The enum value of the node.</returns>
-        T? GetEnumValue<T>() where T: struct, Enum;
+        T? GetEnumValue<T>() where T : struct, Enum;
         /// <summary>
         /// Gets the model object value of the node.
         /// </summary>
         /// <returns>The model object value of the node.</returns>
-        T GetObjectValue<T>() where T: IParsable;
+        T GetObjectValue<T>() where T : IParsable;
         /// <summary>
         /// Callback called before the node is deserialized.
         /// </summary>

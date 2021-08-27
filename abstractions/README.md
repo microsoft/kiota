@@ -5,5 +5,6 @@ Your project will need a reference to the abstraction package to build and run, 
 
 - [Dotnet](./dotnet)
 - [Java](./java)
+- [Go](./go)
 - [Ruby](./ruby/microsoft_kiota_abstractions)
 - [TypeScript](./typescript)

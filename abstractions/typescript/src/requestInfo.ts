@@ -8,12 +8,39 @@ import { MiddlewareOption } from "./middlewareOption";
 export class RequestInfo {
     /** The URI of the request. */
     public URI?: string;
+    /**
+     * Sets the URI of the request.
+     * @param currentPath the current path (scheme, host, port, path, query parameters) of the request.
+     * @param pathSegment the segment to append to the current path.
+     * @param isRawUrl whether the path segment is a raw url. When true, the segment is not happened and the current path is parsed for query parameters.
+     */
+    public setUri(currentPath: string, pathSegment: string, isRawUrl: boolean) : void {
+        if(isRawUrl) {
+            const questionMarkSplat = currentPath.split('?');
+            const schemeHostAndPath = questionMarkSplat[0];
+            this.URI = schemeHostAndPath;
+            if(questionMarkSplat.length > 1) {
+                const queryString = questionMarkSplat[1];
+                queryString?.split('&').forEach(queryPair => {
+                    const keyValue = queryPair.split('=');
+                    if(keyValue.length > 0) {
+                        const key = keyValue[0];
+                        if(key) {
+                            this.queryParameters.set(key, keyValue.length > 1 ? keyValue[1] : undefined);
+                        }
+                    }
+                });
+            }
+        } else {
+            this.URI = currentPath + pathSegment;
+        }
+    }
     /** The HTTP method for the request */
     public httpMethod?: HttpMethod;
     /** The Request Body. */
     public content?: ReadableStream;
     /** The Query Parameters of the request. */
-    public queryParameters: Map<string, object> = new Map<string, object>(); //TODO: case insensitive
+    public queryParameters: Map<string, string | number | boolean | undefined> = new Map<string, string | number | boolean | undefined>(); //TODO: case insensitive
     /** The Request Headers. */
     public headers: Map<string, string> = new Map<string, string>(); //TODO: case insensitive
     private _middlewareOptions = new Map<string, MiddlewareOption>(); //TODO: case insensitive

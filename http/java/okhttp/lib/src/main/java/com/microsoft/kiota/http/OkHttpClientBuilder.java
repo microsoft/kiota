@@ -1,6 +1,6 @@
 package com.microsoft.kiota.http;
 
-import com.microsoft.kiota.AuthenticationProvider;
+import com.microsoft.kiota.authentication.AuthenticationProvider;
 
 import okhttp3.OkHttpClient;
 

@@ -13,7 +13,7 @@ namespace Kiota.Builder.Refiners {
             ConvertUnionTypesToWrapper(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddAsyncSuffix(generatedCode);
-            AddInnerClasses(generatedCode);
+            AddInnerClasses(generatedCode, false);
             AddParsableInheritanceForModelClasses(generatedCode);
             CapitalizeNamespacesFirstLetters(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");

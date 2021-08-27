@@ -29,7 +29,7 @@ jobs:
         run: dotnet build ${{ env.solutionName }} --no-restore -c Release
         working-directory: ${{ env.relativePath }}
       - name: Test
-        run: dotnet test ${{ env.solutionName }} --no-build --verbosity normal -c Release
+        run: dotnet test ${{ env.solutionName }} --no-build --verbosity normal -c Release /p:CollectCoverage=true /p:CoverletOutput=TestResults/ /p:CoverletOutputFormat=opencover
         working-directory: ${{ env.relativePath }}
       - name: Publish
         run: dotnet publish ${{ env.solutionName }} --no-restore --no-build --verbosity normal -c Release
@@ -37,7 +37,14 @@ jobs:
       - name: Pack
         run: dotnet pack ${{ env.solutionName }} --no-restore --no-build --verbosity normal -c Release
         working-directory: ${{ env.relativePath }}
-      - uses: actions/upload-artifact@v2
+      - name: Upload Coverage Results
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeCoverage
+          path: |
+            ${{ env.relativePath }}/Microsoft.Kiota.Authentication.Azure.Tests/TestResults  
+      - name: Upload Nuget package
+        uses: actions/upload-artifact@v2
         with:
           name: drop
           path: |

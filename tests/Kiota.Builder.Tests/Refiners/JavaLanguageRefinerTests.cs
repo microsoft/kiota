@@ -19,7 +19,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 IsExternal = false,
             };
             model.AddUsing(nUsing);
-        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
             Assert.NotEqual("break", nUsing.Declaration.Name);
             Assert.Contains("escaped", nUsing.Declaration.Name);
         }
@@ -310,15 +310,15 @@ namespace Kiota.Builder.Refiners.Tests {
             generator.Parameters.AddRange(executor.Parameters.Where(x => !x.IsOfKind(CodeParameterKind.ResponseHandler)));
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
             var childMethods = builder.GetChildElements(true).OfType<CodeMethod>();
-            Assert.True(childMethods.Any(x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count == 1));//only the body
-            Assert.True(childMethods.Any(x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count == 1));//only the body
-            Assert.True(childMethods.Any(x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count == 2));// body + query params
-            Assert.True(childMethods.Any(x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count == 2));// body + query params
-            Assert.True(childMethods.Any(x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count == 3));// body + query params + headers
-            Assert.True(childMethods.Any(x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count == 3));// body + query params + headers
-            Assert.True(childMethods.Any(x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count == 4));// body + query params + headers + options
-            Assert.True(childMethods.Any(x => !x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count == 4));// body + query params + headers + options
-            Assert.True(childMethods.Any(x => !x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count == 5));// body + query params + headers + options + response handler
+            Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count == 1);//only the body
+            Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count == 1);//only the body
+            Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count == 2);// body + query params
+            Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count == 2);// body + query params
+            Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count == 3);// body + query params + headers
+            Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count == 3);// body + query params + headers
+            Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count == 4);// body + query params + headers + options
+            Assert.Contains(childMethods, x => !x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count == 4);// body + query params + headers + options
+            Assert.Contains(childMethods, x => !x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count == 5);// body + query params + headers + options + response handler
             Assert.Equal(9, childMethods.Count());
             Assert.Equal(7, childMethods.Count(x => x.IsOverload));
         }

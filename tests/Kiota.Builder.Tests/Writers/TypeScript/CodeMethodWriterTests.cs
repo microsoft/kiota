@@ -117,6 +117,11 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             });
         }
         [Fact]
+        public void WritesRequestBuilder() {
+            method.MethodKind = CodeMethodKind.RequestBuilderBackwardCompatibility;
+            Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+        }
+        [Fact]
         public void WritesRequestBodiesThrowOnNullHttpMethod() {
             method.MethodKind = CodeMethodKind.RequestExecutor;
             Assert.Throws<InvalidOperationException>(() => writer.Write(method));
@@ -155,6 +160,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             var result = tw.ToString();
             Assert.Contains("const requestInfo = new RequestInfo()", result);
             Assert.Contains("requestInfo.httpMethod = HttpMethod", result);
+            Assert.Contains("requestInfo.setUri", result);
             Assert.Contains("setHeadersFromRawObject", result);
             Assert.Contains("setQueryStringParametersFromRawObject", result);
             Assert.Contains("setContentFromParsable", result);

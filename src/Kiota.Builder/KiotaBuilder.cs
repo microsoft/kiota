@@ -202,8 +202,7 @@ namespace Kiota.Builder
             var languageWriter = LanguageWriter.GetLanguageWriter(language, this.config.OutputPath, this.config.ClientNamespaceName);
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            var shouldWriteNamespaceIndices = language == GenerationLanguage.Ruby;
-            await CodeRenderer.RenderCodeNamespaceToFilePerClassAsync(languageWriter, generatedCode, shouldWriteNamespaceIndices, config.ClientNamespaceName);
+            await new CodeRenderer(config).RenderCodeNamespaceToFilePerClassAsync(languageWriter, generatedCode);
             stopwatch.Stop();
             logger.LogTrace("{timestamp}ms: Files written to {path}", stopwatch.ElapsedMilliseconds, config.OutputPath);
         }
@@ -279,6 +278,7 @@ namespace Kiota.Builder
             });
         }
         private static readonly string currentPathParameterName = "currentPath";
+        private static readonly string rawUrlParameterName = "isRawUrl";
         private void CreatePathManagement(CodeClass currentClass, OpenApiUrlTreeNode currentNode, bool isApiClientClass) {
             var pathProperty = new CodeProperty(currentClass) {
                 Access = AccessModifier.Private,
@@ -340,6 +340,27 @@ namespace Kiota.Builder
                     Optional = false,
                     Description = currentPathProperty.Description,
                     ParameterKind = CodeParameterKind.CurrentPath,
+                });
+                var isRawURLPproperty = new CodeProperty(constructor) {
+                    Name = rawUrlParameterName,
+                    Description = "Whether the current path is a raw URL",
+                    PropertyKind = CodePropertyKind.RawUrl,
+                    Access = AccessModifier.Private,
+                    ReadOnly = true,
+                };
+                isRawURLPproperty.Type = new CodeType(isRawURLPproperty) {
+                    Name = "boolean",
+                    IsExternal = true,
+                    IsNullable = false,
+                };
+                currentClass.AddProperty(isRawURLPproperty);
+                constructor.AddParameter(new CodeParameter(constructor) {
+                    Name = rawUrlParameterName,
+                    Type = isRawURLPproperty.Type,
+                    Optional = true,
+                    Description = isRawURLPproperty.Description,
+                    ParameterKind = CodeParameterKind.RawUrl,
+                    DefaultValue = "true",
                 });
             }
             constructor.AddParameter(new CodeParameter(constructor) {

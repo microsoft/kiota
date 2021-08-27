@@ -1,28 +1,56 @@
+// ------------------------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
+// ------------------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Microsoft.Kiota.Abstractions {
+namespace Microsoft.Kiota.Abstractions
+{
     /// <summary>
     /// This class can be used to wrap a request using the fluent API and get the native response object in return.
     /// </summary>
-    public class NativeResponseWrapper {
+    public class NativeResponseWrapper
+    {
+        /// <summary>
+        /// Makes a request with the <typeparam name="QueryParametersType"/> instance to get a response with
+        /// a <typeparam name="NativeResponseType"/> instance and expect an instance of <typeparam name="ModelType"/>
+        /// </summary>
+        /// <param name="originalCall">The original request to make</param>
+        /// <param name="q">The query parameters of the request</param>
+        /// <param name="h">The request headers of the request</param>
+        /// <param name="o">Request options for HTTP middlewares</param>
+        /// <returns></returns>
         public static async Task<NativeResponseType> CallAndGetNativeType<ModelType, NativeResponseType, QueryParametersType>(
-                Func<Action<QueryParametersType>, Action<IDictionary<string, string>>, IResponseHandler, Task<ModelType>> originalCall,
-                Action<QueryParametersType> q = default, 
-                Action<IDictionary<string, string>> h = default) where NativeResponseType : class {
+                Func<Action<QueryParametersType>, Action<IDictionary<string, string>>, IEnumerable<IMiddlewareOption>, IResponseHandler, Task<ModelType>> originalCall,
+                Action<QueryParametersType> q = default,
+                Action<IDictionary<string, string>> h = default,
+                IEnumerable<IMiddlewareOption> o = default) where NativeResponseType : class
+        {
             var responseHandler = new NativeResponseHandler();
-            await originalCall.Invoke(q, h, responseHandler);
+            await originalCall.Invoke(q, h, o, responseHandler);
             return responseHandler.Value as NativeResponseType;
         }
 
+        /// <summary>
+        /// Makes a request with the <typeparam name="RequestBodyType"/> and <typeparam name="QueryParametersType"/> instances to get a response with
+        /// a <typeparam name="NativeResponseType"/> instance and expect an instance of <typeparam name="ModelType"/>
+        /// </summary>
+        /// <param name="originalCall">The original request to make</param>
+        /// <param name="requestBody">The request body of the request</param>
+        /// <param name="q">The query parameters of the request</param>
+        /// <param name="h">The request headers of the request</param>
+        /// <param name="o">Request options for HTTP middlewares</param>
         public static async Task<NativeResponseType> CallAndGetNativeType<ModelType, NativeResponseType, QueryParametersType, RequestBodyType>(
-                Func<RequestBodyType, Action<QueryParametersType>, Action<IDictionary<string, string>>, IResponseHandler, Task<ModelType>> originalCall,
+                Func<RequestBodyType, Action<QueryParametersType>, Action<IDictionary<string, string>>, IEnumerable<IMiddlewareOption>, IResponseHandler, Task<ModelType>> originalCall,
                 RequestBodyType requestBody,
-                Action<QueryParametersType> q = default, 
-                Action<IDictionary<string, string>> h = default) where NativeResponseType : class {
+                Action<QueryParametersType> q = default,
+                Action<IDictionary<string, string>> h = default,
+                IEnumerable<IMiddlewareOption> o = default) where NativeResponseType : class
+        {
             var responseHandler = new NativeResponseHandler();
-            await originalCall.Invoke(requestBody, q, h, responseHandler);
+            await originalCall.Invoke(requestBody, q, h, o, responseHandler);
             return responseHandler.Value as NativeResponseType;
         }
     }

@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
-require_relative "microsoft_kiota_abstractions/authentication_provider"
+require_relative "microsoft_kiota_abstractions/authentication/authentication_provider"
+require_relative "microsoft_kiota_abstractions/authentication/base_bearer_token_authentication_provider"
+require_relative "microsoft_kiota_abstractions/authentication/anonymous_authentication_provider"
 require_relative "microsoft_kiota_abstractions/http_core"
 require_relative "microsoft_kiota_abstractions/http_method"
 require_relative "microsoft_kiota_abstractions/request_info"
