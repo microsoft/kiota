@@ -8,9 +8,23 @@ The HTTP core interface is the primary point where Kiota service libraries will 
 
 ```csharp
     public interface IHttpCore {
-        Task<ModelType> SendAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = default);    
-        Task<ModelType> SendPrimitiveAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = default);
-        Task SendNoContentAsync(RequestInfo requestInfo, IResponseHandler responseHandler = default);
+        void EnableBackingStore(IBackingStoreFactory backingStoreFactory);
+
+        ISerializationWriterFactory SerializationWriterFactory { get; }
+
+        Task<ModelType> SendAsync<ModelType>(RequestInfo requestInfo, 
+                                             IResponseHandler responseHandler = default)
+                     where ModelType : IParsable;
+
+        Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(RequestInfo requestInfo,
+                        IResponseHandler responseHandler = default) 
+                    where ModelType : IParsable;
+
+        Task<ModelType> SendPrimitiveAsync<ModelType>(RequestInfo requestInfo,
+                                                      IResponseHandler responseHandler = default);
+                                                      
+        Task SendNoContentAsync(RequestInfo requestInfo, 
+                                IResponseHandler responseHandler = default);
     }
 ```
 
