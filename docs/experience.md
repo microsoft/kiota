@@ -13,9 +13,9 @@ var user = await client.Users["bob@contoso.com"].GetAsync();
 var newUser = new User {
     FirstName = "Bill",
     LastName = "Brown"
-}
+};
 
-await client.Users.PostAsync(newUser)
+await client.Users.PostAsync(newUser);
 
 ```
 
