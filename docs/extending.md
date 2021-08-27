@@ -11,4 +11,4 @@ For more information on the various components used by the Kiota SDK, see the fo
 - [Models](models)
 - [Abstractions](kiotaabstractions)
 - [Core Library](corelibrary)
-- [Authentication](./authentication)
+- [Authentication](authentication)
