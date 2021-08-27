@@ -4,7 +4,7 @@ On most platforms there are a range of different HTTP client library implementat
 
 ## HTTP Core
 
-The HTTP core interface is the primary point where Kiota service libraries will trigger the creation of a HTTP request.
+The HTTP core interface is the primary point where Kiota service libraries will trigger the creation of a HTTP request.  Below is the [C# implementation](https://github.com/microsoft/kiota/blob/main/abstractions/dotnet/src/IHttpCore.cs).
 
 ```csharp
     public interface IHttpCore {
