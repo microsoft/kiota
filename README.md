@@ -14,13 +14,13 @@ The following table provides an overview of the languages supported by Kiota and
 
 | Language | Generation | Abstractions | Serialization | Authentication | HTTP | Required tools |
 | -------- | ---------- | ------------ | ------------- | -------------- | ---- | -------------- |
-| CSharp | [✔](https://github.com/microsoft/kiota/projects/5) | [✔](./abstractions/dotnet) | [JSON](./serialization/dotnet/json) | [Anonymous](./abstractions/dotnet/src/authentication/AnonymousAuthenticationProvider.cs), [Azure](./authentication/dotnet/azure) | [✔](./http/dotnet/httpclient) | [link](./requiredtools/dotnet.md) |
-| Go | [✔](https://github.com/microsoft/kiota/projects/8) | [✔](./abstractions/go)  | ❌ | ❌ | ❌ | [link](./requiredtools/go.md) |
-| Java | [✔](https://github.com/microsoft/kiota/projects/7) | [✔](./abstractions/java) | [JSON](./serialization/java/json) | [Anonymous](./abstractions/java/lib/src/main/java/com/microsoft/kiota/authentication/AnonymousAuthenticationProvider.java), [Azure](./authentication/java/azure) | [✔](./http/java/okhttp) | [link](./requiredtools/java.md) |
+| CSharp | [✔](https://github.com/microsoft/kiota/projects/5) | [✔](./abstractions/dotnet) | [JSON](./serialization/dotnet/json) | [Anonymous](./abstractions/dotnet/src/authentication/AnonymousAuthenticationProvider.cs), [Azure](./authentication/dotnet/azure) | [✔](./http/dotnet/httpclient) | [link](./docs/requiredtools/dotnet.md) |
+| Go | [✔](https://github.com/microsoft/kiota/projects/8) | [✔](./abstractions/go)  | ❌ | ❌ | ❌ | [link](./docs/requiredtools/go.md) |
+| Java | [✔](https://github.com/microsoft/kiota/projects/7) | [✔](./abstractions/java) | [JSON](./serialization/java/json) | [Anonymous](./abstractions/java/lib/src/main/java/com/microsoft/kiota/authentication/AnonymousAuthenticationProvider.java), [Azure](./authentication/java/azure) | [✔](./http/java/okhttp) | [link](./docs/requiredtools/java.md) |
 | PHP | [❌](https://github.com/microsoft/kiota/projects/4) | [▶](https://github.com/microsoft/kiota/pull/321) | ❌ | ❌ | ❌ |  |
 | Python | [❌](https://github.com/microsoft/kiota/projects/3) | ❌ | ❌ | ❌ | ❌ |  |
-| Ruby | [✔](https://github.com/microsoft/kiota/projects/6) | [✔](./abstractions/ruby) | [JSON](./serialization/ruby/json/microsoft_kiota_serialization) | [Anonymous](./abstractions/ruby/microsoft_kiota_abstractions/lib/microsoft_kiota_abstractions/authentication/anonymous_authentication_provider.rb), [Azure ❌](https://github.com/microsoft/kiota/issues/421) | [✔](./http/ruby/nethttp/microsoft_kiota_nethttp)| [link](./requiredtools/ruby.md)  |
-| TypeScript/JavaScript | [✔](https://github.com/microsoft/kiota/projects/2) | [✔](./abstractions/typescript) | [JSON](./serialization/typescript/json) | [Anonymous](./abstractions/typescript/src/authentication/anonymousAuthenticationProvider.ts), [Azure](./authentication/typescript/azure) | [✔](./http/typescript/fetch) | [link](./requiredtools/typescript.md) |
+| Ruby | [✔](https://github.com/microsoft/kiota/projects/6) | [✔](./abstractions/ruby) | [JSON](./serialization/ruby/json/microsoft_kiota_serialization) | [Anonymous](./abstractions/ruby/microsoft_kiota_abstractions/lib/microsoft_kiota_abstractions/authentication/anonymous_authentication_provider.rb), [Azure ❌](https://github.com/microsoft/kiota/issues/421) | [✔](./http/ruby/nethttp/microsoft_kiota_nethttp)| [link](./docs/requiredtools/ruby.md)  |
+| TypeScript/JavaScript | [✔](https://github.com/microsoft/kiota/projects/2) | [✔](./abstractions/typescript) | [JSON](./serialization/typescript/json) | [Anonymous](./abstractions/typescript/src/authentication/anonymousAuthenticationProvider.ts), [Azure](./authentication/typescript/azure) | [✔](./http/typescript/fetch) | [link](./docs/requiredtools/typescript.md) |
 
 > Legend: ✔ -> in preview, ❌ -> not started, ▶ -> in progress.
 
@@ -28,7 +28,7 @@ The following table provides an overview of the languages supported by Kiota and
 
 1. Install the pre-requisites for your language (refer to the [Supported Languages](#supported-languages) table)
 1. Intialize the target project and add the required dependencies (information found in the pre-requisites).
-1. Clone the repository and [build Kiota locally](./generator/build.md) **--or--** [download and run binaries](./generator/binaries.md) **--or--** [install and run the dotnet tool](./generator/tool.md) **--or--** [run the docker image](./generator/docker.md).
+1. Clone the repository and [build Kiota locally](./docs/generator/build.md) **--or--** [download and run binaries](./docs/generator/binaries.md) **--or--** [install and run the dotnet tool](./docs/generator/tool.md) **--or--** [run the docker image](./docs/generator/docker.md).
 
 #### Parameters reference
 
@@ -48,7 +48,7 @@ Kiota accepts the following parameters during the generation:
 
 ### Debugging
 
-Make sure you [install the pre-requisites first](./requiredtools/kiota). If you are using Visual Studio Code as your IDE, the **launch.json** file already contains the configuration to run Kiota. By default this configuration will use the `openApiDocs/v1.0/Mail.yml` under the [PowerShell repository](https://github.com/microsoftgraph/msgraph-sdk-powershell) as the OpenAPI to generate an SDK for. By default this configuration will output the generated files in a graphdotnetv4|graphjavav4|graphtypescriptv4 folder located in the parent folder this repository is cloned in.
+Make sure you [install the pre-requisites first](./docs/requiredtools/kiota). If you are using Visual Studio Code as your IDE, the **launch.json** file already contains the configuration to run Kiota. By default this configuration will use the `openApiDocs/v1.0/Mail.yml` under the [PowerShell repository](https://github.com/microsoftgraph/msgraph-sdk-powershell) as the OpenAPI to generate an SDK for. By default this configuration will output the generated files in a graphdotnetv4|graphjavav4|graphtypescriptv4 folder located in the parent folder this repository is cloned in.
 
 Selecting the language you want to generate an SDK for in the Visual Studio Debug tab and hitting **F5** will automatically build, start, and attach the debugging process to Kiota.
 
