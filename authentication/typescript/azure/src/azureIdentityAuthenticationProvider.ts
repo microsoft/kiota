@@ -1,5 +1,5 @@
 import { TokenCredential } from "@azure/core-auth";
-import { BaseBearerTokenAuthenticationProvider, RequestInfo  } from '@microsoft/kiota-abstractions';
+import { BaseBearerTokenAuthenticationProvider, RequestInformation  } from '@microsoft/kiota-abstractions';
 
 export class AzureIdentityAuthenticationProvider extends BaseBearerTokenAuthenticationProvider {
     /**
@@ -14,7 +14,7 @@ export class AzureIdentityAuthenticationProvider extends BaseBearerTokenAuthenti
             throw new Error('scopes cannot be null or empty');
         }
     }
-    public getAuthorizationToken = async (_: RequestInfo) : Promise<string> => {
+    public getAuthorizationToken = async (_: RequestInformation) : Promise<string> => {
         const result = await this.credentials.getToken(this.scopes);
         return result?.token ?? '';
     }

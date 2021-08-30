@@ -34,7 +34,7 @@ namespace Kiota.Builder.Refiners {
         private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
             new ("HttpCore", "microsoft_kiota_abstractions"),
             new ("HttpMethod", "microsoft_kiota_abstractions"),
-            new ("RequestInfo", "microsoft_kiota_abstractions"),
+            new ("RequestInformation", "microsoft_kiota_abstractions"),
             new ("ResponseHandler", "microsoft_kiota_abstractions"),
             new ("QueryParametersBase", "microsoft_kiota_abstractions"),
             new ("SerializationWriterFactory", "microsoft_kiota_abstractions"),

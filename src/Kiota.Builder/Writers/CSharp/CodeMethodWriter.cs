@@ -159,7 +159,7 @@ namespace Kiota.Builder.Writers.CSharp {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
             var operationName = codeElement.HttpMethod.ToString();
-            writer.WriteLine($"var {_requestInfoVarName} = new RequestInfo {{");
+            writer.WriteLine($"var {_requestInfoVarName} = new RequestInformation {{");
             writer.IncreaseIndent();
             writer.WriteLine($"HttpMethod = HttpMethod.{operationName?.ToUpperInvariant()},");
             writer.DecreaseIndent();

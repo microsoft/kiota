@@ -50,11 +50,11 @@ namespace Microsoft.Kiota.Http.HttpClient
             }
         }
         /// <summary>
-        /// Send a <see cref="RequestInfo"/> instance with a collection instance of <typeparam name="ModelType"></typeparam>
+        /// Send a <see cref="RequestInformation"/> instance with a collection instance of <typeparam name="ModelType"></typeparam>
         /// </summary>
-        /// <param name="requestInfo">The <see cref="RequestInfo"/> instance to send</param>
+        /// <param name="requestInfo">The <see cref="RequestInformation"/> instance to send</param>
         /// <param name="responseHandler">The <see cref="IResponseHandler"/> to use with the response</param>
-        public async Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = default) where ModelType : IParsable
+        public async Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default) where ModelType : IParsable
         {
             var response = await GetHttpResponseMessage(requestInfo);
             requestInfo.Content?.Dispose();
@@ -68,11 +68,11 @@ namespace Microsoft.Kiota.Http.HttpClient
                 return await responseHandler.HandleResponseAsync<HttpResponseMessage, IEnumerable<ModelType>>(response);
         }
         /// <summary>
-        /// Send a <see cref="RequestInfo"/> instance with an instance of <typeparam name="ModelType"></typeparam>
+        /// Send a <see cref="RequestInformation"/> instance with an instance of <typeparam name="ModelType"></typeparam>
         /// </summary>
-        /// <param name="requestInfo">The <see cref="RequestInfo"/> instance to send</param>
+        /// <param name="requestInfo">The <see cref="RequestInformation"/> instance to send</param>
         /// <param name="responseHandler">The <see cref="IResponseHandler"/> to use with the response</param>
-        public async Task<ModelType> SendAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = null) where ModelType : IParsable
+        public async Task<ModelType> SendAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = null) where ModelType : IParsable
         {
             var response = await GetHttpResponseMessage(requestInfo);
             requestInfo.Content?.Dispose();
@@ -86,12 +86,12 @@ namespace Microsoft.Kiota.Http.HttpClient
                 return await responseHandler.HandleResponseAsync<HttpResponseMessage, ModelType>(response);
         }
         /// <summary>
-        /// Send a <see cref="RequestInfo"/> instance with a primitive instance of <typeparam name="ModelType"></typeparam>
+        /// Send a <see cref="RequestInformation"/> instance with a primitive instance of <typeparam name="ModelType"></typeparam>
         /// </summary>
-        /// <param name="requestInfo">The <see cref="RequestInfo"/> instance to send</param>
+        /// <param name="requestInfo">The <see cref="RequestInformation"/> instance to send</param>
         /// <param name="responseHandler">The <see cref="IResponseHandler"/> to use with the response</param>
         /// <returns></returns>
-        public async Task<ModelType> SendPrimitiveAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = default)
+        public async Task<ModelType> SendPrimitiveAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default)
         {
             var response = await GetHttpResponseMessage(requestInfo);
             requestInfo.Content?.Dispose();
@@ -142,12 +142,12 @@ namespace Microsoft.Kiota.Http.HttpClient
                 return await responseHandler.HandleResponseAsync<HttpResponseMessage, ModelType>(response);
         }
         /// <summary>
-        /// Send a <see cref="RequestInfo"/> instance with an empty request body
+        /// Send a <see cref="RequestInformation"/> instance with an empty request body
         /// </summary>
-        /// <param name="requestInfo">The <see cref="RequestInfo"/> instance to send</param>
+        /// <param name="requestInfo">The <see cref="RequestInformation"/> instance to send</param>
         /// <param name="responseHandler">The <see cref="IResponseHandler"/> to use with the response</param>
         /// <returns></returns>
-        public async Task SendNoContentAsync(RequestInfo requestInfo, IResponseHandler responseHandler = null)
+        public async Task SendNoContentAsync(RequestInformation requestInfo, IResponseHandler responseHandler = null)
         {
             var response = await GetHttpResponseMessage(requestInfo);
             requestInfo.Content?.Dispose();
@@ -166,21 +166,21 @@ namespace Microsoft.Kiota.Http.HttpClient
             response.Dispose();
             return rootNode;
         }
-        private async Task<HttpResponseMessage> GetHttpResponseMessage(RequestInfo requestInfo)
+        private async Task<HttpResponseMessage> GetHttpResponseMessage(RequestInformation requestInfo)
         {
             if(requestInfo == null)
                 throw new ArgumentNullException(nameof(requestInfo));
 
             await authProvider.AuthenticateRequestAsync(requestInfo);
 
-            using var message = GetRequestMessageFromRequestInfo(requestInfo);
+            using var message = GetRequestMessageFromRequestInformation(requestInfo);
             var response = await this.client.SendAsync(message);
             if(response == null)
                 throw new InvalidOperationException("Could not get a response after calling the service");
             return response;
         }
         private const string ContentTypeHeaderName = "content-type";
-        private HttpRequestMessage GetRequestMessageFromRequestInfo(RequestInfo requestInfo)
+        private HttpRequestMessage GetRequestMessageFromRequestInformation(RequestInformation requestInfo)
         {
             var message = new HttpRequestMessage
             {

@@ -14,7 +14,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.microsoft.kiota.ApiClientBuilder;
-import com.microsoft.kiota.RequestInfo;
+import com.microsoft.kiota.RequestInformation;
 import com.microsoft.kiota.MiddlewareOption;
 import com.microsoft.kiota.ResponseHandler;
 import com.microsoft.kiota.authentication.AuthenticationProvider;
@@ -81,12 +81,12 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
         }
     }
     @Nonnull
-    public <ModelType extends Parsable> CompletableFuture<Iterable<ModelType>> sendCollectionAsync(@Nonnull final RequestInfo requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
+    public <ModelType extends Parsable> CompletableFuture<Iterable<ModelType>> sendCollectionAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
 
         return this.authProvider.authenticateRequest(requestInfo).thenCompose(x -> {
             final HttpCoreCallbackFutureWrapper wrapper = new HttpCoreCallbackFutureWrapper();
-            this.client.newCall(getRequestFromRequestInfo(requestInfo)).enqueue(wrapper);
+            this.client.newCall(getRequestFromRequestInformation(requestInfo)).enqueue(wrapper);
             return wrapper.future;
         }).thenCompose(response -> {
             if(responseHandler == null) {
@@ -108,12 +108,12 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
         });
     }
     @Nonnull
-    public <ModelType extends Parsable> CompletableFuture<ModelType> sendAsync(@Nonnull final RequestInfo requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
+    public <ModelType extends Parsable> CompletableFuture<ModelType> sendAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
 
         return this.authProvider.authenticateRequest(requestInfo).thenCompose(x -> {
             final HttpCoreCallbackFutureWrapper wrapper = new HttpCoreCallbackFutureWrapper();
-            this.client.newCall(getRequestFromRequestInfo(requestInfo)).enqueue(wrapper);
+            this.client.newCall(getRequestFromRequestInformation(requestInfo)).enqueue(wrapper);
             return wrapper.future;
         }).thenCompose(response -> {
             if(responseHandler == null) {
@@ -138,10 +138,10 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
         return mediaType.type() + "/" + mediaType.subtype();
     }
     @Nonnull
-    public <ModelType> CompletableFuture<ModelType> sendPrimitiveAsync(@Nonnull final RequestInfo requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
+    public <ModelType> CompletableFuture<ModelType> sendPrimitiveAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
         return this.authProvider.authenticateRequest(requestInfo).thenCompose(x -> {
             final HttpCoreCallbackFutureWrapper wrapper = new HttpCoreCallbackFutureWrapper();
-            this.client.newCall(getRequestFromRequestInfo(requestInfo)).enqueue(wrapper);
+            this.client.newCall(getRequestFromRequestInformation(requestInfo)).enqueue(wrapper);
             return wrapper.future;
         }).thenCompose(response -> {
             if(responseHandler == null) {
@@ -186,7 +186,7 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
             }
         });
     }
-    private Request getRequestFromRequestInfo(@Nonnull final RequestInfo requestInfo) {
+    private Request getRequestFromRequestInformation(@Nonnull final RequestInformation requestInfo) {
         final StringBuilder urlBuilder = new StringBuilder(requestInfo.uri.toString());
 
         if(!requestInfo.queryParameters.isEmpty()) {

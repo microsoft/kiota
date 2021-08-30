@@ -29,7 +29,7 @@ namespace Microsoft.Kiota.Authentication.Azure.Tests
             var mockTokenCredential = new Mock<TokenCredential>();
             mockTokenCredential.Setup(credential => credential.GetTokenAsync(It.IsAny<TokenRequestContext>(), It.IsAny<CancellationToken>())).Returns(ValueTask.FromResult(new AccessToken(expectedToken, DateTimeOffset.Now)));
             var azureIdentityAuthenticationProvider = new AzureIdentityAuthenticationProvider(mockTokenCredential.Object, null);
-            var testRequest = new RequestInfo()
+            var testRequest = new RequestInformation()
             {
                 HttpMethod = HttpMethod.GET,
                 URI = new Uri("http://localhost")
@@ -50,7 +50,7 @@ namespace Microsoft.Kiota.Authentication.Azure.Tests
             var mockTokenCredential = new Mock<TokenCredential>();
             mockTokenCredential.Setup(credential => credential.GetTokenAsync(It.IsAny<TokenRequestContext>(), It.IsAny<CancellationToken>())).Returns(ValueTask.FromResult(new AccessToken(expectedToken, DateTimeOffset.Now)));
             var azureIdentityAuthenticationProvider = new AzureIdentityAuthenticationProvider(mockTokenCredential.Object,"User.Read");
-            var testRequest = new RequestInfo()
+            var testRequest = new RequestInformation()
             {
                 HttpMethod = HttpMethod.GET,
                 URI = new Uri("http://localhost")

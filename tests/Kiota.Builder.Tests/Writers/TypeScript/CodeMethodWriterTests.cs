@@ -158,7 +158,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("const requestInfo = new RequestInfo()", result);
+            Assert.Contains("const requestInfo = new RequestInformation()", result);
             Assert.Contains("requestInfo.httpMethod = HttpMethod", result);
             Assert.Contains("requestInfo.setUri", result);
             Assert.Contains("setHeadersFromRawObject", result);

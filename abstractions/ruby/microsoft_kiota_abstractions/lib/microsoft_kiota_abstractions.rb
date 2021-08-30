@@ -5,7 +5,7 @@ require_relative "microsoft_kiota_abstractions/authentication/base_bearer_token_
 require_relative "microsoft_kiota_abstractions/authentication/anonymous_authentication_provider"
 require_relative "microsoft_kiota_abstractions/http_core"
 require_relative "microsoft_kiota_abstractions/http_method"
-require_relative "microsoft_kiota_abstractions/request_info"
+require_relative "microsoft_kiota_abstractions/request_information"
 require_relative "microsoft_kiota_abstractions/response_handler"
 require_relative "microsoft_kiota_abstractions/version"
 require_relative "microsoft_kiota_abstractions/serialization/parsable"

@@ -2,7 +2,7 @@ require 'uri'
 require_relative 'http_method'
 
 module MicrosoftKiotaAbstractions
-  class RequestInfo
+  class RequestInformation
     attr_reader :uri, :content, :http_method
     @@binary_content_type = 'application/octet-stream'
     @@content_type_header = 'Content-Type'

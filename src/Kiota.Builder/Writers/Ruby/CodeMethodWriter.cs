@@ -159,7 +159,7 @@ namespace Kiota.Builder.Writers.Ruby {
 
         private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
-            writer.WriteLines("request_info = MicrosoftKiotaAbstractions::RequestInfo.new()",
+            writer.WriteLines("request_info = MicrosoftKiotaAbstractions::RequestInformation.new()",
                                 $"request_info.set_uri(@{conventions.CurrentPathPropertyName}, @{conventions.PathSegmentPropertyName}, @{conventions.RawUrlPropertyName})",
                                 $"request_info.http_method = :{codeElement.HttpMethod?.ToString().ToUpperInvariant()}");
             if(headersParam != null)

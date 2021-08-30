@@ -159,7 +159,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("var requestInfo = new RequestInfo", result);
+            Assert.Contains("var requestInfo = new RequestInformation", result);
             Assert.Contains("HttpMethod = HttpMethod.GET", result);
             Assert.Contains("requestInfo.SetURI", result);
             Assert.Contains("h?.Invoke", result);

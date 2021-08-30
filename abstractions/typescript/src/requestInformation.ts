@@ -5,7 +5,7 @@ import { HttpCore } from "./httpCore";
 import { MiddlewareOption } from "./middlewareOption";
 
 /** This class represents an abstract HTTP request. */
-export class RequestInfo {
+export class RequestInformation {
     /** The URI of the request. */
     public URI?: string;
     /**
@@ -74,7 +74,7 @@ export class RequestInfo {
         if(!values || values.length === 0) throw new Error("values cannot be undefined or empty");
 
         const writer = httpCore.getSerializationWriterFactory().getSerializationWriter(contentType);
-        this.headers.set(RequestInfo.contentTypeHeader, contentType);
+        this.headers.set(RequestInformation.contentTypeHeader, contentType);
         if(values.length === 1) 
             writer.writeObjectValue(undefined, values[0]);
         else
@@ -86,7 +86,7 @@ export class RequestInfo {
      * @param value the binary stream
      */
     public setStreamContent = (value: ReadableStream): void => {
-        this.headers.set(RequestInfo.contentTypeHeader, RequestInfo.binaryContentType);
+        this.headers.set(RequestInformation.contentTypeHeader, RequestInformation.binaryContentType);
         this.content = value;
     }
     /**

@@ -13,7 +13,7 @@ namespace Microsoft.Kiota.Abstractions
     /// <summary>
     ///     This class represents an abstract HTTP request.
     /// </summary>
-    public class RequestInfo
+    public class RequestInformation
     {
         /// <summary>
         ///  The URI of the request.

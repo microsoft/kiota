@@ -9,7 +9,7 @@ The authentication providers are required to implement the following contract/in
 ```CSharp
 public interface IAuthenticationProvider
 {
-    Task AuthenticateRequest(RequestInfo request);
+    Task AuthenticateRequest(RequestInformation request);
 }
 ```
 
@@ -24,7 +24,7 @@ Should you want to add support for additional authentication providers for that 
 ```CSharp
 public abstract class BaseBearerTokenAuthenticationProvider 
 {
-    public abstract Task<string> GetAuthorizationToken(RequestInfo request);
+    public abstract Task<string> GetAuthorizationToken(RequestInformation request);
 }
 ```
 

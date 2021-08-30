@@ -147,7 +147,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("final RequestInfo requestInfo", result);
+            Assert.Contains("final RequestInformation requestInfo", result);
             Assert.Contains("sendAsync", result);
             Assert.Contains("CompletableFuture.failedFuture(ex)", result);
             AssertExtensions.CurlyBracesAreClosed(result);
@@ -170,7 +170,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("final RequestInfo requestInfo = new RequestInfo()", result);
+            Assert.Contains("final RequestInformation requestInfo = new RequestInformation()", result);
             Assert.Contains("this.setUri", result);
             Assert.Contains("httpMethod = HttpMethod.GET", result);
             Assert.Contains("h.accept(requestInfo.headers)", result);
@@ -188,7 +188,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.DoesNotContain("final RequestInfo requestInfo = new RequestInfo()", result);
+            Assert.DoesNotContain("final RequestInformation requestInfo = new RequestInformation()", result);
             Assert.DoesNotContain("httpMethod = HttpMethod.GET", result);
             Assert.DoesNotContain("h.accept(requestInfo.headers)", result);
             Assert.DoesNotContain("AddQueryParameters", result);

@@ -1,6 +1,6 @@
 package com.microsoft.kiota.authentication;
 
-import com.microsoft.kiota.RequestInfo;
+import com.microsoft.kiota.RequestInformation;
 
 import java.lang.UnsupportedOperationException;
 import java.util.concurrent.CompletableFuture;
@@ -11,7 +11,7 @@ import javax.annotation.Nonnull;
 /** Provides a base class for implementing AuthenticationProvider for Bearer token scheme. */
 public abstract class BaseBearerTokenAuthenticationProvider implements AuthenticationProvider {
     private final static String authorizationHeaderKey = "Authorization";
-    public CompletableFuture<Void> authenticateRequest(final RequestInfo request) {
+    public CompletableFuture<Void> authenticateRequest(final RequestInformation request) {
         Objects.requireNonNull(request);
         if(!request.headers.keySet().contains(authorizationHeaderKey)) {
             return this.getAuthorizationToken(request)
@@ -32,5 +32,5 @@ public abstract class BaseBearerTokenAuthenticationProvider implements Authentic
      * @return A CompletableFuture that holds the access token to use for the request.
      */
     @Nonnull
-    public abstract CompletableFuture<String> getAuthorizationToken(@Nonnull final RequestInfo request);
+    public abstract CompletableFuture<String> getAuthorizationToken(@Nonnull final RequestInformation request);
 }
