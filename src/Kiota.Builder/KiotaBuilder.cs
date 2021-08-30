@@ -429,7 +429,7 @@ namespace Kiota.Builder
                 if(x.TypeDefinition == null) {
                     parentNS = parentNS.Parent as CodeNamespace;
                     x.TypeDefinition = parentNS
-                        .FindNamespaceByName($"{parentNS.Name}.{x.Name.Substring(0, x.Name.Length - requestBuilderSuffix.Length).ToFirstCharacterLowerCase()}")
+                        .FindNamespaceByName($"{parentNS.Name}.{x.Name.Substring(0, x.Name.Length - requestBuilderSuffix.Length).ToFirstCharacterLowerCase()}".TrimEnd('.'))
                         .FindChildrenByName<CodeClass>(x.Name)
                         .OrderBy(shortestNamespaceOrder)
                         .FirstOrDefault();
