@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixes a bug where empty title would make generation fail #558
+- Fixes a bug where float, long and binary types would not be parsed by the generator #558
+- Fixes a bug where generation would fail on compact namespace names #558
+
 ## [0.0.8] - 2021-08-25
 
 ### Added
