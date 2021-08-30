@@ -100,7 +100,7 @@ namespace GraphApp
         static async Task Main(string[] args)
         {
             var credential = new Azure.Identity.InteractiveBrowserCredential("<insert clientId from $app.ClientId>");
-            IAuthenticationProvider authProvider = new AzureIdentityAuthenticationProvider(credential,new string[] {"User.Read"});
+            var authProvider = new AzureIdentityAuthenticationProvider(credential, new string[] {"User.Read"});
             var core = new HttpCore(authProvider);
             var apiClient = new ApiClient(core);
             var me = await apiClient.Me.GetAsync();
