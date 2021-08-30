@@ -113,5 +113,55 @@ namespace Kiota.Builder.Tests
             var progressProp = codeModel.FindChildByName<CodeProperty>("progress", true);
             Assert.Equal("double", progressProp.Type.Name);
         }
+        [Fact]
+        public void Object_Arrays_are_supported() {
+            var node = OpenApiUrlTreeNode.Create();
+            var usersNode = node.Attach("users", new OpenApiPathItem() {
+                
+            }, "default");
+            usersNode.Attach("{id}", new OpenApiPathItem() {
+                Operations = {
+                    [OperationType.Get] = new OpenApiOperation() {
+                        Responses = new OpenApiResponses {
+                            ["200"] = new OpenApiResponse() {
+                                Content = {
+                                    ["application/json"] = new OpenApiMediaType() {
+                                        Schema = new OpenApiSchema {
+                                            Type = "object",
+                                            Properties = new Dictionary<string, OpenApiSchema> {
+                                                {
+                                                    "value", new OpenApiSchema {
+                                                        Type = "array",
+                                                        Items = new OpenApiSchema {
+                                                            Type = "object",
+                                                            Title = "user", // unit test fails if the title is not set
+                                                            Properties = new Dictionary<string, OpenApiSchema> {
+                                                                {
+                                                                    "id", new OpenApiSchema {
+                                                                        Type = "string"
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "displayName", new OpenApiSchema {
+                                                                        Type = "string"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }, "default");
+            var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph" });
+            var codeModel = builder.CreateSourceModel(node);
+        }
     }
 }
