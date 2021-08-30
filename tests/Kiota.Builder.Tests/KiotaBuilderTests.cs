@@ -4,6 +4,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Moq;
 using Xunit;
+using System.Collections.Generic;
+using Microsoft.OpenApi.Any;
 
 namespace Kiota.Builder.Tests
 {
@@ -61,6 +63,55 @@ namespace Kiota.Builder.Tests
             var getMethod = tasksRequestBuilder.TypeDefinition.GetChildElements(true).OfType<CodeMethod>().Single(e => e.Name == "Get");
             var returnType = getMethod.ReturnType;
             Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Array, returnType.CollectionKind);
+        }
+        [Fact]
+        public void OData_doubles_as_any_of(){
+            var node = OpenApiUrlTreeNode.Create();
+            node.Attach("tasks", new OpenApiPathItem() {
+                Operations = {
+                    [OperationType.Get] = new OpenApiOperation() { 
+                        Responses = new OpenApiResponses
+                        {
+                            ["200"] = new OpenApiResponse()
+                            {
+                                Content =
+                                {
+                                    ["application/json"] = new OpenApiMediaType()
+                                    {
+                                        Schema = new OpenApiSchema
+                                        {
+                                            Type = "object",
+                                            Properties = new Dictionary<string, OpenApiSchema> {
+                                                {
+                                                    "progress", new OpenApiSchema{
+                                                        AnyOf = new List<OpenApiSchema>{
+                                                            new OpenApiSchema{
+                                                                Type = "number"
+                                                            },
+                                                            new OpenApiSchema{
+                                                                Type = "string"
+                                                            },
+                                                            new OpenApiSchema {
+                                                                Enum = new List<IOpenApiAny> { new OpenApiString("-INF"), new OpenApiString("INF"), new OpenApiString("NaN") }
+                                                            }
+                                                        },
+                                                        Format = "double"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } 
+            }, "default");
+            var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph" });
+            var codeModel = builder.CreateSourceModel(node);
+            var progressProp = codeModel.FindChildByName<CodeProperty>("progress", true);
+            Assert.Equal("double", progressProp.Type.Name);
         }
     }
 }

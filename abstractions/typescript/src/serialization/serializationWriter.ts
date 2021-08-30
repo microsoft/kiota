@@ -58,6 +58,11 @@ export interface SerializationWriter {
      */
     writeEnumValue<T>(key?: string | undefined, ...values: (T | undefined)[]): void;
     /**
+     * Writes a null value for the specified key.
+     * @param key the key to write the value with.
+     */
+    writeNullValue(key?: string | undefined) : void;
+    /**
      * Gets the value of the serialized content.
      * @return the value of the serialized content.
      */
@@ -77,4 +82,9 @@ export interface SerializationWriter {
      * @return the callback called after the object gets serialized.
      */
     onAfterObjectSerialization: ((value: Parsable) => void) | undefined;
+    /**
+     * Gets the callback called right after the serialization process starts.
+     * @return the callback called right after the serialization process starts.
+     */
+     onStartObjectSerialization: ((value: Parsable, writer: SerializationWriter) => void) | undefined;
 }

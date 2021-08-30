@@ -2,10 +2,10 @@
 
 ![Dotnet Serialization Json](https://github.com/microsoft/kiota/actions/workflows/serialization-dotnet-json.yml/badge.svg)
 
-- [ ] coverage code
+- [x] coverage code
 - [ ] analyzers
-- [ ] unit test project
-- [ ] docs comments
+- [x] unit test project
+- [x] docs comments
 
 ## Using the JSON Serialization implementations
 

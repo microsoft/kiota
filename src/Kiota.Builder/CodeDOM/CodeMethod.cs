@@ -15,7 +15,8 @@ namespace Kiota.Builder
         Constructor,
         Getter,
         Setter,
-        ClientConstructor
+        ClientConstructor,
+        RequestBuilderBackwardCompatibility
     }
     public enum HttpMethod {
         Get,

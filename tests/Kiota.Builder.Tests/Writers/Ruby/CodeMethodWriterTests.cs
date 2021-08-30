@@ -12,6 +12,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeMethod method;
+        private readonly CodeMethod voidMethod;
         private readonly CodeClass parentClass;
         private const string methodName = "methodName";
         private const string returnTypeName = "Somecustomtype";
@@ -34,6 +35,13 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             method.ReturnType = new CodeType(method) {
                 Name = returnTypeName
             };
+            voidMethod = new CodeMethod(parentClass) {
+                Name = methodName,
+            };
+            voidMethod.ReturnType = new CodeType(voidMethod) {
+                Name = "void"
+            };
+            parentClass.AddMethod(voidMethod);
             parentClass.AddMethod(method);
         }
         public void Dispose()
@@ -111,6 +119,36 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
                 Type = stringType,
             });
         }
+        private void AddVoidRequestBodyParameters() {
+            var stringType = new CodeType(voidMethod) {
+                Name = "string",
+            };
+            voidMethod.AddParameter(new CodeParameter(voidMethod) {
+                Name = "h",
+                ParameterKind = CodeParameterKind.Headers,
+                Type = stringType,
+            });
+            voidMethod.AddParameter(new CodeParameter(voidMethod){
+                Name = "q",
+                ParameterKind = CodeParameterKind.QueryParameter,
+                Type = stringType,
+            });
+            voidMethod.AddParameter(new CodeParameter(voidMethod){
+                Name = "b",
+                ParameterKind = CodeParameterKind.RequestBody,
+                Type = stringType,
+            });
+            voidMethod.AddParameter(new CodeParameter(voidMethod){
+                Name = "r",
+                ParameterKind = CodeParameterKind.ResponseHandler,
+                Type = stringType,
+            });
+        }
+        [Fact]
+        public void WritesRequestBuilder() {
+            method.MethodKind = CodeMethodKind.RequestBuilderBackwardCompatibility;
+            Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+        }
         [Fact]
         public void WritesRequestBodiesThrowOnNullHttpMethod() {
             method.MethodKind = CodeMethodKind.RequestExecutor;
@@ -130,17 +168,41 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
+        public void WritesRequestExecutorBodyWithNamespace() {
+            voidMethod.MethodKind = CodeMethodKind.RequestExecutor;
+            voidMethod.HttpMethod = HttpMethod.Get;
+            AddVoidRequestBodyParameters();
+            writer.Write(voidMethod);
+            var result = tw.ToString();
+            Assert.Contains("request_info", result);
+            Assert.Contains("send_async", result);
+            Assert.Contains("nil", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
+        }
+        [Fact]
         public void WritesRequestGeneratorBody() {
             method.MethodKind = CodeMethodKind.RequestGenerator;
             method.HttpMethod = HttpMethod.Get;
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("request_info = RequestInfo.new", result);
+            Assert.Contains("request_info = MicrosoftKiotaAbstractions::RequestInfo.new()", result);
+            Assert.Contains("request_info.set_uri", result);
             Assert.Contains("http_method = :GET", result);
             Assert.Contains("set_query_string_parameters_from_raw_object", result);
             Assert.Contains("set_content_from_parsable", result);
             Assert.Contains("return request_info;", result);
+        }
+        [Fact]
+        public void WritesInheritedDeSerializerBody() {
+            method.MethodKind = CodeMethodKind.Deserializer;
+            method.IsAsync = false;
+            AddSerializationProperties();
+            AddInheritanceClass();
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("super.merge({", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesDeSerializerBody() {
@@ -168,7 +230,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             AddInheritanceClass();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("super.serialize", result);
+            Assert.Contains("super", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
@@ -190,6 +252,62 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             Assert.Contains("write_enum_value", result);
             Assert.Contains("write_additional_data", result);
             AssertExtensions.CurlyBracesAreClosed(result);
+        }
+        [Fact]
+        public void WritesTranslatedTypesDeSerializerBody() {
+            var dummyCollectionProp1 = parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = "guidId",
+            }).First();
+            dummyCollectionProp1.Type = new CodeType(dummyCollectionProp1) {
+                Name = "guid",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            };
+            var dummyCollectionProp2 = parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = "dateTime",
+            }).First();
+            dummyCollectionProp2.Type = new CodeType(dummyCollectionProp2) {
+                Name = "date",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            };
+            var dummyCollectionProp3 = parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = "isTrue",
+            }).First();
+            dummyCollectionProp3.Type = new CodeType(dummyCollectionProp3) {
+                Name = "boolean",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            };
+            var dummyCollectionProp4 = parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = "numberTest",
+            }).First();
+            dummyCollectionProp4.Type = new CodeType(dummyCollectionProp4) {
+                Name = "number",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            };
+            var dummyCollectionProp5 = parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = "DatetimeValueType",
+            }).First();
+            dummyCollectionProp5.Type = new CodeType(dummyCollectionProp5) {
+                Name = "dateTimeOffset",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            };
+            var dummyCollectionProp6 = parentClass.AddProperty(new CodeProperty(parentClass) {
+                Name = "messages",
+            }).First();
+            dummyCollectionProp6.Type = new CodeType(dummyCollectionProp6) {
+                Name = "NewObjectName",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            };
+            method.MethodKind = CodeMethodKind.Deserializer;
+            method.IsAsync = false;
+            AddSerializationProperties();
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("get_collection_of_primitive_values(String)", result);
+            Assert.Contains("get_collection_of_primitive_values(\"boolean\")", result);
+            Assert.Contains("get_collection_of_primitive_values(Integer)", result);
+            Assert.Contains("get_collection_of_primitive_values(Time)", result);
+            Assert.Contains("get_collection_of_primitive_values(UUIDTools::UUID)", result);
+            Assert.Contains("get_collection_of_primitive_values(NewObjectName)", result);
         }
         [Fact]
         public void WritesMethodSyncDescription() {
@@ -239,6 +357,18 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("@some_property", result);
+        }
+        [Fact]
+        public void WritesIndexer() {
+            method.MethodKind = CodeMethodKind.IndexerBackwardCompatibility;
+            method.PathSegment = "somePath";
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("http_core", result);
+            Assert.Contains("path_segment", result);
+            Assert.Contains("+ id", result);
+            Assert.Contains("return Somecustomtype.new", result);
+            Assert.Contains(method.PathSegment, result);
         }
         [Fact]
         public void WritesSetterToField() {
@@ -298,7 +428,16 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
                 ParameterKind = CodeParameterKind.HttpCore,
                 Type = coreProp.Type,
             });
-            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, defaultPath, defaultName, true);
+            var backingStoreParam = new CodeParameter(method) {
+                Name = "backingStore",
+                ParameterKind = CodeParameterKind.BackingStore,
+            };
+            backingStoreParam.Type = new CodeType(backingStoreParam) {
+                Name = "BackingStore",
+                IsExternal = true,
+            };
+            method.AddParameter(backingStoreParam);
+            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, defaultPath, defaultName);
             tempWriter.SetTextWriter(tw);
             tempWriter.Write(method);
             var result = tw.ToString();

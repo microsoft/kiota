@@ -117,6 +117,11 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             });
         }
         [Fact]
+        public void WritesRequestBuilder() {
+            method.MethodKind = CodeMethodKind.RequestBuilderBackwardCompatibility;
+            Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+        }
+        [Fact]
         public void WritesRequestBodiesThrowOnNullHttpMethod() {
             method.MethodKind = CodeMethodKind.RequestExecutor;
             Assert.Throws<InvalidOperationException>(() => writer.Write(method));
@@ -137,6 +142,17 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
+        public void WritesRequestExecutorBodyForCollections() {
+            method.MethodKind = CodeMethodKind.RequestExecutor;
+            method.HttpMethod = HttpMethod.Get;
+            method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
+            AddRequestBodyParameters();
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("SendCollectionAsync", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
+        }
+        [Fact]
         public void WritesRequestGeneratorBody() {
             method.MethodKind = CodeMethodKind.RequestGenerator;
             method.HttpMethod = HttpMethod.Get;
@@ -145,6 +161,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             var result = tw.ToString();
             Assert.Contains("var requestInfo = new RequestInfo", result);
             Assert.Contains("HttpMethod = HttpMethod.GET", result);
+            Assert.Contains("requestInfo.SetURI", result);
             Assert.Contains("h?.Invoke", result);
             Assert.Contains("AddQueryParameters", result);
             Assert.Contains("SetContentFromParsable", result);
@@ -248,7 +265,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         }
         [Fact]
         public void Defensive() {
-            var codeMethodWriter = new CodeMethodWriter(new CSharpConventionService(), false);
+            var codeMethodWriter = new CodeMethodWriter(new CSharpConventionService());
             Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(null, writer));
             Assert.Throws<ArgumentNullException>(() => codeMethodWriter.WriteCodeElement(method, null));
             var originalParent = method.Parent;
@@ -370,7 +387,16 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
                 ParameterKind = CodeParameterKind.HttpCore,
                 Type = coreProp.Type,
             });
-            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, defaultPath, defaultName, true);
+            var backingStoreParam = new CodeParameter(method) {
+                Name = "backingStore",
+                ParameterKind = CodeParameterKind.BackingStore,
+            };
+            backingStoreParam.Type = new CodeType(backingStoreParam) {
+                Name = "IBackingStore",
+                IsExternal = true,
+            };
+            method.AddParameter(backingStoreParam);
+            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, defaultPath, defaultName);
             tempWriter.SetTextWriter(tw);
             tempWriter.Write(method);
             var result = tw.ToString();

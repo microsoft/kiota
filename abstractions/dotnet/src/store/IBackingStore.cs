@@ -1,11 +1,17 @@
+// ------------------------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
+// ------------------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 
-namespace Microsoft.Kiota.Abstractions.Store {
+namespace Microsoft.Kiota.Abstractions.Store
+{
     /// <summary>
     /// Stores model information in a different location than the object properties. Implementations can provide dirty tracking capabilities, caching capabilities or integration with 3rd party stores.
     /// </summary>
-    public interface IBackingStore {
+    public interface IBackingStore
+    {
         /// <summary>Gets a value from the backing store based on its key. Returns null if the value hasn't changed and "ReturnOnlyChangedValues" is true.</summary>
         /// <returns>The value from the backing store.</returns>
         /// <param name="key">The key to lookup the backing store with.</param>
@@ -20,6 +26,11 @@ namespace Microsoft.Kiota.Abstractions.Store {
         /// <summary>Enumerates all the values stored in the backing store. Values will be filtered if "ReturnOnlyChangedValues" is true.</summary>
         /// <returns>The values available in the backing store.</returns>
         IEnumerable<KeyValuePair<string, object>> Enumerate();
+        /// <summary>
+        /// Enumerates the keys for all values that changed to null.
+        /// </summary>
+        /// <returns>The keys for all values that changed to null.</returns>
+        IEnumerable<string> EnumerateKeysForValuesChangedToNull();
         /// <summary>
         /// Creates a subscription to any data change happening.
         /// </summary>

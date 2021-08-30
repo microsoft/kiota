@@ -17,13 +17,15 @@ import com.microsoft.kiota.ApiClientBuilder;
 import com.microsoft.kiota.RequestInfo;
 import com.microsoft.kiota.MiddlewareOption;
 import com.microsoft.kiota.ResponseHandler;
-import com.microsoft.kiota.AuthenticationProvider;
+import com.microsoft.kiota.authentication.AuthenticationProvider;
 import com.microsoft.kiota.serialization.ParseNodeFactoryRegistry;
 import com.microsoft.kiota.serialization.Parsable;
 import com.microsoft.kiota.serialization.ParseNode;
 import com.microsoft.kiota.serialization.ParseNodeFactory;
 import com.microsoft.kiota.serialization.SerializationWriterFactory;
 import com.microsoft.kiota.serialization.SerializationWriterFactoryRegistry;
+import com.microsoft.kiota.store.BackingStoreFactory;
+import com.microsoft.kiota.store.BackingStoreFactorySingleton;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -33,7 +35,6 @@ import okhttp3.ResponseBody;
 import okio.BufferedSink;
 
 public class HttpCore implements com.microsoft.kiota.HttpCore {
-    private final static String authorizationHeaderKey = "Authorization";
     private final static String contentTypeHeaderKey = "Content-Type";
     private final OkHttpClient client;
     private final AuthenticationProvider authProvider;
@@ -72,15 +73,45 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
     public SerializationWriterFactory getSerializationWriterFactory() {
         return sWriterFactory;
     }
-    public void enableBackingStore() {
+    public void enableBackingStore(@Nullable final BackingStoreFactory backingStoreFactory) {
         this.pNodeFactory = Objects.requireNonNull(ApiClientBuilder.enableBackingStoreForParseNodeFactory(pNodeFactory));
         this.sWriterFactory = Objects.requireNonNull(ApiClientBuilder.enableBackingStoreForSerializationWriterFactory(sWriterFactory));
+        if(backingStoreFactory != null) {
+            BackingStoreFactorySingleton.instance = backingStoreFactory;
+        }
+    }
+    @Nonnull
+    public <ModelType extends Parsable> CompletableFuture<Iterable<ModelType>> sendCollectionAsync(@Nonnull final RequestInfo requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
+        Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
+
+        return this.authProvider.authenticateRequest(requestInfo).thenCompose(x -> {
+            final HttpCoreCallbackFutureWrapper wrapper = new HttpCoreCallbackFutureWrapper();
+            this.client.newCall(getRequestFromRequestInfo(requestInfo)).enqueue(wrapper);
+            return wrapper.future;
+        }).thenCompose(response -> {
+            if(responseHandler == null) {
+                final ResponseBody body = response.body();
+                try {
+                    try (final InputStream rawInputStream = body.byteStream()) {
+                        final ParseNode rootNode = pNodeFactory.getParseNode(getMediaTypeAndSubType(body.contentType()), rawInputStream);
+                        final Iterable<ModelType> result = rootNode.getCollectionOfObjectValues(targetClass);
+                        return CompletableFuture.completedStage(result);
+                    }
+                } catch(IOException ex) {
+                    return CompletableFuture.failedFuture(new RuntimeException("failed to read the response body", ex));
+                } finally {
+                    response.close();
+                }
+            } else {
+                return responseHandler.handleResponseAsync(response);
+            }
+        });
     }
     @Nonnull
     public <ModelType extends Parsable> CompletableFuture<ModelType> sendAsync(@Nonnull final RequestInfo requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
 
-        return addBearerIfNotPresent(requestInfo).thenCompose(x -> {
+        return this.authProvider.authenticateRequest(requestInfo).thenCompose(x -> {
             final HttpCoreCallbackFutureWrapper wrapper = new HttpCoreCallbackFutureWrapper();
             this.client.newCall(getRequestFromRequestInfo(requestInfo)).enqueue(wrapper);
             return wrapper.future;
@@ -108,7 +139,7 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
     }
     @Nonnull
     public <ModelType> CompletableFuture<ModelType> sendPrimitiveAsync(@Nonnull final RequestInfo requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
-        return addBearerIfNotPresent(requestInfo).thenCompose(x -> {
+        return this.authProvider.authenticateRequest(requestInfo).thenCompose(x -> {
             final HttpCoreCallbackFutureWrapper wrapper = new HttpCoreCallbackFutureWrapper();
             this.client.newCall(getRequestFromRequestInfo(requestInfo)).enqueue(wrapper);
             return wrapper.future;
@@ -154,21 +185,6 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
                 return responseHandler.handleResponseAsync(response);
             }
         });
-    }
-    private CompletableFuture<Void> addBearerIfNotPresent(final RequestInfo requestInfo) {
-        if(!requestInfo.headers.keySet().contains(authorizationHeaderKey)) {
-            return this.authProvider
-                .getAuthorizationToken(requestInfo.uri)
-                .thenApply(token -> {
-                    if(token == null || token.isEmpty()) {
-                        throw new UnsupportedOperationException("Could not get an authorization token", null);
-                    }
-                    requestInfo.headers.put(authorizationHeaderKey, "Bearer " + token);
-                    return null;
-                });
-        } else {
-            return CompletableFuture.completedFuture(null);
-        }
     }
     private Request getRequestFromRequestInfo(@Nonnull final RequestInfo requestInfo) {
         final StringBuilder urlBuilder = new StringBuilder(requestInfo.uri.toString());

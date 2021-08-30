@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -13,17 +14,16 @@ namespace Kiota.Builder {
         private readonly string RootPath;
         public abstract string FileSuffix { get; }
         public abstract string NormalizeNamespaceSegment(string segmentName);
-        public abstract string NormalizeFileName(string elementName);
-
-        // We wrote barrels inside namespace folders
+        public abstract string NormalizeFileName(CodeElement currentElement);
+        public virtual IEnumerable<string> GetAdditionalSegment(CodeElement currentElement, string fileName) => Enumerable.Empty<string>();
+        protected static string GetLastFileNameSegment(CodeElement currentElement) => currentElement.Name.Split('.').Last();
         public string GetPath(CodeNamespace currentNamespace, CodeElement currentElement) {
-            var fileName = NormalizeFileName(currentElement.Name.Split('.').Last());
-            var namespaceAdditionalSegment = currentElement is CodeNamespace ? fileName : string.Empty;
+            var fileName = NormalizeFileName(currentElement);
             var namespacePathSegments = currentNamespace.Name
                                             .Replace(ClientNamespaceName, string.Empty)
                                             .TrimStart('.')
                                             .Split('.')
-                                            .Union(new string[] { namespaceAdditionalSegment })
+                                            .Union(GetAdditionalSegment(currentElement, fileName))
                                             .Where(x => !string.IsNullOrEmpty(x))
                                             .Select(x => NormalizeNamespaceSegment(x));
             var targetPath = Path.Combine(RootPath, (namespacePathSegments.Any() ? namespacePathSegments                                           

@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -153,6 +154,9 @@ public class JsonSerializationWriter implements SerializationWriter {
                     onBeforeObjectSerialization.accept(value);
                 }
                 writer.beginObject();
+                if(onStartObjectSerialization != null) {
+                    onStartObjectSerialization.accept(value, this);
+                }
                 value.serialize(this);
                 writer.endObject();
                 if(onAfterObjectSerialization != null) {
@@ -174,6 +178,16 @@ public class JsonSerializationWriter implements SerializationWriter {
     public <T extends Enum<T>> void writeEnumValue(@Nullable final String key, @Nullable final T value) {
         if(value != null) {
             this.writeStringValue(key, getStringValueFromValuedEnum(value));
+        }
+    }
+    public void writeNullValue(@Nullable final String key) {
+        try {
+            if(key != null && !key.isEmpty()) {
+                writer.name(key);
+            }
+            writer.nullValue();
+        } catch (IOException ex) {
+            throw new RuntimeException("could not serialize value", ex);
         }
     }
     private <T extends Enum<T>> String getStringValueFromValuedEnum(final T value) {
@@ -217,36 +231,30 @@ public class JsonSerializationWriter implements SerializationWriter {
         }
     }
     private void writeAnyValue(final String key, final Object value) {
-        try {
-            if(value == null) {
-                if(key != null && !key.isEmpty())
-                    this.writer.name(key);
-                this.writer.nullValue();
-            } else {
-                final Class<?> valueClass = value.getClass();
-                if(valueClass.equals(String.class))
-                    this.writeStringValue(key, (String)value);
-                else if(valueClass.equals(Boolean.class))
-                    this.writeBooleanValue(key, (Boolean)value);
-                else if(valueClass.equals(Float.class))
-                    this.writeFloatValue(key, (Float)value);
-                else if(valueClass.equals(Long.class))
-                    this.writeLongValue(key, (Long)value);
-                else if(valueClass.equals(Integer.class))
-                    this.writeIntegerValue(key, (Integer)value);
-                else if(valueClass.equals(UUID.class))
-                    this.writeUUIDValue(key, (UUID)value);
-                else if(valueClass.equals(OffsetDateTime.class))
-                    this.writeOffsetDateTimeValue(key, (OffsetDateTime)value);
-                else if(value instanceof Iterable<?>)
-                    this.writeCollectionOfPrimitiveValues(key, (Iterable<?>)value);
-                else if(!valueClass.isPrimitive())
-                    this.writeNonParsableObject(key, value);
-                else
-                    throw new RuntimeException("unknown type to serialize " + valueClass.getName());
-            }
-        } catch (IOException ex) {
-            throw new RuntimeException("could not serialize value", ex);
+        if(value == null) {
+            this.writeNullValue(key);
+        } else {
+            final Class<?> valueClass = value.getClass();
+            if(valueClass.equals(String.class))
+                this.writeStringValue(key, (String)value);
+            else if(valueClass.equals(Boolean.class))
+                this.writeBooleanValue(key, (Boolean)value);
+            else if(valueClass.equals(Float.class))
+                this.writeFloatValue(key, (Float)value);
+            else if(valueClass.equals(Long.class))
+                this.writeLongValue(key, (Long)value);
+            else if(valueClass.equals(Integer.class))
+                this.writeIntegerValue(key, (Integer)value);
+            else if(valueClass.equals(UUID.class))
+                this.writeUUIDValue(key, (UUID)value);
+            else if(valueClass.equals(OffsetDateTime.class))
+                this.writeOffsetDateTimeValue(key, (OffsetDateTime)value);
+            else if(value instanceof Iterable<?>)
+                this.writeCollectionOfPrimitiveValues(key, (Iterable<?>)value);
+            else if(!valueClass.isPrimitive())
+                this.writeNonParsableObject(key, value);
+            else
+                throw new RuntimeException("unknown type to serialize " + valueClass.getName());
         }
     }
     public Consumer<Parsable> getOnBeforeObjectSerialization() {
@@ -255,6 +263,9 @@ public class JsonSerializationWriter implements SerializationWriter {
     public Consumer<Parsable> getOnAfterObjectSerialization() {
         return this.onAfterObjectSerialization;
     }
+    public BiConsumer<Parsable, SerializationWriter> getOnStartObjectSerialization() {
+        return this.onStartObjectSerialization;
+    }
     private Consumer<Parsable> onBeforeObjectSerialization;
     public void setOnBeforeObjectSerialization(final Consumer<Parsable> value) {
         this.onBeforeObjectSerialization = value;
@@ -262,5 +273,9 @@ public class JsonSerializationWriter implements SerializationWriter {
     private Consumer<Parsable> onAfterObjectSerialization;
     public void setOnAfterObjectSerialization(final Consumer<Parsable> value) {
         this.onAfterObjectSerialization = value;
+    }
+    private BiConsumer<Parsable, SerializationWriter> onStartObjectSerialization;
+    public void setOnStartObjectSerialization(final BiConsumer<Parsable, SerializationWriter> value) {
+        this.onStartObjectSerialization = value;
     }
 }

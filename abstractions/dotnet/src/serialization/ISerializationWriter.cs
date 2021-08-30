@@ -1,12 +1,18 @@
+// ------------------------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
+// ------------------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace Microsoft.Kiota.Abstractions.Serialization {
+namespace Microsoft.Kiota.Abstractions.Serialization
+{
     /// <summary>
     /// Defines an interface for serialization of objects to a stream.
     /// </summary>
-    public interface ISerializationWriter : IDisposable {
+    public interface ISerializationWriter : IDisposable
+    {
         /// <summary>
         /// Writes the specified string value to the stream with an optional given key.
         /// </summary>
@@ -74,9 +80,14 @@ namespace Microsoft.Kiota.Abstractions.Serialization {
         /// <param name="value">The enum value to be written.</param>
         void WriteEnumValue<T>(string key, T? value) where T : struct, Enum;
         /// <summary>
+        /// Writes a null value for the specified key.
+        /// </summary>
+        /// <param name="key">The key to be used for the written value. May be null.</param>
+        void WriteNullValue(string key);
+        /// <summary>
         /// Writes the specified additional data to the stream.
         /// </summary>
-        /// <param name="data">The additional data to be written.</param>
+        /// <param name="value">The additional data to be written.</param>
         void WriteAdditionalData(IDictionary<string, object> value);
         /// <summary>
         /// Gets the value of the serialized content.
@@ -91,5 +102,9 @@ namespace Microsoft.Kiota.Abstractions.Serialization {
         /// Callback called after the serialization process ends.
         /// </summary>
         Action<IParsable> OnAfterObjectSerialization { get; set; }
+        /// <summary>
+        /// Callback called right after the serialization process starts.
+        /// </summary>
+        Action<IParsable, ISerializationWriter> OnStartObjectSerialization { get; set; }
     }
 }

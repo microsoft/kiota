@@ -36,7 +36,7 @@ dependencies {
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation 'com.google.guava:guava:30.1.1-jre'
     api 'com.google.code.gson:gson:2.8.6'
-    api 'com.microsoft.kiota:kiota-abstractions:1.0.13'
+    api 'com.microsoft.kiota:kiota-abstractions:1.0.16'
 }
 
 publishing {
@@ -53,7 +53,7 @@ publishing {
     publications {
         gpr(MavenPublication) {
             artifactId 'kiota-serialization-json'
-            version '1.0.3'
+            version '1.0.16'
             from(components.java)
         }
     }

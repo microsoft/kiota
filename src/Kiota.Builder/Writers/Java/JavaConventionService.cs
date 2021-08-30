@@ -3,21 +3,22 @@ using System.Collections.Generic;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Java {
-    public class JavaConventionService : ILanguageConventionService
+    public class JavaConventionService : CommonLanguageConventionService
     {
         private const string _streamTypeName = "InputStream";
-        public string StreamTypeName => _streamTypeName;
+        public override string StreamTypeName => _streamTypeName;
         private const string _voidTypeName = "Void";
-        public string VoidTypeName => _voidTypeName;
-        public string DocCommentPrefix => " * ";
-        public string PathSegmentPropertyName => "pathSegment";
-        public string CurrentPathPropertyName => "currentPath";
-        public string HttpCorePropertyName => "httpCore";
+        public override string VoidTypeName => _voidTypeName;
+        public override string DocCommentPrefix => " * ";
+        public override string PathSegmentPropertyName => "pathSegment";
+        public override string CurrentPathPropertyName => "currentPath";
+        public override string HttpCorePropertyName => "httpCore";
+        public override string RawUrlPropertyName => "isRawUrl";
         internal HashSet<string> PrimitiveTypes = new() {"String", "Boolean", "Integer", "Float", "Long", "Guid", "OffsetDateTime", _voidTypeName, _streamTypeName };
-        public string ParseNodeInterfaceName => "ParseNode";
+        public override string ParseNodeInterfaceName => "ParseNode";
         internal string DocCommentStart = "/**";
         internal string DocCommentEnd = " */";
-        public string GetAccessModifier(AccessModifier access)
+        public override string GetAccessModifier(AccessModifier access)
         {
             return (access) switch {
                 (AccessModifier.Public) => "public",
@@ -26,17 +27,19 @@ namespace Kiota.Builder.Writers.Java {
             };
         }
 
-        public string GetParameterSignature(CodeParameter parameter)
+        public override string GetParameterSignature(CodeParameter parameter)
         {
-            return $"@javax.annotation.{(parameter.Optional ? "Nullable" : "Nonnull")} final {GetTypeString(parameter.Type)} {parameter.Name}";
+            var nullKeyword = parameter.Optional ? "Nullable" : "Nonnull";
+            var nullAnnotation = parameter.Type.IsNullable ? $"@javax.annotation.{nullKeyword} " : string.Empty;
+            return $"{nullAnnotation}final {GetTypeString(parameter.Type)} {parameter.Name}";
         }
 
-        public string GetTypeString(CodeTypeBase code)
+        public override string GetTypeString(CodeTypeBase code)
         {
             if(code is CodeUnionType) 
                 throw new InvalidOperationException($"Java does not support union types, the union type {code.Name} should have been filtered out by the refiner");
             else if (code is CodeType currentType) {
-                var typeName = TranslateType(currentType.Name);
+                var typeName = TranslateType(currentType);
                 var collectionPrefix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? "List<" : string.Empty;
                 var collectionSuffix = currentType.CollectionKind switch {
                     CodeType.CodeTypeCollectionKind.Complex => ">",
@@ -50,16 +53,13 @@ namespace Kiota.Builder.Writers.Java {
             }
             else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
-
-        public string TranslateType(string typeName)
-        {
-            return (typeName) switch {//TODO we're probably missing a bunch of type mappings
-                ("void") => typeName.ToFirstCharacterLowerCase(), //little casing hack
-                _ => typeName.ToFirstCharacterUpperCase() ?? "Object",
+        public override string TranslateType(CodeType type) {
+            return (type.Name) switch {//TODO we're probably missing a bunch of type mappings
+                ("void" or "boolean") when !type.IsNullable => type.Name.ToFirstCharacterLowerCase(), //little casing hack
+                _ => type.Name.ToFirstCharacterUpperCase() ?? "Object",
             };
         }
-
-        public void WriteShortDescription(string description, LanguageWriter writer)
+        public override void WriteShortDescription(string description, LanguageWriter writer)
         {
             if(!string.IsNullOrEmpty(description))
                 writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)} {DocCommentEnd}");
@@ -68,7 +68,7 @@ namespace Kiota.Builder.Writers.Java {
         internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default) {
             // because if currentPath is null it'll add "null" to the string...
             var currentPath = addCurrentPath ? $"{CurrentPathPropertyName} + " : string.Empty;
-            writer.WriteLines($"return new {returnType}({currentPath}{PathSegmentPropertyName}{suffix}, {HttpCorePropertyName});");
+            writer.WriteLines($"return new {returnType}({currentPath}{PathSegmentPropertyName}{suffix}, {HttpCorePropertyName}, false);");
         }
     }
 }

@@ -12,5 +12,6 @@ namespace Kiota.Builder
         public List<string> Options { get; set; } = new List<string>();
         public bool Flags { get; set; }
         public string Description {get; set;}
+        public List<CodeUsing> Usings { get; set; } = new List<CodeUsing>();
     }
 }

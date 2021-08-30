@@ -15,8 +15,9 @@ namespace Kiota.Builder {
         public bool ActionOf {get;set;} = false;
         public bool IsNullable {get;set;} = true;
         public CodeTypeCollectionKind CollectionKind {get;set;} = CodeTypeCollectionKind.None;
-
-        public ChildType BaseClone<ChildType>(CodeTypeBase source) where ChildType : CodeTypeBase
+        public bool IsCollection { get { return CollectionKind != CodeTypeCollectionKind.None; } }
+        public bool IsArray { get { return CollectionKind == CodeTypeCollectionKind.Array; } }
+        protected ChildType BaseClone<ChildType>(CodeTypeBase source) where ChildType : CodeTypeBase
         {
             ActionOf = source.ActionOf;
             IsNullable = source.IsNullable;

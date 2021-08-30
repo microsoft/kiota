@@ -7,11 +7,8 @@ using Kiota.Builder.Writers.Extensions;
 namespace Kiota.Builder.Writers.TypeScript {
     public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventionService>
     {
-        public CodeMethodWriter(TypeScriptConventionService conventionService, bool usesBackingStore) : base(conventionService){
-            _usesBackingStore = usesBackingStore;
-        }
+        public CodeMethodWriter(TypeScriptConventionService conventionService) : base(conventionService){}
         private TypeScriptConventionService localConventions;
-        private readonly bool _usesBackingStore;
         public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
             if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
@@ -66,6 +63,8 @@ namespace Kiota.Builder.Writers.TypeScript {
                 case CodeMethodKind.Constructor:
                     WriteConstructorBody(parentClass, codeElement, writer, inherits);
                     break;
+                case CodeMethodKind.RequestBuilderBackwardCompatibility:
+                    throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
                 default:
                     WriteDefaultMethodBody(codeElement, writer);
                     break;
@@ -73,15 +72,16 @@ namespace Kiota.Builder.Writers.TypeScript {
             writer.DecreaseIndent();
             writer.WriteLine("};");
         }
-        private void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
+        private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
             var httpCoreProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
             var httpCoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.HttpCore));
+            var backingStoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.BackingStore));
             var httpCorePropertyName = httpCoreProperty.Name.ToFirstCharacterLowerCase();
             writer.WriteLine($"this.{httpCorePropertyName} = {httpCoreParameter.Name};");
             WriteSerializationRegistration(method.SerializerModules, writer, "registerDefaultSerializer");
             WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializer");
-            if(_usesBackingStore)
-                writer.WriteLine($"this.{httpCorePropertyName}.enableBackingStore();");
+            if(backingStoreParameter != null)
+                writer.WriteLine($"this.{httpCorePropertyName}.enableBackingStore({backingStoreParameter.Name});");
         }
         private static void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, string methodName) {
             if(serializationModules != null)
@@ -103,6 +103,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.HttpCore, CodePropertyKind.HttpCore, writer);
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.CurrentPath, CodePropertyKind.CurrentPath, writer);
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RawUrl, CodePropertyKind.RawUrl, writer);
             }
         }
         private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
@@ -172,7 +173,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             }
             writer.WriteLine(");");
             var isStream = localConventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
-            var genericTypeForSendMethod = GetSendRequestMethodName(isVoid, isStream, returnType);
+            var genericTypeForSendMethod = GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnType);
             var newFactoryParameter = GetTypeFactory(isVoid, isStream, returnType);
             writer.WriteLine($"return this.httpCore?.{genericTypeForSendMethod}(requestInfo,{newFactoryParameter} responseHandler) ?? Promise.reject(new Error('http core is null'));");
         }
@@ -181,8 +182,8 @@ namespace Kiota.Builder.Writers.TypeScript {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
             writer.WriteLines($"const {requestInfoVarName} = new RequestInfo();",
-                                $"{requestInfoVarName}.URI = (this.{localConventions.CurrentPathPropertyName} ?? '') + this.{localConventions.PathSegmentPropertyName},",
-                                $"{requestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.ToString().ToUpperInvariant()},");
+                                $"{requestInfoVarName}.setUri(this.{localConventions.CurrentPathPropertyName}, this.{localConventions.PathSegmentPropertyName}, this.{localConventions.RawUrlPropertyName});",
+                                $"{requestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.ToString().ToUpperInvariant()};");
             if(headersParam != null)
                 writer.WriteLine($"{headersParam.Name} && {requestInfoVarName}.setHeadersFromRawObject(h);");
             if(queryStringParam != null)
@@ -190,8 +191,10 @@ namespace Kiota.Builder.Writers.TypeScript {
             if(requestBodyParam != null) {
                 if(requestBodyParam.Type.Name.Equals(localConventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{requestInfoVarName}.setStreamContent({requestBodyParam.Name});");
-                else
-                    writer.WriteLine($"{requestInfoVarName}.setContentFromParsable({requestBodyParam.Name}, this.{localConventions.HttpCorePropertyName}, \"{codeElement.ContentType}\");");
+                else {
+                    var spreadOperator = requestBodyParam.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
+                    writer.WriteLine($"{requestInfoVarName}.setContentFromParsable(this.{localConventions.HttpCorePropertyName}, \"{codeElement.ContentType}\", {spreadOperator}{requestBodyParam.Name});");
+                }
             }
             if(optionsParam != null)
                 writer.WriteLine($"{optionsParam.Name} && {requestInfoVarName}.addMiddlewareOptions(...{optionsParam.Name});");
@@ -225,6 +228,7 @@ namespace Kiota.Builder.Writers.TypeScript {
                 writer.WriteLine(localConventions.DocCommentEnd);
             }
         }
+        private static CodeParameterOrderComparer parameterOrderComparer = new CodeParameterOrderComparer();
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid) {
             var accessModifier = localConventions.GetAccessModifier(code.Access);
             var methodName = (code.MethodKind switch {
@@ -233,7 +237,7 @@ namespace Kiota.Builder.Writers.TypeScript {
                 _ => code.Name,
             })?.ToFirstCharacterLowerCase();
             var asyncPrefix = code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? " async ": string.Empty;
-            var parameters = string.Join(", ", code.Parameters.Select(p=> localConventions.GetParameterSignature(p)).ToList());
+            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> localConventions.GetParameterSignature(p)).ToList());
             var asyncReturnTypePrefix = code.IsAsync ? "Promise<": string.Empty;
             var asyncReturnTypeSuffix = code.IsAsync ? ">": string.Empty;
             var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? " | undefined" : string.Empty;
@@ -249,7 +253,7 @@ namespace Kiota.Builder.Writers.TypeScript {
         }
         private string GetDeserializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = localConventions.TranslateType(propType.Name);
+            var propertyType = localConventions.TranslateType(propType);
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
@@ -272,7 +276,7 @@ namespace Kiota.Builder.Writers.TypeScript {
         }
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = localConventions.TranslateType(propType.Name);
+            var propertyType = localConventions.TranslateType(propType);
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
@@ -293,14 +297,15 @@ namespace Kiota.Builder.Writers.TypeScript {
                     return $"writeObjectValue<{propertyType.ToFirstCharacterUpperCase()}>";
             }
         }
-        private static string GetTypeFactory(bool isVoid, bool isStream, string returnType) {
+        private string GetTypeFactory(bool isVoid, bool isStream, string returnType) {
             if(isVoid) return string.Empty;
-            else if(isStream) return $" \"{returnType}\",";
-            else return $" {returnType},";
+            else if(isStream || conventions.IsPrimitiveType(returnType)) return $" \"{returnType}\",";
+            else return $" {returnType.StripArraySuffix()},";
         }
-        private static string GetSendRequestMethodName(bool isVoid, bool isStream, string returnType) {
+        private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType) {
             if(isVoid) return "sendNoResponseContentAsync";
-            else if(isStream) return $"sendPrimitiveAsync<{returnType}>";
+            else if(isStream || conventions.IsPrimitiveType(returnType)) return $"sendPrimitiveAsync<{returnType}>";
+            else if(isCollection) return $"sendCollectionAsync<{returnType.StripArraySuffix()}>";
             else return $"sendAsync<{returnType}>";
         }
     }

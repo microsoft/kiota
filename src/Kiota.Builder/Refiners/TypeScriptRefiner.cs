@@ -8,10 +8,10 @@ namespace Kiota.Builder.Refiners {
         public override void Refine(CodeNamespace generatedCode)
         {
             PatchResponseHandlerType(generatedCode);
-            AddDefaultImports(generatedCode, Array.Empty<Tuple<string, string>>(), defaultNamespacesForModels, defaultNamespacesForRequestBuilders, defaultSymbolsForApiClient);
-            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, "ById");
+            AddDefaultImports(generatedCode, Array.Empty<Tuple<string, string>>(), defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
+            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
-            CorrectCoreTypesForBackingStoreUsings(generatedCode, "@microsoft/kiota-abstractions");
+            CorrectCoreTypesForBackingStore(generatedCode, "@microsoft/kiota-abstractions", "BackingStoreFactorySingleton.instance.createBackingStore()");
             FixReferencesToEntityType(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
             AddParsableInheritanceForModelClasses(generatedCode);
@@ -25,7 +25,12 @@ namespace Kiota.Builder.Refiners {
             ReplaceRelativeImportsByImportPath(generatedCode, '.');
             ReplaceDefaultSerializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory");
             ReplaceDefaultDeserializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonParseNodeFactory");
-            AddSerializationModulesImport(generatedCode);
+            AddSerializationModulesImport(generatedCode,
+                new[] { "@microsoft/kiota-abstractions.registerDefaultSerializer", 
+                        "@microsoft/kiota-abstractions.enableBackingStoreForSerializationWriterFactory",
+                        "@microsoft/kiota-abstractions.SerializationWriterFactoryRegistry"},
+                new[] { "@microsoft/kiota-abstractions.registerDefaultDeserializer",
+                        "@microsoft/kiota-abstractions.ParseNodeFactoryRegistry" });
         }
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
@@ -48,13 +53,6 @@ namespace Kiota.Builder.Refiners {
             new ("SerializationWriter", "@microsoft/kiota-abstractions"),
             new ("ParseNode", "@microsoft/kiota-abstractions"),
             new ("Parsable", "@microsoft/kiota-abstractions"),
-        };
-        private static readonly Tuple<string, string>[] defaultSymbolsForApiClient = new Tuple<string, string>[] { 
-            new ("registerDefaultSerializer", "@microsoft/kiota-abstractions"),
-            new ("registerDefaultDeserializer", "@microsoft/kiota-abstractions"),
-            new ("enableBackingStoreForSerializationWriterFactory", "@microsoft/kiota-abstractions"),
-            new ("SerializationWriterFactoryRegistry", "@microsoft/kiota-abstractions"),
-            new ("ParseNodeFactoryRegistry", "@microsoft/kiota-abstractions"),
         };
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if(currentProperty.IsOfKind(CodePropertyKind.HttpCore))
@@ -79,7 +77,7 @@ namespace Kiota.Builder.Refiners {
             else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer))
                 currentMethod.ReturnType.Name = $"Map<string, (item: T, node: ParseNode) => void>";
             else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore))
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore, CodeParameterKind.BackingStore))
                     .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                     .ToList()
                     .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"

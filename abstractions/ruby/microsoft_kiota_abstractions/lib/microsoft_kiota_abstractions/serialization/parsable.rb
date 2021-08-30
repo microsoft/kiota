@@ -1,6 +1,6 @@
 module MicrosoftKiotaAbstractions
   module Parsable
-    def self.additional_data 
+    def additional_data 
       @additional_data ||= Hash.new
     end
 

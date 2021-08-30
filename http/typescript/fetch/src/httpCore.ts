@@ -1,4 +1,4 @@
-import { AuthenticationProvider, HttpCore as IHttpCore, Parsable, ParseNodeFactory, RequestInfo, ResponseHandler, ParseNodeFactoryRegistry, enableBackingStoreForParseNodeFactory, SerializationWriterFactoryRegistry, enableBackingStoreForSerializationWriterFactory, SerializationWriterFactory } from '@microsoft/kiota-abstractions';
+import { AuthenticationProvider, BackingStoreFactory, BackingStoreFactorySingleton, HttpCore as IHttpCore, Parsable, ParseNodeFactory, RequestInfo, ResponseHandler, ParseNodeFactoryRegistry, enableBackingStoreForParseNodeFactory, SerializationWriterFactoryRegistry, enableBackingStoreForSerializationWriterFactory, SerializationWriterFactory } from '@microsoft/kiota-abstractions';
 import { Headers as FetchHeadersCtor } from 'cross-fetch';
 import { ReadableStream } from 'web-streams-polyfill';
 import { URLSearchParams } from 'url';
@@ -7,7 +7,6 @@ export class HttpCore implements IHttpCore {
     public getSerializationWriterFactory(): SerializationWriterFactory {
         return this.serializationWriterFactory;
     }
-    private static readonly authorizationHeaderKey = "Authorization";
     /**
      * Instantiates a new http core service
      * @param authenticationProvider the authentication provider to use.
@@ -36,11 +35,32 @@ export class HttpCore implements IHttpCore {
         if(segments.length === 0) return undefined;
         else return segments[0];
     }
+    public sendCollectionAsync = async <ModelType extends Parsable>(requestInfo: RequestInfo, type: new() => ModelType, responseHandler: ResponseHandler | undefined): Promise<ModelType[]> => {
+        if(!requestInfo) {
+            throw new Error('requestInfo cannot be null');
+        }
+        await this.authenticationProvider.authenticateRequest(requestInfo);
+        
+        const request = this.getRequestFromRequestInfo(requestInfo);
+        const response = await this.httpClient.fetch(this.getRequestUrl(requestInfo), request);
+        if(responseHandler) {
+            return await responseHandler.handleResponseAsync(response);
+        } else {
+            const payload = await response.arrayBuffer();
+            const responseContentType = this.getResponseContentType(response);
+            if(!responseContentType)
+                throw new Error("no response content type found for deserialization");
+            
+            const rootNode = this.parseNodeFactory.getRootParseNode(responseContentType, payload);
+            const result = rootNode.getCollectionOfObjectValues(type);
+            return result as unknown as ModelType[];
+        }
+    }
     public sendAsync = async <ModelType extends Parsable>(requestInfo: RequestInfo, type: new() => ModelType, responseHandler: ResponseHandler | undefined): Promise<ModelType> => {
         if(!requestInfo) {
             throw new Error('requestInfo cannot be null');
         }
-        await this.addBearerIfNotPresent(requestInfo);
+        await this.authenticationProvider.authenticateRequest(requestInfo);
         
         const request = this.getRequestFromRequestInfo(requestInfo);
         const response = await this.httpClient.fetch(this.getRequestUrl(requestInfo), request);
@@ -61,7 +81,7 @@ export class HttpCore implements IHttpCore {
         if(!requestInfo) {
             throw new Error('requestInfo cannot be null');
         }
-        await this.addBearerIfNotPresent(requestInfo);
+        await this.authenticationProvider.authenticateRequest(requestInfo);
         
         const request = this.getRequestFromRequestInfo(requestInfo);
         const response = await this.httpClient.fetch(this.getRequestUrl(requestInfo), request);
@@ -109,7 +129,7 @@ export class HttpCore implements IHttpCore {
         if(!requestInfo) {
             throw new Error('requestInfo cannot be null');
         }
-        await this.addBearerIfNotPresent(requestInfo);
+        await this.authenticationProvider.authenticateRequest(requestInfo);
         
         const request = this.getRequestFromRequestInfo(requestInfo);
         const response = await this.httpClient.fetch(this.getRequestUrl(requestInfo), request);
@@ -117,25 +137,13 @@ export class HttpCore implements IHttpCore {
             return await responseHandler.handleResponseAsync(response);
         }
     }
-    public enableBackingStore = (): void => {
+    public enableBackingStore = (backingStoreFactory?: BackingStoreFactory | undefined): void => {
         this.parseNodeFactory = enableBackingStoreForParseNodeFactory(this.parseNodeFactory);
         this.serializationWriterFactory = enableBackingStoreForSerializationWriterFactory(this.serializationWriterFactory);
         if(!this.serializationWriterFactory || !this.parseNodeFactory)
             throw new Error("unable to enable backing store");
-    }
-    private addBearerIfNotPresent = async (requestInfo: RequestInfo): Promise<void> => {
-        if(!requestInfo.URI) {
-            throw new Error('uri cannot be null');
-        }
-        if(!requestInfo.headers?.has(HttpCore.authorizationHeaderKey)) {
-            const token = await this.authenticationProvider.getAuthorizationToken(requestInfo.URI);
-            if(!token) {
-                throw new Error('Could not get an authorization token');
-            }
-            if(!requestInfo.headers) {
-                requestInfo.headers = new Map<string, string>();
-            }
-            requestInfo.headers?.set(HttpCore.authorizationHeaderKey, `Bearer ${token}`);
+        if(backingStoreFactory) {
+            BackingStoreFactorySingleton.instance = backingStoreFactory;
         }
     }
     private getRequestFromRequestInfo = (requestInfo: RequestInfo): RequestInit => {

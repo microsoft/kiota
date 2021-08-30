@@ -2,10 +2,10 @@
 
 ![Dotnet](https://github.com/microsoft/kiota/actions/workflows/authentication-dotnet-azure.yml/badge.svg)
 
-- [ ] coverage code
+- [x] coverage code
 - [ ] analyzers
-- [ ] unit test project
-- [ ] docs comments
+- [x] unit test project
+- [x] docs comments
 
 ## Using the Azure Authentication implementations
 

@@ -1,5 +1,4 @@
 import { BackingStore } from "./backingStore";
-import _ from "lodash";
 import { v4 as uuidv4 } from 'uuid';
 
 type storeEntryWrapper = {changed: boolean, value: unknown};
@@ -34,10 +33,22 @@ export class InMemoryBackingStore implements BackingStore {
         });
     }
     public enumerate(): storeEntry[] {
-        return _.map(this.returnOnlyChangedValues ? 
-                        _.filter(this.store, (_, k) => this.store.get(k)?.changed ?? false) : 
-                        this.store, 
-            (_, k) => { return { key: k, value: this.store.get(k)?.value}});
+        let filterableArray = [...this.store.entries()];
+        if(this.returnOnlyChangedValues) {
+            filterableArray = filterableArray.filter(([_, v]) => v.changed);
+        }
+        return filterableArray.map(([key, value]) => {
+            return {key, value};
+        });
+    }
+    public enumerateKeysForValuesChangedToNull(): string[] {
+        const keys: string[] = [];
+        for(const [key, entry] of this.store) {
+            if(entry.changed && !entry.value) {
+                keys.push(key);
+            }
+        }
+        return keys;
     }
     public subscribe(callback: subscriptionCallback, subscriptionId?: string | undefined): string {
         if(!callback)
