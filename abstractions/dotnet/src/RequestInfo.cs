@@ -33,7 +33,8 @@ namespace Microsoft.Kiota.Abstractions
                 if(string.IsNullOrEmpty(currentPath))
                     throw new ArgumentNullException(nameof(currentPath));
                 var parseUri = new Uri(currentPath);
-                foreach(var qsp in parseUri.Query.Split('&').Select(x => x.Split('=')).Where(x => !string.IsNullOrEmpty(x[0]))) {
+                var parseQueryString = parseUri.Query[0] == '?' ? parseUri.Query.Substring(1) : parseUri.Query; //remove leading ? if needed
+                foreach(var qsp in parseQueryString.Split('&').Select(x => x.Split('=')).Where(x => !string.IsNullOrEmpty(x[0]))) {
                     QueryParameters.Add(qsp[0], qsp.Length > 1 ? qsp[1] : null);
                 }
                 URI = new Uri(parseUri.GetComponents(UriComponents.SchemeAndServer | UriComponents.Path, UriFormat.Unescaped));
