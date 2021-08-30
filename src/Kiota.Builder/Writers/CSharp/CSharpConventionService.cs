@@ -64,6 +64,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 case "string": return "string"; // little casing hack
                 case "object": return "object";
                 case "void": return "void";
+                case "binary": return "byte[]";
                 default: return type.Name?.ToFirstCharacterUpperCase() ?? "object";
             }
         }

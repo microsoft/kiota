@@ -26,7 +26,7 @@ namespace Kiota {
             classOption.AddAlias("-c");
             AddStringRegexValidator(classOption.Argument, @"^[a-zA-Z_][\w_-]+", "class name");
 
-            var namespaceOption = new Option("--namespace-name", "The namespace to use for the core client class specified with the --class-name option.") { Argument = new Argument<string>(() => "ApiClient") };
+            var namespaceOption = new Option("--namespace-name", "The namespace to use for the core client class specified with the --class-name option.") { Argument = new Argument<string>(() => "ApiSdk") };
             namespaceOption.AddAlias("-n");
             AddStringRegexValidator(namespaceOption.Argument, @"^[\w][\w\._-]+", "namespace name");
 

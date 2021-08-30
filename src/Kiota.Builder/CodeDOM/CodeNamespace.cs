@@ -38,6 +38,8 @@ namespace Kiota.Builder
             else return (this.Parent as CodeNamespace).GetRootNamespace();
         }
         public CodeNamespace FindNamespaceByName(string nsName) {
+            if(string.IsNullOrEmpty(nsName)) throw new ArgumentNullException(nameof(nsName));
+            if(nsName.Equals(Name)) return this;
             var result = FindChildByName<CodeNamespace>(nsName, false);
             if(result == null)
                 foreach(var childNS in InnerChildElements.Values.OfType<CodeNamespace>()) {

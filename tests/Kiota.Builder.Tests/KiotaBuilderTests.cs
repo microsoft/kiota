@@ -113,5 +113,71 @@ namespace Kiota.Builder.Tests
             var progressProp = codeModel.FindChildByName<CodeProperty>("progress", true);
             Assert.Equal("double", progressProp.Type.Name);
         }
+        [Fact]
+        public void Object_Arrays_are_supported() {
+            var userSchema = new OpenApiSchema {
+                Type = "object",
+                // Title = "user", // unit test fails if the title is not set
+                Properties = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "id", new OpenApiSchema {
+                            Type = "string"
+                        }
+                    },
+                    {
+                        "displayName", new OpenApiSchema {
+                            Type = "string"
+                        }
+                    }
+                },
+                Reference = new OpenApiReference() {
+                    Id = "#/components/schemas/microsoft.graph.user"
+                },
+                UnresolvedReference = false
+            };
+            var document = new OpenApiDocument() {
+                Paths = new OpenApiPaths() {
+                    ["users/{id}"] = new OpenApiPathItem() {
+                        Operations = {
+                            [OperationType.Get] = new OpenApiOperation() {
+                                Responses = new OpenApiResponses {
+                                    ["200"] = new OpenApiResponse() {
+                                        Content = {
+                                            ["application/json"] = new OpenApiMediaType() {
+                                                Schema = new OpenApiSchema {
+                                                    Type = "object",
+                                                    Properties = new Dictionary<string, OpenApiSchema> {
+                                                        {
+                                                            "value", new OpenApiSchema {
+                                                                Type = "array",
+                                                                Items = userSchema
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                },
+                Components = new OpenApiComponents() {
+                    Schemas = new Dictionary<string, OpenApiSchema> {
+                        {
+                            "microsoft.graph.user", userSchema
+                        }
+                    }
+                }
+            };
+            var node = OpenApiUrlTreeNode.Create(document, "default");
+            var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph" });
+            builder.CreateUriSpace(document);//needed so the component index exists
+            var codeModel = builder.CreateSourceModel(node);
+            var userClass = codeModel.FindNamespaceByName("ApiSdk.users").FindChildByName<CodeClass>("user");
+            Assert.NotNull(userClass);
+        }
     }
 }
