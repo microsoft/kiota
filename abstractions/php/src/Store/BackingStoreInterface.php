@@ -54,7 +54,7 @@ interface BackingStoreInterface {
     /**
      * @return void
      */
-    public function setReturnOnlyChangedValues(): void;
+    public function setReturnOnlyChangedValues(bool $value): void;
 
     /**
      * @return bool

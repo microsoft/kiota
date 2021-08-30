@@ -63,6 +63,9 @@ class ApiClientBuilder {
         return $result;
     }
 
+    /**
+     * @param ParseNodeFactoryRegistry $registry
+     */
     private static function enableBackingStoreForParseNodeRegistry(ParseNodeFactoryRegistry $registry): void {
         foreach (array_values($registry->contentTypeAssociatedFactories) as $factory){
             if (!is_a($factory, BackingStoreAbstractParseNodeFactory::class) && !is_a($factory, ParseNodeFactoryRegistry::class)) {
@@ -71,6 +74,9 @@ class ApiClientBuilder {
         }
     }
 
+    /**
+     * @param SerializationWriterFactoryRegistry $registry
+     */
     private static function enableBackingStoreForSerializationWriterRegistry(SerializationWriterFactoryRegistry $registry): void {
         $factories = array_values($registry->contentTypeAssociatedFactories);
 
