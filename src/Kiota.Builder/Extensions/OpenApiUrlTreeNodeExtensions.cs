@@ -38,6 +38,7 @@ namespace Kiota.Builder.Extensions {
                 foreach(var child in currentNode.Children.Values)
                     AddAllPathsEntries(child, index, label);
         }
+        private static string GetDotIfBothNotNullOfEmpty(string x, string y) => string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) ? string.Empty : ".";
         public static string GetNodeNamespaceFromPath(this OpenApiUrlTreeNode currentNode, string prefix) =>
             prefix + 
                     ((currentNode?.Path?.Contains(pathNameSeparator) ?? false) ?
@@ -46,7 +47,7 @@ namespace Kiota.Builder.Extensions {
                                 ?.Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
                                 ?.Where(x => !x.StartsWith('{'))
                                 ?.Aggregate(string.Empty, 
-                                    (x, y) => $"{x}{(string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) ? string.Empty : ".")}{y}") :
+                                    (x, y) => $"{x}{GetDotIfBothNotNullOfEmpty(x, y)}{y}") :
                         string.Empty)
                     .ReplaceValueIdentifier();
         private static readonly char pathNameSeparator = '\\';
