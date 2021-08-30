@@ -515,12 +515,19 @@ namespace Kiota.Builder
                 return null;
             var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
             var isExternal = false;
-            if("string".Equals(typeName, StringComparison.OrdinalIgnoreCase) && "date-time".Equals(format, StringComparison.OrdinalIgnoreCase)) {
+            if("string".Equals(typeName, StringComparison.OrdinalIgnoreCase)) {
+                if("date-time".Equals(format, StringComparison.OrdinalIgnoreCase)) {
+                    isExternal = true;
+                    typeName = "DateTimeOffset";
+                } else if ("base64url".Equals(format, StringComparison.OrdinalIgnoreCase)) {
+                    isExternal = true;
+                    typeName = "binary";
+                }
+            } else if ("double".Equals(format, StringComparison.OrdinalIgnoreCase) || 
+                    "float".Equals(format, StringComparison.OrdinalIgnoreCase) ||
+                    "int64".Equals(format, StringComparison.OrdinalIgnoreCase)) {
                 isExternal = true;
-                typeName = "DateTimeOffset";
-            } else if ("double".Equals(format, StringComparison.OrdinalIgnoreCase)) {
-                isExternal = true;
-                typeName = "double";
+                typeName = format.ToLowerInvariant();
             }
             return new CodeType(parent) {
                 Name = typeName,
