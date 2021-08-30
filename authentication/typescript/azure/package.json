@@ -34,7 +34,7 @@
     "@microsoft/kiota-abstractions": "^1.0.17"
   },
   "devDependencies": {
-    "@types/node": "^16.7.2",
+    "@types/node": "^16.7.6",
     "typescript": "^4.4.2"
   }
 }
