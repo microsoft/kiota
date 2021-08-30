@@ -45,7 +45,8 @@ namespace Kiota.Builder.Extensions {
                              + currentNode?.Path
                                 ?.Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
                                 ?.Where(x => !x.StartsWith('{'))
-                                ?.Aggregate((x, y) => $"{x}.{y}") :
+                                ?.Aggregate(string.Empty, 
+                                    (x, y) => $"{x}{(string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) ? string.Empty : ".")}{y}") :
                         string.Empty)
                     .ReplaceValueIdentifier();
         private static readonly char pathNameSeparator = '\\';
