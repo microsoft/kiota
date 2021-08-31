@@ -5,7 +5,7 @@ namespace Microsoft\Kiota\Abstractions\Store;
 
 use Closure;
 
-interface BackingStoreInterface {
+interface BackingStore {
     /**
      * @param string $key
      * @return mixed

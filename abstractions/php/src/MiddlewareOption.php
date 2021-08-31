@@ -2,6 +2,7 @@
 
 namespace Microsoft\Kiota\Abstractions;
 
-class EnumBase {
+interface MiddlewareOption
+{
 
 }

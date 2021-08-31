@@ -2,12 +2,12 @@
 
 namespace Microsoft\Kiota\Abstractions\Store;
 
-class InMemoryBackingStoreFactory implements BackingStoreFactoryInterface
+class InMemoryBackingStoreFactory implements BackingStoreFactory
 {
     /**
-     * @return BackingStoreInterface
+     * @return BackingStore
      */
-    public function createBackingStore(): BackingStoreInterface {
+    public function createBackingStore(): BackingStore {
         return new InMemoryBackingStore();
     }
 }

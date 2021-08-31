@@ -6,12 +6,12 @@ namespace Microsoft\Kiota\Abstractions\Serialization;
 use DateTimeInterface;
 use Closure;
 
-abstract class AbstractParseNode {
+abstract class ParseNode {
     /**
      * @param string $identifier
-     * @return AbstractParseNode
+     * @return ParseNode
      */
-    abstract public function getChildNode(string $identifier): AbstractParseNode;
+    abstract public function getChildNode(string $identifier): ParseNode;
 
     /**
      * @return string

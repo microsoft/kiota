@@ -4,13 +4,13 @@ namespace Microsoft\Kiota\Abstractions\Serialization;
 
 use Psr\Http\Message\StreamInterface;
 
-interface ParseNodeFactoryInterface {
+interface ParseNodeFactory {
 
     /**
      * @param string $contentType
      * @param StreamInterface $rawResponse
-     * @return AbstractParseNode
+     * @return ParseNode
      */
-    public function getParseNode(string $contentType, StreamInterface $rawResponse): AbstractParseNode;
+    public function getParseNode(string $contentType, StreamInterface $rawResponse): ParseNode;
     public function getValidContentType(): string;
 }

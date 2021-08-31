@@ -7,11 +7,11 @@ namespace Microsoft\Kiota\Abstractions\Serialization;
 use Closure;
 use Psr\Http\Message\StreamInterface;
 
-abstract class AbstractParseNodeProxyFactory implements ParseNodeFactoryInterface {
+abstract class ParseNodeProxyFactory implements ParseNodeFactory {
     /**
-     * @var ParseNodeFactoryInterface
+     * @var ParseNodeFactory
      */
-    private ParseNodeFactoryInterface $concrete;
+    private ParseNodeFactory $concrete;
     /**
      * @var Closure|null
      */
@@ -23,11 +23,11 @@ abstract class AbstractParseNodeProxyFactory implements ParseNodeFactoryInterfac
 
     /**
      * ParseNodeProxyFactory constructor.
-     * @param ParseNodeFactoryInterface $concrete
+     * @param ParseNodeFactory $concrete
      * @param Closure|null $onBefore
      * @param Closure|null $onAfter
      */
-    public function __construct(ParseNodeFactoryInterface $concrete, ?Closure $onBefore, ?Closure $onAfter) {
+    public function __construct(ParseNodeFactory $concrete, ?Closure $onBefore, ?Closure $onAfter) {
         $this->concrete = $concrete;
         $this->onBefore = $onBefore;
         $this->onAfter = $onAfter;
@@ -36,14 +36,14 @@ abstract class AbstractParseNodeProxyFactory implements ParseNodeFactoryInterfac
     /**
      * @param string $contentType
      * @param StreamInterface $rawResponse
-     * @return AbstractParseNode
+     * @return ParseNode
      */
-    public function getParseNode(string $contentType, StreamInterface $rawResponse): AbstractParseNode {
+    public function getParseNode(string $contentType, StreamInterface $rawResponse): ParseNode {
         $node = $this->concrete->getParseNode($contentType, $rawResponse);
         $originalBefore = $node->onBeforeAssignFieldValues;
         $originalAfter  = $node->onAfterAssignFieldValues;
 
-        $node->onBeforeAssignFieldValues = function (AbstractParsable $x) use ($originalBefore) {
+        $node->onBeforeAssignFieldValues = function (Parsable $x) use ($originalBefore) {
             if (!is_null($this->onBefore)) {
                 $this->onBefore->call($x, $x);
             }
@@ -51,7 +51,7 @@ abstract class AbstractParseNodeProxyFactory implements ParseNodeFactoryInterfac
                 $originalBefore->call($x, $x);
             }
         };
-        $node->onAfterAssignFieldValues = function (AbstractParsable $x) use ($originalAfter) {
+        $node->onAfterAssignFieldValues = function (Parsable $x) use ($originalAfter) {
             if (!is_null($this->onAfter)) {
                 $this->onAfter->call($x, $x);
             }

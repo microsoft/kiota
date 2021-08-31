@@ -2,11 +2,11 @@
 
 namespace Microsoft\Kiota\Abstractions;
 
-use Microsoft\Kiota\Abstractions\Serialization\ParseNodeFactoryInterface;
+use Microsoft\Kiota\Abstractions\Serialization\ParseNodeFactory;
 use Microsoft\Kiota\Abstractions\Serialization\ParseNodeFactoryRegistry;
-use Microsoft\Kiota\Abstractions\Serialization\SerializationWriterFactoryInterface;
+use Microsoft\Kiota\Abstractions\Serialization\SerializationWriterFactory;
 use Microsoft\Kiota\Abstractions\Serialization\SerializationWriterFactoryRegistry;
-use Microsoft\Kiota\Abstractions\Store\BackingStoreAbstractParseNodeFactory;
+use Microsoft\Kiota\Abstractions\Store\BackingStoreParseNodeFactory;
 use Microsoft\Kiota\Abstractions\Store\BackingStoreSerializationWriterProxyFactory;
 
 class ApiClientBuilder {
@@ -14,9 +14,9 @@ class ApiClientBuilder {
 
     /**
      * Registers the default serializer to the registry.
-     * @param SerializationWriterFactoryInterface $factoryClass the class of the factory to be registered.
+     * @param SerializationWriterFactory $factoryClass the class of the factory to be registered.
      */
-    public static function registerDefaultSerializer(SerializationWriterFactoryInterface $factoryClass): void {
+    public static function registerDefaultSerializer(SerializationWriterFactory $factoryClass): void {
         $factory =  new (get_class($factoryClass))();
         SerializationWriterFactoryRegistry::getDefaultInstance()
             ->contentTypeAssociatedFactories[$factory->getValidContentType()] = $factory;
@@ -24,18 +24,18 @@ class ApiClientBuilder {
 
     /**
      * Registers the default deserializer to the registry.
-     * @param ParseNodeFactoryInterface $factoryClass the class of the factory to be registered.
+     * @param ParseNodeFactory $factoryClass the class of the factory to be registered.
      */
-    public static function registerDefaultDeserializer(ParseNodeFactoryInterface $factoryClass): void {
+    public static function registerDefaultDeserializer(ParseNodeFactory $factoryClass): void {
 
     }
 
     /**
      * Enables the backing store on default serialization writers and the given serialization writer.
-     * @param SerializationWriterFactoryInterface $original The serialization writer to enable the backing store on.
-     * @return SerializationWriterFactoryInterface A new serialization writer with the backing store enabled.
+     * @param SerializationWriterFactory $original The serialization writer to enable the backing store on.
+     * @return SerializationWriterFactory A new serialization writer with the backing store enabled.
      */
-    public static function enableBackingStoreForSerializationWriterFactory(SerializationWriterFactoryInterface $original): SerializationWriterFactoryInterface {
+    public static function enableBackingStoreForSerializationWriterFactory(SerializationWriterFactory $original): SerializationWriterFactory {
         $result = $original;
 
         if (is_a($original, SerializationWriterFactoryRegistry::class)) {
@@ -49,15 +49,15 @@ class ApiClientBuilder {
 
     /**
      * Enables the backing store on default parse node factories and the given parse node factory.
-     * @param ParseNodeFactoryInterface $original The parse node factory to enable the backing store on.
-     * @return ParseNodeFactoryInterface A new parse node factory with the backing store enabled.
+     * @param ParseNodeFactory $original The parse node factory to enable the backing store on.
+     * @return ParseNodeFactory A new parse node factory with the backing store enabled.
      */
-    public static function enableBackingStoreForParseNodeFactory(ParseNodeFactoryInterface $original): ParseNodeFactoryInterface {
+    public static function enableBackingStoreForParseNodeFactory(ParseNodeFactory $original): ParseNodeFactory {
         $result = $original;
         if (is_a($original, ParseNodeFactoryRegistry::class)) {
             self::enableBackingStoreForParseNodeRegistry($original);
         } else {
-            $result = new BackingStoreAbstractParseNodeFactory($original);
+            $result = new BackingStoreParseNodeFactory($original);
         }
         self::enableBackingStoreForParseNodeRegistry(ParseNodeFactoryRegistry::getDefaultInstance());
         return $result;
@@ -68,8 +68,8 @@ class ApiClientBuilder {
      */
     private static function enableBackingStoreForParseNodeRegistry(ParseNodeFactoryRegistry $registry): void {
         foreach (array_values($registry->contentTypeAssociatedFactories) as $factory){
-            if (!is_a($factory, BackingStoreAbstractParseNodeFactory::class) && !is_a($factory, ParseNodeFactoryRegistry::class)) {
-                $registry->contentTypeAssociatedFactories[$factory->getValidContentType()] = new BackingStoreAbstractParseNodeFactory($factory);
+            if (!is_a($factory, BackingStoreParseNodeFactory::class) && !is_a($factory, ParseNodeFactoryRegistry::class)) {
+                $registry->contentTypeAssociatedFactories[$factory->getValidContentType()] = new BackingStoreParseNodeFactory($factory);
             }
         }
     }

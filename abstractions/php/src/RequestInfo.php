@@ -39,11 +39,11 @@ class RequestInfo {
     }
 
     /**
-     * @param HttpCoreInterface $httpCore
+     * @param HttpCore $httpCore
      * @param string $contentType
      * @param object ...$values
      */
-    public function setContentFromParsable(HttpCoreInterface $httpCore, string $contentType, object ...$values): void {
+    public function setContentFromParsable(HttpCore $httpCore, string $contentType, object ...$values): void {
         if(count($values) === 0) {
             throw new \RuntimeException('$values cannot be empty');
         }
@@ -76,18 +76,18 @@ class RequestInfo {
     }
 
     /**
-     * @param MiddlewareOptionInterface ...$options
+     * @param MiddlewareOption ...$options
      */
-    public function removeMiddlewareOptions(MiddlewareOptionInterface ...$options): void {
+    public function removeMiddlewareOptions(MiddlewareOption ...$options): void {
         foreach ($options as $middlewareOption) {
             unset($options[get_class($middlewareOption)]);
         }
     }
 
     /**
-     * @param MiddlewareOptionInterface ...$options
+     * @param MiddlewareOption ...$options
      */
-    public function addMiddlewareOptions(MiddlewareOptionInterface ...$options): void {
+    public function addMiddlewareOptions(MiddlewareOption ...$options): void {
 
     }
 }

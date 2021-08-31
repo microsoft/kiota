@@ -3,7 +3,7 @@ namespace Microsoft\Kiota\Abstractions\Serialization;
 
 use Closure;
 
-abstract class AbstractParsable {
+abstract class Parsable {
 
     /**
      * @return array<string, Closure>
@@ -11,9 +11,9 @@ abstract class AbstractParsable {
     abstract public function getFieldDeserializers(): array;
 
     /**
-     * @param AbstractSerializationWriter $writer
+     * @param SerializationWriter $writer
      */
-    abstract public function serialize(AbstractSerializationWriter $writer): void;
+    abstract public function serialize(SerializationWriter $writer): void;
 
     /**
      * @var array

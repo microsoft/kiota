@@ -4,15 +4,15 @@ namespace Microsoft\Kiota\Abstractions\Serialization;
 
 use Psr\Http\Message\StreamInterface;
 
-class ParseNodeFactoryRegistry implements ParseNodeFactoryInterface {
+class ParseNodeFactoryRegistry implements ParseNodeFactory {
 
     /**
-     * @var array<string, ParseNodeFactoryInterface>
+     * @var array<string, ParseNodeFactory>
      */
 
     public array $contentTypeAssociatedFactories = [];
 
-    public function getParseNode(string $contentType, StreamInterface $rawResponse): AbstractParseNode {
+    public function getParseNode(string $contentType, StreamInterface $rawResponse): ParseNode {
         if (array_key_exists($contentType, $this->contentTypeAssociatedFactories)) {
             return $this->contentTypeAssociatedFactories[$contentType]->getParseNode($contentType, $rawResponse);
         }

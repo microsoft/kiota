@@ -3,19 +3,19 @@
 namespace Microsoft\Kiota\Abstractions\Store;
 
 
-use Microsoft\Kiota\Abstractions\Serialization\ParseNodeFactoryInterface;
-use Microsoft\Kiota\Abstractions\Serialization\AbstractParseNodeProxyFactory;
+use Microsoft\Kiota\Abstractions\Serialization\ParseNodeFactory;
+use Microsoft\Kiota\Abstractions\Serialization\ParseNodeProxyFactory;
 
-class BackingStoreAbstractParseNodeFactory extends AbstractParseNodeProxyFactory{
+class BackingStoreParseNodeFactory extends ParseNodeProxyFactory{
 
     /**
      * BackingStoreParseNodeFactory constructor.
-     * @param ParseNodeFactoryInterface $concrete
+     * @param ParseNodeFactory $concrete
      */
-    public function __construct(ParseNodeFactoryInterface $concrete) {
+    public function __construct(ParseNodeFactory $concrete) {
         parent::__construct($concrete,
            function ($x) {
-             if (is_a($x, BackedModelInterface::class)) {
+             if (is_a($x, BackedModel::class)) {
                  $backedModel = $x;
                  $backingStore = $backedModel->getBackingStore();
 
@@ -25,7 +25,7 @@ class BackingStoreAbstractParseNodeFactory extends AbstractParseNodeProxyFactory
              }
            },
            function ($x) {
-               if (is_a($x, BackedModelInterface::class)) {
+               if (is_a($x, BackedModel::class)) {
                    $backedModel = $x;
                    $backingStore = $backedModel->getBackingStore();
 

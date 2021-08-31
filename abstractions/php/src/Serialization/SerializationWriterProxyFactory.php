@@ -3,12 +3,12 @@ namespace Microsoft\Kiota\Abstractions\Serialization;
 
 use Closure;
 
-abstract class SerializationWriterProxyFactory implements SerializationWriterFactoryInterface {
+abstract class SerializationWriterProxyFactory implements SerializationWriterFactory {
 
     /**
-     * @var SerializationWriterFactoryInterface
+     * @var SerializationWriterFactory
      */
-    private SerializationWriterFactoryInterface $concrete;
+    private SerializationWriterFactory $concrete;
 
     /**
      * @var ?Closure $onBefore
@@ -21,11 +21,11 @@ abstract class SerializationWriterProxyFactory implements SerializationWriterFac
 
     /**
      * SerializationWriterProxyFactory constructor.
-     * @param SerializationWriterFactoryInterface $concrete
+     * @param SerializationWriterFactory $concrete
      * @param ?Closure $onBefore
      * @param ?Closure $onAfter
      */
-    public function __construct(SerializationWriterFactoryInterface $concrete, ?Closure $onBefore = null, ?Closure $onAfter = null) {
+    public function __construct(SerializationWriterFactory $concrete, ?Closure $onBefore = null, ?Closure $onAfter = null) {
         $this->concrete = $concrete;
         $this->onBefore = $onBefore;
         $this->onAfter = $onAfter;
@@ -33,18 +33,18 @@ abstract class SerializationWriterProxyFactory implements SerializationWriterFac
 
     /**
      * @param string $contentType
-     * @return AbstractSerializationWriter
+     * @return SerializationWriter
      */
-    public function getSerializationWriter(string $contentType): AbstractSerializationWriter {
+    public function getSerializationWriter(string $contentType): SerializationWriter {
         $writer = $this->concrete->getSerializationWriter($contentType);
         $originalBefore = $writer->onBeforeObjectSerialization;
         $originalAfter  = $writer->onAfterObjectSerialization;
 
-        $writer->onBeforeObjectSerialization = function (AbstractParsable $x) use ($originalBefore) {
+        $writer->onBeforeObjectSerialization = function (Parsable $x) use ($originalBefore) {
             $this->onBefore->call($x, $x);
             $originalBefore->call($x, $x);
         };
-        $writer->onAfterObjectSerialization = function (AbstractParsable $x) use ($originalAfter) {
+        $writer->onAfterObjectSerialization = function (Parsable $x) use ($originalAfter) {
             $this->onAfter->call($x, $x);
             $originalAfter->call($x, $x);
         };

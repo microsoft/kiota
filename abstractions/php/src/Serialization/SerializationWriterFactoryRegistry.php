@@ -6,19 +6,19 @@ namespace Microsoft\Kiota\Abstractions\Serialization;
 
 use UnexpectedValueException;
 
-class SerializationWriterFactoryRegistry implements SerializationWriterFactoryInterface {
+class SerializationWriterFactoryRegistry implements SerializationWriterFactory {
 
     /**
-     * @var array<string, SerializationWriterFactoryInterface>
+     * @var array<string, SerializationWriterFactory>
      */
     public array $contentTypeAssociatedFactories = [];
 
     /**
      * @param string $contentType
-     * @return AbstractSerializationWriter
+     * @return SerializationWriter
      * @throws UnexpectedValueException
      */
-    public function getSerializationWriter(string $contentType): AbstractSerializationWriter {
+    public function getSerializationWriter(string $contentType): SerializationWriter {
         if (trim($contentType) === '') {
             throw new \InvalidArgumentException('contentType cannot be empty');
         }

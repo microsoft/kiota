@@ -4,7 +4,7 @@ namespace Microsoft\Kiota\Abstractions\Store;
 
 use Closure;
 
-class InMemoryBackingStore implements BackingStoreInterface
+class InMemoryBackingStore implements BackingStore
 {
 
     private bool $isInitializationCompleted = true;
@@ -17,9 +17,12 @@ class InMemoryBackingStore implements BackingStoreInterface
      * @param string $key
      * @return mixed
      */
-    public function get(string $key)
-    {
-        // TODO: Implement get() method.
+    public function get(string $key) {
+
+        if (!array_key_exists($key, $this->store)) {
+            return null;
+        }
+        return $this->store[$key];
     }
 
     /**
@@ -28,14 +31,14 @@ class InMemoryBackingStore implements BackingStoreInterface
      */
     public function set(string $key, $value): void
     {
-        // TODO: Implement set() method.
+        $this->store[$key] = $value;
     }
 
     /**
      * @return array<string,mixed>
      */
     public function enumerate(): array {
-        // TODO: Implement enumerate() method.
+        return [];
     }
 
     /**
@@ -44,21 +47,21 @@ class InMemoryBackingStore implements BackingStoreInterface
      * @return string|null
      */
     public function subscribe(Closure $callback, ?string $subscriptionId = null): ?string {
-        // TODO: Implement subscribe() method.
+        return '';
     }
 
     /**
      * @param string $subscriptionId
      */
     public function unsubscribe(string $subscriptionId): void {
-        // TODO: Implement unsubscribe() method.
+        unset($this->subscriptionStore[$subscriptionId]);
     }
 
     /**
      *
      */
     public function clear(): void {
-        
+        $this->store = [];
     }
 
     /**
