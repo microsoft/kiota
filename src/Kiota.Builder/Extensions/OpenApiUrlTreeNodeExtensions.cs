@@ -46,6 +46,10 @@ namespace Kiota.Builder.Extensions {
                              + currentNode?.Path
                                 ?.Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
                                 ?.Where(x => !x.StartsWith('{'))
+                                ?.Select(x => (x ?? string.Empty).Split('.', StringSplitOptions.RemoveEmptyEntries)
+                                                                .Last()
+                                                                .TrimEnd(')') //clearing out delta()
+                                                                .TrimEnd('('))
                                 ?.Aggregate(string.Empty, 
                                     (x, y) => $"{x}{GetDotIfBothNotNullOfEmpty(x, y)}{y}") :
                         string.Empty)
@@ -60,7 +64,7 @@ namespace Kiota.Builder.Extensions {
                                 currentNode?.GetIdentifier()?.ReplaceValueIdentifier();
             if((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup.IsMatch(rawClassName))
                 rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
-            return prefix + rawClassName + suffix;
+            return prefix + rawClassName.Split('.', StringSplitOptions.RemoveEmptyEntries).Last() + suffix;
         }
         public static string GetPathItemDescription(this OpenApiUrlTreeNode currentNode, string label, string defaultValue = default) =>
         !string.IsNullOrEmpty(label) && (currentNode?.PathItems.ContainsKey(label) ?? false) ?
