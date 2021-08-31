@@ -5,13 +5,13 @@ using Xunit;
 
 namespace Microsoft.Kiota.Abstractions.Tests
 {
-    public class RequestInfoTests
+    public class RequestInformationTests
     {
         [Fact]
         public void SetUriAppendsUrlSegments()
         {
             // Arrange
-            var testRequest = new RequestInfo()
+            var testRequest = new RequestInformation()
             {
                 HttpMethod = HttpMethod.GET,
                 URI = new Uri("http://localhost")
@@ -26,7 +26,7 @@ namespace Microsoft.Kiota.Abstractions.Tests
         public void SetUriExtractsQueryParameters()
         {
             // Arrange
-            var testRequest = new RequestInfo()
+            var testRequest = new RequestInformation()
             {
                 HttpMethod = HttpMethod.GET,
                 URI = new Uri("http://localhost")
@@ -45,7 +45,7 @@ namespace Microsoft.Kiota.Abstractions.Tests
         public void AddsAndRemovesMiddlewareOptions()
         {
             // Arrange
-            var testRequest = new RequestInfo()
+            var testRequest = new RequestInformation()
             {
                 HttpMethod = HttpMethod.GET,
                 URI = new Uri("http://localhost")
