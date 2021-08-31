@@ -14,7 +14,7 @@ namespace Microsoft.Kiota.Abstractions.Tests
         {
             // Arrange
             var anonymousAuthenticationProvider = new AnonymousAuthenticationProvider();
-            var testRequest = new RequestInfo()
+            var testRequest = new RequestInformation()
             {
                 HttpMethod = HttpMethod.GET,
                 URI = new Uri("http://localhost")
@@ -35,9 +35,9 @@ namespace Microsoft.Kiota.Abstractions.Tests
             // Arrange
             var expectedToken = "token";
             var mockBaseBearerTokenAuthenticationProvider = new Mock<BaseBearerTokenAuthenticationProvider>();
-            mockBaseBearerTokenAuthenticationProvider.Setup(authProvider => authProvider.GetAuthorizationTokenAsync(It.IsAny<RequestInfo>())).Returns(Task.FromResult(expectedToken));
+            mockBaseBearerTokenAuthenticationProvider.Setup(authProvider => authProvider.GetAuthorizationTokenAsync(It.IsAny<RequestInformation>())).Returns(Task.FromResult(expectedToken));
             var testAuthProvider = mockBaseBearerTokenAuthenticationProvider.Object;
-            var testRequest = new RequestInfo()
+            var testRequest = new RequestInformation()
             {
                 HttpMethod = HttpMethod.GET,
                 URI = new Uri("http://localhost")
