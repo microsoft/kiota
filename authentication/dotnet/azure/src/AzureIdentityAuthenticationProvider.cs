@@ -40,9 +40,9 @@ namespace Microsoft.Kiota.Authentication.Azure
         /// <summary>
         /// Gets the authorization token for the given request.
         /// </summary>
-        /// <param name="request">The <see cref="RequestInfo"/> instance to get te token for</param>
+        /// <param name="request">The <see cref="RequestInformation"/> instance to get te token for</param>
         /// <returns> An authorization token string.</returns>
-        public async override Task<string> GetAuthorizationTokenAsync(RequestInfo request)
+        public async override Task<string> GetAuthorizationTokenAsync(RequestInformation request)
         {
             var result = await this._credential.GetTokenAsync(new TokenRequestContext(_scopes.ToArray()), default); //TODO: we might have to bubble that up for native apps or backend web apps to avoid blocking the UI/getting an exception
             return result.Token;

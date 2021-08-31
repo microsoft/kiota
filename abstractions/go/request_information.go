@@ -12,7 +12,7 @@ import (
 )
 
 /* This type represents an abstract HTTP request. */
-type RequestInfo struct {
+type RequestInformation struct {
 	Method          HttpMethod
 	URI             u.URL
 	Headers         map[string]string
@@ -21,8 +21,8 @@ type RequestInfo struct {
 	options         map[string]MiddlewareOption
 }
 
-func NewRequestInfo() *RequestInfo {
-	return &RequestInfo{
+func NewRequestInformation() *RequestInformation {
+	return &RequestInformation{
 		URI:             u.URL{},
 		Headers:         make(map[string]string),
 		QueryParameters: make(map[string]string),
@@ -30,7 +30,7 @@ func NewRequestInfo() *RequestInfo {
 	}
 }
 
-func (request *RequestInfo) SetUri(currentPath string, pathSegment string, isRawUrl bool) error {
+func (request *RequestInformation) SetUri(currentPath string, pathSegment string, isRawUrl bool) error {
 	if isRawUrl {
 		if currentPath == "" {
 			return errors.New("current path cannot be empty")
@@ -63,7 +63,7 @@ func (request *RequestInfo) SetUri(currentPath string, pathSegment string, isRaw
 	return nil
 }
 
-func (request *RequestInfo) AddMiddlewareOptions(options ...MiddlewareOption) error {
+func (request *RequestInformation) AddMiddlewareOptions(options ...MiddlewareOption) error {
 	if options == nil {
 		return errors.New("MiddlewareOptions cannot be nil")
 	}
@@ -78,7 +78,7 @@ func (request *RequestInfo) AddMiddlewareOptions(options ...MiddlewareOption) er
 	return nil
 }
 
-func (request *RequestInfo) GetMiddlewareOptions() []MiddlewareOption {
+func (request *RequestInformation) GetMiddlewareOptions() []MiddlewareOption {
 	if request.options == nil {
 		return []MiddlewareOption{}
 	}
@@ -92,11 +92,11 @@ func (request *RequestInfo) GetMiddlewareOptions() []MiddlewareOption {
 const contentTypeHeader = "Content-Type"
 const binaryContentType = "application/octet-steam"
 
-func (request *RequestInfo) SetStreamContent(content []byte) {
+func (request *RequestInformation) SetStreamContent(content []byte) {
 	request.Content = content
 	request.Headers[contentTypeHeader] = binaryContentType
 }
-func (request *RequestInfo) SetContentFromParsable(coreService HttpCore, contentType string, items ...s.Parsable) error {
+func (request *RequestInformation) SetContentFromParsable(coreService HttpCore, contentType string, items ...s.Parsable) error {
 	if contentType == "" {
 		return errors.New("content type cannot be empty")
 	} else if coreService == nil {

@@ -1,6 +1,6 @@
 package com.microsoft.kiota.authentication;
 
-import com.microsoft.kiota.RequestInfo;
+import com.microsoft.kiota.RequestInformation;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -14,5 +14,5 @@ public interface AuthenticationProvider {
      * @return a CompletableFuture to await for the authentication to be completed.
      */
     @Nonnull
-    CompletableFuture<Void> authenticateRequest(@Nonnull final RequestInfo request);
+    CompletableFuture<Void> authenticateRequest(@Nonnull final RequestInformation request);
 }

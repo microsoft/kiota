@@ -181,7 +181,7 @@ namespace Kiota.Builder.Writers.TypeScript {
         private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
-            writer.WriteLines($"const {requestInfoVarName} = new RequestInfo();",
+            writer.WriteLines($"const {requestInfoVarName} = new RequestInformation();",
                                 $"{requestInfoVarName}.setUri(this.{localConventions.CurrentPathPropertyName}, this.{localConventions.PathSegmentPropertyName}, this.{localConventions.RawUrlPropertyName});",
                                 $"{requestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.ToString().ToUpperInvariant()};");
             if(headersParam != null)

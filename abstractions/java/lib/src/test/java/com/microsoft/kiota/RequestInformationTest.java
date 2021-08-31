@@ -6,10 +6,10 @@ package com.microsoft.kiota;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-class RequestInfoTest {
+class RequestInformationTest {
     @Test
     void setsRawUri() {
-        final var requestInfo = new RequestInfo();
+        final var requestInfo = new RequestInformation();
         requestInfo.setUri("https://graph.microsoft.com/test", null, true);
         assertEquals("https://graph.microsoft.com/test", requestInfo.uri.toString());
 

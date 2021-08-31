@@ -168,7 +168,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains($"requestInfo := {abstractionsPackageHash}.NewRequestInfo()", result);
+            Assert.Contains($"requestInfo := {abstractionsPackageHash}.NewRequestInformation()", result);
             Assert.Contains("err := requestInfo.SetUri", result);
             Assert.Contains($"Method = {abstractionsPackageHash}.GET", result);
             Assert.Contains("err != nil", result);

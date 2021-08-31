@@ -186,7 +186,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("request_info = MicrosoftKiotaAbstractions::RequestInfo.new()", result);
+            Assert.Contains("request_info = MicrosoftKiotaAbstractions::RequestInformation.new()", result);
             Assert.Contains("request_info.set_uri", result);
             Assert.Contains("http_method = :GET", result);
             Assert.Contains("set_query_string_parameters_from_raw_object", result);

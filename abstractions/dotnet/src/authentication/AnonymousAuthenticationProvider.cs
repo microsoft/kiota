@@ -12,11 +12,11 @@ namespace Microsoft.Kiota.Abstractions.Authentication
     public class AnonymousAuthenticationProvider : IAuthenticationProvider
     {
         /// <summary>
-        /// Authenticates the <see cref="RequestInfo"/> instance
+        /// Authenticates the <see cref="RequestInformation"/> instance
         /// </summary>
         /// <param name="request">The request to authenticate</param>
         /// <returns></returns>
-        public Task AuthenticateRequestAsync(RequestInfo request)
+        public Task AuthenticateRequestAsync(RequestInformation request)
         {
             return Task.CompletedTask;
         }

@@ -576,13 +576,13 @@ namespace Kiota.Builder
             logger.LogTrace("Creating method {name} of {type}", executorMethod.Name, executorMethod.ReturnType);
 
             var generatorMethod = new CodeMethod(parentClass) {
-                Name = $"Create{operationType.ToString().ToFirstCharacterUpperCase()}RequestInfo",
+                Name = $"Create{operationType.ToString().ToFirstCharacterUpperCase()}RequestInformation",
                 MethodKind = CodeMethodKind.RequestGenerator,
                 IsAsync = false,
                 HttpMethod = method,
                 Description = operation.Description ?? operation.Summary,
             };
-            generatorMethod.ReturnType = new CodeType(generatorMethod) { Name = "RequestInfo", IsNullable = false, IsExternal = true};
+            generatorMethod.ReturnType = new CodeType(generatorMethod) { Name = "RequestInformation", IsNullable = false, IsExternal = true};
             parentClass.AddMethod(generatorMethod);
             AddRequestBuilderMethodParameters(currentNode, operation, parameterClass, generatorMethod);
             logger.LogTrace("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);

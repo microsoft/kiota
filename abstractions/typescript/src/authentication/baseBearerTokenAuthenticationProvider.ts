@@ -1,10 +1,10 @@
-import { RequestInfo } from "../requestInfo";
+import { RequestInformation } from "../requestInformation";
 import { AuthenticationProvider } from "./authenticationProvider";
 
 /** Provides a base class for implementing AuthenticationProvider for Bearer token scheme. */
 export abstract class BaseBearerTokenAuthenticationProvider implements AuthenticationProvider {
     private static readonly authorizationHeaderKey = "Authorization";
-    public authenticateRequest = async (request: RequestInfo) : Promise<void> => {
+    public authenticateRequest = async (request: RequestInformation) : Promise<void> => {
         if(!request) {
             throw new Error('request info cannot be null');
         }
@@ -24,5 +24,5 @@ export abstract class BaseBearerTokenAuthenticationProvider implements Authentic
      * @param requestUrl the request to authenticate.
      * @return a Promise that holds the access token to use for the request.
      */
-    public abstract getAuthorizationToken: (request: RequestInfo) => Promise<string>;
+    public abstract getAuthorizationToken: (request: RequestInformation) => Promise<string>;
 }

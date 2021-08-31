@@ -93,7 +93,7 @@ namespace Kiota.Builder.Refiners {
         private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
             new ("HttpCore", "github.com/microsoft/kiota/abstractions/go"),
             new ("HttpMethod", "github.com/microsoft/kiota/abstractions/go"),
-            new ("RequestInfo", "github.com/microsoft/kiota/abstractions/go"),
+            new ("RequestInformation", "github.com/microsoft/kiota/abstractions/go"),
             new ("ResponseHandler", "github.com/microsoft/kiota/abstractions/go"),
             new ("MiddlewareOption", "github.com/microsoft/kiota/abstractions/go"),
             new ("QueryParametersBase", "github.com/microsoft/kiota/abstractions/go"),

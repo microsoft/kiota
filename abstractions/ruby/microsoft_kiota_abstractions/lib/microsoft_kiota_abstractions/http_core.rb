@@ -1,4 +1,4 @@
-require_relative 'request_info'
+require_relative 'request_information'
 require_relative 'response_handler'
 
 module MicrosoftKiotaAbstractions

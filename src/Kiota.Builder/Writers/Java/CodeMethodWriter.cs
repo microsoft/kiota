@@ -183,7 +183,7 @@ namespace Kiota.Builder.Writers.Java {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             writer.WriteLine("try {");
             writer.IncreaseIndent();
-            WriteGeneratorMethodCall(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer, $"final RequestInfo {requestInfoVarName} = ");
+            WriteGeneratorMethodCall(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer, $"final RequestInformation {requestInfoVarName} = ");
             var sendMethodName = GetSendRequestMethodName(codeElement.ReturnType.IsCollection, returnType);
             var responseHandlerParam = codeElement.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.ResponseHandler));
             if(codeElement.Parameters.Any(x => x.IsOfKind(CodeParameterKind.ResponseHandler)))
@@ -226,7 +226,7 @@ namespace Kiota.Builder.Writers.Java {
         private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
-            writer.WriteLine($"final RequestInfo {requestInfoVarName} = new RequestInfo() {{{{");
+            writer.WriteLine($"final RequestInformation {requestInfoVarName} = new RequestInformation() {{{{");
             writer.IncreaseIndent();
             writer.WriteLines($"this.setUri({conventions.CurrentPathPropertyName}, {conventions.PathSegmentPropertyName}, {conventions.RawUrlPropertyName});",
                         $"httpMethod = HttpMethod.{codeElement.HttpMethod?.ToString().ToUpperInvariant()};");

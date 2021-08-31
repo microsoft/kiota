@@ -5,7 +5,7 @@
     <TargetFramework>net5.0</TargetFramework>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryUrl>https://github.com/microsoft/kiota</RepositoryUrl>
-    <Version>1.0.4</Version>
+    <Version>1.0.5</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <!-- Enable this line once we go live to prevent breaking changes -->
@@ -14,7 +14,7 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Core" Version="1.18.0" />
-    <PackageReference Include="Microsoft.Kiota.Abstractions" Version="1.0.17" />
+    <PackageReference Include="Microsoft.Kiota.Abstractions" Version="1.0.19" />
   </ItemGroup>
 
 </Project>
