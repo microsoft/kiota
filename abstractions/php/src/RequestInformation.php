@@ -4,7 +4,7 @@ namespace Microsoft\Kiota\Abstractions;
 use http\Url;
 use Psr\Http\Message\StreamInterface;
 
-class RequestInfo {
+class RequestInformation {
 
     /** @var string|null */
     public ?string $uri;
