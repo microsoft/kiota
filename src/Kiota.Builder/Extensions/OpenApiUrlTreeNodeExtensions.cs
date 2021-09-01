@@ -55,7 +55,7 @@ namespace Kiota.Builder.Extensions {
                         string.Empty)
                     .ReplaceValueIdentifier();
         private static readonly char pathNameSeparator = '\\';
-        private static readonly Regex idClassNameCleanup = new Regex(@"Id\d?$");
+        private static readonly Regex idClassNameCleanup = new(@"Id\d?$");
         ///<summary>
         /// Returns the class name for the node with more or less precision depending on the provided arguments
         ///</summary>
@@ -64,7 +64,7 @@ namespace Kiota.Builder.Extensions {
                                 currentNode?.GetIdentifier()?.ReplaceValueIdentifier();
             if((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup.IsMatch(rawClassName))
                 rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
-            return prefix + rawClassName.Split('.', StringSplitOptions.RemoveEmptyEntries).Last() + suffix;
+            return prefix + rawClassName?.Split('.', StringSplitOptions.RemoveEmptyEntries)?.Last() + suffix;
         }
         public static string GetPathItemDescription(this OpenApiUrlTreeNode currentNode, string label, string defaultValue = default) =>
         !string.IsNullOrEmpty(label) && (currentNode?.PathItems.ContainsKey(label) ?? false) ?
