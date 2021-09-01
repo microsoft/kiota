@@ -14,6 +14,11 @@ class SerializationWriterFactoryRegistry implements SerializationWriterFactory {
     public array $contentTypeAssociatedFactories = [];
 
     /**
+     * @var SerializationWriterFactoryRegistry|null
+     */
+    public static ?SerializationWriterFactoryRegistry $defaultInstance = null;
+
+    /**
      * @param string $contentType
      * @return SerializationWriter
      * @throws UnexpectedValueException
@@ -34,6 +39,8 @@ class SerializationWriterFactoryRegistry implements SerializationWriterFactory {
     }
 
     public static function getDefaultInstance(): SerializationWriterFactoryRegistry {
-        return new self();
+        if (is_null(self::$defaultInstance))
+            self::$defaultInstance = new self();
+        return self::$defaultInstance;
     }
 }

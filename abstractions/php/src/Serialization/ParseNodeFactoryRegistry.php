@@ -6,6 +6,7 @@ use Psr\Http\Message\StreamInterface;
 
 class ParseNodeFactoryRegistry implements ParseNodeFactory {
 
+    private static ?ParseNodeFactoryRegistry $defaultInstance = null;
     /**
      * @var array<string, ParseNodeFactory>
      */
@@ -20,7 +21,10 @@ class ParseNodeFactoryRegistry implements ParseNodeFactory {
     }
 
     public static function getDefaultInstance(): ParseNodeFactoryRegistry {
-        return new self();
+        if (is_null(self::$defaultInstance)) {
+            self::$defaultInstance = new self();
+        }
+        return self::$defaultInstance;
     }
 
     public function getValidContentType(): string {
