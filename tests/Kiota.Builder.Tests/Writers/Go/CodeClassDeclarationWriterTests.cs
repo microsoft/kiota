@@ -5,8 +5,8 @@ using Xunit;
 namespace Kiota.Builder.Writers.Go.Tests {
     public class CodeClassDeclarationWriterTests : IDisposable
     {
-        private const string defaultPath = "./";
-        private const string defaultName = "name";
+        private const string DefaultPath = "./";
+        private const string DefaultName = "name";
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeClassDeclarationWriter codeElementWriter;
@@ -15,7 +15,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
 
         public CodeClassDeclarationWriterTests() {
             codeElementWriter = new CodeClassDeclarationWriter(new GoConventionService());
-            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, defaultPath, defaultName);
+            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             root = CodeNamespace.InitRootNamespace();
@@ -26,6 +26,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
         }
         public void Dispose() {
             tw?.Dispose();
+            GC.SuppressFinalize(this);
         }
         [Fact]
         public void WritesSimpleDeclaration() {

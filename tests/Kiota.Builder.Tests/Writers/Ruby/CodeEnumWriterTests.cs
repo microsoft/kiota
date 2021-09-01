@@ -6,25 +6,26 @@ using Xunit;
 
 namespace Kiota.Builder.Writers.Ruby.Tests {
     public class CodeEnumWriterTests :IDisposable {
-        private const string defaultPath = "./";
-        private const string defaultName = "name";
+        private const string DefaultPath = "./";
+        private const string DefaultName = "name";
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeEnum currentEnum;
-        private const string enumName = "someEnum";
+        private const string EnumName = "someEnum";
         private readonly CodeNamespace parentNamespace;
         public CodeEnumWriterTests(){
-            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Ruby, defaultPath, defaultName);
+            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Ruby, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
             parentNamespace = root.AddNamespace("parentNamespace");
             currentEnum = parentNamespace.AddEnum(new CodeEnum(root) {
-            Name = enumName,
+            Name = EnumName,
             }).First();
         }
         public void Dispose(){
             tw?.Dispose();
+            GC.SuppressFinalize(this);
         }
         [Fact]
         public void WritesEnum() {

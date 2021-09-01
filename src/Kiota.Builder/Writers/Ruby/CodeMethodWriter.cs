@@ -184,7 +184,7 @@ namespace Kiota.Builder.Writers.Ruby {
             if(additionalDataProperty != null)
                 writer.WriteLine($"writer.write_additional_data(@{additionalDataProperty.Name.ToSnakeCase()})");
         }
-        private static CodeParameterOrderComparer parameterOrderComparer = new CodeParameterOrderComparer();
+        private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer) {
             var methodName = (code.MethodKind switch {
                 (CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor) => $"initialize",
@@ -225,23 +225,16 @@ namespace Kiota.Builder.Writers.Ruby {
                 else if(currentType.TypeDefinition is CodeEnum currentEnum)
                     return $"get_enum_value{(currentEnum.Flags ? "s" : string.Empty)}({(propType as CodeType).TypeDefinition.Parent.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase()}::{propertyType.ToFirstCharacterUpperCase()})";
             }
-            switch(propertyType) {
-                case "string":
-                case "boolean":
-                case "number":
-                case "float":
-                case "Guid":
-                    return $"get_{propertyType.ToSnakeCase()}_value()";
-                case "DateTimeOffset":
-                case "Date":
-                    return $"get_date_value()";
-                default:
-                    return $"get_object_value({(propType as CodeType).TypeDefinition.Parent.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase()}::{propertyType.ToFirstCharacterUpperCase()})";
-            }
+            return propertyType switch
+            {
+                "string" or "boolean" or "number" or "float" or "Guid" => $"get_{propertyType.ToSnakeCase()}_value()",
+                "DateTimeOffset" or "Date" => $"get_date_value()",
+                _ => $"get_object_value({(propType as CodeType).TypeDefinition.Parent.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase()}::{propertyType.ToFirstCharacterUpperCase()})",
+            };
         }
         private static string TranslateObjectType(string typeName)
         {
-            return (typeName) switch {
+            return typeName switch {
                 "String" or "Float" or "Object" => typeName, 
                 "Boolean" => "\"boolean\"",
                 "Number" => "Integer",
@@ -255,27 +248,20 @@ namespace Kiota.Builder.Writers.Ruby {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
             var propertyType = conventions.TranslateType(propType);
             if(propType is CodeType currentType) {
-                if(isCollection)
+                if (isCollection)
                     if(currentType.TypeDefinition == null)
                         return $"write_collection_of_primitive_values";
                     else
                         return $"write_collection_of_object_values";
-                else if(currentType.TypeDefinition is CodeEnum currentEnum)
+                else if(currentType.TypeDefinition is CodeEnum)
                     return $"write_enum_value";
             }
-            switch(propertyType) {
-                case "string":
-                case "boolean":
-                case "number":
-                case "float":
-                case "Guid":
-                    return $"write_{propertyType.ToSnakeCase()}_value";
-                case "DateTimeOffset":
-                case "Date":
-                    return $"write_date_value";
-                default:
-                    return $"write_object_value";
-            }
+            return propertyType switch
+            {
+                "string" or "boolean" or "number" or "float" or "Guid" => $"write_{propertyType.ToSnakeCase()}_value",
+                "DateTimeOffset" or "Date" => $"write_date_value",
+                _ => $"write_object_value",
+            };
         }
         private static string GetSendRequestMethodName(bool isStream) {
             if(isStream) return $"send_primitive_async";

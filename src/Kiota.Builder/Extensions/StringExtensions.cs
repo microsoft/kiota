@@ -38,7 +38,7 @@ namespace Kiota.Builder.Extensions {
             }
             var sb = new StringBuilder();
             sb.Append(char.ToLowerInvariant(identifier[0]));
-            foreach (var item in identifier.Substring(1))
+            foreach (var item in identifier[1..])
             {
                 if(char.IsUpper(item)) {
                     sb.Append('_');

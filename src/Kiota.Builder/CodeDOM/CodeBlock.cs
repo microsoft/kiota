@@ -98,7 +98,7 @@ namespace Kiota.Builder
                 throw new ArgumentNullException(nameof(childName));
             
             if(!InnerChildElements.Any())
-                return default(T);
+                return default;
 
             if(InnerChildElements.TryGetValue(childName, out var result) && result is T)
                 return (T)(object)result;
@@ -108,7 +108,7 @@ namespace Kiota.Builder
                     if(childResult != null)
                         return childResult;
                 }
-            return default(T);
+            return default;
         }
         public class BlockDeclaration : CodeTerminal
         {

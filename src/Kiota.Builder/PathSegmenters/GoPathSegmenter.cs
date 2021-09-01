@@ -9,20 +9,18 @@ namespace Kiota.Builder {
         public override string FileSuffix => ".go";
         public override IEnumerable<string> GetAdditionalSegment(CodeElement currentElement, string fileName)
         {
-            switch(currentElement) {
-                case CodeNamespace ns:
-                    return new string[] { GetLastFileNameSegment(currentElement) }; // We put barrels inside namespace folders
-                default:
-                    return Enumerable.Empty<string>();
-            }
+            return currentElement switch
+            {
+                CodeNamespace => new string[] { GetLastFileNameSegment(currentElement) },// We put barrels inside namespace folders
+                _ => Enumerable.Empty<string>(),
+            };
         }
         public override string NormalizeFileName(CodeElement currentElement) {
-            switch (currentElement) {
-                case CodeNamespace ns:
-                    return "go";
-                default:
-                    return GetLastFileNameSegment(currentElement).ToSnakeCase();
-            }
+            return currentElement switch
+            {
+                CodeNamespace => "go",
+                _ => GetLastFileNameSegment(currentElement).ToSnakeCase(),
+            };
         }
         public override string NormalizeNamespaceSegment(string segmentName) => segmentName.ToLowerInvariant();
     }
