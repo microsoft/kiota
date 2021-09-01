@@ -31,7 +31,7 @@ namespace Kiota.Builder.Refiners {
                                                 .FirstOrDefault(x => x.Name.Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase));
                 if(sameNameProperty != null) {
                     currentClass.RemoveChildElement(sameNameProperty);
-                    sameNameProperty.SerializationName = sameNameProperty.SerializationName ?? sameNameProperty.Name;
+                    sameNameProperty.SerializationName ??= sameNameProperty.Name;
                     sameNameProperty.Name = $"{sameNameProperty.Name}_prop";
                     currentClass.AddProperty(sameNameProperty);
                 }

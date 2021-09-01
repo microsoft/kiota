@@ -51,14 +51,14 @@ namespace Kiota.Builder.Tests {
             var grandChildName = "child1.grandchild1";
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace("child1");
-            var grandChild = child.AddNamespace(grandChildName);
+            child.AddNamespace(grandChildName);
             Assert.NotNull(root.FindChildByName<CodeNamespace>(grandChildName));
             Assert.Null(root.FindChildByName<CodeNamespace>("child2"));
         }
         [Fact]
         public void RemovesElements() {
             var root = CodeNamespace.InitRootNamespace();
-            var child = root.AddNamespace(CodeNamespaceTests.childName);
+            var child = root.AddNamespace(CodeNamespaceTests.ChildName);
             var elements = child.AddClass(new CodeClass(child) { Name = "class1"},
                             new CodeClass(child) { Name = "class2"});
             child.RemoveChildElement(elements.First());
@@ -69,7 +69,7 @@ namespace Kiota.Builder.Tests {
         [Fact]
         public void AddsUsing() {
             var root = CodeNamespace.InitRootNamespace();
-            var child = root.AddNamespace(CodeNamespaceTests.childName);
+            var child = root.AddNamespace(CodeNamespaceTests.ChildName);
             child.AddUsing(new CodeUsing(child) {
                 Name = "someNS"
             });
@@ -78,7 +78,7 @@ namespace Kiota.Builder.Tests {
         [Fact]
         public void ThrowsWhenInsertingDuplicatedElements() {
             var root = CodeNamespace.InitRootNamespace();
-            var child = root.AddNamespace(CodeNamespaceTests.childName);
+            var child = root.AddNamespace(CodeNamespaceTests.ChildName);
             Assert.Throws<InvalidOperationException>(() => {
                 child.AddClass(new CodeClass(child) {
                     Name = "class1"
@@ -91,7 +91,7 @@ namespace Kiota.Builder.Tests {
         [Fact]
         public void DoesntThrowWhenAddingOverloads() {
             var root = CodeNamespace.InitRootNamespace();
-            var child = root.AddNamespace(CodeNamespaceTests.childName);
+            var child = root.AddNamespace(CodeNamespaceTests.ChildName);
             var codeClass = child.AddClass(new CodeClass(child) {
                 Name = "class1"
             }).First();
@@ -108,7 +108,7 @@ namespace Kiota.Builder.Tests {
         [Fact]
         public void DoesntThrowWhenAddingIndexersWithPropName() {
             var root = CodeNamespace.InitRootNamespace();
-            var child = root.AddNamespace(CodeNamespaceTests.childName);
+            var child = root.AddNamespace(CodeNamespaceTests.ChildName);
             var codeClass = child.AddClass(new CodeClass(child) {
                 Name = "class1"
             }).First();
@@ -126,7 +126,7 @@ namespace Kiota.Builder.Tests {
         [Fact]
         public void FindChildByNameThrowsOnEmptyNames() {
             var root = CodeNamespace.InitRootNamespace();
-            var child = root.AddNamespace(CodeNamespaceTests.childName);
+            var child = root.AddNamespace(CodeNamespaceTests.ChildName);
             Assert.Throws<ArgumentNullException>(() => {
                 child.FindChildByName<CodeClass>(string.Empty);
             });
@@ -137,7 +137,7 @@ namespace Kiota.Builder.Tests {
         [Fact]
         public void FindsChildByNameInSubnamespace() {
             var root = CodeNamespace.InitRootNamespace();
-            var child = root.AddNamespace(CodeNamespaceTests.childName);
+            var child = root.AddNamespace(CodeNamespaceTests.ChildName);
             var className = "class1";
             var class1 = child.AddClass(new CodeClass(child) {
                 Name = className
@@ -149,7 +149,7 @@ namespace Kiota.Builder.Tests {
         [Fact]
         public void FindsChildrenByName() {
             var root = CodeNamespace.InitRootNamespace();
-            var child = root.AddNamespace(CodeNamespaceTests.childName);
+            var child = root.AddNamespace(CodeNamespaceTests.ChildName);
             var className = "class1";
             child.AddClass(new CodeClass(child) {
                 Name = className

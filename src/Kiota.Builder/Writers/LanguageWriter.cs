@@ -14,7 +14,7 @@ namespace Kiota.Builder.Writers
     public abstract class LanguageWriter
     {
         private TextWriter writer;
-        private const int indentSize = 4;
+        private const int IndentSize = 4;
         private static readonly string indentString = "                                                                                             ";
         private int currentIndent = 0;
 
@@ -31,17 +31,17 @@ namespace Kiota.Builder.Writers
         }
         public IPathSegmenter PathSegmenter { get; protected set; }
 
-        private readonly Stack<int> factorStack = new Stack<int>();
+        private readonly Stack<int> factorStack = new();
         public void IncreaseIndent(int factor = 1)
         {
             factorStack.Push(factor);
-            currentIndent += indentSize * factor;
+            currentIndent += IndentSize * factor;
         }
 
         public void DecreaseIndent()
         {
             var popped = factorStack.TryPop(out var factor);
-            currentIndent -= indentSize * (popped ? factor : 1);
+            currentIndent -= IndentSize * (popped ? factor : 1);
         }
 
         public string GetIndent()

@@ -96,7 +96,7 @@ namespace Kiota.Builder.Writers.TypeScript {
         }
         public bool IsPrimitiveType(string typeName) {
             return typeName switch {
-                ("number" or "string" or "byte[]" or "boolean" or "void") => true,
+                "number" or "string" or "byte[]" or "boolean" or "void" => true,
                 _ => false,
             };
         }
