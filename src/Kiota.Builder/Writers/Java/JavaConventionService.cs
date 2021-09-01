@@ -5,16 +5,16 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.Java {
     public class JavaConventionService : CommonLanguageConventionService
     {
-        private const string streamTypeName = "InputStream";
-        public override string StreamTypeName => streamTypeName;
-        private const string voidTypeName = "Void";
-        public override string VoidTypeName => voidTypeName;
+        private const string InternalStreamTypeName = "InputStream";
+        public override string StreamTypeName => InternalStreamTypeName;
+        private const string InternalVoidTypeName = "Void";
+        public override string VoidTypeName => InternalVoidTypeName;
         public override string DocCommentPrefix => " * ";
         public override string PathSegmentPropertyName => "pathSegment";
         public override string CurrentPathPropertyName => "currentPath";
         public override string HttpCorePropertyName => "httpCore";
         public override string RawUrlPropertyName => "isRawUrl";
-        internal HashSet<string> PrimitiveTypes = new() {"String", "Boolean", "Integer", "Float", "Long", "Guid", "OffsetDateTime", voidTypeName, streamTypeName };
+        internal HashSet<string> PrimitiveTypes = new() {"String", "Boolean", "Integer", "Float", "Long", "Guid", "OffsetDateTime", InternalVoidTypeName, InternalStreamTypeName };
         public override string ParseNodeInterfaceName => "ParseNode";
         internal string DocCommentStart = "/**";
         internal string DocCommentEnd = " */";
