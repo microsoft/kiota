@@ -69,6 +69,8 @@ kiota -d openapi.yml -o graphclient -n GraphClient
 
 ## Creating an application registration
 
+> Note: this step is required if your client will be calling APIs that are protected by the Microsoft Identity Platform like Microsoft Graph.
+
 To be able to authenticate against the demo application against Microsoft Graph, you will need to create an application registration.  You can do this via the Azure portal, or if you have [Microsoft Graph PowerShell](https://www.powershellgallery.com/packages/Microsoft.Graph) installed, you can use the following command to create the application.
 
 ```PowerShell
@@ -92,6 +94,7 @@ using GraphClient;
 using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Authentication.Azure;
 using Microsoft.Kiota.Http.HttpClient;
+using Azure.Identity;
 
 namespace GraphApp
 {
@@ -99,7 +102,7 @@ namespace GraphApp
     {
         static async Task Main(string[] args)
         {
-            var credential = new Azure.Identity.InteractiveBrowserCredential("<insert clientId from $app.ClientId>");
+            var credential = new InteractiveBrowserCredential("<insert clientId from $app.ClientId>");
             var authProvider = new AzureIdentityAuthenticationProvider(credential, new string[] {"User.Read"});
             var core = new HttpCore(authProvider);
             var apiClient = new ApiClient(core);
@@ -109,3 +112,7 @@ namespace GraphApp
     }
 }
 ```
+
+> Note: if the target API doesn't require any authentication, you can use the **AnonymousAuthenticationProvider** instead.  
+> Note: if the target API requires a Authorization bearer \<token> header but doesn't rely on the Microsoft Identity Platform, you can implement your own authentication provider by inheriting from **BaseBearerTokenAuthenticationProvider**.  
+> Note: if the target API requires any other form of authentication schemes, you can implement the **IAuthenticationProvider** interface.
