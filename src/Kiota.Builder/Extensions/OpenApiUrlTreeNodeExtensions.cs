@@ -46,14 +46,17 @@ namespace Kiota.Builder.Extensions {
                              + currentNode?.Path
                                 ?.Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
                                 ?.Where(x => !x.StartsWith('{'))
-                                ?.Select(x => (x ?? string.Empty).Split('.', StringSplitOptions.RemoveEmptyEntries)
-                                                                .Last()
-                                                                .TrimEnd(')') //clearing out delta()
-                                                                .TrimEnd('('))
+                                ?.Select(x => CleanupParametersFromPath((x ?? string.Empty).Split('.', StringSplitOptions.RemoveEmptyEntries)
+                                                                .Last()))
                                 ?.Aggregate(string.Empty, 
                                     (x, y) => $"{x}{GetDotIfBothNotNullOfEmpty(x, y)}{y}") :
                         string.Empty)
                     .ReplaceValueIdentifier();
+        private static readonly Regex PathParametersRegex = new(@"((?<urlParamName>\w+)='?\{(?<schemaParamName>\w+)\}'?,?)");
+        private static string CleanupParametersFromPath(string path) {
+            if(!(path?.Contains('(') ?? false)) return path;
+            return PathParametersRegex.Replace(path, string.Empty).TrimEnd(')').TrimEnd('(');
+        }
         private static readonly char pathNameSeparator = '\\';
         private static readonly Regex idClassNameCleanup = new(@"Id\d?$");
         ///<summary>
@@ -64,7 +67,7 @@ namespace Kiota.Builder.Extensions {
                                 currentNode?.GetIdentifier()?.ReplaceValueIdentifier();
             if((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup.IsMatch(rawClassName))
                 rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
-            return prefix + rawClassName?.Split('.', StringSplitOptions.RemoveEmptyEntries)?.Last() + suffix;
+            return prefix + rawClassName?.Split('.', StringSplitOptions.RemoveEmptyEntries)?.LastOrDefault() + suffix;
         }
         public static string GetPathItemDescription(this OpenApiUrlTreeNode currentNode, string label, string defaultValue = default) =>
         !string.IsNullOrEmpty(label) && (currentNode?.PathItems.ContainsKey(label) ?? false) ?
