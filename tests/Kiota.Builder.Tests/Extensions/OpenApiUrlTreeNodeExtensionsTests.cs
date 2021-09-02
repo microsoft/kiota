@@ -7,7 +7,6 @@ namespace Kiota.Builder.Extensions.Tests {
     public class OpenApiUrlTreeNodeExtensionsTests {
         [Fact]
         public void Defensive() {
-            Assert.Empty(OpenApiUrlTreeNodeExtensions.GetIdentifier(null));
             Assert.False(OpenApiUrlTreeNodeExtensions.IsComplexPathWithAnyNumberOfParameters(null));
             Assert.False(OpenApiUrlTreeNodeExtensions.IsPathWithSingleSimpleParamter(null));
             Assert.False(OpenApiUrlTreeNodeExtensions.DoesNodeBelongToItemSubnamespace(null));
@@ -76,15 +75,6 @@ namespace Kiota.Builder.Extensions.Tests {
             doc.Paths.Add("{param", new() {});
             node = OpenApiUrlTreeNode.Create(doc, Label);
             Assert.False(node.Children.First().Value.DoesNodeBelongToItemSubnamespace());
-        }
-        [Fact]
-        public void GetIdentifier() {
-            var doc = new OpenApiDocument {
-                Paths = new(),
-            };
-            doc.Paths.Add("function(parm1)", new() {});
-            var node = OpenApiUrlTreeNode.Create(doc, Label);
-            Assert.DoesNotContain("(", node.Children.First().Value.GetIdentifier());
         }
         [Fact]
         public void GetNodeNamespaceFromPath() {

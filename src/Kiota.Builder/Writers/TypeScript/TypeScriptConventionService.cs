@@ -28,9 +28,9 @@ namespace Kiota.Builder.Writers.TypeScript {
 
         internal string DocCommentStart = "/**";
         internal string DocCommentEnd = " */";
-        internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default) {
+        internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default, string additionalPathParameters = default) {
             var currentPath = addCurrentPath ? $"this.{CurrentPathPropertyName} + " : string.Empty;
-            writer.WriteLines($"return new {returnType}({currentPath}this.{PathSegmentPropertyName}{suffix}, this.{HttpCorePropertyName}, false);");
+            writer.WriteLines($"return new {returnType}({currentPath}this.{PathSegmentPropertyName}{suffix}, this.{HttpCorePropertyName}{additionalPathParameters}, false);");
         }
 
         public override string GetAccessModifier(AccessModifier access)

@@ -28,6 +28,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
             var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
+            var currentPathProperty = codeElement.Parent.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
             if(!codeElement.IsOfKind(CodeMethodKind.Setter))
                 foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
                     writer.WriteLine($"if(!{parameter.Name}) throw new Error(\"{parameter.Name} cannot be undefined\");");
@@ -35,7 +36,6 @@ namespace Kiota.Builder.Writers.TypeScript {
             switch(codeElement.MethodKind) {
                 case CodeMethodKind.IndexerBackwardCompatibility:
                     var pathSegment = codeElement.PathSegment;
-                    var currentPathProperty = codeElement.Parent.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
                     localConventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
                     break;
                 case CodeMethodKind.Deserializer:
@@ -63,6 +63,9 @@ namespace Kiota.Builder.Writers.TypeScript {
                 case CodeMethodKind.Constructor:
                     WriteConstructorBody(parentClass, codeElement, writer, inherits);
                     break;
+                case CodeMethodKind.RequestBuilderWithParameters:
+                    WriteRequestBuilderWithParametersBody(codeElement, currentPathProperty, returnType, writer);
+                    break;
                 case CodeMethodKind.RequestBuilderBackwardCompatibility:
                     throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
                 default:
@@ -71,6 +74,16 @@ namespace Kiota.Builder.Writers.TypeScript {
             }
             writer.DecreaseIndent();
             writer.WriteLine("};");
+        }
+        private void WriteRequestBuilderWithParametersBody(CodeMethod codeElement, CodeProperty currentPathProperty, string returnType, LanguageWriter writer)
+        {
+            var codePathParameters = codeElement.Parameters
+                                                        .Where(x => x.IsOfKind(CodeParameterKind.Path))
+                                                        .Select(x => x.Name);
+            var codePathParametersSuffix = codePathParameters.Any() ? 
+                                            ", " + codePathParameters.Aggregate((x, y) => $"{x}, {y}") :
+                                            string.Empty;
+            localConventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer, additionalPathParameters: codePathParametersSuffix);
         }
         private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
             var httpCoreProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
@@ -91,10 +104,22 @@ namespace Kiota.Builder.Writers.TypeScript {
         private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
             if(inherits)
                 writer.WriteLine("super();");
-            foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData,
-                                                                            CodePropertyKind.BackingStore,
-                                                                            CodePropertyKind.RequestBuilder,
-                                                                            CodePropertyKind.PathSegment)
+            var propertiesWithDefaultValues = new List<CodePropertyKind> {
+                CodePropertyKind.AdditionalData,
+                CodePropertyKind.BackingStore,
+                CodePropertyKind.RequestBuilder,
+            };
+            if(currentMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path)) &&
+                parentClass.GetPropertiesOfKind(CodePropertyKind.PathSegment).FirstOrDefault() is CodeProperty pathSegmentProperty &&
+                !string.IsNullOrEmpty(pathSegmentProperty.DefaultValue)) {
+                var defaultValue = pathSegmentProperty.DefaultValue
+                                                        .Replace("\"", "`")
+                                                        .Replace("{", "${")
+                                                        .Replace("}", " ?? ''}");
+                writer.WriteLine($"this.{pathSegmentProperty.NamePrefix}{pathSegmentProperty.Name.ToFirstCharacterLowerCase()} = {defaultValue};");
+            } else
+                propertiesWithDefaultValues.Add(CodePropertyKind.PathSegment);
+            foreach(var propWithDefault in parentClass.GetPropertiesOfKind(propertiesWithDefaultValues.ToArray())
                                             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
                                             .OrderByDescending(x => x.PropertyKind)
                                             .ThenBy(x => x.Name)) {
@@ -222,7 +247,7 @@ namespace Kiota.Builder.Writers.TypeScript {
                 
                 if(!isVoid)
                     if(code.IsAsync)
-                        writer.WriteLine($"{localConventions.DocCommentPrefix}@returns a Promise of {code.ReturnType.Name}");
+                        writer.WriteLine($"{localConventions.DocCommentPrefix}@returns a Promise of {code.ReturnType.Name.ToFirstCharacterUpperCase()}");
                     else
                         writer.WriteLine($"{localConventions.DocCommentPrefix}@returns a {code.ReturnType.Name}");
                 writer.WriteLine(localConventions.DocCommentEnd);
@@ -232,8 +257,8 @@ namespace Kiota.Builder.Writers.TypeScript {
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid) {
             var accessModifier = localConventions.GetAccessModifier(code.Access);
             var methodName = (code.MethodKind switch {
-                (CodeMethodKind.Getter or CodeMethodKind.Setter) => code.AccessedProperty?.Name,
-                (CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor) => "constructor",
+                CodeMethodKind.Getter or CodeMethodKind.Setter => code.AccessedProperty?.Name,
+                CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor => "constructor",
                 _ => code.Name,
             })?.ToFirstCharacterLowerCase();
             var asyncPrefix = code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? " async ": string.Empty;

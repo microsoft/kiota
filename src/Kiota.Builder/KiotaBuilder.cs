@@ -236,7 +236,7 @@ namespace Kiota.Builder
             {
                 var targetNS = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNamespace.EnsureItemNamespace() : currentNamespace;
                 var className = currentNode.GetClassName(requestBuilderSuffix);
-                codeClass = targetNS.AddClass(new CodeClass((currentNode.DoesNodeBelongToItemSubnamespace() ? currentNamespace.EnsureItemNamespace() : currentNamespace)) {
+                codeClass = targetNS.AddClass(new CodeClass(currentNode.DoesNodeBelongToItemSubnamespace() ? currentNamespace.EnsureItemNamespace() : currentNamespace) {
                     Name = className, 
                     ClassKind = CodeClassKind.RequestBuilder,
                     Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel, $"Builds and executes requests for operations under {currentNode.Path}"),
@@ -284,14 +284,13 @@ namespace Kiota.Builder
                 CreateRequestBuilderClass(targetNamespace, childNode, rootNode);
             });
         }
-        private static void CreateMethod(string propIdentifier, string propType, CodeClass codeClass, OpenApiUrlTreeNode value)
+        private static void CreateMethod(string propIdentifier, string propType, CodeClass codeClass, OpenApiUrlTreeNode currentNode)
         {
             var methodToAdd = new CodeMethod(codeClass) {
                 Name = propIdentifier,
                 MethodKind = CodeMethodKind.RequestBuilderWithParameters,
-                Description = value.GetPathItemDescription(Constants.DefaultOpenApiLabel, $"Builds and executes requests for operations under {value.Path}"),
+                Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel, $"Builds and executes requests for operations under {currentNode.Path}"),
                 Access = AccessModifier.Public,
-                PathSegment = value.Path,
                 IsAsync = false,
                 IsStatic = false,
             };
@@ -302,10 +301,7 @@ namespace Kiota.Builder
                 IsExternal = false,
                 IsNullable = false,
             };
-            if(value.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
-                foreach(var parameter in pathItem
-                                            .Parameters
-                                            .Where(x => x.In == ParameterLocation.Path)) {
+                foreach(var parameter in currentNode.GetPathParametersForCurrentSegment()) {
                         var mParameter = new CodeParameter(methodToAdd) {
                             Name = parameter.Name,
                             Optional = false,
@@ -353,7 +349,7 @@ namespace Kiota.Builder
                 MethodKind = isApiClientClass ? CodeMethodKind.ClientConstructor : CodeMethodKind.Constructor,
                 IsAsync = false,
                 IsStatic = false,
-                Description = $"Instantiates a new {currentClass.Name} and sets the default values.",
+                Description = $"Instantiates a new {currentClass.Name.ToFirstCharacterUpperCase()} and sets the default values.",
                 Access = AccessModifier.Public,
             }).First();
             constructor.ReturnType = new CodeType(constructor) { Name = voidType, IsExternal = true };
@@ -402,19 +398,16 @@ namespace Kiota.Builder
                     ParameterKind = CodeParameterKind.RawUrl,
                     DefaultValue = "true",
                 });
-                if(currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
-                    foreach(var parameter in pathItem
-                                            .Parameters
-                                            .Where(x => x.In == ParameterLocation.Path)) {
-                        var mParameter = new CodeParameter(constructor) {
-                            Name = parameter.Name,
-                            Optional = true,
-                            Description = parameter.Description,
-                            ParameterKind = CodeParameterKind.Path,
-                        };
-                        mParameter.Type = GetPrimitiveType(mParameter, parameter.Schema);
-                        constructor.AddParameter(mParameter);
-                    }
+                foreach(var parameter in currentNode.GetPathParametersForCurrentSegment()) {
+                    var mParameter = new CodeParameter(constructor) {
+                        Name = parameter.Name,
+                        Optional = true,
+                        Description = parameter.Description,
+                        ParameterKind = CodeParameterKind.Path,
+                    };
+                    mParameter.Type = GetPrimitiveType(mParameter, parameter.Schema);
+                    constructor.AddParameter(mParameter);
+                }
             }
             constructor.AddParameter(new CodeParameter(constructor) {
                 Name = httpCoreParameterName,

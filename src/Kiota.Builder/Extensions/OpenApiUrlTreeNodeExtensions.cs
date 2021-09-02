@@ -53,20 +53,39 @@ namespace Kiota.Builder.Extensions {
                         string.Empty)
                     .ReplaceValueIdentifier();
         //{id}, name(idParam={id}), name(idParam='{id}'), name(idParam='{id}',idParam2='{id2}')
-        private static readonly Regex PathParametersRegex = new(@"(?:(?:\w+)?=?'?\{(?:\w+)\}'?,?)");
+        private static readonly Regex PathParametersRegex = new(@"(?:\w+)?=?'?\{(?:\w+)\}'?,?", RegexOptions.Compiled);
         private static readonly char requestParametersChar = '{';
-        private static string CleanupParametersFromPath(string path) {
-            if(!(path?.Contains(requestParametersChar) ?? false)) return path;
-            return PathParametersRegex.Replace(path, string.Empty).TrimEnd(')').TrimEnd('(');
+        private static readonly char requestParametersEndChar = '}';
+        private static readonly char requestParametersSectionChar = '(';
+        private static readonly char requestParametersSectionEndChar = ')';
+        private static string CleanupParametersFromPath(string pathSegment) {
+            if((pathSegment?.Contains(requestParametersChar) ?? false) ||
+                (pathSegment?.Contains(requestParametersSectionChar) ?? false))
+                return PathParametersRegex.Replace(pathSegment, string.Empty).TrimEnd(requestParametersSectionEndChar).TrimEnd(requestParametersSectionChar);
+            return pathSegment;
+        }
+        public static IEnumerable<OpenApiParameter> GetPathParametersForCurrentSegment(this OpenApiUrlTreeNode node) {
+            if(node != null &&
+                (node.Segment.Contains(requestParametersSectionChar) || node.Segment.Count(x => x == requestParametersChar) > 1) &&
+                node.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
+                return pathItem.Parameters
+                                .Union(pathItem.Operations.SelectMany(x => x.Value.Parameters))
+                                .Where(x => x.In == ParameterLocation.Path)
+                                .Where(x => node.Segment.Contains($"{{{x.Name}}}", StringComparison.OrdinalIgnoreCase));
+            return Enumerable.Empty<OpenApiParameter>();
         }
         private static readonly char pathNameSeparator = '\\';
-        private static readonly Regex idClassNameCleanup = new(@"Id\d?$");
+        private static readonly Regex idClassNameCleanup = new(@"Id\d?$", RegexOptions.Compiled);
         ///<summary>
         /// Returns the class name for the node with more or less precision depending on the provided arguments
         ///</summary>
         public static string GetClassName(this OpenApiUrlTreeNode currentNode, string suffix = default, string prefix = default, OpenApiOperation operation = default) {
-            var rawClassName = operation?.GetResponseSchema()?.Reference?.GetClassName() ?? 
-                                currentNode?.GetIdentifier()?.ReplaceValueIdentifier();
+            var rawClassName = (operation?.GetResponseSchema()?.Reference?.GetClassName() ?? 
+                                CleanupParametersFromPath(currentNode.Segment)?.ReplaceValueIdentifier())
+                                .TrimEnd(requestParametersEndChar)
+                                .TrimStart(requestParametersChar)
+                                .Split('-')
+                                .First();
             if((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup.IsMatch(rawClassName))
                 rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
             return prefix + rawClassName?.Split('.', StringSplitOptions.RemoveEmptyEntries)?.LastOrDefault() + suffix;
@@ -81,31 +100,12 @@ namespace Kiota.Builder.Extensions {
         public static bool IsPathWithSingleSimpleParamter(this OpenApiUrlTreeNode currentNode)
         {
             return (currentNode?.Segment?.StartsWith(requestParametersChar) ?? false) &&
-                    currentNode.Segment.EndsWith('}') &&
+                    currentNode.Segment.EndsWith(requestParametersEndChar) &&
                     currentNode.Segment.Count(x => x == requestParametersChar) == 1;
         }
         public static bool IsComplexPathWithAnyNumberOfParameters(this OpenApiUrlTreeNode currentNode)
         {
-            return (currentNode?.Segment?.Contains('(') ?? false) && currentNode.Segment.EndsWith(')');
-        }
-        public static string GetIdentifier(this OpenApiUrlTreeNode currentNode)
-        {
-            if(currentNode == null) return string.Empty;
-            string identifier;
-            if (currentNode.IsPathWithSingleSimpleParamter())
-            {
-                identifier = currentNode.Segment.Substring(1, currentNode.Segment.Length - 2).ToPascalCase();
-            }
-            else
-            {
-                identifier = currentNode.Segment.ToPascalCase().Replace("()", "");
-                var openParen = identifier.IndexOf("(");
-                if (openParen >= 0)
-                {
-                    identifier = identifier.Substring(0, openParen);
-                }
-            }
-            return identifier;
+            return (currentNode?.Segment?.Contains(requestParametersSectionChar) ?? false) && currentNode.Segment.EndsWith(requestParametersSectionEndChar);
         }
     }
 }
