@@ -2,15 +2,16 @@
  * @module HTTPClientFactory
  */
 
- import { HTTPClient } from "./HTTPClient";
- import { AuthenticationProvider } from "./IAuthenticationProvider";
+ import { HttpClient } from "./httpClient";
+ import { AuthenticationProvider } from "@microsoft/kiota-abstractions";
  import { AuthenticationHandler } from "./middleware/AuthenticationHandler";
- import { HTTPMessageHandler } from "./middleware/FetchHandler";
- import { Middleware } from "./middleware/IMiddleware";
+ import { FetchHandler } from "./middleware/FetchHandler";
+ import { Middleware } from "./middleware/middleware";
  import { RedirectHandlerOptions } from "./middleware/options/RedirectHandlerOptions";
  import { RetryHandlerOptions } from "./middleware/options/RetryHandlerOptions";
  import { RedirectHandler } from "./middleware/RedirectHandler";
  import { RetryHandler } from "./middleware/RetryHandler";
+import { MiddlewareFactory } from "./middleware/MiddlewareFactory";
  
  /**
   * @private
@@ -38,20 +39,8 @@
       * 		* The best place for AuthenticationHandler is in the starting of the pipeline, because every other handler might have to work for multiple times for a request but the auth token for
       * 		  them will remain same. For example, Retry and Redirect handlers might be working multiple times for a request based on the response but their auth token would remain same.
       */
-     public static createWithAuthenticationProvider(authProvider: AuthenticationProvider): HTTPClient {
-         const authenticationHandler = new AuthenticationHandler(authProvider);
-         const retryHandler = new RetryHandler(new RetryHandlerOptions());
-         const FetchHandler = new FetchHandler();
- 
-         authenticationHandler.setNext(retryHandler);
-         if (isNodeEnvironment()) {
-             const redirectHandler = new RedirectHandler(new RedirectHandlerOptions());
-             retryHandler.setNext(redirectHandler);
-             redirectHandler.setNext(FetchHandler);
-         } else {
-             retryHandler.setNext(FetchHandler);
-         }
-         return HTTPClientFactory.createWithMiddleware(authenticationHandler);
+     public static createWithAuthenticationProvider(authProvider: AuthenticationProvider): HttpClient {
+         return HTTPClientFactory.createWithMiddleware(MiddlewareFactory.getDefaultMiddlewareChain(authProvider));
      }
  
      /**
@@ -61,9 +50,9 @@
       * @property {...Middleware} middleware - The first middleware of the middleware chain or a sequence of all the Middleware handlers
       * @returns A HTTPClient instance
       */
-     public static createWithMiddleware(...middleware: Middleware[]): HTTPClient {
+     public static createWithMiddleware(middleware: Middleware[]): HttpClient {
          // Middleware should not empty or undefined. This is check is present in the HTTPClient constructor.
-         return new HTTPClient(...middleware);
+         return new HttpClient(middleware);
      }
  }
  

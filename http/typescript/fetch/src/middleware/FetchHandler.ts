@@ -6,7 +6,7 @@
  */
 
 /**
- * @module HTTPMessageHandler
+ * @module FetchHandler
  */
 
 import { MiddlewareContext } from "../middlewareContext";
@@ -17,7 +17,7 @@ import { Middleware } from "./IMiddleware";
  * @implements Middleware
  * Class for HTTPMessageHandler
  */
-export class HTTPMessageHandler implements Middleware {
+export class FetchHandler implements Middleware {
 	/**
 	 * @public
 	 * @async
@@ -26,6 +26,5 @@ export class HTTPMessageHandler implements Middleware {
 	 * @returns A promise that resolves to nothing
 	 */
 	public async execute(context: MiddlewareContext): Promise<void> {
-		context.response = await fetch(context.request, context.options);
 	}
 }

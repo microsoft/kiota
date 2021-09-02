@@ -1,4 +1,4 @@
-import { Middleware } from "./middleware";
+import { Middleware } from "./middleware/middleware";
 import { MiddlewareContext } from "./middlewareContext";
 
 /** Default fetch client with options and a middleware pipleline for requests execution. */
@@ -8,7 +8,7 @@ export class HttpClient {
      * @param middlewares middlewares to be used for requests execution.
      * @param defaultRequestSettings default request settings to be used for requests execution.
      */
-    public constructor(private readonly middlewares: Middleware[] = HttpClient.getDefaultMiddlewares()) {
+    public constructor(private readonly middlewares: Middleware[]) {
         this.middlewares.forEach((middleware, idx) => {
             if (idx < this.middlewares.length)
                 middleware.next = this.middlewares[idx + 1];
@@ -22,7 +22,7 @@ export class HttpClient {
      */
     public fetch(context: MiddlewareContext): Promise<Response> {
         if (this.middlewares.length > 0 && this.middlewares[0])
-            return this.middlewares[0].execute(context: MiddlewareContext);
+            return this.middlewares[0].execute(context);
         else
             throw new Error("No middlewares found");
     }

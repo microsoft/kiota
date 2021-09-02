@@ -11,7 +11,7 @@
 
 import { AuthenticationProvider } from "../IAuthenticationProvider";
 import { AuthenticationHandler } from "./AuthenticationHandler";
-import { HTTPMessageHandler } from "./FetchMiddlware";
+import { FetchHandler, HTTPMessageHandler } from "./FetchHandler";
 import { Middleware } from "./IMiddleware";
 import { RedirectHandlerOptions } from "./options/RedirectHandlerOptions";
 import { RetryHandlerOptions } from "./options/RetryHandlerOptions";
@@ -44,8 +44,6 @@ export class MiddlewareFactory {
 		const middleware: Middleware[] = [];
 		const authenticationHandler = new AuthenticationHandler(authProvider);
 		const retryHandler = new RetryHandler(new RetryHandlerOptions());
-		const telemetryHandler = new TelemetryHandler();
-		const httpMessageHandler = new HTTPMessageHandler();
 
 		middleware.push(authenticationHandler);
 		middleware.push(retryHandler);
@@ -53,8 +51,7 @@ export class MiddlewareFactory {
 			const redirectHandler = new RedirectHandler(new RedirectHandlerOptions());
 			middleware.push(redirectHandler);
 		}
-		middleware.push(telemetryHandler);
-		middleware.push(httpMessageHandler);
+		middleware.push(new FetchHandler());
 
 		return middleware;
 	}

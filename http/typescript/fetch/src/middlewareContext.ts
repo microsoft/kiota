@@ -20,10 +20,5 @@ import { FetchOptions } from "./IFetchOptions";
   */
  
  export interface MiddlewareContext {
-     request: RequestInfo;
-     options?: FetchOptions;
-     response?: Response;
-     // TODO add request information from middleware options
-     middlewareOptions?: MiddlewareOptions; /
  }
  

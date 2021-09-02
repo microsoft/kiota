@@ -1,5 +1,4 @@
-import { Context } from "vm";
-import { MiddlewareContext } from "./middlewareContext";
+import { MiddlewareContext } from "../middlewareContext";
 
 /** Defines the contract for a middleware in the request execution pipeline. */
 export interface Middleware {
@@ -12,5 +11,4 @@ export interface Middleware {
      * @return A promise that resolves to the response object.
      */
     execute(context: MiddlewareContext): Promise<Response>;
-    setNext?: (middleware: Middleware) => void;
 }

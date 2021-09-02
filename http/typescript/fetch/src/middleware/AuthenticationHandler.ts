@@ -9,15 +9,9 @@
  * @module AuthenticationHandler
  */
 
-import { isCustomHost, isGraphURL } from "../GraphRequestUtil";
 import { AuthenticationProvider } from "@microsoft/kiota-abstractions";
-import { AuthenticationProviderOptions } from "../IAuthenticationProviderOptions";
-import { Context } from "../IContext";
+import { MiddlewareContext } from "../middlewareContext";
 import { Middleware } from "./IMiddleware";
-import { MiddlewareControl } from "./MiddlewareControl";
-import { appendRequestHeader } from "./MiddlewareUtil";
-import { AuthenticationHandlerOptions } from "./options/AuthenticationHandlerOptions";
-import { FeatureUsageFlag, TelemetryHandlerOptions } from "./options/TelemetryHandlerOptions";
 
 /**
  * @class
@@ -25,11 +19,6 @@ import { FeatureUsageFlag, TelemetryHandlerOptions } from "./options/TelemetryHa
  * Class representing AuthenticationHandler
  */
 export class AuthenticationHandler implements Middleware {
-	/**
-	 * @private
-	 * A member representing the authorization header name
-	 */
-	private static AUTHORIZATION_HEADER = "Authorization";
 
 	/**
 	 * @private
@@ -60,33 +49,7 @@ export class AuthenticationHandler implements Middleware {
 	 * @param {Context} context - The context object of the request
 	 * @returns A Promise that resolves to nothing
 	 */
-	public async execute(context: Context): Promise<void> {
-
-        // TODO: move authenticate request logic from HttpCore
-		const url = typeof context.request === "string" ? context.request : context.request.url;
-		if (isGraphURL(url) || (context.customHosts && isCustomHost(url, context.customHosts))) {
-			let options: AuthenticationHandlerOptions;
-			if (context.middlewareControl instanceof MiddlewareControl) {
-				options = context.middlewareControl.getMiddlewareOptions(AuthenticationHandlerOptions) as AuthenticationHandlerOptions;
-			}
-			let authenticationProvider: AuthenticationProvider;
-			let authenticationProviderOptions: AuthenticationProviderOptions;
-			if (options) {
-				authenticationProvider = options.authenticationProvider;
-				authenticationProviderOptions = options.authenticationProviderOptions;
-			}
-			if (!authenticationProvider) {
-				authenticationProvider = this.authenticationProvider;
-			}
-			const token: string = await authenticationProvider.getAccessToken(authenticationProviderOptions);
-			const bearerKey = `Bearer ${token}`;
-			appendRequestHeader(context.request, context.options, AuthenticationHandler.AUTHORIZATION_HEADER, bearerKey);
-			TelemetryHandlerOptions.updateFeatureUsageFlag(context, FeatureUsageFlag.AUTHENTICATION_HANDLER_ENABLED);
-		} else {
-			if (context.options.headers) {
-				delete context.options.headers[AuthenticationHandler.AUTHORIZATION_HEADER];
-			}
-		}
+	public async execute(context: MiddlewareContext): Promise<void> {
 		return await this.nextMiddleware.execute(context);
 	}
 
