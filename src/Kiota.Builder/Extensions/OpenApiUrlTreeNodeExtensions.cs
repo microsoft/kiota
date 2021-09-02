@@ -52,9 +52,11 @@ namespace Kiota.Builder.Extensions {
                                     (x, y) => $"{x}{GetDotIfBothNotNullOfEmpty(x, y)}{y}") :
                         string.Empty)
                     .ReplaceValueIdentifier();
-        private static readonly Regex PathParametersRegex = new(@"((?<urlParamName>\w+)='?\{(?<schemaParamName>\w+)\}'?,?)");
+        //{id}, name(idParam={id}), name(idParam='{id}'), name(idParam='{id}',idParam2='{id2}')
+        private static readonly Regex PathParametersRegex = new(@"(?:(?:\w+)?=?'?\{(?:\w+)\}'?,?)");
+        private static readonly char requestParametersChar = '{';
         private static string CleanupParametersFromPath(string path) {
-            if(!(path?.Contains('(') ?? false)) return path;
+            if(!(path?.Contains(requestParametersChar) ?? false)) return path;
             return PathParametersRegex.Replace(path, string.Empty).TrimEnd(')').TrimEnd('(');
         }
         private static readonly char pathNameSeparator = '\\';
@@ -75,21 +77,22 @@ namespace Kiota.Builder.Extensions {
                 currentNode.PathItems[label].Summary ??
                 defaultValue :
             defaultValue;
-        public static bool DoesNodeBelongToItemSubnamespace(this OpenApiUrlTreeNode currentNode) =>
-        (currentNode?.Segment.StartsWith("{") ?? false) && currentNode.Segment.EndsWith("}");
-        public static bool IsParameter(this OpenApiUrlTreeNode currentNode)
+        public static bool DoesNodeBelongToItemSubnamespace(this OpenApiUrlTreeNode currentNode) => currentNode.IsPathWithSingleSimpleParamter();
+        public static bool IsPathWithSingleSimpleParamter(this OpenApiUrlTreeNode currentNode)
         {
-            return currentNode?.Segment.StartsWith("{") ?? false;
+            return (currentNode?.Segment?.StartsWith(requestParametersChar) ?? false) &&
+                    currentNode.Segment.EndsWith('}') &&
+                    currentNode.Segment.Count(x => x == requestParametersChar) == 1;
         }
-        public static bool IsFunction(this OpenApiUrlTreeNode currentNode)
+        public static bool IsComplexPathWithAnyNumberOfParameters(this OpenApiUrlTreeNode currentNode)
         {
-            return currentNode?.Segment.Contains("(") ?? false;
+            return (currentNode?.Segment?.Contains('(') ?? false) && currentNode.Segment.EndsWith(')');
         }
         public static string GetIdentifier(this OpenApiUrlTreeNode currentNode)
         {
             if(currentNode == null) return string.Empty;
             string identifier;
-            if (currentNode.IsParameter())
+            if (currentNode.IsPathWithSingleSimpleParamter())
             {
                 identifier = currentNode.Segment.Substring(1, currentNode.Segment.Length - 2).ToPascalCase();
             }

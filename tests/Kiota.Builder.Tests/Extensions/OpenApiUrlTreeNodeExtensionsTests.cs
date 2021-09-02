@@ -8,8 +8,8 @@ namespace Kiota.Builder.Extensions.Tests {
         [Fact]
         public void Defensive() {
             Assert.Empty(OpenApiUrlTreeNodeExtensions.GetIdentifier(null));
-            Assert.False(OpenApiUrlTreeNodeExtensions.IsFunction(null));
-            Assert.False(OpenApiUrlTreeNodeExtensions.IsParameter(null));
+            Assert.False(OpenApiUrlTreeNodeExtensions.IsComplexPathWithAnyNumberOfParameters(null));
+            Assert.False(OpenApiUrlTreeNodeExtensions.IsPathWithSingleSimpleParamter(null));
             Assert.False(OpenApiUrlTreeNodeExtensions.DoesNodeBelongToItemSubnamespace(null));
             Assert.Empty(OpenApiUrlTreeNodeExtensions.GetComponentsReferenceIndex(null, null));
             Assert.Empty(OpenApiUrlTreeNodeExtensions.GetComponentsReferenceIndex(null, Label));
@@ -34,24 +34,24 @@ namespace Kiota.Builder.Extensions.Tests {
             Assert.Equal("summary", node.GetPathItemDescription(Label, Label));
         }
         [Fact]
-        public void IsFunction() {
+        public void IsComplexPathWithAnyNumberOfParameters() {
             var doc = new OpenApiDocument {
                 Paths = new(),
             };
             doc.Paths.Add("function()", new() {});
             var node = OpenApiUrlTreeNode.Create(doc, Label);
-            Assert.False(node.IsFunction());
-            Assert.True(node.Children.First().Value.IsFunction());
+            Assert.False(node.IsComplexPathWithAnyNumberOfParameters());
+            Assert.True(node.Children.First().Value.IsComplexPathWithAnyNumberOfParameters());
         }
         [Fact]
-        public void IsParameter() {
+        public void IsPathWithSingleSimpleParamter() {
             var doc = new OpenApiDocument {
                 Paths = new(),
             };
             doc.Paths.Add("{param}", new() {});
             var node = OpenApiUrlTreeNode.Create(doc, Label);
-            Assert.False(node.IsParameter());
-            Assert.True(node.Children.First().Value.IsParameter());
+            Assert.False(node.IsPathWithSingleSimpleParamter());
+            Assert.True(node.Children.First().Value.IsPathWithSingleSimpleParamter());
         }
         [Fact]
         public void DoesNodeBelongToItemSubnamespace() {

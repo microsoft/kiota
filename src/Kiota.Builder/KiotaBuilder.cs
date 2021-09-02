@@ -250,14 +250,14 @@ namespace Kiota.Builder
             {
                 var propIdentifier = child.Value.GetClassName();
                 var propType = propIdentifier + requestBuilderSuffix;
-                if (child.Value.IsParameter())
+                if (child.Value.IsPathWithSingleSimpleParamter())
                 {
                     var prop = CreateIndexer($"{propIdentifier}-indexer", propType, codeClass, child.Value);
                     codeClass.SetIndexer(prop);
                 }
-                else if (child.Value.IsFunction())
+                else if (child.Value.IsComplexPathWithAnyNumberOfParameters())
                 {
-                    // Don't support functions for the moment
+                    CreateMethod(propIdentifier, propType, codeClass, child.Value);
                 }
                 else
                 {
@@ -284,13 +284,46 @@ namespace Kiota.Builder
                 CreateRequestBuilderClass(targetNamespace, childNode, rootNode);
             });
         }
+        private static void CreateMethod(string propIdentifier, string propType, CodeClass codeClass, OpenApiUrlTreeNode value)
+        {
+            var methodToAdd = new CodeMethod(codeClass) {
+                Name = propIdentifier,
+                MethodKind = CodeMethodKind.RequestBuilderWithParameters,
+                Description = value.GetPathItemDescription(Constants.DefaultOpenApiLabel, $"Builds and executes requests for operations under {value.Path}"),
+                Access = AccessModifier.Public,
+                PathSegment = value.Path,
+                IsAsync = false,
+                IsStatic = false,
+            };
+            methodToAdd.ReturnType = new CodeType(codeClass) {
+                Name = propType,
+                ActionOf = false,
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.None,
+                IsExternal = false,
+                IsNullable = false,
+            };
+            if(value.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
+                foreach(var parameter in pathItem
+                                            .Parameters
+                                            .Where(x => x.In == ParameterLocation.Path)) {
+                        var mParameter = new CodeParameter(methodToAdd) {
+                            Name = parameter.Name,
+                            Optional = false,
+                            Description = parameter.Description,
+                            ParameterKind = CodeParameterKind.Path,
+                        };
+                        mParameter.Type = GetPrimitiveType(mParameter, parameter.Schema);
+                        methodToAdd.AddParameter(mParameter);
+                }
+            codeClass.AddMethod(methodToAdd);
+        }
         private static readonly string currentPathParameterName = "currentPath";
         private static readonly string rawUrlParameterName = "isRawUrl";
         private void CreatePathManagement(CodeClass currentClass, OpenApiUrlTreeNode currentNode, bool isApiClientClass) {
             var pathProperty = new CodeProperty(currentClass) {
                 Access = AccessModifier.Private,
                 Name = "pathSegment",
-                DefaultValue = isApiClientClass ? $"\"{this.config.ApiRootUrl}\"" : (currentNode.IsParameter() ? "\"\"" : $"\"/{currentNode.Segment}\""),
+                DefaultValue = isApiClientClass ? $"\"{this.config.ApiRootUrl}\"" : (currentNode.IsPathWithSingleSimpleParamter() ? "\"\"" : $"\"/{currentNode.Segment}\""),
                 ReadOnly = true,
                 Description = "Path segment to use to build the URL for the current request builder",
                 PropertyKind = CodePropertyKind.PathSegment
@@ -369,6 +402,19 @@ namespace Kiota.Builder
                     ParameterKind = CodeParameterKind.RawUrl,
                     DefaultValue = "true",
                 });
+                if(currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
+                    foreach(var parameter in pathItem
+                                            .Parameters
+                                            .Where(x => x.In == ParameterLocation.Path)) {
+                        var mParameter = new CodeParameter(constructor) {
+                            Name = parameter.Name,
+                            Optional = true,
+                            Description = parameter.Description,
+                            ParameterKind = CodeParameterKind.Path,
+                        };
+                        mParameter.Type = GetPrimitiveType(mParameter, parameter.Schema);
+                        constructor.AddParameter(mParameter);
+                    }
             }
             constructor.AddParameter(new CodeParameter(constructor) {
                 Name = httpCoreParameterName,
@@ -508,7 +554,7 @@ namespace Kiota.Builder
             return prop;
         }
         private static readonly HashSet<string> typeNamesToSkip = new() {"object", "array"};
-        private static CodeType GetPrimitiveType(CodeElement parent, OpenApiSchema typeSchema, string childType) {
+        private static CodeType GetPrimitiveType(CodeElement parent, OpenApiSchema typeSchema, string childType = default) {
             var typeNames = new List<string>{typeSchema?.Items?.Type, childType, typeSchema?.Type};
             if(typeSchema?.AnyOf?.Any() ?? false)
                 typeNames.AddRange(typeSchema.AnyOf.Select(x => x.Type)); // double is sometimes an anyof string, number and enum
