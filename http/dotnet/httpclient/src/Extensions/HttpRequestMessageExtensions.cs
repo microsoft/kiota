@@ -7,6 +7,7 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Kiota.Abstractions;
+using HttpMethod = System.Net.Http.HttpMethod;
 
 namespace Microsoft.Kiota.Http.HttpClient.Extensions
 {
@@ -71,6 +72,23 @@ namespace Microsoft.Kiota.Http.HttpClient.Extensions
             }
 
             return newRequest;
+        }
+
+        /// <summary>
+        /// Checks the HTTP request's content to determine if it's buffered or streamed content.
+        /// </summary>
+        /// <param name="httpRequestMessage">The <see cref="HttpRequestMessage"/>needs to be sent.</param>
+        /// <returns></returns>
+        internal static bool IsBuffered(this HttpRequestMessage httpRequestMessage)
+        {
+            HttpContent requestContent = httpRequestMessage.Content;
+
+            if((httpRequestMessage.Method == HttpMethod.Put || httpRequestMessage.Method == HttpMethod.Post || httpRequestMessage.Method == HttpMethod.Patch)
+               && requestContent != null && (requestContent.Headers.ContentLength == null || (int)requestContent.Headers.ContentLength == -1))
+            {
+                return false;
+            }
+            return true;
         }
     }
 }

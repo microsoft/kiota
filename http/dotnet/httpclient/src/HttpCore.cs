@@ -223,6 +223,7 @@ namespace Microsoft.Kiota.Http.HttpClient
         {
             if(createdClient)
                 client?.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

@@ -37,6 +37,7 @@ namespace Microsoft.Kiota.Http.HttpClient
             {
                 //add the default middlewares as they are ready
                 new CompressionHandler(),
+                new RetryHandler(),
                 new RedirectHandler()
             };
         }

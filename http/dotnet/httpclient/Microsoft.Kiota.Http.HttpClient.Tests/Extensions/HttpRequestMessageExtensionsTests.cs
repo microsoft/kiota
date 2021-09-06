@@ -101,5 +101,53 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Extensions
             Assert.Equal(redirectHandlerOption, clonedRequest.Options.First().Value);
             Assert.Equal(originalRequest.Content?.Headers.ContentType, clonedRequest.Content?.Headers.ContentType);
         }
+
+        [Fact]
+        public void IsBufferedReturnsTrueForGetRequest()
+        {
+            // Arrange
+            var requestInfo = new RequestInformation
+            {
+                HttpMethod = HttpMethod.GET,
+                URI = new Uri("http://localhost")
+            };
+            var originalRequest = HttpCore.GetRequestMessageFromRequestInformation(requestInfo);
+            // Act
+            var response = originalRequest.IsBuffered();
+            // Assert
+            Assert.True(response, "Unexpected content type");
+        }
+        [Fact]
+        public void IsBufferedReturnsTrueForPostWithNoContent()
+        {
+            // Arrange
+            var requestInfo = new RequestInformation
+            {
+                HttpMethod = HttpMethod.POST,
+                URI = new Uri("http://localhost")
+            };
+            var originalRequest = HttpCore.GetRequestMessageFromRequestInformation(requestInfo);
+            // Act
+            var response = originalRequest.IsBuffered();
+            // Assert
+            Assert.True(response, "Unexpected content type");
+        }
+        [Fact]
+        public void IsBufferedReturnsTrueForPostWithBufferStringContent()
+        {
+            // Arrange
+            byte[] data = new byte[] { 1, 2, 3, 4, 5 };
+            var requestInfo = new RequestInformation
+            {
+                HttpMethod = HttpMethod.POST,
+                URI = new Uri("http://localhost"),
+                Content = new MemoryStream(data)
+            };
+            var originalRequest = HttpCore.GetRequestMessageFromRequestInformation(requestInfo);
+            // Act
+            var response = originalRequest.IsBuffered();
+            // Assert
+            Assert.True(response, "Unexpected content type");
+        }
     }
 }
