@@ -13,9 +13,9 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware.Options
     /// </summary>
     public class RedirectHandlerOption: IMiddlewareOption
     {
-        internal const int DEFAULT_MAX_REDIRECT = 5;
-        internal const int MAX_MAX_REDIRECT = 20;
-        private int _maxRedirect = DEFAULT_MAX_REDIRECT;
+        private const int DefaultMaxRedirect = 5;
+        private const int MaxMaxRedirect = 20;
+        private int _maxRedirect = DefaultMaxRedirect;
 
         /// <summary>
         /// The maximum number of redirects with a maximum value of 20. This defaults to 5 redirects.
@@ -28,7 +28,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware.Options
             }
             set
             {
-                if(value > MAX_MAX_REDIRECT)
+                if(value > MaxMaxRedirect)
                     throw new InvalidOperationException($"Maximum value for {nameof(MaxRedirect)} property exceeded ");
 
                 _maxRedirect = value;
