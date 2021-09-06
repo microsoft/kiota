@@ -6,6 +6,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Net.Http;
 using Microsoft.Kiota.Abstractions.Authentication;
+using Microsoft.Kiota.Http.HttpClient.Middleware;
 
 namespace Microsoft.Kiota.Http.HttpClient
 {
@@ -32,7 +33,11 @@ namespace Microsoft.Kiota.Http.HttpClient
         /// <returns>A list of the default handlers used by the client.</returns>
         public static IList<DelegatingHandler> CreateDefaultHandlers(IAuthenticationProvider authenticationProvider = default)
         {
-            return new List<DelegatingHandler>(); //TODO add the default middlewares when they are ready
+            return new List<DelegatingHandler>
+            {
+                //add the default middlewares as they are ready
+                new RedirectHandler()
+            };
         }
         /// <summary>
         /// Creates a <see cref="DelegatingHandler"/> to use for the <see cref="HttpClient" /> from the provided <see cref="DelegatingHandler"/> instances. Order matters.
@@ -42,7 +47,7 @@ namespace Microsoft.Kiota.Http.HttpClient
         public static DelegatingHandler ChainHandlersCollectionAndGetFirstLink(params DelegatingHandler[] handlers)
         {
             if(handlers == null || !handlers.Any()) return default;
-            var handlersCount = handlers.Count();
+            var handlersCount = handlers.Length;
             for(var i = 0; i < handlersCount; i++)
             {
                 var handler = handlers[i];
