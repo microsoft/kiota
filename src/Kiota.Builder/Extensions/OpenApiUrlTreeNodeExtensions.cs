@@ -53,15 +53,20 @@ namespace Kiota.Builder.Extensions {
                         string.Empty)
                     .ReplaceValueIdentifier();
         //{id}, name(idParam={id}), name(idParam='{id}'), name(idParam='{id}',idParam2='{id2}')
-        private static readonly Regex PathParametersRegex = new(@"(?:\w+)?=?'?\{(?:\w+)\}'?,?", RegexOptions.Compiled);
+        private static readonly Regex PathParametersRegex = new(@"(?:\w+)?=?'?\{(?<paramName>\w+)\}'?,?", RegexOptions.Compiled);
         private static readonly char requestParametersChar = '{';
         private static readonly char requestParametersEndChar = '}';
         private static readonly char requestParametersSectionChar = '(';
         private static readonly char requestParametersSectionEndChar = ')';
+        private static readonly MatchEvaluator requestParametersMatchEvaluator = (match) => {
+            return "With" + match.Groups["paramName"].Value.ToFirstCharacterUpperCase();
+        };
         private static string CleanupParametersFromPath(string pathSegment) {
             if((pathSegment?.Contains(requestParametersChar) ?? false) ||
                 (pathSegment?.Contains(requestParametersSectionChar) ?? false))
-                return PathParametersRegex.Replace(pathSegment, string.Empty).TrimEnd(requestParametersSectionEndChar).TrimEnd(requestParametersSectionChar);
+                return PathParametersRegex.Replace(pathSegment, requestParametersMatchEvaluator)
+                                        .TrimEnd(requestParametersSectionEndChar)
+                                        .Replace(requestParametersSectionChar.ToString(), string.Empty);
             return pathSegment;
         }
         public static IEnumerable<OpenApiParameter> GetPathParametersForCurrentSegment(this OpenApiUrlTreeNode node) {
