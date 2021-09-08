@@ -463,7 +463,9 @@ namespace Kiota.Builder
 
             var unmappedRequestBuilderTypes = unmappedTypesWithName
                                     .Where(x => 
-                                    x.Parent is CodeProperty property && property.IsOfKind(CodePropertyKind.RequestBuilder) || x.Parent is CodeIndexer)
+                                    x.Parent is CodeProperty property && property.IsOfKind(CodePropertyKind.RequestBuilder) ||
+                                    x.Parent is CodeIndexer ||
+                                    x.Parent is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestBuilderWithParameters))
                                     .ToList();
             
             Parallel.ForEach(unmappedRequestBuilderTypes, x => {
@@ -503,7 +505,7 @@ namespace Kiota.Builder
             var childElementsUnmappedTypes = codeElement.GetChildElements(true).SelectMany(x => GetUnmappedTypeDefinitions(x));
             return codeElement switch
             {
-                CodeMethod method => filterUnmappedTypeDefitions(method.Parameters.Select(x => x.Type)).Union(childElementsUnmappedTypes),
+                CodeMethod method => filterUnmappedTypeDefitions(method.Parameters.Select(x => x.Type).Union(new CodeTypeBase[] { method.ReturnType })).Union(childElementsUnmappedTypes),
                 CodeProperty property => filterUnmappedTypeDefitions(new CodeTypeBase[] { property.Type }).Union(childElementsUnmappedTypes),
                 CodeIndexer indexer => filterUnmappedTypeDefitions(new CodeTypeBase[] { indexer.ReturnType }).Union(childElementsUnmappedTypes),
                 _ => childElementsUnmappedTypes,
