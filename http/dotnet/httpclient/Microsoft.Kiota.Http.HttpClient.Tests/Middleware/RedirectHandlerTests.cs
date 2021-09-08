@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -84,7 +84,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Middleware
         [InlineData(HttpStatusCode.MovedPermanently)]  // 301
         [InlineData(HttpStatusCode.Found)]  // 302
         [InlineData(HttpStatusCode.TemporaryRedirect)]  // 307
-        [InlineData((HttpStatusCode)308)] // 308
+        [InlineData(HttpStatusCode.PermanentRedirect)] // 308
         public async Task ShouldRedirectSameMethodAndContent(HttpStatusCode statusCode)
         {
             // Arrange
@@ -129,7 +129,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Middleware
         [InlineData(HttpStatusCode.MovedPermanently)]  // 301
         [InlineData(HttpStatusCode.Found)]  // 302
         [InlineData(HttpStatusCode.TemporaryRedirect)]  // 307
-        [InlineData((HttpStatusCode)308)] // 308
+        [InlineData(HttpStatusCode.PermanentRedirect)] // 308
         public async Task RedirectWithDifferentHostShouldRemoveAuthHeader(HttpStatusCode statusCode)
         {
             // Arrange
@@ -150,7 +150,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Middleware
         [InlineData(HttpStatusCode.MovedPermanently)]  // 301
         [InlineData(HttpStatusCode.Found)]  // 302
         [InlineData(HttpStatusCode.TemporaryRedirect)]  // 307
-        [InlineData((HttpStatusCode)308)] // 308
+        [InlineData(HttpStatusCode.PermanentRedirect)] // 308
         public async Task RedirectWithDifferentSchemeShouldRemoveAuthHeader(HttpStatusCode statusCode)
         {
             // Arrange
@@ -214,7 +214,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Middleware
                    httpRequestMessage, CancellationToken.None));
             // Assert
             Assert.Equal("Too many redirects performed", exception.Message);
-            Assert.Equal("Max redirects exceeded. Redirect count : 3", exception.InnerException?.Message);
+            Assert.Equal("Max redirects exceeded. Redirect count : 5", exception.InnerException?.Message);
             Assert.IsType<InvalidOperationException>(exception);
         }
     }

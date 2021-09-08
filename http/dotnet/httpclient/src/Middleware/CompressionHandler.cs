@@ -2,6 +2,7 @@
 //  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
 // ------------------------------------------------------------------------------
 
+using System;
 using System.IO.Compression;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -25,6 +26,9 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
         /// <returns></returns>
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage httpRequest, CancellationToken cancellationToken)
         {
+            if(httpRequest == null)
+                throw new ArgumentNullException(nameof(httpRequest));
+
             StringWithQualityHeaderValue gzipQHeaderValue = new StringWithQualityHeaderValue(GZip);
 
             // Add Accept-encoding: gzip header to incoming request if it doesn't have one.

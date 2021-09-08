@@ -48,6 +48,9 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
         /// <returns></returns>
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage httpRequest, CancellationToken cancellationToken)
         {
+            if(httpRequest == null)
+                throw new ArgumentNullException(nameof(httpRequest));
+
             RetryOption = httpRequest.GetMiddlewareOption<RetryHandlerOption>() ?? RetryOption;
 
             var response = await base.SendAsync(httpRequest, cancellationToken);

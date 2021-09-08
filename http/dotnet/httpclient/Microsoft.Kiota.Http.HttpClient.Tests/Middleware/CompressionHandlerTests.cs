@@ -103,14 +103,15 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Middleware
         {
             // Arrange
             HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "http://example.org/foo");
+            // setup the http response
             string stringToCompress = "Microsoft Graph";
-            StringContent stringContent = new StringContent(stringToCompress);
+            StringContent stringContent = new StringContent(stringToCompress); // setup the content object
             stringContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-            HttpResponseMessage httpResponse = new HttpResponseMessage(HttpStatusCode.OK)
+            stringContent.Headers.ContentEncoding.Add(CompressionHandler.GZip);
+            HttpResponseMessage httpResponse = new HttpResponseMessage(HttpStatusCode.OK)// setup the HttpResponseMessage object
             {
                 Content = new MockCompressedContent(stringContent)
             };
-            httpResponse.Content.Headers.ContentEncoding.Add(CompressionHandler.GZip);
             httpResponse.Headers.CacheControl = new CacheControlHeaderValue { Private = true };
             // Examples of Custom Headers returned by Microsoft Graph
             httpResponse.Headers.Add("request-id", Guid.NewGuid().ToString());

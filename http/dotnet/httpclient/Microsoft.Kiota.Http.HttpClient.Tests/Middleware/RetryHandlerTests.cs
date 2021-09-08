@@ -94,7 +94,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Middleware
         [Theory]
         [InlineData(HttpStatusCode.GatewayTimeout)]  // 504
         [InlineData(HttpStatusCode.ServiceUnavailable)]  // 503
-        [InlineData((HttpStatusCode)429)] // 429
+        [InlineData(HttpStatusCode.TooManyRequests)] // 429
         public async Task ShouldRetryWithAddRetryAttemptHeader(HttpStatusCode statusCode)
         {
             // Arrange
@@ -119,7 +119,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Middleware
         [Theory]
         [InlineData(HttpStatusCode.GatewayTimeout)]  // 504
         [InlineData(HttpStatusCode.ServiceUnavailable)]  // 503
-        [InlineData((HttpStatusCode)429)] // 429
+        [InlineData(HttpStatusCode.TooManyRequests)] // 429
         public async Task ShouldRetryWithBuffedContent(HttpStatusCode statusCode)
         {
             // Arrange
@@ -145,7 +145,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Middleware
         [Theory]
         [InlineData(HttpStatusCode.GatewayTimeout)]  // 504
         [InlineData(HttpStatusCode.ServiceUnavailable)]  // 503
-        [InlineData((HttpStatusCode)429)] // 429
+        [InlineData(HttpStatusCode.TooManyRequests)] // 429
         public async Task ShouldNotRetryWithPostStreaming(HttpStatusCode statusCode)
         {
             // Arrange
@@ -172,7 +172,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Middleware
         [Theory]
         [InlineData(HttpStatusCode.GatewayTimeout)]  // 504
         [InlineData(HttpStatusCode.ServiceUnavailable)]  // 503
-        [InlineData((HttpStatusCode)429)] // 429
+        [InlineData(HttpStatusCode.TooManyRequests)] // 429
         public async Task ShouldNotRetryWithPutStreaming(HttpStatusCode statusCode)
         {
             // Arrange
