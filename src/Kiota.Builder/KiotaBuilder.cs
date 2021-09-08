@@ -834,10 +834,10 @@ namespace Kiota.Builder
                 model.AddProperty(schema
                                     .Properties
                                     .Select(x => {
-                                        var propertyDefinitionSchema = x.Value.Items ?? x.Value;
+                                        var propertyDefinitionSchema = x.Value.GetSchemasWithValidReferenceId().FirstOrDefault();
                                         var className = propertyDefinitionSchema.GetSchemaTitle();
                                         CodeElement definition = default;
-                                        if(!string.IsNullOrEmpty(className) && !string.IsNullOrEmpty(propertyDefinitionSchema?.Reference?.Id)) {
+                                        if(!string.IsNullOrEmpty(className)) {
                                             var shortestNamespaceName = GetShortestNamespaceNameForModelByReferenceId(propertyDefinitionSchema.Reference.Id);
                                             var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns : 
                                                                     (rootNamespace.FindNamespaceByName(shortestNamespaceName) ?? rootNamespace.AddNamespace(shortestNamespaceName));
