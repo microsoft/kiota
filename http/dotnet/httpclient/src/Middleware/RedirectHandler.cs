@@ -94,6 +94,14 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
                         newRequest.Headers.Authorization = null;
                     }
 
+                    // If scheme has changed. Ensure that this has been opted in for security reasons
+                    if(!newRequest.RequestUri.Scheme.Equals(httpRequestMessage.RequestUri?.Scheme) && !RedirectOption.AllowRedirectOnSchemeChange)
+                    {
+                        throw new InvalidOperationException(
+                            $"Redirects with changing schemes not allowed by default. You can change this by modifying the {nameof(RedirectOption.AllowRedirectOnSchemeChange)} option",
+                            new Exception($"Scheme changed from {httpRequestMessage.RequestUri?.Scheme} to {newRequest.RequestUri.Scheme}."));
+                    }
+
                     // Send redirect request to get response
                     response = await base.SendAsync(newRequest, cancellationToken);
 

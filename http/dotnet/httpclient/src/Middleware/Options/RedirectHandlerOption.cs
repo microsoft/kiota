@@ -39,5 +39,10 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware.Options
         /// A delegate that's called to determine whether a response should be redirected or not. The delegate method should accept <see cref="HttpResponseMessage"/> as it's parameter and return a <see cref="bool"/>. This defaults to true.
         /// </summary>
         public Func<HttpResponseMessage, bool> ShouldRedirect { get; set; } = (response) => true;
+
+        /// <summary>
+        /// A boolean value to determine if we redirects are allowed if the scheme changes(e.g. https to http). Defaults to false. 
+        /// </summary>
+        public bool AllowRedirectOnSchemeChange { get; set; } = false;
     }
 }
