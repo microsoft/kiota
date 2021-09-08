@@ -390,13 +390,12 @@ namespace Kiota.Builder.Refiners {
         protected static void AddPropertiesAndMethodTypesImports(CodeElement current, bool includeParentNamespaces, bool includeCurrentNamespace, bool compareOnDeclaration) {
             if(current is CodeClass currentClass) {
                 var currentClassNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
-                var propertiesTypes = currentClass
-                                    .GetChildElements(true)
+                var currentClassChildren = currentClass.GetChildElements(true);
+                var propertiesTypes = currentClassChildren
                                     .OfType<CodeProperty>()
                                     .Select(x => x.Type)
                                     .Distinct();
-                var methods = currentClass
-                                    .GetChildElements(true)
+                var methods = currentClassChildren
                                     .OfType<CodeMethod>();
                 var methodsReturnTypes = methods
                                     .Select(x => x.ReturnType)
@@ -406,8 +405,7 @@ namespace Kiota.Builder.Refiners {
                                     .Where(x => x.IsOfKind(CodeParameterKind.Custom, CodeParameterKind.RequestBody))
                                     .Select(x => x.Type)
                                     .Distinct();
-                var indexerTypes = currentClass
-                                    .GetChildElements(true)
+                var indexerTypes = currentClassChildren
                                     .OfType<CodeIndexer>()
                                     .Select(x => x.ReturnType)
                                     .Distinct();
