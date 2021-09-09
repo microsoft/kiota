@@ -561,19 +561,19 @@ namespace Kiota.Builder
             var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
             var isExternal = false;
             if("string".Equals(typeName, StringComparison.OrdinalIgnoreCase)) {
-                if("date-time".Equals(format, StringComparison.OrdinalIgnoreCase)) {
                     isExternal = true;
+                if("date-time".Equals(format, StringComparison.OrdinalIgnoreCase))
                     typeName = "DateTimeOffset";
-                } else if ("base64url".Equals(format, StringComparison.OrdinalIgnoreCase)) {
-                    isExternal = true;
+                else if ("base64url".Equals(format, StringComparison.OrdinalIgnoreCase))
                     typeName = "binary";
-                }
             } else if ("double".Equals(format, StringComparison.OrdinalIgnoreCase) || 
                     "float".Equals(format, StringComparison.OrdinalIgnoreCase) ||
                     "int64".Equals(format, StringComparison.OrdinalIgnoreCase)) {
                 isExternal = true;
                 typeName = format.ToLowerInvariant();
-            }
+            } else if ("boolean".Equals(typeName, StringComparison.OrdinalIgnoreCase) ||
+                        "integer".Equals(typeName, StringComparison.OrdinalIgnoreCase))
+                isExternal = true;
             return new CodeType(parent) {
                 Name = typeName,
                 IsExternal = isExternal,
@@ -604,7 +604,7 @@ namespace Kiota.Builder
                     returnType = "binary";
                 else if(!operation.Responses.Any(x => noContentStatusCodes.Contains(x.Key)))
                     logger.LogWarning($"could not find operation return type {operationType} {currentNode.Path}");
-                executorMethod.ReturnType = new CodeType(executorMethod) { Name = returnType };
+                executorMethod.ReturnType = new CodeType(executorMethod) { Name = returnType, IsExternal = true, };
             }
 
             
@@ -688,30 +688,37 @@ namespace Kiota.Builder
             optionsParam.Type = new CodeType(optionsParam) { Name = "IEnumerable<IMiddlewareOption>", ActionOf = false, IsExternal = true };
             method.AddParameter(optionsParam);
         }
-        private IEnumerable<string> GetAllNamespaceNamesForModelByReferenceId(string referenceId) {
+        private IEnumerable<string> GetPathsForModelByReferenceId(string referenceId) {
             if(string.IsNullOrEmpty(referenceId)) throw new ArgumentNullException(nameof(referenceId));
             return ComponentsReferencesIndex.TryGetValue(referenceId, out var nodes) ? 
-                        nodes.Select(x => x.GetNodeNamespaceFromPath(this.config.ClientNamespaceName)) :
+                        nodes.Select(x => x.Path) :
                         Enumerable.Empty<string>();
         }
         private string GetShortestNamespaceNameForModelByReferenceId(string referenceId) {
             if(string.IsNullOrEmpty(referenceId))
                 throw new ArgumentNullException(nameof(referenceId));
             
-            var potentialNamespaceNamesWithDepth = GetAllNamespaceNamesForModelByReferenceId(referenceId)
-                                .Select(x => new Tuple<string, int>(x, x.Count(y => y == '.')))
+            var potentialNamespaceNamesWithDepth = GetPathsForModelByReferenceId(referenceId)
+                                .Distinct()
+                                .Select(x => new Tuple<string, int>(x, x.Count(y => y == '\\')))
                                 .OrderBy(x => x.Item2);
             var currentShortestCandidate = potentialNamespaceNamesWithDepth.FirstOrDefault();
             if(currentShortestCandidate == null)
                 return null;
 
-            var countOfNamespaceNamesMeetingCutoff = potentialNamespaceNamesWithDepth.Count(x => x.Item2 == currentShortestCandidate.Item2);
-            if (countOfNamespaceNamesMeetingCutoff == 1)
-                return currentShortestCandidate.Item1;
-            else if(countOfNamespaceNamesMeetingCutoff > 1) {
-                return currentShortestCandidate.Item1.Substring(0, currentShortestCandidate.Item1.LastIndexOf('.'));
-            } else 
+            var namespaceNamesMeetingCutoff = potentialNamespaceNamesWithDepth.Where(x => x.Item2 == currentShortestCandidate.Item2).ToList();
+            if (namespaceNamesMeetingCutoff.Count == 1)
+                return currentShortestCandidate.Item1.GetNamespaceFromPath(config.ClientNamespaceName);
+            else if(namespaceNamesMeetingCutoff.Count > 1)
+                return GetCommonNamespaceTrunk(namespaceNamesMeetingCutoff, currentShortestCandidate.Item1).GetNamespaceFromPath(config.ClientNamespaceName);
+            else 
                 throw new InvalidOperationException($"could not find a shortest namespace name for reference id {referenceId}");
+        }
+        private static string GetCommonNamespaceTrunk(IEnumerable<Tuple<string, int>> namespaceNames, string candidateNamespaceName) {
+            if(namespaceNames.Select(x => x.Item1).All(x => x.Contains(candidateNamespaceName, StringComparison.OrdinalIgnoreCase)))
+                return candidateNamespaceName;
+            else
+                return GetCommonNamespaceTrunk(namespaceNames, candidateNamespaceName[..candidateNamespaceName.LastIndexOf('\\')]);
         }
         private CodeType CreateModelDeclarationAndType(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement, CodeNamespace codeNamespace, string classNameSuffix = "") {
             var className = currentNode.GetClassName(operation: operation, suffix: classNameSuffix);
@@ -953,6 +960,7 @@ namespace Kiota.Builder
                 model.AddUsing(backingStoreUsing, backedModelUsing, storeImplUsing);
                 (model.StartBlock as CodeClass.Declaration).Implements.Add(new CodeType(model) {
                     Name = BackedModelInterface,
+                    IsExternal = true,
                 });
             }
         }
@@ -975,8 +983,9 @@ namespace Kiota.Builder
                     };
                     prop.Type = new CodeType(prop)
                     {
+                        IsExternal = true,
                         Name = parameter.Schema.Items?.Type ?? parameter.Schema.Type,
-                        CollectionKind = parameter.Schema.IsArray() ? CodeType.CodeTypeCollectionKind.Array : default
+                        CollectionKind = parameter.Schema.IsArray() ? CodeType.CodeTypeCollectionKind.Array : default,
                     };
 
                     if (!parameterClass.ContainsMember(parameter.Name))

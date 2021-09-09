@@ -39,11 +39,11 @@ namespace Kiota.Builder.Extensions {
                     AddAllPathsEntries(child, index, label);
         }
         private static string GetDotIfBothNotNullOfEmpty(string x, string y) => string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) ? string.Empty : ".";
-        public static string GetNodeNamespaceFromPath(this OpenApiUrlTreeNode currentNode, string prefix) =>
+        public static string GetNamespaceFromPath(this string currentPath, string prefix) => 
             prefix + 
-                    ((currentNode?.Path?.Contains(pathNameSeparator) ?? false) ?
+                    ((currentPath?.Contains(pathNameSeparator) ?? false) ?
                         (string.IsNullOrEmpty(prefix) ? string.Empty : ".")
-                             + currentNode?.Path
+                             + currentPath
                                 ?.Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
                                 ?.Where(x => !x.StartsWith('{'))
                                 ?.Select(x => CleanupParametersFromPath((x ?? string.Empty).Split('.', StringSplitOptions.RemoveEmptyEntries)
@@ -52,6 +52,8 @@ namespace Kiota.Builder.Extensions {
                                     (x, y) => $"{x}{GetDotIfBothNotNullOfEmpty(x, y)}{y}") :
                         string.Empty)
                     .ReplaceValueIdentifier();
+        public static string GetNodeNamespaceFromPath(this OpenApiUrlTreeNode currentNode, string prefix) =>
+            currentNode?.Path?.GetNamespaceFromPath(prefix);
         //{id}, name(idParam={id}), name(idParam='{id}'), name(idParam='{id}',idParam2='{id2}')
         private static readonly Regex PathParametersRegex = new(@"(?:\w+)?=?'?\{(?<paramName>\w+)\}'?,?", RegexOptions.Compiled);
         private static readonly char requestParametersChar = '{';
