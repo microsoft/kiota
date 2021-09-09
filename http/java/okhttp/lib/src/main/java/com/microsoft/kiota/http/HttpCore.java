@@ -2,7 +2,6 @@ package com.microsoft.kiota.http;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.UnsupportedOperationException;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Objects;
@@ -54,7 +53,7 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
     public HttpCore(@Nonnull final AuthenticationProvider authenticationProvider, @Nullable final ParseNodeFactory parseNodeFactory, @Nullable final SerializationWriterFactory serializationWriterFactory, @Nullable final OkHttpClient client) {
         this.authProvider = Objects.requireNonNull(authenticationProvider, "parameter authenticationProvider cannot be null");
         if(client == null) {
-            this.client = OkHttpClientBuilder.Create(this.authProvider).build();
+            this.client = OkHttpClientBuilder.Create().build();
         } else {
             this.client = client;
         }
