@@ -21,10 +21,10 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware.Options
         /// <summary>
         /// List of failure responses that potentially could be returned when 
         /// </summary>
-        public List<HttpResponseMessage> KnownChaos { get; set; } = null;
+        public List<HttpResponseMessage> KnownChaos { get; set; }
         /// <summary>
         /// Function to return chaos response based on current request.  This is used to reproduce detected failure modes.
         /// </summary>
-        public Func<HttpRequestMessage, HttpResponseMessage> PlannedChaosFactory { get; set; } = null;
+        public Func<HttpRequestMessage, HttpResponseMessage> PlannedChaosFactory { get; set; }
     }
 }

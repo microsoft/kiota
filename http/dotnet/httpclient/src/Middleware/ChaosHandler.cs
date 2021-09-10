@@ -21,7 +21,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
     /// <summary>
     /// A <see cref="DelegatingHandler"/> implementation that is used for simulating server failures.
     /// </summary>
-    public class ChaosHandler : DelegatingHandler
+    public class ChaosHandler : DelegatingHandler, IDisposable
     {
         private readonly DiagnosticSource _logger = new DiagnosticListener(typeof(ChaosHandler).FullName!);
         private readonly Random _random;
@@ -220,6 +220,21 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
             };
             gatewayTimeoutResponse.Headers.RetryAfter = new RetryConditionHeaderValue(retry);
             return gatewayTimeoutResponse;
+        }
+
+        /// <summary>
+        /// Clean up any thing we created
+        /// </summary>
+        public new void Dispose()
+        {
+            // clean up the response messages
+            foreach(var response in _knownFailures)
+            {
+                response.Dispose();
+            }
+            // Cleanup any base resources
+            base.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
