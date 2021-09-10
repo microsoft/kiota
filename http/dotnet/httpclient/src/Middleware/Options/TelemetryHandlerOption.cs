@@ -5,7 +5,7 @@ using Microsoft.Kiota.Abstractions;
 namespace Microsoft.Kiota.Http.HttpClient.Middleware.Options
 {
     /// <summary>
-    /// The retry middleware option class
+    /// The Telemetry middleware option class
     /// </summary>
     public class TelemetryHandlerOption : IMiddlewareOption
     {

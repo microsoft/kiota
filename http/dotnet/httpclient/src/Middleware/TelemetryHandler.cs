@@ -41,9 +41,14 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
             var telemetryHandlerOption = httpRequest.GetMiddlewareOption<TelemetryHandlerOption>() ?? _telemetryHandlerOption;
 
             // use the enriched request from the handler
-            var enrichedRequest = telemetryHandlerOption.TelemetryConfigurator(httpRequest);
+            if(telemetryHandlerOption.TelemetryConfigurator != null)
+            {
+                var enrichedRequest = telemetryHandlerOption.TelemetryConfigurator(httpRequest);
+                return await base.SendAsync(enrichedRequest, cancellationToken);
+            }
 
-            return await base.SendAsync(enrichedRequest, cancellationToken);
+            // Just forward the request if TelemetryConfigurator was intentionally set to null
+            return await base.SendAsync(httpRequest, cancellationToken);
         }
     }
 }
