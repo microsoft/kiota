@@ -76,15 +76,17 @@ namespace Kiota.Builder.Extensions {
         }
 
         public static IEnumerable<string> GetSchemaReferenceIds(this OpenApiSchema schema, HashSet<OpenApiSchema> visitedSchemas = null) {
-            if(visitedSchemas == null)
-                visitedSchemas = new();            
+            visitedSchemas ??= new();            
             if(schema != null && !visitedSchemas.Contains(schema)) {
                 visitedSchemas.Add(schema);
                 var result = new List<string>();
                 if(!string.IsNullOrEmpty(schema.Reference?.Id))
                     result.Add(schema.Reference.Id);
-                if(!string.IsNullOrEmpty(schema.Items?.Reference?.Id))
-                    result.Add(schema.Items.Reference.Id);
+                if(schema.Items != null) {
+                    if(!string.IsNullOrEmpty(schema.Items.Reference?.Id))
+                        result.Add(schema.Items.Reference.Id);
+                    result.AddRange(schema.Items.GetSchemaReferenceIds(visitedSchemas));
+                }
                 var subSchemaReferences = (schema.Properties?.Values ?? Enumerable.Empty<OpenApiSchema>())
                                             .Union(schema.AnyOf ?? Enumerable.Empty<OpenApiSchema>())
                                             .Union(schema.AllOf ?? Enumerable.Empty<OpenApiSchema>())

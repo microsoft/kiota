@@ -150,10 +150,13 @@ namespace Kiota.Builder
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             var node = OpenApiUrlTreeNode.Create(doc, Constants.DefaultOpenApiLabel);
-            ComponentsReferencesIndex = node.GetComponentsReferenceIndex(Constants.DefaultOpenApiLabel);
-
             stopwatch.Stop();
             logger.LogTrace("{timestamp}ms: Created UriSpace tree", stopwatch.ElapsedMilliseconds);
+            stopwatch.Reset();
+            stopwatch.Start();
+            ComponentsReferencesIndex = node.GetComponentsReferenceIndex(Constants.DefaultOpenApiLabel);
+            stopwatch.Stop();
+            logger.LogTrace("{timestamp}ms: Created Components index", stopwatch.ElapsedMilliseconds);
             return node;
         }
         private Dictionary<string, HashSet<OpenApiUrlTreeNode>> ComponentsReferencesIndex;
@@ -779,7 +782,8 @@ namespace Kiota.Builder
                 return CreateUnionModelDeclaration(currentNode, schema, operation, parentElement);
             } else if(schema.IsObject()) {
                 // referenced schema, no inheritance or union type
-                return CreateModelDeclarationAndType(currentNode, schema, operation, parentElement, codeNamespace);
+                var targetNamespace = GetShortestNamespace(codeNamespace, schema);
+                return CreateModelDeclarationAndType(currentNode, schema, operation, parentElement, targetNamespace);
             } else if (schema.IsArray()) {
                 // collections at root
                 var type = GetPrimitiveType(parentElement, schema?.Items, string.Empty);
@@ -816,11 +820,20 @@ namespace Kiota.Builder
             } else
                 return existingDeclaration;
         }
+        private CodeNamespace GetShortestNamespace(CodeNamespace currentNamespace, OpenApiSchema currentSchema) {
+            if(!string.IsNullOrEmpty(currentSchema.Reference?.Id)) {
+                var parentClassNamespaceName = GetShortestNamespaceNameForModelByReferenceId(currentSchema.Reference.Id);
+                return currentNamespace.AddNamespace(parentClassNamespaceName);
+            }
+            return currentNamespace;
+        }
         private CodeClass AddModelClass(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeElement parentElement, CodeClass inheritsFrom = null) {
             if(inheritsFrom == null && schema.AllOf.Count > 1) { //the last is always the current class, we want the one before the last as parent
                 var parentSchema = schema.AllOf.Except(new OpenApiSchema[] {schema.AllOf.Last()}).FirstOrDefault();
-                if(parentSchema != null)
-                    inheritsFrom = AddModelDeclarationIfDoesntExit(currentNode, parentSchema, parentSchema.GetSchemaTitle(), currentNamespace, parentElement, null, true) as CodeClass;
+                if(parentSchema != null) {
+                    var parentClassNamespace = GetShortestNamespace(currentNamespace, parentSchema);
+                    inheritsFrom = AddModelDeclarationIfDoesntExit(currentNode, parentSchema, parentSchema.GetSchemaTitle(), parentClassNamespace, parentElement, null, true) as CodeClass;
+                }
             }
             var newClass = currentNamespace.AddClass(new CodeClass(currentNamespace) {
                 Name = declarationName,
