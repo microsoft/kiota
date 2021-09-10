@@ -5,12 +5,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Kiota.Http.HttpClient.Extensions;
@@ -25,8 +25,8 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
     {
         private readonly DiagnosticSource _logger = new DiagnosticListener(typeof(ChaosHandler).FullName!);
         private readonly Random _random;
-        private readonly ChaosHandlerOption _globalChaosHandlerOptions;
-        private List<HttpResponseMessage> _knownGraphFailures;
+        private readonly ChaosHandlerOption _chaosHandlerOptions;
+        private List<HttpResponseMessage> _knownFailures;
         private const string Json = "application/json";
 
         /// <summary>
@@ -35,9 +35,9 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
         /// <param name="chaosHandlerOptions">Optional parameter to change default behavior of handler.</param>
         public ChaosHandler(ChaosHandlerOption chaosHandlerOptions = null)
         {
-            _globalChaosHandlerOptions = chaosHandlerOptions ?? new ChaosHandlerOption();
+            _chaosHandlerOptions = chaosHandlerOptions ?? new ChaosHandlerOption();
             _random = new Random(DateTime.Now.Millisecond);
-            LoadKnownGraphFailures(_globalChaosHandlerOptions.KnownChaos);
+            LoadKnownFailures(_chaosHandlerOptions.KnownChaos);
         }
 
         /// <summary>
@@ -49,7 +49,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             // Select global or per request options
-            var chaosHandlerOptions = request.GetMiddlewareOption<ChaosHandlerOption>() ?? _globalChaosHandlerOptions;
+            var chaosHandlerOptions = request.GetMiddlewareOption<ChaosHandlerOption>() ?? _chaosHandlerOptions;
 
             HttpResponseMessage response = null;
             // Planned Chaos or Random?
@@ -67,7 +67,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
             {
                 if(_random.Next(100) < chaosHandlerOptions.ChaosPercentLevel)
                 {
-                    response = CreateChaosResponse(chaosHandlerOptions.KnownChaos ?? _knownGraphFailures);
+                    response = CreateChaosResponse(chaosHandlerOptions.KnownChaos ?? _knownFailures);
                     response.RequestMessage = request;
                     if(_logger.IsEnabled("ChaosResponse"))
                         _logger.Write("ChaosResponse", response);
@@ -87,15 +87,15 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
             return knownFailures[responseIndex];
         }
 
-        private void LoadKnownGraphFailures(List<HttpResponseMessage> knownFailures)
+        private void LoadKnownFailures(List<HttpResponseMessage> knownFailures)
         {
-            if(knownFailures != null && knownFailures.Count > 0)
+            if(knownFailures?.Any() ?? false)
             {
-                _knownGraphFailures = knownFailures;
+                _knownFailures = knownFailures;
             }
             else
             {
-                _knownGraphFailures = new List<HttpResponseMessage>
+                _knownFailures = new List<HttpResponseMessage>
                 {
                     Create429TooManyRequestsResponse(new TimeSpan(0, 0, 3)),
                     Create503Response(new TimeSpan(0, 0, 3)),
@@ -119,9 +119,9 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
                     Message ="Client application has been throttled and should not attempt to repeat the request until an amount of time has elapsed."
                 }
             });
-            var throttleResponse = new HttpResponseMessage()
+            var throttleResponse = new HttpResponseMessage
             {
-                StatusCode = (HttpStatusCode)429,
+                StatusCode = HttpStatusCode.TooManyRequests,
                 Content = new StringContent(contentString, Encoding.UTF8, Json)
             };
             throttleResponse.Headers.RetryAfter = new RetryConditionHeaderValue(retry);
@@ -137,13 +137,13 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
         {
             var contentString = JsonSerializer.Serialize(new
             {
-                error = new Error()
+                error = new Error
                 {
                     Code = "serviceNotAvailable",
                     Message = "The service is temporarily unavailable for maintenance or is overloaded. You may repeat the request after a delay, the length of which may be specified in a Retry-After header."
                 }
             });
-            var serverUnavailableResponse = new HttpResponseMessage()
+            var serverUnavailableResponse = new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.ServiceUnavailable,
                 Content = new StringContent(contentString, Encoding.UTF8, Json)
@@ -160,12 +160,12 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
         {
             var contentString = JsonSerializer.Serialize(new
             {
-                error = new Error()
+                error = new Error
                 {
                     Code = "502"
                 }
             });
-            var badGatewayResponse = new HttpResponseMessage()
+            var badGatewayResponse = new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.BadGateway,
                 Content = new StringContent(contentString, Encoding.UTF8, Json)
@@ -181,13 +181,13 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
         {
             var contentString = JsonSerializer.Serialize(new
             {
-                error = new Error()
+                error = new Error
                 {
                     Code = "generalException",
                     Message = "There was an internal server error while processing the request."
                 }
             });
-            var internalServerError = new HttpResponseMessage()
+            var internalServerError = new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.InternalServerError,
                 Content = new StringContent(contentString, Encoding.UTF8, Json)
@@ -204,13 +204,13 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
         {
             var contentString = JsonSerializer.Serialize(new
             {
-                error = new Error()
+                error = new Error
                 {
                     Code = "504",
                     Message = "The server, while acting as a proxy, did not receive a timely response from the upstream server it needed to access in attempting to complete the request. May occur together with 503."
                 }
             });
-            var gatewayTimeoutResponse = new HttpResponseMessage()
+            var gatewayTimeoutResponse = new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.GatewayTimeout,
                 Content = new StringContent(contentString, Encoding.UTF8, Json)
@@ -219,143 +219,20 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
             return gatewayTimeoutResponse;
         }
 
-        // TODO this is not your home!
-        private class Error
+        /// <summary>
+        /// Private class to model sample responses
+        /// </summary>
+        internal class Error
         {
             /// <summary>
-            /// This code represents the HTTP status code when this Error object accessed from the ServiceException.Error object.
-            /// This code represent a sub-code when the Error object is in the InnerError or ErrorDetails object.
+            /// The error code
             /// </summary>
-            [JsonPropertyName("code")]
-            public string Code
-            {
-                get; set;
-            }
+            public string Code { get; set; }
 
             /// <summary>
-            /// The error message.
+            /// The error message
             /// </summary>
-            [JsonPropertyName("message")]
-            public string Message
-            {
-                get; set;
-            }
-
-            /// <summary>
-            /// Indicates the target of the error, for example, the name of the property in error.
-            /// </summary>
-            [JsonPropertyName("target")]
-            public string Target
-            {
-                get; set;
-            }
-
-            /// <summary>
-            /// The inner error of the response. These are additional error objects that may be more specific than the top level error.
-            /// </summary>
-            [JsonPropertyName("innererror")]
-            public Error InnerError
-            {
-                get; set;
-            }
-
-            /// <summary>
-            /// The Throw site of the error.
-            /// </summary>
-            public string ThrowSite
-            {
-                get; internal set;
-            }
-
-            /// <summary>
-            /// Gets or set the client-request-id header returned in the response headers collection. 
-            /// </summary>
-            public string ClientRequestId
-            {
-                get; internal set;
-            }
-
-            /// <summary>
-            /// The AdditionalData property bag.
-            /// </summary>
-            [JsonExtensionData]
-            public IDictionary<string, object> AdditionalData
-            {
-                get; set;
-            }
-
-            /// <summary>
-            /// Concatenates the error into a string.
-            /// </summary>
-            /// <returns>A human-readable string error response.</returns>
-            public override string ToString()
-            {
-                var errorStringBuilder = new StringBuilder();
-
-                if(!string.IsNullOrEmpty(this.Code))
-                {
-                    errorStringBuilder.AppendFormat("Code: {0}", this.Code);
-                    errorStringBuilder.Append(Environment.NewLine);
-                }
-
-                if(!string.IsNullOrEmpty(this.Message))
-                {
-                    errorStringBuilder.AppendFormat("Message: {0}", this.Message);
-                    errorStringBuilder.Append(Environment.NewLine);
-                }
-
-                if(!string.IsNullOrEmpty(this.Target))
-                {
-                    errorStringBuilder.AppendFormat("Target: {0}", this.Target);
-                    errorStringBuilder.Append(Environment.NewLine);
-                }
-
-                // if(this.Details != null && this.Details.GetEnumerator().MoveNext())
-                // {
-                //     errorStringBuilder.Append("Details:");
-                //     errorStringBuilder.Append(Environment.NewLine);
-                //
-                //     int i = 0;
-                //     foreach(var detail in this.Details)
-                //     {
-                //         errorStringBuilder.AppendFormat("\tDetail{0}:{1}", i, detail.ToString());
-                //         errorStringBuilder.Append(Environment.NewLine);
-                //         i++;
-                //     }
-                // }
-
-                if(this.InnerError != null)
-                {
-                    errorStringBuilder.Append("Inner error:");
-                    errorStringBuilder.Append(Environment.NewLine);
-                    errorStringBuilder.Append("\t" + this.InnerError.ToString());
-                }
-
-                if(!string.IsNullOrEmpty(this.ThrowSite))
-                {
-                    errorStringBuilder.AppendFormat("Throw site: {0}", this.ThrowSite);
-                    errorStringBuilder.Append(Environment.NewLine);
-                }
-
-                if(!string.IsNullOrEmpty(this.ClientRequestId))
-                {
-                    errorStringBuilder.AppendFormat("ClientRequestId: {0}", this.ClientRequestId);
-                    errorStringBuilder.Append(Environment.NewLine);
-                }
-
-                if(this.AdditionalData != null && this.AdditionalData.GetEnumerator().MoveNext())
-                {
-                    errorStringBuilder.Append("AdditionalData:");
-                    errorStringBuilder.Append(Environment.NewLine);
-                    foreach(var prop in this.AdditionalData)
-                    {
-                        errorStringBuilder.AppendFormat("\t{0}: {1}", prop.Key, prop.Value?.ToString() ?? "null");
-                        errorStringBuilder.Append(Environment.NewLine);
-                    }
-                }
-
-                return errorStringBuilder.ToString();
-            }
+            public string Message { get; set; }
         }
     }
 }
