@@ -48,6 +48,9 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
         /// <returns></returns>
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            if(request == null)
+                throw new ArgumentNullException(nameof(request));
+
             // Select global or per request options
             var chaosHandlerOptions = request.GetMiddlewareOption<ChaosHandlerOption>() ?? _chaosHandlerOptions;
 
@@ -222,7 +225,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
         /// <summary>
         /// Private class to model sample responses
         /// </summary>
-        internal class Error
+        private class Error
         {
             /// <summary>
             /// The error code

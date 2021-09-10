@@ -55,7 +55,8 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Middleware
                     ChaosHandler.Create429TooManyRequestsResponse(new TimeSpan(0,0,5)),
                     ChaosHandler.Create500InternalServerErrorResponse(),
                     ChaosHandler.Create503Response(new TimeSpan(0,0,5)),
-                    ChaosHandler.Create502BadGatewayResponse()
+                    ChaosHandler.Create502BadGatewayResponse(),
+                    ChaosHandler.Create504GatewayTimeoutResponse(new TimeSpan(0,0,5))
                 }
             })
             {
@@ -69,7 +70,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Middleware
             Dictionary<HttpStatusCode, object> responses = new Dictionary<HttpStatusCode, object>();
 
             // Make calls until all known failures have been triggered
-            while(responses.Count < 4)
+            while(responses.Count < 5)
             {
                 var response = await invoker.SendAsync(request, new CancellationToken());
                 if(response.StatusCode != HttpStatusCode.OK)
@@ -83,6 +84,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Middleware
             Assert.True(responses.ContainsKey(HttpStatusCode.InternalServerError));
             Assert.True(responses.ContainsKey(HttpStatusCode.BadGateway));
             Assert.True(responses.ContainsKey(HttpStatusCode.ServiceUnavailable));
+            Assert.True(responses.ContainsKey(HttpStatusCode.GatewayTimeout));
         }
 
         [Fact]
