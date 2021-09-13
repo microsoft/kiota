@@ -2,16 +2,22 @@
 
 - [.NET SDK 5.0](https://dotnet.microsoft.com/download)
 
-## Initializing target projects
+## Target project requirements
 
-Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](../abstractions/dotnet) and the [authentication](../authentication/dotnet/azure), [http](../http/dotnet/httpclient), [serialization](../serialization/dotnet/json) packages from the GitHub feed.
+Before you can compile and run the generated files, you will need to make sure they are part of a project with the required dependencies. After creating a new project, or reusing an existing one, you will need to add references to the [abstraction](../abstractions/dotnet) and the [authentication](../authentication/dotnet/azure), [http](../http/dotnet/httpclient), [serialization](../serialization/dotnet/json) packages from the GitHub feed.
 
-Execute the following command in the directory you want to initialize the project in.
+## Creating target projects
+
+> Note: you can use an existing project if you have one you'd like to, in that case, you can skip the following section.
+
+Execute the following command in the directory you want to create a new project.
 
 ```Shell
 dotnet new console
 dotnet new gitignore
 ```
+
+> Note: in this example the console template is used, but you can use any CSharp template.
 
 ## Adding dependencies
 
