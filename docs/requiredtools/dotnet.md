@@ -8,7 +8,7 @@ Before you can compile and run the generated files, you will need to make sure t
 
 ## Creating target projects
 
-> Note: you can use an existing project if you have one you'd like to, in that case, you can skip the following section.
+> Note: you can use an existing project if you have one, in that case, you can skip the following section.
 
 Execute the following command in the directory you want to create a new project.
 
