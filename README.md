@@ -12,7 +12,7 @@ This library builds on top of the [Microsoft.OpenAPI.NET](https://github.com/mic
 
 1. Install the required tools for your language. (refer to the [Supported Languages](#supported-languages) table under the **Required tools & dependencies** column)
 1. Intialize the target project and add the required dependencies. (refer to the [Supported Languages](#supported-languages) table under the **Required tools & dependencies** column)
-1. Get Kiota: clone the repository and [build Kiota locally](./docs/generator/build.md) **--or--** [download and run binaries](./docs/generator/binaries.md) **--or--** [install and run the dotnet tool](./docs/generator/tool.md) **--or--** [run the docker image](./docs/generator/docker.md).
+1. Get Kiota: [download and run binaries](./docs/generator/binaries.md) **--or--** [run the docker image](./docs/generator/docker.md)  **--or--** [install and run the dotnet tool](./docs/generator/tool.md) **--or--** clone the repository and [build Kiota locally](./docs/generator/build.md).
 1. Generate your API client, checkout the [Parameters reference](#parameters-reference) for the different options.
 1. Start calling your API using your fluent API SDK.
 
