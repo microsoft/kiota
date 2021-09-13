@@ -37,7 +37,7 @@ namespace Microsoft.Kiota.Http.HttpClient
         {
             authProvider = authenticationProvider ?? throw new ArgumentNullException(nameof(authenticationProvider));
             createdClient = httpClient == null;
-            client = httpClient ?? HttpClientBuilder.Create(authProvider);
+            client = httpClient ?? HttpClientBuilder.Create();
             pNodeFactory = parseNodeFactory ?? ParseNodeFactoryRegistry.DefaultInstance;
             sWriterFactory = serializationWriterFactory ?? SerializationWriterFactoryRegistry.DefaultInstance;
         }
@@ -180,7 +180,7 @@ namespace Microsoft.Kiota.Http.HttpClient
             return response;
         }
         private const string ContentTypeHeaderName = "content-type";
-        private HttpRequestMessage GetRequestMessageFromRequestInformation(RequestInformation requestInfo)
+        internal static HttpRequestMessage GetRequestMessageFromRequestInformation(RequestInformation requestInfo)
         {
             var message = new HttpRequestMessage
             {
@@ -223,6 +223,7 @@ namespace Microsoft.Kiota.Http.HttpClient
         {
             if(createdClient)
                 client?.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

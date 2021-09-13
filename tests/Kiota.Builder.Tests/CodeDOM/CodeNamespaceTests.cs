@@ -7,7 +7,7 @@ namespace Kiota.Builder.Tests
 {
     public class CodeNamespaceTests
     {
-        public const string childName = "one.two.three";
+        public const string ChildName = "one.two.three";
         [Fact]
         public void DoesntThrowOnRootInitialization() {
             var root = CodeNamespace.InitRootNamespace();
@@ -19,9 +19,9 @@ namespace Kiota.Builder.Tests
         [Fact]
         public void SegmentsNamespaceNames() {
             var root = CodeNamespace.InitRootNamespace();
-            var child = root.AddNamespace(childName);
+            var child = root.AddNamespace(ChildName);
             Assert.NotNull(child);
-            Assert.Equal(childName, child.Name);
+            Assert.Equal(ChildName, child.Name);
             var two = child.Parent as CodeNamespace;
             Assert.NotNull(two);
             Assert.Equal("one.two", two.Name);
@@ -33,7 +33,7 @@ namespace Kiota.Builder.Tests
         [Fact]
         public void AddsASingleItemNamespace() {
             var root = CodeNamespace.InitRootNamespace();
-            var child = root.AddNamespace(childName);
+            var child = root.AddNamespace(ChildName);
             var item = child.EnsureItemNamespace();
             Assert.NotNull(item);
             Assert.True(item.IsItemNamespace);
@@ -62,19 +62,19 @@ namespace Kiota.Builder.Tests
         [Fact]
         public void FindsNamespaceByName() {
             var root = CodeNamespace.InitRootNamespace();
-            var child = root.AddNamespace(childName);
-            var result = root.FindNamespaceByName(childName);
+            var child = root.AddNamespace(ChildName);
+            var result = root.FindNamespaceByName(ChildName);
             Assert.Equal(child, result);
         }
         [Fact]
         public void ThrowsOnAddingEmptyCollections() {
             var root = CodeNamespace.InitRootNamespace();
-            var child = root.AddNamespace(childName);
+            var child = root.AddNamespace(ChildName);
             Assert.Throws<ArgumentNullException>(() => {
                 child.AddClass(null);
             });
             Assert.Throws<ArgumentOutOfRangeException>(() => {
-                child.AddClass(new CodeClass[] {});
+                child.AddClass(Array.Empty<CodeClass>());
             });
             Assert.Throws<ArgumentNullException>(() => {
                 child.AddClass(new CodeClass[] {null});
@@ -83,7 +83,7 @@ namespace Kiota.Builder.Tests
                 child.AddEnum(null);
             });
             Assert.Throws<ArgumentOutOfRangeException>(() => {
-                child.AddEnum(new CodeEnum[] {});
+                child.AddEnum(Array.Empty<CodeEnum>());
             });
             Assert.Throws<ArgumentNullException>(() => {
                 child.AddEnum(new CodeEnum[] {null});
@@ -92,7 +92,7 @@ namespace Kiota.Builder.Tests
                 child.AddUsing(null);
             });
             Assert.Throws<ArgumentOutOfRangeException>(() => {
-                child.AddUsing(new CodeUsing[] {});
+                child.AddUsing(Array.Empty<CodeUsing>());
             });
             Assert.Throws<ArgumentNullException>(() => {
                 child.AddUsing(new CodeUsing[] {null});

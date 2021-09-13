@@ -5,18 +5,15 @@ using Xunit;
 
 namespace Kiota.Builder.Writers.Java.Tests {
     public class CodeClassEndWriterTests: IDisposable {
-        private const string defaultPath = "./";
-        private const string defaultName = "name";
+        private const string DefaultPath = "./";
+        private const string DefaultName = "name";
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeClassEndWriter codeElementWriter;
         private readonly CodeClass parentClass;
-        private const string propertyName = "propertyName";
-        private const string propertyDescription = "some description";
-        private const string typeName = "Somecustomtype";
         public CodeClassEndWriterTests() {
             codeElementWriter = new CodeClassEndWriter();
-            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, defaultPath, defaultName);
+            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
@@ -27,6 +24,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
         }
         public void Dispose() {
             tw?.Dispose();
+            GC.SuppressFinalize(this);
         }
         [Fact]
         public void ClosesNestedClasses() {

@@ -7,21 +7,21 @@ using Xunit;
 
 namespace Kiota.Builder.Writers.Ruby.Tests {
     public class CodeMethodWriterTests : IDisposable {
-        private const string defaultPath = "./";
-        private const string defaultName = "name";
+        private const string DefaultPath = "./";
+        private const string DefaultName = "name";
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeMethod method;
         private readonly CodeMethod voidMethod;
         private readonly CodeClass parentClass;
-        private const string methodName = "methodName";
-        private const string returnTypeName = "Somecustomtype";
-        private const string methodDescription = "some description";
-        private const string paramDescription = "some parameter description";
-        private const string paramName = "paramName";
+        private const string MethodName = "methodName";
+        private const string ReturnTypeName = "Somecustomtype";
+        private const string MethodDescription = "some description";
+        private const string ParamDescription = "some parameter description";
+        private const string ParamName = "paramName";
         public CodeMethodWriterTests()
         {
-            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Ruby, defaultPath, defaultName);
+            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Ruby, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
@@ -30,13 +30,13 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             };
             root.AddClass(parentClass);
             method = new CodeMethod(parentClass) {
-                Name = methodName,
+                Name = MethodName,
             };
             method.ReturnType = new CodeType(method) {
-                Name = returnTypeName
+                Name = ReturnTypeName
             };
             voidMethod = new CodeMethod(parentClass) {
-                Name = methodName,
+                Name = MethodName,
             };
             voidMethod.ReturnType = new CodeType(voidMethod) {
                 Name = "void"
@@ -47,6 +47,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         public void Dispose()
         {
             tw?.Dispose();
+            GC.SuppressFinalize(this);
         }
         private void AddSerializationProperties() {
             var addData = parentClass.AddProperty(new CodeProperty(parentClass) {
@@ -207,8 +208,8 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         [Fact]
         public void WritesDeSerializerBody() {
             var parameter = new CodeParameter(method){
-                Description = paramDescription,
-                Name = paramName
+                Description = ParamDescription,
+                Name = ParamName
             };
             parameter.Type = new CodeType(parameter) {
                 Name = "string"
@@ -236,8 +237,8 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         [Fact]
         public void WritesSerializerBody() {
             var parameter = new CodeParameter(method){
-                Description = paramDescription,
-                Name = paramName
+                Description = ParamDescription,
+                Name = ParamName
             };
             parameter.Type = new CodeType(parameter) {
                 Name = "string"
@@ -312,11 +313,11 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         [Fact]
         public void WritesMethodSyncDescription() {
             
-            method.Description = methodDescription;
+            method.Description = MethodDescription;
             method.IsAsync = false;
             var parameter = new CodeParameter(method){
-                Description = paramDescription,
-                Name = paramName
+                Description = ParamDescription,
+                Name = ParamName
             };
             parameter.Type = new CodeType(parameter) {
                 Name = "string"
@@ -341,13 +342,13 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             method.Parent = CodeNamespace.InitRootNamespace();
             Assert.Throws<InvalidOperationException>(() => writer.Write(method));
         }
-        private const string taskPrefix = "CompletableFuture<";
+        private const string TaskPrefix = "CompletableFuture<";
         [Fact]
         public void DoesNotAddAsyncInformationOnSyncMethods() {
             method.IsAsync = false;
             writer.Write(method);
             var result = tw.ToString();
-            Assert.DoesNotContain(taskPrefix, result);
+            Assert.DoesNotContain(TaskPrefix, result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
@@ -437,7 +438,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
                 IsExternal = true,
             };
             method.AddParameter(backingStoreParam);
-            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, defaultPath, defaultName);
+            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, DefaultPath, DefaultName);
             tempWriter.SetTextWriter(tw);
             tempWriter.Write(method);
             var result = tw.ToString();

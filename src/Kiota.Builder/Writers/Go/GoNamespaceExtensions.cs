@@ -17,7 +17,7 @@ namespace Kiota.Builder.Writers.Go {
             var urlPrefixIndex = ns.Name.LastIndexOf('/') + 1;
             return (ns.Name[0..urlPrefixIndex] + ns.Name[urlPrefixIndex..].Split('.', StringSplitOptions.RemoveEmptyEntries).Aggregate((x, y) => $"{x}/{y}")).ToLowerInvariant();
         }
-        private static HashAlgorithm sha = SHA256.Create();
+        private static readonly HashAlgorithm sha = SHA256.Create();
         public static string GetNamespaceImportSymbol(this CodeElement ns) {
             if(ns == null) return string.Empty;
             var importName = ns.GetInternalNamespaceImport();

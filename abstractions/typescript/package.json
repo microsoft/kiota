@@ -23,15 +23,15 @@
   },
   "homepage": "https://github.com/microsoft/kiota#readme",
   "devDependencies": {
-    "@types/node": "^16.7.10",
+    "@types/node": "^16.9.1",
     "@types/uuid": "^8.3.1",
-    "typescript": "^4.4.2"
+    "typescript": "^4.4.3"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
   "dependencies": {
     "uuid": "^8.3.2",
-    "web-streams-polyfill": "^3.1.0"
+    "web-streams-polyfill": "^3.1.1"
   }
 }

@@ -30,7 +30,7 @@ namespace Kiota.Builder {
                 _ => 13,
             };
         }
-        private static int optionalWeight = 1000;
-        private static int kindWeight = 10;
+        private static readonly int optionalWeight = 1000;
+        private static readonly int kindWeight = 10;
     }
 }

@@ -11,7 +11,7 @@ namespace Kiota.Builder.Tests {
                 Name = "class",
             };
             Assert.False(method.IsOfKind((CodeMethodKind[])null));
-            Assert.False(method.IsOfKind(new CodeMethodKind[] { }));
+            Assert.False(method.IsOfKind(Array.Empty<CodeMethodKind>()));
         }
         [Fact]
         public void IsOfKind() {
@@ -38,7 +38,7 @@ namespace Kiota.Builder.Tests {
                 method.AddParameter(null);
             });
             Assert.Throws<ArgumentOutOfRangeException>(() => {
-                method.AddParameter(new CodeParameter[] { });
+                method.AddParameter(Array.Empty<CodeParameter>());
             });
         }
         [Fact]
