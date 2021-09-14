@@ -78,7 +78,7 @@ namespace Kiota.Builder
         private void SetApiRootUrl(OpenApiDocument doc) {
             config.ApiRootUrl = doc.Servers.FirstOrDefault()?.Url.TrimEnd('/');
             if(string.IsNullOrEmpty(config.ApiRootUrl))
-                throw new InvalidOperationException("A servers entry (v3) or a host + basePath property (v2) must be present in the OpenAPI description.");
+                throw new InvalidOperationException("A servers entry (v3) or host + basePath + schems properties (v2) must be present in the OpenAPI description.");
         }
         private void StopLogAndReset(Stopwatch sw, string prefix) {
             sw.Stop();

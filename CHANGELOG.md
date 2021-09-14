@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug where float, long and binary types would not be parsed by the generator #558
 - Fixes a bug where generation would fail on compact namespace names #558
 - Renames request info into request information to avoid conflicts with platform #559
+- Fixes a bug where the server url would not be taken in consideration #626
 
 ## [0.0.8] - 2021-08-25
 
