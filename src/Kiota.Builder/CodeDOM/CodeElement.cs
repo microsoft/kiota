@@ -16,6 +16,13 @@ namespace Kiota.Builder
             Parent = parent;
         }
         public CodeElement Parent { get; set; }
+        public int GetNamespaceDepth(int currentDepth = 0) {
+            return this switch {
+                _ when Parent is null => currentDepth,
+                CodeNamespace ns => ns.Parent.GetNamespaceDepth(++currentDepth),
+                _ => Parent.GetNamespaceDepth(currentDepth),
+            };
+        }
         public virtual IEnumerable<CodeElement> GetChildElements(bool innerOnly = false) => Enumerable.Empty<CodeElement>();
 
         public virtual string Name

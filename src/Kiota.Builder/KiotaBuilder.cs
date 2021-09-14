@@ -297,7 +297,7 @@ namespace Kiota.Builder
                 IsAsync = false,
                 IsStatic = false,
             };
-            methodToAdd.ReturnType = new CodeType(codeClass) {
+            methodToAdd.ReturnType = new CodeType(methodToAdd) {
                 Name = propType,
                 ActionOf = false,
                 CollectionKind = CodeTypeBase.CodeTypeCollectionKind.None,
@@ -449,7 +449,7 @@ namespace Kiota.Builder
                 currentClass.AddUsing(backingStoreInterfaceUsing, backingStoreSingletonUsing);
             }
         }
-        private static readonly Func<CodeClass, int> shortestNamespaceOrder = (x) => x.Parent.Name.Split('.').Length;
+        private static readonly Func<CodeClass, int> shortestNamespaceOrder = (x) => x.GetNamespaceDepth();
         /// <summary>
         /// Remaps definitions to custom types so they can be used later in generation or in refiners
         /// </summary>
@@ -490,11 +490,12 @@ namespace Kiota.Builder
                 }
             });
 
-            Parallel.ForEach(unmappedTypesWithName.Except(unmappedRequestBuilderTypes).GroupBy(x => x.Name), x => {
+            Parallel.ForEach(unmappedTypesWithName.Where(x => x.TypeDefinition == null).GroupBy(x => x.Name), x => {
                 if (rootNamespace.FindChildByName<ITypeDefinition>(x.First().Name) is CodeElement definition)
                     foreach (var type in x)
                     {
                         type.TypeDefinition = definition;
+                        logger.LogWarning($"Mapped type {type.Name} for {type.Parent.Name} using the fallback approach.");
                     }
             });
         }
