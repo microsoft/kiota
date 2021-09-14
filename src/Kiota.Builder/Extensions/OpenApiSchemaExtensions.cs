@@ -95,7 +95,7 @@ namespace Kiota.Builder.Extensions {
                                             .ToList();// this to list is important otherwise the any marks the schemas as visited and add range doesn't find anything
                 if(subSchemaReferences.Any())
                     result.AddRange(subSchemaReferences);
-                return result;
+                return result.Distinct();
             } else 
                 return Enumerable.Empty<string>();
         }
