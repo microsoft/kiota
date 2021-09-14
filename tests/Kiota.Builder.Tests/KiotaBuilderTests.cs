@@ -78,7 +78,7 @@ namespace Kiota.Builder.Tests
 
             var rootNamespace = codeModel.GetChildElements(true).Single();
             var rootBuilder = rootNamespace.GetChildElements(true).Single(e => e.Name == "Graph");
-            var tasksProperty = rootBuilder.GetChildElements(true).OfType<CodeProperty>().Single(e => e.Name == "Tasks");
+            var tasksProperty = rootBuilder.GetChildElements(true).OfType<CodeProperty>().Single(e => e.Name.Equals("Tasks", StringComparison.OrdinalIgnoreCase));
             var tasksRequestBuilder = tasksProperty.Type as CodeType;
             Assert.NotNull(tasksRequestBuilder);
             var getMethod = tasksRequestBuilder.TypeDefinition.GetChildElements(true).OfType<CodeMethod>().Single(e => e.Name == "Get");
@@ -295,12 +295,12 @@ namespace Kiota.Builder.Tests
             Assert.NotNull(deviceManagementNS);
             var deviceManagementRequestBuilder = deviceManagementNS.FindChildByName<CodeClass>("DeviceManagementRequestBuilder");
             Assert.NotNull(deviceManagementRequestBuilder);
-            var getEffectivePermissionsMethod = deviceManagementRequestBuilder.FindChildByName<CodeMethod>("GetEffectivePermissions");
+            var getEffectivePermissionsMethod = deviceManagementRequestBuilder.FindChildByName<CodeMethod>("getEffectivePermissionsWithScope");
             Assert.NotNull(getEffectivePermissionsMethod);
             Assert.Single(getEffectivePermissionsMethod.Parameters);
-            var getEffectivePermissionsNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement.getEffectivePermissions");
+            var getEffectivePermissionsNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement.getEffectivePermissionsWithScope");
             Assert.NotNull(getEffectivePermissionsNS);
-            var getEffectivePermissionsRequestBuilder = getEffectivePermissionsNS.FindChildByName<CodeClass>("GetEffectivePermissionsRequestBuilder");
+            var getEffectivePermissionsRequestBuilder = getEffectivePermissionsNS.FindChildByName<CodeClass>("GetEffectivePermissionsWithScopeRequestBuilder");
             Assert.NotNull(getEffectivePermissionsRequestBuilder);
             var constructorMethod = getEffectivePermissionsRequestBuilder.FindChildByName<CodeMethod>("constructor");
             Assert.NotNull(constructorMethod);
