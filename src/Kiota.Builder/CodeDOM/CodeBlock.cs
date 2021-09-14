@@ -100,8 +100,8 @@ namespace Kiota.Builder
             if(!InnerChildElements.Any())
                 return default;
 
-            if(InnerChildElements.TryGetValue(childName, out var result) && result is T)
-                return (T)(object)result;
+            if(InnerChildElements.TryGetValue(childName, out var result) && result is T castResult)
+                return castResult;
             else if(findInChildElements)
                 foreach(var childElement in InnerChildElements.Values.OfType<CodeBlock>()) {
                     var childResult = childElement.FindChildByName<T>(childName, true);
