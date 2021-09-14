@@ -20,7 +20,7 @@ namespace Kiota.Builder.Refiners {
                                                     CodePropertyKind.BackingStore,
                                                 }, _configuration.UsesBackingStore, true);
             ReplaceReservedNames(generatedCode, new RubyReservedNamesProvider(), x => $"{x}_escaped");
-            ReplaceRelativeImportsByImportPath(generatedCode, '.');
+            ReplaceRelativeImportsByImportPath(generatedCode, '.', _configuration.ClientNamespaceName);
             AddNamespaceModuleImports(generatedCode , _configuration.ClientNamespaceName);
             FixReferencesToEntityType(generatedCode);
             FixInheritedEntityType(generatedCode);

@@ -25,14 +25,15 @@ namespace Kiota.Builder.Refiners.Tests {
             var messageClassDef = new CodeClass(subNS) {
                 Name = "Message",
             };
+            subNS.AddClass(messageClassDef);
             declaration.Usings.Add(new (parentClass) {
-                Name = "graph",
+                Name = messageClassDef.Name,
                 Declaration = new(parentClass) {
-                    Name = "Message",
+                    Name = messageClassDef.Name,
                     TypeDefinition = messageClassDef,
                 }
             });
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript, ClientNamespaceName = graphNS.Name }, root);
             Assert.Equal("./messages/message", declaration.Usings.First().Declaration.Name);
         }
         [Fact]
@@ -50,8 +51,46 @@ namespace Kiota.Builder.Refiners.Tests {
                     TypeDefinition = messageClassDef,
                 }
             });
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript, ClientNamespaceName = string.Empty }, root);
             Assert.Equal("../messages/message", declaration.Usings.First().Declaration.Name);
+        }
+        [Fact]
+        public void ReplacesImportsInOtherTrunk() {
+            var usedRangeNS1 = graphNS.AddNamespace($"{graphNS.Name}.workbooks.workbook.tables.worksheet.pivotTables.usedRange");
+            var usedRangeNS2 = graphNS.AddNamespace($"{graphNS.Name}.workbooks.workbook.worksheets.usedRange");
+            var workbookNS = graphNS.AddNamespace($"{graphNS.Name}.workbooks.workbook");
+            var workbookRangeClassDef = new CodeClass(workbookNS) {
+                Name = "workbookRange",
+            };
+            workbookNS.AddClass(workbookRangeClassDef);
+            var usedRangeClassDef1 = new CodeClass(usedRangeNS1) {
+                Name = "usedRangeRequestBuilder",
+            };
+            usedRangeNS1.AddClass(usedRangeClassDef1);
+            
+            var declaration1 = usedRangeClassDef1.StartBlock as CodeClass.Declaration;
+            declaration1.Usings.Add(new (usedRangeClassDef1) {
+                Name = workbookNS.Name,
+                Declaration = new (usedRangeClassDef1) {
+                    Name = workbookRangeClassDef.Name,
+                    TypeDefinition = workbookRangeClassDef,
+                }
+            });
+            var usedRangeClassDef2 = new CodeClass(usedRangeNS2) {
+                Name = "usedRangeRequestBuilder",
+            };
+            usedRangeNS2.AddClass(usedRangeClassDef2);
+            var declaration2 = usedRangeClassDef2.StartBlock as CodeClass.Declaration;
+            declaration2.Usings.Add(new (usedRangeClassDef2) {
+                Name = workbookNS.Name,
+                Declaration = new (usedRangeClassDef2) {
+                    Name = workbookRangeClassDef.Name,
+                    TypeDefinition = workbookRangeClassDef,
+                }
+            });
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript, ClientNamespaceName = graphNS.Name }, root);
+            Assert.Equal("../../../../workbookRange", declaration1.Usings.First().Declaration.Name);
+            Assert.Equal("../../workbookRange", declaration2.Usings.First().Declaration.Name);
         }
         [Fact]
         public void ReplacesImportsSameNamespace() {

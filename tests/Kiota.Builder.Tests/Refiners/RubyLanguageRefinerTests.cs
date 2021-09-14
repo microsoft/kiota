@@ -26,7 +26,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 Name = "rb",
                 ClassKind = CodeClassKind.RequestBuilder,
             }).First();
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
             Assert.NotEmpty(model.StartBlock.Usings);
             Assert.NotEmpty(requestBuilder.StartBlock.Usings);
         }
@@ -47,13 +47,16 @@ namespace Kiota.Builder.Refiners.Tests {
                     TypeDefinition = messageClassDef,
                 }
             });
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
             Assert.Equal("./messages/message", declaration.Usings.First().Declaration.Name);
         }
         [Fact]
         public void ReplacesImportsParentNamespace() {
             var declaration = parentClass.StartBlock as CodeClass.Declaration;
-            var subNS = root.AddNamespace("messages");
+            graphNS.RemoveChildElement(parentClass);
+            var parentNS = root.AddNamespace($"{graphNS.Name}.otherNS");
+            parentNS.AddClass(parentClass);
+            var subNS = root.AddNamespace($"{graphNS.Name}.messages");
             var messageClassDef = new CodeClass(subNS) {
                 Name = "Message",
             };
@@ -65,7 +68,7 @@ namespace Kiota.Builder.Refiners.Tests {
                     TypeDefinition = messageClassDef,
                 }
             });
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
             Assert.Equal("../messages/message", declaration.Usings.First().Declaration.Name);
         }
         [Fact]
@@ -81,7 +84,7 @@ namespace Kiota.Builder.Refiners.Tests {
                     TypeDefinition = messageClassDef,
                 }
             });
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
             Assert.Equal("./message", declaration.Usings.First().Declaration.Name);
         }
         #endregion
@@ -92,7 +95,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 Name = "break",
                 ClassKind = CodeClassKind.Model
             }).First();
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
             Assert.NotEqual("break", model.Name);
             Assert.Contains("escaped", model.Name);
         }
@@ -106,7 +109,7 @@ namespace Kiota.Builder.Refiners.Tests {
             declaration.Inherits = new (parentClass){
                 Name = "someInterface"
             };
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
             Assert.Equal("./someInterface", declaration.Usings.First().Declaration.Name);
         }
         [Fact]
@@ -123,26 +126,26 @@ namespace Kiota.Builder.Refiners.Tests {
             declaration.Inherits = new (entity){
                 Name = "entity"
             };
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
             Assert.Equal("Graph::Entity", declaration.Inherits.Name);
         }
         [Fact]
         public void AddNamespaceModuleImports() {
             var declaration = parentClass.StartBlock as CodeClass.Declaration;
-            var subNS = graphNS.AddNamespace("messages");
+            var subNS = graphNS.AddNamespace($"{graphNS.Name}.messages");
             var messageClassDef = new CodeClass(subNS) {
                 Name = "Message",
             };
             subNS.AddClass(messageClassDef);
             declaration.Usings.Add(new (parentClass) {
-                Name = "messages",
+                Name = messageClassDef.Name,
                 Declaration = new(parentClass) {
-                    Name = "Message",
+                    Name = messageClassDef.Name,
                     TypeDefinition = messageClassDef,
                 }
             });
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
-            Assert.Equal("../messages/message", declaration.Usings.First().Declaration.Name);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
+            Assert.Equal("./messages/message", declaration.Usings.First().Declaration.Name);
             Assert.Equal("./graph", declaration.Usings.Last().Declaration.Name);
         }
         #endregion
