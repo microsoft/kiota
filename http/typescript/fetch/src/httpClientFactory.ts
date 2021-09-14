@@ -4,23 +4,9 @@
 
  import { HttpClient } from "./httpClient";
  import { AuthenticationProvider } from "@microsoft/kiota-abstractions";
- import { AuthenticationHandler } from "./middleware/AuthenticationHandler";
- import { FetchHandler } from "./middleware/FetchHandler";
- import { Middleware } from "./middleware/middleware";
- import { RedirectHandlerOptions } from "./middleware/options/RedirectHandlerOptions";
- import { RetryHandlerOptions } from "./middleware/options/RetryHandlerOptions";
- import { RedirectHandler } from "./middleware/RedirectHandler";
- import { RetryHandler } from "./middleware/RetryHandler";
-import { MiddlewareFactory } from "./middleware/MiddlewareFactory";
+ import { Middleware } from "./middlewares/middleware";
+import { MiddlewareFactory } from "./middlewares/middlewareFactory";
  
- /**
-  * @private
-  * To check whether the environment is node or not
-  * @returns A boolean representing the environment is node or not
-  */
- const isNodeEnvironment = (): boolean => {
-     return typeof process === "object" && typeof require === "function";
- };
  
  /**
   * @class
@@ -52,7 +38,12 @@ import { MiddlewareFactory } from "./middleware/MiddlewareFactory";
       */
      public static createWithMiddleware(middleware: Middleware[]): HttpClient {
          // Middleware should not empty or undefined. This is check is present in the HTTPClient constructor.
-         return new HttpClient(middleware);
+         return new HttpClient(undefined,...middleware);
      }
+
+     public static createWithoutMiddleware(customFetch:()=> Promise<Response>): HttpClient {
+        // Middleware should not empty or undefined. This is check is present in the HTTPClient constructor.
+        return new HttpClient(customFetch);
+    }
  }
  

@@ -3,6 +3,8 @@ import { Headers as FetchHeadersCtor } from 'cross-fetch';
 import { ReadableStream } from 'web-streams-polyfill';
 import { URLSearchParams } from 'url';
 import { HttpClient } from './httpClient';
+import { Context } from 'vm';
+import { MiddlewareContext } from './middlewareContext';
 export class HttpCore implements IHttpCore {
     public getSerializationWriterFactory(): SerializationWriterFactory {
         return this.serializationWriterFactory;
@@ -42,7 +44,7 @@ export class HttpCore implements IHttpCore {
         await this.authenticationProvider.authenticateRequest(requestInfo);
         
         const request = this.getRequestFromRequestInformation(requestInfo);
-        const response = await this.httpClient.fetch(this.getRequestUrl(requestInfo), request);
+        const response = await this.httpClient.fetch(this.createContext(requestInfo));
         if(responseHandler) {
             return await responseHandler.handleResponseAsync(response);
         } else {
@@ -63,7 +65,7 @@ export class HttpCore implements IHttpCore {
         await this.authenticationProvider.authenticateRequest(requestInfo);
         
         const request = this.getRequestFromRequestInformation(requestInfo);
-        const response = await this.httpClient.fetch(this.getRequestUrl(requestInfo), request);
+        const response = await this.httpClient.fetch(this.createContext(requestInfo));
         if(responseHandler) {
             return await responseHandler.handleResponseAsync(response);
         } else {
@@ -84,7 +86,7 @@ export class HttpCore implements IHttpCore {
         await this.authenticationProvider.authenticateRequest(requestInfo);
         
         const request = this.getRequestFromRequestInformation(requestInfo);
-        const response = await this.httpClient.fetch(this.getRequestUrl(requestInfo), request);
+        const response = await this.httpClient.fetch(this.createContext(requestInfo));
         if(responseHandler) {
             return await responseHandler.handleResponseAsync(response);
         } else {
@@ -132,7 +134,7 @@ export class HttpCore implements IHttpCore {
         await this.authenticationProvider.authenticateRequest(requestInfo);
         
         const request = this.getRequestFromRequestInformation(requestInfo);
-        const response = await this.httpClient.fetch(this.getRequestUrl(requestInfo), request);
+        const response = await this.httpClient.fetch(this.createContext(requestInfo));
         if(responseHandler) {
             return await responseHandler.handleResponseAsync(response);
         }
@@ -147,11 +149,11 @@ export class HttpCore implements IHttpCore {
         }
     }
     private getRequestFromRequestInformation = (requestInfo: RequestInformation): RequestInit => {
-        const request = {
+        const request :RequestInit = {
             method: requestInfo.httpMethod?.toString(),
-            headers: new FetchHeadersCtor(),
+            headers: new Headers(),
             body: requestInfo.content,
-        } as RequestInit;
+        }
         requestInfo.headers?.forEach((v, k) => (request.headers as Headers).set(k, v));
         return request;
     }
@@ -165,6 +167,16 @@ export class HttpCore implements IHttpCore {
             url = url + '?' + queryParametersBuilder.toString();
         }
         return url;
+    }
+
+    private createContext (requestInformation : RequestInformation): MiddlewareContext{
+
+        const context:MiddlewareContext = {
+            request: this.getRequestUrl(requestInformation),
+            options: requestInformation.headers,
+            middlewareOptions: requestInformation.getMiddlewareOptions()
+        }
+        return context;
     }
 
 }

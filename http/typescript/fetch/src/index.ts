@@ -1,3 +1,3 @@
 export * from './httpCore';
 export * from './httpClient';
-export * from './middleware/middleware';
+export * from './middlewares/middleware';

@@ -29,7 +29,7 @@
     "registry": "https://npm.pkg.github.com"
   },
   "dependencies": {
-    "@microsoft/kiota-abstractions": "^1.0.19",
+    "@microsoft/kiota-abstractions": "file:../../../abstractions/typescript",
     "cross-fetch": "^3.1.4",
     "web-streams-polyfill": "^3.1.0"
   },

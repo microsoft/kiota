@@ -3,11 +3,13 @@ import { ReadableStream } from 'web-streams-polyfill/es2018';
 import { Parsable } from "./serialization";
 import { HttpCore } from "./httpCore";
 import { MiddlewareOption } from "./middlewareOption";
+import { RequestDetails } from "./requestDetails";
+import { FetchOptions } from "./fetchOptions";
 
 /** This class represents an abstract HTTP request. */
-export class RequestInformation {
+export class RequestInformation implements RequestDetails{
     /** The URI of the request. */
-    public URI?: string;
+    public URI?: RequestInfo;
     /**
      * Sets the URI of the request.
      * @param currentPath the current path (scheme, host, port, path, query parameters) of the request.
@@ -42,7 +44,11 @@ export class RequestInformation {
     /** The Query Parameters of the request. */
     public queryParameters: Map<string, string | number | boolean | undefined> = new Map<string, string | number | boolean | undefined>(); //TODO: case insensitive
     /** The Request Headers. */
-    public headers: Map<string, string> = new Map<string, string>(); //TODO: case insensitive
+    public headers: Headers = new Headers(); //TODO: case insensitive
+
+
+    public options?: FetchOptions;
+    
     private _middlewareOptions = new Map<string, MiddlewareOption>(); //TODO: case insensitive
     /** Gets the middleware options for the request. */
     public getMiddlewareOptions() { return this._middlewareOptions.values(); }

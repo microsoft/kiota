@@ -6,7 +6,7 @@
         "moduleResolution": "node",
         "downlevelIteration": true,
         "allowSyntheticDefaultImports": true,
-        "outDir": "lib",
+        "outDir": "dist",
         "lib": ["es2020", "DOM"],
         "declaration": true
 	},
