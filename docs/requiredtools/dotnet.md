@@ -4,7 +4,7 @@
 
 ## Initializing target projects
 
-Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](../abstractions/dotnet) and the [authentication](../authentication/dotnet/azure), [http](../http/dotnet/httpclient), [serialization](../serialization/dotnet/json) packages from the GitHub feed.
+Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](../../abstractions/dotnet) and the [authentication](../../authentication/dotnet/azure), [http](../../http/dotnet/httpclient), [serialization](../../serialization/dotnet/json) packages from the GitHub feed.
 
 Execute the following command in the directory you want to initialize the project in.
 
@@ -15,7 +15,7 @@ dotnet new gitignore
 
 ## Adding dependencies
 
-If you have not already, you will need to create a nuget.config to enable access to the packages in the GitHub package feed.  The article on installing the [Kiota command line](../generator/tool) tool shows how to do this.
+If you have not already, you will need to create a nuget.config to enable access to the packages in the GitHub package feed.  The article on installing the [Kiota command line](../generator/tool.md) tool shows how to do this.
 
 Once the pacakge feed is accessible the following packages can be added to the project.
 
