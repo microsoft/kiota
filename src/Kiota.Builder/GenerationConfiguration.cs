@@ -7,7 +7,7 @@ namespace Kiota.Builder {
         public string ClientClassName { get; set; } = "ApiClient";
         public string ClientNamespaceName { get; set; } = "ApiSdk";
         public GenerationLanguage Language { get; set; } = GenerationLanguage.CSharp;
-        public string ApiRootUrl { get; set; } = "https://graph.microsoft.com/v1.0";
+        public string ApiRootUrl { get; set; }
         public List<string> PropertiesPrefixToStrip { get; set; } = new() { "@odata."};
         public HashSet<string> IgnoredRequestContentTypes { get; set; } = new();
         public bool UsesBackingStore { get; set; }
