@@ -4,7 +4,7 @@
 
 ## Target project requirements
 
-Before you can compile and run the generated files, you will need to make sure they are part of a project with the required dependencies. After creating a new project, or reusing an existing one, you will need to add references to the [abstraction](../abstractions/dotnet) and the [authentication](../authentication/dotnet/azure), [http](../http/dotnet/httpclient), [serialization](../serialization/dotnet/json) packages from the GitHub feed.
+Before you can compile and run the generated files, you will need to make sure they are part of a project with the required dependencies. After creating a new project, or reusing an existing one, you will need to add references to the [abstraction](../../abstractions/dotnet) and the [authentication](../../authentication/dotnet/azure), [http](../../http/dotnet/httpclient), [serialization](../../serialization/dotnet/json) packages from the GitHub feed.
 
 ## Creating target projects
 
@@ -21,7 +21,7 @@ dotnet new gitignore
 
 ## Adding dependencies
 
-If you have not already, you will need to create a nuget.config to enable access to the packages in the GitHub package feed.  The article on installing the [Kiota command line](../generator/tool) tool shows how to do this.
+If you have not already, you will need to create a nuget.config to enable access to the packages in the GitHub package feed.  The article on installing the [Kiota command line](../generator/tool.md) tool shows how to do this.
 
 Once the pacakge feed is accessible the following packages can be added to the project.
 
