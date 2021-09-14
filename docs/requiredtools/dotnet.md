@@ -15,7 +15,7 @@ dotnet new gitignore
 
 ## Adding dependencies
 
-If you have not already, you will need to create a nuget.config to enable access to the packages in the GitHub package feed.  The article on installing the [Kiota command line](../generator/tool) tool shows how to do this.
+If you have not already, you will need to create a nuget.config to enable access to the packages in the GitHub package feed.  The article on installing the [Kiota command line](../generator/tool.md) tool shows how to do this.
 
 Once the pacakge feed is accessible the following packages can be added to the project.
 
