@@ -53,6 +53,8 @@ namespace Kiota.Builder
             var doc = CreateOpenApiDocument(input);
             StopLogAndReset(sw, "step 2 - parsing the document - took");
 
+            SetApiRootUrl(doc);
+
             // Step 3 - Create Uri Space of API
             sw.Start();
             var openApiTree = CreateUriSpace(doc);
@@ -72,6 +74,11 @@ namespace Kiota.Builder
             sw.Start();
             await CreateLanguageSourceFilesAsync(config.Language, generatedCode);
             StopLogAndReset(sw, "step 6 - writing files - took");
+        }
+        private void SetApiRootUrl(OpenApiDocument doc) {
+            config.ApiRootUrl = doc.Servers.FirstOrDefault()?.Url.TrimEnd('/');
+            if(string.IsNullOrEmpty(config.ApiRootUrl))
+                throw new InvalidOperationException("A servers entry (v3) or host + basePath + schems properties (v2) must be present in the OpenAPI description.");
         }
         private void StopLogAndReset(Stopwatch sw, string prefix) {
             sw.Stop();
