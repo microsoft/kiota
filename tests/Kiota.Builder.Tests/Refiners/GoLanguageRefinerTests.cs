@@ -11,15 +11,15 @@ namespace Kiota.Builder.Refiners.Tests {
         #region GoRefinerTests
         [Fact]
         public void ReplacesRequestBuilderPropertiesByMethods() {
-            var model = root.AddClass(new CodeClass (root) {
+            var model = root.AddClass(new CodeClass {
                 Name = "someModel",
                 ClassKind = CodeClassKind.RequestBuilder
             }).First();
-            var rb = model.AddProperty(new CodeProperty(model) {
+            var rb = model.AddProperty(new CodeProperty {
                 Name = "someProperty",
                 PropertyKind = CodePropertyKind.RequestBuilder,
             }).First();
-            rb.Type = new CodeType(rb) {
+            rb.Type = new CodeType {
                 Name = "someType",
             };
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
@@ -28,7 +28,7 @@ namespace Kiota.Builder.Refiners.Tests {
         }
         [Fact]
         public void AddsErrorImportForEnums() {
-            var testEnum = root.AddEnum(new CodeEnum(root) {
+            var testEnum = root.AddEnum(new CodeEnum {
                 Name = "TestEnum",
 
             }).First();
@@ -38,7 +38,7 @@ namespace Kiota.Builder.Refiners.Tests {
         [Fact]
         public void MovesModelsInDedicatedNamespace() {
             var main = root.AddNamespace("/main");
-            main.AddClass(new CodeClass (main) {
+            main.AddClass(new CodeClass {
                 Name = "someModel",
                 ClassKind = CodeClassKind.Model
             });
@@ -55,69 +55,69 @@ namespace Kiota.Builder.Refiners.Tests {
             const string deserializeDefaultName = "IDictionary<string, Action<Model, IParseNode>>";
             const string dateTimeOffsetDefaultName = "DateTimeOffset";
             const string addiationalDataDefaultName = "new Dictionary<string, object>()";
-            var model = root.AddClass(new CodeClass (root) {
+            var model = root.AddClass(new CodeClass {
                 Name = "model",
                 ClassKind = CodeClassKind.Model
             }).First();
-            model.AddProperty(new (model) {
+            model.AddProperty(new () {
                 Name = "core",
                 PropertyKind = CodePropertyKind.HttpCore,
-                Type = new CodeType(model) {
+                Type = new CodeType {
                     Name = httpCoreDefaultName
                 }
-            }, new (model) {
+            }, new () {
                 Name = "someDate",
                 PropertyKind = CodePropertyKind.Custom,
-                Type = new CodeType(model) {
+                Type = new CodeType {
                     Name = dateTimeOffsetDefaultName,
                 }
-            }, new (model) {
+            }, new () {
                 Name = "additionalData",
                 PropertyKind = CodePropertyKind.AdditionalData,
-                Type = new CodeType(model) {
+                Type = new CodeType {
                     Name = addiationalDataDefaultName
                 }
             });
             const string handlerDefaultName = "IResponseHandler";
             const string headersDefaultName = "IDictionary<string, string>";
-            var executorMethod = model.AddMethod(new CodeMethod(model) {
+            var executorMethod = model.AddMethod(new CodeMethod {
                 Name = "executor",
                 MethodKind = CodeMethodKind.RequestExecutor,
-                ReturnType = new CodeType(model) {
+                ReturnType = new CodeType {
                     Name = "string"
                 }
-            }, new (model) {
+            }, new () {
                 Name = "deserializeFields",
-                ReturnType = new CodeType(model) {
+                ReturnType = new CodeType {
                     Name = deserializeDefaultName,
                 },
                 MethodKind = CodeMethodKind.Deserializer
             }).First();
-            executorMethod.AddParameter(new (executorMethod) {
+            executorMethod.AddParameter(new () {
                 Name = "handler",
                 ParameterKind = CodeParameterKind.ResponseHandler,
-                Type = new CodeType(executorMethod) {
+                Type = new CodeType {
                     Name = handlerDefaultName,
                 }
-            }, new (executorMethod) {
+            }, new () {
                 Name = "headers",
                 ParameterKind = CodeParameterKind.Headers,
-                Type = new CodeType(executorMethod) {
+                Type = new CodeType {
                     Name = headersDefaultName
                 }
             });
             const string serializerDefaultName = "ISerializationWriter";
-            var serializationMethod = model.AddMethod(new CodeMethod(model) {
+            var serializationMethod = model.AddMethod(new CodeMethod {
                 Name = "seriailization",
                 MethodKind = CodeMethodKind.Serializer,
-                ReturnType = new CodeType(model) {
+                ReturnType = new CodeType {
                     Name = "string"
                 }
             }).First();
-            serializationMethod.AddParameter(new CodeParameter(serializationMethod) {
+            serializationMethod.AddParameter(new CodeParameter {
                 Name = "handler",
                 ParameterKind = CodeParameterKind.Serializer,
-                Type = new CodeType(executorMethod) {
+                Type = new CodeType {
                     Name = serializerDefaultName,
                 }
             });

@@ -109,7 +109,7 @@ namespace Kiota.Builder.Writers.Go {
                 _ => code.Name.ToFirstCharacterLowerCase()
             });
             var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p => conventions.GetParameterSignature(p, parentClass)).ToList());
-            var classType = conventions.GetTypeString(new CodeType(parentClass) { Name = parentClass.Name, TypeDefinition = parentClass }, parentClass);
+            var classType = conventions.GetTypeString(new CodeType { Name = parentClass.Name, TypeDefinition = parentClass }, parentClass);
             var associatedTypePrefix = isConstructor ? string.Empty : $" (m {classType})";
             var finalReturnType = isConstructor ? classType : $"{returnTypeAsyncPrefix}{returnType}{returnTypeAsyncSuffix}";
             var errorDeclaration = code.IsOfKind(CodeMethodKind.ClientConstructor, 
@@ -156,11 +156,11 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLine($"m.{httpCorePropertyName}.EnableBackingStore({backingStoreParameter.Name});");
         }
         private void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, CodeClass parentClass, string methodName, string interfaceName) {
-            var interfaceImportSymbol = conventions.GetTypeString(new CodeType(parentClass) { Name = interfaceName, IsExternal = true }, parentClass, false, false);
-            var methodImportSymbol = conventions.GetTypeString(new CodeType(parentClass) { Name = methodName, IsExternal = true }, parentClass, false, false);
+            var interfaceImportSymbol = conventions.GetTypeString(new CodeType { Name = interfaceName, IsExternal = true }, parentClass, false, false);
+            var methodImportSymbol = conventions.GetTypeString(new CodeType { Name = methodName, IsExternal = true }, parentClass, false, false);
             if(serializationModules != null)
                 foreach(var module in serializationModules) {
-                    var moduleImportSymbol = conventions.GetTypeString(new CodeType(parentClass) { Name = module, IsExternal = true }, parentClass, false, false);
+                    var moduleImportSymbol = conventions.GetTypeString(new CodeType { Name = module, IsExternal = true }, parentClass, false, false);
                     moduleImportSymbol = moduleImportSymbol.Split('.').First();
                     writer.WriteLine($"{methodImportSymbol}(func() {interfaceImportSymbol} {{ return {moduleImportSymbol}.New{module}() }})");
                 }
@@ -220,7 +220,7 @@ namespace Kiota.Builder.Writers.Go {
             else
                 writer.WriteLine($"res := make({codeElement.ReturnType.Name})");
             if(fieldToSerialize.Any()) {
-                var parsableImportSymbol = GetConversionHelperMethodImport(codeElement, parentClass, "ParseNode");
+                var parsableImportSymbol = GetConversionHelperMethodImport(parentClass, "ParseNode");
                 fieldToSerialize
                         .OrderBy(x => x.Name)
                         .ToList()
@@ -272,7 +272,7 @@ namespace Kiota.Builder.Writers.Go {
             var isVoid = string.IsNullOrEmpty(typeShortName);
             WriteGeneratorMethodCall(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer, $"{RequestInfoVarName}, err := ");
             WriteAsyncReturnError(writer, returnType);
-            var parsableImportSymbol = GetConversionHelperMethodImport(codeElement, codeElement.Parent as CodeClass, "Parsable");
+            var parsableImportSymbol = GetConversionHelperMethodImport(codeElement.Parent as CodeClass, "Parsable");
             var constructorFunction = returnType switch {
                 _ when isVoid => string.Empty,
                 _ when isScalar => $"\"{parsableImportSymbol}\", ",
@@ -426,11 +426,11 @@ namespace Kiota.Builder.Writers.Go {
             if(propType is CodeType currentType) {
                 if (isCollection) {
                     if(currentType.TypeDefinition == null) {
-                        var conversionMethodImport = GetConversionHelperMethodImport(propType, parentClass, PrimitiveConversionMethodName);
+                        var conversionMethodImport = GetConversionHelperMethodImport(parentClass, PrimitiveConversionMethodName);
                         writer.WriteLine($"{errorPrefix}WriteCollectionOfPrimitiveValues({serializationKey}, {conversionMethodImport}({valueGet}))");
                         WriteReturnError(writer);
                     } else {
-                        var conversionMethodImport = GetConversionHelperMethodImport(propType, parentClass, ParsableConversionMethodName);
+                        var conversionMethodImport = GetConversionHelperMethodImport(parentClass, ParsableConversionMethodName);
                         writer.WriteLine($"{errorPrefix}WriteCollectionOfObjectValues({serializationKey}, {conversionMethodImport}({valueGet}))");
                         WriteReturnError(writer);
                     }
@@ -462,8 +462,8 @@ namespace Kiota.Builder.Writers.Go {
                 break;
             }
         }
-        private string GetConversionHelperMethodImport(CodeElement parentForTemporaryType, CodeClass parentClass, string name) {
-            var conversionMethodType = new CodeType(parentForTemporaryType) { Name = name, IsExternal = true };
+        private string GetConversionHelperMethodImport(CodeClass parentClass, string name) {
+            var conversionMethodType = new CodeType { Name = name, IsExternal = true };
             return conventions.GetTypeString(conversionMethodType, parentClass, false);
         }
     }

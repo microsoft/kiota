@@ -5,19 +5,20 @@ using System.Linq;
 namespace Kiota.Builder
 {
     public class CodeUnionType : CodeTypeBase, ICloneable {
-        public CodeUnionType(CodeElement parent) : base(parent) {
-            
-        }
         public void AddType(params CodeType[] codeTypes) {
+            AddMissingParent(codeTypes);
             foreach(var codeType in codeTypes.Where(x => x != null && !Types.Contains(x)))
-                Types.Add(codeType);
+                types.Add(codeType);
         }
-        public List<CodeType> Types { get; private set; } = new List<CodeType>();
+        private readonly List<CodeType> types = new ();
+        public IEnumerable<CodeType> Types { get => types; }
 
         public override object Clone() {
-            return new CodeUnionType(this.Parent){
-                Types = new List<CodeType>(Types),
+            var value = new CodeUnionType{
             }.BaseClone<CodeUnionType>(this);
+            if(Types?.Any() ?? false)
+                value.AddType(Types.ToArray());
+            return value;
         }
     }
 }

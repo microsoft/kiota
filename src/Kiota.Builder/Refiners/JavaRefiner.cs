@@ -43,16 +43,17 @@ namespace Kiota.Builder.Refiners {
         private static void SetSetterParametersToNullable(CodeElement currentElement, params Tuple<CodeMethodKind, CodePropertyKind>[] accessorPairs) {
             if(currentElement is CodeMethod method &&
                 accessorPairs.Any(x => method.IsOfKind(x.Item1) && (method.AccessedProperty?.IsOfKind(x.Item2) ?? false))) 
-                method.Parameters.ForEach(x => x.Type.IsNullable = true);
+                foreach(var param in method.Parameters)
+                    param.Type.IsNullable = true;
             CrawlTree(currentElement, element => SetSetterParametersToNullable(element, accessorPairs));   
         }
         private static void AddEnumSetImport(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) &&
                 currentClass.GetChildElements(true).OfType<CodeProperty>().Any(x => x.Type is CodeType xType && xType.TypeDefinition is CodeEnum xEnumType && xEnumType.Flags)) {
-                    var nUsing = new CodeUsing(currentClass) {
+                    var nUsing = new CodeUsing {
                         Name = "EnumSet",
+                        Declaration = new CodeType { Name = "java.util", IsExternal = true },
                     };
-                    nUsing.Declaration = new CodeType(nUsing) { Name = "java.util", IsExternal = true };
                     currentClass.AddUsing(nUsing);
                 }
 
@@ -61,7 +62,7 @@ namespace Kiota.Builder.Refiners {
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
                 var declaration = currentClass.StartBlock as CodeClass.Declaration;
-                declaration.Implements.Add(new CodeType(currentClass) {
+                declaration.AddImplements(new CodeType {
                     IsExternal = true,
                     Name = $"Parsable",
                 });
@@ -74,10 +75,10 @@ namespace Kiota.Builder.Refiners {
                 if(childElements.OfType<CodeProperty>().Any(x => x.Type?.CollectionKind == CodeType.CodeTypeCollectionKind.Complex) ||
                     childElements.OfType<CodeMethod>().Any(x => x.ReturnType?.CollectionKind == CodeType.CodeTypeCollectionKind.Complex) ||
                     childElements.OfType<CodeMethod>().Any(x => x.Parameters.Any(y => y.Type.CollectionKind == CodeType.CodeTypeCollectionKind.Complex))) {
-                        var nUsing = new CodeUsing(currentClass) {
-                            Name = "List"
+                        var nUsing = new CodeUsing {
+                            Name = "List",
+                            Declaration = new CodeType { Name = "java.util", IsExternal = true },
                         };
-                        nUsing.Declaration = new CodeType(nUsing) { Name = "java.util", IsExternal = true };
                         currentClass.AddUsing(nUsing);
                 }
             }
@@ -115,13 +116,14 @@ namespace Kiota.Builder.Refiners {
                 currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
             else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase)) {
                 currentProperty.Type.Name = $"OffsetDateTime";
-                var nUsing = new CodeUsing(currentProperty.Parent) {
+                var nUsing = new CodeUsing {
                     Name = "OffsetDateTime",
+                    Declaration = new CodeType {
+                        Name = "java.time",
+                        IsExternal = true,
+                    },
                 };
-                nUsing.Declaration = new CodeType(nUsing) {
-                    Name = "java.time",
-                    IsExternal = true,
-                };
+                
                 (currentProperty.Parent as CodeClass).AddUsing(nUsing);
             } else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
                 currentProperty.Type.Name = "Map<String, Object>";
@@ -146,7 +148,7 @@ namespace Kiota.Builder.Refiners {
                 currentMethod.ReturnType.Name = $"Map<String, BiConsumer<T, ParseNode>>";
                 currentMethod.Name = "getFieldDeserializers";
             }
-            else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
+            else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor))
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore, CodeParameterKind.BackingStore))
                     .Where(x => x.Type.Name.StartsWith("I", StringComparison.OrdinalIgnoreCase))
                     .ToList()
@@ -157,16 +159,16 @@ namespace Kiota.Builder.Refiners {
             }
         }
         private static void AddRequireNonNullImports(CodeElement currentElement) {
-            if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => !x.Optional)) {
-                var parentClass = currentMethod.Parent as CodeClass;
-                var newUsing = new CodeUsing(parentClass) {
+            if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => !x.Optional) &&
+                currentMethod.Parent is CodeClass parentClass) {
+                var newUsing = new CodeUsing {
                     Name = "Objects",
+                    Declaration = new CodeType {
+                        Name = "java.util",
+                        IsExternal = true,
+                    },
                 };
-                newUsing.Declaration = new CodeType(newUsing) {
-                    Name = "java.util",
-                    IsExternal = true,
-                };
-                parentClass?.AddUsing(newUsing);
+                parentClass.AddUsing(newUsing);
             }
             CrawlTree(currentElement, AddRequireNonNullImports);
         }
@@ -209,7 +211,7 @@ namespace Kiota.Builder.Refiners {
         private static CodeMethod GetMethodClone(CodeMethod currentMethod, params CodeParameterKind[] parameterTypesToExclude) {
             if(currentMethod.Parameters.Any(x => x.IsOfKind(parameterTypesToExclude))) {
                 var cloneMethod = currentMethod.Clone() as CodeMethod;
-                cloneMethod.Parameters.RemoveAll(x => x.IsOfKind(parameterTypesToExclude));
+                cloneMethod.RemoveParametersByKind(parameterTypesToExclude);
                 cloneMethod.OriginalMethod = currentMethod;
                 return cloneMethod;
             }

@@ -71,7 +71,7 @@ namespace Kiota.Builder.Refiners {
                 currentElement.Parent is CodeClass parentClass) {
                     parentClass.RemoveChildElement(currentProperty);
                     currentProperty.Type.IsNullable = false;
-                    parentClass.AddMethod(new CodeMethod(parentClass) {
+                    parentClass.AddMethod(new CodeMethod {
                         Name = currentProperty.Name,
                         ReturnType = currentProperty.Type,
                         Access = AccessModifier.Public,
@@ -84,7 +84,7 @@ namespace Kiota.Builder.Refiners {
         }
         private static void AddErrorImportForEnums(CodeElement currentElement) {
             if(currentElement is CodeEnum currentEnum) {
-                currentEnum.Usings.Add(new CodeUsing(currentElement) {
+                currentEnum.AddUsings(new CodeUsing {
                     Name = "errors",
                 });
             }
@@ -127,7 +127,7 @@ namespace Kiota.Builder.Refiners {
             else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer)) {
                 currentMethod.ReturnType.Name = "map[string]func(interface{}, i04eb5309aeaafadd28374d79c8471df9b267510b4dc2e3144c378c50f6fd7b55.ParseNode)(error)";
                 currentMethod.Name = "getFieldDeserializers";
-            } else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
+            } else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor))
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore))
                     .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                     .ToList()
@@ -143,12 +143,12 @@ namespace Kiota.Builder.Refiners {
                     currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
                 else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase)) {
                     currentProperty.Type.Name = $"Time";
-                    var nUsing = new CodeUsing(currentProperty.Parent) {
+                    var nUsing = new CodeUsing {
                         Name = "Time",
-                    };
-                    nUsing.Declaration = new CodeType(nUsing) {
-                        Name = "time",
-                        IsExternal = true,
+                        Declaration = new CodeType {
+                            Name = "time",
+                            IsExternal = true,
+                        },
                     };
                     (currentProperty.Parent as CodeClass).AddUsing(nUsing);
                 } else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {

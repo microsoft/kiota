@@ -4,13 +4,12 @@ namespace Kiota.Builder.Tests {
     public class CodeIndexerTests {
         [Fact]
         public void IndexerInits() {
-            var root = CodeNamespace.InitRootNamespace();
-            var indexer = new CodeIndexer(root) {
+            var indexer = new CodeIndexer {
                 Name = "idx",
                 Description = "some description"
             };
-            indexer.IndexType = new CodeType(indexer) {};
-            indexer.ReturnType = new CodeType(indexer) {};
+            indexer.IndexType = new CodeType {};
+            indexer.ReturnType = new CodeType {};
         }
     }
     

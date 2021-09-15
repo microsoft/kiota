@@ -52,11 +52,11 @@ namespace Kiota.Builder.Refiners {
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
                 var declaration = currentClass.StartBlock as CodeClass.Declaration;
-                declaration.Implements.Add(new CodeType(currentClass) {
+                declaration.AddImplements(new CodeType {
                     IsExternal = true,
                     Name = $"IParsable",
                 });
-                declaration.Usings.Add(new CodeUsing(currentClass) {
+                declaration.AddUsings(new CodeUsing {
                     Name = "Microsoft.Kiota.Abstractions.Serialization"
                 });
             }
@@ -66,9 +66,9 @@ namespace Kiota.Builder.Refiners {
         private static readonly string[] defaultNamespacesForRequestBuilders = new string[] { "System.Threading.Tasks", "System.IO", "Microsoft.Kiota.Abstractions", "Microsoft.Kiota.Abstractions.Serialization"};
         private static void AddDefaultImports(CodeElement current) {
             if(current is CodeClass currentClass) {
-                currentClass.AddUsing(defaultNamespacesForClasses.Select(x => new CodeUsing(currentClass) { Name = x }).ToArray());
+                currentClass.AddUsing(defaultNamespacesForClasses.Select(x => new CodeUsing { Name = x }).ToArray());
                 if(currentClass.IsOfKind(CodeClassKind.RequestBuilder))
-                    currentClass.AddUsing(defaultNamespacesForRequestBuilders.Select(x => new CodeUsing(currentClass) { Name = x }).ToArray());
+                    currentClass.AddUsing(defaultNamespacesForRequestBuilders.Select(x => new CodeUsing { Name = x }).ToArray());
             }
             CrawlTree(current, AddDefaultImports);
         }

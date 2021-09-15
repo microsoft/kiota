@@ -19,14 +19,14 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
-            parentClass = new CodeClass(root) {
+            parentClass = new CodeClass {
                 Name = "parentClass"
             };
             root.AddClass(parentClass);
-            property = new CodeProperty(parentClass) {
+            property = new CodeProperty {
                 Name = PropertyName,
             };
-            property.Type = new CodeType(property) {
+            property.Type = new CodeType {
                 Name = TypeName
             };
             parentClass.AddProperty(property);

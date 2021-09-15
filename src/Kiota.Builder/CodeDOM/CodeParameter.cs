@@ -22,12 +22,13 @@ namespace Kiota.Builder
 
     public class CodeParameter : CodeTerminal, ICloneable, IDocumentedElement
     {
-        public CodeParameter(CodeElement parent): base(parent)
-        {
-            
-        }
+        public CodeParameter(): base() {}
         public CodeParameterKind ParameterKind {get;set;}= CodeParameterKind.Custom;
-        public CodeTypeBase Type {get;set;}
+        private CodeTypeBase type;
+        public CodeTypeBase Type {get => type; set {
+            AddMissingParent(type);
+            type = value;
+        }}
         public bool Optional {get;set;}= false;
         public string Description {get; set;}
         public string DefaultValue {get; set;}
@@ -36,13 +37,14 @@ namespace Kiota.Builder
         }
         public object Clone()
         {
-            return new CodeParameter(Parent) {
+            return new CodeParameter {
                 Optional = Optional,
                 ParameterKind = ParameterKind,
                 Name = Name.Clone() as string,
                 Type = Type?.Clone() as CodeTypeBase,
                 Description = Description?.Clone() as string,
                 DefaultValue = DefaultValue?.Clone() as string,
+                Parent = Parent
             };
         }
     }

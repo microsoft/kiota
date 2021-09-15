@@ -18,7 +18,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
-            parentClass = new (root) {
+            parentClass = new () {
                 Name = "parentClass"
             };
             root.AddClass(parentClass);
@@ -36,7 +36,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         [Fact]
         public void WritesImplementation() {
             var declaration = parentClass.StartBlock as CodeClass.Declaration;
-            declaration.Implements.Add(new (parentClass){
+            declaration.AddImplements(new CodeType {
                 Name = "someInterface"
             });
             codeElementWriter.WriteCodeElement(declaration, writer);
@@ -46,7 +46,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         [Fact]
         public void WritesInheritance() {
             var declaration = parentClass.StartBlock as CodeClass.Declaration;
-            declaration.Inherits = new (parentClass){
+            declaration.Inherits = new (){
                 Name = "someInterface"
             };
             codeElementWriter.WriteCodeElement(declaration, writer);
@@ -56,16 +56,16 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         [Fact]
         public void WritesImports() {
             var declaration = parentClass.StartBlock as CodeClass.Declaration;
-            declaration.Usings.Add(new (parentClass) {
+            declaration.AddUsings(new () {
                 Name = "Objects",
-                Declaration = new(parentClass) {
+                Declaration = new() {
                     Name = "util",
                     IsExternal = true,
                 }
-            });
-            declaration.Usings.Add(new (parentClass) {
+            },
+            new () {
                 Name = "project-graph",
-                Declaration = new(parentClass) {
+                Declaration = new() {
                     Name = "Message",
                 }
             });
@@ -78,7 +78,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         [Fact]
         public void WritesMixins() {
             var declaration = parentClass.StartBlock as CodeClass.Declaration;
-            declaration.Implements.Add(new (parentClass) {
+            declaration.AddImplements(new CodeType {
                 Name = "test"
             });
             codeElementWriter.WriteCodeElement(declaration, writer);

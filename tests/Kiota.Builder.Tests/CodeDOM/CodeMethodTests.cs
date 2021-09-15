@@ -6,8 +6,7 @@ namespace Kiota.Builder.Tests {
     public class CodeMethodTests {
         [Fact]
         public void Defensive() {
-            var root = CodeNamespace.InitRootNamespace();
-            var method = new CodeMethod(root) {
+            var method = new CodeMethod {
                 Name = "class",
             };
             Assert.False(method.IsOfKind((CodeMethodKind[])null));
@@ -15,8 +14,7 @@ namespace Kiota.Builder.Tests {
         }
         [Fact]
         public void IsOfKind() {
-            var root = CodeNamespace.InitRootNamespace();
-            var method = new CodeMethod(root) {
+            var method = new CodeMethod {
                 Name = "class",
             };
             Assert.False(method.IsOfKind(CodeMethodKind.Constructor));
@@ -27,8 +25,7 @@ namespace Kiota.Builder.Tests {
         }
         [Fact]
         public void AddsParameter() {
-            var root = CodeNamespace.InitRootNamespace();
-            var method = new CodeMethod(root) {
+            var method = new CodeMethod {
                 Name = "method1"
             };
             Assert.Throws<ArgumentNullException>(() => {
@@ -43,11 +40,10 @@ namespace Kiota.Builder.Tests {
         }
         [Fact]
         public void ClonesParameters() {
-            var root = CodeNamespace.InitRootNamespace();
-            var method = new CodeMethod(root) {
+            var method = new CodeMethod {
                 Name = "method1"
             };
-            method.AddParameter(new CodeParameter(method) {
+            method.AddParameter(new CodeParameter {
                 Name = "param1"
             });
             var clone = method.Clone() as CodeMethod;
@@ -57,11 +53,10 @@ namespace Kiota.Builder.Tests {
         }
         [Fact]
         public void ParametersExtensionsReturnsValue() {
-            var root = CodeNamespace.InitRootNamespace();
-            var method = new CodeMethod(root) {
+            var method = new CodeMethod {
                 Name = "method1"
             };
-            method.AddParameter(new CodeParameter(method) {
+            method.AddParameter(new CodeParameter {
                 Name = "param1",
                 ParameterKind = CodeParameterKind.Custom,
             });

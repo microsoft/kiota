@@ -9,7 +9,7 @@ namespace Kiota.Builder.Refiners.Tests {
         public TypeScriptLanguageRefinerTests() {
             root = CodeNamespace.InitRootNamespace();
             graphNS = root.AddNamespace("graph");
-            parentClass = new (graphNS) {
+            parentClass = new () {
                 Name = "parentClass"
             };
             graphNS.AddClass(parentClass);
@@ -22,13 +22,13 @@ namespace Kiota.Builder.Refiners.Tests {
             graphNS.AddClass(parentClass);
             var declaration = parentClass.StartBlock as CodeClass.Declaration;
             var subNS = graphNS.AddNamespace($"{graphNS.Name}.messages");
-            var messageClassDef = new CodeClass(subNS) {
+            var messageClassDef = new CodeClass {
                 Name = "Message",
             };
             subNS.AddClass(messageClassDef);
-            declaration.Usings.Add(new (parentClass) {
+            declaration.AddUsings(new CodeUsing {
                 Name = messageClassDef.Name,
-                Declaration = new(parentClass) {
+                Declaration = new() {
                     Name = messageClassDef.Name,
                     TypeDefinition = messageClassDef,
                 }
@@ -40,13 +40,13 @@ namespace Kiota.Builder.Refiners.Tests {
         public void ReplacesImportsParentNamespace() {
             var declaration = parentClass.StartBlock as CodeClass.Declaration;
             var subNS = root.AddNamespace("messages");
-            var messageClassDef = new CodeClass(subNS) {
+            var messageClassDef = new CodeClass {
                 Name = "Message",
             };
             subNS.AddClass(messageClassDef);
-            declaration.Usings.Add(new (parentClass) {
+            declaration.AddUsings(new CodeUsing() {
                 Name = "messages",
-                Declaration = new(parentClass) {
+                Declaration = new() {
                     Name = "Message",
                     TypeDefinition = messageClassDef,
                 }
@@ -59,31 +59,31 @@ namespace Kiota.Builder.Refiners.Tests {
             var usedRangeNS1 = graphNS.AddNamespace($"{graphNS.Name}.workbooks.workbook.tables.worksheet.pivotTables.usedRange");
             var usedRangeNS2 = graphNS.AddNamespace($"{graphNS.Name}.workbooks.workbook.worksheets.usedRange");
             var workbookNS = graphNS.AddNamespace($"{graphNS.Name}.workbooks.workbook");
-            var workbookRangeClassDef = new CodeClass(workbookNS) {
+            var workbookRangeClassDef = new CodeClass {
                 Name = "workbookRange",
             };
             workbookNS.AddClass(workbookRangeClassDef);
-            var usedRangeClassDef1 = new CodeClass(usedRangeNS1) {
+            var usedRangeClassDef1 = new CodeClass {
                 Name = "usedRangeRequestBuilder",
             };
             usedRangeNS1.AddClass(usedRangeClassDef1);
             
             var declaration1 = usedRangeClassDef1.StartBlock as CodeClass.Declaration;
-            declaration1.Usings.Add(new (usedRangeClassDef1) {
+            declaration1.AddUsings(new CodeUsing {
                 Name = workbookNS.Name,
-                Declaration = new (usedRangeClassDef1) {
+                Declaration = new () {
                     Name = workbookRangeClassDef.Name,
                     TypeDefinition = workbookRangeClassDef,
                 }
             });
-            var usedRangeClassDef2 = new CodeClass(usedRangeNS2) {
+            var usedRangeClassDef2 = new CodeClass {
                 Name = "usedRangeRequestBuilder",
             };
             usedRangeNS2.AddClass(usedRangeClassDef2);
             var declaration2 = usedRangeClassDef2.StartBlock as CodeClass.Declaration;
-            declaration2.Usings.Add(new (usedRangeClassDef2) {
+            declaration2.AddUsings(new CodeUsing {
                 Name = workbookNS.Name,
-                Declaration = new (usedRangeClassDef2) {
+                Declaration = new () {
                     Name = workbookRangeClassDef.Name,
                     TypeDefinition = workbookRangeClassDef,
                 }
@@ -95,12 +95,13 @@ namespace Kiota.Builder.Refiners.Tests {
         [Fact]
         public void ReplacesImportsSameNamespace() {
             var declaration = parentClass.StartBlock as CodeClass.Declaration;
-            var messageClassDef = new CodeClass(graphNS) {
+            var messageClassDef = new CodeClass {
                 Name = "Message",
             };
-            declaration.Usings.Add(new (parentClass) {
+            graphNS.AddClass(messageClassDef);
+            declaration.AddUsings(new CodeUsing {
                 Name = "graph",
-                Declaration = new(parentClass) {
+                Declaration = new() {
                     Name = "Message",
                     TypeDefinition = messageClassDef,
                 }
@@ -118,7 +119,7 @@ namespace Kiota.Builder.Refiners.Tests {
         private const string HandlerDefaultName = "IResponseHandler";
         [Fact]
         public void EscapesReservedKeywords() {
-            var model = root.AddClass(new CodeClass (root) {
+            var model = root.AddClass(new CodeClass {
                 Name = "break",
                 ClassKind = CodeClassKind.Model
             }).First();
@@ -129,74 +130,74 @@ namespace Kiota.Builder.Refiners.Tests {
         [Fact]
         public void CorrectsCoreType() {
 
-            var model = root.AddClass(new CodeClass (root) {
+            var model = root.AddClass(new CodeClass () {
                 Name = "model",
                 ClassKind = CodeClassKind.Model
             }).First();
-            model.AddProperty(new (model) {
+            model.AddProperty(new CodeProperty() {
                 Name = "core",
                 PropertyKind = CodePropertyKind.HttpCore,
-                Type = new CodeType(model) {
+                Type = new CodeType {
                     Name = HttpCoreDefaultName
                 }
-            }, new (model) {
+            }, new () {
                 Name = "someDate",
                 PropertyKind = CodePropertyKind.Custom,
-                Type = new CodeType(model) {
+                Type = new CodeType {
                     Name = DateTimeOffsetDefaultName,
                 }
-            }, new (model) {
+            }, new () {
                 Name = "additionalData",
                 PropertyKind = CodePropertyKind.AdditionalData,
-                Type = new CodeType(model) {
+                Type = new CodeType {
                     Name = AddiationalDataDefaultName
                 }
             });
-            var executorMethod = model.AddMethod(new CodeMethod(model) {
+            var executorMethod = model.AddMethod(new CodeMethod {
                 Name = "executor",
                 MethodKind = CodeMethodKind.RequestExecutor,
-                ReturnType = new CodeType(model) {
+                ReturnType = new CodeType {
                     Name = "string"
                 }
             }).First();
-            executorMethod.AddParameter(new CodeParameter(executorMethod) {
+            executorMethod.AddParameter(new CodeParameter {
                 Name = "handler",
                 ParameterKind = CodeParameterKind.ResponseHandler,
-                Type = new CodeType(executorMethod) {
+                Type = new CodeType {
                     Name = HandlerDefaultName,
                 }
             });
             const string serializerDefaultName = "ISerializationWriter";
-            var serializationMethod = model.AddMethod(new CodeMethod(model) {
+            var serializationMethod = model.AddMethod(new CodeMethod {
                 Name = "seriailization",
                 MethodKind = CodeMethodKind.Serializer,
-                ReturnType = new CodeType(model) {
+                ReturnType = new CodeType {
                     Name = "string"
                 }
             }).First();
-            serializationMethod.AddParameter(new CodeParameter(serializationMethod) {
+            serializationMethod.AddParameter(new CodeParameter {
                 Name = "handler",
                 ParameterKind = CodeParameterKind.Serializer,
-                Type = new CodeType(executorMethod) {
+                Type = new CodeType {
                     Name = serializerDefaultName,
                 }
             });
-            var responseHandlerMethod = model.AddMethod(new CodeMethod(model) {
+            var responseHandlerMethod = model.AddMethod(new CodeMethod {
                 Name = "defaultResponseHandler",
-                ReturnType = new CodeType(model) {
+                ReturnType = new CodeType {
                     Name = "string"
                 }
-            }, new (model) {
+            }, new () {
                 Name = "deserializeFields",
-                ReturnType = new CodeType(model) {
+                ReturnType = new CodeType() {
                     Name = DeserializeDefaultName,
                 },
                 MethodKind = CodeMethodKind.Deserializer
             }).First();
             const string streamDefaultName = "Stream";
-            responseHandlerMethod.AddParameter(new CodeParameter(responseHandlerMethod) {
+            responseHandlerMethod.AddParameter(new CodeParameter {
                 Name = "param1",
-                Type = new CodeType(responseHandlerMethod) {
+                Type = new CodeType {
                     Name = streamDefaultName
                 }
             });

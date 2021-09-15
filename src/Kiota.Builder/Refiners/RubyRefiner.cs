@@ -49,7 +49,7 @@ namespace Kiota.Builder.Refiners {
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
                 && currentClass.StartBlock is CodeClass.Declaration declaration) {
-                declaration.Implements.Add(new CodeType(currentClass) {
+                declaration.AddImplements(new CodeType {
                     IsExternal = true,
                     Name = $"MicrosoftKiotaAbstractions::Parsable",
                 });
@@ -59,7 +59,7 @@ namespace Kiota.Builder.Refiners {
         protected static void AddInheritedAndMethodTypesImports(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
                 && currentClass.StartBlock is CodeClass.Declaration declaration && declaration.Inherits != null) {
-                currentClass.AddUsing(new CodeUsing(currentElement) { Name = declaration.Inherits.Name, Declaration = declaration.Inherits});
+                currentClass.AddUsing(new CodeUsing { Name = declaration.Inherits.Name, Declaration = declaration.Inherits});
             }
             CrawlTree(currentElement, (x) => AddInheritedAndMethodTypesImports(x));
         }
@@ -96,14 +96,14 @@ namespace Kiota.Builder.Refiners {
                     var modulesProperties = Module.Name.Replace(clientNamespaceName+dot, string.Empty).Split(dot);
                     for (int i = modulesProperties.Length - 1; i >= 0; i--){
                         var prefix = String.Concat(Enumerable.Repeat("../", modulesProperties.Length -i-1));
-                        var nUsing = new CodeUsing(Module) { 
-                            Name = modulesProperties[i].ToSnakeCase(), 
-                            Declaration = new CodeType(Module) {
+                        var usingName = modulesProperties[i].ToSnakeCase();
+                        currentClass.AddUsing(new CodeUsing { 
+                            Name = usingName,
+                            Declaration = new CodeType {
                                 IsExternal = false,
+                                Name = $"{(string.IsNullOrEmpty(prefix) ? "./" : prefix)}{usingName}",
                             }
-                        };
-                        nUsing.Declaration.Name = $"{(string.IsNullOrEmpty(prefix) ? "./" : prefix)}{nUsing.Name}";
-                        currentClass.AddUsing(nUsing);
+                        });
                     }
                 } 
             }

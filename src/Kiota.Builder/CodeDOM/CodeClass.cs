@@ -16,11 +16,10 @@ namespace Kiota.Builder
     public class CodeClass : CodeBlock, IDocumentedElement, ITypeDefinition
     {
         private string name;
-
-        public CodeClass(CodeElement parent):base(parent)
+        public CodeClass():base()
         {
-            StartBlock = new Declaration(this);
-            EndBlock = new End(this);
+            StartBlock = new Declaration() { Parent = this};
+            EndBlock = new End() { Parent = this };
         }
         public CodeClassKind ClassKind { get; set; } = CodeClassKind.Custom;
 
@@ -34,7 +33,7 @@ namespace Kiota.Builder
             set
             {
                 name = value;
-                StartBlock = new Declaration(this) { Name = name };
+                StartBlock.Name = name;
             }
         }
 
@@ -58,7 +57,7 @@ namespace Kiota.Builder
 
         public bool ContainsMember(string name)
         {
-            return this.InnerChildElements.ContainsKey(name);
+            return InnerChildElements.ContainsKey(name);
         }
 
         public IEnumerable<CodeMethod> AddMethod(params CodeMethod[] methods)
@@ -99,20 +98,23 @@ namespace Kiota.Builder
 
     public class Declaration : BlockDeclaration
         {
-            public Declaration(CodeElement parent):base(parent)
-            {
-                
+            private CodeType inherits;
+            public CodeType Inherits { get => inherits; set {
+                AddMissingParent(value);
+                inherits = value;
+            } }
+            private readonly List<CodeType> implements = new ();
+            public void AddImplements(params CodeType[] types) {
+                if(types == null || types.Any(x => x == null))
+                    throw new ArgumentNullException(nameof(types));
+                AddMissingParent(types);
+                implements.AddRange(types);
             }
-            public CodeType Inherits { get; set; }
-            public List<CodeType> Implements { get; set; } = new List<CodeType>();
+            public IEnumerable<CodeType> Implements => implements;
         }
 
         public class End : BlockEnd
         {
-            public End(CodeElement parent):base(parent)
-            {
-                
-            }
         }
     }
 }

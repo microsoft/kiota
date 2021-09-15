@@ -9,9 +9,9 @@ namespace Kiota.Builder
     /// </summary>
     public class CodeNamespace : CodeBlock
     {
-        private CodeNamespace(CodeElement parent):base(parent) {}
+        private CodeNamespace():base() {}
         public static CodeNamespace InitRootNamespace() {
-            return new CodeNamespace(null);
+            return new CodeNamespace();
         }
         private string name;
         public override string Name
@@ -67,8 +67,9 @@ namespace Kiota.Builder
             foreach(var childSegment in namespaceNameSegements.Skip(lastPresentSegmentIndex))
                 lastPresentSegmentNamespace = lastPresentSegmentNamespace
                                             .AddRange(
-                                                new CodeNamespace(lastPresentSegmentNamespace) {
+                                                new CodeNamespace {
                                                     Name = $"{lastPresentSegmentNamespace?.Name}{(string.IsNullOrEmpty(lastPresentSegmentNamespace?.Name) ? string.Empty : ".")}{childSegment}",
+                                                    Parent = lastPresentSegmentNamespace,
                                             }).First();
             return lastPresentSegmentNamespace;
         }

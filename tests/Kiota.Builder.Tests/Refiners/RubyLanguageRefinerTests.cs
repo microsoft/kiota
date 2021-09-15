@@ -10,7 +10,7 @@ namespace Kiota.Builder.Refiners.Tests {
         public RubyLanguageRefinerTests() {
             root = CodeNamespace.InitRootNamespace();
             graphNS = root.AddNamespace("graph");
-            parentClass = new (graphNS) {
+            parentClass = new () {
                 Name = "parentClass"
             };
             graphNS.AddClass(parentClass);
@@ -18,11 +18,11 @@ namespace Kiota.Builder.Refiners.Tests {
         #region CommonLanguageRefinerTests
         [Fact]
         public void AddsDefaultImports() {
-            var model = root.AddClass(new CodeClass (root) {
+            var model = root.AddClass(new CodeClass {
                 Name = "model",
                 ClassKind = CodeClassKind.Model
             }).First();
-            var requestBuilder = root.AddClass(new CodeClass(root) {
+            var requestBuilder = root.AddClass(new CodeClass {
                 Name = "rb",
                 ClassKind = CodeClassKind.RequestBuilder,
             }).First();
@@ -37,12 +37,13 @@ namespace Kiota.Builder.Refiners.Tests {
             graphNS.AddClass(parentClass);
             var declaration = parentClass.StartBlock as CodeClass.Declaration;
             var subNS = graphNS.AddNamespace($"{graphNS.Name}.messages");
-            var messageClassDef = new CodeClass(subNS) {
+            var messageClassDef = new CodeClass {
                 Name = "Message",
             };
-            declaration.Usings.Add(new (parentClass) {
+            subNS.AddClass(messageClassDef);
+            declaration.AddUsings(new CodeUsing {
                 Name = "graph",
-                Declaration = new(parentClass) {
+                Declaration = new() {
                     Name = "Message",
                     TypeDefinition = messageClassDef,
                 }
@@ -57,13 +58,13 @@ namespace Kiota.Builder.Refiners.Tests {
             var parentNS = root.AddNamespace($"{graphNS.Name}.otherNS");
             parentNS.AddClass(parentClass);
             var subNS = root.AddNamespace($"{graphNS.Name}.messages");
-            var messageClassDef = new CodeClass(subNS) {
+            var messageClassDef = new CodeClass {
                 Name = "Message",
             };
             subNS.AddClass(messageClassDef);
-            declaration.Usings.Add(new (parentClass) {
+            declaration.AddUsings(new CodeUsing {
                 Name = "messages",
-                Declaration = new(parentClass) {
+                Declaration = new() {
                     Name = "Message",
                     TypeDefinition = messageClassDef,
                 }
@@ -74,12 +75,13 @@ namespace Kiota.Builder.Refiners.Tests {
         [Fact]
         public void ReplacesImportsSameNamespace() {
             var declaration = parentClass.StartBlock as CodeClass.Declaration;
-            var messageClassDef = new CodeClass(graphNS) {
+            var messageClassDef = new CodeClass {
                 Name = "Message",
             };
-            declaration.Usings.Add(new (parentClass) {
+            graphNS.AddClass(messageClassDef);
+            declaration.AddUsings(new CodeUsing {
                 Name = "graph",
-                Declaration = new(parentClass) {
+                Declaration = new() {
                     Name = "Message",
                     TypeDefinition = messageClassDef,
                 }
@@ -91,7 +93,7 @@ namespace Kiota.Builder.Refiners.Tests {
         #region RubyLanguageRefinerTests
         [Fact]
         public void EscapesReservedKeywords() {
-            var model = root.AddClass(new CodeClass (root) {
+            var model = root.AddClass(new CodeClass {
                 Name = "break",
                 ClassKind = CodeClassKind.Model
             }).First();
@@ -101,12 +103,12 @@ namespace Kiota.Builder.Refiners.Tests {
         }
         [Fact]
         public void AddInheritedAndMethodTypesImports() {
-            var model = root.AddClass(new CodeClass (root) {
+            var model = root.AddClass(new CodeClass {
                 Name = "model",
                 ClassKind = CodeClassKind.Model
             }).First();
             var declaration = model.StartBlock as CodeClass.Declaration;
-            declaration.Inherits = new (parentClass){
+            declaration.Inherits = new (){
                 Name = "someInterface"
             };
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
@@ -114,16 +116,16 @@ namespace Kiota.Builder.Refiners.Tests {
         }
         [Fact]
         public void FixInheritedEntityType() {
-            var model = root.AddClass(new CodeClass (root) {
+            var model = root.AddClass(new CodeClass {
                 Name = "model",
                 ClassKind = CodeClassKind.Model
             }).First();
-            var entity = graphNS.AddClass(new CodeClass (root) {
+            var entity = graphNS.AddClass(new CodeClass {
                 Name = "entity",
                 ClassKind = CodeClassKind.Model
             }).First();
             var declaration = model.StartBlock as CodeClass.Declaration;
-            declaration.Inherits = new (entity){
+            declaration.Inherits = new (){
                 Name = "entity"
             };
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
@@ -133,13 +135,13 @@ namespace Kiota.Builder.Refiners.Tests {
         public void AddNamespaceModuleImports() {
             var declaration = parentClass.StartBlock as CodeClass.Declaration;
             var subNS = graphNS.AddNamespace($"{graphNS.Name}.messages");
-            var messageClassDef = new CodeClass(subNS) {
+            var messageClassDef = new CodeClass {
                 Name = "Message",
             };
             subNS.AddClass(messageClassDef);
-            declaration.Usings.Add(new (parentClass) {
+            declaration.AddUsings(new CodeUsing() {
                 Name = messageClassDef.Name,
-                Declaration = new(parentClass) {
+                Declaration = new() {
                     Name = messageClassDef.Name,
                     TypeDefinition = messageClassDef,
                 }

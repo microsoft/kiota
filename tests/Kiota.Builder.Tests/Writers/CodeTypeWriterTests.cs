@@ -14,8 +14,7 @@ namespace Kiota.Builder.Writers.Tests {
             writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
-            var root = CodeNamespace.InitRootNamespace();
-            currentType = new (root) {
+            currentType = new () {
                 Name = TypeName
             };
         }

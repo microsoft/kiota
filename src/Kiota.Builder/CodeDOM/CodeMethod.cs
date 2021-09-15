@@ -33,13 +33,21 @@ namespace Kiota.Builder
 
     public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
     {
-        public CodeMethod(CodeElement parent): base(parent) {}
+        public CodeMethod(): base() {}
         public HttpMethod? HttpMethod {get;set;}
         public CodeMethodKind MethodKind {get;set;} = CodeMethodKind.Custom;
         public string ContentType { get; set; }
         public AccessModifier Access {get;set;} = AccessModifier.Public;
-        public CodeTypeBase ReturnType {get;set;}
-        public List<CodeParameter> Parameters {get;set;} = new List<CodeParameter>();
+        private CodeTypeBase returnType;
+        public CodeTypeBase ReturnType {get => returnType;set {
+            AddMissingParent(value);
+            returnType = value;
+        }}
+        private readonly List<CodeParameter> parameters = new ();
+        public void RemoveParametersByKind(params CodeParameterKind[] kinds) {
+            parameters.RemoveAll(p => p.IsOfKind(kinds));
+        }
+        public IEnumerable<CodeParameter> Parameters { get => parameters; }
         public string PathSegment { get; set; }
         public bool IsStatic {get;set;} = false;
         public bool IsAsync {get;set;} = true;
@@ -67,10 +75,9 @@ namespace Kiota.Builder
 
         public object Clone()
         {
-            return new CodeMethod(Parent) {
+            var method = new CodeMethod {
                 MethodKind = MethodKind,
                 ReturnType = ReturnType?.Clone() as CodeTypeBase,
-                Parameters = Parameters.Select(x => x.Clone() as CodeParameter).ToList(),
                 Name = Name.Clone() as string,
                 HttpMethod = HttpMethod,
                 IsAsync = IsAsync,
@@ -82,8 +89,12 @@ namespace Kiota.Builder
                 PathSegment = PathSegment?.Clone() as string,
                 SerializerModules = SerializerModules == null ? null : new (SerializerModules),
                 DeserializerModules = DeserializerModules == null ? null : new (DeserializerModules),
-                OriginalMethod = OriginalMethod
+                OriginalMethod = OriginalMethod,
+                Parent = Parent
             };
+            if(Parameters?.Any() ?? false)
+                method.AddParameter(Parameters.Select(x => x.Clone() as CodeParameter).ToArray());
+            return method;
         }
 
         public void AddParameter(params CodeParameter[] methodParameters)
@@ -93,7 +104,7 @@ namespace Kiota.Builder
             if(!methodParameters.Any())
                 throw new ArgumentOutOfRangeException(nameof(methodParameters));
             AddMissingParent(methodParameters);
-            Parameters.AddRange(methodParameters);
+            parameters.AddRange(methodParameters);
         }
     }
 }

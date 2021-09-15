@@ -1,13 +1,11 @@
-﻿using System.Collections.Generic;
-
-namespace Kiota.Builder
+﻿namespace Kiota.Builder
 {
     public class CodeUsing : CodeElement
     {
-        public CodeUsing(CodeElement parent): base(parent)
-        {
-            
-        }
-        public CodeType Declaration { get; set; }
+        private CodeType declaration;
+        public CodeType Declaration { get => declaration; set {
+            AddMissingParent(declaration);
+            declaration = value;
+        } }
     }
 }

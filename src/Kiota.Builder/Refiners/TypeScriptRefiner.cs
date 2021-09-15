@@ -35,7 +35,7 @@ namespace Kiota.Builder.Refiners {
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
                 var declaration = currentClass.StartBlock as CodeClass.Declaration;
-                declaration.Implements.Add(new CodeType(currentClass) {
+                declaration.AddImplements(new CodeType{
                     IsExternal = true,
                     Name = "Parsable",
                 });
@@ -76,7 +76,7 @@ namespace Kiota.Builder.Refiners {
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
             else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer))
                 currentMethod.ReturnType.Name = $"Map<string, (item: T, node: ParseNode) => void>";
-            else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
+            else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor))
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore, CodeParameterKind.BackingStore))
                     .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                     .ToList()

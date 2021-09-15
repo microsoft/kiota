@@ -6,7 +6,7 @@ namespace Kiota.Builder.Tests {
         [Fact]
         public void EnumInits() {
             var root = CodeNamespace.InitRootNamespace();
-            var codeEnum = root.AddEnum(new CodeEnum(root) {
+            var codeEnum = root.AddEnum(new CodeEnum {
                 Name = "Enum",
                 Description = "some description",
                 Flags = true,
