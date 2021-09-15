@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Abstractions.Store;
 using Moq;
@@ -38,5 +39,29 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests
             //Assert the backing store has been updated
             Assert.IsAssignableFrom(backingStore.GetType(), BackingStoreFactorySingleton.Instance);
         }
+
+        [Theory]
+        [InlineData("select", new[] { "id", "displayName" }, "select=id,displayName")]
+        [InlineData("count", true, "count=true")]
+        [InlineData("skip", 10, "skip=10")]
+        [InlineData("skip", null, "skip")]
+        public void GetRequestMessageFromRequestInformationSetsQueryParametersCorrectlyWithSelect(string queryParam, object queryParamObject, string expectedString)
+        {
+            // Arrange
+            var requestInfo = new RequestInformation
+            {
+                HttpMethod = HttpMethod.GET,
+            };
+            requestInfo.SetURI("http://localhost/me", "", true);
+            requestInfo.QueryParameters.Add(queryParam, queryParamObject);
+
+            // Act
+            var requestMessage = HttpCore.GetRequestMessageFromRequestInformation(requestInfo);
+
+            // Assert
+            Assert.NotNull(requestMessage.RequestUri);
+            Assert.Contains(expectedString, requestMessage.RequestUri.Query);
+        }
+
     }
 }

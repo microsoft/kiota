@@ -13,6 +13,7 @@ using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Abstractions.Serialization;
 using Microsoft.Kiota.Abstractions.Store;
 using Microsoft.Kiota.Abstractions.Authentication;
+using Microsoft.Kiota.Abstractions.Extensions;
 
 namespace Microsoft.Kiota.Http.HttpClient
 {
@@ -188,7 +189,7 @@ namespace Microsoft.Kiota.Http.HttpClient
                 RequestUri = new Uri(requestInfo.URI +
                                         ((requestInfo.QueryParameters?.Any() ?? false) ?
                                             "?" + requestInfo.QueryParameters
-                                                        .Select(x => $"{x.Key}{(x.Value == null ? string.Empty : "=")}{x.Value?.ToString() ?? string.Empty}")
+                                                        .Select(x => $"{x.Key}{(x.Value == null ? string.Empty : "=")}{GetStringForQueryParameter(x.Value)}")
                                                         .Aggregate((x, y) => $"{x}&{y}") :
                                             string.Empty)),
             };
@@ -205,6 +206,22 @@ namespace Microsoft.Kiota.Http.HttpClient
             }
             return message;
         }
+
+        private static string GetStringForQueryParameter(object value)
+        {
+            return value switch
+            {
+                null => string.Empty,
+                bool booleanValue =>
+                    // ToString returns True/False with the first character in uppercase
+                    booleanValue.ToString().ToFirstCharacterLowerCase(),
+                IEnumerable<object> collection =>
+                    // the collection could be of booleans for all we know, make sure its cleaned up as well by this same function
+                    string.Join(',', collection.Select(GetStringForQueryParameter)),
+                _ => value.ToString()
+            };
+        }
+
         /// <summary>
         /// Enable the backing store with the provided <see cref="IBackingStoreFactory"/>
         /// </summary>
