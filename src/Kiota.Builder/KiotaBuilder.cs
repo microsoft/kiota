@@ -253,7 +253,7 @@ namespace Kiota.Builder
             {
                 var propIdentifier = child.Value.GetClassName();
                 var propType = propIdentifier + requestBuilderSuffix;
-                if (child.Value.IsPathWithSingleSimpleParamter())
+                if (child.Value.IsPathSegmentWithSingleSimpleParamter())
                 {
                     var prop = CreateIndexer($"{propIdentifier}-indexer", propType, child.Value);
                     codeClass.SetIndexer(prop);
@@ -322,7 +322,7 @@ namespace Kiota.Builder
             var pathProperty = new CodeProperty {
                 Access = AccessModifier.Private,
                 Name = "pathSegment",
-                DefaultValue = isApiClientClass ? $"\"{this.config.ApiRootUrl}\"" : (currentNode.IsPathWithSingleSimpleParamter() ? "\"\"" : $"\"/{currentNode.Segment}\""),
+                DefaultValue = isApiClientClass ? $"\"{this.config.ApiRootUrl}\"" : (currentNode.IsPathSegmentWithSingleSimpleParamter() ? "\"\"" : $"\"/{currentNode.Segment}\""),
                 ReadOnly = true,
                 Description = "Path segment to use to build the URL for the current request builder",
                 PropertyKind = CodePropertyKind.PathSegment

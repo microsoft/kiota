@@ -7,13 +7,24 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.TypeScript {
     public class CodeClassDeclarationWriter : BaseElementWriter<CodeClass.Declaration, TypeScriptConventionService>
     {
-        public CodeClassDeclarationWriter(TypeScriptConventionService conventionService) : base(conventionService){}
+        private readonly RelativeImportManager _relativeImportManager;
+        public CodeClassDeclarationWriter(TypeScriptConventionService conventionService, string clientNamespaceName) : base(conventionService){
+            _relativeImportManager = new RelativeImportManager(clientNamespaceName, '.');
+        }
         public override void WriteCodeElement(CodeClass.Declaration codeElement, LanguageWriter writer)
         {
-            foreach (var codeUsing in codeElement.Usings
-                                        .GroupBy(x => x.Declaration?.Name)
-                                        .OrderBy(x => x.Key))
-                writer.WriteLine($"import {{{codeUsing.Select(x => x.Name).Distinct().Aggregate((x,y) => x + ", " + y)}}} from '{codeUsing.Key}';");
+            var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
+            var externalImportSymbolsAndPaths = codeElement.Usings
+                                                            .Where(x => x.IsExternal)
+                                                            .Select(x => (x.Name, x.Declaration?.Name));
+            var internalImportSymbolsAndPaths = codeElement.Usings
+                                                            .Where(x => !x.IsExternal)
+                                                            .Select(x => _relativeImportManager.GetRelativeImportPathForUsing(x, parentNamespace));
+            var importSymbolsAndPaths = externalImportSymbolsAndPaths.Union(internalImportSymbolsAndPaths)
+                                                                    .GroupBy(x => x.Item2)
+                                                                    .OrderBy(x => x.Key);
+            foreach (var codeUsing in importSymbolsAndPaths)
+                writer.WriteLine($"import {{{codeUsing.Select(x => x.Item1).Distinct().Aggregate((x,y) => x + ", " + y)}}} from '{codeUsing.Key}';");
             writer.WriteLine();
             var derivation = (codeElement.Inherits == null ? string.Empty : $" extends {codeElement.Inherits.Name.ToFirstCharacterUpperCase()}") +
                             (!codeElement.Implements.Any() ? string.Empty : $" implements {codeElement.Implements.Select(x => x.Name).Aggregate((x,y) => x + ", " + y)}");

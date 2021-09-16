@@ -7,5 +7,8 @@
             AddMissingParent(declaration);
             declaration = value;
         } }
+        public bool IsExternal {
+            get => Declaration?.IsExternal ?? true;
+        }
     }
 }

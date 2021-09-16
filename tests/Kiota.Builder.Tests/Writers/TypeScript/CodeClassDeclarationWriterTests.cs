@@ -14,14 +14,15 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
 
         public CodeClassDeclarationWriterTests() {
             writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
-            codeElementWriter = new CodeClassDeclarationWriter(new TypeScriptConventionService(writer));
+            codeElementWriter = new CodeClassDeclarationWriter(new TypeScriptConventionService(writer), "graphtests");
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
+            var ns = root.AddNamespace("graphtests.models");
             parentClass = new () {
                 Name = "parentClass"
             };
-            root.AddClass(parentClass);
+            ns.AddClass(parentClass);
         }
         public void Dispose() {
             tw?.Dispose();

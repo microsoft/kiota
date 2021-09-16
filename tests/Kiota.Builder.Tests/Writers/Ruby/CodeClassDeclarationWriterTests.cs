@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using Xunit;
 
 namespace Kiota.Builder.Writers.Ruby.Tests {
@@ -13,7 +14,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         private readonly CodeClass parentClass;
 
         public CodeClassDeclarationWriterTests() {
-            codeElementWriter = new CodeClassDeclarationWriter(new RubyConventionService());
+            codeElementWriter = new CodeClassDeclarationWriter(new RubyConventionService(), "graph");
             writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Ruby, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
@@ -56,6 +57,9 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         [Fact]
         public void WritesImports() {
             var declaration = parentClass.StartBlock as CodeClass.Declaration;
+            var messageClass = parentClass.GetImmediateParentOfType<CodeNamespace>().AddClass( new CodeClass {
+                Name = "Message"
+            }).First();
             declaration.AddUsings(new () {
                 Name = "Objects",
                 Declaration = new() {
@@ -67,6 +71,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
                 Name = "project-graph",
                 Declaration = new() {
                     Name = "Message",
+                    TypeDefinition = messageClass,
                 }
             });
             codeElementWriter.WriteCodeElement(declaration, writer);

@@ -45,7 +45,7 @@ namespace Kiota.Builder.Extensions {
                         (string.IsNullOrEmpty(prefix) ? string.Empty : ".")
                              + currentPath
                                 ?.Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
-                                ?.Where(x => !x.StartsWith('{'))
+                                ?.Select(x => x.IsPathSegmentWithSingleSimpleParamter() ? "item" : x)
                                 ?.Select(x => CleanupParametersFromPath((x ?? string.Empty).Split('.', StringSplitOptions.RemoveEmptyEntries)
                                                                 .Last()))
                                 ?.Aggregate(string.Empty, 
@@ -103,12 +103,14 @@ namespace Kiota.Builder.Extensions {
                 currentNode.PathItems[label].Summary ??
                 defaultValue :
             defaultValue;
-        public static bool DoesNodeBelongToItemSubnamespace(this OpenApiUrlTreeNode currentNode) => currentNode.IsPathWithSingleSimpleParamter();
-        public static bool IsPathWithSingleSimpleParamter(this OpenApiUrlTreeNode currentNode)
+        public static bool DoesNodeBelongToItemSubnamespace(this OpenApiUrlTreeNode currentNode) => currentNode.IsPathSegmentWithSingleSimpleParamter();
+        public static bool IsPathSegmentWithSingleSimpleParamter(this OpenApiUrlTreeNode currentNode) =>
+            currentNode?.Segment.IsPathSegmentWithSingleSimpleParamter() ?? false;
+        public static bool IsPathSegmentWithSingleSimpleParamter(this string currentSegment)
         {
-            return (currentNode?.Segment?.StartsWith(requestParametersChar) ?? false) &&
-                    currentNode.Segment.EndsWith(requestParametersEndChar) &&
-                    currentNode.Segment.Count(x => x == requestParametersChar) == 1;
+            return (currentSegment?.StartsWith(requestParametersChar) ?? false) &&
+                    currentSegment.EndsWith(requestParametersEndChar) &&
+                    currentSegment.Count(x => x == requestParametersChar) == 1;
         }
         public static bool IsComplexPathWithAnyNumberOfParameters(this OpenApiUrlTreeNode currentNode)
         {

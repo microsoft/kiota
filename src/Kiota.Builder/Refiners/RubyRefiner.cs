@@ -20,7 +20,6 @@ namespace Kiota.Builder.Refiners {
                                                     CodePropertyKind.BackingStore,
                                                 }, _configuration.UsesBackingStore, true);
             ReplaceReservedNames(generatedCode, new RubyReservedNamesProvider(), x => $"{x}_escaped");
-            ReplaceRelativeImportsByImportPath(generatedCode, '.', _configuration.ClientNamespaceName);
             AddNamespaceModuleImports(generatedCode , _configuration.ClientNamespaceName);
             FixReferencesToEntityType(generatedCode);
             FixInheritedEntityType(generatedCode);
@@ -88,7 +87,7 @@ namespace Kiota.Builder.Refiners {
             }
             return null;
         }
-        protected void AddNamespaceModuleImports(CodeElement current, String clientNamespaceName) {
+        protected void AddNamespaceModuleImports(CodeElement current, string clientNamespaceName) {
             const string dot = ".";
             if(current is CodeClass currentClass) {
                 var Module = currentClass.GetImmediateParentOfType<CodeNamespace>();
@@ -100,12 +99,12 @@ namespace Kiota.Builder.Refiners {
                         currentClass.AddUsing(new CodeUsing { 
                             Name = usingName,
                             Declaration = new CodeType {
-                                IsExternal = false,
+                                IsExternal = true,
                                 Name = $"{(string.IsNullOrEmpty(prefix) ? "./" : prefix)}{usingName}",
                             }
                         });
                     }
-                } 
+                }
             }
             CrawlTree(current, c => AddNamespaceModuleImports(c, clientNamespaceName));
         }

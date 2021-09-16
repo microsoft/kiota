@@ -22,7 +22,6 @@ namespace Kiota.Builder.Refiners {
                                                     CodePropertyKind.AdditionalData,
                                                 }, _configuration.UsesBackingStore, false);
             AddConstructorsForDefaultValues(generatedCode, true);
-            ReplaceRelativeImportsByImportPath(generatedCode, '.', _configuration.ClientNamespaceName);
             ReplaceDefaultSerializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory");
             ReplaceDefaultDeserializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonParseNodeFactory");
             AddSerializationModulesImport(generatedCode,

@@ -90,6 +90,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             return type.Name switch  {
                 "integer" or "int64" or "float" or "double" => "number",
                 "binary" => "string",
+                "DateTimeOffset" => "Date",
                 "string" or "object" or "boolean" or "void" => type.Name, // little casing hack
                 _ => type.Name.ToFirstCharacterUpperCase() ?? "object",
             };

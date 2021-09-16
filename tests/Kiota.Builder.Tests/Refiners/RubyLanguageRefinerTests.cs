@@ -30,65 +30,6 @@ namespace Kiota.Builder.Refiners.Tests {
             Assert.NotEmpty(model.StartBlock.Usings);
             Assert.NotEmpty(requestBuilder.StartBlock.Usings);
         }
-        [Fact]
-        public void ReplacesImportsSubNamespace() {
-            var rootNS = parentClass.Parent as CodeNamespace;
-            rootNS.RemoveChildElement(parentClass);
-            graphNS.AddClass(parentClass);
-            var declaration = parentClass.StartBlock as CodeClass.Declaration;
-            var subNS = graphNS.AddNamespace($"{graphNS.Name}.messages");
-            var messageClassDef = new CodeClass {
-                Name = "Message",
-            };
-            subNS.AddClass(messageClassDef);
-            declaration.AddUsings(new CodeUsing {
-                Name = "graph",
-                Declaration = new() {
-                    Name = "Message",
-                    TypeDefinition = messageClassDef,
-                }
-            });
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
-            Assert.Equal("./messages/message", declaration.Usings.First().Declaration.Name);
-        }
-        [Fact]
-        public void ReplacesImportsParentNamespace() {
-            var declaration = parentClass.StartBlock as CodeClass.Declaration;
-            graphNS.RemoveChildElement(parentClass);
-            var parentNS = root.AddNamespace($"{graphNS.Name}.otherNS");
-            parentNS.AddClass(parentClass);
-            var subNS = root.AddNamespace($"{graphNS.Name}.messages");
-            var messageClassDef = new CodeClass {
-                Name = "Message",
-            };
-            subNS.AddClass(messageClassDef);
-            declaration.AddUsings(new CodeUsing {
-                Name = "messages",
-                Declaration = new() {
-                    Name = "Message",
-                    TypeDefinition = messageClassDef,
-                }
-            });
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
-            Assert.Equal("../messages/message", declaration.Usings.First().Declaration.Name);
-        }
-        [Fact]
-        public void ReplacesImportsSameNamespace() {
-            var declaration = parentClass.StartBlock as CodeClass.Declaration;
-            var messageClassDef = new CodeClass {
-                Name = "Message",
-            };
-            graphNS.AddClass(messageClassDef);
-            declaration.AddUsings(new CodeUsing {
-                Name = "graph",
-                Declaration = new() {
-                    Name = "Message",
-                    TypeDefinition = messageClassDef,
-                }
-            });
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
-            Assert.Equal("./message", declaration.Usings.First().Declaration.Name);
-        }
         #endregion
         #region RubyLanguageRefinerTests
         [Fact]
@@ -112,7 +53,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 Name = "someInterface"
             };
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
-            Assert.Equal("./someInterface", declaration.Usings.First().Declaration.Name);
+            Assert.Equal("someInterface", declaration.Usings.First().Declaration.Name);
         }
         [Fact]
         public void FixInheritedEntityType() {
@@ -147,7 +88,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 }
             });
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
-            Assert.Equal("./messages/message", declaration.Usings.First().Declaration.Name);
+            Assert.Equal("Message", declaration.Usings.First().Declaration.Name);
             Assert.Equal("./graph", declaration.Usings.Last().Declaration.Name);
         }
         #endregion

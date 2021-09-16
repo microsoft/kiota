@@ -412,91 +412,19 @@ namespace Kiota.Builder.Refiners {
                                     .Union(methodsParametersTypes)
                                     .Union(methodsReturnTypes)
                                     .Union(indexerTypes)
-                                    .Union(new List<CodeType> { (currentClass.StartBlock as CodeClass.Declaration)?.Inherits })
+                                    .Union(new List<CodeType> { (currentClass.StartBlock as Declaration)?.Inherits })
                                     .Where(x => x != null)
                                     .SelectMany(x => x?.AllTypes?.Select(y => new Tuple<CodeType, CodeNamespace>(y, y?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())))
                                     .Where(x => x.Item2 != null && (includeCurrentNamespace || x.Item2 != currentClassNamespace))
                                     .Where(x => includeParentNamespaces || !currentClassNamespace.IsChildOf(x.Item2))
                                     .Select(x => new CodeUsing { Name = x.Item2.Name, Declaration = x.Item1 })
+                                    .Where(x => x.Declaration?.TypeDefinition != current)
                                     .Distinct(compareOnDeclaration ? usingComparerWithDeclarations : usingComparerWithoutDeclarations)
                                     .ToArray();
                 if(usingsToAdd.Any())
                     currentClass.AddUsing(usingsToAdd);
             }
             CrawlTree(current, (x) => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration));
-        }
-        protected static void ReplaceRelativeImportsByImportPath(CodeElement currentElement, char namespaceNameSeparator, string namespacePrefix) {
-            ReplaceRelativeImportsByImportPath(currentElement, namespaceNameSeparator, namespacePrefix?.Length ?? 0);
-        }
-        protected static void ReplaceRelativeImportsByImportPath(CodeElement currentElement, char namespaceNameSeparator, int prefixLength) {
-            if(currentElement is CodeClass currentClass && currentClass.StartBlock is Declaration currentDeclaration
-                && currentElement.Parent is CodeNamespace currentNamespace) {
-                currentDeclaration.RemoveUsingsByDeclarationName(currentDeclaration.Name);
-                foreach(var codeUsing in currentDeclaration.Usings
-                                            .Where(x => (!x.Declaration?.IsExternal) ?? true)) {
-                    var relativeImportPath = GetRelativeImportPathForUsing(codeUsing, currentNamespace, namespaceNameSeparator, prefixLength);
-                    codeUsing.Name = $"{codeUsing.Declaration?.Name?.ToFirstCharacterUpperCase() ?? codeUsing.Name}";
-                    codeUsing.Declaration = new CodeType {
-                        Name = $"{relativeImportPath}{(string.IsNullOrEmpty(relativeImportPath) ? codeUsing.Name : codeUsing.Declaration.Name.ToFirstCharacterLowerCase())}",
-                        IsExternal = false,
-                    };
-                }
-            }
-
-            CrawlTree(currentElement, x => ReplaceRelativeImportsByImportPath(x, namespaceNameSeparator, prefixLength));
-        }
-        private static string GetRelativeImportPathForUsing(CodeUsing codeUsing, CodeNamespace currentNamespace, char namespaceNameSeparator, int prefixLength) {
-            if(codeUsing.Declaration == null)
-                return string.Empty;//it's an external import, add nothing
-            var typeDef = codeUsing.Declaration.TypeDefinition;
-
-            if(typeDef == null)
-                return "./"; // it's relative to the folder, with no declaration (default failsafe)
-            else
-                return GetImportRelativePathFromNamespaces(currentNamespace, 
-                                                        typeDef.GetImmediateParentOfType<CodeNamespace>(), namespaceNameSeparator, prefixLength);
-        }
-        private static string GetImportRelativePathFromNamespaces(CodeNamespace currentNamespace, CodeNamespace importNamespace, char namespaceNameSeparator, int prefixLength) {
-            if(currentNamespace == null)
-                throw new ArgumentNullException(nameof(currentNamespace));
-            else if (importNamespace == null)
-                throw new ArgumentNullException(nameof(importNamespace));
-            else if(currentNamespace.Name.Equals(importNamespace.Name, StringComparison.OrdinalIgnoreCase)) // we're in the same namespace
-                return "./";
-            else
-                return GetRelativeImportPathFromSegments(currentNamespace, importNamespace, namespaceNameSeparator, prefixLength);                
-        }
-        private static string GetRelativeImportPathFromSegments(CodeNamespace currentNamespace, CodeNamespace importNamespace, char namespaceNameSeparator, int prefixLength) {
-            var currentNamespaceSegments = currentNamespace
-                                    .Name[prefixLength..]
-                                    .Split(namespaceNameSeparator, StringSplitOptions.RemoveEmptyEntries);
-            var importNamespaceSegments = importNamespace
-                                .Name[prefixLength..]
-                                .Split(namespaceNameSeparator, StringSplitOptions.RemoveEmptyEntries);
-            var importNamespaceSegmentsCount = importNamespaceSegments.Length;
-            var currentNamespaceSegmentsCount = currentNamespaceSegments.Length;
-            var deeperMostSegmentIndex = 0;
-            while(deeperMostSegmentIndex < Math.Min(importNamespaceSegmentsCount, currentNamespaceSegmentsCount)) {
-                if(currentNamespaceSegments.ElementAt(deeperMostSegmentIndex).Equals(importNamespaceSegments.ElementAt(deeperMostSegmentIndex), StringComparison.OrdinalIgnoreCase))
-                    deeperMostSegmentIndex++;
-                else
-                    break;
-            }
-            if (deeperMostSegmentIndex == currentNamespaceSegmentsCount) { // we're in a parent namespace and need to import with a relative path
-                return "./" + GetRemainingImportPath(importNamespaceSegments.Skip(deeperMostSegmentIndex));
-            } else { // we're in a sub namespace and need to go "up" with dot dots
-                var upMoves = currentNamespaceSegmentsCount - deeperMostSegmentIndex;
-                var pathSegmentSeparator = upMoves > 0 ? "/" : string.Empty;
-                return string.Join("/", Enumerable.Repeat("..", upMoves)) +
-                        pathSegmentSeparator +
-                        GetRemainingImportPath(importNamespaceSegments.Skip(deeperMostSegmentIndex));
-            }
-        }
-        private static string GetRemainingImportPath(IEnumerable<string> remainingSegments) {
-            if(remainingSegments.Any())
-                return remainingSegments.Select(x => x.ToFirstCharacterLowerCase()).Aggregate((x, y) => $"{x}/{y}") + '/';
-            else
-                return string.Empty;
         }
         protected static void PatchHeaderParametersType(CodeElement currentElement, string newTypeName) {
             if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Headers)))
