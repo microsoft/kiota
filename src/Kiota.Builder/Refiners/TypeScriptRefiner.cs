@@ -7,12 +7,10 @@ namespace Kiota.Builder.Refiners {
         public TypeScriptRefiner(GenerationConfiguration configuration) : base(configuration) {}
         public override void Refine(CodeNamespace generatedCode)
         {
-            PatchResponseHandlerType(generatedCode);
             AddDefaultImports(generatedCode, Array.Empty<Tuple<string, string>>(), defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             CorrectCoreTypesForBackingStore(generatedCode, "@microsoft/kiota-abstractions", "BackingStoreFactorySingleton.instance.createBackingStore()");
-            FixReferencesToEntityType(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
             AddParsableInheritanceForModelClasses(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "ReadableStream", "web-streams-polyfill/es2018", true);
@@ -80,11 +78,6 @@ namespace Kiota.Builder.Refiners {
                     .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                     .ToList()
                     .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
-        }
-        private static void PatchResponseHandlerType(CodeElement current) {
-            if(current is CodeMethod currentMethod && currentMethod.Name.Equals("defaultResponseHandler", StringComparison.OrdinalIgnoreCase)) 
-                currentMethod.Parameters.First().Type.Name = "ReadableStream";
-            CrawlTree(current, PatchResponseHandlerType);
         }
     }
 }

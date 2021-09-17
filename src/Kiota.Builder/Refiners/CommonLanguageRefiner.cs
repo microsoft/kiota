@@ -241,19 +241,6 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(currentElement, c => ReplaceBinaryByNativeType(c, symbol, ns, addDeclaration));
         }
         private const string PathSegmentPropertyName = "pathSegment";
-        // temporary patch of type to it resolves as the builder sets types we didn't generate to entity
-        protected static void FixReferencesToEntityType(CodeElement currentElement, CodeClass entityClass = null){
-            if(entityClass == null && currentElement is CodeNamespace currentNamespace)
-                entityClass = currentNamespace.FindChildByName<CodeClass>("entity");
-
-            if(currentElement is CodeMethod currentMethod 
-                && currentMethod.ReturnType is CodeType currentReturnType
-                && currentReturnType.Name.Equals("entity", StringComparison.OrdinalIgnoreCase)
-                && currentReturnType.TypeDefinition == null)
-                currentReturnType.TypeDefinition = entityClass;
-
-            CrawlTree(currentElement, (c) => FixReferencesToEntityType(c, entityClass));
-        }
         protected static void ConvertUnionTypesToWrapper(CodeElement currentElement) {
             if(currentElement is CodeMethod currentMethod) {
                 if(currentMethod.ReturnType is CodeUnionType currentUnionType)
@@ -308,8 +295,8 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(currentElement, MoveClassesWithNamespaceNamesUnderNamespace);
         }
         protected static void ReplaceIndexersByMethodsWithParameter(CodeElement currentElement, CodeNamespace rootNamespace, bool parameterNullable, string methodNameSuffix = default) {
-            if(currentElement is CodeIndexer currentIndexer) {
-                var currentParentClass = currentElement.Parent as CodeClass;
+            if(currentElement is CodeIndexer currentIndexer &&
+                currentElement.Parent is CodeClass currentParentClass) {
                 currentParentClass.RemoveChildElement(currentElement);
                 var pathSegment = currentParentClass
                                     .FindChildByName<CodeProperty>(PathSegmentPropertyName)

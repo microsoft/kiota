@@ -21,7 +21,6 @@ namespace Kiota.Builder.Refiners {
                                                 }, _configuration.UsesBackingStore, true);
             ReplaceReservedNames(generatedCode, new RubyReservedNamesProvider(), x => $"{x}_escaped");
             AddNamespaceModuleImports(generatedCode , _configuration.ClientNamespaceName);
-            FixReferencesToEntityType(generatedCode);
             FixInheritedEntityType(generatedCode);
             ReplaceDefaultSerializationModules(generatedCode, "microsoft_kiota_serialization.JsonSerializationWriterFactory");
             ReplaceDefaultDeserializationModules(generatedCode, "microsoft_kiota_serialization.JsonParseNodeFactory");

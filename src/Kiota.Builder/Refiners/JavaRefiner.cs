@@ -15,7 +15,6 @@ namespace Kiota.Builder.Refiners {
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);
             ConvertUnionTypesToWrapper(generatedCode);
             AddRequireNonNullImports(generatedCode);
-            FixReferencesToEntityType(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
