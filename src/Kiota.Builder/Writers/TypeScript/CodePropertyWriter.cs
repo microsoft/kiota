@@ -9,7 +9,7 @@ namespace Kiota.Builder.Writers.TypeScript {
         public CodePropertyWriter(TypeScriptConventionService conventionService) : base(conventionService){}
         public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
         {
-            var returnType = conventions.GetTypeString(codeElement.Type);
+            var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
             var isFlagEnum = codeElement.Type is CodeType currentType && currentType.TypeDefinition is CodeEnum currentEnum && currentEnum.Flags;
             conventions.WriteShortDescription(codeElement.Description, writer);
             switch(codeElement.PropertyKind) {

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Kiota.Builder.Extensions;
+using static Kiota.Builder.CodeTypeBase;
 
 namespace Kiota.Builder.Writers.TypeScript {
     public class TypeScriptConventionService : CommonLanguageConventionService
@@ -42,33 +43,44 @@ namespace Kiota.Builder.Writers.TypeScript {
             };
         }
 
-        public override string GetParameterSignature(CodeParameter parameter)
+        public override string GetParameterSignature(CodeParameter parameter) => throw new InvalidOperationException("Use the overload with the targer element instead.");
+        public string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
         {
             var defaultValueSuffiix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue}";
-            return $"{parameter.Name}{(parameter.Optional && parameter.Type.IsNullable ? "?" : string.Empty)}: {GetTypeString(parameter.Type)}{(parameter.Type.IsNullable ? " | undefined": string.Empty)}{defaultValueSuffiix}";
+            return $"{parameter.Name}{(parameter.Optional && parameter.Type.IsNullable ? "?" : string.Empty)}: {GetTypeString(parameter.Type, targetElement)}{(parameter.Type.IsNullable ? " | undefined": string.Empty)}{defaultValueSuffiix}";
         }
-
-        public override string GetTypeString(CodeTypeBase code)
-        {
-            var collectionSuffix = code.CollectionKind == CodeType.CodeTypeCollectionKind.None ? string.Empty : "[]";
+        public string GetTypeString(CodeTypeBase code, CodeElement targetElement) {
+            var collectionSuffix = code.CollectionKind == CodeTypeCollectionKind.None ? string.Empty : "[]";
             if(code is CodeUnionType currentUnion && currentUnion.Types.Any())
-                return currentUnion.Types.Select(x => GetTypeString(x)).Aggregate((x, y) => $"{x} | {y}") + collectionSuffix;
+                return currentUnion.Types.Select(x => GetTypeString(x, targetElement)).Aggregate((x, y) => $"{x} | {y}") + collectionSuffix;
             else if(code is CodeType currentType) {
-                var typeName = TranslateType(currentType);
+                var typeName = GetTypeAlias(currentType, targetElement) ?? TranslateType(currentType);
                 if (code.ActionOf)
-                    return WriteInlineDeclaration(currentType);
+                    return WriteInlineDeclaration(currentType, targetElement);
                 else
                     return $"{typeName}{collectionSuffix}";
             }
             else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
-        private string WriteInlineDeclaration(CodeType currentType) {
+        private static string GetTypeAlias(CodeType targetType, CodeElement targetElement) {
+            var parentClass = targetElement.GetImmediateParentOfType<CodeClass>();
+            if(parentClass != null && parentClass.StartBlock is CodeClass.Declaration currentDeclaration) {
+                var aliasedUsing = currentDeclaration.Usings
+                                                    .FirstOrDefault(x => !x.IsExternal &&
+                                                                    x.Declaration.TypeDefinition == targetType.TypeDefinition &&
+                                                                    !string.IsNullOrEmpty(x.Alias));
+                return aliasedUsing?.Alias;
+            }
+            return null;
+        }
+        public override string GetTypeString(CodeTypeBase code) => throw new InvalidOperationException("Use the overload with the target element instead.");
+        private string WriteInlineDeclaration(CodeType currentType, CodeElement targetElement) {
             writer.IncreaseIndent(4);
             var childElements = (currentType?.TypeDefinition as CodeClass)
                                         ?.GetChildElements(true)
                                         ?.OfType<CodeProperty>()
                                         ?.OrderBy(x => x.Name)
-                                        ?.Select(x => $"{x.Name}?: {GetTypeString(x.Type)}");
+                                        ?.Select(x => $"{x.Name}?: {GetTypeString(x.Type, targetElement)}");
             var innerDeclaration = childElements?.Any() ?? false ? 
                                             LanguageWriter.NewLine +
                                             writer.GetIndent() +

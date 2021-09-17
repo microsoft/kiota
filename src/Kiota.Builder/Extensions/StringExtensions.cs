@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 
 
@@ -54,5 +55,14 @@ namespace Kiota.Builder.Extensions {
         }
         public static string NormalizeNameSpaceName(this string original, string delimiter) => 
             original?.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z,y) => z + delimiter + y);
+        private static readonly HashAlgorithm sha = SHA256.Create();
+        public static string GetNamespaceImportSymbol(this string importName) {
+            if(string.IsNullOrEmpty(importName)) return string.Empty;
+            return "i" + HashString(importName).ToLowerInvariant();
+        }
+        private static string HashString(string input) {
+            var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
+            return hash.Select(b => b.ToString("x2")).Aggregate((x, y) => x + y);
+        }
     }
 }

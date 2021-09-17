@@ -10,5 +10,6 @@
         public bool IsExternal {
             get => Declaration?.IsExternal ?? true;
         }
+        public string Alias { get; set; }
     }
 }

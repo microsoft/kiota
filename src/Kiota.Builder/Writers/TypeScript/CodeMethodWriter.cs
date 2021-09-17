@@ -17,7 +17,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
 
             localConventions = new TypeScriptConventionService(writer); //because we allow inline type definitions for methods parameters
-            var returnType = localConventions.GetTypeString(codeElement.ReturnType);
+            var returnType = localConventions.GetTypeString(codeElement.ReturnType, codeElement);
             var isVoid = "void".Equals(returnType, StringComparison.OrdinalIgnoreCase);
             WriteMethodDocumentation(codeElement, writer, isVoid);
             WriteMethodPrototype(codeElement, writer, returnType, isVoid);
@@ -153,7 +153,7 @@ namespace Kiota.Builder.Writers.TypeScript {
                 if(!(codeElement.AccessedProperty?.Type?.IsNullable ?? true) &&
                     !(codeElement.AccessedProperty?.ReadOnly ?? true) &&
                     !string.IsNullOrEmpty(codeElement.AccessedProperty?.DefaultValue)) {
-                    writer.WriteLines($"let value = this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.get<{conventions.GetTypeString(codeElement.AccessedProperty.Type)}>(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\");",
+                    writer.WriteLines($"let value = this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.get<{conventions.GetTypeString(codeElement.AccessedProperty.Type, codeElement)}>(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\");",
                         "if(!value) {");
                     writer.IncreaseIndent();
                     writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue};",
@@ -198,16 +198,16 @@ namespace Kiota.Builder.Writers.TypeScript {
             }
             writer.WriteLine(");");
             var isStream = localConventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
-            var returnTypeWithoutCollectionSymbol = GetReturnTypeWithoutCollectionSymbol(codeElement.ReturnType, returnType);
+            var returnTypeWithoutCollectionSymbol = GetReturnTypeWithoutCollectionSymbol(codeElement, returnType);
             var genericTypeForSendMethod = GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnTypeWithoutCollectionSymbol);
             var newFactoryParameter = GetTypeFactory(isVoid, isStream, returnTypeWithoutCollectionSymbol);
             writer.WriteLine($"return this.httpCore?.{genericTypeForSendMethod}(requestInfo,{newFactoryParameter} responseHandler) ?? Promise.reject(new Error('http core is null'));");
         }
-        private string GetReturnTypeWithoutCollectionSymbol(CodeTypeBase returnType, string fullTypeName) {
-            if(!returnType.IsCollection) return fullTypeName;
-            var clone = returnType.Clone() as CodeTypeBase;
+        private string GetReturnTypeWithoutCollectionSymbol(CodeMethod codeElement, string fullTypeName) {
+            if(!codeElement.ReturnType.IsCollection) return fullTypeName;
+            var clone = codeElement.ReturnType.Clone() as CodeTypeBase;
             clone.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.None;
-            return conventions.GetTypeString(clone);
+            return conventions.GetTypeString(clone, codeElement);
         }
         private const string RequestInfoVarName = "requestInfo";
         private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, LanguageWriter writer) {
@@ -269,7 +269,7 @@ namespace Kiota.Builder.Writers.TypeScript {
                 _ => code.Name,
             })?.ToFirstCharacterLowerCase();
             var asyncPrefix = code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? " async ": string.Empty;
-            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> localConventions.GetParameterSignature(p)).ToList());
+            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> localConventions.GetParameterSignature(p, code)).ToList());
             var asyncReturnTypePrefix = code.IsAsync ? "Promise<": string.Empty;
             var asyncReturnTypeSuffix = code.IsAsync ? ">": string.Empty;
             var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? " | undefined" : string.Empty;

@@ -22,16 +22,16 @@ namespace Kiota.Builder.Writers {
         /// </summary>
         /// <param name="codeUsing">The using to import into the current namespace context</param>
         /// <param name="currentNamespace">The current namespace</param>
-        /// <returns>The import symbol and the relative import path</returns>
-        public (string, string) GetRelativeImportPathForUsing(CodeUsing codeUsing, CodeNamespace currentNamespace) {
+        /// <returns>The import symbol, it's alias if any and the relative import path</returns>
+        public (string, string, string) GetRelativeImportPathForUsing(CodeUsing codeUsing, CodeNamespace currentNamespace) {
             if(codeUsing?.IsExternal ?? true)
-                return (string.Empty, string.Empty);//it's an external import, add nothing
+                return (string.Empty, string.Empty, string.Empty);//it's an external import, add nothing
             var typeDef = codeUsing.Declaration.TypeDefinition;
 
             var importSymbol = codeUsing.Declaration?.Name?.ToFirstCharacterUpperCase() ?? codeUsing.Name;
 
             if(typeDef == null)
-                return (importSymbol, "./"); // it's relative to the folder, with no declaration (default failsafe)
+                return (importSymbol, codeUsing.Alias, "./"); // it's relative to the folder, with no declaration (default failsafe)
             else {
                 var importPath = GetImportRelativePathFromNamespaces(currentNamespace, 
                                                         typeDef.GetImmediateParentOfType<CodeNamespace>());
@@ -39,7 +39,7 @@ namespace Kiota.Builder.Writers {
                     importPath+= codeUsing.Name;
                 else
                     importPath+= codeUsing.Declaration.Name.ToFirstCharacterLowerCase();
-                return (importSymbol, importPath);
+                return (importSymbol, codeUsing.Alias, importPath);
             }
         }
         private string GetImportRelativePathFromNamespaces(CodeNamespace currentNamespace, CodeNamespace importNamespace) {
