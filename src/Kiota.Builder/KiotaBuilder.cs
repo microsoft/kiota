@@ -731,9 +731,11 @@ namespace Kiota.Builder
         private CodeTypeBase CreateInheritedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement) {
             var allOfs = schema.AllOf.FlattenEmptyEntries(x => x.AllOf);
             CodeElement codeDeclaration = null;
-            string className = string.Empty;
+            var lastSchema = allOfs.LastOrDefault();
+            var className = string.Empty;
             foreach(var currentSchema in allOfs) {
-                var shortestNamespaceName = currentSchema.Reference == null ? currentNode.GetNodeNamespaceFromPath(config.ClientNamespaceName) : GetShortestNamespaceNameForModelByReferenceId(currentSchema.Reference.Id);
+                var referenceId = currentSchema.Reference == null && currentSchema == lastSchema ? schema.Reference?.Id : currentSchema.Reference?.Id;
+                var shortestNamespaceName = string.IsNullOrEmpty(referenceId) ? currentNode.GetNodeNamespaceFromPath(config.ClientNamespaceName) : GetShortestNamespaceNameForModelByReferenceId(referenceId);
                 var shortestNamespace = rootNamespace.FindNamespaceByName(shortestNamespaceName);
                 if(shortestNamespace == null)
                     shortestNamespace = rootNamespace.AddNamespace(shortestNamespaceName);
