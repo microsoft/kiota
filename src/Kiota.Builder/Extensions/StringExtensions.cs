@@ -12,10 +12,9 @@ namespace Kiota.Builder.Extensions {
         public static string ToCamelCase(this string name)
         {
             if(string.IsNullOrEmpty(name)) return name;
-            var chunks = name.Split("-", StringSplitOptions.RemoveEmptyEntries);
-            var identifier = String.Join(null, chunks.Take(1)
-                                                  .Union(chunks.Skip(1)
-                                                                .Select(s => ToFirstCharacterUpperCase(s))));
+            var chunks = name.Split('-', StringSplitOptions.RemoveEmptyEntries);
+            var identifier = chunks[0] + string.Join(string.Empty, chunks.Skip(1)
+                                                                .Select(s => ToFirstCharacterUpperCase(s)));
             return identifier;
         }
         public static string ToPascalCase(this string name)
@@ -29,10 +28,9 @@ namespace Kiota.Builder.Extensions {
         public static string ToSnakeCase(this string name)
         {
             if(string.IsNullOrEmpty(name)) return name;
-            var chunks = name.Split("-", StringSplitOptions.RemoveEmptyEntries);
-            var identifier = String.Join(string.Empty, chunks.Take(1)
-                                                  .Union(chunks.Skip(1)
-                                                                .Select(s => ToFirstCharacterUpperCase(s))));
+            var chunks = name.Split('-', StringSplitOptions.RemoveEmptyEntries);
+            var identifier = chunks[0] + string.Join(string.Empty, chunks.Skip(1)
+                                                                .Select(s => ToFirstCharacterUpperCase(s)));
             if(identifier.Length < 2) {
                 return identifier;
             }
