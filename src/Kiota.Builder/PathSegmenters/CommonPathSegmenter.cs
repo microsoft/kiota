@@ -19,13 +19,14 @@ namespace Kiota.Builder {
         protected static string GetLastFileNameSegment(CodeElement currentElement) => currentElement.Name.Split('.').Last();
         public string GetPath(CodeNamespace currentNamespace, CodeElement currentElement) {
             var fileName = NormalizeFileName(currentElement);
-            var namespacePathSegments = currentNamespace.Name
+            var namespacePathSegments = new List<string>(currentNamespace.Name
                                             .Replace(ClientNamespaceName, string.Empty)
                                             .TrimStart('.')
-                                            .Split('.')
-                                            .Union(GetAdditionalSegment(currentElement, fileName))
-                                            .Where(x => !string.IsNullOrEmpty(x))
-                                            .Select(x => NormalizeNamespaceSegment(x));
+                                            .Split('.'));
+            namespacePathSegments.AddRange(GetAdditionalSegment(currentElement, fileName)); //Union removes duplicates
+            namespacePathSegments = namespacePathSegments.Where(x => !string.IsNullOrEmpty(x))
+                                            .Select(x => NormalizeNamespaceSegment(x))
+                                            .ToList();
             var targetPath = Path.Combine(RootPath, (namespacePathSegments.Any() ? namespacePathSegments                                           
                                             .Aggregate((x, y) => $"{x}{Path.DirectorySeparatorChar}{y}") : string.Empty),
                                             fileName + FileSuffix);
