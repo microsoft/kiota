@@ -173,7 +173,7 @@ namespace Kiota.Builder
             stopwatch.Start();
 
             rootNamespace = CodeNamespace.InitRootNamespace();
-            var codeNamespace = rootNamespace.AddNamespace(this.config.ClientNamespaceName);
+            var codeNamespace = rootNamespace.AddNamespace(config.ClientNamespaceName);
             CreateRequestBuilderClass(codeNamespace, root, root);
             StopLogAndReset(stopwatch, $"{nameof(CreateRequestBuilderClass)}");
             stopwatch.Start();
@@ -275,14 +275,14 @@ namespace Kiota.Builder
                 foreach(var operation in currentNode
                                         .PathItems[Constants.DefaultOpenApiLabel]
                                         .Operations
-                                        .Where(x => x.Value.RequestBody?.Content?.Any(y => !this.config.IgnoredRequestContentTypes.Contains(y.Key)) ?? true))
+                                        .Where(x => x.Value.RequestBody?.Content?.Any(y => !config.IgnoredRequestContentTypes.Contains(y.Key)) ?? true))
                     CreateOperationMethods(currentNode, operation.Key, operation.Value, codeClass);
             }
             CreatePathManagement(codeClass, currentNode, isApiClientClass);
            
             Parallel.ForEach(currentNode.Children.Values, childNode =>
             {
-                var targetNamespaceName = childNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName);
+                var targetNamespaceName = childNode.GetNodeNamespaceFromPath(config.ClientNamespaceName);
                 var targetNamespace = rootNamespace.FindNamespaceByName(targetNamespaceName) ?? rootNamespace.AddNamespace(targetNamespaceName);
                 CreateRequestBuilderClass(targetNamespace, childNode, rootNode);
             });
@@ -583,7 +583,7 @@ namespace Kiota.Builder
         private static readonly HashSet<string> noContentStatusCodes = new() { "201", "202", "204" };
         private void CreateOperationMethods(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
         {
-            var parameterClass = CreateOperationParameter(currentNode, operationType, operation, parentClass);
+            var parameterClass = CreateOperationParameter(currentNode, operationType, operation);
 
             var schema = operation.GetResponseSchema();
             var method = (HttpMethod)Enum.Parse(typeof(HttpMethod), operationType.ToString());
@@ -973,7 +973,7 @@ namespace Kiota.Builder
                 });
             }
         }
-        private CodeClass CreateOperationParameter(OpenApiUrlTreeNode node, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
+        private CodeClass CreateOperationParameter(OpenApiUrlTreeNode node, OperationType operationType, OpenApiOperation operation)
         {
             var parameters = node.PathItems[Constants.DefaultOpenApiLabel].Parameters.Union(operation.Parameters).Where(p => p.In == ParameterLocation.Query);
             if(parameters.Any()) {
