@@ -152,15 +152,10 @@ namespace Kiota.Builder
             var node = OpenApiUrlTreeNode.Create(doc, Constants.DefaultOpenApiLabel);
             stopwatch.Stop();
             logger.LogTrace("{timestamp}ms: Created UriSpace tree", stopwatch.ElapsedMilliseconds);
-            stopwatch.Reset();
-            stopwatch.Start();
-            ComponentsReferencesIndex = node.GetComponentsReferenceIndex(Constants.DefaultOpenApiLabel);
-            stopwatch.Stop();
-            logger.LogTrace("{timestamp}ms: Created Components index", stopwatch.ElapsedMilliseconds);
             return node;
         }
-        private Dictionary<string, HashSet<OpenApiUrlTreeNode>> ComponentsReferencesIndex;
         private CodeNamespace rootNamespace;
+        private CodeNamespace modelsNamespace;
 
         /// <summary>
         /// Convert UriSpace of OpenApiPathItems into conceptual SDK Code model 
@@ -174,6 +169,7 @@ namespace Kiota.Builder
 
             rootNamespace = CodeNamespace.InitRootNamespace();
             var codeNamespace = rootNamespace.AddNamespace(config.ClientNamespaceName);
+            modelsNamespace = rootNamespace.AddNamespace($"{codeNamespace.Name}.models");
             CreateRequestBuilderClass(codeNamespace, root, root);
             StopLogAndReset(stopwatch, $"{nameof(CreateRequestBuilderClass)}");
             stopwatch.Start();
@@ -480,7 +476,7 @@ namespace Kiota.Builder
                 if(x.TypeDefinition == null) {
                     parentNS = parentNS.Parent as CodeNamespace;
                     x.TypeDefinition = parentNS
-                        .FindNamespaceByName($"{parentNS.Name}.{x.Name.Substring(0, x.Name.Length - requestBuilderSuffix.Length).ToFirstCharacterLowerCase()}".TrimEnd('.'))
+                        .FindNamespaceByName($"{parentNS.Name}.{x.Name.Substring(0, x.Name.Length - requestBuilderSuffix.Length).ToFirstCharacterLowerCase()}".TrimEnd(nsNameSeparator))
                         ?.FindChildrenByName<CodeClass>(x.Name)
                         ?.OrderBy(shortestNamespaceOrder)
                         ?.FirstOrDefault();
@@ -499,6 +495,7 @@ namespace Kiota.Builder
                     }
             });
         }
+        private static readonly char nsNameSeparator = '.';
         private static IEnumerable<CodeType> filterUnmappedTypeDefitions(IEnumerable<CodeTypeBase> source) =>
         source.OfType<CodeType>()
                 .Union(source
@@ -688,37 +685,13 @@ namespace Kiota.Builder
             };
             method.AddParameter(optionsParam);
         }
-        private IEnumerable<string> GetPathsForModelByReferenceId(string referenceId) {
-            if(string.IsNullOrEmpty(referenceId)) throw new ArgumentNullException(nameof(referenceId));
-            return ComponentsReferencesIndex.TryGetValue(referenceId, out var nodes) ? 
-                        nodes.Select(x => x.Path) :
-                        Enumerable.Empty<string>();
-        }
-        private string GetShortestNamespaceNameForModelByReferenceId(string referenceId) {
-            if(string.IsNullOrEmpty(referenceId))
-                throw new ArgumentNullException(nameof(referenceId));
-            
-            var potentialNamespaceNamesWithDepth = GetPathsForModelByReferenceId(referenceId)
-                                .Distinct()
-                                .Select(x => new Tuple<string, int>(x, x.Count(y => y == '\\')))
-                                .OrderBy(x => x.Item2);
-            var currentShortestCandidate = potentialNamespaceNamesWithDepth.FirstOrDefault();
-            if(currentShortestCandidate == null)
-                return null;
-
-            var namespaceNamesMeetingCutoff = potentialNamespaceNamesWithDepth.Where(x => x.Item2 == currentShortestCandidate.Item2).ToList();
-            if (namespaceNamesMeetingCutoff.Count == 1)
-                return currentShortestCandidate.Item1.GetNamespaceFromPath(config.ClientNamespaceName);
-            else if(namespaceNamesMeetingCutoff.Count > 1)
-                return GetCommonNamespaceTrunk(namespaceNamesMeetingCutoff, currentShortestCandidate.Item1).GetNamespaceFromPath(config.ClientNamespaceName);
-            else 
-                throw new InvalidOperationException($"could not find a shortest namespace name for reference id {referenceId}");
-        }
-        private static string GetCommonNamespaceTrunk(IEnumerable<Tuple<string, int>> namespaceNames, string candidateNamespaceName) {
-            if(namespaceNames.Select(x => x.Item1).All(x => x.Contains(candidateNamespaceName, StringComparison.OrdinalIgnoreCase)))
-                return candidateNamespaceName;
-            else
-                return GetCommonNamespaceTrunk(namespaceNames, candidateNamespaceName[..candidateNamespaceName.LastIndexOf('\\')]);
+        private string GetModelsNamespaceNameFromReferenceId(string referenceId) {
+            if(referenceId.StartsWith(config.ClientClassName, StringComparison.OrdinalIgnoreCase))
+                referenceId = referenceId[config.ClientClassName.Length..];
+            referenceId = referenceId.Trim(nsNameSeparator);
+            var lastDotIndex = referenceId.LastIndexOf(nsNameSeparator);
+            var namespaceSuffix = lastDotIndex != -1 ? referenceId[..lastDotIndex] : referenceId;
+            return $"{modelsNamespace.Name}.{namespaceSuffix}";
         }
         private CodeType CreateModelDeclarationAndType(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement, CodeNamespace codeNamespace, string classNameSuffix = "") {
             var className = currentNode.GetClassName(operation: operation, suffix: classNameSuffix);
@@ -735,7 +708,7 @@ namespace Kiota.Builder
             var className = string.Empty;
             foreach(var currentSchema in allOfs) {
                 var referenceId = currentSchema.Reference == null && currentSchema == lastSchema ? schema.Reference?.Id : currentSchema.Reference?.Id;
-                var shortestNamespaceName = string.IsNullOrEmpty(referenceId) ? currentNode.GetNodeNamespaceFromPath(config.ClientNamespaceName) : GetShortestNamespaceNameForModelByReferenceId(referenceId);
+                var shortestNamespaceName = string.IsNullOrEmpty(referenceId) ? currentNode.GetNodeNamespaceFromPath(config.ClientNamespaceName) : GetModelsNamespaceNameFromReferenceId(referenceId);
                 var shortestNamespace = rootNamespace.FindNamespaceByName(shortestNamespaceName);
                 if(shortestNamespace == null)
                     shortestNamespace = rootNamespace.AddNamespace(shortestNamespaceName);
@@ -754,7 +727,7 @@ namespace Kiota.Builder
                 Name = currentNode.GetClassName(operation: operation, suffix: "Response"),
             };
             foreach(var currentSchema in schemas) {
-                var shortestNamespaceName = currentSchema.Reference == null ? currentNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName) : GetShortestNamespaceNameForModelByReferenceId(currentSchema.Reference.Id);
+                var shortestNamespaceName = currentSchema.Reference == null ? currentNode.GetNodeNamespaceFromPath(config.ClientNamespaceName) : GetModelsNamespaceNameFromReferenceId(currentSchema.Reference.Id);
                 var shortestNamespace = rootNamespace.FindNamespaceByName(shortestNamespaceName);
                 if(shortestNamespace == null)
                     shortestNamespace = rootNamespace.AddNamespace(shortestNamespaceName);
@@ -819,8 +792,8 @@ namespace Kiota.Builder
         }
         private CodeNamespace GetShortestNamespace(CodeNamespace currentNamespace, OpenApiSchema currentSchema) {
             if(!string.IsNullOrEmpty(currentSchema.Reference?.Id)) {
-                var parentClassNamespaceName = GetShortestNamespaceNameForModelByReferenceId(currentSchema.Reference.Id);
-                return currentNamespace.AddNamespace(parentClassNamespaceName);
+                var parentClassNamespaceName = GetModelsNamespaceNameFromReferenceId(currentSchema.Reference.Id);
+                return rootNamespace.AddNamespace(parentClassNamespaceName);
             }
             return currentNamespace;
         }
@@ -855,7 +828,7 @@ namespace Kiota.Builder
                                         var className = propertyDefinitionSchema.GetSchemaTitle();
                                         CodeElement definition = default;
                                         if(!string.IsNullOrEmpty(className)) {
-                                            var shortestNamespaceName = GetShortestNamespaceNameForModelByReferenceId(propertyDefinitionSchema.Reference.Id);
+                                            var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertyDefinitionSchema.Reference.Id);
                                             var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns : 
                                                                     (rootNamespace.FindNamespaceByName(shortestNamespaceName) ?? rootNamespace.AddNamespace(shortestNamespaceName));
                                             definition = AddModelDeclarationIfDoesntExit(currentNode, propertyDefinitionSchema, className, targetNamespace, parent, null, true);

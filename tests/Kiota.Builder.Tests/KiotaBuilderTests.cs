@@ -196,7 +196,7 @@ namespace Kiota.Builder.Tests
             var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph" });
             builder.CreateUriSpace(document);//needed so the component index exists
             var codeModel = builder.CreateSourceModel(node);
-            var userClass = codeModel.FindNamespaceByName("ApiSdk.users").FindChildByName<CodeClass>("user");
+            var userClass = codeModel.FindNamespaceByName("ApiSdk.models").FindChildByName<CodeClass>("user");
             Assert.NotNull(userClass);
         }
         [Fact]

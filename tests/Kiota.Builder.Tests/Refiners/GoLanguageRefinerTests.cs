@@ -36,19 +36,6 @@ namespace Kiota.Builder.Refiners.Tests {
             Assert.Single(testEnum.Usings);
         }
         [Fact]
-        public void MovesModelsInDedicatedNamespace() {
-            var main = root.AddNamespace("/main");
-            main.AddClass(new CodeClass {
-                Name = "someModel",
-                ClassKind = CodeClassKind.Model
-            });
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-            Assert.Empty(main.GetChildElements(true).OfType<CodeClass>());
-            var modelsNS = main.FindNamespaceByName("/main.models");
-            Assert.NotNull(modelsNS);
-            Assert.Single(modelsNS.GetChildElements(true).OfType<CodeClass>());
-        }
-        [Fact]
         public void CorrectsCoreType() {
             const string httpCoreDefaultName = "IHttpCore";
             const string factoryDefaultName = "ISerializationWriterFactory";
