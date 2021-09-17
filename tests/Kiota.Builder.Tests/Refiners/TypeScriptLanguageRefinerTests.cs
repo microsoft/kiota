@@ -86,25 +86,6 @@ namespace Kiota.Builder.Refiners.Tests {
                     Name = serializerDefaultName,
                 }
             });
-            var responseHandlerMethod = model.AddMethod(new CodeMethod {
-                Name = "defaultResponseHandler",
-                ReturnType = new CodeType {
-                    Name = "string"
-                }
-            }, new () {
-                Name = "deserializeFields",
-                ReturnType = new CodeType() {
-                    Name = DeserializeDefaultName,
-                },
-                MethodKind = CodeMethodKind.Deserializer
-            }).First();
-            const string streamDefaultName = "Stream";
-            responseHandlerMethod.AddParameter(new CodeParameter {
-                Name = "param1",
-                Type = new CodeType {
-                    Name = streamDefaultName
-                }
-            });
             ILanguageRefiner.Refine(new GenerationConfiguration{ Language = GenerationLanguage.TypeScript }, root);
             Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => HttpCoreDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => FactoryDefaultName.Equals(x.Type.Name)));
@@ -113,7 +94,6 @@ namespace Kiota.Builder.Refiners.Tests {
             Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().Where(x => DeserializeDefaultName.Equals(x.ReturnType.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => HandlerDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => streamDefaultName.Equals(x.Type.Name)));
         }
     }
 #endregion
