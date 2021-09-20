@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -225,11 +226,29 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Middleware
         [InlineData(HttpStatusCode.GatewayTimeout)]  // 504
         [InlineData(HttpStatusCode.ServiceUnavailable)]  // 503
         [InlineData(HttpStatusCode.TooManyRequests)] // 429
-        public async Task ShouldDelayBasedOnRetryAfterHeader(HttpStatusCode statusCode)
+        public async Task ShouldDelayBasedOnRetryAfterHeaderWithSeconds(HttpStatusCode statusCode)
         {
             // Arrange
             var retryResponse = new HttpResponseMessage(statusCode);
             retryResponse.Headers.TryAddWithoutValidation(RetryAfter, 1.ToString());
+            // Act
+            await DelayTestWithMessage(retryResponse, 1, "Init");
+            // Assert
+            Assert.Equal("Init Work 1", Message);
+        }
+
+        [Theory]
+        [InlineData(HttpStatusCode.GatewayTimeout)]  // 504
+        [InlineData(HttpStatusCode.ServiceUnavailable)]  // 503
+        [InlineData(HttpStatusCode.TooManyRequests)] // 429
+        public async Task ShouldDelayBasedOnRetryAfterHeaderWithHttpDate(HttpStatusCode statusCode)
+        {
+            // Arrange
+            var retryResponse = new HttpResponseMessage(statusCode);
+            var futureTime = DateTime.Now + TimeSpan.FromSeconds(3);// 3 seconds from now
+            var futureTimeString = futureTime.ToString(CultureInfo.InvariantCulture.DateTimeFormat.RFC1123Pattern);
+            Assert.Contains("GMT",futureTimeString); // http date always end in GMT according to the spec
+            retryResponse.Headers.TryAddWithoutValidation(RetryAfter, futureTimeString);
             // Act
             await DelayTestWithMessage(retryResponse, 1, "Init");
             // Assert
@@ -281,7 +300,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Middleware
         [InlineData(HttpStatusCode.GatewayTimeout)]  // 504
         [InlineData(HttpStatusCode.ServiceUnavailable)]  // 503
         [InlineData(HttpStatusCode.TooManyRequests)] // 429
-        public async Task ShouldRetryBasedOnRetryAfter(HttpStatusCode statusCode)
+        public async Task ShouldRetryBasedOnRetryAfterHeaderWithSeconds(HttpStatusCode statusCode)
         {
             // Arrange
             var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "http://example.org/foo")
@@ -290,6 +309,35 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Middleware
             };
             var retryResponse = new HttpResponseMessage(statusCode);
             retryResponse.Headers.TryAddWithoutValidation(RetryAfter, 5.ToString());
+            var response2 = new HttpResponseMessage(HttpStatusCode.OK);
+            this._testHttpMessageHandler.SetHttpResponse(retryResponse, response2);
+            // Act
+            var response = await _invoker.SendAsync(httpRequestMessage, new CancellationToken());
+            // Assert
+            Assert.Same(response, response2);
+            Assert.NotNull(response.RequestMessage);
+            Assert.True(response.RequestMessage.Headers.TryGetValues(RetryAttempt, out var values), "Don't set Retry-Attempt Header");
+            Assert.Single(values);
+            Assert.Equal(values.First(), 1.ToString());
+            Assert.NotSame(response.RequestMessage, httpRequestMessage);
+        }
+
+        [Theory]
+        [InlineData(HttpStatusCode.GatewayTimeout)]  // 504
+        [InlineData(HttpStatusCode.ServiceUnavailable)]  // 503
+        [InlineData(HttpStatusCode.TooManyRequests)] // 429
+        public async Task ShouldRetryBasedOnRetryAfterHeaderWithHttpDate(HttpStatusCode statusCode)
+        {
+            // Arrange
+            var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "http://example.org/foo")
+            {
+                Content = new StringContent("Hello World")
+            };
+            var retryResponse = new HttpResponseMessage(statusCode);
+            var futureTime = DateTime.Now + TimeSpan.FromSeconds(5);// 5 seconds from now
+            var futureTimeString = futureTime.ToString(CultureInfo.InvariantCulture.DateTimeFormat.RFC1123Pattern);
+            retryResponse.Headers.TryAddWithoutValidation(RetryAfter, futureTimeString);
+            Assert.Contains("GMT", futureTimeString); // http date always end in GMT according to the spec
             var response2 = new HttpResponseMessage(HttpStatusCode.OK);
             this._testHttpMessageHandler.SetHttpResponse(retryResponse, response2);
             // Act
