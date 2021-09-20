@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using Xunit;
 
 namespace Kiota.Builder.Writers.Tests {
@@ -17,6 +18,11 @@ namespace Kiota.Builder.Writers.Tests {
             currentType = new () {
                 Name = TypeName
             };
+            var root = CodeNamespace.InitRootNamespace();
+            var parentClass = root.AddClass(new CodeClass {
+                Name = "ParentClass"
+            }).First();
+            currentType.Parent = parentClass;
         }
         public void Dispose() {
             tw?.Dispose();

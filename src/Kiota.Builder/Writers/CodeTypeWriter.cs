@@ -1,10 +1,15 @@
+using Kiota.Builder.Writers.TypeScript;
+
 namespace Kiota.Builder.Writers {
     public class CodeTypeWriter : BaseElementWriter<CodeType, ILanguageConventionService>
     {
         public CodeTypeWriter(ILanguageConventionService conventionService) : base(conventionService){}
         public override void WriteCodeElement(CodeType codeElement, LanguageWriter writer)
         {
-            writer.Write(conventions.GetTypeString(codeElement), includeIndent: false);
+            if(conventions is TypeScriptConventionService tsConventions)
+                writer.Write(tsConventions.GetTypeString(codeElement, codeElement), includeIndent: false);
+            else
+                writer.Write(conventions.GetTypeString(codeElement), includeIndent: false);
         }
     }
 }
