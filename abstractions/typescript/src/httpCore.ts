@@ -37,7 +37,7 @@ export interface HttpCore {
      * @typeParam ResponseType the type of the response model to deserialize the response into.
      * @return a {@link Promise} with the deserialized response model collection.
      */
-    sendCollectionOfPrimitiveAsync<ResponseType>(requestInfo: RequestInformation, responseType: "string" | "number" | "boolean" | "Date" | "ReadableStream", responseHandler: ResponseHandler | undefined): Promise<ResponseType[]>;
+    sendCollectionOfPrimitiveAsync<ResponseType>(requestInfo: RequestInformation, responseType: "string" | "number" | "boolean" | "Date", responseHandler: ResponseHandler | undefined): Promise<ResponseType[] | undefined>;
     /**
      * Excutes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model.
      * @param requestInfo the request info to execute.
