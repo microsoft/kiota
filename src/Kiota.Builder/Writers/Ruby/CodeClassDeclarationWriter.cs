@@ -22,7 +22,7 @@ namespace  Kiota.Builder.Writers.Ruby {
             foreach (var relativePath in codeElement.Usings
                                         .Where(x => !x.IsExternal)
                                         .Select(x => relativeImportManager.GetRelativeImportPathForUsing(x, currentNamespace))
-                                        .Select(x => x.Item2)
+                                        .Select(x => x.Item3)
                                         .Distinct()
                                         .OrderBy(x => x))
                 writer.WriteLine($"require_relative '{relativePath.ToSnakeCase()}'");

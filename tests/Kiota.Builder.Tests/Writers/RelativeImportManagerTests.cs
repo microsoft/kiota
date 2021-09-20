@@ -34,7 +34,7 @@ namespace Kiota.Builder.Writers.Tests {
             };
             declaration.AddUsings(nUsing);
             var result = importManager.GetRelativeImportPathForUsing(nUsing, graphNS);
-            Assert.Equal("./messages/message", result.Item2);
+            Assert.Equal("./messages/message", result.Item3);
         }
         [Fact]
         public void ReplacesImportsParentNamespace() {
@@ -56,7 +56,7 @@ namespace Kiota.Builder.Writers.Tests {
             };
             declaration.AddUsings(nUsing);
             var result = importManager.GetRelativeImportPathForUsing(nUsing, modelsNS);
-            Assert.Equal("../messages/message", result.Item2);
+            Assert.Equal("../messages/message", result.Item3);
         }
         [Fact]
         public void ReplacesImportsInOtherTrunk() {
@@ -96,8 +96,8 @@ namespace Kiota.Builder.Writers.Tests {
             declaration2.AddUsings(nUsing2);
             var result = importManager.GetRelativeImportPathForUsing(nUsing, usedRangeNS1);
             var result2 = importManager.GetRelativeImportPathForUsing(nUsing2, usedRangeNS2);
-            Assert.Equal("../../../../workbookRange", result.Item2);
-            Assert.Equal("../../workbookRange", result2.Item2);
+            Assert.Equal("../../../../workbookRange", result.Item3);
+            Assert.Equal("../../workbookRange", result2.Item3);
         }
         [Fact]
         public void ReplacesImportsSameNamespace() {
@@ -115,7 +115,7 @@ namespace Kiota.Builder.Writers.Tests {
             };
             declaration.AddUsings(nUsing);
             var result = importManager.GetRelativeImportPathForUsing(nUsing, graphNS);
-            Assert.Equal("./message", result.Item2);
+            Assert.Equal("./message", result.Item3);
         }
     }
 }
