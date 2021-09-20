@@ -7,23 +7,24 @@ using Xunit;
 
 namespace Kiota.Builder.Writers.Go.Tests {
     public class CodeEnumWriterTests :IDisposable {
-        private const string defaultPath = "./";
-        private const string defaultName = "name";
+        private const string DefaultPath = "./";
+        private const string DefaultName = "name";
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeEnum currentEnum;
-        private const string enumName = "someEnum";
+        private const string EnumName = "someEnum";
         public CodeEnumWriterTests(){
-            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, defaultPath, defaultName);
+            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
             currentEnum = root.AddEnum(new CodeEnum(root) {
-                Name = enumName,
+                Name = EnumName,
             }).First();
         }
         public void Dispose(){
             tw?.Dispose();
+            GC.SuppressFinalize(this);
         }
         [Fact]
         public void WritesEnum() {
@@ -31,9 +32,9 @@ namespace Kiota.Builder.Writers.Go.Tests {
             currentEnum.Options.Add(optionName);
             writer.Write(currentEnum);
             var result = tw.ToString();
-            Assert.Contains($"type {enumName.ToFirstCharacterUpperCase()} int", result);
+            Assert.Contains($"type {EnumName.ToFirstCharacterUpperCase()} int", result);
             Assert.Contains($"const (", result);
-            Assert.Contains($"{enumName.ToFirstCharacterUpperCase()} = iota", result);
+            Assert.Contains($"{EnumName.ToFirstCharacterUpperCase()} = iota", result);
             Assert.Contains($"func (i", result);
             Assert.Contains($"String() string {{", result);
             Assert.Contains($"return []string{{", result);

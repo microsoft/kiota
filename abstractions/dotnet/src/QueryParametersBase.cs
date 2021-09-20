@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Kiota.Abstractions.Extensions;
 
 namespace Microsoft.Kiota.Abstractions
 {
@@ -23,7 +24,7 @@ namespace Microsoft.Kiota.Abstractions
                                         .GetProperties()
                                         .Where(x => !target.ContainsKey(x.Name)))
             {
-                target.Add(property.Name, property.GetValue(this));
+                target.Add(property.Name.ToFirstCharacterLowerCase(), property.GetValue(this));
             }
         }
     }

@@ -9,23 +9,21 @@ namespace Kiota.Builder {
         public TypeScriptPathSegmenter(string rootPath, string clientNamespaceName) : base (rootPath, clientNamespaceName) { }
         public override string FileSuffix =>  ".ts";
         public override string NormalizeFileName(CodeElement currentElement) {
-            switch(currentElement) {
-                case CodeNamespace ns:
-                    return "index";
-                default:
-                    return GetDefaultFileName(currentElement);
-            }
+            return currentElement switch
+            {
+                CodeNamespace => "index",
+                _ => GetDefaultFileName(currentElement),
+            };
         }
         private static string GetDefaultFileName(CodeElement currentElement) => GetLastFileNameSegment(currentElement).ToFirstCharacterLowerCase();
         public override string NormalizeNamespaceSegment(string segmentName) => segmentName.ToFirstCharacterLowerCase();
         public override IEnumerable<string> GetAdditionalSegment(CodeElement currentElement, string fileName)
         {
-            switch(currentElement) {
-                case CodeNamespace ns:
-                    return new string[] { GetDefaultFileName(currentElement) }; // We put barrels inside namespace folders
-                default:
-                    return Enumerable.Empty<string>();
-            }
+            return currentElement switch
+            {
+                CodeNamespace => new string[] { GetDefaultFileName(currentElement) },// We put barrels inside namespace folders
+                _ => Enumerable.Empty<string>(),
+            };
         }
     }
 }

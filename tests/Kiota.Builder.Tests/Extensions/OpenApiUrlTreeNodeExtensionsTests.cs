@@ -12,26 +12,26 @@ namespace Kiota.Builder.Extensions.Tests {
             Assert.False(OpenApiUrlTreeNodeExtensions.IsParameter(null));
             Assert.False(OpenApiUrlTreeNodeExtensions.DoesNodeBelongToItemSubnamespace(null));
             Assert.Empty(OpenApiUrlTreeNodeExtensions.GetComponentsReferenceIndex(null, null));
-            Assert.Empty(OpenApiUrlTreeNodeExtensions.GetComponentsReferenceIndex(null, label));
+            Assert.Empty(OpenApiUrlTreeNodeExtensions.GetComponentsReferenceIndex(null, Label));
             Assert.Empty(OpenApiUrlTreeNodeExtensions.GetComponentsReferenceIndex(OpenApiUrlTreeNode.Create(), null));
-            Assert.Empty(OpenApiUrlTreeNodeExtensions.GetComponentsReferenceIndex(OpenApiUrlTreeNode.Create(), label));
+            Assert.Empty(OpenApiUrlTreeNodeExtensions.GetComponentsReferenceIndex(OpenApiUrlTreeNode.Create(), Label));
             Assert.Null(OpenApiUrlTreeNodeExtensions.GetPathItemDescription(null, null));
-            Assert.Null(OpenApiUrlTreeNodeExtensions.GetPathItemDescription(null, label));
+            Assert.Null(OpenApiUrlTreeNodeExtensions.GetPathItemDescription(null, Label));
             Assert.Null(OpenApiUrlTreeNodeExtensions.GetPathItemDescription(OpenApiUrlTreeNode.Create(), null));
-            Assert.Null(OpenApiUrlTreeNodeExtensions.GetPathItemDescription(OpenApiUrlTreeNode.Create(), label));
+            Assert.Null(OpenApiUrlTreeNodeExtensions.GetPathItemDescription(OpenApiUrlTreeNode.Create(), Label));
         }
-        private const string label = "default";
+        private const string Label = "default";
         [Fact]
         public void GetsDescription() {
             var node = OpenApiUrlTreeNode.Create();
-            node.PathItems.Add(label, new() {
+            node.PathItems.Add(Label, new() {
                 Description = "description",
                 Summary = "summary"
             });
-            Assert.Equal(label, OpenApiUrlTreeNode.Create().GetPathItemDescription(label, label));
-            Assert.Equal("description", node.GetPathItemDescription(label, label));
-            node.PathItems[label].Description = null;
-            Assert.Equal("summary", node.GetPathItemDescription(label, label));
+            Assert.Equal(Label, OpenApiUrlTreeNode.Create().GetPathItemDescription(Label, Label));
+            Assert.Equal("description", node.GetPathItemDescription(Label, Label));
+            node.PathItems[Label].Description = null;
+            Assert.Equal("summary", node.GetPathItemDescription(Label, Label));
         }
         [Fact]
         public void IsFunction() {
@@ -39,7 +39,7 @@ namespace Kiota.Builder.Extensions.Tests {
                 Paths = new(),
             };
             doc.Paths.Add("function()", new() {});
-            var node = OpenApiUrlTreeNode.Create(doc, label);
+            var node = OpenApiUrlTreeNode.Create(doc, Label);
             Assert.False(node.IsFunction());
             Assert.True(node.Children.First().Value.IsFunction());
         }
@@ -49,7 +49,7 @@ namespace Kiota.Builder.Extensions.Tests {
                 Paths = new(),
             };
             doc.Paths.Add("{param}", new() {});
-            var node = OpenApiUrlTreeNode.Create(doc, label);
+            var node = OpenApiUrlTreeNode.Create(doc, Label);
             Assert.False(node.IsParameter());
             Assert.True(node.Children.First().Value.IsParameter());
         }
@@ -59,7 +59,7 @@ namespace Kiota.Builder.Extensions.Tests {
                 Paths = new(),
             };
             doc.Paths.Add("{param}", new() {});
-            var node = OpenApiUrlTreeNode.Create(doc, label);
+            var node = OpenApiUrlTreeNode.Create(doc, Label);
             Assert.False(node.DoesNodeBelongToItemSubnamespace());
             Assert.True(node.Children.First().Value.DoesNodeBelongToItemSubnamespace());
 
@@ -67,14 +67,14 @@ namespace Kiota.Builder.Extensions.Tests {
                 Paths = new(),
             };
             doc.Paths.Add("param}", new() {});
-            node = OpenApiUrlTreeNode.Create(doc, label);
+            node = OpenApiUrlTreeNode.Create(doc, Label);
             Assert.False(node.Children.First().Value.DoesNodeBelongToItemSubnamespace());
 
             doc = new OpenApiDocument {
                 Paths = new(),
             };
             doc.Paths.Add("{param", new() {});
-            node = OpenApiUrlTreeNode.Create(doc, label);
+            node = OpenApiUrlTreeNode.Create(doc, Label);
             Assert.False(node.Children.First().Value.DoesNodeBelongToItemSubnamespace());
         }
         [Fact]
@@ -83,7 +83,7 @@ namespace Kiota.Builder.Extensions.Tests {
                 Paths = new(),
             };
             doc.Paths.Add("function(parm1)", new() {});
-            var node = OpenApiUrlTreeNode.Create(doc, label);
+            var node = OpenApiUrlTreeNode.Create(doc, Label);
             Assert.DoesNotContain("(", node.Children.First().Value.GetIdentifier());
         }
         [Fact]
@@ -92,7 +92,7 @@ namespace Kiota.Builder.Extensions.Tests {
                 Paths = new(),
             };
             doc.Paths.Add("\\users\\messages", new() {});
-            var node = OpenApiUrlTreeNode.Create(doc, label);
+            var node = OpenApiUrlTreeNode.Create(doc, Label);
             Assert.Equal("graph.users.messages", node.Children.First().Value.GetNodeNamespaceFromPath("graph"));
             Assert.Equal("users.messages", node.Children.First().Value.GetNodeNamespaceFromPath(null));
         }

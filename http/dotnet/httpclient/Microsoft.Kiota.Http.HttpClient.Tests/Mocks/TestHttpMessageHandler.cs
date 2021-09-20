@@ -24,11 +24,9 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Mocks
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            HttpResponseMessage responseMessage;
-
             requestMessageDelegate(request);
 
-            if(this.responseMessages.TryGetValue(request.RequestUri.ToString(), out responseMessage))
+            if(this.responseMessages.TryGetValue(request.RequestUri.ToString(), out HttpResponseMessage responseMessage))
             {
                 responseMessage.RequestMessage = request;
                 return Task.FromResult(responseMessage);

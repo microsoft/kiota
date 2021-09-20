@@ -4,7 +4,7 @@ using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder.Extensions {
     public static class OpenApiOperationExtensions {
-        private static HashSet<string> successCodes = new() {"200", "201", "202"}; //204 excluded as it won't have a schema
+        private static readonly HashSet<string> successCodes = new() {"200", "201", "202"}; //204 excluded as it won't have a schema
         public static OpenApiSchema GetResponseSchema(this OpenApiOperation operation)
         {
             // Return Schema that represents all the possible success responses!

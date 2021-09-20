@@ -38,10 +38,10 @@ namespace Kiota.Builder.Refiners.Tests {
         [Fact]
         public void MovesModelsInDedicatedNamespace() {
             var main = root.AddNamespace("/main");
-            var model = main.AddClass(new CodeClass (main) {
+            main.AddClass(new CodeClass (main) {
                 Name = "someModel",
                 ClassKind = CodeClassKind.Model
-            }).First();
+            });
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
             Assert.Empty(main.GetChildElements(true).OfType<CodeClass>());
             var modelsNS = main.FindNamespaceByName("/main.models");

@@ -5,7 +5,7 @@ using Microsoft.OpenApi.Models;
 
 namespace Kiota.Builder.Extensions {
     public static class OpenApiSchemaExtensions {
-        private static Func<OpenApiSchema, IList<OpenApiSchema>> classNamesFlattener = (x) =>
+        private static readonly Func<OpenApiSchema, IList<OpenApiSchema>> classNamesFlattener = (x) =>
         (x.AnyOf ?? Enumerable.Empty<OpenApiSchema>()).Union(x.AllOf).Union(x.OneOf).ToList();
         public static IEnumerable<string> GetSchemaTitles(this OpenApiSchema schema) {
             if(schema == null)

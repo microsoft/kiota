@@ -11,7 +11,7 @@
     To generate a SDK from an online OpenAPI description and into the current directory:
 
     ```Shell
-    docker run -v ${PWD}:/app/output docker.pkg.github.com/microsoft/kiota/generator --language typescript -n gfx -d https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml
+    docker run -v ${PWD}:/app/output ghcr.io/microsoft/kiota/generator --language typescript -n gfx -d https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml
     ```
 
 > Note: steps 1-4 only need to be done once per machine.

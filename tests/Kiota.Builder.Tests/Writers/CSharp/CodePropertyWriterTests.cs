@@ -6,17 +6,16 @@ using Xunit;
 
 namespace Kiota.Builder.Writers.CSharp.Tests {
     public class CodePropertyWriterTests: IDisposable {
-        private const string defaultPath = "./";
-        private const string defaultName = "name";
+        private const string DefaultPath = "./";
+        private const string DefaultName = "name";
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeProperty property;
         private readonly CodeClass parentClass;
-        private const string propertyName = "PropertyName";
-        private const string propertyDescription = "some description";
-        private const string typeName = "Somecustomtype";
+        private const string PropertyName = "PropertyName";
+        private const string TypeName = "Somecustomtype";
         public CodePropertyWriterTests() {
-            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, defaultPath, defaultName);
+            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
@@ -25,61 +24,16 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             };
             root.AddClass(parentClass);
             property = new CodeProperty(parentClass) {
-                Name = propertyName,
+                Name = PropertyName,
             };
             property.Type = new CodeType(property) {
-                Name = typeName
+                Name = TypeName
             };
             parentClass.AddProperty(property);
         }
         public void Dispose() {
             tw?.Dispose();
-        }
-        private void AddSerializationProperties() {
-            var addData = parentClass.AddProperty(new CodeProperty(parentClass) {
-                Name = "additionalData",
-                PropertyKind = CodePropertyKind.AdditionalData,
-            }).First();
-            addData.Type = new CodeType(addData) {
-                Name = "string"
-            };
-            var dummyProp = parentClass.AddProperty(new CodeProperty(parentClass) {
-                Name = "dummyProp",
-            }).First();
-            dummyProp.Type = new CodeType(dummyProp) {
-                Name = "string"
-            };
-            var dummyCollectionProp = parentClass.AddProperty(new CodeProperty(parentClass) {
-                Name = "dummyColl",
-            }).First();
-            dummyCollectionProp.Type = new CodeType(dummyCollectionProp) {
-                Name = "string",
-                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-            };
-            var dummyComplexCollection = parentClass.AddProperty(new CodeProperty(parentClass) {
-                Name = "dummyComplexColl"
-            }).First();
-            dummyComplexCollection.Type = new CodeType(dummyComplexCollection) {
-                Name = "Complex",
-                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-                TypeDefinition = new CodeClass(parentClass.Parent) {
-                    Name = "SomeComplexType"
-                }
-            };
-            var dummyEnumProp = parentClass.AddProperty(new CodeProperty(parentClass){
-                Name = "dummyEnumCollection",
-            }).First();
-            dummyEnumProp.Type = new CodeType(dummyEnumProp) {
-                Name = "SomeEnum",
-                TypeDefinition = new CodeEnum(parentClass.Parent) {
-                    Name = "EnumType"
-                }
-            };
-        }
-        private void AddInheritanceClass() {
-            (parentClass.StartBlock as CodeClass.Declaration).Inherits = new CodeType(parentClass) {
-                Name = "someParentClass"
-            };
+            GC.SuppressFinalize(this);
         }
         [Fact]
         public void WritesRequestBuilder() {
@@ -87,7 +41,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains("get =>", result);
-            Assert.Contains($"new {typeName}", result);
+            Assert.Contains($"new {TypeName}", result);
             Assert.Contains("HttpCore", result);
             Assert.Contains("PathSegment", result);
         }
@@ -96,7 +50,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             property.PropertyKind = CodePropertyKind.Custom;
             writer.Write(property);
             var result = tw.ToString();
-            Assert.Contains($"{typeName} {propertyName}", result);
+            Assert.Contains($"{TypeName} {PropertyName}", result);
             Assert.Contains("get; set;", result);
         }
         [Fact]

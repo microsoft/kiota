@@ -1,7 +1,7 @@
 # Building Kiota
 
 1. Clone the current repository.
-1. Install [the pre-requesites](../requiredtools/kiota).
+1. Install [the pre-requesites](./tool.md).
 1. Open the solution with Visual Studio and right click *publish* **--or--** execute the following commands:
 
     ```Shell

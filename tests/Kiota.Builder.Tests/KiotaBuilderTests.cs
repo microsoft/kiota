@@ -6,11 +6,32 @@ using Moq;
 using Xunit;
 using System.Collections.Generic;
 using Microsoft.OpenApi.Any;
+using System.Threading.Tasks;
+using System.IO;
+using System;
 
 namespace Kiota.Builder.Tests
 {
     public class KiotaBuilderTests
     {
+        [Fact]
+        public async Task ThrowsOnMissingServer() {
+            var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+            await File.WriteAllLinesAsync(tempFilePath, new string[] {"openapi: 3.0.0", "info:", "  title: \"Todo API\"", "  version: \"1.0.0\""});
+            var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
+            await Assert.ThrowsAsync<InvalidOperationException>(() => builder.GenerateSDK());
+            File.Delete(tempFilePath);
+        }
+        [Fact]
+        public async Task DoesntThrowOnMissingServerForV2() {
+            var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+            await File.WriteAllLinesAsync(tempFilePath, new string[] {"swagger: 2.0", "title: \"Todo API\"", "version: \"1.0.0\"", "host: mytodos.doesntexit", "basePath: v2", "schemes:", " - https"," - http"});
+            var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
+            await builder.GenerateSDK();
+            File.Delete(tempFilePath);
+        }
         [Fact]
         public void Single_root_node_creates_single_request_builder_class()
         {

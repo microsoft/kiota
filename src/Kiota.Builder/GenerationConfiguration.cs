@@ -7,7 +7,7 @@ namespace Kiota.Builder {
         public string ClientClassName { get; set; } = "ApiClient";
         public string ClientNamespaceName { get; set; } = "ApiSdk";
         public GenerationLanguage Language { get; set; } = GenerationLanguage.CSharp;
-        public string ApiRootUrl { get; set; } = "https://graph.microsoft.com/v1.0";
+        public string ApiRootUrl { get; set; }
         public List<string> PropertiesPrefixToStrip { get; set; } = new() { "@odata."};
         public HashSet<string> IgnoredRequestContentTypes { get; set; } = new();
         public bool UsesBackingStore { get; set; }
@@ -16,14 +16,14 @@ namespace Kiota.Builder {
         public bool ShouldWriteNamespaceIndices { get { return BarreledLanguages.Contains(Language); } }
         public bool ShouldWriteBarrelsIfClassExists { get { return BarreledLanguagesWithConstantFileName.Contains(Language); } }
         public bool ShouldRenderMethodsOutsideOfClasses { get { return MethodOutsideOfClassesLanguages.Contains(Language); } }
-        private static HashSet<GenerationLanguage> MethodOutsideOfClassesLanguages = new () {
+        private static readonly HashSet<GenerationLanguage> MethodOutsideOfClassesLanguages = new () {
             GenerationLanguage.Go,
         };
-        private static HashSet<GenerationLanguage> BarreledLanguages = new () {
+        private static readonly HashSet<GenerationLanguage> BarreledLanguages = new () {
             GenerationLanguage.Ruby,
             // TODO: add typescript once we have a barrel writer for it
         };
-        private static HashSet<GenerationLanguage> BarreledLanguagesWithConstantFileName = new () {
+        private static readonly HashSet<GenerationLanguage> BarreledLanguagesWithConstantFileName = new () {
             //TODO: add typescript once we have a barrel writer for it
         };
     }

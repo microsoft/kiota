@@ -6,23 +6,24 @@ using Xunit;
 
 namespace Kiota.Builder.Writers.Java.Tests {
     public class CodeEnumWriterTests :IDisposable {
-        private const string defaultPath = "./";
-        private const string defaultName = "name";
+        private const string DefaultPath = "./";
+        private const string DefaultName = "name";
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeEnum currentEnum;
-        private const string enumName = "someEnum";
+        private const string EnumName = "someEnum";
         public CodeEnumWriterTests(){
-            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, defaultPath, defaultName);
+            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
             currentEnum = root.AddEnum(new CodeEnum(root) {
-                Name = enumName,
+                Name = EnumName,
             }).First();
         }
         public void Dispose(){
             tw?.Dispose();
+            GC.SuppressFinalize(this);
         }
         [Fact]
         public void WritesEnum() {

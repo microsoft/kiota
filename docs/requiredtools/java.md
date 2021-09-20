@@ -5,7 +5,7 @@
 
 ## Initializing target projects
 
-Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](../abstractions/java) and the [authentication](../authentication/java/azure), [http](../http/java/okhttp), [serialization](../serialization/java/json) packages from the GitHub feed.
+Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](../../abstractions/java) and the [authentication](../../authentication/java/azure), [http](../../http/java/okhttp), [serialization](../../serialization/java/json) packages from the GitHub feed.
 
 Execute the following command in the directory you want to initialize the project in.
 

@@ -2,20 +2,26 @@
 
 - [.NET SDK 5.0](https://dotnet.microsoft.com/download)
 
-## Initializing target projects
+## Target project requirements
 
-Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](../abstractions/dotnet) and the [authentication](../authentication/dotnet/azure), [http](../http/dotnet/httpclient), [serialization](../serialization/dotnet/json) packages from the GitHub feed.
+Before you can compile and run the generated files, you will need to make sure they are part of a project with the required dependencies. After creating a new project, or reusing an existing one, you will need to add references to the [abstraction](../../abstractions/dotnet) and the [authentication](../../authentication/dotnet/azure), [http](../../http/dotnet/httpclient), [serialization](../../serialization/dotnet/json) packages from the GitHub feed.
 
-Execute the following command in the directory you want to initialize the project in.
+## Creating target projects
+
+> Note: you can use an existing project if you have one, in that case, you can skip the following section.
+
+Execute the following command in the directory you want to create a new project.
 
 ```Shell
 dotnet new console
 dotnet new gitignore
 ```
 
+> Note: in this example the console template is used, but you can use any CSharp template.
+
 ## Adding dependencies
 
-If you have not already, you will need to create a nuget.config to enable access to the packages in the GitHub package feed.  The article on installing the [Kiota command line](../generator/tool) tool shows how to do this.
+If you have not already, you will need to create a nuget.config to enable access to the packages in the GitHub package feed.  The article on installing the [Kiota command line](../generator/tool.md) tool shows how to do this.
 
 Once the pacakge feed is accessible the following packages can be added to the project.
 
@@ -69,6 +75,8 @@ kiota -d openapi.yml -o graphclient -n GraphClient
 
 ## Creating an application registration
 
+> Note: this step is required if your client will be calling APIs that are protected by the Microsoft Identity Platform like Microsoft Graph.
+
 To be able to authenticate against the demo application against Microsoft Graph, you will need to create an application registration.  You can do this via the Azure portal, or if you have [Microsoft Graph PowerShell](https://www.powershellgallery.com/packages/Microsoft.Graph) installed, you can use the following command to create the application.
 
 ```PowerShell
@@ -92,6 +100,7 @@ using GraphClient;
 using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Authentication.Azure;
 using Microsoft.Kiota.Http.HttpClient;
+using Azure.Identity;
 
 namespace GraphApp
 {
@@ -99,7 +108,7 @@ namespace GraphApp
     {
         static async Task Main(string[] args)
         {
-            var credential = new Azure.Identity.InteractiveBrowserCredential("<insert clientId from $app.ClientId>");
+            var credential = new InteractiveBrowserCredential("<insert clientId from $app.ClientId>");
             var authProvider = new AzureIdentityAuthenticationProvider(credential, new string[] {"User.Read"});
             var core = new HttpCore(authProvider);
             var apiClient = new ApiClient(core);
@@ -109,3 +118,7 @@ namespace GraphApp
     }
 }
 ```
+
+> Note: if the target API doesn't require any authentication, you can use the **AnonymousAuthenticationProvider** instead.  
+> Note: if the target API requires a Authorization bearer \<token> header but doesn't rely on the Microsoft Identity Platform, you can implement your own authentication provider by inheriting from **BaseBearerTokenAuthenticationProvider**.  
+> Note: if the target API requires any other form of authentication schemes, you can implement the **IAuthenticationProvider** interface.
