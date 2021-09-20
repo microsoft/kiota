@@ -23,7 +23,8 @@ namespace Kiota.Builder.Writers.TypeScript {
             foreach (var codeUsing in importSymbolsAndPaths)
                 writer.WriteLine($"import {{{codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct().Aggregate((x,y) => x + ", " + y)}}} from '{codeUsing.Key}';");
             writer.WriteLine();
-            var derivation = (codeElement.Inherits == null ? string.Empty : $" extends {codeElement.Inherits.Name.ToFirstCharacterUpperCase()}") +
+            var inheritSymbol = conventions.GetTypeString(codeElement.Inherits, codeElement);
+            var derivation = (inheritSymbol == null ? string.Empty : $" extends {inheritSymbol}") +
                             (!codeElement.Implements.Any() ? string.Empty : $" implements {codeElement.Implements.Select(x => x.Name).Aggregate((x,y) => x + ", " + y)}");
             conventions.WriteShortDescription((codeElement.Parent as CodeClass).Description, writer);
             writer.WriteLine($"export class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation} {{");
