@@ -54,6 +54,8 @@ namespace Kiota.Builder
                 throw new ArgumentOutOfRangeException(nameof(properties));
             return AddRange(properties);
         }
+        public IEnumerable<CodeProperty> Properties => InnerChildElements.Values.OfType<CodeProperty>();
+        public IEnumerable<CodeMethod> Methods => InnerChildElements.Values.OfType<CodeMethod>();
 
         public bool ContainsMember(string name)
         {

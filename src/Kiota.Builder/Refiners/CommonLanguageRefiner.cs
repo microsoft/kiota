@@ -76,7 +76,7 @@ namespace Kiota.Builder.Refiners {
                 var backedModelImplements = currentDeclaration.Implements.FirstOrDefault(x => "IBackedModel".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
                 if(backedModelImplements != null)
                     backedModelImplements.Name = backedModelImplements.Name[1..]; //removing the "I"
-                var backingStoreProperty = currentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.BackingStore));
+                var backingStoreProperty = currentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.BackingStore));
                 if(backingStoreProperty != null)
                     backingStoreProperty.DefaultValue = defaultPropertyValue;
                 
@@ -101,9 +101,9 @@ namespace Kiota.Builder.Refiners {
                 defaultValueUsing.Name = defaultPropertyValue.Split('.').First();
         }
         private static bool DoesAnyParentHaveAPropertyWithDefaultValue(CodeClass current) {
-            if(current.StartBlock is CodeClass.Declaration currentDeclaration &&
+            if(current.StartBlock is Declaration currentDeclaration &&
                 currentDeclaration.Inherits?.TypeDefinition is CodeClass parentClass) {
-                    if(parentClass.GetChildElements(true).OfType<CodeProperty>().Any(x => !string.IsNullOrEmpty(x.DefaultValue)))
+                    if(parentClass.Properties.Any(x => !string.IsNullOrEmpty(x.DefaultValue)))
                         return true;
                     else
                         return DoesAnyParentHaveAPropertyWithDefaultValue(parentClass);
@@ -159,9 +159,9 @@ namespace Kiota.Builder.Refiners {
         protected static void AddConstructorsForDefaultValues(CodeElement current, bool addIfInherited) {
             if(current is CodeClass currentClass &&
                 !currentClass.IsOfKind(CodeClassKind.RequestBuilder, CodeClassKind.QueryParameters) &&
-                (currentClass.GetChildElements(true).OfType<CodeProperty>().Any(x => !string.IsNullOrEmpty(x.DefaultValue)) ||
+                (currentClass.Properties.Any(x => !string.IsNullOrEmpty(x.DefaultValue)) ||
                 addIfInherited && DoesAnyParentHaveAPropertyWithDefaultValue(currentClass)) &&
-                !currentClass.GetChildElements(true).OfType<CodeMethod>().Any(x => x.IsOfKind(CodeMethodKind.ClientConstructor)))
+                !currentClass.Methods.Any(x => x.IsOfKind(CodeMethodKind.ClientConstructor)))
                 currentClass.AddMethod(new CodeMethod {
                     Name = "constructor",
                     MethodKind = CodeMethodKind.Constructor,
@@ -349,8 +349,7 @@ namespace Kiota.Builder.Refiners {
         internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName) {
             if(current is CodeClass currentClass) {
                 foreach(var innerClass in currentClass
-                                        .GetChildElements(true)
-                                        .OfType<CodeMethod>()
+                                        .Methods
                                         .SelectMany(x => x.Parameters)
                                         .Where(x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.QueryParameter))
                                         .SelectMany(x => x.Type.AllTypes)
@@ -379,12 +378,11 @@ namespace Kiota.Builder.Refiners {
                 var currentClassNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
                 var currentClassChildren = currentClass.GetChildElements(true);
                 var inheritTypes = currentClassDeclaration.Inherits?.AllTypes ?? Enumerable.Empty<CodeType>();
-                var propertiesTypes = currentClassChildren
-                                    .OfType<CodeProperty>()
+                var propertiesTypes = currentClass
+                                    .Properties
                                     .Select(x => x.Type)
                                     .Distinct();
-                var methods = currentClassChildren
-                                    .OfType<CodeMethod>();
+                var methods = currentClass.Methods;
                 var methodsReturnTypes = methods
                                     .Select(x => x.ReturnType)
                                     .Distinct();
@@ -440,8 +438,7 @@ namespace Kiota.Builder.Refiners {
         protected static void MakeModelPropertiesNullable(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass &&
                 currentClass.IsOfKind(CodeClassKind.Model))
-                currentClass.GetChildElements(true)
-                            .OfType<CodeProperty>()
+                currentClass.Properties
                             .Where(x => x.IsOfKind(CodePropertyKind.Custom))
                             .ToList()
                             .ForEach(x => x.Type.IsNullable = true);

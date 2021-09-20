@@ -98,10 +98,10 @@ namespace Kiota.Builder.Refiners.Tests {
                 },
             });
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
-            Assert.Single(requestBuilder.GetChildElements(true).OfType<CodeProperty>());
+            Assert.Single(requestBuilder.Properties);
             Assert.Empty(requestBuilder.GetChildElements(true).OfType<CodeIndexer>());
-            Assert.Single(collectionRequestBuilder.GetChildElements(true).OfType<CodeMethod>().Where(x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)));
-            Assert.Single(collectionRequestBuilder.GetChildElements(true).OfType<CodeProperty>());
+            Assert.Single(collectionRequestBuilder.Methods.Where(x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)));
+            Assert.Single(collectionRequestBuilder.Properties);
         }
         [Fact]
         public void AddsInnerClasses() {
@@ -244,14 +244,14 @@ namespace Kiota.Builder.Refiners.Tests {
                 }
             });
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
-            Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => httpCoreDefaultName.Equals(x.Type.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => factoryDefaultName.Equals(x.Type.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => addiationalDataDefaultName.Equals(x.Type.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().Where(x => deserializeDefaultName.Equals(x.ReturnType.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => handlerDefaultName.Equals(x.Type.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => headersDefaultName.Equals(x.Type.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.Properties.Where(x => httpCoreDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.Properties.Where(x => factoryDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.Properties.Where(x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.Properties.Where(x => addiationalDataDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.Methods.Where(x => deserializeDefaultName.Equals(x.ReturnType.Name)));
+            Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => handlerDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => headersDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
         }
         [Fact]
         public void AddsMethodsOverloads() {
@@ -310,7 +310,7 @@ namespace Kiota.Builder.Refiners.Tests {
             }).First();
             generator.AddParameter(executor.Parameters.Where(x => !x.IsOfKind(CodeParameterKind.ResponseHandler)).ToArray());
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
-            var childMethods = builder.GetChildElements(true).OfType<CodeMethod>();
+            var childMethods = builder.Methods;
             Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count() == 1);//only the body
             Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count() == 1);//only the body
             Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count() == 2);// body + query params

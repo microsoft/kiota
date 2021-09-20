@@ -77,11 +77,11 @@ namespace Kiota.Builder.Tests
             var codeModel = builder.CreateSourceModel(node);
 
             var rootNamespace = codeModel.GetChildElements(true).Single();
-            var rootBuilder = rootNamespace.GetChildElements(true).Single(e => e.Name == "Graph");
-            var tasksProperty = rootBuilder.GetChildElements(true).OfType<CodeProperty>().Single(e => e.Name.Equals("Tasks", StringComparison.OrdinalIgnoreCase));
+            var rootBuilder = rootNamespace.GetChildElements(true).OfType<CodeClass>().Single(e => e.Name == "Graph");
+            var tasksProperty = rootBuilder.Properties.Single(e => e.Name.Equals("Tasks", StringComparison.OrdinalIgnoreCase));
             var tasksRequestBuilder = tasksProperty.Type as CodeType;
             Assert.NotNull(tasksRequestBuilder);
-            var getMethod = tasksRequestBuilder.TypeDefinition.GetChildElements(true).OfType<CodeMethod>().Single(e => e.Name == "Get");
+            var getMethod = (tasksRequestBuilder.TypeDefinition as CodeClass).Methods.Single(e => e.Name == "Get");
             var returnType = getMethod.ReturnType;
             Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Array, returnType.CollectionKind);
         }

@@ -79,8 +79,7 @@ namespace Kiota.Builder.Writers.TypeScript {
         private string WriteInlineDeclaration(CodeType currentType, CodeElement targetElement) {
             writer.IncreaseIndent(4);
             var childElements = (currentType?.TypeDefinition as CodeClass)
-                                        ?.GetChildElements(true)
-                                        ?.OfType<CodeProperty>()
+                                        ?.Properties
                                         ?.OrderBy(x => x.Name)
                                         ?.Select(x => $"{x.Name}?: {GetTypeString(x.Type, targetElement)}");
             var innerDeclaration = childElements?.Any() ?? false ? 

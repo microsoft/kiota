@@ -64,7 +64,7 @@ namespace Kiota.Builder.Writers.CSharp {
             writer.WriteLine("}");
         }
         private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
-            var httpCoreProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
+            var httpCoreProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
             var httpCoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.HttpCore));
             var backingStoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.BackingStore));
             var httpCorePropertyName = httpCoreProperty.Name.ToFirstCharacterUpperCase();
@@ -81,8 +81,7 @@ namespace Kiota.Builder.Writers.CSharp {
         }
         private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer) {
             foreach(var propWithDefault in parentClass
-                                            .GetChildElements(true)
-                                            .OfType<CodeProperty>()
+                                            .Properties
                                             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
                                             .OrderByDescending(x => x.PropertyKind)
                                             .ThenBy(x => x.Name)) {
@@ -95,7 +94,7 @@ namespace Kiota.Builder.Writers.CSharp {
             }
         }
         private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
-            var property = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(propertyKind));
+            var property = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(propertyKind));
             var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
             if(property != null && parameter != null) {
                 writer.WriteLine($"{property.Name.ToFirstCharacterUpperCase()} = {parameter.Name};");
@@ -107,8 +106,7 @@ namespace Kiota.Builder.Writers.CSharp {
             writer.WriteLine($"return new Dictionary<string, Action<T, {conventions.ParseNodeInterfaceName}>>{parentSerializationInfo} {{");
             writer.IncreaseIndent();
             foreach(var otherProp in parentClass
-                                            .GetChildElements(true)
-                                            .OfType<CodeProperty>()
+                                            .Properties
                                             .Where(x => x.IsOfKind(CodePropertyKind.Custom))
                                             .OrderBy(x => x.Name)) {
                 writer.WriteLine($"{{\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", (o,n) => {{ (o as {parentClass.Name.ToFirstCharacterUpperCase()}).{otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type)}(); }} }},");
@@ -139,8 +137,7 @@ namespace Kiota.Builder.Writers.CSharp {
             
             var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
             var generatorMethodName = (codeElement.Parent as CodeClass)
-                                                .GetChildElements(true)
-                                                .OfType<CodeMethod>()
+                                                .Methods
                                                 .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
                                                 ?.Name;
             var parametersList = parameters.Select(x => x?.Name).Where(x => x != null).Aggregate((x,y) => $"{x}, {y}");
@@ -180,12 +177,11 @@ namespace Kiota.Builder.Writers.CSharp {
             writer.WriteLine($"return {RequestInfoVarName};");
         }
         private void WriteSerializerBody(bool shouldHide, CodeClass parentClass, LanguageWriter writer) {
-            var additionalDataProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.AdditionalData));
+            var additionalDataProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.AdditionalData));
             if(shouldHide)
                 writer.WriteLine("base.Serialize(writer);");
             foreach(var otherProp in parentClass
-                                            .GetChildElements(true)
-                                            .OfType<CodeProperty>()
+                                            .Properties
                                             .Where(x => x.IsOfKind(CodePropertyKind.Custom))
                                             .OrderBy(x => x.Name)) {
                 writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterUpperCase()});");

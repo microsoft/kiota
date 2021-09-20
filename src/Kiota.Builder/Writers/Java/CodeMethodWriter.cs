@@ -40,7 +40,7 @@ namespace Kiota.Builder.Writers.Java {
                     WriteDeserializerBody(codeElement, parentClass, writer);
                 break;
                 case CodeMethodKind.IndexerBackwardCompatibility:
-                    WriteIndexerBody(codeElement, writer, returnType);
+                    WriteIndexerBody(codeElement, parentClass, writer, returnType);
                 break;
                 case CodeMethodKind.RequestGenerator when codeElement.IsOverload:
                     WriteGeneratorMethodCall(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer, "return ");
@@ -89,7 +89,7 @@ namespace Kiota.Builder.Writers.Java {
             writer.WriteLine($"this({currentPathParameter.Name}, {httpCoreParameter.Name}, {originalRawUrlParameter.DefaultValue});");
         }
         private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
-            var httpCoreProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
+            var httpCoreProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
             var httpCoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.HttpCore));
             var backingStoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.BackingStore));
             var httpCorePropertyName = httpCoreProperty.Name.ToFirstCharacterLowerCase();
@@ -126,7 +126,7 @@ namespace Kiota.Builder.Writers.Java {
             }
         }
         private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
-            var property = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(propertyKind));
+            var property = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(propertyKind));
             var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
             if(property != null && parameter != null) {
                 writer.WriteLine($"this.{property.Name.ToFirstCharacterLowerCase()} = {parameter.Name};");
@@ -158,8 +158,8 @@ namespace Kiota.Builder.Writers.Java {
                     writer.WriteLine($"return this.get{backingStore.Name.ToFirstCharacterUpperCase()}().get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\");");
 
         }
-        private void WriteIndexerBody(CodeMethod codeElement, LanguageWriter writer, string returnType) {
-            var currentPathProperty = codeElement.Parent.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
+        private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType) {
+            var currentPathProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
             var pathSegment = codeElement.PathSegment;
             conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
         }
@@ -205,8 +205,7 @@ namespace Kiota.Builder.Writers.Java {
         private const string RequestInfoVarName = "requestInfo";
         private static void WriteGeneratorMethodCall(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, LanguageWriter writer, string prefix) {
             var generatorMethodName = (codeElement.Parent as CodeClass)
-                                                .GetChildElements(true)
-                                                .OfType<CodeMethod>()
+                                                .Methods
                                                 .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
                                                 ?.Name
                                                 ?.ToFirstCharacterLowerCase();

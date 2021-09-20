@@ -32,7 +32,7 @@ namespace Kiota.Builder.Writers.Ruby {
                 break;
                 case CodeMethodKind.IndexerBackwardCompatibility:
                     WriteMethodPrototype(codeElement, writer);
-                    WriteIndexerBody(codeElement, writer, returnType);
+                    WriteIndexerBody(codeElement, parentClass, writer, returnType);
                 break;
                 case CodeMethodKind.RequestGenerator:
                     WriteMethodPrototype(codeElement, writer);
@@ -68,7 +68,7 @@ namespace Kiota.Builder.Writers.Ruby {
             writer.WriteLine("end");
         }
         private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
-            var httpCoreProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
+            var httpCoreProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
             var httpCoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.HttpCore));
             var httpCorePropertyName = httpCoreProperty.Name.ToSnakeCase();
             writer.WriteLine($"@{httpCorePropertyName} = {httpCoreParameter.Name.ToSnakeCase()}");
@@ -90,7 +90,7 @@ namespace Kiota.Builder.Writers.Ruby {
             }
         }
         private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
-            var property = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(propertyKind));
+            var property = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(propertyKind));
             var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
             if(property != null && parameter != null) {
                 writer.WriteLine($"@{property.Name.ToSnakeCase()} = {parameter.Name.ToSnakeCase()}");
@@ -106,9 +106,9 @@ namespace Kiota.Builder.Writers.Ruby {
             writer.IncreaseIndent();
             writer.WriteLine($"return @{codeElement.AccessedProperty?.Name?.ToSnakeCase()}");
         }
-        private void WriteIndexerBody(CodeMethod codeElement, LanguageWriter writer, string returnType) {
+        private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType) {
             var prefix = conventions.GetNormalizedNamespacePrefixForType(codeElement.ReturnType);
-            var currentPathProperty = codeElement.Parent.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
+            var currentPathProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
             var pathSegment = codeElement.PathSegment;
             conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id", $"return {prefix}");
         }
@@ -139,8 +139,7 @@ namespace Kiota.Builder.Writers.Ruby {
             
 
             var generatorMethodName = (codeElement.Parent as CodeClass)
-                                                .GetChildElements(true)
-                                                .OfType<CodeMethod>()
+                                                .Methods
                                                 .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
                                                 ?.Name
                                                 ?.ToFirstCharacterLowerCase();

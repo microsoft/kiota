@@ -11,10 +11,11 @@ namespace Kiota.Builder.Writers.TypeScript {
         {
             var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
             var isFlagEnum = codeElement.Type is CodeType currentType && currentType.TypeDefinition is CodeEnum currentEnum && currentEnum.Flags;
+            var parentClass = codeElement.Parent as CodeClass;
             conventions.WriteShortDescription(codeElement.Description, writer);
             switch(codeElement.PropertyKind) {
                 case CodePropertyKind.RequestBuilder:
-                    var currentPathProperty = codeElement.Parent.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
+                    var currentPathProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
                     writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} get {codeElement.Name.ToFirstCharacterLowerCase()}(): {returnType} {{");
                     writer.IncreaseIndent();
                     conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer);

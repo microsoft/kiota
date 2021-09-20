@@ -27,9 +27,7 @@ namespace Kiota.Builder.Refiners {
         }
         private static void DisambiguatePropertiesWithClassNames(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass) {
-                var sameNameProperty = currentClass
-                                                .GetChildElements(true)
-                                                .OfType<CodeProperty>()
+                var sameNameProperty = currentClass.Properties
                                                 .FirstOrDefault(x => x.Name.Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase));
                 if(sameNameProperty != null) {
                     currentClass.RemoveChildElement(sameNameProperty);
@@ -42,8 +40,7 @@ namespace Kiota.Builder.Refiners {
         }
         private static void MakeEnumPropertiesNullable(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model))
-                currentClass.GetChildElements(true)
-                            .OfType<CodeProperty>()
+                currentClass.Properties
                             .Where(x => x.Type is CodeType propType && propType.TypeDefinition is CodeEnum)
                             .ToList()
                             .ForEach(x => x.Type.IsNullable = true);

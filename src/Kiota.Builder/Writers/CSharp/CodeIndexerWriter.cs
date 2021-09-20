@@ -6,7 +6,7 @@ namespace Kiota.Builder.Writers.CSharp {
         public CodeIndexerWriter(CSharpConventionService conventionService) : base(conventionService) {}
         public override void WriteCodeElement(CodeIndexer codeElement, LanguageWriter writer)
         {
-            var currentPathProperty = codeElement.Parent.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
+            var currentPathProperty = (codeElement.Parent as CodeClass).Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
             var returnType = conventions.GetTypeString(codeElement.ReturnType);
             conventions.WriteShortDescription(codeElement.Description, writer);
             writer.WriteLine($"public {returnType} this[{conventions.GetTypeString(codeElement.IndexType)} position] {{ get {{");
