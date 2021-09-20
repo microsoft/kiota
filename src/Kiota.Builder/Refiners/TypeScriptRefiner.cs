@@ -1,5 +1,6 @@
 using System.Linq;
 using System;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners {
     public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
@@ -12,6 +13,7 @@ namespace Kiota.Builder.Refiners {
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             CorrectCoreTypesForBackingStore(generatedCode, "@microsoft/kiota-abstractions", "BackingStoreFactorySingleton.instance.createBackingStore()");
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
+            AliasUsingsWithSameSymbol(generatedCode);
             AddParsableInheritanceForModelClasses(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "ReadableStream", "web-streams-polyfill/es2018", true);
             ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
@@ -28,6 +30,26 @@ namespace Kiota.Builder.Refiners {
                         "@microsoft/kiota-abstractions.SerializationWriterFactoryRegistry"},
                 new[] { "@microsoft/kiota-abstractions.registerDefaultDeserializer",
                         "@microsoft/kiota-abstractions.ParseNodeFactoryRegistry" });
+        }
+        private static void AliasUsingsWithSameSymbol(CodeElement currentElement) {
+            if(currentElement is CodeClass currentClass &&
+                currentClass.StartBlock is CodeClass.Declaration currentDeclaration &&
+                currentDeclaration.Usings.Any(x => !x.IsExternal)) {
+                    var duplicatedSymbolsUsings = currentDeclaration.Usings.Where(x => !x.IsExternal)
+                                                                            .GroupBy(x => x.Declaration.Name, StringComparer.OrdinalIgnoreCase)
+                                                                            .Where(x => x.Count() > 1);
+                    foreach(var duplicatedSymbol in duplicatedSymbolsUsings)
+                        foreach(var usingElement in duplicatedSymbol)
+                            usingElement.Alias = (usingElement.Declaration
+                                                            .TypeDefinition
+                                                            .GetImmediateParentOfType<CodeNamespace>()
+                                                            .Name +
+                                                usingElement.Declaration
+                                                            .TypeDefinition
+                                                            .Name)
+                                                .GetNamespaceImportSymbol();
+                }
+            CrawlTree(currentElement, AliasUsingsWithSameSymbol);
         }
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
