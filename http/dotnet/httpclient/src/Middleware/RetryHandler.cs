@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -21,7 +22,6 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
     {
         private const string RetryAfter = "Retry-After";
         private const string RetryAttempt = "Retry-Attempt";
-        private double _mPow = 1;
 
         /// <summary>
         /// RetryOption property
@@ -154,19 +154,36 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
             if(response.Headers.TryGetValues(RetryAfter, out IEnumerable<string> values))
             {
                 string retryAfter = values.First();
+                // the delay could be in the form of a seconds or a http date. See https://httpwg.org/specs/rfc7231.html#header.retry-after
                 if(Int32.TryParse(retryAfter, out int delaySeconds))
                 {
                     delayInSeconds = delaySeconds;
                 }
+                else if(DateTime.TryParseExact(retryAfter, CultureInfo.InvariantCulture.DateTimeFormat.RFC1123Pattern, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dateTime))
+                {
+                    var timeSpan = dateTime - DateTime.Now;
+                    // ensure the delay is a positive span otherwise use the exponential back-off
+                    delayInSeconds = timeSpan.Seconds > 0 ? timeSpan.Seconds: CalculateExponentialDelay(retryCount, delay);
+                }
             }
             else
             {
-                _mPow = Math.Pow(2, retryCount);
-                delayInSeconds = _mPow * delay;
+                delayInSeconds = CalculateExponentialDelay(retryCount, delay);
             }
 
             TimeSpan delayTimeSpan = TimeSpan.FromSeconds(Math.Min(delayInSeconds, RetryHandlerOption.MaxDelay));
             return Task.Delay(delayTimeSpan, cancellationToken);
+        }
+
+        /// <summary>
+        /// Calculates the delay based on the exponential back off
+        /// </summary>
+        /// <param name="retryCount">The retry count</param>
+        /// <param name="delay">The base to use as a delay</param>
+        /// <returns></returns>
+        private static double CalculateExponentialDelay(int retryCount, int delay)
+        {
+            return Math.Pow(2, retryCount) * delay;
         }
 
         /// <summary>
