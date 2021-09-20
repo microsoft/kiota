@@ -237,7 +237,8 @@ namespace Kiota.Builder.Writers.TypeScript {
             if(inherits)
                 writer.WriteLine("super.serialize(writer);");
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
-                writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", this.{otherProp.Name.ToFirstCharacterLowerCase()});");
+                var spreadOperator = otherProp.Type is CodeType cType && cType.IsCollection && cType.TypeDefinition is CodeEnum ? "..." : string.Empty;
+                writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", {spreadOperator}this.{otherProp.Name.ToFirstCharacterLowerCase()});");
             }
             if(additionalDataProperty != null)
                 writer.WriteLine($"writer.writeAdditionalData(this.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
@@ -287,13 +288,13 @@ namespace Kiota.Builder.Writers.TypeScript {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
             var propertyType = localConventions.TranslateType(propType);
             if(propType is CodeType currentType) {
-                if(isCollection)
+                if(currentType.TypeDefinition is CodeEnum currentEnum)
+                    return $"getEnumValue{(currentEnum.Flags || isCollection ? "s" : string.Empty)}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
+                else if(isCollection)
                     if(currentType.TypeDefinition == null)
                         return $"getCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>()";
                     else
                         return $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
-                else if(currentType.TypeDefinition is CodeEnum currentEnum)
-                    return $"getEnumValue{(currentEnum.Flags ? "s" : string.Empty)}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
             }
             return propertyType switch
             {
@@ -305,13 +306,13 @@ namespace Kiota.Builder.Writers.TypeScript {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
             var propertyType = localConventions.TranslateType(propType);
             if(propType is CodeType currentType) {
-                if(isCollection)
+                if(currentType.TypeDefinition is CodeEnum currentEnum)
+                    return $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}>";
+                else if(isCollection)
                     if(currentType.TypeDefinition == null)
                         return $"writeCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>";
                     else
                         return $"writeCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>";
-                else if(currentType.TypeDefinition is CodeEnum currentEnum)
-                    return $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}>";
             }
             return propertyType switch
             {
