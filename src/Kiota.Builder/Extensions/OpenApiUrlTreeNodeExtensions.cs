@@ -47,6 +47,7 @@ namespace Kiota.Builder.Extensions {
                                 ?.Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
                                 ?.Select(x => x.IsPathSegmentWithSingleSimpleParamter() ? "item" : x)
                                 ?.Select(x => CleanupParametersFromPath((x ?? string.Empty).Split('.', StringSplitOptions.RemoveEmptyEntries)
+                                ?.Select(x => x.TrimStart('$')) //$ref from OData
                                                                 .Last()))
                                 ?.Aggregate(string.Empty, 
                                     (x, y) => $"{x}{GetDotIfBothNotNullOfEmpty(x, y)}{y}") :
