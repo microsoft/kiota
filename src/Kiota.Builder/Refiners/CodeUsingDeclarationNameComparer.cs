@@ -11,7 +11,7 @@ namespace Kiota.Builder.Refiners {
             y != null &&
             GetHashCode(x) == GetHashCode(y);
         public int GetHashCode([DisallowNull] CodeUsing obj) => 
-            (obj?.Name.GetHashCode(OrdinalIgnoreCase) ?? 0) * 7 +
-            (obj?.Declaration?.Name.GetHashCode(OrdinalIgnoreCase) ?? 0);
+            (obj?.Name?.GetHashCode(OrdinalIgnoreCase) ?? 0) * 7 +
+            (obj?.Declaration?.Name?.GetHashCode(OrdinalIgnoreCase) ?? 0);
     }
 }
