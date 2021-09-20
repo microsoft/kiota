@@ -374,9 +374,11 @@ namespace Kiota.Builder.Refiners {
         protected readonly GenerationConfiguration _configuration;
 
         protected static void AddPropertiesAndMethodTypesImports(CodeElement current, bool includeParentNamespaces, bool includeCurrentNamespace, bool compareOnDeclaration) {
-            if(current is CodeClass currentClass) {
+            if(current is CodeClass currentClass &&
+                currentClass.StartBlock is Declaration currentClassDeclaration) {
                 var currentClassNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
                 var currentClassChildren = currentClass.GetChildElements(true);
+                var inheritTypes = currentClassDeclaration.Inherits?.AllTypes ?? Enumerable.Empty<CodeType>();
                 var propertiesTypes = currentClassChildren
                                     .OfType<CodeProperty>()
                                     .Select(x => x.Type)
@@ -399,7 +401,7 @@ namespace Kiota.Builder.Refiners {
                                     .Union(methodsParametersTypes)
                                     .Union(methodsReturnTypes)
                                     .Union(indexerTypes)
-                                    .Union(new List<CodeType> { (currentClass.StartBlock as Declaration)?.Inherits })
+                                    .Union(inheritTypes)
                                     .Where(x => x != null)
                                     .SelectMany(x => x?.AllTypes?.Select(y => new Tuple<CodeType, CodeNamespace>(y, y?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())))
                                     .Where(x => x.Item2 != null && (includeCurrentNamespace || x.Item2 != currentClassNamespace))

@@ -31,15 +31,23 @@ namespace Kiota.Builder.Refiners {
                 new[] { "@microsoft/kiota-abstractions.registerDefaultDeserializer",
                         "@microsoft/kiota-abstractions.ParseNodeFactoryRegistry" });
         }
+        private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
         private static void AliasUsingsWithSameSymbol(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass &&
                 currentClass.StartBlock is CodeClass.Declaration currentDeclaration &&
                 currentDeclaration.Usings.Any(x => !x.IsExternal)) {
                     var duplicatedSymbolsUsings = currentDeclaration.Usings.Where(x => !x.IsExternal)
+                                                                            .Distinct(usingComparer)
                                                                             .GroupBy(x => x.Declaration.Name, StringComparer.OrdinalIgnoreCase)
-                                                                            .Where(x => x.Count() > 1);
-                    foreach(var duplicatedSymbol in duplicatedSymbolsUsings)
-                        foreach(var usingElement in duplicatedSymbol)
+                                                                            .Where(x => x.Count() > 1)
+                                                                            .SelectMany(x => x)
+                                                                            .Union(currentDeclaration
+                                                                                    .Usings
+                                                                                    .Where(x => !x.IsExternal)
+                                                                                    .Where(x => x.Declaration
+                                                                                                    .Name
+                                                                                                    .Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase)));
+                    foreach(var usingElement in duplicatedSymbolsUsings)
                             usingElement.Alias = (usingElement.Declaration
                                                             .TypeDefinition
                                                             .GetImmediateParentOfType<CodeNamespace>()
