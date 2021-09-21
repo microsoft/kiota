@@ -44,7 +44,7 @@ namespace Kiota.Builder.Extensions {
         }
 
         public static string GetSchemaTitle(this OpenApiSchema schema) {
-            return schema.GetSchemaTitles().LastOrDefault();
+            return schema.GetSchemaTitles().LastOrDefault()?.TrimStart('$');// OData $ref
         }
 
         public static bool IsReferencedSchema(this OpenApiSchema schema) {
