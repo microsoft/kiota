@@ -33,10 +33,11 @@ namespace Kiota.Builder
             return AddRange(codeClasses);
         }
         private static readonly char namespaceNameSeparator = '.';
-        private CodeNamespace GetRootNamespace() {
-            if(Parent == null) return this;
-            else return (this.Parent as CodeNamespace).GetRootNamespace();
+        public CodeNamespace GetRootNamespace() {
+            if (Parent is CodeNamespace parentNS) return parentNS.GetRootNamespace();
+            else return this;
         }
+        public IEnumerable<CodeNamespace> Namespaces => InnerChildElements.Values.OfType<CodeNamespace>();
         public CodeNamespace FindNamespaceByName(string nsName) {
             if(string.IsNullOrEmpty(nsName)) throw new ArgumentNullException(nameof(nsName));
             if(nsName.Equals(Name)) return this;

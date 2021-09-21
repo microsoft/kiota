@@ -14,7 +14,7 @@ namespace Kiota.Builder.Writers.CSharp {
             if(writer == null) throw new ArgumentNullException(nameof(writer));
             if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
 
-            var returnType = conventions.GetTypeString(codeElement.ReturnType);
+            var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
             var parentClass = codeElement.Parent as CodeClass;
             var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
             var isVoid = conventions.VoidTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
@@ -225,7 +225,7 @@ namespace Kiota.Builder.Writers.CSharp {
             var baseSuffix = string.Empty;
             if(isConstructor && inherits)
                 baseSuffix = " : base()";
-            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> conventions.GetParameterSignature(p)).ToList());
+            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> conventions.GetParameterSignature(p, code)).ToList());
             var methodName = isConstructor ? code.Parent.Name.ToFirstCharacterUpperCase() : code.Name;
             writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({parameters}){baseSuffix} {{");
         }

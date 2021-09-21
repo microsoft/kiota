@@ -13,7 +13,7 @@ namespace Kiota.Builder.Writers.CSharp {
             var backingStorePropery = parentClass.GetBackingStoreProperty();
             var setterAccessModifier = codeElement.ReadOnly && codeElement.Access > AccessModifier.Private ? "private " : string.Empty;
             var simpleBody = $"get; {setterAccessModifier}set;";
-            var propertyType = conventions.GetTypeString(codeElement.Type);
+            var propertyType = conventions.GetTypeString(codeElement.Type, codeElement);
             conventions.WriteShortDescription(codeElement.Description, writer);
             switch(codeElement.PropertyKind) {
                 case CodePropertyKind.RequestBuilder:

@@ -7,9 +7,9 @@ namespace Kiota.Builder.Writers.CSharp {
         public override void WriteCodeElement(CodeIndexer codeElement, LanguageWriter writer)
         {
             var currentPathProperty = (codeElement.Parent as CodeClass).Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
-            var returnType = conventions.GetTypeString(codeElement.ReturnType);
+            var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
             conventions.WriteShortDescription(codeElement.Description, writer);
-            writer.WriteLine($"public {returnType} this[{conventions.GetTypeString(codeElement.IndexType)} position] {{ get {{");
+            writer.WriteLine($"public {returnType} this[{conventions.GetTypeString(codeElement.IndexType, codeElement)} position] {{ get {{");
             writer.IncreaseIndent();
             conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer, " + \"/\" + position", "return ");
             writer.DecreaseIndent();

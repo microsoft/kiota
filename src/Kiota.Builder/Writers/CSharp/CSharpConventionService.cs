@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
+using static Kiota.Builder.CodeTypeBase;
 
 namespace Kiota.Builder.Writers.CSharp {
     public class CSharpConventionService : CommonLanguageConventionService {
@@ -11,7 +12,7 @@ namespace Kiota.Builder.Writers.CSharp {
         public override string PathSegmentPropertyName => "PathSegment";
         public override string CurrentPathPropertyName => "CurrentPath";
         public override string HttpCorePropertyName => "HttpCore";
-        public HashSet<string> NullableTypes { get; } = new() { "int", "bool", "float", "double", "decimal", "Guid", "DateTimeOffset" };
+        public HashSet<string> NullableTypes { get; } = new() { "int", "bool", "float", "double", "decimal", "long", "Guid", "DateTimeOffset" };
         public static string NullableMarker => "?";
         public override string ParseNodeInterfaceName => "IParseNode";
         public override string RawUrlPropertyName => "IsRawUrl";
@@ -21,9 +22,9 @@ namespace Kiota.Builder.Writers.CSharp {
         }
         public override string GetAccessModifier(AccessModifier access)
         {
-            return (access) switch {
-                (AccessModifier.Public) => "public",
-                (AccessModifier.Protected) => "protected",
+            return access switch {
+                AccessModifier.Public => "public",
+                AccessModifier.Protected => "protected",
                 _ => "private",
             };
         }
@@ -34,17 +35,43 @@ namespace Kiota.Builder.Writers.CSharp {
         internal bool ShouldTypeHaveNullableMarker(CodeTypeBase propType, string propTypeName) {
             return propType.IsNullable && (NullableTypes.Contains(propTypeName) || (propType is CodeType codeType && codeType.TypeDefinition is CodeEnum));
         }
-        public override string GetTypeString(CodeTypeBase code)
+        public override string GetTypeString(CodeTypeBase code) => throw new InvalidOperationException("Use the overload with the target element parameter instead");
+
+        private static HashSet<string> _reservedNames;
+        private static readonly object _reservedNamesLock = new();
+        private static HashSet<string> GetReservedNames(CodeElement currentElement) {
+            if(_reservedNames == null) {
+                lock(_reservedNamesLock) {
+                    var rootNamespace = currentElement.GetImmediateParentOfType<CodeNamespace>().GetRootNamespace();
+                    var names = new List<string>(GetNamespaceNameSegments(rootNamespace).Distinct(StringComparer.OrdinalIgnoreCase));
+                    _reservedNames = new (names, StringComparer.OrdinalIgnoreCase);
+                    _reservedNames.Add("keyvaluepair"); //workaround as System.Collections.Generic imports keyvalue pair
+                }
+            }
+            return _reservedNames;
+        }
+        private static IEnumerable<string> GetNamespaceNameSegments(CodeNamespace ns) {
+            if(!string.IsNullOrEmpty(ns.Name))
+                foreach(var segment in ns.Name.Split('.', StringSplitOptions.RemoveEmptyEntries).Distinct(StringComparer.OrdinalIgnoreCase))
+                    yield return segment;
+            foreach(var childNs in ns.Namespaces)
+                foreach(var segment in GetNamespaceNameSegments(childNs))
+                    yield return segment;
+        }
+        public string GetTypeString(CodeTypeBase code, CodeElement targetElement)
         {
-            if(code is CodeUnionType) 
+            if(code is CodeUnionType)
                 throw new InvalidOperationException($"CSharp does not support union types, the union type {code.Name} should have been filtered out by the refiner");
             else if (code is CodeType currentType) {
                 var typeName = TranslateType(currentType);
+                if(currentType.TypeDefinition != null &&
+                    GetReservedNames(targetElement).Contains(typeName))
+                    typeName = $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
                 var nullableSuffix = ShouldTypeHaveNullableMarker(code, typeName) ? NullableMarker : string.Empty;
-                var collectionPrefix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? "List<" : string.Empty;
+                var collectionPrefix = currentType.CollectionKind == CodeTypeCollectionKind.Complex ? "List<" : string.Empty;
                 var collectionSuffix = currentType.CollectionKind switch {
-                    CodeType.CodeTypeCollectionKind.Complex => ">",
-                    CodeType.CodeTypeCollectionKind.Array => "[]",
+                    CodeTypeCollectionKind.Complex => ">",
+                    CodeTypeCollectionKind.Array => "[]",
                     _ => string.Empty,
                 };
                 if (currentType.ActionOf)
@@ -61,7 +88,7 @@ namespace Kiota.Builder.Writers.CSharp {
             {
                 "integer" => "int",
                 "boolean" => "bool",
-                "string" => "string",// little casing hack
+                "string" or "float" => type.Name.ToLowerInvariant(),// little casing hack
                 "object" => "object",
                 "void" => "void",
                 "binary" => "byte[]",
@@ -73,10 +100,11 @@ namespace Kiota.Builder.Writers.CSharp {
                         (NullableTypes.Contains(typeName) ||
                         "string".Equals(typeName, StringComparison.OrdinalIgnoreCase));
         }
-        public override string GetParameterSignature(CodeParameter parameter)
+        public override string GetParameterSignature(CodeParameter parameter) => throw new InvalidOperationException("Use the overload with the target element parameter instead");
+        public string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
         {
-            var parameterType = GetTypeString(parameter.Type);
-            var defaultValue = (parameter) switch {
+            var parameterType = GetTypeString(parameter.Type, targetElement);
+            var defaultValue = parameter switch {
                 _ when !string.IsNullOrEmpty(parameter.DefaultValue) => $" = {parameter.DefaultValue}",
                 _ when parameter.Optional => " = default",
                 _ => string.Empty,
