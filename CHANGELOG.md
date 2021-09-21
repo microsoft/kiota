@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug where the generator would duplicate some models #573
 - Moves the models to a dedicated namespace (models) #573
 - Fixes a bug where enum serialization would be calling the wrong method in TypeScript #573
+- Fixes a bug where request body would use the response schema #573
 
 ## [0.0.8] - 2021-08-25
 

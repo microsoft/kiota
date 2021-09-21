@@ -593,7 +593,7 @@ namespace Kiota.Builder
             parentClass.AddMethod(executorMethod);
             if (schema != null)
             {
-                var returnType = CreateModelDeclarations(currentNode, schema, operation, executorMethod);
+                var returnType = CreateModelDeclarations(currentNode, schema, operation, executorMethod, "Response");
                 executorMethod.ReturnType = returnType ?? throw new InvalidOperationException("Could not resolve return type for operation");
             } else {
                 var returnType = voidType;
@@ -634,7 +634,7 @@ namespace Kiota.Builder
             if (nonBinaryRequestBody.HasValue && nonBinaryRequestBody.Value.Value != null)
             {
                 var requestBodySchema = nonBinaryRequestBody.Value.Value.Schema;
-                var requestBodyType = CreateModelDeclarations(currentNode, requestBodySchema, operation, method);
+                var requestBodyType = CreateModelDeclarations(currentNode, requestBodySchema, operation, method, "RequestBody");
                 method.AddParameter(new CodeParameter {
                     Name = "body",
                     Type = requestBodyType,
@@ -721,10 +721,10 @@ namespace Kiota.Builder
                 Name = className,
             };
         }
-        private CodeTypeBase CreateUnionModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation) {
+        private CodeTypeBase CreateUnionModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, string suffixForInlineSchema) {
             var schemas = schema.AnyOf.Union(schema.OneOf);
             var unionType = new CodeUnionType {
-                Name = currentNode.GetClassName(operation: operation, suffix: "Response"),
+                Name = currentNode.GetClassName(operation: operation, suffix: suffixForInlineSchema),
             };
             foreach(var currentSchema in schemas) {
                 var shortestNamespaceName = currentSchema.Reference == null ? currentNode.GetNodeNamespaceFromPath(config.ClientNamespaceName) : GetModelsNamespaceNameFromReferenceId(currentSchema.Reference.Id);
@@ -740,16 +740,16 @@ namespace Kiota.Builder
             }
             return unionType;
         }
-        private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement)
+        private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement, string suffixForInlineSchema)
         {
             var codeNamespace = parentElement.GetImmediateParentOfType<CodeNamespace>();
             
             if (!schema.IsReferencedSchema() && schema.Properties.Any()) { // Inline schema, i.e. specific to the Operation
-                return CreateModelDeclarationAndType(currentNode, schema, operation, codeNamespace, "Response");
+                return CreateModelDeclarationAndType(currentNode, schema, operation, codeNamespace, suffixForInlineSchema);
             } else if(schema.IsAllOf()) {
                 return CreateInheritedModelDeclaration(currentNode, schema, operation);
             } else if(schema.IsAnyOf() || schema.IsOneOf()) {
-                return CreateUnionModelDeclaration(currentNode, schema, operation);
+                return CreateUnionModelDeclaration(currentNode, schema, operation, suffixForInlineSchema);
             } else if(schema.IsObject()) {
                 // referenced schema, no inheritance or union type
                 var targetNamespace = GetShortestNamespace(codeNamespace, schema);
