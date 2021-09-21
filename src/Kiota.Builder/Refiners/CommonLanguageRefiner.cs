@@ -242,17 +242,18 @@ namespace Kiota.Builder.Refiners {
         }
         private const string PathSegmentPropertyName = "pathSegment";
         protected static void ConvertUnionTypesToWrapper(CodeElement currentElement) {
+            var parentClass = currentElement.Parent as CodeClass;
             if(currentElement is CodeMethod currentMethod) {
                 if(currentMethod.ReturnType is CodeUnionType currentUnionType)
-                    currentMethod.ReturnType = ConvertUnionTypeToWrapper(currentMethod.Parent as CodeClass, currentUnionType);
+                    currentMethod.ReturnType = ConvertUnionTypeToWrapper(parentClass, currentUnionType);
                 if(currentMethod.Parameters.Any(x => x.Type is CodeUnionType))
                     foreach(var currentParameter in currentMethod.Parameters.Where(x => x.Type is CodeUnionType))
-                        currentParameter.Type = ConvertUnionTypeToWrapper(currentMethod.Parent as CodeClass, currentParameter.Type as CodeUnionType);
+                        currentParameter.Type = ConvertUnionTypeToWrapper(parentClass, currentParameter.Type as CodeUnionType);
             }
             else if (currentElement is CodeIndexer currentIndexer && currentIndexer.ReturnType is CodeUnionType currentUnionType)
-                currentIndexer.ReturnType = ConvertUnionTypeToWrapper(currentIndexer.Parent as CodeClass, currentUnionType);
+                currentIndexer.ReturnType = ConvertUnionTypeToWrapper(parentClass, currentUnionType);
             else if(currentElement is CodeProperty currentProperty && currentProperty.Type is CodeUnionType currentPropUnionType)
-                currentProperty.Type = ConvertUnionTypeToWrapper(currentProperty.Parent as CodeClass, currentPropUnionType);
+                currentProperty.Type = ConvertUnionTypeToWrapper(parentClass, currentPropUnionType);
 
             CrawlTree(currentElement, ConvertUnionTypesToWrapper);
         }
@@ -409,7 +410,7 @@ namespace Kiota.Builder.Refiners {
                                     .Distinct(compareOnDeclaration ? usingComparerWithDeclarations : usingComparerWithoutDeclarations)
                                     .ToArray();
                 if(usingsToAdd.Any())
-                    currentClass.AddUsing(usingsToAdd);
+                    (currentClass.Parent is CodeClass parentClass ? parentClass : currentClass).AddUsing(usingsToAdd); //lots of languages do not support imports on nested classes
             }
             CrawlTree(current, (x) => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration));
         }
