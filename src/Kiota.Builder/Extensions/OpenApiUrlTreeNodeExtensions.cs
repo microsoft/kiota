@@ -92,6 +92,7 @@ namespace Kiota.Builder.Extensions {
                                 CleanupParametersFromPath(currentNode.Segment)?.ReplaceValueIdentifier())
                                 .TrimEnd(requestParametersEndChar)
                                 .TrimStart(requestParametersChar)
+                                .TrimStart('$') //$ref from OData
                                 .Split('-')
                                 .First();
             if((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup.IsMatch(rawClassName))
