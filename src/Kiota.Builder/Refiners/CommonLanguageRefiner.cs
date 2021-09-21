@@ -192,20 +192,18 @@ namespace Kiota.Builder.Refiners {
 
             CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions));
         }
+        private static CodeUsing usingSelector(Tuple<string, string> x) =>
+            new()
+            {
+                Name = x.Item1,
+                Declaration = new CodeType { Name = x.Item2, IsExternal = true },
+            };
         protected static void AddDefaultImports(CodeElement current, Tuple<string, string>[] defaultNamespaces, Tuple<string, string>[] defaultNamespacesForModels, Tuple<string, string>[] defaultNamespacesForRequestBuilders) {
             if(current is CodeClass currentClass) {
-                CodeUsing usingSelector(Tuple<string, string> x)
-                {
-                    return new CodeUsing
-                    {
-                        Name = x.Item1,
-                        Declaration = new CodeType { Name = x.Item2, IsExternal = true },
-                    };
-                }
                 if (currentClass.IsOfKind(CodeClassKind.Model))
                     currentClass.AddUsing(defaultNamespaces.Union(defaultNamespacesForModels)
                                             .Select(usingSelector).ToArray());
-                if(currentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
+                if (currentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
                     var usingsToAdd = defaultNamespaces.Union(defaultNamespacesForRequestBuilders);
                     currentClass.AddUsing(usingsToAdd.Select(usingSelector).ToArray());
                 }
