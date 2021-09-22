@@ -128,7 +128,8 @@ namespace Kiota.Builder.Writers.CSharp {
             }
             return propertyType switch
             {
-                "string" or "bool" or "int" or "float" or "double" or "Guid" or "DateTimeOffset" => $"Get{propertyType.ToFirstCharacterUpperCase()}Value",
+                "string" => $"GetStringValue",// can't use a or https://stackoverflow.com/questions/69284781/csharp-switch-expression-with-or-and-default-guard-with-condition
+                _ when conventions.NullableTypes.Contains(propertyType) => $"Get{propertyType.ToFirstCharacterUpperCase()}Value",
                 _ => $"GetObjectValue<{propertyType.ToFirstCharacterUpperCase()}>",
             };
         }
@@ -245,7 +246,8 @@ namespace Kiota.Builder.Writers.CSharp {
             }
             return propertyType switch
             {
-                "string" or "bool" or "int" or "float" or "double" or "Guid" or "DateTimeOffset" => $"Write{propertyType.ToFirstCharacterUpperCase()}Value",
+                "string" => $"WriteStringValue", // can't use a or https://stackoverflow.com/questions/69284781/csharp-switch-expression-with-or-and-default-guard-with-condition
+                _ when conventions.NullableTypes.Contains(propertyType) => $"Write{propertyType.ToFirstCharacterUpperCase()}Value",
                 _ => $"WriteObjectValue<{propertyType.ToFirstCharacterUpperCase()}>",
             };
         }
