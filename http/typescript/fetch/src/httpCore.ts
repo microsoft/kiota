@@ -1,9 +1,8 @@
 import { AuthenticationProvider, BackingStoreFactory, BackingStoreFactorySingleton, HttpCore as IHttpCore, Parsable, ParseNodeFactory, RequestInformation, ResponseHandler, ParseNodeFactoryRegistry, enableBackingStoreForParseNodeFactory, SerializationWriterFactoryRegistry, enableBackingStoreForSerializationWriterFactory, SerializationWriterFactory } from '@microsoft/kiota-abstractions';
-import { Headers as FetchHeadersCtor } from 'cross-fetch';
 import { ReadableStream } from 'web-streams-polyfill';
 import { URLSearchParams } from 'url';
 import { HttpClient } from './httpClient';
-import { Context } from 'vm';
+
 import { MiddlewareContext } from './middlewareContext';
 export class HttpCore implements IHttpCore {
     public getSerializationWriterFactory(): SerializationWriterFactory {
@@ -44,7 +43,7 @@ export class HttpCore implements IHttpCore {
         await this.authenticationProvider.authenticateRequest(requestInfo);
         
         const request = this.getRequestFromRequestInformation(requestInfo);
-        const response = await this.httpClient.fetch(this.createContext(requestInfo));
+        const response = await this.httpClient.executeFetch(this.createContext(requestInfo));
         if(responseHandler) {
             return await responseHandler.handleResponseAsync(response);
         } else {
@@ -65,7 +64,7 @@ export class HttpCore implements IHttpCore {
         await this.authenticationProvider.authenticateRequest(requestInfo);
         
         const request = this.getRequestFromRequestInformation(requestInfo);
-        const response = await this.httpClient.fetch(this.createContext(requestInfo));
+        const response = await this.httpClient.executeFetch(this.createContext(requestInfo));
         if(responseHandler) {
             return await responseHandler.handleResponseAsync(response);
         } else {
@@ -86,7 +85,7 @@ export class HttpCore implements IHttpCore {
         await this.authenticationProvider.authenticateRequest(requestInfo);
         
         const request = this.getRequestFromRequestInformation(requestInfo);
-        const response = await this.httpClient.fetch(this.createContext(requestInfo));
+        const response = await this.httpClient.executeFetch(this.createContext(requestInfo));
         if(responseHandler) {
             return await responseHandler.handleResponseAsync(response);
         } else {
@@ -134,7 +133,7 @@ export class HttpCore implements IHttpCore {
         await this.authenticationProvider.authenticateRequest(requestInfo);
         
         const request = this.getRequestFromRequestInformation(requestInfo);
-        const response = await this.httpClient.fetch(this.createContext(requestInfo));
+        const response = await this.httpClient.executeFetch(this.createContext(requestInfo));
         if(responseHandler) {
             return await responseHandler.handleResponseAsync(response);
         }

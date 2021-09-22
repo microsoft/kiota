@@ -10,19 +10,24 @@
  */
 
 import fetch from "cross-fetch";
-import { Context } from "./Context";
-import { Middleware } from "./middlewares/middleware";
+import { MiddlewareContext } from "../middlewareContext";
+import { Middleware } from "./middleware";
 
 /**
  * @class
  * @implements Middleware
- * Class for HTTPMessageHandler
+ * Class for FetchHandler
  */
 export class FetchHandler implements Middleware {
-    next = null;
-    constructor(private customFetch: (context) => Promise<Response>) {
 
-    }
+    /**
+	 * @private
+	 * The next middleware in the middleware chain
+	 */
+	next: Middleware;
+
+    constructor(private customFetch?: (input: RequestInfo, init:RequestInit) => Promise<Response>) {};
+
     /**
      * @public
      * @async
@@ -30,17 +35,13 @@ export class FetchHandler implements Middleware {
      * @param {Context} context - The request context object
      * @returns A promise that resolves to nothing
      */
-    public async execute(context: Context): Promise<void> {
+    public async execute(context: MiddlewareContext): Promise<void> {
         if (this.customFetch) {
-            context.response = await this.customFetch(context);
+            context.response = await this.customFetch(context.request, context.options);
         }
         else {
-            context.response = await fetch(context.request);
-        }
+            context.response = await fetch(context.request, context.options);
+        } 
         return;
     }
-
-
-    // Consider case where no middleware and just http called?
-    
 }

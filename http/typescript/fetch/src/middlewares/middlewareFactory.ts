@@ -9,11 +9,10 @@
  * @module MiddlewareFactory
  */
 
-import { AuthenticationProvider } from "@microsoft/kiota-abstractions";
-import { FetchHandler} from "../fetchHandler";
+import { FetchHandler} from "./fetchHandler";
 import { Middleware } from "./middleware";
-import { RedirectHandlerOptions } from "./options/RedirectHandlerOptions";
-import { RetryHandlerOptions } from "./options/RetryHandlerOptions";
+import { RedirectHandlerOptions } from "./options/redirectHandlerOption";
+import { RetryHandlerOptions } from "./options/retryHandlerOptions";
 import { RedirectHandler } from "./redirectHandler";
 import { RetryHandler } from "./retryHandler";
 
@@ -38,12 +37,9 @@ export class MiddlewareFactory {
 	 * @param {AuthenticationProvider} authProvider - The authentication provider instance
 	 * @returns an array of the middleware handlers of the default middleware chain
 	 */
-	public static getDefaultMiddlewareChain(authProvider: AuthenticationProvider): Middleware[] {
+	public static getDefaultMiddlewareChain(): Middleware[] {
 		const middleware: Middleware[] = [];
-		// TODO :const authenticationHandler = new AuthenticationHandler(authProvider);
 		const retryHandler = new RetryHandler(new RetryHandlerOptions());
-
-		//middleware.push(authenticationHandler);
 		middleware.push(retryHandler);
 		if (isNodeEnvironment()) {
 			const redirectHandler = new RedirectHandler(new RedirectHandlerOptions());

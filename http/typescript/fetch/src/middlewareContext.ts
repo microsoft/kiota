@@ -11,7 +11,7 @@ import { FetchOptions } from "../fetchOptions";
  *
  */
 
-export interface Context {
+export interface MiddlewareContext {
     request?:RequestInfo,
     response?: Response,
     options?:FetchOptions,

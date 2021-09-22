@@ -10,4 +10,4 @@ export * from './serialization';
 export * from './utils';
 export * from './store';
 export * from './middlewareOption';
-export * from './fetchOptions';
+export * from './FetchInitOptions';

@@ -12,7 +12,4 @@ export interface Middleware {
      * @return A promise that resolves to the response object.
      */
     execute(middlewareContext: MiddlewareContext): Promise<void>;
-
-
-
 }

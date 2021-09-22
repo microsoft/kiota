@@ -9,12 +9,11 @@
  * @module RetryHandler
  */
 
-import { Context } from "../Context";
-import { FetchOptions } from "@microsoft/kiota-abstractions";
-import { HttpMethod} from "@microsoft/kiota-abstractions";
+import { MiddlewareContext } from "../middlewareContext";
+import { FetchOptions, HttpMethod } from "@microsoft/kiota-abstractions";
 import { Middleware } from "./middleware";
 import { getRequestHeader, setRequestHeader } from "./middlewareUtil";
-import { RetryHandlerOptions } from "./options/RetryHandlerOptions";
+import { RetryHandlerOptions } from "./options/retryHandlerOptions";
 
 /**
  * @class
@@ -49,9 +48,9 @@ export class RetryHandler implements Middleware {
 
 	/**
 	 * @private
-	 * A member to hold next middleware in the middleware chain
+	 * The next middleware in the middleware chain
 	 */
-	private nextMiddleware: Middleware;
+	next: Middleware;
 
 	/**
 	 * @private
@@ -113,9 +112,12 @@ export class RetryHandler implements Middleware {
 		const retryAfter = response.headers !== undefined ? response.headers.get(RetryHandler.RETRY_AFTER_HEADER) : null;
 		let newDelay: number;
 		if (retryAfter !== null) {
+
+            // Retry-After: <http-date>
 			if (Number.isNaN(Number(retryAfter))) {
 				newDelay = Math.round((new Date(retryAfter).getTime() - Date.now()) / 1000);
 			} else {
+            // Retry-After: <delay-seconds>
 				newDelay = Number(retryAfter);
 			}
 		} else {
@@ -147,7 +149,7 @@ export class RetryHandler implements Middleware {
 		return new Promise((resolve) => setTimeout(resolve, delayMilliseconds));
 	}
 
-	private getOptions(context: Context): RetryHandlerOptions {
+	private getOptions(context: MiddlewareContext): RetryHandlerOptions {
 		let options: RetryHandlerOptions;
 		if (context.middlewareOptions) {
 			options = context.middlewareOptions as RetryHandlerOptions;
@@ -167,8 +169,8 @@ export class RetryHandler implements Middleware {
 	 * @param {RetryHandlerOptions} options - The retry middleware options instance
 	 * @returns A Promise that resolves to nothing
 	 */
-	private async executeWithRetry(context: Context, retryAttempts: number, options: RetryHandlerOptions): Promise<void> {
-		await this.nextMiddleware.execute(context);
+	private async executeWithRetry(context: MiddlewareContext, retryAttempts: number, options: RetryHandlerOptions): Promise<void> {
+		await this.next.execute(context);
 		if (retryAttempts < options.maxRetries && this.isRetry(context.response) && this.isBuffered(context.request, context.options) && options.shouldRetry(options.delay, retryAttempts, context.request, context.options, context.response)) {
 			++retryAttempts;
 			setRequestHeader(context.request, context.options, RetryHandler.RETRY_ATTEMPT_HEADER, retryAttempts.toString());
@@ -187,19 +189,9 @@ export class RetryHandler implements Middleware {
 	 * @param {Context} context - The context object of the request
 	 * @returns A Promise that resolves to nothing
 	 */
-	public async execute(context: Context): Promise<void> {
+	public async execute(context: MiddlewareContext): Promise<void> {
 		const retryAttempts = 0;
 		const options: RetryHandlerOptions = this.getOptions(context);
 		return await this.executeWithRetry(context, retryAttempts, options);
-	}
-
-	/**
-	 * @public
-	 * To set the next middleware in the chain
-	 * @param {Middleware} next - The middleware instance
-	 * @returns Nothing
-	 */
-	public setNext(next: Middleware): void {
-		this.nextMiddleware = next;
 	}
 }

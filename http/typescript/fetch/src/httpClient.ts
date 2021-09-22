@@ -1,5 +1,7 @@
 import { Middleware } from "./middlewares/middleware";
-import { Context } from "./Context";
+import { MiddlewareContext } from "./middlewareContext";
+import { FetchHandler } from "./middlewares/fetchHandler";
+import { MiddlewareFactory } from "./middlewares/middlewareFactory";
 
 /** Default fetch client with options and a middleware pipleline for requests execution. */
 export class HttpClient {
@@ -9,12 +11,20 @@ export class HttpClient {
      * @param middlewares middlewares to be used for requests execution.
      * @param defaultRequestSettings default request settings to be used for requests execution.
      */
-    public constructor(private customFetch?: () => Promise<Response>, ...middlewares: Middleware[]) {
+    public constructor(private customFetch?: (request: RequestInfo, init?: RequestInit) => Promise<Response>, ...middlewares: Middleware[]) {
+
+        // Use default middleware chain if middlewares and custom fetch function are not defined
+        if(!middlewares && !customFetch){
+            this.setMiddleware(...(MiddlewareFactory.getDefaultMiddlewareChain()));
+        }
+
         if (middlewares) {
-            middlewares.forEach((middleware, idx) => {
-                if (idx < middlewares.length)
-                    this.middleware.next = middlewares[idx + 1];
-            });
+            if(customFetch){
+                this.setMiddleware(...middlewares, new FetchHandler(customFetch));
+            }
+            else {
+                this.setMiddleware(...middlewares);
+            }
         }
     }
 
@@ -56,10 +66,10 @@ export class HttpClient {
      * @param options request options.
      * @returns the promise resolving the response.
      */
-    public async fetch(context: Context): Promise<Response> {
+    public async executeFetch(context: MiddlewareContext): Promise<Response> {
 
         if (this.customFetch && !this.middleware) {
-            return this.customFetch();
+            return this.customFetch(context.request, context.options);
         }
         if (this.middleware) {
             await this.middleware.execute(context);
@@ -67,6 +77,6 @@ export class HttpClient {
             return context.response;
         }
         else
-            throw new Error("No middlewares found");
+            throw new Error("Please provide middlewares or a custom fetch function to execute the request");
     }
 }

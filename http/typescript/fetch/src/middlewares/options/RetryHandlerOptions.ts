@@ -10,7 +10,7 @@
  */
 
 import { FetchOptions } from "@microsoft/kiota-abstractions";
-import { MiddlewareOption } from "@microsoft/kiota-abstractions";
+import { MiddlewareOption } from "./middlewareOption";
 
 /**
  * @type

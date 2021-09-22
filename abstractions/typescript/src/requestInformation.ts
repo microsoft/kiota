@@ -4,7 +4,7 @@ import { Parsable } from "./serialization";
 import { HttpCore } from "./httpCore";
 import { MiddlewareOption } from "./middlewareOption";
 import { RequestDetails } from "./requestDetails";
-import { FetchOptions } from "./fetchOptions";
+import { FetchOptions } from "./FetchInitOptions";
 
 /** This class represents an abstract HTTP request. */
 export class RequestInformation implements RequestDetails{
