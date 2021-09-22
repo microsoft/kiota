@@ -194,8 +194,12 @@ namespace Kiota.Builder.Writers.CSharp {
         }
         private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType) {
             if(isVoid) return "SendNoContentAsync";
-            else if(isStream || conventions.IsPrimitiveType(returnType)) return $"SendPrimitiveAsync<{returnType}>";
-            else if(isCollection) return $"SendCollectionAsync<{returnType.StripArraySuffix()}>";
+            else if(isStream || conventions.IsPrimitiveType(returnType))
+                if(isCollection)
+                    return $"SendPrimitiveCollectionAsync<{returnType.StripArraySuffix()}>";
+                else
+                    return $"SendPrimitiveAsync<{returnType}>";
+            else if (isCollection) return $"SendCollectionAsync<{returnType.StripArraySuffix()}>";
             else return $"SendAsync<{returnType}>";
         }
         private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer) {

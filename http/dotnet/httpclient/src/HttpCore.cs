@@ -69,6 +69,24 @@ namespace Microsoft.Kiota.Http.HttpClient
                 return await responseHandler.HandleResponseAsync<HttpResponseMessage, IEnumerable<ModelType>>(response);
         }
         /// <summary>
+        /// Executes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model collection.
+        /// </summary>
+        /// <param name="requestInfo">The RequestInformation object to use for the HTTP request.</param>
+        /// <param name="responseHandler">The response handler to use for the HTTP request instead of the default handler.</param>
+        /// <returns>The deserialized primitive response model collection.</returns>
+        public async Task<IEnumerable<ModelType>> SendPrimitiveCollectionAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default) {
+            var response = await GetHttpResponseMessage(requestInfo);
+            requestInfo.Content?.Dispose();
+            if(responseHandler == null)
+            {
+                var rootNode = await GetRootParseNode(response);
+                var result = rootNode.GetCollectionOfPrimitiveValues<ModelType>();
+                return result;
+            }
+            else
+                return await responseHandler.HandleResponseAsync<HttpResponseMessage, IEnumerable<ModelType>>(response);
+        }
+        /// <summary>
         /// Send a <see cref="RequestInformation"/> instance with an instance of <typeparam name="ModelType"></typeparam>
         /// </summary>
         /// <param name="requestInfo">The <see cref="RequestInformation"/> instance to send</param>

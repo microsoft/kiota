@@ -99,7 +99,7 @@ namespace Kiota.Builder.Writers.CSharp {
         }
         public bool IsPrimitiveType(string typeName) {
             if (string.IsNullOrEmpty(typeName)) return false;
-            typeName = typeName.TrimEnd('?').ToLowerInvariant();
+            typeName = typeName.StripArraySuffix().TrimEnd('?').ToLowerInvariant();
             return typeName switch {
                 "string" => true,
                 _ when NullableTypes.Contains(typeName) => true,
