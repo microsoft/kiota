@@ -33,7 +33,7 @@ namespace Kiota.Builder.Writers.CSharp {
             }
             switch(codeElement.MethodKind) {
                 case CodeMethodKind.Serializer:
-                    WriteSerializerBody(inherits, parentClass, writer);
+                    WriteSerializerBody(inherits, codeElement, parentClass, writer);
                 break;
                 case CodeMethodKind.RequestGenerator:
                     WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer);
@@ -109,18 +109,20 @@ namespace Kiota.Builder.Writers.CSharp {
                                             .Properties
                                             .Where(x => x.IsOfKind(CodePropertyKind.Custom))
                                             .OrderBy(x => x.Name)) {
-                writer.WriteLine($"{{\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", (o,n) => {{ (o as {parentClass.Name.ToFirstCharacterUpperCase()}).{otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type)}(); }} }},");
+                writer.WriteLine($"{{\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", (o,n) => {{ (o as {parentClass.Name.ToFirstCharacterUpperCase()}).{otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeElement)}(); }} }},");
             }
             writer.DecreaseIndent();
             writer.WriteLine("};");
         }
-        private string GetDeserializationMethodName(CodeTypeBase propType) {
+        private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = conventions.TranslateType(propType);
+            var propertyType = conventions.GetTypeString(propType, method, false);
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
                         return $"GetCollectionOfPrimitiveValues<{propertyType}>().ToList";
+                    else if (currentType.TypeDefinition is CodeEnum enumType)
+                        return $"GetCollectionOfEnumValues<{enumType.Name.ToFirstCharacterUpperCase()}>().ToList";
                     else
                         return $"GetCollectionOfObjectValues<{propertyType}>().ToList";
                 else if (currentType.TypeDefinition is CodeEnum enumType)
@@ -128,8 +130,8 @@ namespace Kiota.Builder.Writers.CSharp {
             }
             return propertyType switch
             {
-                "string" => $"GetStringValue",// can't use a or https://stackoverflow.com/questions/69284781/csharp-switch-expression-with-or-and-default-guard-with-condition
-                _ when conventions.NullableTypes.Contains(propertyType) => $"Get{propertyType.ToFirstCharacterUpperCase()}Value",
+                "byte[]" => "GetByteArrayValue",
+                _ when conventions.IsPrimitiveType(propertyType) => $"Get{propertyType.TrimEnd(CSharpConventionService.NullableMarker).ToFirstCharacterUpperCase()}Value",
                 _ => $"GetObjectValue<{propertyType.ToFirstCharacterUpperCase()}>",
             };
         }
@@ -177,7 +179,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 writer.WriteLine($"{RequestInfoVarName}.AddMiddlewareOptions({optionsParam.Name}?.ToArray());");
             writer.WriteLine($"return {RequestInfoVarName};");
         }
-        private void WriteSerializerBody(bool shouldHide, CodeClass parentClass, LanguageWriter writer) {
+        private void WriteSerializerBody(bool shouldHide, CodeMethod method, CodeClass parentClass, LanguageWriter writer) {
             var additionalDataProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.AdditionalData));
             if(shouldHide)
                 writer.WriteLine("base.Serialize(writer);");
@@ -185,7 +187,7 @@ namespace Kiota.Builder.Writers.CSharp {
                                             .Properties
                                             .Where(x => x.IsOfKind(CodePropertyKind.Custom))
                                             .OrderBy(x => x.Name)) {
-                writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
+                writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
             }
             if(additionalDataProperty != null)
                 writer.WriteLine($"writer.WriteAdditionalData({additionalDataProperty.Name});");
@@ -230,24 +232,25 @@ namespace Kiota.Builder.Writers.CSharp {
             var methodName = isConstructor ? code.Parent.Name.ToFirstCharacterUpperCase() : code.Name;
             writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({parameters}){baseSuffix} {{");
         }
-        private string GetSerializationMethodName(CodeTypeBase propType) {
+        private string GetSerializationMethodName(CodeTypeBase propType, CodeMethod method) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = conventions.TranslateType(propType);
-            var nullableSuffix = conventions.ShouldTypeHaveNullableMarker(propType, propertyType) ? CSharpConventionService.NullableMarker : string.Empty;
+            var propertyType = conventions.GetTypeString(propType, method, false);
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
-                        return $"WriteCollectionOfPrimitiveValues<{propertyType}{nullableSuffix}>";
+                        return $"WriteCollectionOfPrimitiveValues<{propertyType}>";
+                    else if(currentType.TypeDefinition is CodeEnum enumType)
+                        return $"WriteCollectionOfEnumValues<{enumType.Name.ToFirstCharacterUpperCase()}>";
                     else
-                        return $"WriteCollectionOfObjectValues<{propertyType}{nullableSuffix}>";
+                        return $"WriteCollectionOfObjectValues<{propertyType}>";
                 else if (currentType.TypeDefinition is CodeEnum enumType)
                     return $"WriteEnumValue<{enumType.Name.ToFirstCharacterUpperCase()}>";
                 
             }
             return propertyType switch
             {
-                "string" => $"WriteStringValue", // can't use a or https://stackoverflow.com/questions/69284781/csharp-switch-expression-with-or-and-default-guard-with-condition
-                _ when conventions.NullableTypes.Contains(propertyType) => $"Write{propertyType.ToFirstCharacterUpperCase()}Value",
+                "byte[]" => "WriteByteArrayValue",
+                _ when conventions.IsPrimitiveType(propertyType) => $"Write{propertyType.TrimEnd(CSharpConventionService.NullableMarker).ToFirstCharacterUpperCase()}Value",
                 _ => $"WriteObjectValue<{propertyType.ToFirstCharacterUpperCase()}>",
             };
         }

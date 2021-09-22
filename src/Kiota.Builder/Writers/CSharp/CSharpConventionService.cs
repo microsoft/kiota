@@ -12,8 +12,9 @@ namespace Kiota.Builder.Writers.CSharp {
         public override string PathSegmentPropertyName => "PathSegment";
         public override string CurrentPathPropertyName => "CurrentPath";
         public override string HttpCorePropertyName => "HttpCore";
-        public HashSet<string> NullableTypes { get; } = new() { "int", "bool", "float", "double", "decimal", "long", "Guid", "DateTimeOffset" };
-        public static string NullableMarker => "?";
+        public HashSet<string> NullableTypes { get; } = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "float", "double", "decimal", "long", "Guid", "DateTimeOffset" };
+        public static readonly char NullableMarker = '?';
+        public static string NullableMarkerAsString => "?";
         public override string ParseNodeInterfaceName => "IParseNode";
         public override string RawUrlPropertyName => "IsRawUrl";
         public override void WriteShortDescription(string description, LanguageWriter writer) {
@@ -58,7 +59,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 foreach(var segment in GetNamespaceNameSegments(childNs))
                     yield return segment;
         }
-        public string GetTypeString(CodeTypeBase code, CodeElement targetElement)
+        public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
         {
             if(code is CodeUnionType)
                 throw new InvalidOperationException($"CSharp does not support union types, the union type {code.Name} should have been filtered out by the refiner");
@@ -67,11 +68,11 @@ namespace Kiota.Builder.Writers.CSharp {
                 if(currentType.TypeDefinition != null &&
                     GetReservedNames(targetElement).Contains(typeName))
                     typeName = $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
-                var nullableSuffix = ShouldTypeHaveNullableMarker(code, typeName) ? NullableMarker : string.Empty;
-                var collectionPrefix = currentType.CollectionKind == CodeTypeCollectionKind.Complex ? "List<" : string.Empty;
+                var nullableSuffix = ShouldTypeHaveNullableMarker(code, typeName) ? NullableMarkerAsString : string.Empty;
+                var collectionPrefix = currentType.CollectionKind == CodeTypeCollectionKind.Complex && includeCollectionInformation ? "List<" : string.Empty;
                 var collectionSuffix = currentType.CollectionKind switch {
-                    CodeTypeCollectionKind.Complex => ">",
-                    CodeTypeCollectionKind.Array => "[]",
+                    CodeTypeCollectionKind.Complex when includeCollectionInformation => ">",
+                    CodeTypeCollectionKind.Array when includeCollectionInformation => "[]",
                     _ => string.Empty,
                 };
                 if (currentType.ActionOf)
@@ -88,7 +89,8 @@ namespace Kiota.Builder.Writers.CSharp {
             {
                 "integer" => "int",
                 "boolean" => "bool",
-                "string" or "float" => type.Name.ToLowerInvariant(),// little casing hack
+                "int64" => "long",
+                "string" or "float" or "double" => type.Name.ToLowerInvariant(),// little casing hack
                 "object" => "object",
                 "void" => "void",
                 "binary" => "byte[]",
@@ -96,9 +98,13 @@ namespace Kiota.Builder.Writers.CSharp {
             };
         }
         public bool IsPrimitiveType(string typeName) {
-            return !string.IsNullOrEmpty(typeName) &&
-                        (NullableTypes.Contains(typeName) ||
-                        "string".Equals(typeName, StringComparison.OrdinalIgnoreCase));
+            if (string.IsNullOrEmpty(typeName)) return false;
+            typeName = typeName.TrimEnd('?').ToLowerInvariant();
+            return typeName switch {
+                "string" => true,
+                _ when NullableTypes.Contains(typeName) => true,
+                _ => false,
+            };
         }
         public override string GetParameterSignature(CodeParameter parameter) => throw new InvalidOperationException("Use the overload with the target element parameter instead");
         public string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
