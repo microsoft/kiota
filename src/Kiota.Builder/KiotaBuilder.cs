@@ -818,7 +818,7 @@ namespace Kiota.Builder
             return newClass;
         }
         private void CreatePropertiesForModelClass(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace ns, CodeClass model) {
-            AddSerializationMembers(model, schema?.AdditionalPropertiesAllowed ?? false);
+            AddSerializationMembers(model, schema?.AdditionalPropertiesAllowed ?? false, config.UsesBackingStore);
             if(schema?.Properties?.Any() ?? false)
             {
                 model.AddProperty(schema
@@ -848,7 +848,7 @@ namespace Kiota.Builder
         private const string BackingStoreSingleton = "BackingStoreFactorySingleton";
         private const string BackedModelInterface = "IBackedModel";
         private const string StoreNamespaceName = "Microsoft.Kiota.Abstractions.Store";
-        private void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties) {
+        internal static void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties, bool usesBackingStore) {
             var serializationPropsType = $"IDictionary<string, Action<T, IParseNode>>";
             if(!model.ContainsMember(FieldDeserializersMethodName)) {
                 var deserializeProp = new CodeMethod {
@@ -902,7 +902,7 @@ namespace Kiota.Builder
                 model.AddProperty(additionalDataProp);
             }
             if(!model.ContainsMember(BackingStorePropertyName) &&
-               config.UsesBackingStore &&
+               usesBackingStore &&
                !(model.GetGreatestGrandparent(model)?.ContainsMember(BackingStorePropertyName) ?? false)) {
                 var backingStoreProperty = new CodeProperty {
                     Name = BackingStorePropertyName,

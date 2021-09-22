@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug where request body would use the response schema #573
 - Fixes an issue where type could conflict with namespace names and prevent CSharp compilation #573
 - Fixes an issue where primitive types would map to the wrong serialization method in dotnet #573
+- Fixes an issue where union models would not be able to deserialize because of missing members #573
 
 ## [0.0.8] - 2021-08-25
 

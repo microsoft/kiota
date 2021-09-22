@@ -11,7 +11,7 @@ namespace Kiota.Builder.Refiners {
         {
             AddDefaultImports(generatedCode);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
-            ConvertUnionTypesToWrapper(generatedCode);
+            ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddAsyncSuffix(generatedCode);
             AddInnerClasses(generatedCode, false);
@@ -47,14 +47,19 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(currentElement, MakeEnumPropertiesNullable);
         }
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
-                var declaration = currentClass.StartBlock as CodeClass.Declaration;
+            if(currentElement is CodeClass currentClass &&
+                currentClass.IsOfKind(CodeClassKind.Model) &&
+                currentClass.StartBlock is CodeClass.Declaration declaration) {
                 declaration.AddImplements(new CodeType {
                     IsExternal = true,
                     Name = $"IParsable",
                 });
-                declaration.AddUsings(new CodeUsing {
-                    Name = "Microsoft.Kiota.Abstractions.Serialization"
+                (currentClass.Parent is CodeClass parentClass &&
+                parentClass.StartBlock is CodeClass.Declaration parentDeclaration ? 
+                    parentDeclaration :
+                    declaration)
+                    .AddUsings(new CodeUsing {
+                        Name = "Microsoft.Kiota.Abstractions.Serialization"
                 });
             }
             CrawlTree(currentElement, AddParsableInheritanceForModelClasses);

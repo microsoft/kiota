@@ -13,7 +13,7 @@ namespace Kiota.Builder.Refiners {
             AddInnerClasses(generatedCode, false);
             InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);
-            ConvertUnionTypesToWrapper(generatedCode);
+            ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
             AddRequireNonNullImports(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);

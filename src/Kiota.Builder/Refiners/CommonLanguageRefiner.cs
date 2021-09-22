@@ -239,23 +239,23 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(currentElement, c => ReplaceBinaryByNativeType(c, symbol, ns, addDeclaration));
         }
         private const string PathSegmentPropertyName = "pathSegment";
-        protected static void ConvertUnionTypesToWrapper(CodeElement currentElement) {
+        protected static void ConvertUnionTypesToWrapper(CodeElement currentElement, bool usesBackingStore) {
             var parentClass = currentElement.Parent as CodeClass;
             if(currentElement is CodeMethod currentMethod) {
                 if(currentMethod.ReturnType is CodeUnionType currentUnionType)
-                    currentMethod.ReturnType = ConvertUnionTypeToWrapper(parentClass, currentUnionType);
+                    currentMethod.ReturnType = ConvertUnionTypeToWrapper(parentClass, currentUnionType, usesBackingStore);
                 if(currentMethod.Parameters.Any(x => x.Type is CodeUnionType))
                     foreach(var currentParameter in currentMethod.Parameters.Where(x => x.Type is CodeUnionType))
-                        currentParameter.Type = ConvertUnionTypeToWrapper(parentClass, currentParameter.Type as CodeUnionType);
+                        currentParameter.Type = ConvertUnionTypeToWrapper(parentClass, currentParameter.Type as CodeUnionType, usesBackingStore);
             }
             else if (currentElement is CodeIndexer currentIndexer && currentIndexer.ReturnType is CodeUnionType currentUnionType)
-                currentIndexer.ReturnType = ConvertUnionTypeToWrapper(parentClass, currentUnionType);
+                currentIndexer.ReturnType = ConvertUnionTypeToWrapper(parentClass, currentUnionType, usesBackingStore);
             else if(currentElement is CodeProperty currentProperty && currentProperty.Type is CodeUnionType currentPropUnionType)
-                currentProperty.Type = ConvertUnionTypeToWrapper(parentClass, currentPropUnionType);
+                currentProperty.Type = ConvertUnionTypeToWrapper(parentClass, currentPropUnionType, usesBackingStore);
 
-            CrawlTree(currentElement, ConvertUnionTypesToWrapper);
+            CrawlTree(currentElement, x => ConvertUnionTypesToWrapper(x, usesBackingStore));
         }
-        private static CodeTypeBase ConvertUnionTypeToWrapper(CodeClass codeClass, CodeUnionType codeUnionType)
+        private static CodeTypeBase ConvertUnionTypeToWrapper(CodeClass codeClass, CodeUnionType codeUnionType, bool usesBackingStore)
         {
             if(codeClass == null) throw new ArgumentNullException(nameof(codeClass));
             if(codeUnionType == null) throw new ArgumentNullException(nameof(codeUnionType));
@@ -270,6 +270,11 @@ namespace Kiota.Builder.Refiners {
                                         Type = x,
                                         Description = $"Union type representation for type {x.Name}"
                                     }).ToArray());
+            if(codeUnionType.Types.All(x => x.TypeDefinition is CodeClass targetClass && targetClass.IsOfKind(CodeClassKind.Model) ||
+                                    x.TypeDefinition is CodeEnum)) {
+                KiotaBuilder.AddSerializationMembers(newClass, true, usesBackingStore);
+                newClass.ClassKind = CodeClassKind.Model;
+            }
             return new CodeType {
                 Name = newClass.Name,
                 TypeDefinition = newClass,
