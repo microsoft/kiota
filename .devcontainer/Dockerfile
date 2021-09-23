@@ -17,11 +17,7 @@ RUN wget -c https://dl.google.com/go/go1.16.7.linux-amd64.tar.gz -O - | tar -xz 
     && export PATH=$PATH:/usr/local/go/bin
 
 # installs node, nvm is already present but not loaded
-RUN export NVM_DIR="$HOME/.nvm" \
-    && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" \
-    && [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" \
-    && nvm install --lts \
-    && nvm use --lts \
+RUN apt-get install nodejs npm \
     && npm i -g typescript eslint prettier
 
 # installs powershell
