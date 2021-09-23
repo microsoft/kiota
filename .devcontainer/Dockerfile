@@ -1,6 +1,9 @@
 FROM mcr.microsoft.com/vscode/devcontainers/dotnetcore:5.0
 
 RUN wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | sudo apt-key add - \
+    && apt-get update \
+    && apt-get dist-upgrade -y \
+    && apt-get install software-properties-common -y \
     && add-apt-repository --yes https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ \
     && apt-get update \
     && apt-get install unzip adoptopenjdk-16-hotspot -y \
