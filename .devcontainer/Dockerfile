@@ -1,7 +1,8 @@
 FROM mcr.microsoft.com/vscode/devcontainers/dotnetcore:5.0
 
 # installs tools required for installation of other tools
-RUN apt-get dist-upgrade -y \
+RUN apt-get update \
+    && apt-get dist-upgrade -y \
     && apt-get install wget apt-transport-https software-properties-common -y
 
 # installs java
