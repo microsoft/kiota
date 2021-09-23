@@ -5,30 +5,35 @@ use Http\Promise\Promise;
 use Microsoft\Kiota\Abstractions\Serialization\SerializationWriterFactory;
 use Microsoft\Kiota\Abstractions\Store\BackingStoreFactory;
 
+/** Service responsible for translating abstract Request Info into concrete native HTTP requests. */
 interface HttpCore {
     /**
-     * @param RequestInformation $requestInfo
-     * @param object|mixed $targetClass
-     * @param ResponseHandler $responseHandler
-     * @return Promise
+     * Executes the HTTP request specified by the given RequestInformation and returns the deserialized response model.
+     * @param RequestInformation $requestInfo the request info to execute.
+     * @param mixed $targetClass the class of the response model to deserialize the response into.
+     * @param ResponseHandler $responseHandler The response handler to use for the HTTP request instead of the default handler.
+     * @return Promise with the deserialized response model.
      */
     public function sendAsync(RequestInformation $requestInfo, $targetClass, ResponseHandler $responseHandler): Promise;
 
     /**
-     * @return SerializationWriterFactory
+     * Gets the serialization writer factory currently in use for the HTTP core service.
+     * @return SerializationWriterFactory the serialization writer factory currently in use for the HTTP core service.
      */
     public function getSerializationWriterFactory(): SerializationWriterFactory;
 
     /**
+     * Executes the HTTP request specified by the given RequestInformation and returns the deserialized response model collection.
      * @param RequestInformation $requestInfo
-     * @param mixed|object $targetClass
+     * @param mixed $targetClass the request info to execute.
      * @param ResponseHandler $responseHandler
-     * @return Promise
+     * @return Promise with the deserialized response model collection.
      */
     public function sendCollectionAsync(RequestInformation $requestInfo, $targetClass, ResponseHandler $responseHandler): Promise;
 
     /**
-     * @param BackingStoreFactory $backingStoreFactory
+     * Enables the backing store proxies for the SerializationWriters and ParseNodes in use.
+     * @param BackingStoreFactory $backingStoreFactory The backing store factory to use.
      */
     public function enableBackingStore(BackingStoreFactory $backingStoreFactory): void;
 }
