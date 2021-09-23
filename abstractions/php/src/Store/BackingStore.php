@@ -13,15 +13,26 @@ interface BackingStore {
     public function get(string $key);
 
     /**
-     * @param string $key
-     * @param mixed|null $value
+     * Sets or updates the stored value for the given key.
+     * Will trigger subscription callbacks
+     *
+     * @param string $key The key to store and retrieve information.
+     * @param mixed|null $value The value to be $associated with the given key.
      */
     public function set(string $key, $value): void;
 
     /**
-     * @return array<string,mixed>
+     *
+     * @return array<string,mixed> the array of key-value pairs available in
+     *  the backing store
      */
     public function enumerate(): array;
+
+    /**
+     * Enumerates the keys for all values that changed to null
+     * @return iterable
+     */
+    public function enumerateKeysForValuesChangedToNull(): iterable;
 
     /**
      * @param Closure $callback

@@ -9,6 +9,10 @@ class InMemoryBackingStore implements BackingStore
 
     private bool $isInitializationCompleted = true;
     private bool $returnOnlyChangedValues;
+
+    /**
+     * @var array<string, array> $store;
+     */
     private array $store = [];
 
     /** @var array<string, callable> $subscriptionStore */
@@ -90,5 +94,21 @@ class InMemoryBackingStore implements BackingStore
      */
     public function getReturnOnlyChangedValues(): bool {
         return $this->returnOnlyChangedValues;
+    }
+
+    /**
+     * @return iterable
+     */
+    public function enumerateKeysForValuesChangedToNull(): iterable {
+        $result = [];
+
+        foreach ($this->store as $key => $val) {
+            $wrapper = $val;
+            $value = $wrapper[1];
+            if ($value === null && $wrapper[0]) {
+                $result []= $key;
+            }
+        }
+        return $result;
     }
 }

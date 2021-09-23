@@ -80,7 +80,7 @@ class RequestInformation {
      */
     public function removeMiddlewareOptions(MiddlewareOption ...$options): void {
         foreach ($options as $middlewareOption) {
-            unset($options[get_class($middlewareOption)]);
+            unset($this->_middlewareOptions[get_class($middlewareOption)]);
         }
     }
 
@@ -89,5 +89,9 @@ class RequestInformation {
      */
     public function addMiddlewareOptions(MiddlewareOption ...$options): void {
 
+    }
+
+    public function getMiddlewareOptions(): array {
+        return $this->_middlewareOptions;
     }
 }

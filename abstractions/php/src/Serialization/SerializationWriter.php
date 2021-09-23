@@ -12,12 +12,13 @@ abstract class SerializationWriter {
     abstract public function writeUUIDValue(string $key, string $value): void;
     abstract public function writeOffsetDateTimeValue(string $key, \DateInterval $value): void;
     abstract public function writeCollectionOfPrimitiveValues(string $key, array $values): void;
-    abstract public function writeCollectionOfObjectValues(string $key, array $values): void;
-    abstract public function writeObjectValue(string $key,object $value): void;
+    abstract public function writeCollectionOfObjectValues(?string $key, array $values): void;
+    abstract public function writeObjectValue(?string $key,object $value): void;
     abstract public function getSerializedContent(): StreamInterface;
     abstract public function writeEnumSetValue(string $key, array $values): void;
     abstract public function writeEnumValue(string $key, object $value): void;
     abstract public function writeAdditionalData(array $value): void;
     public Closure $onBeforeObjectSerialization;
     public Closure $onAfterObjectSerialization;
+    public Closure $onStartObjectSerialization;
 }

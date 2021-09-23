@@ -18,17 +18,20 @@ abstract class SerializationWriterProxyFactory implements SerializationWriterFac
      * @var ?Closure $onAfter
      */
     private ?Closure $onAfter;
+    private ?Closure $onStart;
 
     /**
      * SerializationWriterProxyFactory constructor.
      * @param SerializationWriterFactory $concrete
      * @param ?Closure $onBefore
      * @param ?Closure $onAfter
+     * @param Closure|null $onStart
      */
-    public function __construct(SerializationWriterFactory $concrete, ?Closure $onBefore = null, ?Closure $onAfter = null) {
+    public function __construct(SerializationWriterFactory $concrete, ?Closure $onBefore = null, ?Closure $onAfter = null, ?Closure $onStart = null) {
         $this->concrete = $concrete;
         $this->onBefore = $onBefore;
         $this->onAfter = $onAfter;
+        $this->onStart = $onStart;
     }
 
     /**
@@ -39,6 +42,7 @@ abstract class SerializationWriterProxyFactory implements SerializationWriterFac
         $writer = $this->concrete->getSerializationWriter($contentType);
         $originalBefore = $writer->onBeforeObjectSerialization;
         $originalAfter  = $writer->onAfterObjectSerialization;
+        $originalStart = $writer->onStartObjectSerialization;
 
         $writer->onBeforeObjectSerialization = function (Parsable $x) use ($originalBefore) {
             $this->onBefore->call($x, $x);
@@ -47,6 +51,16 @@ abstract class SerializationWriterProxyFactory implements SerializationWriterFac
         $writer->onAfterObjectSerialization = function (Parsable $x) use ($originalAfter) {
             $this->onAfter->call($x, $x);
             $originalAfter->call($x, $x);
+        };
+
+        $writer->onStartObjectSerialization = function (Parsable $x, SerializationWriter $y) use ($originalStart) {
+            if ($this->onStart !== null) {
+                $this->onStart->call($x, $x, $y);
+            }
+
+            if ($originalStart !== null) {
+                $originalStart->call($x, $x, $y);
+            }
         };
         return $writer;
     }
