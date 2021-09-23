@@ -1,20 +1,30 @@
 FROM mcr.microsoft.com/vscode/devcontainers/dotnetcore:5.0
 
+# installs tools required for installation of other tools
+RUN apt-get dist-upgrade -y \
+    && apt-get install wget apt-transport-https software-properties-common -y
+
+# installs java
 RUN wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | sudo apt-key add - \
     && apt-get update \
-    && apt-get dist-upgrade -y \
-    && apt-get install software-properties-common -y \
     && add-apt-repository --yes https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ \
     && apt-get update \
-    && apt-get install unzip adoptopenjdk-16-hotspot -y \
-    && wget -c https://dl.google.com/go/go1.16.7.linux-amd64.tar.gz -O - | tar -xz -C /usr/local \
-    && export PATH=$PATH:/usr/local/go/bin \
-    && curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash \
-    && export NVM_DIR="$HOME/.nvm" \
-    && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" \
-    && [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" \
-    && nvm install --lts \
+    && apt-get install unzip adoptopenjdk-16-hotspot -y
+
+# installs golang
+RUN wget -c https://dl.google.com/go/go1.16.7.linux-amd64.tar.gz -O - | tar -xz -C /usr/local \
+    && export PATH=$PATH:/usr/local/go/bin
+
+# installs node, nvm is already present
+RUN nvm install --lts \
     && nvm use --lts \
     && npm i -g typescript eslint prettier
+
+# installs powershell
+RUN wget -q https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb \
+    && dpkg -i packages-microsoft-prod.deb \
+    && apt-get update \
+    && add-apt-repository universe \
+    && apt-get install -y powershell
 
 USER codespace
