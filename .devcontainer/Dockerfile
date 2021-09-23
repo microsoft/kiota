@@ -14,7 +14,8 @@ RUN wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | s
 
 # installs golang
 RUN wget -c https://dl.google.com/go/go1.16.7.linux-amd64.tar.gz -O - | tar -xz -C /usr/local \
-    && export PATH=$PATH:/usr/local/go/bin
+    && export PATH=$PATH:/usr/local/go/bin \
+    && go get -v golang.org/x/tools/gopls
 
 # installs node
 RUN apt-get install nodejs npm -y \
