@@ -36,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes an issue where primitive types would map to the wrong serialization method in dotnet #573
 - Fixes an issue where union models would not be able to deserialize because of missing members #573
 - Fixes an issue where request builder methods would refer to unexisting properties in dotnet #573
+- Fixes an issue where duplicated symbols for different imports would make java compilation fail #573
+- Adds missing type mappings in java #573
 
 ## [0.0.8] - 2021-08-25
 

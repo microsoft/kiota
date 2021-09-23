@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Refiners;
 
 namespace Kiota.Builder.Writers.Java {
     public class JavaConventionService : CommonLanguageConventionService
@@ -20,30 +22,35 @@ namespace Kiota.Builder.Writers.Java {
         internal string DocCommentEnd = " */";
         public override string GetAccessModifier(AccessModifier access)
         {
-            return (access) switch {
-                (AccessModifier.Public) => "public",
-                (AccessModifier.Protected) => "protected",
+            return access switch {
+                AccessModifier.Public => "public",
+                AccessModifier.Protected => "protected",
                 _ => "private",
             };
         }
 
-        public override string GetParameterSignature(CodeParameter parameter)
+        public override string GetParameterSignature(CodeParameter parameter) => throw new InvalidOperationException("Use the target element overload instead");
+        public string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
         {
             var nullKeyword = parameter.Optional ? "Nullable" : "Nonnull";
             var nullAnnotation = parameter.Type.IsNullable ? $"@javax.annotation.{nullKeyword} " : string.Empty;
-            return $"{nullAnnotation}final {GetTypeString(parameter.Type)} {parameter.Name}";
+            return $"{nullAnnotation}final {GetTypeString(parameter.Type, targetElement)} {parameter.Name}";
         }
 
-        public override string GetTypeString(CodeTypeBase code)
+        public override string GetTypeString(CodeTypeBase code) => throw new InvalidOperationException("Use the target element overload instead");
+        public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
         {
             if(code is CodeUnionType) 
                 throw new InvalidOperationException($"Java does not support union types, the union type {code.Name} should have been filtered out by the refiner");
             else if (code is CodeType currentType) {
                 var typeName = TranslateType(currentType);
-                var collectionPrefix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex ? "List<" : string.Empty;
+                if(!currentType.IsExternal && IsSymbolDuplicated(typeName, targetElement))
+                    typeName = $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
+
+                var collectionPrefix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex && includeCollectionInformation ? "List<" : string.Empty;
                 var collectionSuffix = currentType.CollectionKind switch {
-                    CodeType.CodeTypeCollectionKind.Complex => ">",
-                    CodeType.CodeTypeCollectionKind.Array => "[]",
+                    CodeType.CodeTypeCollectionKind.Complex when includeCollectionInformation => ">",
+                    CodeType.CodeTypeCollectionKind.Array when includeCollectionInformation => "[]",
                     _ => string.Empty,
                 };
                 if (currentType.ActionOf)
@@ -53,9 +60,22 @@ namespace Kiota.Builder.Writers.Java {
             }
             else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
+        private static readonly CodeUsingDeclarationNameComparer usingDeclarationComparer = new();
+        private static bool IsSymbolDuplicated(string symbol, CodeElement targetElement) {
+            var targetClass = targetElement as CodeClass ?? targetElement.GetImmediateParentOfType<CodeClass>();
+            if (targetClass.Parent is CodeClass parentClass) 
+                targetClass = parentClass;
+            return (targetClass.StartBlock as CodeClass.Declaration)
+                            ?.Usings
+                            ?.Where(x => !x.IsExternal && symbol.Equals(x.Declaration.TypeDefinition.Name, StringComparison.OrdinalIgnoreCase))
+                            ?.Distinct(usingDeclarationComparer)
+                            ?.Count() > 1;
+        }
         public override string TranslateType(CodeType type) {
-            return (type.Name) switch {//TODO we're probably missing a bunch of type mappings
-                ("void" or "boolean") when !type.IsNullable => type.Name.ToFirstCharacterLowerCase(), //little casing hack
+            return type.Name switch {
+                "int64" => "Long",
+                "void" or "boolean" when !type.IsNullable => type.Name.ToFirstCharacterLowerCase(), //little casing hack
+                "binary" => "byte[]",
                 _ => type.Name.ToFirstCharacterUpperCase() ?? "Object",
             };
         }

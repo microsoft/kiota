@@ -9,7 +9,7 @@ namespace Kiota.Builder.Writers.Java {
         public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
         {
             conventions.WriteShortDescription(codeElement.Description, writer);
-            var returnType = conventions.GetTypeString(codeElement.Type);
+            var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
             var parentClass = codeElement.Parent as CodeClass;
             var currentPathProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
             switch(codeElement.PropertyKind) {

@@ -1,4 +1,5 @@
 using Kiota.Builder.Writers.CSharp;
+using Kiota.Builder.Writers.Java;
 using Kiota.Builder.Writers.TypeScript;
 
 namespace Kiota.Builder.Writers {
@@ -11,6 +12,8 @@ namespace Kiota.Builder.Writers {
                 writer.Write(tsConventions.GetTypeString(codeElement, codeElement), includeIndent: false);
             else if (conventions is CSharpConventionService csConventions)
                 writer.Write(csConventions.GetTypeString(codeElement, codeElement), includeIndent: false);
+            else if (conventions is JavaConventionService javaConventions)
+                writer.Write(javaConventions.GetTypeString(codeElement, codeElement), includeIndent: false);
             else
                 writer.Write(conventions.GetTypeString(codeElement), includeIndent: false);
         }

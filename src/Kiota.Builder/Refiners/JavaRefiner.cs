@@ -14,6 +14,7 @@ namespace Kiota.Builder.Refiners {
             InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);
             ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
+            ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
             AddRequireNonNullImports(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
@@ -23,7 +24,6 @@ namespace Kiota.Builder.Refiners {
             AddParsableInheritanceForModelClasses(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
             AddEnumSetImport(generatedCode);
-            ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
             AddGetterAndSetterMethods(generatedCode, new() {
                                                     CodePropertyKind.Custom,
                                                     CodePropertyKind.AdditionalData,

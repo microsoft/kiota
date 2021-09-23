@@ -174,7 +174,7 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(current, x => AddConstructorsForDefaultValues(x, addIfInherited));
         }
         protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement, HashSet<Type> codeElementExceptions = null) {
-            if(current is CodeClass currentClass && currentClass.StartBlock is CodeClass.Declaration currentDeclaration)
+            if(current is CodeClass currentClass && currentClass.StartBlock is Declaration currentDeclaration)
                 currentDeclaration.Usings
                                     .Select(x => x.Declaration)
                                     .Where(x => x != null && !x.IsExternal)
@@ -183,7 +183,16 @@ namespace Kiota.Builder.Refiners {
                                     .ForEach(x => {
                                         x.Name = replacement.Invoke(x.Name);
                                     });
-
+            if(current is CodeNamespace currentNamespace &&
+                (!codeElementExceptions?.Contains(typeof(CodeNamespace)) ?? true) &&
+                !string.IsNullOrEmpty(currentNamespace.Name)) {
+                var segments = currentNamespace.Name.Split('.');
+                if(segments.Any(x => provider.ReservedNames.Contains(x)))
+                    currentNamespace.Name = segments.Select(x => provider.ReservedNames.Contains(x) ?
+                                                                    replacement.Invoke(x) :
+                                                                    x)
+                                                    .Aggregate((x, y) => $"{x}.{y}");
+            }
             // Check if the current name meets the following conditions to be replaced
             // 1. In the list of reserved names
             // 2. If it is a reserved name, make sure that the CodeElement type is worth replacing(not on the blacklist)
@@ -201,7 +210,7 @@ namespace Kiota.Builder.Refiners {
         protected static void AddDefaultImports(CodeElement current, Tuple<string, string>[] defaultNamespaces, Tuple<string, string>[] defaultNamespacesForModels, Tuple<string, string>[] defaultNamespacesForRequestBuilders) {
             if(current is CodeClass currentClass) {
                 if (currentClass.IsOfKind(CodeClassKind.Model))
-                    currentClass.AddUsing(defaultNamespaces.Union(defaultNamespacesForModels)
+                    (currentClass.Parent is CodeClass parentClass ? parentClass : currentClass).AddUsing(defaultNamespaces.Union(defaultNamespacesForModels)
                                             .Select(usingSelector).ToArray());
                 if (currentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
                     var usingsToAdd = defaultNamespaces.Union(defaultNamespacesForRequestBuilders);

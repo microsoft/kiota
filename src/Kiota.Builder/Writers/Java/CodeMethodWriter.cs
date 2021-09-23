@@ -15,7 +15,7 @@ namespace Kiota.Builder.Writers.Java {
             if(writer == null) throw new ArgumentNullException(nameof(writer));
             if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
 
-            var returnType = conventions.GetTypeString(codeElement.ReturnType);
+            var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
             WriteMethodDocumentation(codeElement, writer);
             if(returnType.Equals("void", StringComparison.OrdinalIgnoreCase))
             {
@@ -34,10 +34,10 @@ namespace Kiota.Builder.Writers.Java {
             AddNullChecks(codeElement, writer);
             switch(codeElement.MethodKind) {
                 case CodeMethodKind.Serializer:
-                    WriteSerializerBody(parentClass, writer);
+                    WriteSerializerBody(parentClass, codeElement, writer);
                 break;
                 case CodeMethodKind.Deserializer:
-                    WriteDeserializerBody(codeElement, parentClass, writer);
+                    WriteDeserializerBody(codeElement, codeElement, parentClass, writer);
                 break;
                 case CodeMethodKind.IndexerBackwardCompatibility:
                     WriteIndexerBody(codeElement, parentClass, writer, returnType);
@@ -147,7 +147,7 @@ namespace Kiota.Builder.Writers.Java {
                 if(!(codeElement.AccessedProperty?.Type?.IsNullable ?? true) &&
                    !(codeElement.AccessedProperty?.ReadOnly ?? true) &&
                     !string.IsNullOrEmpty(codeElement.AccessedProperty?.DefaultValue)) {
-                    writer.WriteLines($"{conventions.GetTypeString(codeElement.AccessedProperty.Type)} value = this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\");",
+                    writer.WriteLines($"{conventions.GetTypeString(codeElement.AccessedProperty.Type, codeElement)} value = this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\");",
                         "if(value == null) {");
                     writer.IncreaseIndent();
                     writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue};",
@@ -163,7 +163,7 @@ namespace Kiota.Builder.Writers.Java {
             var pathSegment = codeElement.PathSegment;
             conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
         }
-        private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
+        private void WriteDeserializerBody(CodeMethod codeElement, CodeMethod method, CodeClass parentClass, LanguageWriter writer) {
             var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
             var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
             writer.WriteLine($"return new HashMap<>({(inherits ? "super." + codeElement.Name.ToFirstCharacterLowerCase()+ "()" : fieldToSerialize.Count())}) {{{{");
@@ -172,7 +172,7 @@ namespace Kiota.Builder.Writers.Java {
                 fieldToSerialize
                         .OrderBy(x => x.Name)
                         .Select(x => 
-                            $"this.put(\"{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}\", (o, n) -> {{ (({parentClass.Name.ToFirstCharacterUpperCase()})o).set{x.Name.ToFirstCharacterUpperCase()}({GetDeserializationMethodName(x.Type)}); }});")
+                            $"this.put(\"{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}\", (o, n) -> {{ (({parentClass.Name.ToFirstCharacterUpperCase()})o).set{x.Name.ToFirstCharacterUpperCase()}({GetDeserializationMethodName(x.Type, method)}); }});")
                         .ToList()
                         .ForEach(x => writer.WriteLine(x));
                 writer.DecreaseIndent();
@@ -262,12 +262,12 @@ namespace Kiota.Builder.Writers.Java {
             }
             writer.WriteLine($"return {RequestInfoVarName};");
         }
-        private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer) {
+        private void WriteSerializerBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
             var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();
             if((parentClass.StartBlock as CodeClass.Declaration).Inherits != null)
                 writer.WriteLine("super.serialize(writer);");
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
-                writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", this.get{otherProp.Name.ToFirstCharacterUpperCase()}());");
+                writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", this.get{otherProp.Name.ToFirstCharacterUpperCase()}());");
             }
             if(additionalDataProperty != null)
                 writer.WriteLine($"writer.writeAdditionalData(this.get{additionalDataProperty.Name.ToFirstCharacterUpperCase()}());");
@@ -279,13 +279,13 @@ namespace Kiota.Builder.Writers.Java {
             var returnTypeAsyncPrefix = code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty;
             var returnTypeAsyncSuffix = code.IsAsync ? ">" : string.Empty;
             var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor);
-            var methodName = (code.MethodKind switch {
-                (CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor) => code.Parent.Name.ToFirstCharacterUpperCase(),
-                (CodeMethodKind.Getter) => $"get{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
-                (CodeMethodKind.Setter) => $"set{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
+            var methodName = code.MethodKind switch {
+                CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor => code.Parent.Name.ToFirstCharacterUpperCase(),
+                CodeMethodKind.Getter => $"get{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
+                CodeMethodKind.Setter => $"set{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
                 _ => code.Name.ToFirstCharacterLowerCase()
-            });
-            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> conventions.GetParameterSignature(p)).ToList());
+            };
+            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> conventions.GetParameterSignature(p, code)).ToList());
             var throwableDeclarations = code.IsOfKind(CodeMethodKind.RequestGenerator) ? "throws URISyntaxException ": string.Empty;
             var collectionCorrectedReturnType = code.ReturnType.IsArray && code.IsOfKind(CodeMethodKind.RequestExecutor) ?
                                                 $"Iterable<{returnType.StripArraySuffix()}>" :
@@ -310,9 +310,9 @@ namespace Kiota.Builder.Writers.Java {
                 writer.WriteLine(conventions.DocCommentEnd);
             }
         }
-        private string GetDeserializationMethodName(CodeTypeBase propType) {
+        private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = conventions.TranslateType(propType);
+            var propertyType = conventions.GetTypeString(propType, method, false);
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
@@ -328,9 +328,9 @@ namespace Kiota.Builder.Writers.Java {
                 _ => $"n.getObjectValue({propertyType.ToFirstCharacterUpperCase()}.class)",
             };
         }
-        private string GetSerializationMethodName(CodeTypeBase propType) {
+        private string GetSerializationMethodName(CodeTypeBase propType, CodeMethod method) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = conventions.TranslateType(propType);
+            var propertyType = conventions.GetTypeString(propType, method, false);
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)

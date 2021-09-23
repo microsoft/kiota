@@ -90,9 +90,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 "integer" => "int",
                 "boolean" => "bool",
                 "int64" => "long",
-                "string" or "float" or "double" => type.Name.ToLowerInvariant(),// little casing hack
-                "object" => "object",
-                "void" => "void",
+                "string" or "float" or "double" or "object" or "void" => type.Name.ToLowerInvariant(),// little casing hack
                 "binary" => "byte[]",
                 _ => type.Name?.ToFirstCharacterUpperCase() ?? "object",
             };
