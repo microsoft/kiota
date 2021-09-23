@@ -16,8 +16,8 @@ RUN wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | s
 RUN wget -c https://dl.google.com/go/go1.16.7.linux-amd64.tar.gz -O - | tar -xz -C /usr/local \
     && export PATH=$PATH:/usr/local/go/bin
 
-# installs node, nvm is already present but not loaded
-RUN apt-get install nodejs npm \
+# installs node
+RUN apt-get install nodejs npm -y \
     && npm i -g typescript eslint prettier
 
 # installs powershell
