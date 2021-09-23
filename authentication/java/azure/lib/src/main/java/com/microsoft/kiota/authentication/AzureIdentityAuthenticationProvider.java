@@ -13,7 +13,7 @@ import javax.annotation.Nullable;
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.credential.TokenRequestContext;
 import com.microsoft.kiota.authentication.BaseBearerTokenAuthenticationProvider;
-import com.microsoft.kiota.RequestInfo;
+import com.microsoft.kiota.RequestInformation;
 
 public class AzureIdentityAuthenticationProvider extends BaseBearerTokenAuthenticationProvider {
     private final TokenCredential creds;
@@ -31,7 +31,7 @@ public class AzureIdentityAuthenticationProvider extends BaseBearerTokenAuthenti
     }
 
     @Nonnull
-    public CompletableFuture<String> getAuthorizationToken(@Nonnull final RequestInfo request) {
+    public CompletableFuture<String> getAuthorizationToken(@Nonnull final RequestInformation request) {
         return this.creds.getToken(new TokenRequestContext() {{
             this.setScopes(_scopes);
         }}).toFuture().thenApply(r -> r.getToken());

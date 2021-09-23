@@ -2,9 +2,9 @@
 
 ![Dotnet](https://github.com/microsoft/kiota/actions/workflows/abstractions-dotnet.yml/badge.svg)
 
-- [ ] coverage code
+- [x] coverage code
 - [ ] analyzers
-- [ ] unit test project
+- [x] unit test project
 - [x] docs comments
 
 ## Using the abstractions

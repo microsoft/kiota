@@ -18,7 +18,7 @@ import com.microsoft.kiota.serialization.SerializationWriter;
 import com.microsoft.kiota.HttpCore;
 
 /** This class represents an abstract HTTP request. */
-public class RequestInfo {
+public class RequestInformation {
     /** The URI of the request. */
     @Nullable
     public URI uri;

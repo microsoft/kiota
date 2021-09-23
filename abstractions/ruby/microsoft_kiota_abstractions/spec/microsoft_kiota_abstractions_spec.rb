@@ -6,7 +6,7 @@ RSpec.describe MicrosoftKiotaAbstractions do
   end
 
   it "tests library method" do
-    request_obj = MicrosoftKiotaAbstractions::RequestInfo.new
+    request_obj = MicrosoftKiotaAbstractions::RequestInformation.new
     expect(!request_obj).to eq(false)
   end
 
@@ -22,6 +22,6 @@ RSpec.describe MicrosoftKiotaAbstractions do
 
   it "throws if the token method is not implemented" do
     token_provider = MicrosoftKiotaAbstractions::BaseBearerTokenAuthenticationProvider.new()
-    expect { token_provider.authenticate_request(MicrosoftKiotaAbstractions::RequestInfo.new()) }.to raise_error(NotImplementedError)
+    expect { token_provider.authenticate_request(MicrosoftKiotaAbstractions::RequestInformation.new()) }.to raise_error(NotImplementedError)
   end
 end

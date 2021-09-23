@@ -7,20 +7,20 @@ using Xunit;
 
 namespace Kiota.Builder.Writers.Java.Tests {
     public class CodeMethodWriterTests : IDisposable {
-        private const string defaultPath = "./";
-        private const string defaultName = "name";
+        private const string DefaultPath = "./";
+        private const string DefaultName = "name";
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeMethod method;
         private readonly CodeClass parentClass;
-        private const string methodName = "methodName";
-        private const string returnTypeName = "Somecustomtype";
-        private const string methodDescription = "some description";
-        private const string paramDescription = "some parameter description";
-        private const string paramName = "paramName";
+        private const string MethodName = "methodName";
+        private const string ReturnTypeName = "Somecustomtype";
+        private const string MethodDescription = "some description";
+        private const string ParamDescription = "some parameter description";
+        private const string ParamName = "paramName";
         public CodeMethodWriterTests()
         {
-            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, defaultPath, defaultName);
+            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
@@ -29,16 +29,17 @@ namespace Kiota.Builder.Writers.Java.Tests {
             };
             root.AddClass(parentClass);
             method = new CodeMethod(parentClass) {
-                Name = methodName,
+                Name = MethodName,
             };
             method.ReturnType = new CodeType(method) {
-                Name = returnTypeName
+                Name = ReturnTypeName
             };
             parentClass.AddMethod(method);
         }
         public void Dispose()
         {
             tw?.Dispose();
+            GC.SuppressFinalize(this);
         }
         private void AddSerializationProperties() {
             var addData = parentClass.AddProperty(new CodeProperty(parentClass) {
@@ -147,7 +148,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("final RequestInfo requestInfo", result);
+            Assert.Contains("final RequestInformation requestInfo", result);
             Assert.Contains("sendAsync", result);
             Assert.Contains("CompletableFuture.failedFuture(ex)", result);
             AssertExtensions.CurlyBracesAreClosed(result);
@@ -170,7 +171,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("final RequestInfo requestInfo = new RequestInfo()", result);
+            Assert.Contains("final RequestInformation requestInfo = new RequestInformation()", result);
             Assert.Contains("this.setUri", result);
             Assert.Contains("httpMethod = HttpMethod.GET", result);
             Assert.Contains("h.accept(requestInfo.headers)", result);
@@ -188,7 +189,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.DoesNotContain("final RequestInfo requestInfo = new RequestInfo()", result);
+            Assert.DoesNotContain("final RequestInformation requestInfo = new RequestInformation()", result);
             Assert.DoesNotContain("httpMethod = HttpMethod.GET", result);
             Assert.DoesNotContain("h.accept(requestInfo.headers)", result);
             Assert.DoesNotContain("AddQueryParameters", result);
@@ -212,8 +213,8 @@ namespace Kiota.Builder.Writers.Java.Tests {
         [Fact]
         public void WritesDeSerializerBody() {
             var parameter = new CodeParameter(method){
-                Description = paramDescription,
-                Name = paramName
+                Description = ParamDescription,
+                Name = ParamName
             };
             parameter.Type = new CodeType(parameter) {
                 Name = "string"
@@ -243,8 +244,8 @@ namespace Kiota.Builder.Writers.Java.Tests {
         [Fact]
         public void WritesSerializerBody() {
             var parameter = new CodeParameter(method){
-                Description = paramDescription,
-                Name = paramName
+                Description = ParamDescription,
+                Name = ParamName
             };
             parameter.Type = new CodeType(parameter) {
                 Name = "string"
@@ -264,10 +265,10 @@ namespace Kiota.Builder.Writers.Java.Tests {
         [Fact]
         public void WritesMethodAsyncDescription() {
             
-            method.Description = methodDescription;
+            method.Description = MethodDescription;
             var parameter = new CodeParameter(method){
-                Description = paramDescription,
-                Name = paramName
+                Description = ParamDescription,
+                Name = ParamName
             };
             parameter.Type = new CodeType(parameter) {
                 Name = "string"
@@ -276,10 +277,10 @@ namespace Kiota.Builder.Writers.Java.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("/**", result);
-            Assert.Contains(methodDescription, result);
+            Assert.Contains(MethodDescription, result);
             Assert.Contains("@param ", result);
-            Assert.Contains(paramName, result);
-            Assert.Contains(paramDescription, result); 
+            Assert.Contains(ParamName, result);
+            Assert.Contains(ParamDescription, result); 
             Assert.Contains("@return a CompletableFuture of", result);
             Assert.Contains("*/", result);
             AssertExtensions.CurlyBracesAreClosed(result);
@@ -287,11 +288,11 @@ namespace Kiota.Builder.Writers.Java.Tests {
         [Fact]
         public void WritesMethodSyncDescription() {
             
-            method.Description = methodDescription;
+            method.Description = MethodDescription;
             method.IsAsync = false;
             var parameter = new CodeParameter(method){
-                Description = paramDescription,
-                Name = paramName
+                Description = ParamDescription,
+                Name = ParamName
             };
             parameter.Type = new CodeType(parameter) {
                 Name = "string"
@@ -324,12 +325,12 @@ namespace Kiota.Builder.Writers.Java.Tests {
             method.ReturnType = null;
             Assert.Throws<InvalidOperationException>(() => writer.Write(method));
         }
-        private const string taskPrefix = "CompletableFuture<";
+        private const string TaskPrefix = "CompletableFuture<";
         [Fact]
         public void WritesReturnType() {
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains($"{taskPrefix}{returnTypeName}> {methodName}", result);// async default
+            Assert.Contains($"{TaskPrefix}{ReturnTypeName}> {MethodName}", result);// async default
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
@@ -337,7 +338,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             method.IsAsync = false;
             writer.Write(method);
             var result = tw.ToString();
-            Assert.DoesNotContain(taskPrefix, result);
+            Assert.DoesNotContain(TaskPrefix, result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
@@ -489,7 +490,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
                 IsExternal = true,
             };
             method.AddParameter(backingStoreParam);
-            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, defaultPath, defaultName);
+            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, DefaultPath, DefaultName);
             tempWriter.SetTextWriter(tw);
             tempWriter.Write(method);
             var result = tw.ToString();

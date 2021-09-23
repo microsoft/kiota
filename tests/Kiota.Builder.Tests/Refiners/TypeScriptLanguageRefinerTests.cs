@@ -71,12 +71,12 @@ namespace Kiota.Builder.Refiners.Tests {
         }
 #endregion
 #region typescript
-        private const string httpCoreDefaultName = "IHttpCore";
-        private const string factoryDefaultName = "ISerializationWriterFactory";
-        private const string deserializeDefaultName = "IDictionary<string, Action<Model, IParseNode>>";
-        private const string dateTimeOffsetDefaultName = "DateTimeOffset";
-        private const string addiationalDataDefaultName = "new Dictionary<string, object>()";
-        private const string handlerDefaultName = "IResponseHandler";
+        private const string HttpCoreDefaultName = "IHttpCore";
+        private const string FactoryDefaultName = "ISerializationWriterFactory";
+        private const string DeserializeDefaultName = "IDictionary<string, Action<Model, IParseNode>>";
+        private const string DateTimeOffsetDefaultName = "DateTimeOffset";
+        private const string AddiationalDataDefaultName = "new Dictionary<string, object>()";
+        private const string HandlerDefaultName = "IResponseHandler";
         [Fact]
         public void EscapesReservedKeywords() {
             var model = root.AddClass(new CodeClass (root) {
@@ -98,19 +98,19 @@ namespace Kiota.Builder.Refiners.Tests {
                 Name = "core",
                 PropertyKind = CodePropertyKind.HttpCore,
                 Type = new CodeType(model) {
-                    Name = httpCoreDefaultName
+                    Name = HttpCoreDefaultName
                 }
             }, new (model) {
                 Name = "someDate",
                 PropertyKind = CodePropertyKind.Custom,
                 Type = new CodeType(model) {
-                    Name = dateTimeOffsetDefaultName,
+                    Name = DateTimeOffsetDefaultName,
                 }
             }, new (model) {
                 Name = "additionalData",
                 PropertyKind = CodePropertyKind.AdditionalData,
                 Type = new CodeType(model) {
-                    Name = addiationalDataDefaultName
+                    Name = AddiationalDataDefaultName
                 }
             });
             var executorMethod = model.AddMethod(new CodeMethod(model) {
@@ -124,7 +124,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 Name = "handler",
                 ParameterKind = CodeParameterKind.ResponseHandler,
                 Type = new CodeType(executorMethod) {
-                    Name = handlerDefaultName,
+                    Name = HandlerDefaultName,
                 }
             });
             const string serializerDefaultName = "ISerializationWriter";
@@ -150,7 +150,7 @@ namespace Kiota.Builder.Refiners.Tests {
             }, new (model) {
                 Name = "deserializeFields",
                 ReturnType = new CodeType(model) {
-                    Name = deserializeDefaultName,
+                    Name = DeserializeDefaultName,
                 },
                 MethodKind = CodeMethodKind.Deserializer
             }).First();
@@ -162,12 +162,12 @@ namespace Kiota.Builder.Refiners.Tests {
                 }
             });
             ILanguageRefiner.Refine(new GenerationConfiguration{ Language = GenerationLanguage.TypeScript }, root);
-            Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => httpCoreDefaultName.Equals(x.Type.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => factoryDefaultName.Equals(x.Type.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => addiationalDataDefaultName.Equals(x.Type.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().Where(x => deserializeDefaultName.Equals(x.ReturnType.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => handlerDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => HttpCoreDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => FactoryDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => DateTimeOffsetDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => AddiationalDataDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().Where(x => DeserializeDefaultName.Equals(x.ReturnType.Name)));
+            Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => HandlerDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => streamDefaultName.Equals(x.Type.Name)));
         }

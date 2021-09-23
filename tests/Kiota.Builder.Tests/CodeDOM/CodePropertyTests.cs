@@ -1,3 +1,4 @@
+using System;
 using Xunit;
 
 namespace Kiota.Builder.Tests {
@@ -9,7 +10,7 @@ namespace Kiota.Builder.Tests {
                 Name = "prop",
             };
             Assert.False(property.IsOfKind((CodePropertyKind[])null));
-            Assert.False(property.IsOfKind(new CodePropertyKind[] { }));
+            Assert.False(property.IsOfKind(Array.Empty<CodePropertyKind>()));
         }
         [Fact]
         public void IsOfKind() {

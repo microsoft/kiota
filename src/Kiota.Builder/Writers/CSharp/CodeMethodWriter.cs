@@ -128,18 +128,11 @@ namespace Kiota.Builder.Writers.CSharp {
                 else if (currentType.TypeDefinition is CodeEnum enumType)
                     return $"GetEnumValue<{enumType.Name.ToFirstCharacterUpperCase()}>";
             }
-            switch(propertyType) {
-                case "string":
-                case "bool":
-                case "int":
-                case "float":
-                case "double":
-                case "Guid":
-                case "DateTimeOffset":
-                    return $"Get{propertyType.ToFirstCharacterUpperCase()}Value";
-                default:
-                    return $"GetObjectValue<{propertyType.ToFirstCharacterUpperCase()}>";
-            }
+            return propertyType switch
+            {
+                "string" or "bool" or "int" or "float" or "double" or "Guid" or "DateTimeOffset" => $"Get{propertyType.ToFirstCharacterUpperCase()}Value",
+                _ => $"GetObjectValue<{propertyType.ToFirstCharacterUpperCase()}>",
+            };
         }
         private void WriteRequestExecutorBody(CodeMethod codeElement, IEnumerable<CodeParameter> parameters, bool isVoid, string returnType, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
@@ -154,37 +147,37 @@ namespace Kiota.Builder.Writers.CSharp {
             writer.WriteLine($"var requestInfo = {generatorMethodName}({parametersList});");
             writer.WriteLine($"{(isVoid ? string.Empty : "return ")}await HttpCore.{GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnType)}(requestInfo, responseHandler);");
         }
-        private const string _requestInfoVarName = "requestInfo";
+        private const string RequestInfoVarName = "requestInfo";
         private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
             var operationName = codeElement.HttpMethod.ToString();
-            writer.WriteLine($"var {_requestInfoVarName} = new RequestInfo {{");
+            writer.WriteLine($"var {RequestInfoVarName} = new RequestInformation {{");
             writer.IncreaseIndent();
             writer.WriteLine($"HttpMethod = HttpMethod.{operationName?.ToUpperInvariant()},");
             writer.DecreaseIndent();
             writer.WriteLines("};",
-                        $"{_requestInfoVarName}.SetURI({conventions.CurrentPathPropertyName}, {conventions.PathSegmentPropertyName}, {conventions.RawUrlPropertyName});");
+                        $"{RequestInfoVarName}.SetURI({conventions.CurrentPathPropertyName}, {conventions.PathSegmentPropertyName}, {conventions.RawUrlPropertyName});");
             if(requestBodyParam != null) {
                 if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                    writer.WriteLine($"{_requestInfoVarName}.SetStreamContent({requestBodyParam.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({requestBodyParam.Name});");
                 else
-                    writer.WriteLine($"{_requestInfoVarName}.SetContentFromParsable({conventions.HttpCorePropertyName}, \"{codeElement.ContentType}\", {requestBodyParam.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable({conventions.HttpCorePropertyName}, \"{codeElement.ContentType}\", {requestBodyParam.Name});");
             }
             if(queryStringParam != null) {
                 writer.WriteLine($"if ({queryStringParam.Name} != null) {{");
                 writer.IncreaseIndent();
                 writer.WriteLines($"var qParams = new {operationName?.ToFirstCharacterUpperCase()}QueryParameters();",
                             $"{queryStringParam.Name}.Invoke(qParams);",
-                            $"qParams.AddQueryParameters({_requestInfoVarName}.QueryParameters);");
+                            $"qParams.AddQueryParameters({RequestInfoVarName}.QueryParameters);");
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
             }
             if(headersParam != null)
-                writer.WriteLine($"{headersParam.Name}?.Invoke({_requestInfoVarName}.Headers);");
+                writer.WriteLine($"{headersParam.Name}?.Invoke({RequestInfoVarName}.Headers);");
             if(optionsParam != null)
-                writer.WriteLine($"{_requestInfoVarName}.AddMiddlewareOptions({optionsParam.Name}?.ToArray());");
-            writer.WriteLine($"return {_requestInfoVarName};");
+                writer.WriteLine($"{RequestInfoVarName}.AddMiddlewareOptions({optionsParam.Name}?.ToArray());");
+            writer.WriteLine($"return {RequestInfoVarName};");
         }
         private void WriteSerializerBody(bool shouldHide, CodeClass parentClass, LanguageWriter writer) {
             var additionalDataProperty = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.AdditionalData));
@@ -218,7 +211,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 writer.WriteLine($"{conventions.DocCommentPrefix}</summary>");
             }
         }
-        private static CodeParameterOrderComparer parameterOrderComparer = new CodeParameterOrderComparer();
+        private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool inherits, bool isVoid) {
             var staticModifier = code.IsStatic ? "static " : string.Empty;
             var hideModifier = inherits && code.IsSerializationMethod ? "new " : string.Empty;
@@ -254,18 +247,11 @@ namespace Kiota.Builder.Writers.CSharp {
                     return $"WriteEnumValue<{enumType.Name.ToFirstCharacterUpperCase()}>";
                 
             }
-            switch(propertyType) {
-                case "string":
-                case "bool":
-                case "int":
-                case "float":
-                case "double":
-                case "Guid":
-                case "DateTimeOffset":
-                    return $"Write{propertyType.ToFirstCharacterUpperCase()}Value";
-                default:
-                    return $"WriteObjectValue<{propertyType.ToFirstCharacterUpperCase()}>";
-            }
+            return propertyType switch
+            {
+                "string" or "bool" or "int" or "float" or "double" or "Guid" or "DateTimeOffset" => $"Write{propertyType.ToFirstCharacterUpperCase()}Value",
+                _ => $"WriteObjectValue<{propertyType.ToFirstCharacterUpperCase()}>",
+            };
         }
     }
 }

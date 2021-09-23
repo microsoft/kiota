@@ -190,14 +190,16 @@ namespace Kiota.Builder.Refiners {
         }
         protected static void AddDefaultImports(CodeElement current, Tuple<string, string>[] defaultNamespaces, Tuple<string, string>[] defaultNamespacesForModels, Tuple<string, string>[] defaultNamespacesForRequestBuilders) {
             if(current is CodeClass currentClass) {
-                Func<Tuple<string, string>, CodeUsing> usingSelector = x => {
-                                                            var nUsing = new CodeUsing(currentClass) { 
-                                                                Name = x.Item1,
-                                                            };
-                                                            nUsing.Declaration = new CodeType(nUsing) { Name = x.Item2, IsExternal = true };
-                                                            return nUsing;
-                                                        };
-                if(currentClass.IsOfKind(CodeClassKind.Model))
+                CodeUsing usingSelector(Tuple<string, string> x)
+                {
+                    var nUsing = new CodeUsing(currentClass)
+                    {
+                        Name = x.Item1,
+                    };
+                    nUsing.Declaration = new CodeType(nUsing) { Name = x.Item2, IsExternal = true };
+                    return nUsing;
+                }
+                if (currentClass.IsOfKind(CodeClassKind.Model))
                     currentClass.AddUsing(defaultNamespaces.Union(defaultNamespacesForModels)
                                             .Select(usingSelector).ToArray());
                 if(currentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
@@ -207,16 +209,16 @@ namespace Kiota.Builder.Refiners {
             }
             CrawlTree(current, c => AddDefaultImports(c, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders));
         }
-        private const string binaryType = "binary";
+        private const string BinaryType = "binary";
         protected static void ReplaceBinaryByNativeType(CodeElement currentElement, string symbol, string ns, bool addDeclaration = false) {
             if(currentElement is CodeMethod currentMethod) {
                 var parentClass = currentMethod.Parent as CodeClass;
                 var shouldInsertUsing = false;
-                if(binaryType.Equals(currentMethod.ReturnType?.Name)) {
+                if(BinaryType.Equals(currentMethod.ReturnType?.Name)) {
                     currentMethod.ReturnType.Name = symbol;
                     shouldInsertUsing = true;
                 }
-                var binaryParameter = currentMethod.Parameters.FirstOrDefault(x => x.Type.Name.Equals(binaryType));
+                var binaryParameter = currentMethod.Parameters.FirstOrDefault(x => x.Type.Name.Equals(BinaryType));
                 if(binaryParameter != null) {
                     binaryParameter.Type.Name = symbol;
                     shouldInsertUsing = true;
@@ -235,7 +237,7 @@ namespace Kiota.Builder.Refiners {
             }
             CrawlTree(currentElement, c => ReplaceBinaryByNativeType(c, symbol, ns, addDeclaration));
         }
-        private const string pathSegmentPropertyName = "pathSegment";
+        private const string PathSegmentPropertyName = "pathSegment";
         // temporary patch of type to it resolves as the builder sets types we didn't generate to entity
         protected static void FixReferencesToEntityType(CodeElement currentElement, CodeClass entityClass = null){
             if(entityClass == null && currentElement is CodeNamespace currentNamespace)
@@ -307,7 +309,7 @@ namespace Kiota.Builder.Refiners {
                 var currentParentClass = currentElement.Parent as CodeClass;
                 currentParentClass.RemoveChildElement(currentElement);
                 var pathSegment = currentParentClass
-                                    .FindChildByName<CodeProperty>(pathSegmentPropertyName)
+                                    .FindChildByName<CodeProperty>(PathSegmentPropertyName)
                                     ?.DefaultValue;
                 if(!string.IsNullOrEmpty(pathSegment))
                     foreach(var returnType in currentIndexer.ReturnType.AllTypes)
@@ -377,8 +379,8 @@ namespace Kiota.Builder.Refiners {
             }
             CrawlTree(current, x => AddInnerClasses(x, prefixClassNameWithParentName));
         }
-        private static readonly CodeUsingComparer usingComparerWithDeclarations = new CodeUsingComparer(true);
-        private static readonly CodeUsingComparer usingComparerWithoutDeclarations = new CodeUsingComparer(false);
+        private static readonly CodeUsingComparer usingComparerWithDeclarations = new(true);
+        private static readonly CodeUsingComparer usingComparerWithoutDeclarations = new(false);
         protected readonly GenerationConfiguration _configuration;
 
         protected static void AddPropertiesAndMethodTypesImports(CodeElement current, bool includeParentNamespaces, bool includeCurrentNamespace, bool compareOnDeclaration) {

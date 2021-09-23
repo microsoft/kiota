@@ -5,8 +5,8 @@ using Xunit;
 namespace Kiota.Builder.Writers.Java.Tests {
     public class CodeClassDeclarationWriterTests : IDisposable
     {
-        private const string defaultPath = "./";
-        private const string defaultName = "name";
+        private const string DefaultPath = "./";
+        private const string DefaultName = "name";
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeClassDeclarationWriter codeElementWriter;
@@ -14,7 +14,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
 
         public CodeClassDeclarationWriterTests() {
             codeElementWriter = new CodeClassDeclarationWriter(new JavaConventionService());
-            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, defaultPath, defaultName);
+            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
@@ -25,6 +25,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
         }
         public void Dispose() {
             tw?.Dispose();
+            GC.SuppressFinalize(this);
         }
         [Fact]
         public void WritesSimpleDeclaration() {

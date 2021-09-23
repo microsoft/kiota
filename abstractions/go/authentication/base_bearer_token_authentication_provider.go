@@ -9,14 +9,14 @@ import (
 const authorizationHeader = "Authorization"
 
 type BaseBearerTokenAuthenticationProvider struct {
-	getAuthorizationToken func(request abs.RequestInfo) (string, error)
+	getAuthorizationToken func(request abs.RequestInformation) (string, error)
 }
 
-func NewBaseBearerTokenAuthenticationProvider(getAuthorizationToken func(request abs.RequestInfo) (string, error)) *BaseBearerTokenAuthenticationProvider {
+func NewBaseBearerTokenAuthenticationProvider(getAuthorizationToken func(request abs.RequestInformation) (string, error)) *BaseBearerTokenAuthenticationProvider {
 	return &BaseBearerTokenAuthenticationProvider{getAuthorizationToken}
 }
 
-func (provider *BaseBearerTokenAuthenticationProvider) Authenticate(request abs.RequestInfo) error {
+func (provider *BaseBearerTokenAuthenticationProvider) Authenticate(request abs.RequestInformation) error {
 	if request.Headers == nil {
 		request.Headers = make(map[string]string)
 	}

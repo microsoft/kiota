@@ -53,6 +53,8 @@ namespace Kiota.Builder
             var doc = CreateOpenApiDocument(input);
             StopLogAndReset(sw, "step 2 - parsing the document - took");
 
+            SetApiRootUrl(doc);
+
             // Step 3 - Create Uri Space of API
             sw.Start();
             var openApiTree = CreateUriSpace(doc);
@@ -72,6 +74,11 @@ namespace Kiota.Builder
             sw.Start();
             await CreateLanguageSourceFilesAsync(config.Language, generatedCode);
             StopLogAndReset(sw, "step 6 - writing files - took");
+        }
+        private void SetApiRootUrl(OpenApiDocument doc) {
+            config.ApiRootUrl = doc.Servers.FirstOrDefault()?.Url.TrimEnd('/');
+            if(string.IsNullOrEmpty(config.ApiRootUrl))
+                throw new InvalidOperationException("A servers entry (v3) or host + basePath + schems properties (v2) must be present in the OpenAPI description.");
         }
         private void StopLogAndReset(Stopwatch sw, string prefix) {
             sw.Stop();
@@ -377,7 +384,7 @@ namespace Kiota.Builder
                     Description = "The backing store to use for the models.",
                     ParameterKind = CodeParameterKind.BackingStore,
                 };
-                var factoryInterfaceName = $"{backingStoreInterface}Factory";
+                var factoryInterfaceName = $"{BackingStoreInterface}Factory";
                 backingStoreParam.Type = new CodeType(backingStoreParam) {
                     Name = factoryInterfaceName,
                     IsNullable = true,
@@ -387,20 +394,20 @@ namespace Kiota.Builder
                     Name = factoryInterfaceName,
                 };
                 backingStoreInterfaceUsing.Declaration = new CodeType(backingStoreInterfaceUsing) {
-                    Name = storeNamespaceName,
+                    Name = StoreNamespaceName,
                     IsExternal = true,
                 };
                 var backingStoreSingletonUsing = new CodeUsing(currentClass) {
-                    Name = backingStoreSingleton,
+                    Name = BackingStoreSingleton,
                 };
                 backingStoreSingletonUsing.Declaration = new CodeType(backingStoreSingletonUsing) {
-                    Name = storeNamespaceName,
+                    Name = StoreNamespaceName,
                     IsExternal = true,
                 };
                 currentClass.AddUsing(backingStoreInterfaceUsing, backingStoreSingletonUsing);
             }
         }
-        private static Func<CodeClass, int> shortestNamespaceOrder = (x) => x.Parent.Name.Split('.').Length;
+        private static readonly Func<CodeClass, int> shortestNamespaceOrder = (x) => x.Parent.Name.Split('.').Length;
         /// <summary>
         /// Remaps definitions to custom types so they can be used later in generation or in refiners
         /// </summary>
@@ -429,7 +436,7 @@ namespace Kiota.Builder
                 if(x.TypeDefinition == null) {
                     parentNS = parentNS.Parent as CodeNamespace;
                     x.TypeDefinition = parentNS
-                        .FindNamespaceByName($"{parentNS.Name}.{x.Name.Substring(0, x.Name.Length - requestBuilderSuffix.Length).ToFirstCharacterLowerCase()}")
+                        .FindNamespaceByName($"{parentNS.Name}.{x.Name.Substring(0, x.Name.Length - requestBuilderSuffix.Length).ToFirstCharacterLowerCase()}".TrimEnd('.'))
                         .FindChildrenByName<CodeClass>(x.Name)
                         .OrderBy(shortestNamespaceOrder)
                         .FirstOrDefault();
@@ -440,9 +447,9 @@ namespace Kiota.Builder
             });
 
             Parallel.ForEach(unmappedTypesWithName.Except(unmappedRequestBuilderTypes).GroupBy(x => x.Name), x => {
-                var definition = rootNamespace.FindChildByName<ITypeDefinition>(x.First().Name) as CodeElement;
-                if(definition != null)
-                    foreach(var type in x) {
+                if (rootNamespace.FindChildByName<ITypeDefinition>(x.First().Name) is CodeElement definition)
+                    foreach (var type in x)
+                    {
                         type.TypeDefinition = definition;
                     }
             });
@@ -455,16 +462,13 @@ namespace Kiota.Builder
                 .Where(x => !x.IsExternal && x.TypeDefinition == null);
         private IEnumerable<CodeType> GetUnmappedTypeDefinitions(CodeElement codeElement) {
             var childElementsUnmappedTypes = codeElement.GetChildElements(true).SelectMany(x => GetUnmappedTypeDefinitions(x));
-            switch(codeElement) {
-                case CodeMethod method:
-                    return filterUnmappedTypeDefitions(method.Parameters.Select(x => x.Type)).Union(childElementsUnmappedTypes);
-                case CodeProperty property:
-                    return filterUnmappedTypeDefitions(new CodeTypeBase[] {property.Type}).Union(childElementsUnmappedTypes);
-                case CodeIndexer indexer:
-                    return filterUnmappedTypeDefitions(new CodeTypeBase[] {indexer.ReturnType}).Union(childElementsUnmappedTypes);
-                default:
-                    return childElementsUnmappedTypes;
-            }
+            return codeElement switch
+            {
+                CodeMethod method => filterUnmappedTypeDefitions(method.Parameters.Select(x => x.Type)).Union(childElementsUnmappedTypes),
+                CodeProperty property => filterUnmappedTypeDefitions(new CodeTypeBase[] { property.Type }).Union(childElementsUnmappedTypes),
+                CodeIndexer indexer => filterUnmappedTypeDefitions(new CodeTypeBase[] { indexer.ReturnType }).Union(childElementsUnmappedTypes),
+                _ => childElementsUnmappedTypes,
+            };
         }
         private CodeIndexer CreateIndexer(string childIdentifier, string childType, CodeClass codeClass, OpenApiUrlTreeNode currentNode)
         {
@@ -503,7 +507,7 @@ namespace Kiota.Builder
             logger.LogTrace("Creating property {name} of {type}", prop.Name, prop.Type.Name);
             return prop;
         }
-        private static HashSet<string> typeNamesToSkip = new() {"object", "array"};
+        private static readonly HashSet<string> typeNamesToSkip = new() {"object", "array"};
         private static CodeType GetPrimitiveType(CodeElement parent, OpenApiSchema typeSchema, string childType) {
             var typeNames = new List<string>{typeSchema?.Items?.Type, childType, typeSchema?.Type};
             if(typeSchema?.AnyOf?.Any() ?? false)
@@ -515,20 +519,27 @@ namespace Kiota.Builder
                 return null;
             var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
             var isExternal = false;
-            if("string".Equals(typeName, StringComparison.OrdinalIgnoreCase) && "date-time".Equals(format, StringComparison.OrdinalIgnoreCase)) {
+            if("string".Equals(typeName, StringComparison.OrdinalIgnoreCase)) {
+                if("date-time".Equals(format, StringComparison.OrdinalIgnoreCase)) {
+                    isExternal = true;
+                    typeName = "DateTimeOffset";
+                } else if ("base64url".Equals(format, StringComparison.OrdinalIgnoreCase)) {
+                    isExternal = true;
+                    typeName = "binary";
+                }
+            } else if ("double".Equals(format, StringComparison.OrdinalIgnoreCase) || 
+                    "float".Equals(format, StringComparison.OrdinalIgnoreCase) ||
+                    "int64".Equals(format, StringComparison.OrdinalIgnoreCase)) {
                 isExternal = true;
-                typeName = "DateTimeOffset";
-            } else if ("double".Equals(format, StringComparison.OrdinalIgnoreCase)) {
-                isExternal = true;
-                typeName = "double";
+                typeName = format.ToLowerInvariant();
             }
             return new CodeType(parent) {
                 Name = typeName,
                 IsExternal = isExternal,
             };
         }
-        private const string requestBodyBinaryContentType = "application/octet-stream";
-        private static HashSet<string> noContentStatusCodes = new() { "201", "202", "204" };
+        private const string RequestBodyBinaryContentType = "application/octet-stream";
+        private static readonly HashSet<string> noContentStatusCodes = new() { "201", "202", "204" };
         private void CreateOperationMethods(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
         {
             var parameterClass = CreateOperationParameter(currentNode, operationType, operation, parentClass);
@@ -548,7 +559,7 @@ namespace Kiota.Builder
                 executorMethod.ReturnType = returnType ?? throw new InvalidOperationException("Could not resolve return type for operation");
             } else {
                 var returnType = voidType;
-                if(operation.Responses.Any(x => x.Value.Content.Keys.Contains(requestBodyBinaryContentType)))
+                if(operation.Responses.Any(x => x.Value.Content.Keys.Contains(RequestBodyBinaryContentType)))
                     returnType = "binary";
                 else if(!operation.Responses.Any(x => noContentStatusCodes.Contains(x.Key)))
                     logger.LogWarning($"could not find operation return type {operationType} {currentNode.Path}");
@@ -569,19 +580,19 @@ namespace Kiota.Builder
             logger.LogTrace("Creating method {name} of {type}", executorMethod.Name, executorMethod.ReturnType);
 
             var generatorMethod = new CodeMethod(parentClass) {
-                Name = $"Create{operationType.ToString().ToFirstCharacterUpperCase()}RequestInfo",
+                Name = $"Create{operationType.ToString().ToFirstCharacterUpperCase()}RequestInformation",
                 MethodKind = CodeMethodKind.RequestGenerator,
                 IsAsync = false,
                 HttpMethod = method,
                 Description = operation.Description ?? operation.Summary,
             };
-            generatorMethod.ReturnType = new CodeType(generatorMethod) { Name = "RequestInfo", IsNullable = false, IsExternal = true};
+            generatorMethod.ReturnType = new CodeType(generatorMethod) { Name = "RequestInformation", IsNullable = false, IsExternal = true};
             parentClass.AddMethod(generatorMethod);
             AddRequestBuilderMethodParameters(currentNode, operation, parameterClass, generatorMethod);
             logger.LogTrace("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
         }
         private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeClass parameterClass, CodeMethod method) {
-            var nonBinaryRequestBody = operation.RequestBody?.Content?.FirstOrDefault(x => !requestBodyBinaryContentType.Equals(x.Key, StringComparison.OrdinalIgnoreCase));
+            var nonBinaryRequestBody = operation.RequestBody?.Content?.FirstOrDefault(x => !RequestBodyBinaryContentType.Equals(x.Key, StringComparison.OrdinalIgnoreCase));
             if (nonBinaryRequestBody.HasValue && nonBinaryRequestBody.Value.Value != null)
             {
                 var requestBodySchema = nonBinaryRequestBody.Value.Value.Schema;
@@ -594,7 +605,7 @@ namespace Kiota.Builder
                     Description = requestBodySchema.Description
                 });
                 method.ContentType = nonBinaryRequestBody.Value.Key;
-            } else if (operation.RequestBody?.Content?.ContainsKey(requestBodyBinaryContentType) ?? false) {
+            } else if (operation.RequestBody?.Content?.ContainsKey(RequestBodyBinaryContentType) ?? false) {
                 var nParam = new CodeParameter(method) {
                     Name = "body",
                     Optional = false,
@@ -798,19 +809,19 @@ namespace Kiota.Builder
             else if(schema?.AllOf?.Any(x => x.IsObject()) ?? false)
                 CreatePropertiesForModelClass(currentNode, schema.AllOf.Last(x => x.IsObject()), ns, model, parent);
         }
-        private const string fieldDeserializersMethodName = "GetFieldDeserializers<T>";
-        private const string serializeMethodName = "Serialize";
-        private const string additionalDataPropName = "AdditionalData";
-        private const string backingStorePropertyName = "BackingStore";
-        private const string backingStoreInterface = "IBackingStore";
-        private const string backingStoreSingleton = "BackingStoreFactorySingleton";
-        private const string backedModelInterface = "IBackedModel";
-        private const string storeNamespaceName = "Microsoft.Kiota.Abstractions.Store";
+        private const string FieldDeserializersMethodName = "GetFieldDeserializers<T>";
+        private const string SerializeMethodName = "Serialize";
+        private const string AdditionalDataPropName = "AdditionalData";
+        private const string BackingStorePropertyName = "BackingStore";
+        private const string BackingStoreInterface = "IBackingStore";
+        private const string BackingStoreSingleton = "BackingStoreFactorySingleton";
+        private const string BackedModelInterface = "IBackedModel";
+        private const string StoreNamespaceName = "Microsoft.Kiota.Abstractions.Store";
         private void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties) {
             var serializationPropsType = $"IDictionary<string, Action<T, IParseNode>>";
-            if(!model.ContainsMember(fieldDeserializersMethodName)) {
+            if(!model.ContainsMember(FieldDeserializersMethodName)) {
                 var deserializeProp = new CodeMethod(model) {
-                    Name = fieldDeserializersMethodName,
+                    Name = FieldDeserializersMethodName,
                     MethodKind = CodeMethodKind.Deserializer,
                     Access = AccessModifier.Public,
                     Description = "The deserialization information for the current model",
@@ -823,9 +834,9 @@ namespace Kiota.Builder
                 };
                 model.AddMethod(deserializeProp);
             }
-            if(!model.ContainsMember(serializeMethodName)) {
+            if(!model.ContainsMember(SerializeMethodName)) {
                 var serializeMethod = new CodeMethod(model) {
-                    Name = serializeMethodName,
+                    Name = SerializeMethodName,
                     MethodKind = CodeMethodKind.Serializer,
                     IsAsync = false,
                     Description = $"Serializes information the current object",
@@ -841,12 +852,12 @@ namespace Kiota.Builder
                 
                 model.AddMethod(serializeMethod);
             }
-            if(!model.ContainsMember(additionalDataPropName) &&
+            if(!model.ContainsMember(AdditionalDataPropName) &&
                 includeAdditionalProperties && 
-                !(model.GetGreatestGrandparent(model)?.ContainsMember(additionalDataPropName) ?? false)) {
+                !(model.GetGreatestGrandparent(model)?.ContainsMember(AdditionalDataPropName) ?? false)) {
                 // we don't want to add the property if the parent already has it
                 var additionalDataProp = new CodeProperty(model) {
-                    Name = additionalDataPropName,
+                    Name = AdditionalDataPropName,
                     Access = AccessModifier.Public,
                     DefaultValue = "new Dictionary<string, object>()",
                     PropertyKind = CodePropertyKind.AdditionalData,
@@ -859,11 +870,11 @@ namespace Kiota.Builder
                 };
                 model.AddProperty(additionalDataProp);
             }
-            if(!model.ContainsMember(backingStorePropertyName) &&
+            if(!model.ContainsMember(BackingStorePropertyName) &&
                config.UsesBackingStore &&
-               !(model.GetGreatestGrandparent(model)?.ContainsMember(backingStorePropertyName) ?? false)) {
+               !(model.GetGreatestGrandparent(model)?.ContainsMember(BackingStorePropertyName) ?? false)) {
                 var backingStoreProperty = new CodeProperty(model) {
-                    Name = backingStorePropertyName,
+                    Name = BackingStorePropertyName,
                     Access = AccessModifier.Public,
                     DefaultValue = $"BackingStoreFactorySingleton.Instance.CreateBackingStore()",
                     PropertyKind = CodePropertyKind.BackingStore,
@@ -871,36 +882,36 @@ namespace Kiota.Builder
                     ReadOnly = true,
                 };
                 var storeType = new CodeType(backingStoreProperty) {
-                    Name = backingStoreInterface,
+                    Name = BackingStoreInterface,
                     IsNullable = false,
                     IsExternal = true,
                 };
                 backingStoreProperty.Type = storeType;
                 model.AddProperty(backingStoreProperty);
                 var backingStoreUsing = new CodeUsing(model) {
-                    Name = backingStoreInterface,
+                    Name = BackingStoreInterface,
                 };
                 backingStoreUsing.Declaration = new CodeType(backingStoreUsing) {
-                    Name = storeNamespaceName,
+                    Name = StoreNamespaceName,
                     IsExternal = true
                 };
                 var backedModelUsing = new CodeUsing(model) {
-                    Name = backedModelInterface,
+                    Name = BackedModelInterface,
                 };
                 backedModelUsing.Declaration = new CodeType(backedModelUsing) {
-                    Name = storeNamespaceName,
+                    Name = StoreNamespaceName,
                     IsExternal = true
                 };
                 var storeImplUsing = new CodeUsing(model) {
-                    Name = backingStoreSingleton,
+                    Name = BackingStoreSingleton,
                 };
                 storeImplUsing.Declaration = new CodeType(storeImplUsing) {
-                    Name = storeNamespaceName,
+                    Name = StoreNamespaceName,
                     IsExternal = true,
                 };
                 model.AddUsing(backingStoreUsing, backedModelUsing, storeImplUsing);
                 (model.StartBlock as CodeClass.Declaration).Implements.Add(new CodeType(model) {
-                    Name = backedModelInterface,
+                    Name = BackedModelInterface,
                 });
             }
         }

@@ -6,8 +6,8 @@ namespace Kiota.Builder.Writers.Ruby {
     {
         public static string SerializerFactoryPropertyName => "serializer_factory";
         public override string StreamTypeName => "stdin";
-        private const string _voidTypeName = "nil";
-        public override string VoidTypeName => _voidTypeName;
+        private const string InternalVoidTypeName = "nil";
+        public override string VoidTypeName => InternalVoidTypeName;
         public override string DocCommentPrefix => "## ";
         public override string PathSegmentPropertyName => "path_segment";
         public override string CurrentPathPropertyName => "current_path";

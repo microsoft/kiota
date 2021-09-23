@@ -57,15 +57,16 @@ namespace Kiota.Builder.Writers.CSharp {
 
         public override string TranslateType(CodeType type)
         {
-            switch (type.Name)
+            return type.Name switch
             {
-                case "integer": return "int";
-                case "boolean": return "bool";
-                case "string": return "string"; // little casing hack
-                case "object": return "object";
-                case "void": return "void";
-                default: return type.Name?.ToFirstCharacterUpperCase() ?? "object";
-            }
+                "integer" => "int",
+                "boolean" => "bool",
+                "string" => "string",// little casing hack
+                "object" => "object",
+                "void" => "void",
+                "binary" => "byte[]",
+                _ => type.Name?.ToFirstCharacterUpperCase() ?? "object",
+            };
         }
         public bool IsPrimitiveType(string typeName) {
             return !string.IsNullOrEmpty(typeName) &&

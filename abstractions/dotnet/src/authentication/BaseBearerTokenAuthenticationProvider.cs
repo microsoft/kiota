@@ -15,11 +15,11 @@ namespace Microsoft.Kiota.Abstractions.Authentication
         private const string AuthorizationHeaderKey = "Authorization";
 
         /// <summary>
-        /// Authenticates the <see cref="RequestInfo"/> instance
+        /// Authenticates the <see cref="RequestInformation"/> instance
         /// </summary>
         /// <param name="request">The request to authenticate</param>
         /// <returns></returns>
-        public async Task AuthenticateRequestAsync(RequestInfo request)
+        public async Task AuthenticateRequestAsync(RequestInformation request)
         {
             if(request == null) throw new ArgumentNullException(nameof(request));
             if(!request.Headers.ContainsKey(AuthorizationHeaderKey))
@@ -35,6 +35,6 @@ namespace Microsoft.Kiota.Abstractions.Authentication
         /// </summary>
         /// <param name="request">The request to authenticate.</param>
         /// <returns>A Task that holds the access token to use for the request.</returns>
-        public abstract Task<string> GetAuthorizationTokenAsync(RequestInfo request);
+        public abstract Task<string> GetAuthorizationTokenAsync(RequestInformation request);
     }
 }
