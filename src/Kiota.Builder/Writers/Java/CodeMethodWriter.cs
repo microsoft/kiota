@@ -49,7 +49,7 @@ namespace Kiota.Builder.Writers.Java {
                     WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer);
                 break;
                 case CodeMethodKind.RequestExecutor:
-                    WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, returnType, writer);
+                    WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer);
                 break;
                 case CodeMethodKind.Getter:
                     WriteGetterBody(codeElement, writer, parentClass);
@@ -179,8 +179,9 @@ namespace Kiota.Builder.Writers.Java {
             }
             writer.WriteLine("}};");
         }
-        private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, string returnType, LanguageWriter writer) {
+        private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
+            var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement, false);
             writer.WriteLine("try {");
             writer.IncreaseIndent();
             WriteGeneratorMethodCall(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer, $"final RequestInformation {RequestInfoVarName} = ");
@@ -213,8 +214,7 @@ namespace Kiota.Builder.Writers.Java {
             var requestInfoParameters = paramsList.Where(x => x != null)
                                                 .Select(x => x.Name)
                                                 .ToList();
-            var shouldSkipBodyParam = requestBodyParam == null && (codeElement.HttpMethod == HttpMethod.Get || codeElement.HttpMethod == HttpMethod.Delete);
-            var skipIndex = shouldSkipBodyParam ? 1 : 0;
+            var skipIndex = requestBodyParam == null ? 1 : 0;
             if(codeElement.IsOverload && !codeElement.OriginalMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.QueryParameter)) || // we're on an overload and the original method has no query parameters
                 !codeElement.IsOverload && queryStringParam == null) // we're on the original method and there is no query string parameter
                 skipIndex++;// we skip the query string parameter null value
@@ -324,7 +324,7 @@ namespace Kiota.Builder.Writers.Java {
             }
             return propertyType switch
             {
-                "String" or "Boolean" or "Integer" or "Float" or "Long" or "Guid" or "OffsetDateTime" => $"n.get{propertyType.ToFirstCharacterUpperCase()}Value()",
+                "String" or "Boolean" or "Integer" or "Float" or "Long" or "Guid" or "OffsetDateTime" or "Double" => $"n.get{propertyType.ToFirstCharacterUpperCase()}Value()",
                 _ => $"n.getObjectValue({propertyType.ToFirstCharacterUpperCase()}.class)",
             };
         }
@@ -342,7 +342,7 @@ namespace Kiota.Builder.Writers.Java {
             }
             return propertyType switch
             {
-                "String" or "Boolean" or "Integer" or "Float" or "Long" or "Guid" or "OffsetDateTime" => $"write{propertyType}Value",
+                "String" or "Boolean" or "Integer" or "Float" or "Long" or "Guid" or "OffsetDateTime" or "Double" => $"write{propertyType}Value",
                 _ => $"writeObjectValue",
             };
         }

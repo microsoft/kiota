@@ -58,6 +58,9 @@ public class JsonParseNode implements ParseNode {
     public Float getFloatValue() {
         return currentNode.getAsFloat();
     }
+    public Double getDoubleValue() {
+        return currentNode.getAsDouble();
+    }
     public Long getLongValue() {
         return currentNode.getAsLong();
     }

@@ -79,6 +79,17 @@ public class JsonSerializationWriter implements SerializationWriter {
                 throw new RuntimeException("could not serialize value", ex);
             }
     }
+    public void writeDoubleValue(final String key, final Double value) {
+        if(value != null)
+            try {
+                if(key != null && !key.isEmpty()) {
+                    writer.name(key);
+                }
+                writer.value(value);
+            } catch (IOException ex) {
+                throw new RuntimeException("could not serialize value", ex);
+            }
+    }
     public void writeLongValue(final String key, final Long value) {
         if(value != null)
             try {

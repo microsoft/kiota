@@ -40,6 +40,12 @@ public interface SerializationWriter extends Closeable {
      */
     void writeFloatValue(@Nullable final String key, @Nonnull final Float value);
     /**
+     * Writes the specified Double value to the stream with an optional given key.
+     * @param key the key to write the value with.
+     * @param value the value to write to the stream.
+     */
+    void writeDoubleValue(@Nullable final String key, @Nonnull final Double value);
+    /**
      * Writes the specified Long value to the stream with an optional given key.
      * @param key the key to write the value with.
      * @param value the value to write to the stream.

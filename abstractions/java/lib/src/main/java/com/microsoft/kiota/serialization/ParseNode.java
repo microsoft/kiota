@@ -46,6 +46,12 @@ public interface ParseNode {
     @Nonnull
     Float getFloatValue();
     /**
+     * Gets the Double value of the node.
+     * @return the Double value of the node.
+     */
+    @Nonnull
+    Double getDoubleValue();
+    /**
      * Gets the Long value of the node.
      * @return the Long value of the node.
      */
