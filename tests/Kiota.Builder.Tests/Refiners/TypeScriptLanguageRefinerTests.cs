@@ -95,6 +95,46 @@ namespace Kiota.Builder.Refiners.Tests {
             Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => HandlerDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
         }
-    }
+        [Fact]
+        public void AliasesDuplicateUsingSymbols() {
+            var model = graphNS.AddClass(new CodeClass {
+                Name = "model",
+                ClassKind = CodeClassKind.Model
+            }).First();
+            var modelsNS = graphNS.AddNamespace($"{graphNS.Name}.models");
+            var source1 = modelsNS.AddClass(new CodeClass {
+                Name = "source",
+                ClassKind = CodeClassKind.Model
+            }).First();
+            var submodelsNS = modelsNS.AddNamespace($"{modelsNS.Name}.submodels");
+            var source2 = submodelsNS.AddClass(new CodeClass {
+                Name = "source",
+                ClassKind = CodeClassKind.Model
+            }).First();
+
+            var using1 = new CodeUsing {
+               Name = modelsNS.Name,
+               Declaration = new CodeType {
+                   Name = source1.Name,
+                   TypeDefinition = source1,
+                   IsExternal = false,
+               }
+            };
+            var using2 = new CodeUsing {
+               Name = submodelsNS.Name,
+               Declaration = new CodeType {
+                   Name = source2.Name,
+                   TypeDefinition = source2,
+                   IsExternal = false,
+               }
+            };
+            model.AddUsing(using1);
+            model.AddUsing(using2);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+            Assert.NotEmpty(using1.Alias);
+            Assert.NotEmpty(using2.Alias);
+            Assert.NotEqual(using1.Alias, using2.Alias);
+        }
 #endregion
+    }
 }
