@@ -175,37 +175,18 @@ namespace Kiota.Builder.Refiners {
         }
         protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement, HashSet<Type> codeElementExceptions = null) {
             if(current is CodeClass currentClass && currentClass.StartBlock is Declaration currentDeclaration)
-                currentDeclaration.Usings
-                                    .Select(x => x.Declaration)
-                                    .Where(x => x != null && !x.IsExternal)
-                                    .Join(provider.ReservedNames, x => x.Name, y => y, (x, y) => x)
-                                    .ToList()
-                                    .ForEach(x => {
-                                        x.Name = replacement.Invoke(x.Name);
-                                    });
+                ReplaceReservedCodeUsings(currentDeclaration, provider, replacement);
             else if(current is CodeNamespace currentNamespace &&
                 (!codeElementExceptions?.Contains(typeof(CodeNamespace)) ?? true) &&
-                !string.IsNullOrEmpty(currentNamespace.Name)) {
-                var segments = currentNamespace.Name.Split('.');
-                if(segments.Any(x => provider.ReservedNames.Contains(x)))
-                    currentNamespace.Name = segments.Select(x => provider.ReservedNames.Contains(x) ?
-                                                                    replacement.Invoke(x) :
-                                                                    x)
-                                                    .Aggregate((x, y) => $"{x}.{y}");
-            }
+                !string.IsNullOrEmpty(currentNamespace.Name))
+                ReplaceReservedNamespaceSegments(currentNamespace, provider, replacement);
             else if(current is CodeMethod currentMethod &&
                 (!codeElementExceptions?.Contains(typeof(CodeMethod)) ?? true)) {
                 if(currentMethod.ReturnType is CodeType returnType &&
                     !returnType.IsExternal &&
                     provider.ReservedNames.Contains(currentMethod.ReturnType.Name))
                     returnType.Name = replacement.Invoke(returnType.Name);
-                currentMethod.Parameters.Where(x => x.Type is CodeType parameterType &&
-                                                    !parameterType.IsExternal &&
-                                                    provider.ReservedNames.Contains(parameterType.Name))
-                                                    .ToList()
-                                                    .ForEach(x => {
-                                                        x.Type.Name = replacement.Invoke(x.Type.Name);
-                                                    });
+                ReplaceReservedParameterNamesTypes(currentMethod, provider, replacement);
             } else if (current is CodeProperty currentProperty &&
                     (!codeElementExceptions?.Contains(typeof(CodeProperty)) ?? true) &&
                     currentProperty.Type is CodeType propertyType &&
@@ -219,6 +200,36 @@ namespace Kiota.Builder.Refiners {
                 current.Name = replacement.Invoke(current.Name);
 
             CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions));
+        }
+        private static void ReplaceReservedCodeUsings(Declaration currentDeclaration, IReservedNamesProvider provider, Func<string, string> replacement)
+        {
+            currentDeclaration.Usings
+                            .Select(x => x.Declaration)
+                            .Where(x => x != null && !x.IsExternal)
+                            .Join(provider.ReservedNames, x => x.Name, y => y, (x, y) => x)
+                            .ToList()
+                            .ForEach(x => {
+                                x.Name = replacement.Invoke(x.Name);
+                            });
+        }
+        private static void ReplaceReservedNamespaceSegments(CodeNamespace currentNamespace, IReservedNamesProvider provider, Func<string, string> replacement)
+        {
+            var segments = currentNamespace.Name.Split('.');
+            if(segments.Any(x => provider.ReservedNames.Contains(x)))
+                currentNamespace.Name = segments.Select(x => provider.ReservedNames.Contains(x) ?
+                                                                replacement.Invoke(x) :
+                                                                x)
+                                                .Aggregate((x, y) => $"{x}.{y}");
+        }
+        private static void ReplaceReservedParameterNamesTypes(CodeMethod currentMethod, IReservedNamesProvider provider, Func<string, string> replacement)
+        {
+            currentMethod.Parameters.Where(x => x.Type is CodeType parameterType &&
+                                                !parameterType.IsExternal &&
+                                                provider.ReservedNames.Contains(parameterType.Name))
+                                                .ToList()
+                                                .ForEach(x => {
+                                                    x.Type.Name = replacement.Invoke(x.Type.Name);
+                                                });
         }
         private static CodeUsing usingSelector(Tuple<string, string> x) =>
             new()

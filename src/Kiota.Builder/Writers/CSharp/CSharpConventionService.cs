@@ -61,10 +61,7 @@ namespace Kiota.Builder.Writers.CSharp {
             if(code is CodeUnionType)
                 throw new InvalidOperationException($"CSharp does not support union types, the union type {code.Name} should have been filtered out by the refiner");
             else if (code is CodeType currentType) {
-                var typeName = TranslateType(currentType);
-                if(currentType.TypeDefinition != null &&
-                    GetReservedNames(targetElement).Contains(typeName))
-                    typeName = $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
+                var typeName = TranslateTypeAndAvoidUsingReservedNames(currentType, targetElement);
                 var nullableSuffix = ShouldTypeHaveNullableMarker(code, typeName) ? NullableMarkerAsString : string.Empty;
                 var collectionPrefix = currentType.CollectionKind == CodeTypeCollectionKind.Complex && includeCollectionInformation ? "List<" : string.Empty;
                 var collectionSuffix = currentType.CollectionKind switch {
@@ -79,7 +76,15 @@ namespace Kiota.Builder.Writers.CSharp {
             }
             else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
-
+        private string TranslateTypeAndAvoidUsingReservedNames(CodeType currentType, CodeElement targetElement)
+        {
+            var typeName = TranslateType(currentType);
+            if(currentType.TypeDefinition != null &&
+                GetReservedNames(targetElement).Contains(typeName))
+                return $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
+            else
+                return typeName;
+        }
         public override string TranslateType(CodeType type)
         {
             return type.Name switch
