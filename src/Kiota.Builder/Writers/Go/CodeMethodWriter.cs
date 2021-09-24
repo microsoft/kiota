@@ -276,7 +276,7 @@ namespace Kiota.Builder.Writers.Go {
             var constructorFunction = returnType switch {
                 _ when isVoid => string.Empty,
                 _ when isScalar => $"\"{parsableImportSymbol}\", ",
-                _ => $"func () {parsableImportSymbol} {{ return new({conventions.GetTypeString(codeElement.ReturnType, codeElement.Parent, false)}) }}, ",
+                _ => $"func () {parsableImportSymbol} {{ return new({conventions.GetTypeString(codeElement.ReturnType, codeElement.Parent, true, false)}) }}, ",
             };
             var returnTypeDeclaration = isVoid ?
                         string.Empty :
@@ -469,7 +469,7 @@ namespace Kiota.Builder.Writers.Go {
         }
         private string GetConversionHelperMethodImport(CodeClass parentClass, string name) {
             var conversionMethodType = new CodeType { Name = name, IsExternal = true };
-            return conventions.GetTypeString(conversionMethodType, parentClass, false);
+            return conventions.GetTypeString(conversionMethodType, parentClass, true, false);
         }
     }
 }

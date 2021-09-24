@@ -24,9 +24,9 @@ namespace Kiota.Builder.Writers.Go {
         {
             return $"{parameter.Name} {GetTypeString(parameter.Type, targetElement)}";
         }
-        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = false) =>
-            GetTypeString(code, targetElement, includeCollectionInformation: includeCollectionInformation);
-        public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool addPointerSymbol = true, bool includeCollectionInformation = true)
+        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true) =>
+            GetTypeString(code, targetElement, includeCollectionInformation, true);
+        public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation, bool addPointerSymbol)
         {
             if(code is CodeUnionType) 
                 throw new InvalidOperationException($"Go does not support union types, the union type {code.Name} should have been filtered out by the refiner");
@@ -113,7 +113,7 @@ namespace Kiota.Builder.Writers.Go {
             throw new NotImplementedException();
         }
 
-        internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default)
+        internal static void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default)
         {
             var currentPath = addCurrentPath ? $"m.{CurrentPathPropertyName} + " : string.Empty;
             var splatImport = returnType.Split('.');

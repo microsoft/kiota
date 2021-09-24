@@ -39,13 +39,15 @@ namespace Kiota.Builder.Extensions {
                     AddAllPathsEntries(child, index, label);
         }
         private static string GetDotIfBothNotNullOfEmpty(string x, string y) => string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) ? string.Empty : ".";
+        private static readonly Func<string, string> replaceSingleParameterSegementByItem =
+        x => x.IsPathSegmentWithSingleSimpleParamter() ? "item" : x;
         public static string GetNamespaceFromPath(this string currentPath, string prefix) => 
             prefix + 
                     ((currentPath?.Contains(pathNameSeparator) ?? false) ?
                         (string.IsNullOrEmpty(prefix) ? string.Empty : ".")
                              + currentPath
                                 ?.Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
-                                ?.Select(x => x.IsPathSegmentWithSingleSimpleParamter() ? "item" : x)
+                                ?.Select(replaceSingleParameterSegementByItem)
                                 ?.Select(x => CleanupParametersFromPath((x ?? string.Empty).Split('.', StringSplitOptions.RemoveEmptyEntries)
                                 ?.Select(x => x.TrimStart('$')) //$ref from OData
                                                                 .Last()))

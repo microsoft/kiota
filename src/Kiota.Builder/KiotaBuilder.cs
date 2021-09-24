@@ -318,7 +318,11 @@ namespace Kiota.Builder
             var pathProperty = new CodeProperty {
                 Access = AccessModifier.Private,
                 Name = "pathSegment",
-                DefaultValue = isApiClientClass ? $"\"{this.config.ApiRootUrl}\"" : (currentNode.IsPathSegmentWithSingleSimpleParamter() ? "\"\"" : $"\"/{currentNode.Segment}\""),
+                DefaultValue = (isApiClientClass, currentNode.IsPathSegmentWithSingleSimpleParamter()) switch {
+                    (true, _) => $"\"{config.ApiRootUrl}\"",
+                    (false, true) => "\"\"",
+                    (_, _) => $"\"/{currentNode.Segment}\"",
+                },
                 ReadOnly = true,
                 Description = "Path segment to use to build the URL for the current request builder",
                 PropertyKind = CodePropertyKind.PathSegment

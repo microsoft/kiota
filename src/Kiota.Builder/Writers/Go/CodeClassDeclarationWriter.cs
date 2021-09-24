@@ -35,7 +35,7 @@ namespace Kiota.Builder.Writers.Go {
             writer.WriteLine($"type {codeElement.Name.ToFirstCharacterUpperCase()} struct {{");
             writer.IncreaseIndent();
             if(codeElement.Inherits?.AllTypes?.Any() ?? false) {
-                var parentTypeName = conventions.GetTypeString(codeElement.Inherits.AllTypes.First(), codeElement.Parent.Parent, false);
+                var parentTypeName = conventions.GetTypeString(codeElement.Inherits.AllTypes.First(), codeElement.Parent.Parent, true, false);
                 writer.WriteLine($"{parentTypeName}");
             }
         }

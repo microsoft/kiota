@@ -1,7 +1,3 @@
-using Kiota.Builder.Writers.CSharp;
-using Kiota.Builder.Writers.Java;
-using Kiota.Builder.Writers.TypeScript;
-
 namespace Kiota.Builder.Writers {
     public class CodeTypeWriter : BaseElementWriter<CodeType, ILanguageConventionService>
     {
