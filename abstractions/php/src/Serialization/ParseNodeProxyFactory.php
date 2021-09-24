@@ -4,30 +4,33 @@
 namespace Microsoft\Kiota\Abstractions\Serialization;
 
 
-use Closure;
 use Psr\Http\Message\StreamInterface;
 
+/**
+ * @method onBefore(Parsable $x)
+ * @method onAfter(Parsable $x)
+ */
 abstract class ParseNodeProxyFactory implements ParseNodeFactory {
     /**
      * @var ParseNodeFactory
      */
     private ParseNodeFactory $concrete;
     /**
-     * @var Closure|null
+     * @var callable|null
      */
-    private ?Closure $onBefore;
+    private  $onBefore;
     /**
-     * @var Closure|null
+     * @var callable|null
      */
-    private ?Closure $onAfter;
+    private $onAfter;
 
     /**
-     * ParseNodeProxyFactory constructor.
-     * @param ParseNodeFactory $concrete
-     * @param Closure|null $onBefore
-     * @param Closure|null $onAfter
+     * Creates a new proxy factory that wraps the specified concrete factory while composing the before and after callbacks.
+     * @param ParseNodeFactory $concrete the concrete factory to wrap
+     * @param callable|null $onBefore the callback to invoke before the deserialization of any model object.
+     * @param callable|null $onAfter the callback to invoke after the deserialization of any model object.
      */
-    public function __construct(ParseNodeFactory $concrete, ?Closure $onBefore, ?Closure $onAfter) {
+    public function __construct(ParseNodeFactory $concrete, ?callable $onBefore, ?callable $onAfter) {
         $this->concrete = $concrete;
         $this->onBefore = $onBefore;
         $this->onAfter = $onAfter;
@@ -40,25 +43,25 @@ abstract class ParseNodeProxyFactory implements ParseNodeFactory {
      */
     public function getParseNode(string $contentType, StreamInterface $rawResponse): ParseNode {
         $node = $this->concrete->getParseNode($contentType, $rawResponse);
-        $originalBefore = $node->onBeforeAssignFieldValues;
-        $originalAfter  = $node->onAfterAssignFieldValues;
+        $originalBefore  = $node->getOnBeforeAssignFieldValues();
+        $originalAfter  = $node->getOnAfterAssignFieldValues();
 
-        $node->onBeforeAssignFieldValues = function (Parsable $x) use ($originalBefore) {
+        $node->setOnBeforeAssignFieldValues(function (Parsable $x) use ($originalBefore) {
             if (!is_null($this->onBefore)) {
-                $this->onBefore->call($x, $x);
+                $this->onBefore($x);
             }
             if (!is_null($originalBefore)) {
-                $originalBefore->call($x, $x);
+                $originalBefore($x);
             }
-        };
-        $node->onAfterAssignFieldValues = function (Parsable $x) use ($originalAfter) {
+        });
+        $node->setOnAfterAssignFieldValues(function (Parsable $x) use ($originalAfter) {
             if (!is_null($this->onAfter)) {
-                $this->onAfter->call($x, $x);
+                $this->onAfter($x);
             }
             if (!is_null($originalAfter)) {
-                $originalAfter->call($x, $x);
+                $originalAfter($x);
             }
-        };
+        });
         return $node;
     }
 

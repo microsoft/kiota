@@ -3,9 +3,11 @@
 
 namespace Microsoft\Kiota\Abstractions\Store;
 
+/** Defines the contracts for a model that is backed by a store. */
 interface BackedModel {
     /**
-     * @return BackingStore|null
+     * Gets the store that is backing the model.
+     * @return BackingStore|null the backing store.
      */
     public function getBackingStore(): ?BackingStore;
 }

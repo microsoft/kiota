@@ -46,11 +46,11 @@ class InMemoryBackingStore implements BackingStore
     }
 
     /**
-     * @param Closure $callback
+     * @param callable $callback
      * @param string|null $subscriptionId
      * @return string|null
      */
-    public function subscribe(Closure $callback, ?string $subscriptionId = null): ?string {
+    public function subscribe(callable $callback, ?string $subscriptionId = null): ?string {
         return '';
     }
 

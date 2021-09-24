@@ -9,11 +9,13 @@ use UnexpectedValueException;
 class SerializationWriterFactoryRegistry implements SerializationWriterFactory {
 
     /**
+     * List of factories that are registered by content type
      * @var array<string, SerializationWriterFactory>
      */
     public array $contentTypeAssociatedFactories = [];
 
     /**
+     * Default singleton instance of the registry to be used when registering new factories that should be available by default.
      * @var SerializationWriterFactoryRegistry|null
      */
     public static ?SerializationWriterFactoryRegistry $defaultInstance = null;
@@ -38,6 +40,10 @@ class SerializationWriterFactoryRegistry implements SerializationWriterFactory {
         throw new \RuntimeException("The registry supports multiple content types. Get the registered factory instead.");
     }
 
+    /**
+     * Gets the singleton default instance of  @link SerializationWriterFactoryRegistry
+     * @return SerializationWriterFactoryRegistry
+     */
     public static function getDefaultInstance(): SerializationWriterFactoryRegistry {
         if (is_null(self::$defaultInstance))
             self::$defaultInstance = new self();

@@ -2,9 +2,11 @@
 
 namespace Microsoft\Kiota\Abstractions\Store;
 
+/** This class is used to register the backing store factory. */
 abstract class BackingStoreFactorySingleton
 {
     /**
+     * The backing store factory singleton instance.
      * @var BackingStoreFactory|null
      */
     public static ?BackingStoreFactory $instance = null;

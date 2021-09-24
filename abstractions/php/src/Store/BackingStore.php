@@ -7,8 +7,9 @@ use Closure;
 
 interface BackingStore {
     /**
+     * Gets a value from the backing store based on its key. Returns null if the value hasn't changed and "ReturnOnlyChangedValues" is true.
      * @param string $key
-     * @return mixed
+     * @return mixed The value from the backing store.
      */
     public function get(string $key);
 
@@ -22,7 +23,7 @@ interface BackingStore {
     public function set(string $key, $value): void;
 
     /**
-     *
+     * Enumerates all the values stored in the backing store. Values will be filtered if "ReturnOnlyChangedValues" is true.
      * @return array<string,mixed> the array of key-value pairs available in
      *  the backing store
      */
@@ -35,40 +36,43 @@ interface BackingStore {
     public function enumerateKeysForValuesChangedToNull(): iterable;
 
     /**
-     * @param Closure $callback
+     * Creates a subscription to any data change happening.
+     * @param callable $callback Callback to be invoked on data changes where the first parameter is the data key, the second the previous value and the third the new value.
      * @param string|null $subscriptionId
-     * @return string
+     * @return string|null The subscription ID to use when removing the subscription
      */
-    public function subscribe(Closure $callback, ?string $subscriptionId = null): ?string;
+    public function subscribe(callable $callback, ?string $subscriptionId = null): ?string;
 
     /**
-     * @param string $subscriptionId
+     * Removes a subscription from the store based on its subscription id.
+     * @param string $subscriptionId The Id of the subscription to remove.
      */
     public function unsubscribe(string $subscriptionId): void;
 
     /**
-     * @return void
+     * Clears the data stored in the backing store. Doesn't trigger any subscription.
      */
     public function clear(): void;
 
     /**
-     * @param bool $value
-     * @return void
+     * Sets whether the initialization of the object and/or the initial deserialization has been completed to track whether objects have changed.
+     * @param bool $value value to set
      */
     public function setIsInitializationCompleted(bool $value): void;
 
     /**
-     * @return bool
+     * @return bool Whether the initialization of the object and/or the initial deserialization has been completed to track whether objects have changed.
      */
     public function getIsInitializationCompleted(): bool;
 
     /**
-     * @return void
+     * Sets whether to return only values that have changed since the initialization of the object when calling the Get and Enumerate methods.
+     * @param bool $value value to set
      */
     public function setReturnOnlyChangedValues(bool $value): void;
 
     /**
-     * @return bool
+     * @return bool Whether to return only values that have changed since the initialization of the object when calling the Get and Enumerate methods.
      */
     public function getReturnOnlyChangedValues(): bool;
 
