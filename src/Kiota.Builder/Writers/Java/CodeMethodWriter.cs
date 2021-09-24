@@ -46,7 +46,7 @@ namespace Kiota.Builder.Writers.Java {
                     WriteGeneratorMethodCall(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer, "return ");
                 break;
                 case CodeMethodKind.RequestGenerator when !codeElement.IsOverload:
-                    WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer);
+                    WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, parentClass, writer);
                 break;
                 case CodeMethodKind.RequestExecutor:
                     WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, writer);
@@ -86,7 +86,9 @@ namespace Kiota.Builder.Writers.Java {
             var httpCoreParameter = codeElement.Parameters.OfKind(CodeParameterKind.HttpCore);
             var currentPathParameter = codeElement.Parameters.OfKind(CodeParameterKind.CurrentPath);
             var originalRawUrlParameter = codeElement.OriginalMethod.Parameters.OfKind(CodeParameterKind.RawUrl);
-            writer.WriteLine($"this({currentPathParameter.Name}, {httpCoreParameter.Name}, {originalRawUrlParameter.DefaultValue});");
+            var pathParameters = codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path));
+            var pathParametersRef = pathParameters.Any() ? pathParameters.Select(x => x.Name).Aggregate((x, y) => $"{x}, {y}") + ", " : string.Empty;
+            writer.WriteLine($"this({currentPathParameter.Name}, {httpCoreParameter.Name}, {pathParametersRef}{originalRawUrlParameter.DefaultValue});");
         }
         private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
             var httpCoreProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
@@ -199,7 +201,11 @@ namespace Kiota.Builder.Writers.Java {
             writer.WriteLine("}");
         }
         private string GetSendRequestMethodName(bool isCollection, string returnType) {
-            if(conventions.PrimitiveTypes.Contains(returnType)) return $"sendPrimitiveAsync";
+            if(conventions.PrimitiveTypes.Contains(returnType)) 
+                if(isCollection)
+                    return $"sendPrimitiveCollectionAsync";
+                else
+                    return $"sendPrimitiveAsync";
             else if(isCollection) return $"sendCollectionAsync";
             else return $"sendAsync";
         }
@@ -222,12 +228,15 @@ namespace Kiota.Builder.Writers.Java {
             var paramsCall = requestInfoParameters.Any() ? requestInfoParameters.Aggregate((x,y) => $"{x}, {y}") : string.Empty;
             writer.WriteLine($"{prefix}{generatorMethodName}({paramsCall});");
         }
-        private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, LanguageWriter writer) {
+        private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, CodeClass currentClass, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
+            var currentPathProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.CurrentPath).FirstOrDefault();
+            var pathSegmentProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.PathSegment).FirstOrDefault();
+            var rawUrlProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.RawUrl).FirstOrDefault();
             writer.WriteLine($"final RequestInformation {RequestInfoVarName} = new RequestInformation() {{{{");
             writer.IncreaseIndent();
-            writer.WriteLines($"this.setUri({conventions.CurrentPathPropertyName}, {conventions.PathSegmentPropertyName}, {conventions.RawUrlPropertyName});",
+            writer.WriteLines($"this.setUri({GetPropertyCall(currentPathProperty, "\"\"")}, {GetPropertyCall(pathSegmentProperty, "\"\"")}, {GetPropertyCall(rawUrlProperty, "false")});",
                         $"httpMethod = HttpMethod.{codeElement.HttpMethod?.ToString().ToUpperInvariant()};");
             writer.DecreaseIndent();
             writer.WriteLine("}};");
@@ -262,6 +271,7 @@ namespace Kiota.Builder.Writers.Java {
             }
             writer.WriteLine($"return {RequestInfoVarName};");
         }
+        private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"{property.Name.ToFirstCharacterLowerCase()}";
         private void WriteSerializerBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
             var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();
             if((parentClass.StartBlock as CodeClass.Declaration).Inherits != null)
@@ -317,6 +327,8 @@ namespace Kiota.Builder.Writers.Java {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
                         return $"n.getCollectionOfPrimitiveValues({propertyType.ToFirstCharacterUpperCase()}.class)";
+                    else if (currentType.TypeDefinition is CodeEnum enumType)
+                        return $"n.getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}.class)";
                     else
                         return $"n.getCollectionOfObjectValues({propertyType.ToFirstCharacterUpperCase()}.class)";
                 else if (currentType.TypeDefinition is CodeEnum currentEnum)
@@ -324,6 +336,7 @@ namespace Kiota.Builder.Writers.Java {
             }
             return propertyType switch
             {
+                "byte[]" => "n.getByteArrayValue()",
                 "String" or "Boolean" or "Integer" or "Float" or "Long" or "Guid" or "OffsetDateTime" or "Double" => $"n.get{propertyType.ToFirstCharacterUpperCase()}Value()",
                 _ => $"n.getObjectValue({propertyType.ToFirstCharacterUpperCase()}.class)",
             };
@@ -335,6 +348,8 @@ namespace Kiota.Builder.Writers.Java {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
                         return $"writeCollectionOfPrimitiveValues";
+                    else if(currentType.TypeDefinition is CodeEnum)
+                        return $"writeCollectionOfEnumValues";
                     else
                         return $"writeCollectionOfObjectValues";
                 else if (currentType.TypeDefinition is CodeEnum currentEnum)
@@ -342,6 +357,7 @@ namespace Kiota.Builder.Writers.Java {
             }
             return propertyType switch
             {
+                "byte[]" => "writeByteArrayValue",
                 "String" or "Boolean" or "Integer" or "Float" or "Long" or "Guid" or "OffsetDateTime" or "Double" => $"write{propertyType}Value",
                 _ => $"writeObjectValue",
             };

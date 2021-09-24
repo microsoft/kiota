@@ -15,6 +15,7 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -155,6 +156,22 @@ public class JsonSerializationWriter implements SerializationWriter {
             throw new RuntimeException("could not serialize value", ex);
         }
     }
+    public <T extends Enum<T>> void writeCollectionOfEnumValues(@Nullable final String key, @Nullable final Iterable<T> values) {
+        try {
+            if(values != null) { //empty array is meaningful
+                if(key != null && !key.isEmpty()) {
+                    writer.name(key);
+                }
+                writer.beginArray();
+                for (final T t : values) {
+                    this.writeEnumValue(null, t);
+                }
+                writer.endArray();
+            }
+        } catch (IOException ex) {
+            throw new RuntimeException("could not serialize value", ex);
+        }
+    }
     public <T extends Parsable> void writeObjectValue(final String key, final T value) {
         try {
             if(value != null) {
@@ -288,5 +305,9 @@ public class JsonSerializationWriter implements SerializationWriter {
     private BiConsumer<Parsable, SerializationWriter> onStartObjectSerialization;
     public void setOnStartObjectSerialization(final BiConsumer<Parsable, SerializationWriter> value) {
         this.onStartObjectSerialization = value;
+    }
+    public void writeByteArrayValue(@Nullable final String key, @Nonnull final byte[] value) {
+        if(value != null)
+            this.writeStringValue(key, Base64.getEncoder().encodeToString(value));
     }
 }

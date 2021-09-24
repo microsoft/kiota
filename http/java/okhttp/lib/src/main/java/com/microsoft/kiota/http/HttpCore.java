@@ -185,6 +185,32 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
             }
         });
     }
+    public <ModelType> CompletableFuture<Iterable<ModelType>> sendPrimitiveCollectionAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
+        Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
+
+        return this.authProvider.authenticateRequest(requestInfo).thenCompose(x -> {
+            final HttpCoreCallbackFutureWrapper wrapper = new HttpCoreCallbackFutureWrapper();
+            this.client.newCall(getRequestFromRequestInformation(requestInfo)).enqueue(wrapper);
+            return wrapper.future;
+        }).thenCompose(response -> {
+            if(responseHandler == null) {
+                final ResponseBody body = response.body();
+                try {
+                    try (final InputStream rawInputStream = body.byteStream()) {
+                        final ParseNode rootNode = pNodeFactory.getParseNode(getMediaTypeAndSubType(body.contentType()), rawInputStream);
+                        final Iterable<ModelType> result = rootNode.getCollectionOfPrimitiveValues(targetClass);
+                        return CompletableFuture.completedStage(result);
+                    }
+                } catch(IOException ex) {
+                    return CompletableFuture.failedFuture(new RuntimeException("failed to read the response body", ex));
+                } finally {
+                    response.close();
+                }
+            } else {
+                return responseHandler.handleResponseAsync(response);
+            }
+        });
+    }
     private Request getRequestFromRequestInformation(@Nonnull final RequestInformation requestInfo) {
         final StringBuilder urlBuilder = new StringBuilder(requestInfo.uri.toString());
 
