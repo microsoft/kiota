@@ -5,51 +5,99 @@ namespace Microsoft\Kiota\Abstractions\Serialization;
 
 use DateTimeInterface;
 use Closure;
+use Microsoft\Kiota\Abstractions\Enum;
 
-abstract class ParseNode {
+interface ParseNode {
     /**
-     * @param string $identifier
-     * @return ParseNode
+     * Gets a new parse node for the given identifier.
+     * @param string $identifier the identifier of the current node property.
+     * @return $this a new parse node for the given identifier.
      */
-    abstract public function getChildNode(string $identifier): ParseNode;
-
-    /**
-     * @return string
-     */
-    abstract public function getStringValue(): string;
+    public function getChildNode(string $identifier): ParseNode;
 
     /**
-     * @return bool
+     * Gets the string value of the node.
+     * @return string the string value of the node.
      */
-    abstract public function getBooleanValue(): bool;
+    public function getStringValue(): string;
 
     /**
-     * @return int
+     * Gets the boolean value of the node.
+     * @return bool the boolean value of the node.
      */
-    abstract public function getIntegerValue(): int;
+    public function getBooleanValue(): bool;
 
     /**
-     * @return float
+     * Gets the Integer value of the node.
+     * @return int the Integer value of the node.
      */
-    abstract public function getFloatValue(): float;
+    public function getIntegerValue(): int;
 
     /**
-     * @return string
+     * Gets the Float value of the node.
+     * @return float the Float value of the node.
      */
-    abstract public function getUUIDValue(): string;
+    public function getFloatValue(): float;
 
     /**
-     * @return DateTimeInterface
+     * Gets the Long value of the node.
+     * @return int the Long value of the node.
      */
-    abstract public function getOffsetDateTimeValue(): DateTimeInterface;
+    public function getLongValue(): int;
 
     /**
-     * @var Closure|null
+     * Gets the UUID value of the node.
+     * @return string the UUID value of the node.
      */
-    public ?Closure $onBeforeAssignFieldValues;
+    public function getUUIDValue(): string;
 
     /**
-     * @var Closure|null
+     * Gets the model object value of the node.
+     * @return object the model object value of the node.
      */
-    public ?Closure $onAfterAssignFieldValues;
+    public function getObjectValue(): object;
+
+    /**
+     * Gets the OffsetDateTime value of the node.
+     * @return DateTimeInterface the OffsetDateTime value of the node.
+     */
+    public function getOffsetDateTimeValue(): DateTimeInterface;
+
+    /**
+     * Gets the Enum value of the node.
+     * @param string $targetEnum
+     * @return string the Enum value of the node.
+     */
+    public function getEnumValue(string $targetEnum): string;
+
+    /**
+     * Gets the EnumSet value of the node.
+     * @param Enum $targetEnum
+     * @return array<string> the EnumSet value of the node.
+     */
+    public function getEnumSetValue(Enum $targetEnum): array;
+
+    /**
+     * Gets the callback called before the node is deserialized.
+     * @return callable the callback called before the node is deserialized.
+     */
+    public function getOnBeforeAssignFieldValues(): ?callable;
+
+    /**
+     * Gets the callback called after the node is deserialized.
+     * @return callable the callback called after the node is deserialized.
+     */
+    public function getOnAfterAssignFieldValues(): ?callable;
+
+    /**
+     * Sets the callback called after the node is deserialized.
+     * @param callable $value the callback called after the node is deserialized.
+     */
+    public function setOnAfterAssignFieldValues(callable $value): void;
+
+    /**
+     * Sets the callback called before the node is deserialized.
+     * @param callable $value the callback called before the node is deserialized.
+     */
+    public function setOnBeforeAssignFieldValues(callable $value): void;
 }

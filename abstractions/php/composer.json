@@ -10,9 +10,9 @@
         }
     },
     "require": {
-        "php": "^7.4 || ^8.0",
-        "php-http/promise": "^1.1.0",
-        "php-http/message-factory": "^1.0.2",
+      "php": "^7.4 || ^8.0",
+      "php-http/promise": "^1.1.0",
+      "php-http/message-factory": "^1.0.2",
       "ext-http": "*"
     },
     "require-dev": {

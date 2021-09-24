@@ -3,20 +3,26 @@ namespace Microsoft\Kiota\Abstractions\Serialization;
 
 use Closure;
 
-abstract class Parsable {
+/**
+ * Defines the serializable model object.
+ */
+interface Parsable {
 
     /**
-     * @return array<string, Closure>
+     * Gets the deserialization information for this object.
+     * @return array<string, callable> The deserialization information for this object where each entry is a property key with its deserialization callback.
      */
-    abstract public function getFieldDeserializers(): array;
+    public function getFieldDeserializers(): array;
 
     /**
-     * @param SerializationWriter $writer
+     * Writes the objects properties to the current writer.
+     * @param SerializationWriter $writer The writer to write to.
      */
-    abstract public function serialize(SerializationWriter $writer): void;
+    public function serialize(SerializationWriter $writer): void;
 
     /**
-     * @var array
+     * Gets the additional data for this object that did not belong to the properties.
+     * @return array<string, mixed> The additional data for this object.
      */
-    public array $additionalData;
+    public function getAdditionalData(): array;
 }
