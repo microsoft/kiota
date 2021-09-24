@@ -215,6 +215,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             var currentPathProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.CurrentPath).FirstOrDefault();
             var pathSegmentProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.PathSegment).FirstOrDefault();
             var rawUrlProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.RawUrl).FirstOrDefault();
+            var httpCoreProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.HttpCore).FirstOrDefault();
             writer.WriteLines($"const {RequestInfoVarName} = new RequestInformation();",
                                 $"{RequestInfoVarName}.setUri({GetPropertyCall(currentPathProperty, "''")}, {GetPropertyCall(pathSegmentProperty, "''")}, {GetPropertyCall(rawUrlProperty, "false")});",
                                 $"{RequestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.ToString().ToUpperInvariant()};");
@@ -227,7 +228,7 @@ namespace Kiota.Builder.Writers.TypeScript {
                     writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestBodyParam.Name});");
                 else {
                     var spreadOperator = requestBodyParam.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
-                    writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable(this.{localConventions.HttpCorePropertyName}, \"{codeElement.ContentType}\", {spreadOperator}{requestBodyParam.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable(this.{httpCoreProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {spreadOperator}{requestBodyParam.Name});");
                 }
             }
             if(optionsParam != null)

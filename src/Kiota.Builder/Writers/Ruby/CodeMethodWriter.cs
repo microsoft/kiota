@@ -14,7 +14,7 @@ namespace Kiota.Builder.Writers.Ruby {
             if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
             if(writer == null) throw new ArgumentNullException(nameof(writer));
             if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
-            var returnType = conventions.GetTypeString(codeElement.ReturnType);
+            var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
             WriteMethodDocumentation(codeElement, writer);
             var parentClass = codeElement.Parent as CodeClass;
             var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
@@ -36,7 +36,7 @@ namespace Kiota.Builder.Writers.Ruby {
                 break;
                 case CodeMethodKind.RequestGenerator:
                     WriteMethodPrototype(codeElement, writer);
-                    WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, writer);
+                    WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, parentClass, writer);
                 break;
                 case CodeMethodKind.RequestExecutor:
                     WriteMethodPrototype(codeElement, writer);
@@ -156,10 +156,14 @@ namespace Kiota.Builder.Writers.Ruby {
             writer.WriteLine($"return @http_core.{genericTypeForSendMethod}(request_info, {returnType}, response_handler)");
         }
 
-        private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, LanguageWriter writer) {
+        private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeClass parentClass, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
+
+            var currentPathProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.CurrentPath).FirstOrDefault();
+            var pathSegmentProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.PathSegment).FirstOrDefault();
+            var rawUrlProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.RawUrl).FirstOrDefault();
             writer.WriteLines("request_info = MicrosoftKiotaAbstractions::RequestInformation.new()",
-                                $"request_info.set_uri(@{conventions.CurrentPathPropertyName}, @{conventions.PathSegmentPropertyName}, @{conventions.RawUrlPropertyName})",
+                                $"request_info.set_uri({GetPropertyCall(currentPathProperty, "''")}, {GetPropertyCall(pathSegmentProperty, "''")}, {GetPropertyCall(rawUrlProperty, "false")})",
                                 $"request_info.http_method = :{codeElement.HttpMethod?.ToString().ToUpperInvariant()}");
             if(headersParam != null)
                 writer.WriteLine($"request_info.set_headers_from_raw_object(h)");
@@ -173,6 +177,7 @@ namespace Kiota.Builder.Writers.Ruby {
             }
             writer.WriteLine("return request_info;");
         }
+        private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"@{property.Name.ToSnakeCase()}";
         private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer) {
             var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();
             if((parentClass.StartBlock as CodeClass.Declaration).Inherits != null)
@@ -191,7 +196,7 @@ namespace Kiota.Builder.Writers.Ruby {
                 (CodeMethodKind.Setter) => $"{code.AccessedProperty?.Name?.ToSnakeCase()}",
                 _ => code.Name.ToSnakeCase()
             });
-            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> conventions.GetParameterSignature(p).ToSnakeCase()).ToList());
+            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> conventions.GetParameterSignature(p, code).ToSnakeCase()).ToList());
             writer.WriteLine($"def {methodName.ToSnakeCase()}({parameters}) ");
             writer.IncreaseIndent();
         }

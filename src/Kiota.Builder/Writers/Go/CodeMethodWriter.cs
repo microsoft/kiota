@@ -321,15 +321,19 @@ namespace Kiota.Builder.Writers.Go {
         private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, LanguageWriter writer, CodeClass parentClass, string returnType) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
+            var currentPathProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.CurrentPath).FirstOrDefault();
+            var pathSegmentProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.PathSegment).FirstOrDefault();
+            var rawUrlProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.RawUrl).FirstOrDefault();
+            var httpCoreProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.HttpCore).FirstOrDefault();
             writer.WriteLine($"{RequestInfoVarName} := {conventions.AbstractionsHash}.NewRequestInformation()");
-            writer.WriteLines($"err := {RequestInfoVarName}.SetUri(m.{conventions.CurrentPathPropertyName}, m.{conventions.PathSegmentPropertyName}, m.{conventions.RawUrlPropertyName})",
+            writer.WriteLines($"err := {RequestInfoVarName}.SetUri({GetPropertyCall(currentPathProperty, "\"\"")}, {GetPropertyCall(pathSegmentProperty, "\"\"")}, {GetPropertyCall(rawUrlProperty, "false")})",
                         $"{RequestInfoVarName}.Method = {conventions.AbstractionsHash}.{codeElement.HttpMethod?.ToString().ToUpperInvariant()}");
             WriteReturnError(writer, returnType);
             if(requestBodyParam != null)
                 if(requestBodyParam.Type.Name.Equals("binary", StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({requestBodyParam.Name})");
                 else
-                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable(m.{conventions.HttpCorePropertyName}, \"{codeElement.ContentType}\", {requestBodyParam.Name})");
+                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable(m.{httpCoreProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {requestBodyParam.Name})");
             if(queryStringParam != null) {
                 var httpMethodPrefix = codeElement.HttpMethod.ToString().ToFirstCharacterUpperCase();
                 writer.WriteLine($"if {queryStringParam.Name} != nil {{");
@@ -360,6 +364,8 @@ namespace Kiota.Builder.Writers.Go {
             }
             writer.WriteLine($"return {RequestInfoVarName}, err");
         }
+        private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"m.{property.Name.ToFirstCharacterLowerCase()}";
+
         private static void WriteReturnError(LanguageWriter writer, params string[] returnTypes) {
             writer.WriteLine("if err != nil {");
             writer.IncreaseIndent();

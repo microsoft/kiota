@@ -234,6 +234,7 @@ namespace Kiota.Builder.Writers.Java {
             var currentPathProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.CurrentPath).FirstOrDefault();
             var pathSegmentProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.PathSegment).FirstOrDefault();
             var rawUrlProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.RawUrl).FirstOrDefault();
+            var httpCoreProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.HttpCore).FirstOrDefault();
             writer.WriteLine($"final RequestInformation {RequestInfoVarName} = new RequestInformation() {{{{");
             writer.IncreaseIndent();
             writer.WriteLines($"this.setUri({GetPropertyCall(currentPathProperty, "\"\"")}, {GetPropertyCall(pathSegmentProperty, "\"\"")}, {GetPropertyCall(rawUrlProperty, "false")});",
@@ -244,7 +245,7 @@ namespace Kiota.Builder.Writers.Java {
                 if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestBodyParam.Name});");
                 else
-                    writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable({conventions.HttpCorePropertyName}, \"{codeElement.ContentType}\", {requestBodyParam.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable({httpCoreProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {requestBodyParam.Name});");
             if(queryStringParam != null) {
                 var httpMethodPrefix = codeElement.HttpMethod.ToString().ToFirstCharacterUpperCase();
                 writer.WriteLine($"if ({queryStringParam.Name} != null) {{");

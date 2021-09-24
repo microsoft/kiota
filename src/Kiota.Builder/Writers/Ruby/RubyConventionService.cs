@@ -9,27 +9,26 @@ namespace Kiota.Builder.Writers.Ruby {
         private const string InternalVoidTypeName = "nil";
         public override string VoidTypeName => InternalVoidTypeName;
         public override string DocCommentPrefix => "## ";
-        public override string PathSegmentPropertyName => "path_segment";
-        public override string CurrentPathPropertyName => "current_path";
-        public override string HttpCorePropertyName => "http_core";
+        private const string PathSegmentPropertyName = "path_segment";
+        private const string CurrentPathPropertyName = "current_path";
+        private const string HttpCorePropertyName = "http_core";
         public override string ParseNodeInterfaceName => "parse_node";
-        public override string RawUrlPropertyName => "is_raw_url";
         internal string DocCommentStart = "## ";
         internal string DocCommentEnd = "## ";
         public override string GetAccessModifier(AccessModifier access)
         {
-            return (access) switch {
-                (AccessModifier.Public) => "public",
-                (AccessModifier.Protected) => "protected",
+            return access switch {
+                AccessModifier.Public => "public",
+                AccessModifier.Protected => "protected",
                 _ => "private",
             };
         }
-        public override string GetParameterSignature(CodeParameter parameter)
+        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
         {
             var defaultValue = parameter.Optional ? $"={(parameter.DefaultValue ?? "nil")}" : string.Empty;
             return $"{parameter.Name}{defaultValue}";
         }
-        public override string GetTypeString(CodeTypeBase code)
+        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
         {
             if (code is CodeType currentType) {
                 return $"{TranslateType(currentType)}";
@@ -38,7 +37,7 @@ namespace Kiota.Builder.Writers.Ruby {
         }
         public override string TranslateType(CodeType type)
         {
-            return (type.Name) switch {
+            return type.Name switch {
                 "integer" => "number",
                 "float" or "string" or "object" or "boolean" or "void" => type.Name, // little casing hack
                 _ => type.Name.ToFirstCharacterUpperCase() ?? "object",

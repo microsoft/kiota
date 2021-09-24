@@ -156,6 +156,7 @@ namespace Kiota.Builder.Writers.CSharp {
             var currentPathProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.CurrentPath).FirstOrDefault();
             var pathSegmentProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.PathSegment).FirstOrDefault();
             var rawUrlProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.RawUrl).FirstOrDefault();
+            var httpCoreProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.HttpCore).FirstOrDefault();
             writer.WriteLine($"var {RequestInfoVarName} = new RequestInformation {{");
             writer.IncreaseIndent();
             writer.WriteLine($"HttpMethod = HttpMethod.{operationName?.ToUpperInvariant()},");
@@ -166,7 +167,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({requestBodyParam.Name});");
                 else
-                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable({conventions.HttpCorePropertyName}, \"{codeElement.ContentType}\", {requestBodyParam.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable({httpCoreProperty.Name.ToFirstCharacterUpperCase()}, \"{codeElement.ContentType}\", {requestBodyParam.Name});");
             }
             if(queryStringParam != null) {
                 writer.WriteLine($"if ({queryStringParam.Name} != null) {{");

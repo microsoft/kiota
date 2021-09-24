@@ -11,29 +11,22 @@ namespace Kiota.Builder.Writers.Go {
 
         public override string DocCommentPrefix => string.Empty;
 
-        public override string PathSegmentPropertyName => "pathSegment";
-
-        public override string CurrentPathPropertyName => "currentPath";
-
-        public override string HttpCorePropertyName => "httpCore";
-
+        private const string PathSegmentPropertyName = "pathSegment";
+        private const string CurrentPathPropertyName = "currentPath";
+        private const string HttpCorePropertyName = "httpCore";
         public override string ParseNodeInterfaceName => "ParseNode";
-        public override string RawUrlPropertyName => "isRawUrl";
-
         public object AbstractionsHash => "ida96af0f171bb75f894a4013a6b3146a4397c58f11adb81a2b7cbea9314783a9";
         public override string GetAccessModifier(AccessModifier access)
         {
             throw new InvalidOperationException("go uses a naming convention for access modifiers");
         }
-        public override string GetParameterSignature(CodeParameter parameter) {
-            throw new InvalidOperationException("go needs import symbols, use the local override instead");
-        }
-        public string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
+        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
         {
             return $"{parameter.Name} {GetTypeString(parameter.Type, targetElement)}";
         }
-        public override string GetTypeString(CodeTypeBase code) => throw new InvalidOperationException("go needs import symbols, use the local override instead");
-        public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool addPointerSymbol = true, bool addCollectionSymbol = true)
+        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = false) =>
+            GetTypeString(code, targetElement, includeCollectionInformation: includeCollectionInformation);
+        public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool addPointerSymbol = true, bool includeCollectionInformation = true)
         {
             if(code is CodeUnionType) 
                 throw new InvalidOperationException($"Go does not support union types, the union type {code.Name} should have been filtered out by the refiner");
@@ -48,7 +41,7 @@ namespace Kiota.Builder.Writers.Go {
                                     !IsScalarType(currentType.Name) ? "*"
                                     : string.Empty;
                 var collectionPrefix = currentType.CollectionKind switch {
-                    (CodeType.CodeTypeCollectionKind.Array or CodeType.CodeTypeCollectionKind.Complex) when addCollectionSymbol => "[]",
+                    CodeType.CodeTypeCollectionKind.Array or CodeType.CodeTypeCollectionKind.Complex when includeCollectionInformation => "[]",
                     _ => string.Empty,
                 };
                 if (currentType.ActionOf)

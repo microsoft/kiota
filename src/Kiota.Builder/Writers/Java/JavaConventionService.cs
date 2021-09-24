@@ -12,10 +12,9 @@ namespace Kiota.Builder.Writers.Java {
         private const string InternalVoidTypeName = "Void";
         public override string VoidTypeName => InternalVoidTypeName;
         public override string DocCommentPrefix => " * ";
-        public override string PathSegmentPropertyName => "pathSegment";
-        public override string CurrentPathPropertyName => "currentPath";
-        public override string HttpCorePropertyName => "httpCore";
-        public override string RawUrlPropertyName => "isRawUrl";
+        private const string PathSegmentPropertyName = "pathSegment";
+        private const string CurrentPathPropertyName = "currentPath";
+        private const string HttpCorePropertyName = "httpCore";
         internal HashSet<string> PrimitiveTypes = new() {"String", "Boolean", "Integer", "Float", "Long", "Guid", "OffsetDateTime", InternalVoidTypeName, InternalStreamTypeName };
         public override string ParseNodeInterfaceName => "ParseNode";
         internal string DocCommentStart = "/**";
@@ -29,16 +28,14 @@ namespace Kiota.Builder.Writers.Java {
             };
         }
 
-        public override string GetParameterSignature(CodeParameter parameter) => throw new InvalidOperationException("Use the target element overload instead");
-        public string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
+        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
         {
             var nullKeyword = parameter.Optional ? "Nullable" : "Nonnull";
             var nullAnnotation = parameter.Type.IsNullable ? $"@javax.annotation.{nullKeyword} " : string.Empty;
             return $"{nullAnnotation}final {GetTypeString(parameter.Type, targetElement)} {parameter.Name}";
         }
 
-        public override string GetTypeString(CodeTypeBase code) => throw new InvalidOperationException("Use the target element overload instead");
-        public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
+        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
         {
             if(code is CodeUnionType) 
                 throw new InvalidOperationException($"Java does not support union types, the union type {code.Name} should have been filtered out by the refiner");

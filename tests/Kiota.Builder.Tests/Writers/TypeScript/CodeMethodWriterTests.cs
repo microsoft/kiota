@@ -41,6 +41,24 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             tw?.Dispose();
             GC.SuppressFinalize(this);
         }
+        private void AddRequestProperties() {
+            parentClass.AddProperty(new CodeProperty {
+                Name = "httpCore",
+                PropertyKind = CodePropertyKind.HttpCore,
+            });
+            parentClass.AddProperty(new CodeProperty {
+                Name = "isRawUrl",
+                PropertyKind = CodePropertyKind.RawUrl,
+            });
+            parentClass.AddProperty(new CodeProperty {
+                Name = "currentPath",
+                PropertyKind = CodePropertyKind.CurrentPath,
+            });
+            parentClass.AddProperty(new CodeProperty {
+                Name = "pathSegment",
+                PropertyKind = CodePropertyKind.PathSegment,
+            });
+        }
         private void AddSerializationProperties() {
             var addData = parentClass.AddProperty(new CodeProperty {
                 Name = "additionalData",
@@ -156,6 +174,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         public void WritesRequestGeneratorBody() {
             method.MethodKind = CodeMethodKind.RequestGenerator;
             method.HttpMethod = HttpMethod.Get;
+            AddRequestProperties();
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();

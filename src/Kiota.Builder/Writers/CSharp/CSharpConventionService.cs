@@ -9,14 +9,13 @@ namespace Kiota.Builder.Writers.CSharp {
         public override string StreamTypeName => "stream";
         public override string VoidTypeName => "void";
         public override string DocCommentPrefix => "/// ";
-        public override string PathSegmentPropertyName => "PathSegment";
-        public override string CurrentPathPropertyName => "CurrentPath";
-        public override string HttpCorePropertyName => "HttpCore";
+        private const string PathSegmentPropertyName = "PathSegment";
+        private const string CurrentPathPropertyName = "CurrentPath";
+        private const string HttpCorePropertyName = "HttpCore";
         public HashSet<string> NullableTypes { get; } = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "float", "double", "decimal", "long", "Guid", "DateTimeOffset" };
         public static readonly char NullableMarker = '?';
         public static string NullableMarkerAsString => "?";
         public override string ParseNodeInterfaceName => "IParseNode";
-        public override string RawUrlPropertyName => "IsRawUrl";
         public override void WriteShortDescription(string description, LanguageWriter writer) {
             if(!string.IsNullOrEmpty(description))
                 writer.WriteLine($"{DocCommentPrefix}<summary>{description}</summary>");
@@ -36,8 +35,6 @@ namespace Kiota.Builder.Writers.CSharp {
         internal bool ShouldTypeHaveNullableMarker(CodeTypeBase propType, string propTypeName) {
             return propType.IsNullable && (NullableTypes.Contains(propTypeName) || (propType is CodeType codeType && codeType.TypeDefinition is CodeEnum));
         }
-        public override string GetTypeString(CodeTypeBase code) => throw new InvalidOperationException("Use the overload with the target element parameter instead");
-
         private static HashSet<string> _reservedNames;
         private static readonly object _reservedNamesLock = new();
         private static HashSet<string> GetReservedNames(CodeElement currentElement) {
@@ -59,7 +56,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 foreach(var segment in GetNamespaceNameSegments(childNs))
                     yield return segment;
         }
-        public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
+        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
         {
             if(code is CodeUnionType)
                 throw new InvalidOperationException($"CSharp does not support union types, the union type {code.Name} should have been filtered out by the refiner");
@@ -104,8 +101,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 _ => false,
             };
         }
-        public override string GetParameterSignature(CodeParameter parameter) => throw new InvalidOperationException("Use the overload with the target element parameter instead");
-        public string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
+        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
         {
             var parameterType = GetTypeString(parameter.Type, targetElement);
             var defaultValue = parameter switch {

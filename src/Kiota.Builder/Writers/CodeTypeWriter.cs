@@ -8,14 +8,7 @@ namespace Kiota.Builder.Writers {
         public CodeTypeWriter(ILanguageConventionService conventionService) : base(conventionService){}
         public override void WriteCodeElement(CodeType codeElement, LanguageWriter writer)
         {
-            if(conventions is TypeScriptConventionService tsConventions)
-                writer.Write(tsConventions.GetTypeString(codeElement, codeElement), includeIndent: false);
-            else if (conventions is CSharpConventionService csConventions)
-                writer.Write(csConventions.GetTypeString(codeElement, codeElement), includeIndent: false);
-            else if (conventions is JavaConventionService javaConventions)
-                writer.Write(javaConventions.GetTypeString(codeElement, codeElement), includeIndent: false);
-            else
-                writer.Write(conventions.GetTypeString(codeElement), includeIndent: false);
+            writer.Write(conventions.GetTypeString(codeElement, codeElement), includeIndent: false);
         }
     }
 }
