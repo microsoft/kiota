@@ -183,7 +183,7 @@ namespace Kiota.Builder.Refiners {
                                     .ForEach(x => {
                                         x.Name = replacement.Invoke(x.Name);
                                     });
-            if(current is CodeNamespace currentNamespace &&
+            else if(current is CodeNamespace currentNamespace &&
                 (!codeElementExceptions?.Contains(typeof(CodeNamespace)) ?? true) &&
                 !string.IsNullOrEmpty(currentNamespace.Name)) {
                 var segments = currentNamespace.Name.Split('.');
@@ -193,6 +193,25 @@ namespace Kiota.Builder.Refiners {
                                                                     x)
                                                     .Aggregate((x, y) => $"{x}.{y}");
             }
+            else if(current is CodeMethod currentMethod &&
+                (!codeElementExceptions?.Contains(typeof(CodeMethod)) ?? true)) {
+                if(currentMethod.ReturnType is CodeType returnType &&
+                    !returnType.IsExternal &
+                    provider.ReservedNames.Contains(currentMethod.ReturnType.Name))
+                    returnType.Name = replacement.Invoke(returnType.Name);
+                currentMethod.Parameters.Where(x => x.Type is CodeType parameterType &&
+                                                    !parameterType.IsExternal &&
+                                                    provider.ReservedNames.Contains(parameterType.Name))
+                                                    .ToList()
+                                                    .ForEach(x => {
+                                                        x.Type.Name = replacement.Invoke(x.Type.Name);
+                                                    });
+            } else if (current is CodeProperty currentProperty &&
+                    (!codeElementExceptions?.Contains(typeof(CodeProperty)) ?? true) &&
+                    currentProperty.Type is CodeType propertyType &&
+                    !propertyType.IsExternal &&
+                    provider.ReservedNames.Contains(currentProperty.Type.Name))
+                    propertyType.Name = replacement.Invoke(propertyType.Name);
             // Check if the current name meets the following conditions to be replaced
             // 1. In the list of reserved names
             // 2. If it is a reserved name, make sure that the CodeElement type is worth replacing(not on the blacklist)

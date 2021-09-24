@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Kiota.Builder.Extensions;
 
@@ -20,7 +18,6 @@ namespace Kiota.Builder.Refiners {
             AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             PatchHeaderParametersType(generatedCode, "Map<String, String>");
-            AddListImport(generatedCode);
             AddParsableInheritanceForModelClasses(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
             AddEnumSetImport(generatedCode);
@@ -68,19 +65,6 @@ namespace Kiota.Builder.Refiners {
             }
             CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
         }
-        private static void AddListImport(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass &&
-                (currentClass.Properties.Any(x => x.Type?.CollectionKind == CodeType.CodeTypeCollectionKind.Complex) ||
-                    currentClass.Methods.Any(x => x.ReturnType?.CollectionKind == CodeType.CodeTypeCollectionKind.Complex) ||
-                    currentClass.Methods.Any(x => x.Parameters.Any(y => y.Type.CollectionKind == CodeType.CodeTypeCollectionKind.Complex)))) {
-                        var nUsing = new CodeUsing {
-                            Name = "List",
-                            Declaration = new CodeType { Name = "java.util", IsExternal = true },
-                        };
-                        currentClass.AddUsing(nUsing);
-                }
-            CrawlTree(currentElement, AddListImport);
-        }
         private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
             new ("HttpCore", "com.microsoft.kiota"),
             new ("HttpMethod", "com.microsoft.kiota"),
@@ -104,6 +88,9 @@ namespace Kiota.Builder.Refiners {
             new ("Map", "java.util"),
             new ("HashMap", "java.util"),
         };
+        private const string OriginalDateTimeOffsetType = "DateTimeOffset";
+        private const string JavaOffsetDateTimeType = "OffsetDateTime";
+        private const string JavaOffsetDateTimeTypePackage = "java.time";
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if(currentProperty.IsOfKind(CodePropertyKind.HttpCore)) {
                 currentProperty.Type.Name = "HttpCore";
@@ -111,12 +98,12 @@ namespace Kiota.Builder.Refiners {
             }
             else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
                 currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
-            else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase)) {
-                currentProperty.Type.Name = $"OffsetDateTime";
+            else if(OriginalDateTimeOffsetType.Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase)) {
+                currentProperty.Type.Name = JavaOffsetDateTimeType;
                 var nUsing = new CodeUsing {
-                    Name = "OffsetDateTime",
+                    Name = JavaOffsetDateTimeType,
                     Declaration = new CodeType {
-                        Name = "java.time",
+                        Name = JavaOffsetDateTimeTypePackage,
                         IsExternal = true,
                     },
                 };
@@ -153,6 +140,20 @@ namespace Kiota.Builder.Refiners {
             else if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore, CodeParameterKind.CurrentPath)).ToList().ForEach(x => x.Type.IsNullable = true);
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I" 
+            }
+            if (currentMethod.IsOfKind(CodeMethodKind.RequestBuilderWithParameters, CodeMethodKind.Constructor) &&
+                    currentMethod.Parameters.Any(x => OriginalDateTimeOffsetType.Equals(x.Type.Name, StringComparison.OrdinalIgnoreCase))) {
+                currentMethod.Parameters.Where(x => OriginalDateTimeOffsetType.Equals(x.Type.Name, StringComparison.OrdinalIgnoreCase))
+                                        .ToList()
+                                        .ForEach(x => x.Type.Name = JavaOffsetDateTimeType);
+                var nUsing = new CodeUsing {
+                    Name = JavaOffsetDateTimeType,
+                    Declaration = new CodeType {
+                        Name = JavaOffsetDateTimeTypePackage,
+                        IsExternal = true,
+                    },
+                };
+                (currentMethod.Parent as CodeClass).AddUsing(nUsing);
             }
         }
         private static void AddRequireNonNullImports(CodeElement currentElement) {

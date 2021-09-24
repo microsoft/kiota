@@ -134,23 +134,6 @@ namespace Kiota.Builder.Refiners.Tests {
         #endregion
         #region JavaLanguageRefinerTests
         [Fact]
-        public void AddsListImport() {
-            var model = root.AddClass(new CodeClass {
-                Name = "model",
-                ClassKind = CodeClassKind.Model
-            }).First();
-            model.AddProperty(new CodeProperty{
-                Name = "prop1",
-                Type = new CodeType {
-                    Name = "string",
-                    CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex,
-                    IsExternal = true,
-                }
-            });
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
-            Assert.NotEmpty((model.StartBlock as CodeClass.Declaration).Usings.Where(x => "List".Equals(x.Name)));
-        }
-        [Fact]
         public void AddsEnumSetImport() {
             var model = root.AddClass(new CodeClass {
                 Name = "model",

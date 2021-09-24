@@ -47,7 +47,7 @@ namespace Kiota.Builder.Writers.Java {
                 if(!currentType.IsExternal && IsSymbolDuplicated(typeName, targetElement))
                     typeName = $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
 
-                var collectionPrefix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex && includeCollectionInformation ? "List<" : string.Empty;
+                var collectionPrefix = currentType.CollectionKind == CodeType.CodeTypeCollectionKind.Complex && includeCollectionInformation ? "java.util.List<" : string.Empty;
                 var collectionSuffix = currentType.CollectionKind switch {
                     CodeType.CodeTypeCollectionKind.Complex when includeCollectionInformation => ">",
                     CodeType.CodeTypeCollectionKind.Array when includeCollectionInformation => "[]",
