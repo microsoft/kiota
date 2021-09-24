@@ -173,7 +173,7 @@ namespace Kiota.Builder.Refiners {
                 });
             CrawlTree(current, x => AddConstructorsForDefaultValues(x, addIfInherited));
         }
-        protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement) {
+        protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement, HashSet<Type> codeElementExceptions = null) {
             if(current is CodeClass currentClass && currentClass.StartBlock is CodeClass.Declaration currentDeclaration)
                 currentDeclaration.Usings
                                     .Select(x => x.Declaration)
@@ -183,10 +183,14 @@ namespace Kiota.Builder.Refiners {
                                     .ForEach(x => {
                                         x.Name = replacement.Invoke(x.Name);
                                     });
-            if(provider.ReservedNames.Contains(current.Name))
+
+            // Check if the current name meets the following conditions to be replaced
+            // 1. In the list of reserved names
+            // 2. If it is a reserved name, make sure that the CodeElement type is worth replacing(not on the blacklist)
+            if (provider.ReservedNames.Contains(current.Name) && (!codeElementExceptions?.Contains(current.GetType()) ?? true))
                 current.Name = replacement.Invoke(current.Name);
 
-            CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement));
+            CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions));
         }
         protected static void AddDefaultImports(CodeElement current, Tuple<string, string>[] defaultNamespaces, Tuple<string, string>[] defaultNamespacesForModels, Tuple<string, string>[] defaultNamespacesForRequestBuilders) {
             if(current is CodeClass currentClass) {
