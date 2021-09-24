@@ -113,7 +113,7 @@ namespace Kiota.Builder.Writers.Go {
             throw new NotImplementedException();
         }
 
-        internal static void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default)
+        internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default)
         {
             var currentPath = addCurrentPath ? $"m.{CurrentPathPropertyName} + " : string.Empty;
             var splatImport = returnType.Split('.');

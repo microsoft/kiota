@@ -22,7 +22,7 @@ namespace Kiota.Builder.Writers.TypeScript {
         public override string ParseNodeInterfaceName => "ParseNode";
         internal string DocCommentStart = "/**";
         internal string DocCommentEnd = " */";
-        internal static void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default, string additionalPathParameters = default) {
+        internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default, string additionalPathParameters = default) {
             var currentPath = addCurrentPath ? $"this.{CurrentPathPropertyName} + " : string.Empty;
             writer.WriteLines($"return new {returnType}({currentPath}this.{PathSegmentPropertyName}{suffix}, this.{HttpCorePropertyName}{additionalPathParameters}, false);");
         }
