@@ -1,4 +1,4 @@
-import { MiddlewareContext } from "../middlewareContext";
+import { MiddlewareContext } from "./middlewareContext";
 
 /** Defines the contract for a middleware in the request execution pipeline. */
 export interface Middleware {

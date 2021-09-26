@@ -1,11 +1,11 @@
 import { Middleware } from "./middlewares/middleware";
-import { MiddlewareContext } from "./middlewareContext";
+import { MiddlewareContext } from "./middlewares/middlewareContext";
 import { FetchHandler } from "./middlewares/fetchHandler";
 import { MiddlewareFactory } from "./middlewares/middlewareFactory";
 
 /** Default fetch client with options and a middleware pipleline for requests execution. */
 export class HttpClient {
-    private middleware: Middleware
+    private middleware: Middleware;
     /**
      * Instantiates a new HttpClient.
      * @param middlewares middlewares to be used for requests execution.

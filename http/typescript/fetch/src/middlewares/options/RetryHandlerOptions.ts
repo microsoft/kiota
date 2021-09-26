@@ -9,7 +9,7 @@
  * @module RetryHandlerOptions
  */
 
-import { FetchOptions } from "@microsoft/kiota-abstractions";
+import { FetchOptions } from "../../fetchInit";
 import { MiddlewareOption } from "./middlewareOption";
 
 /**

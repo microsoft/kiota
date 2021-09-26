@@ -10,7 +10,7 @@
  */
 
 import { HttpMethod } from "@microsoft/kiota-abstractions";
-import { MiddlewareContext } from "../middlewareContext";
+import { MiddlewareContext } from "./middlewareContext";
 import { Middleware } from "./middleware";
 import { cloneRequestWithNewUrl } from "./middlewareUtil";
 import { RedirectHandlerOptions } from "./options/redirectHandlerOption";
@@ -160,8 +160,8 @@ export class RedirectHandler implements Middleware {
      */
     private getOptions(context: MiddlewareContext): RedirectHandlerOptions {
         let options: RedirectHandlerOptions;
-        if (context.middlewareOptions) {
-            options = context.middlewareOptions as RedirectHandlerOptions;
+        if (context.middlewareControl) {
+            options = context.middlewareControl.getMiddlewareOptions(RedirectHandlerOptions) as RedirectHandlerOptions;
         }
         if (typeof options === "undefined") {
             options = Object.assign(new RedirectHandlerOptions(), this.options);

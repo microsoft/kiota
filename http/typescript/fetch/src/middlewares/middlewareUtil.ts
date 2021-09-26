@@ -9,7 +9,7 @@
  * @module MiddlewareUtil
  */
 
-import { FetchOptions } from "@microsoft/kiota-abstractions";
+import { FetchOptions } from "../fetchInit";
 
 /**
  * @constant

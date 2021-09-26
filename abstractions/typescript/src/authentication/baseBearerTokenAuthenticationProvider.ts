@@ -14,7 +14,7 @@ export abstract class BaseBearerTokenAuthenticationProvider implements Authentic
                 throw new Error('Could not get an authorization token');
             }
             if(!request.headers) {
-                request.headers = new Map<string, string>();
+                //request.headers = new Map<string, string>();
             }
             request.headers?.set(BaseBearerTokenAuthenticationProvider.authorizationHeaderKey, `Bearer ${token}`);
         }

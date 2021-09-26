@@ -9,11 +9,13 @@
  * @module RetryHandler
  */
 
-import { MiddlewareContext } from "../middlewareContext";
-import { FetchOptions, HttpMethod } from "@microsoft/kiota-abstractions";
+import { MiddlewareContext } from "./middlewareContext";
+import { HttpMethod } from "@microsoft/kiota-abstractions";
+import { FetchOptions } from "../fetchInit";
 import { Middleware } from "./middleware";
 import { getRequestHeader, setRequestHeader } from "./middlewareUtil";
 import { RetryHandlerOptions } from "./options/retryHandlerOptions";
+import { MiddlewareControl } from "./MiddlewareControl";
 
 /**
  * @class
@@ -151,8 +153,8 @@ export class RetryHandler implements Middleware {
 
 	private getOptions(context: MiddlewareContext): RetryHandlerOptions {
 		let options: RetryHandlerOptions;
-		if (context.middlewareOptions) {
-			options = context.middlewareOptions as RetryHandlerOptions;
+		if (context.middlewareControl instanceof MiddlewareControl) {
+			options = context.middlewareControl.getMiddlewareOptions(RetryHandlerOptions) as RetryHandlerOptions;
 		}
 		if (typeof options === "undefined") {
 			options = Object.assign(new RetryHandlerOptions(), this.options);

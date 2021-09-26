@@ -10,7 +10,7 @@
  */
 
 import fetch from "cross-fetch";
-import { MiddlewareContext } from "../middlewareContext";
+import { MiddlewareContext } from "./middlewareContext";
 import { Middleware } from "./middleware";
 
 /**

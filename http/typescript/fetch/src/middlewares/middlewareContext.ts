@@ -1,5 +1,5 @@
-import { MiddlewareOption } from "@microsoft/kiota-abstractions";
-import { FetchOptions } from "../fetchOptions";
+import { FetchOptions } from "../fetchInit";
+import { MiddlewareControl } from "./MiddlewareControl";
 
 /**
  * @interface
@@ -12,8 +12,8 @@ import { FetchOptions } from "../fetchOptions";
  */
 
 export interface MiddlewareContext {
-    request?:RequestInfo,
+    request:RequestInfo,
     response?: Response,
     options?:FetchOptions,
-    middlewareOptions?: MiddlewareOption
+    middlewareControl?: MiddlewareControl
 }
