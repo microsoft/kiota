@@ -5,19 +5,19 @@ use Psr\Http\Message\StreamInterface;
 
 class RequestInformation {
 
-    /** @var string|null */
+    /** @var string|null The URI of the request. */
     public ?string $uri;
 
-    /** @var HttpMethod|null */
-    public ?HttpMethod $httpMethod;
+    /** @var string|null The HTTP method for the request */
+    public ?string $httpMethod;
 
-    /** @var StreamInterface $content */
+    /** @var StreamInterface $content The Request Body. */
     public StreamInterface $content;
 
-    /** @var array $headers */
+    /** @var array $headers  The Request Headers. */
     public array $headers = [];
 
-    /** @var array $queryParams */
+    /** @var array $queryParams The Query Parameters of the request. */
     public array $queryParams = [];
 
     /** @var string $binaryContentType */
@@ -26,7 +26,7 @@ class RequestInformation {
     /** @var string $contentTypeHeader */
     private static string $contentTypeHeader = "Content-Type";
 
-    /** @var array<string, mixed> */
+    /** @var array<string, mixed> Middleware options to apply to this request. */
     private array $_middlewareOptions = [];
 
     /**
@@ -77,9 +77,10 @@ class RequestInformation {
     }
 
     /**
-     * @param string|null $currentPath
-     * @param string|null $pathSegment
-     * @param bool $isRawUri
+     * Sets the URI of the request.
+     * @param string|null $currentPath the current path (scheme, host, port, path, query parameters) of the request.
+     * @param string|null $pathSegment the segment to append to the current path.
+     * @param bool $isRawUri whether the path segment is a raw url. When true, the segment is not happened and the current path is parsed for query parameters.
      */
     public function setUri(?string $currentPath, ?string $pathSegment, bool $isRawUri): void {
         if ($isRawUri) {

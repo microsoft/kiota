@@ -17,6 +17,7 @@ class ApiClientBuilder {
      * @param SerializationWriterFactory $factoryClass the class of the factory to be registered.
      */
     public static function registerDefaultSerializer(SerializationWriterFactory $factoryClass): void {
+        /** @var SerializationWriterFactory $factory */
         $factory =  new (get_class($factoryClass))();
         SerializationWriterFactoryRegistry::getDefaultInstance()
             ->contentTypeAssociatedFactories[$factory->getValidContentType()] = $factory;
@@ -24,10 +25,20 @@ class ApiClientBuilder {
 
     /**
      * Registers the default deserializer to the registry.
-     * @param ParseNodeFactory $factoryClass the class of the factory to be registered.
+     * @param SerializationWriterFactory $factoryClass the class of the factory to be registered.
      */
-    public static function registerDefaultDeserializer(ParseNodeFactory $factoryClass): void {
-
+    public static function registerDefaultDeserializer(SerializationWriterFactory $factoryClass): void {
+        // TODO: Find the best way of doing this.
+        try {
+            /**
+             * @var SerializationWriterFactory $factory
+             */
+            $factory = new (get_class($factoryClass))();
+            SerializationWriterFactoryRegistry::getDefaultInstance()
+                ->contentTypeAssociatedFactories[$factory->getValidContentType()] = $factory;
+        } catch (\Exception $exception) {
+            throw new \RuntimeException($exception);
+        }
     }
 
     /**
