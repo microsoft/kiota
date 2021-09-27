@@ -4,9 +4,9 @@ using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Php
 {
-    public class PhpConventionService: ILanguageConventionService
+    public class PhpConventionService: CommonLanguageConventionService
     {
-        public string GetAccessModifier(AccessModifier access)
+        public override string GetAccessModifier(AccessModifier access)
         {
             return (access) switch
             {
@@ -16,26 +16,35 @@ namespace Kiota.Builder.Writers.Php
             };
         }
 
-        public string StreamTypeName => "StreamInterface";
+        public override string StreamTypeName => "StreamInterface";
 
-        public string VoidTypeName => "void";
+        public override string VoidTypeName => "void";
 
-        public string DocCommentPrefix => " * ";
+        public override string DocCommentPrefix => " * ";
 
-        public string PathSegmentPropertyName => "$pathSegment";
+        public override string PathSegmentPropertyName => "$pathSegment";
 
-        public string CurrentPathPropertyName => "$currentPath";
+        public override string CurrentPathPropertyName => "$currentPath";
 
-        public string HttpCorePropertyName => "$httpCore";
+        public override string HttpCorePropertyName => "$httpCore";
+        public override string RawUrlPropertyName
+        {
+            get;
+        }
 
-        public string ParseNodeInterfaceName => "ParseNode";
+        public override string ParseNodeInterfaceName => "ParseNode";
 
         public string DocCommentStart = "/**";
         public string DocCommentEnd = "*/";
 
-        public string GetTypeString(CodeTypeBase code)
+        public override string GetTypeString(CodeTypeBase code)
         {
             return TranslateType(code.Name);
+        }
+
+        public override string TranslateType(CodeType type)
+        {
+            throw new NotImplementedException();
         }
 
         public string TranslateType(string typeName)
@@ -50,7 +59,7 @@ namespace Kiota.Builder.Writers.Php
             };
         }
 
-        public string GetParameterSignature(CodeParameter parameter)
+        public override string GetParameterSignature(CodeParameter parameter)
         {
             
             var typeString = GetTypeString(parameter.Type);
@@ -87,7 +96,7 @@ namespace Kiota.Builder.Writers.Php
         }
 
         private static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
-        public void WriteShortDescription(string description, LanguageWriter writer)
+        public override void WriteShortDescription(string description, LanguageWriter writer)
         {
             
             if (!String.IsNullOrEmpty(description))
