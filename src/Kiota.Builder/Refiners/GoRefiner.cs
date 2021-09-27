@@ -23,6 +23,9 @@ namespace Kiota.Builder.Refiners {
                 generatedCode,
                 _configuration.UsesBackingStore
             );
+            MoveAllModelsToTopLevel(
+                generatedCode
+            );
             ReplaceReservedNames(
                 generatedCode,
                 new GoReservedNamesProvider(),
@@ -69,6 +72,47 @@ namespace Kiota.Builder.Refiners {
                 generatedCode,
                 new string[] {"github.com/microsoft/kiota/abstractions/go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota/abstractions/go.RegisterDefaultSerializer"},
                 new string[] {"github.com/microsoft/kiota/abstractions/go/serialization.ParseNodeFactory", "github.com/microsoft/kiota/abstractions/go.RegisterDefaultDeserializer"});
+        }
+        private static void MoveAllModelsToTopLevel(CodeElement currentElement, CodeNamespace targetNamespace = null) {
+            if(currentElement is CodeNamespace currentNamespace) {
+                if(targetNamespace == null) {
+                    var rootModels = FindRootModelsNamespace(currentNamespace);
+                    targetNamespace = FindFirstModelSubnamepaceWithClasses(rootModels);
+                }
+                if(currentNamespace != targetNamespace &&
+                    !string.IsNullOrEmpty(currentNamespace.Name) &&
+                    currentNamespace.Name.Contains(targetNamespace.Name, StringComparison.OrdinalIgnoreCase)) {
+                    foreach (var codeClass in currentNamespace.Classes)
+                    {
+                        currentNamespace.RemoveChildElement(codeClass);
+                        targetNamespace.AddClass(codeClass);
+                    }
+                }
+                CrawlTree(currentElement, x => MoveAllModelsToTopLevel(x, targetNamespace));
+            }
+        }
+        private static CodeNamespace FindFirstModelSubnamepaceWithClasses(CodeNamespace currentNamespace) {
+            if(currentNamespace.Classes.Any()) return currentNamespace;
+            else
+                foreach (var subNS in currentNamespace.Namespaces)
+                {
+                    var result = FindFirstModelSubnamepaceWithClasses(subNS);
+                    if (result != null) return result;
+                }
+            return null;
+        }
+        private static CodeNamespace FindRootModelsNamespace(CodeNamespace currentNamespace) {
+            if(!string.IsNullOrEmpty(currentNamespace.Name) &&
+                currentNamespace.Name.EndsWith("Models", StringComparison.OrdinalIgnoreCase))
+                return currentNamespace;
+            else
+                foreach(var subNS in currentNamespace.Namespaces)
+                {
+                    var result = FindRootModelsNamespace(subNS);
+                    if(result != null)
+                        return result;
+                }
+            return null;
         }
         private static void ReplaceRequestBuilderPropertiesByMethods(CodeElement currentElement) {
             if(currentElement is CodeProperty currentProperty &&

@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes an issue where duplicated symbols for different imports would make java compilation fail #573
 - Adds missing type mappings in java #573
 - Fixes an issue where Go generation could use reserved keywords #573
+- Fixes a bug where Go generation could end up with circular dependencies in models #573
 
 ## [0.0.8] - 2021-08-25
 
