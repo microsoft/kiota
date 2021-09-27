@@ -1,0 +1,31 @@
+{
+    "build": { "dockerfile": "Dockerfile" },
+    "extensions": [
+		"formulahendry.dotnet-test-explorer",
+		"ms-dotnettools.csharp",
+		"editorconfig.editorconfig",
+		"cschleiden.vscode-github-actions",
+		"davidanson.vscode-markdownlint",
+		"esbenp.prettier-vscode",
+		"ms-python.python",
+		"shengchen.vscode-checkstyle",
+		"dbaeumer.vscode-eslint",
+		"vscjava.vscode-java-pack",
+		"github.copilot",
+		"vector-of-bool.gitflow",
+		"waderyan.gitblame",
+		"donjayamanne.githistory",
+		"eamodio.gitlens",
+		"codezombiech.gitignore",
+		"golang.go",
+		"vscjava.vscode-gradle",
+		"kosunix.guid",
+		"wix.vscode-import-cost",
+		"ms-vsliveshare.vsliveshare",
+		"eg2.vscode-npm-script",
+		"fknop.vscode-npm",
+		"ms-vscode.powershell",
+		"rebornix.ruby",
+		"visualstudioexptteam.vscodeintellicode"
+	]
+}
