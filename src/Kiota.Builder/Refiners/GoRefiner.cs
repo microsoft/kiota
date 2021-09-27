@@ -19,6 +19,14 @@ namespace Kiota.Builder.Refiners {
             ReplaceRequestBuilderPropertiesByMethods(
                 generatedCode
             );
+            ConvertUnionTypesToWrapper(
+                generatedCode,
+                _configuration.UsesBackingStore
+            );
+            ReplaceReservedNames(
+                generatedCode,
+                new GoReservedNamesProvider(),
+                x => $"{x}_escpaped");
             AddPropertiesAndMethodTypesImports(
                 generatedCode,
                 true,
