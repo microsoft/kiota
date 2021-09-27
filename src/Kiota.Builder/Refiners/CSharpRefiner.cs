@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
 
@@ -18,7 +19,8 @@ namespace Kiota.Builder.Refiners {
             CapitalizeNamespacesFirstLetters(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");
             MakeEnumPropertiesNullable(generatedCode);
-            ReplaceReservedNames(generatedCode, new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}");
+            // Exclude code classes, declarations and properties as they will be capitalized making the change unnecessary in this case sensitive language
+            ReplaceReservedNames(generatedCode, new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}", new HashSet<Type>{ typeof(CodeClass), typeof(CodeClass.Declaration), typeof(CodeProperty) }); 
             DisambiguatePropertiesWithClassNames(generatedCode);
             AddConstructorsForDefaultValues(generatedCode, false);
             AddSerializationModulesImport(generatedCode);
@@ -31,7 +33,7 @@ namespace Kiota.Builder.Refiners {
                                                 .FirstOrDefault(x => x.Name.Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase));
                 if(sameNameProperty != null) {
                     currentClass.RemoveChildElement(sameNameProperty);
-                    sameNameProperty.SerializationName = sameNameProperty.SerializationName ?? sameNameProperty.Name;
+                    sameNameProperty.SerializationName ??= sameNameProperty.Name;
                     sameNameProperty.Name = $"{sameNameProperty.Name}_prop";
                     currentClass.AddProperty(sameNameProperty);
                 }

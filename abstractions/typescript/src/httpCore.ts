@@ -1,4 +1,4 @@
-import { RequestInfo } from "./requestInfo";
+import { RequestInformation } from "./requestInformation";
 import { ResponseHandler } from "./responseHandler";
 import { Parsable, SerializationWriterFactory } from "./serialization";
 import { BackingStoreFactory } from "./store";
@@ -11,39 +11,39 @@ export interface HttpCore {
      */
     getSerializationWriterFactory(): SerializationWriterFactory;
     /**
-     * Excutes the HTTP request specified by the given RequestInfo and returns the deserialized response model.
+     * Excutes the HTTP request specified by the given RequestInformation and returns the deserialized response model.
      * @param requestInfo the request info to execute.
      * @param responseHandler The response handler to use for the HTTP request instead of the default handler.
      * @param type the class of the response model to deserialize the response into.
      * @typeParam ModelType the type of the response model to deserialize the response into.
      * @return a {@link Promise} with the deserialized response model.
      */
-    sendAsync<ModelType extends Parsable>(requestInfo: RequestInfo, type: new() => ModelType, responseHandler: ResponseHandler | undefined): Promise<ModelType>;
+    sendAsync<ModelType extends Parsable>(requestInfo: RequestInformation, type: new() => ModelType, responseHandler: ResponseHandler | undefined): Promise<ModelType>;
     /**
-     * Excutes the HTTP request specified by the given RequestInfo and returns the deserialized response model collection.
+     * Excutes the HTTP request specified by the given RequestInformation and returns the deserialized response model collection.
      * @param requestInfo the request info to execute.
      * @param responseHandler The response handler to use for the HTTP request instead of the default handler.
      * @param type the class of the response model to deserialize the response into.
      * @typeParam ModelType the type of the response model to deserialize the response into.
      * @return a {@link Promise} with the deserialized response model collection.
      */
-    sendCollectionAsync<ModelType extends Parsable>(requestInfo: RequestInfo, type: new() => ModelType, responseHandler: ResponseHandler | undefined): Promise<ModelType[]>;
+    sendCollectionAsync<ModelType extends Parsable>(requestInfo: RequestInformation, type: new() => ModelType, responseHandler: ResponseHandler | undefined): Promise<ModelType[]>;
     /**
-     * Excutes the HTTP request specified by the given RequestInfo and returns the deserialized primitive response model.
+     * Excutes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model.
      * @param requestInfo the request info to execute.
      * @param responseHandler The response handler to use for the HTTP request instead of the default handler.
      * @param responseType the class of the response model to deserialize the response into.
      * @typeParam responseType the type of the response model to deserialize the response into.
      * @return a {@link Promise} with the deserialized primitive response model.
      */
-    sendPrimitiveAsync<ResponseType>(requestInfo: RequestInfo, responseType: "string" | "number" | "boolean" | "Date" | "ReadableStream", responseHandler: ResponseHandler | undefined): Promise<ResponseType>;
+    sendPrimitiveAsync<ResponseType>(requestInfo: RequestInformation, responseType: "string" | "number" | "boolean" | "Date" | "ReadableStream", responseHandler: ResponseHandler | undefined): Promise<ResponseType>;
     /**
-     * Excutes the HTTP request specified by the given RequestInfo and returns the deserialized primitive response model.
+     * Excutes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model.
      * @param requestInfo the request info to execute.
      * @param responseHandler The response handler to use for the HTTP request instead of the default handler.
      * @return a {@link Promise} of void.
      */
-    sendNoResponseContentAsync(requestInfo: RequestInfo, responseHandler: ResponseHandler | undefined): Promise<void>;
+    sendNoResponseContentAsync(requestInfo: RequestInformation, responseHandler: ResponseHandler | undefined): Promise<void>;
     /**
      * Enables the backing store proxies for the SerializationWriters and ParseNodes in use.
      * @param backingStoreFactory the backing store factory to use.

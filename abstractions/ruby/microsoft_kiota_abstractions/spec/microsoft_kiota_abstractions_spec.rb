@@ -6,7 +6,22 @@ RSpec.describe MicrosoftKiotaAbstractions do
   end
 
   it "tests library method" do
-    request_obj = MicrosoftKiotaAbstractions::RequestInfo.new
+    request_obj = MicrosoftKiotaAbstractions::RequestInformation.new
     expect(!request_obj).to eq(false)
+  end
+
+  it "creates a anonymous token provider" do
+    token_provider = MicrosoftKiotaAbstractions::AnonymousAuthenticationProvider.new()
+    expect(token_provider).not_to be nil
+  end
+
+  it "creates a bearer token provider" do
+    token_provider = MicrosoftKiotaAbstractions::BaseBearerTokenAuthenticationProvider.new()
+    expect(token_provider).not_to be nil
+  end
+
+  it "throws if the token method is not implemented" do
+    token_provider = MicrosoftKiotaAbstractions::BaseBearerTokenAuthenticationProvider.new()
+    expect { token_provider.authenticate_request(MicrosoftKiotaAbstractions::RequestInformation.new()) }.to raise_error(NotImplementedError)
   end
 end

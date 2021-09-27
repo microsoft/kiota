@@ -5,15 +5,15 @@ using Xunit;
 namespace Kiota.Builder.Writers.TypeScript.Tests {
     public class CodeClassDeclarationWriterTests : IDisposable
     {
-        private const string defaultPath = "./";
-        private const string defaultName = "name";
+        private const string DefaultPath = "./";
+        private const string DefaultName = "name";
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeClassDeclarationWriter codeElementWriter;
         private readonly CodeClass parentClass;
 
         public CodeClassDeclarationWriterTests() {
-            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, defaultPath, defaultName);
+            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
             codeElementWriter = new CodeClassDeclarationWriter(new TypeScriptConventionService(writer));
             tw = new StringWriter();
             writer.SetTextWriter(tw);
@@ -25,6 +25,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         }
         public void Dispose() {
             tw?.Dispose();
+            GC.SuppressFinalize(this);
         }
         [Fact]
         public void WritesSimpleDeclaration() {

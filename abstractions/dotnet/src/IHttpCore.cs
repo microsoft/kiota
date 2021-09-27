@@ -1,13 +1,19 @@
+﻿// ------------------------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
+// ------------------------------------------------------------------------------
+
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Kiota.Abstractions.Serialization;
 using Microsoft.Kiota.Abstractions.Store;
 
-namespace Microsoft.Kiota.Abstractions {
+namespace Microsoft.Kiota.Abstractions
+{
     /// <summary>
     ///   Service responsible for translating abstract Request Info into concrete native HTTP requests.
     /// </summary>
-    public interface IHttpCore {
+    public interface IHttpCore
+    {
         /// <summary>
         ///  Enables the backing store proxies for the SerializationWriters and ParseNodes in use.
         /// </summary>
@@ -18,32 +24,32 @@ namespace Microsoft.Kiota.Abstractions {
         /// </summary>
         ISerializationWriterFactory SerializationWriterFactory { get; }
         /// <summary>
-        /// Excutes the HTTP request specified by the given RequestInfo and returns the deserialized response model.
+        /// Executes the HTTP request specified by the given RequestInformation and returns the deserialized response model.
         /// </summary>
-        /// <param name="requestInfo">The RequestInfo object to use for the HTTP request.</param>
+        /// <param name="requestInfo">The RequestInformation object to use for the HTTP request.</param>
         /// <param name="responseHandler">The response handler to use for the HTTP request instead of the default handler.</param>
         /// <returns>The deserialized response model.</returns>
-        Task<ModelType> SendAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = default) where ModelType : IParsable;
+        Task<ModelType> SendAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default) where ModelType : IParsable;
         /// <summary>
-        /// Excutes the HTTP request specified by the given RequestInfo and returns the deserialized response model collection.
+        /// Executes the HTTP request specified by the given RequestInformation and returns the deserialized response model collection.
         /// </summary>
-        /// <param name="requestInfo">The RequestInfo object to use for the HTTP request.</param>
+        /// <param name="requestInfo">The RequestInformation object to use for the HTTP request.</param>
         /// <param name="responseHandler">The response handler to use for the HTTP request instead of the default handler.</param>
         /// <returns>The deserialized response model collection.</returns>
-        Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = default) where ModelType : IParsable;
+        Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default) where ModelType : IParsable;
         /// <summary>
-        /// Excutes the HTTP request specified by the given RequestInfo and returns the deserialized primitive response model.
+        /// Executes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model.
         /// </summary>
-        /// <param name="requestInfo">The RequestInfo object to use for the HTTP request.</param>
+        /// <param name="requestInfo">The RequestInformation object to use for the HTTP request.</param>
         /// <param name="responseHandler">The response handler to use for the HTTP request instead of the default handler.</param>
         /// <returns>The deserialized primitive response model.</returns>
-        Task<ModelType> SendPrimitiveAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = default);
+        Task<ModelType> SendPrimitiveAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default);
         /// <summary>
-        /// Excutes the HTTP request specified by the given RequestInfo with no return content.
+        /// Executes the HTTP request specified by the given RequestInformation with no return content.
         /// </summary>
-        /// <param name="requestInfo">The RequestInfo object to use for the HTTP request.</param>
+        /// <param name="requestInfo">The RequestInformation object to use for the HTTP request.</param>
         /// <param name="responseHandler">The response handler to use for the HTTP request instead of the default handler.</param>
         /// <returns>A Task to await completion.</returns>
-        Task SendNoContentAsync(RequestInfo requestInfo, IResponseHandler responseHandler = default);
+        Task SendNoContentAsync(RequestInformation requestInfo, IResponseHandler responseHandler = default);
     }
 }

@@ -66,7 +66,7 @@ namespace Kiota.Builder
                     // indexer retrofited to method in the parent request builder on the path and conflicting with the collection request builder propeerty
                     returnedValue = innerChildElements.GetOrAdd($"{element.Name}-indexerbackcompat", element);
                     added = true;
-                } else if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
+                } else if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator, CodeMethodKind.Constructor)) {
                     // allows for methods overload
                     var methodOverloadNameSuffix = currentMethod.Parameters.Any() ? currentMethod.Parameters.Select(x => x.Name).OrderBy(x => x).Aggregate((x, y) => x + y) : "1";
                     returnedValue = innerChildElements.GetOrAdd($"{element.Name}-{methodOverloadNameSuffix}", element);
@@ -98,7 +98,7 @@ namespace Kiota.Builder
                 throw new ArgumentNullException(nameof(childName));
             
             if(!InnerChildElements.Any())
-                return default(T);
+                return default;
 
             if(InnerChildElements.TryGetValue(childName, out var result) && result is T)
                 return (T)(object)result;
@@ -108,7 +108,7 @@ namespace Kiota.Builder
                     if(childResult != null)
                         return childResult;
                 }
-            return default(T);
+            return default;
         }
         public class BlockDeclaration : CodeTerminal
         {

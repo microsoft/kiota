@@ -7,20 +7,20 @@ using Xunit;
 
 namespace Kiota.Builder.Writers.CSharp.Tests {
     public class CodeMethodWriterTests : IDisposable {
-        private const string defaultPath = "./";
-        private const string defaultName = "name";
+        private const string DefaultPath = "./";
+        private const string DefaultName = "name";
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeMethod method;
         private readonly CodeClass parentClass;
-        private const string methodName = "methodName";
-        private const string returnTypeName = "Somecustomtype";
-        private const string methodDescription = "some description";
-        private const string paramDescription = "some parameter description";
-        private const string paramName = "paramName";
+        private const string MethodName = "methodName";
+        private const string ReturnTypeName = "Somecustomtype";
+        private const string MethodDescription = "some description";
+        private const string ParamDescription = "some parameter description";
+        private const string ParamName = "paramName";
         public CodeMethodWriterTests()
         {
-            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, defaultPath, defaultName);
+            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
@@ -29,16 +29,17 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             };
             root.AddClass(parentClass);
             method = new CodeMethod(parentClass) {
-                Name = methodName,
+                Name = MethodName,
             };
             method.ReturnType = new CodeType(method) {
-                Name = returnTypeName
+                Name = ReturnTypeName
             };
             parentClass.AddMethod(method);
         }
         public void Dispose()
         {
             tw?.Dispose();
+            GC.SuppressFinalize(this);
         }
         private void AddSerializationProperties() {
             var addData = parentClass.AddProperty(new CodeProperty(parentClass) {
@@ -137,7 +138,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             var result = tw.ToString();
             Assert.Contains("var requestInfo", result);
             Assert.Contains("SendAsync", result);
-            Assert.Contains(asyncKeyword, result);
+            Assert.Contains(AsyncKeyword, result);
             Assert.Contains("await", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
@@ -159,8 +160,9 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("var requestInfo = new RequestInfo", result);
+            Assert.Contains("var requestInfo = new RequestInformation", result);
             Assert.Contains("HttpMethod = HttpMethod.GET", result);
+            Assert.Contains("requestInfo.SetURI", result);
             Assert.Contains("h?.Invoke", result);
             Assert.Contains("AddQueryParameters", result);
             Assert.Contains("SetContentFromParsable", result);
@@ -203,8 +205,8 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         [Fact]
         public void WritesSerializerBody() {
             var parameter = new CodeParameter(method){
-                Description = paramDescription,
-                Name = paramName
+                Description = ParamDescription,
+                Name = ParamName
             };
             parameter.Type = new CodeType(parameter) {
                 Name = "string"
@@ -224,10 +226,10 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         [Fact]
         public void WritesMethodAsyncDescription() {
             
-            method.Description = methodDescription;
+            method.Description = MethodDescription;
             var parameter = new CodeParameter(method){
-                Description = paramDescription,
-                Name = paramName
+                Description = ParamDescription,
+                Name = ParamName
             };
             parameter.Type = new CodeType(parameter) {
                 Name = "string"
@@ -236,22 +238,22 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("/// <summary>", result);
-            Assert.Contains(methodDescription, result);
+            Assert.Contains(MethodDescription, result);
             Assert.Contains("<param name=", result);
             Assert.Contains("</param>", result);
-            Assert.Contains(paramName, result);
-            Assert.Contains(paramDescription, result); 
+            Assert.Contains(ParamName, result);
+            Assert.Contains(ParamDescription, result); 
             Assert.Contains("</summary>", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesMethodSyncDescription() {
             
-            method.Description = methodDescription;
+            method.Description = MethodDescription;
             method.IsAsync = false;
             var parameter = new CodeParameter(method){
-                Description = paramDescription,
-                Name = paramName
+                Description = ParamDescription,
+                Name = ParamName
             };
             parameter.Type = new CodeType(parameter) {
                 Name = "string"
@@ -284,13 +286,13 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             method.ReturnType = null;
             Assert.Throws<InvalidOperationException>(() => writer.Write(method));
         }
-        private const string taskPrefix = "Task<";
-        private const string asyncKeyword = "async";
+        private const string TaskPrefix = "Task<";
+        private const string AsyncKeyword = "async";
         [Fact]
         public void WritesReturnType() {
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains($"{asyncKeyword} {taskPrefix}{returnTypeName}> {methodName}", result); // async default
+            Assert.Contains($"{AsyncKeyword} {TaskPrefix}{ReturnTypeName}> {MethodName}", result); // async default
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
@@ -305,8 +307,8 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             method.IsAsync = false;
             writer.Write(method);
             var result = tw.ToString();
-            Assert.DoesNotContain(taskPrefix, result);
-            Assert.DoesNotContain(asyncKeyword, result);
+            Assert.DoesNotContain(TaskPrefix, result);
+            Assert.DoesNotContain(AsyncKeyword, result);
         }
         [Fact]
         public void WritesPublicMethodByDefault() {
@@ -395,7 +397,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
                 IsExternal = true,
             };
             method.AddParameter(backingStoreParam);
-            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, defaultPath, defaultName);
+            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName);
             tempWriter.SetTextWriter(tw);
             tempWriter.Write(method);
             var result = tw.ToString();

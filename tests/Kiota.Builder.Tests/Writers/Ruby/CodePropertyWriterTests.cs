@@ -6,20 +6,19 @@ using Xunit;
 
 namespace Kiota.Builder.Writers.Ruby.Tests {
     public class CodePropertyWriterTests: IDisposable {
-        private const string defaultPath = "./";
-        private const string defaultName = "name";
+        private const string DefaultPath = "./";
+        private const string DefaultName = "name";
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeProperty property;
         private readonly CodeClass parentClass;
         private readonly CodeClass EmptyClass;
         private readonly CodeProperty emptyProperty;
-        private const string propertyName = "propertyName";
-        private const string propertyDescription = "some description";
-        private const string typeName = "Somecustomtype";
-        private const string rootNamespaceName = "RootNamespace";
+        private const string PropertyName = "propertyName";
+        private const string TypeName = "Somecustomtype";
+        private const string RootNamespaceName = "RootNamespace";
         public CodePropertyWriterTests() {
-            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Ruby, defaultPath, defaultName);
+            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Ruby, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var emptyRoot = CodeNamespace.InitRootNamespace();
@@ -27,38 +26,39 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
                 Name = "emptyClass"
             };
             emptyProperty = new CodeProperty(EmptyClass) {
-                Name = propertyName,
+                Name = PropertyName,
             };
             emptyProperty.Type = new CodeType(emptyProperty) {
-                Name = typeName
+                Name = TypeName
             };
             EmptyClass.AddProperty(emptyProperty);
             
             var root = CodeNamespace.InitRootNamespace();
-            root.Name = rootNamespaceName;
+            root.Name = RootNamespaceName;
             parentClass = new CodeClass(root) {
                 Name = "parentClass"
             };
             root.AddClass(parentClass);
             property = new CodeProperty(parentClass) {
-                Name = propertyName,
+                Name = PropertyName,
             };
             property.Type = new CodeType(property) {
-                Name = typeName,
+                Name = TypeName,
                 TypeDefinition = parentClass
             };
             parentClass.AddProperty(property);
         }
         public void Dispose() {
             tw?.Dispose();
+            GC.SuppressFinalize(this);
         }
         [Fact]
         public void WritesRequestBuilder() {
             property.PropertyKind = CodePropertyKind.RequestBuilder;
             writer.Write(property);
             var result = tw.ToString();
-            Assert.Contains($"def {propertyName.ToSnakeCase()}", result);
-            Assert.Contains($"{rootNamespaceName}::{typeName}.new", result);
+            Assert.Contains($"def {PropertyName.ToSnakeCase()}", result);
+            Assert.Contains($"{RootNamespaceName}::{TypeName}.new", result);
             Assert.Contains("http_core", result);
             Assert.Contains("path_segment", result);
         }
@@ -67,18 +67,18 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             emptyProperty.PropertyKind = CodePropertyKind.RequestBuilder;
             writer.Write(emptyProperty);
             var result = tw.ToString();
-            Assert.Contains($"def {propertyName.ToSnakeCase()}", result);
-            Assert.Contains($"{typeName}.new", result);
+            Assert.Contains($"def {PropertyName.ToSnakeCase()}", result);
+            Assert.Contains($"{TypeName}.new", result);
             Assert.Contains("http_core", result);
             Assert.Contains("path_segment", result);
-            Assert.DoesNotContain($"::{typeName}.new", result);
+            Assert.DoesNotContain($"::{TypeName}.new", result);
         }
         [Fact]
         public void WritesCustomProperty() {
             property.PropertyKind = CodePropertyKind.Custom;
             writer.Write(property);
             var result = tw.ToString();
-            Assert.Contains($"@{propertyName.ToSnakeCase()}", result);
+            Assert.Contains($"@{PropertyName.ToSnakeCase()}", result);
         }
     }
 }

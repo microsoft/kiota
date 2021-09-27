@@ -12,9 +12,10 @@ import javax.annotation.Nullable;
 
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.credential.TokenRequestContext;
-import com.microsoft.kiota.AuthenticationProvider;
+import com.microsoft.kiota.authentication.BaseBearerTokenAuthenticationProvider;
+import com.microsoft.kiota.RequestInformation;
 
-public class AzureIdentityAuthenticationProvider implements AuthenticationProvider {
+public class AzureIdentityAuthenticationProvider extends BaseBearerTokenAuthenticationProvider {
     private final TokenCredential creds;
     private final List<String> _scopes;
     public AzureIdentityAuthenticationProvider(@Nonnull final TokenCredential tokenCredential, @Nonnull final String... scopes) {
@@ -30,7 +31,7 @@ public class AzureIdentityAuthenticationProvider implements AuthenticationProvid
     }
 
     @Nonnull
-    public CompletableFuture<String> getAuthorizationToken(@Nonnull final URI requestUri) {
+    public CompletableFuture<String> getAuthorizationToken(@Nonnull final RequestInformation request) {
         return this.creds.getToken(new TokenRequestContext() {{
             this.setScopes(_scopes);
         }}).toFuture().thenApply(r -> r.getToken());

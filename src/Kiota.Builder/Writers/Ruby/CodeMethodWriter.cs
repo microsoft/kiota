@@ -86,6 +86,7 @@ namespace Kiota.Builder.Writers.Ruby {
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.HttpCore, CodePropertyKind.HttpCore, writer);
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.CurrentPath, CodePropertyKind.CurrentPath, writer);
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RawUrl, CodePropertyKind.RawUrl, writer);
             }
         }
         private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
@@ -158,8 +159,8 @@ namespace Kiota.Builder.Writers.Ruby {
 
         private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
-            writer.WriteLines("request_info = MicrosoftKiotaAbstractions::RequestInfo.new()",
-                                $"request_info.uri = @{conventions.CurrentPathPropertyName} + @{conventions.PathSegmentPropertyName}",
+            writer.WriteLines("request_info = MicrosoftKiotaAbstractions::RequestInformation.new()",
+                                $"request_info.set_uri(@{conventions.CurrentPathPropertyName}, @{conventions.PathSegmentPropertyName}, @{conventions.RawUrlPropertyName})",
                                 $"request_info.http_method = :{codeElement.HttpMethod?.ToString().ToUpperInvariant()}");
             if(headersParam != null)
                 writer.WriteLine($"request_info.set_headers_from_raw_object(h)");
@@ -183,6 +184,7 @@ namespace Kiota.Builder.Writers.Ruby {
             if(additionalDataProperty != null)
                 writer.WriteLine($"writer.write_additional_data(@{additionalDataProperty.Name.ToSnakeCase()})");
         }
+        private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer) {
             var methodName = (code.MethodKind switch {
                 (CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor) => $"initialize",
@@ -190,7 +192,7 @@ namespace Kiota.Builder.Writers.Ruby {
                 (CodeMethodKind.Setter) => $"{code.AccessedProperty?.Name?.ToSnakeCase()}",
                 _ => code.Name.ToSnakeCase()
             });
-            var parameters = string.Join(", ", code.Parameters.Select(p=> conventions.GetParameterSignature(p).ToSnakeCase()).ToList());
+            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> conventions.GetParameterSignature(p).ToSnakeCase()).ToList());
             writer.WriteLine($"def {methodName.ToSnakeCase()}({parameters}) ");
             writer.IncreaseIndent();
         }
@@ -213,7 +215,7 @@ namespace Kiota.Builder.Writers.Ruby {
         }
         private string GetDeserializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = conventions.TranslateType(propType.Name);
+            var propertyType = conventions.TranslateType(propType);
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
@@ -223,23 +225,16 @@ namespace Kiota.Builder.Writers.Ruby {
                 else if(currentType.TypeDefinition is CodeEnum currentEnum)
                     return $"get_enum_value{(currentEnum.Flags ? "s" : string.Empty)}({(propType as CodeType).TypeDefinition.Parent.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase()}::{propertyType.ToFirstCharacterUpperCase()})";
             }
-            switch(propertyType) {
-                case "string":
-                case "boolean":
-                case "number":
-                case "float":
-                case "Guid":
-                    return $"get_{propertyType.ToSnakeCase()}_value()";
-                case "DateTimeOffset":
-                case "Date":
-                    return $"get_date_value()";
-                default:
-                    return $"get_object_value({(propType as CodeType).TypeDefinition.Parent.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase()}::{propertyType.ToFirstCharacterUpperCase()})";
-            }
+            return propertyType switch
+            {
+                "string" or "boolean" or "number" or "float" or "Guid" => $"get_{propertyType.ToSnakeCase()}_value()",
+                "DateTimeOffset" or "Date" => $"get_date_value()",
+                _ => $"get_object_value({(propType as CodeType).TypeDefinition.Parent.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase()}::{propertyType.ToFirstCharacterUpperCase()})",
+            };
         }
         private static string TranslateObjectType(string typeName)
         {
-            return (typeName) switch {
+            return typeName switch {
                 "String" or "Float" or "Object" => typeName, 
                 "Boolean" => "\"boolean\"",
                 "Number" => "Integer",
@@ -251,29 +246,22 @@ namespace Kiota.Builder.Writers.Ruby {
         }
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = conventions.TranslateType(propType.Name);
+            var propertyType = conventions.TranslateType(propType);
             if(propType is CodeType currentType) {
-                if(isCollection)
+                if (isCollection)
                     if(currentType.TypeDefinition == null)
                         return $"write_collection_of_primitive_values";
                     else
                         return $"write_collection_of_object_values";
-                else if(currentType.TypeDefinition is CodeEnum currentEnum)
+                else if(currentType.TypeDefinition is CodeEnum)
                     return $"write_enum_value";
             }
-            switch(propertyType) {
-                case "string":
-                case "boolean":
-                case "number":
-                case "float":
-                case "Guid":
-                    return $"write_{propertyType.ToSnakeCase()}_value";
-                case "DateTimeOffset":
-                case "Date":
-                    return $"write_date_value";
-                default:
-                    return $"write_object_value";
-            }
+            return propertyType switch
+            {
+                "string" or "boolean" or "number" or "float" or "Guid" => $"write_{propertyType.ToSnakeCase()}_value",
+                "DateTimeOffset" or "Date" => $"write_date_value",
+                _ => $"write_object_value",
+            };
         }
         private static string GetSendRequestMethodName(bool isStream) {
             if(isStream) return $"send_primitive_async";

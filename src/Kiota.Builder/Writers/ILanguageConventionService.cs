@@ -8,9 +8,10 @@ namespace Kiota.Builder.Writers {
         string PathSegmentPropertyName {get; }
         string CurrentPathPropertyName {get; }
         string HttpCorePropertyName {get; }
+        string RawUrlPropertyName {get; }
         string ParseNodeInterfaceName {get; }
         string GetTypeString(CodeTypeBase code);
-        string TranslateType(string typeName);
+        string TranslateType(CodeType type);
         string GetParameterSignature(CodeParameter parameter);
         void WriteShortDescription(string description, LanguageWriter writer);
     }

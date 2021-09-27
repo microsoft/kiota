@@ -103,6 +103,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.HttpCore, CodePropertyKind.HttpCore, writer);
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.CurrentPath, CodePropertyKind.CurrentPath, writer);
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RawUrl, CodePropertyKind.RawUrl, writer);
             }
         }
         private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
@@ -176,28 +177,28 @@ namespace Kiota.Builder.Writers.TypeScript {
             var newFactoryParameter = GetTypeFactory(isVoid, isStream, returnType);
             writer.WriteLine($"return this.httpCore?.{genericTypeForSendMethod}(requestInfo,{newFactoryParameter} responseHandler) ?? Promise.reject(new Error('http core is null'));");
         }
-        private const string requestInfoVarName = "requestInfo";
+        private const string RequestInfoVarName = "requestInfo";
         private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
-            writer.WriteLines($"const {requestInfoVarName} = new RequestInfo();",
-                                $"{requestInfoVarName}.URI = (this.{localConventions.CurrentPathPropertyName} ?? '') + this.{localConventions.PathSegmentPropertyName},",
-                                $"{requestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.ToString().ToUpperInvariant()},");
+            writer.WriteLines($"const {RequestInfoVarName} = new RequestInformation();",
+                                $"{RequestInfoVarName}.setUri(this.{localConventions.CurrentPathPropertyName}, this.{localConventions.PathSegmentPropertyName}, this.{localConventions.RawUrlPropertyName});",
+                                $"{RequestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.ToString().ToUpperInvariant()};");
             if(headersParam != null)
-                writer.WriteLine($"{headersParam.Name} && {requestInfoVarName}.setHeadersFromRawObject(h);");
+                writer.WriteLine($"{headersParam.Name} && {RequestInfoVarName}.setHeadersFromRawObject(h);");
             if(queryStringParam != null)
-                writer.WriteLines($"{queryStringParam.Name} && {requestInfoVarName}.setQueryStringParametersFromRawObject(q);");
+                writer.WriteLines($"{queryStringParam.Name} && {RequestInfoVarName}.setQueryStringParametersFromRawObject(q);");
             if(requestBodyParam != null) {
                 if(requestBodyParam.Type.Name.Equals(localConventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                    writer.WriteLine($"{requestInfoVarName}.setStreamContent({requestBodyParam.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestBodyParam.Name});");
                 else {
                     var spreadOperator = requestBodyParam.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
-                    writer.WriteLine($"{requestInfoVarName}.setContentFromParsable(this.{localConventions.HttpCorePropertyName}, \"{codeElement.ContentType}\", {spreadOperator}{requestBodyParam.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable(this.{localConventions.HttpCorePropertyName}, \"{codeElement.ContentType}\", {spreadOperator}{requestBodyParam.Name});");
                 }
             }
             if(optionsParam != null)
-                writer.WriteLine($"{optionsParam.Name} && {requestInfoVarName}.addMiddlewareOptions(...{optionsParam.Name});");
-            writer.WriteLine($"return {requestInfoVarName};");
+                writer.WriteLine($"{optionsParam.Name} && {RequestInfoVarName}.addMiddlewareOptions(...{optionsParam.Name});");
+            writer.WriteLine($"return {RequestInfoVarName};");
         }
         private void WriteSerializerBody(bool inherits, CodeClass parentClass, LanguageWriter writer) {
             var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();
@@ -227,6 +228,7 @@ namespace Kiota.Builder.Writers.TypeScript {
                 writer.WriteLine(localConventions.DocCommentEnd);
             }
         }
+        private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid) {
             var accessModifier = localConventions.GetAccessModifier(code.Access);
             var methodName = (code.MethodKind switch {
@@ -235,7 +237,7 @@ namespace Kiota.Builder.Writers.TypeScript {
                 _ => code.Name,
             })?.ToFirstCharacterLowerCase();
             var asyncPrefix = code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? " async ": string.Empty;
-            var parameters = string.Join(", ", code.Parameters.Select(p=> localConventions.GetParameterSignature(p)).ToList());
+            var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> localConventions.GetParameterSignature(p)).ToList());
             var asyncReturnTypePrefix = code.IsAsync ? "Promise<": string.Empty;
             var asyncReturnTypeSuffix = code.IsAsync ? ">": string.Empty;
             var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? " | undefined" : string.Empty;
@@ -251,7 +253,7 @@ namespace Kiota.Builder.Writers.TypeScript {
         }
         private string GetDeserializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = localConventions.TranslateType(propType.Name);
+            var propertyType = localConventions.TranslateType(propType);
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
@@ -261,20 +263,15 @@ namespace Kiota.Builder.Writers.TypeScript {
                 else if(currentType.TypeDefinition is CodeEnum currentEnum)
                     return $"getEnumValue{(currentEnum.Flags ? "s" : string.Empty)}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
             }
-            switch(propertyType) {
-                case "string":
-                case "boolean":
-                case "number":
-                case "Guid":
-                case "Date":
-                    return $"get{propertyType.ToFirstCharacterUpperCase()}Value()";
-                default:
-                    return $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
-            }
+            return propertyType switch
+            {
+                "string" or "boolean" or "number" or "Guid" or "Date" => $"get{propertyType.ToFirstCharacterUpperCase()}Value()",
+                _ => $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})",
+            };
         }
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = localConventions.TranslateType(propType.Name);
+            var propertyType = localConventions.TranslateType(propType);
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
@@ -284,16 +281,11 @@ namespace Kiota.Builder.Writers.TypeScript {
                 else if(currentType.TypeDefinition is CodeEnum currentEnum)
                     return $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}>";
             }
-            switch(propertyType) {
-                case "string":
-                case "boolean":
-                case "number":
-                case "Guid":
-                case "Date":
-                    return $"write{propertyType.ToFirstCharacterUpperCase()}Value";
-                default:
-                    return $"writeObjectValue<{propertyType.ToFirstCharacterUpperCase()}>";
-            }
+            return propertyType switch
+            {
+                "string" or "boolean" or "number" or "Guid" or "Date" => $"write{propertyType.ToFirstCharacterUpperCase()}Value",
+                _ => $"writeObjectValue<{propertyType.ToFirstCharacterUpperCase()}>",
+            };
         }
         private string GetTypeFactory(bool isVoid, bool isStream, string returnType) {
             if(isVoid) return string.Empty;

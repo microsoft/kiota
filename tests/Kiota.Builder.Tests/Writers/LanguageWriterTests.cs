@@ -8,22 +8,22 @@ using Xunit;
 
 namespace Kiota.Builder.Writers.Tests {
     public class LanguageWriterTests {
-        private const string defaultPath = "./";
-        private const string defaultName = "name";
+        private const string DefaultPath = "./";
+        private const string DefaultName = "name";
         [Fact]
         public void GetCorrectWriterForLanguage() {
             Assert.Equal(typeof(CSharpWriter),
-                        LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, defaultPath, defaultName).GetType());
+                        LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName).GetType());
             Assert.Equal(typeof(JavaWriter),
-                        LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, defaultPath, defaultName).GetType());
+                        LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, DefaultPath, DefaultName).GetType());
             Assert.Equal(typeof(RubyWriter),
-                        LanguageWriter.GetLanguageWriter(GenerationLanguage.Ruby, defaultPath, defaultName).GetType());
+                        LanguageWriter.GetLanguageWriter(GenerationLanguage.Ruby, DefaultPath, DefaultName).GetType());
             Assert.Equal(typeof(TypeScriptWriter),
-                        LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, defaultPath, defaultName).GetType());
+                        LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName).GetType());
             Assert.Equal(typeof(GoWriter),
-                        LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, defaultPath, defaultName).GetType());
-            Assert.Throws<InvalidEnumArgumentException>(() => LanguageWriter.GetLanguageWriter(GenerationLanguage.PHP, defaultPath, defaultName));
-            Assert.Throws<InvalidEnumArgumentException>(() => LanguageWriter.GetLanguageWriter(GenerationLanguage.Python, defaultPath, defaultName));
+                        LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, DefaultPath, DefaultName).GetType());
+            Assert.Throws<InvalidEnumArgumentException>(() => LanguageWriter.GetLanguageWriter(GenerationLanguage.PHP, DefaultPath, DefaultName));
+            Assert.Throws<InvalidEnumArgumentException>(() => LanguageWriter.GetLanguageWriter(GenerationLanguage.Python, DefaultPath, DefaultName));
         }
     }
 }

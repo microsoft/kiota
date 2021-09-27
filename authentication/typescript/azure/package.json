@@ -1,6 +1,6 @@
 {
   "name": "@microsoft/kiota-authentication-azure",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "Authentication provider for Kiota using Azure Identity",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -31,10 +31,10 @@
   },
   "dependencies": {
     "@azure/core-auth": "^1.3.2",
-    "@microsoft/kiota-abstractions": "^1.0.13"
+    "@microsoft/kiota-abstractions": "^1.0.19"
   },
   "devDependencies": {
-    "@types/node": "^16.6.2",
-    "typescript": "^4.3.5"
+    "@types/node": "^16.10.1",
+    "typescript": "^4.4.3"
   }
 }

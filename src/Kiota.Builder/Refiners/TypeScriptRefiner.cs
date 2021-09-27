@@ -9,7 +9,7 @@ namespace Kiota.Builder.Refiners {
         {
             PatchResponseHandlerType(generatedCode);
             AddDefaultImports(generatedCode, Array.Empty<Tuple<string, string>>(), defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
-            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, "ById");
+            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             CorrectCoreTypesForBackingStore(generatedCode, "@microsoft/kiota-abstractions", "BackingStoreFactorySingleton.instance.createBackingStore()");
             FixReferencesToEntityType(generatedCode);
@@ -45,7 +45,7 @@ namespace Kiota.Builder.Refiners {
         private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
             new ("HttpCore", "@microsoft/kiota-abstractions"),
             new ("HttpMethod", "@microsoft/kiota-abstractions"),
-            new ("RequestInfo", "@microsoft/kiota-abstractions"),
+            new ("RequestInformation", "@microsoft/kiota-abstractions"),
             new ("ResponseHandler", "@microsoft/kiota-abstractions"),
             new ("MiddlewareOption", "@microsoft/kiota-abstractions"),
         };

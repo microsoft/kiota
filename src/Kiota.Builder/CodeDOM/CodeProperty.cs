@@ -11,7 +11,8 @@ namespace Kiota.Builder
         BackingStore,
         PathSegment,
         CurrentPath,
-        HttpCore
+        HttpCore,
+        RawUrl
     }
 
     public class CodeProperty : CodeTerminal, IDocumentedElement

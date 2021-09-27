@@ -5,17 +5,16 @@ using Xunit;
 
 namespace Kiota.Builder.Writers.Java.Tests {
     public class CodePropertyWriterTests: IDisposable {
-        private const string defaultPath = "./";
-        private const string defaultName = "name";
+        private const string DefaultPath = "./";
+        private const string DefaultName = "name";
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeProperty property;
         private readonly CodeClass parentClass;
-        private const string propertyName = "propertyName";
-        private const string propertyDescription = "some description";
-        private const string typeName = "Somecustomtype";
+        private const string PropertyName = "propertyName";
+        private const string TypeName = "Somecustomtype";
         public CodePropertyWriterTests() {
-            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, defaultPath, defaultName);
+            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
@@ -24,22 +23,23 @@ namespace Kiota.Builder.Writers.Java.Tests {
             };
             root.AddClass(parentClass);
             property = new CodeProperty(parentClass) {
-                Name = propertyName,
+                Name = PropertyName,
             };
             property.Type = new CodeType(property) {
-                Name = typeName
+                Name = TypeName
             };
             parentClass.AddProperty(property);
         }
         public void Dispose() {
             tw?.Dispose();
+            GC.SuppressFinalize(this);
         }
         [Fact]
         public void WritesRequestBuilder() {
             property.PropertyKind = CodePropertyKind.RequestBuilder;
             writer.Write(property);
             var result = tw.ToString();
-            Assert.Contains($"return new {typeName}", result);
+            Assert.Contains($"return new {TypeName}", result);
             Assert.Contains("httpCore", result);
             Assert.Contains("pathSegment", result);
         }
@@ -48,7 +48,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             property.PropertyKind = CodePropertyKind.Custom;
             writer.Write(property);
             var result = tw.ToString();
-            Assert.Contains($"{typeName} {propertyName}", result);
+            Assert.Contains($"{TypeName} {PropertyName}", result);
             Assert.Contains("@javax.annotation.Nullable", result);
         }
         [Fact]

@@ -7,20 +7,20 @@ using Xunit;
 
 namespace Kiota.Builder.Writers.Go.Tests {
     public class CodeMethodWriterTests : IDisposable {
-        private const string defaultPath = "./";
-        private const string defaultName = "name";
+        private const string DefaultPath = "./";
+        private const string DefaultName = "name";
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeMethod method;
         private readonly CodeClass parentClass;
-        private const string methodName = "methodName";
-        private const string returnTypeName = "Somecustomtype";
-        private const string methodDescription = "some description";
-        private const string paramDescription = "some parameter description";
-        private const string paramName = "paramName";
+        private const string MethodName = "methodName";
+        private const string ReturnTypeName = "Somecustomtype";
+        private const string MethodDescription = "some description";
+        private const string ParamDescription = "some parameter description";
+        private const string ParamName = "paramName";
         public CodeMethodWriterTests()
         {
-            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, defaultPath, defaultName);
+            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
@@ -29,16 +29,17 @@ namespace Kiota.Builder.Writers.Go.Tests {
             };
             root.AddClass(parentClass);
             method = new CodeMethod(parentClass) {
-                Name = methodName,
+                Name = MethodName,
             };
             method.ReturnType = new CodeType(method) {
-                Name = returnTypeName
+                Name = ReturnTypeName
             };
             parentClass.AddMethod(method);
         }
         public void Dispose()
         {
             tw?.Dispose();
+            GC.SuppressFinalize(this);
         }
         private void AddSerializationProperties() {
             var addData = parentClass.AddProperty(new CodeProperty(parentClass) {
@@ -160,7 +161,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             Assert.Contains("return func() (", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
-        private const string abstractionsPackageHash = "ida96af0f171bb75f894a4013a6b3146a4397c58f11adb81a2b7cbea9314783a9";
+        private const string AbstractionsPackageHash = "ida96af0f171bb75f894a4013a6b3146a4397c58f11adb81a2b7cbea9314783a9";
         [Fact]
         public void WritesRequestGeneratorBody() {
             method.MethodKind = CodeMethodKind.RequestGenerator;
@@ -168,9 +169,9 @@ namespace Kiota.Builder.Writers.Go.Tests {
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains($"requestInfo := new({abstractionsPackageHash}.RequestInfo)", result);
-            Assert.Contains("requestInfo.URI = *uri", result);
-            Assert.Contains($"Method = {abstractionsPackageHash}.GET", result);
+            Assert.Contains($"requestInfo := {AbstractionsPackageHash}.NewRequestInformation()", result);
+            Assert.Contains("err := requestInfo.SetUri", result);
+            Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
             Assert.Contains("err != nil", result);
             Assert.Contains("h != nil", result);
             Assert.Contains("h(requestInfo.Headers)", result);
@@ -196,8 +197,8 @@ namespace Kiota.Builder.Writers.Go.Tests {
         [Fact]
         public void WritesDeSerializerBody() {
             var parameter = new CodeParameter(method){
-                Description = paramDescription,
-                Name = paramName
+                Description = ParamDescription,
+                Name = ParamName
             };
             parameter.Type = new CodeType(parameter) {
                 Name = "string"
@@ -227,8 +228,8 @@ namespace Kiota.Builder.Writers.Go.Tests {
         [Fact]
         public void WritesSerializerBody() {
             var parameter = new CodeParameter(method){
-                Description = paramDescription,
-                Name = paramName
+                Description = ParamDescription,
+                Name = ParamName
             };
             parameter.Type = new CodeType(parameter) {
                 Name = "string"
@@ -247,11 +248,11 @@ namespace Kiota.Builder.Writers.Go.Tests {
         }
         [Fact(Skip = "descriptions are not supported")]
         public void WritesMethodSyncDescription() {
-            method.Description = methodDescription;
+            method.Description = MethodDescription;
             method.IsAsync = false;
             var parameter = new CodeParameter(method){
-                Description = paramDescription,
-                Name = paramName
+                Description = ParamDescription,
+                Name = ParamName
             };
             parameter.Type = new CodeType(parameter) {
                 Name = "string"
@@ -284,12 +285,12 @@ namespace Kiota.Builder.Writers.Go.Tests {
             method.ReturnType = null;
             Assert.Throws<InvalidOperationException>(() => writer.Write(method));
         }
-        private const string taskPrefix = "func() (";
+        private const string TaskPrefix = "func() (";
         [Fact]
         public void WritesReturnType() {
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains($"{methodName.ToFirstCharacterUpperCase()}()({taskPrefix}*{returnTypeName}, error)", result);// async default
+            Assert.Contains($"{MethodName.ToFirstCharacterUpperCase()}()({TaskPrefix}*{ReturnTypeName}, error)", result);// async default
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
@@ -297,14 +298,14 @@ namespace Kiota.Builder.Writers.Go.Tests {
             method.IsAsync = false;
             writer.Write(method);
             var result = tw.ToString();
-            Assert.DoesNotContain(taskPrefix, result);
+            Assert.DoesNotContain(TaskPrefix, result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesPublicMethodByDefault() {
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains(methodName.ToFirstCharacterUpperCase(), result);// public default
+            Assert.Contains(MethodName.ToFirstCharacterUpperCase(), result);// public default
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
@@ -312,7 +313,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             method.Access = AccessModifier.Private;
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains(methodName.ToFirstCharacterLowerCase(), result);
+            Assert.Contains(MethodName.ToFirstCharacterLowerCase(), result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
@@ -320,7 +321,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             method.Access = AccessModifier.Protected;
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains(methodName.ToFirstCharacterLowerCase(), result);
+            Assert.Contains(MethodName.ToFirstCharacterLowerCase(), result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
@@ -450,7 +451,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
                 IsExternal = true,
             };
             method.AddParameter(backingStoreParam);
-            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, defaultPath, defaultName);
+            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, DefaultPath, DefaultName);
             tempWriter.SetTextWriter(tw);
             tempWriter.Write(method);
             var result = tw.ToString();

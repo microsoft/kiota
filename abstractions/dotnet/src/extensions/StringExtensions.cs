@@ -1,7 +1,14 @@
-using System.Linq;
+// ------------------------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
+// ------------------------------------------------------------------------------
 
-namespace Microsoft.Kiota.Abstractions.Extensions {
-    public static class StringExtensions {
+namespace Microsoft.Kiota.Abstractions.Extensions
+{
+    /// <summary>
+    /// The class for extension methods for <see cref="string"/> type
+    /// </summary>
+    public static class StringExtensions
+    {
         /// <summary>
         ///     Returns a string with the first letter lowered.
         /// </summary>

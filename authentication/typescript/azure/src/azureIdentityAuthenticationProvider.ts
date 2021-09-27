@@ -1,11 +1,12 @@
 import { TokenCredential } from "@azure/core-auth";
-import { AuthenticationProvider  } from '@microsoft/kiota-abstractions';
+import { BaseBearerTokenAuthenticationProvider, RequestInformation  } from '@microsoft/kiota-abstractions';
 
-export class AzureIdentityAuthenticationProvider implements AuthenticationProvider {
+export class AzureIdentityAuthenticationProvider extends BaseBearerTokenAuthenticationProvider {
     /**
      *
      */
     public constructor(private readonly credentials: TokenCredential, private readonly scopes: string[] = ['https://graph.microsoft.com/.default']) {
+        super();
         if(!credentials) {
             throw new Error('parameter credentials cannot be null');
         }
@@ -13,7 +14,7 @@ export class AzureIdentityAuthenticationProvider implements AuthenticationProvid
             throw new Error('scopes cannot be null or empty');
         }
     }
-    public getAuthorizationToken = async (_requestUrl: string) : Promise<string> => {
+    public getAuthorizationToken = async (_: RequestInformation) : Promise<string> => {
         const result = await this.credentials.getToken(this.scopes);
         return result?.token ?? '';
     }

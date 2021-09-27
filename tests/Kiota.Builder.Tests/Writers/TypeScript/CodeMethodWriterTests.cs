@@ -7,20 +7,20 @@ using Xunit;
 
 namespace Kiota.Builder.Writers.TypeScript.Tests {
     public class CodeMethodWriterTests : IDisposable {
-        private const string defaultPath = "./";
-        private const string defaultName = "name";
+        private const string DefaultPath = "./";
+        private const string DefaultName = "name";
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeMethod method;
         private readonly CodeClass parentClass;
-        private const string methodName = "methodName";
-        private const string returnTypeName = "Somecustomtype";
-        private const string methodDescription = "some description";
-        private const string paramDescription = "some parameter description";
-        private const string paramName = "paramName";
+        private const string MethodName = "methodName";
+        private const string ReturnTypeName = "Somecustomtype";
+        private const string MethodDescription = "some description";
+        private const string ParamDescription = "some parameter description";
+        private const string ParamName = "paramName";
         public CodeMethodWriterTests()
         {
-            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, defaultPath, defaultName);
+            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
@@ -29,16 +29,17 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             };
             root.AddClass(parentClass);
             method = new CodeMethod(parentClass) {
-                Name = methodName,
+                Name = MethodName,
             };
             method.ReturnType = new CodeType(method) {
-                Name = returnTypeName
+                Name = ReturnTypeName
             };
             parentClass.AddMethod(method);
         }
         public void Dispose()
         {
             tw?.Dispose();
+            GC.SuppressFinalize(this);
         }
         private void AddSerializationProperties() {
             var addData = parentClass.AddProperty(new CodeProperty(parentClass) {
@@ -158,8 +159,9 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("const requestInfo = new RequestInfo()", result);
+            Assert.Contains("const requestInfo = new RequestInformation()", result);
             Assert.Contains("requestInfo.httpMethod = HttpMethod", result);
+            Assert.Contains("requestInfo.setUri", result);
             Assert.Contains("setHeadersFromRawObject", result);
             Assert.Contains("setQueryStringParametersFromRawObject", result);
             Assert.Contains("setContentFromParsable", result);
@@ -181,8 +183,8 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         [Fact]
         public void WritesDeSerializerBody() {
             var parameter = new CodeParameter(method){
-                Description = paramDescription,
-                Name = paramName
+                Description = ParamDescription,
+                Name = ParamName
             };
             parameter.Type = new CodeType(parameter) {
                 Name = "string"
@@ -212,8 +214,8 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         [Fact]
         public void WritesSerializerBody() {
             var parameter = new CodeParameter(method){
-                Description = paramDescription,
-                Name = paramName
+                Description = ParamDescription,
+                Name = ParamName
             };
             parameter.Type = new CodeType(parameter) {
                 Name = "string"
@@ -233,10 +235,10 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         [Fact]
         public void WritesMethodAsyncDescription() {
             
-            method.Description = methodDescription;
+            method.Description = MethodDescription;
             var parameter = new CodeParameter(method){
-                Description = paramDescription,
-                Name = paramName
+                Description = ParamDescription,
+                Name = ParamName
             };
             parameter.Type = new CodeType(parameter) {
                 Name = "string"
@@ -245,10 +247,10 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("/**", result);
-            Assert.Contains(methodDescription, result);
+            Assert.Contains(MethodDescription, result);
             Assert.Contains("@param ", result);
-            Assert.Contains(paramName, result);
-            Assert.Contains(paramDescription, result); 
+            Assert.Contains(ParamName, result);
+            Assert.Contains(ParamDescription, result); 
             Assert.Contains("@returns a Promise of", result);
             Assert.Contains("*/", result);
             AssertExtensions.CurlyBracesAreClosed(result);
@@ -256,11 +258,11 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         [Fact]
         public void WritesMethodSyncDescription() {
             
-            method.Description = methodDescription;
+            method.Description = MethodDescription;
             method.IsAsync = false;
             var parameter = new CodeParameter(method){
-                Description = paramDescription,
-                Name = paramName
+                Description = ParamDescription,
+                Name = ParamName
             };
             parameter.Type = new CodeType(parameter) {
                 Name = "string"
@@ -297,8 +299,8 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         public void WritesReturnType() {
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains(methodName, result);
-            Assert.Contains(returnTypeName, result);
+            Assert.Contains(MethodName, result);
+            Assert.Contains(ReturnTypeName, result);
             Assert.Contains("Promise<", result);// async default
             Assert.Contains("| undefined", result);// nullable default
             AssertExtensions.CurlyBracesAreClosed(result);
@@ -470,7 +472,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
                 IsExternal = true,
             };
             method.AddParameter(backingStoreParam);
-            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, defaultPath, defaultName);
+            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
             tempWriter.SetTextWriter(tw);
             tempWriter.Write(method);
             var result = tw.ToString();

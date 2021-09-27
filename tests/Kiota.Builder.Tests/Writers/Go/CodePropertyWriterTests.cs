@@ -6,17 +6,16 @@ using Xunit;
 
 namespace Kiota.Builder.Writers.Go.Tests {
     public class CodePropertyWriterTests: IDisposable {
-        private const string defaultPath = "./";
-        private const string defaultName = "name";
+        private const string DefaultPath = "./";
+        private const string DefaultName = "name";
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
         private readonly CodeProperty property;
         private readonly CodeClass parentClass;
-        private const string propertyName = "propertyName";
-        private const string propertyDescription = "some description";
-        private const string typeName = "Somecustomtype";
+        private const string PropertyName = "propertyName";
+        private const string TypeName = "Somecustomtype";
         public CodePropertyWriterTests() {
-            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, defaultPath, defaultName);
+            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
@@ -25,15 +24,16 @@ namespace Kiota.Builder.Writers.Go.Tests {
             };
             root.AddClass(parentClass);
             property = new CodeProperty(parentClass) {
-                Name = propertyName,
+                Name = PropertyName,
             };
             property.Type = new CodeType(property) {
-                Name = typeName
+                Name = TypeName
             };
             parentClass.AddProperty(property);
         }
         public void Dispose() {
             tw?.Dispose();
+            GC.SuppressFinalize(this);
         }
         [Fact]
         public void WritesRequestBuilder() {
@@ -45,7 +45,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             property.PropertyKind = CodePropertyKind.Custom;
             writer.Write(property);
             var result = tw.ToString();
-            Assert.Contains($"{propertyName.ToFirstCharacterUpperCase()} *{typeName}", result);
+            Assert.Contains($"{PropertyName.ToFirstCharacterUpperCase()} *{TypeName}", result);
         }
         [Fact(Skip = "flag enum support needs to be added in Go")]
         public void WritesFlagEnums() {

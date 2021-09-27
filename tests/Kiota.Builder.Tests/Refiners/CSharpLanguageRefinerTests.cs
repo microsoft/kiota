@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using Xunit;
 
 namespace Kiota.Builder.Refiners.Tests {
@@ -6,14 +6,27 @@ namespace Kiota.Builder.Refiners.Tests {
         private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
         #region CommonLanguageRefinerTests
         [Fact]
-        public void EscapesReservedKeywords() {
+        public void DoesNotEscapesReservedKeywordsForClassOrPropertyKind() {
+            // Arrange
             var model = root.AddClass(new CodeClass (root) {
-                Name = "break",
-                ClassKind = CodeClassKind.Model
+                Name = "break", // this a keyword
+                ClassKind = CodeClassKind.Model,
             }).First();
+            var property = model.AddProperty(new CodeProperty(model)
+            {
+                Name = "alias",// this a keyword
+                Type = new CodeType(model)
+                {
+                    Name = "string"
+                }
+            }).First();
+            // Act
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
-            Assert.NotEqual("break", model.Name);
-            Assert.Contains("@", model.Name);
+            // Assert
+            Assert.Equal("break", model.Name);
+            Assert.DoesNotContain("@", model.Name); // classname will be capitalized
+            Assert.Equal("alias", property.Name);
+            Assert.DoesNotContain("@", property.Name); // classname will be capitalized
         }
         [Fact]
         public void ConvertsUnionTypesToWrapper() {

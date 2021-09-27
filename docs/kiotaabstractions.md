@@ -4,24 +4,38 @@ On most platforms there are a range of different HTTP client library implementat
 
 ## HTTP Core
 
-The HTTP core interface is the primary point where Kiota service libraries will trigger the creation of a HTTP request.
+The HTTP core interface is the primary point where Kiota service libraries will trigger the creation of a HTTP request.  Below is the [C# implementation](https://github.com/microsoft/kiota/blob/main/abstractions/dotnet/src/IHttpCore.cs).
 
 ```csharp
     public interface IHttpCore {
-        Task<ModelType> SendAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = default);    
-        Task<ModelType> SendPrimitiveAsync<ModelType>(RequestInfo requestInfo, IResponseHandler responseHandler = default);
-        Task SendNoContentAsync(RequestInfo requestInfo, IResponseHandler responseHandler = default);
+        void EnableBackingStore(IBackingStoreFactory backingStoreFactory);
+
+        ISerializationWriterFactory SerializationWriterFactory { get; }
+
+        Task<ModelType> SendAsync<ModelType>(RequestInformation requestInfo, 
+                                             IResponseHandler responseHandler = default)
+                     where ModelType : IParsable;
+
+        Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(RequestInformation requestInfo,
+                        IResponseHandler responseHandler = default) 
+                    where ModelType : IParsable;
+
+        Task<ModelType> SendPrimitiveAsync<ModelType>(RequestInformation requestInfo,
+                                                      IResponseHandler responseHandler = default);
+                                                      
+        Task SendNoContentAsync(RequestInformation requestInfo, 
+                                IResponseHandler responseHandler = default);
     }
 ```
 
 Kiota service libraries return the model type that is associated with HTTP resource. This behavior can be overriden by changing the `responseHandler` to do something different than default behavior.  One use of this is to change the response type to be either a native HTTP response class, or return a generic API response class that provides access to more underlying metadata.
 
-## RequestInfo
+## RequestInformation
 
-In order to enable Kiota service libraries to make requests, they need to be able accumulate information about the request and pass it to the core library. The RequestInfo object is designed to do that. It only contains properties that be provided by the request builders. As request builders get more sophisticated, so may the RequestInfo class.
+In order to enable Kiota service libraries to make requests, they need to be able accumulate information about the request and pass it to the core library. The RequestInformation object is designed to do that. It only contains properties that be provided by the request builders. As request builders get more sophisticated, so may the RequestInformation class.
 
 ```csharp
-public class RequestInfo
+public class RequestInformation
     {
         public Uri URI { get; set; }
         public HttpMethod HttpMethod { get; set; }
@@ -32,7 +46,7 @@ public class RequestInfo
 ```
 
 ```TypeScript
-export interface RequestInfo {
+export interface RequestInformation {
     URI?: URL;
     httpMethod?: HttpMethod;
     content?: ReadableStream;
@@ -42,7 +56,7 @@ export interface RequestInfo {
 ```
 
 ```java
-public class RequestInfo {
+public class RequestInformation {
     @Nullable
     public URI uri;
     @Nullable

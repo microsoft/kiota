@@ -11,7 +11,7 @@ namespace Kiota.Builder.Tests {
                 Name = "class",
             };
             Assert.False(codeClass.IsOfKind((CodeClassKind[])null));
-            Assert.False(codeClass.IsOfKind(new CodeClassKind[] { }));
+            Assert.False(codeClass.IsOfKind(Array.Empty<CodeClassKind>()));
 
             codeClass.StartBlock = new CodeBlock.BlockDeclaration(codeClass);
             Assert.Null(codeClass.GetParentClass());
@@ -31,7 +31,7 @@ namespace Kiota.Builder.Tests {
         [Fact]
         public void SetsIndexer() {
             var root = CodeNamespace.InitRootNamespace();
-            var child = root.AddNamespace(CodeNamespaceTests.childName);
+            var child = root.AddNamespace(CodeNamespaceTests.ChildName);
             var codeClass = child.AddClass(new CodeClass(child) {
                 Name = "class1"
             }).First();
@@ -50,7 +50,7 @@ namespace Kiota.Builder.Tests {
         [Fact]
         public void ThrowsOnAddingEmptyCollections() {
             var root = CodeNamespace.InitRootNamespace();
-            var child = root.AddNamespace(CodeNamespaceTests.childName);
+            var child = root.AddNamespace(CodeNamespaceTests.ChildName);
             var codeClass = child.AddClass(new CodeClass(child) {
                 Name = "class1"
             }).First();
@@ -58,7 +58,7 @@ namespace Kiota.Builder.Tests {
                 codeClass.AddMethod(null);
             });
             Assert.Throws<ArgumentOutOfRangeException>(() => {
-                codeClass.AddMethod(new CodeMethod[] {});
+                codeClass.AddMethod(Array.Empty<CodeMethod>());
             });
             Assert.Throws<ArgumentNullException>(() => {
                 codeClass.AddMethod(new CodeMethod[] {null});
@@ -67,7 +67,7 @@ namespace Kiota.Builder.Tests {
                 codeClass.AddProperty(null);
             });
             Assert.Throws<ArgumentOutOfRangeException>(() => {
-                codeClass.AddProperty(new CodeProperty[] {});
+                codeClass.AddProperty(Array.Empty<CodeProperty>());
             });
             Assert.Throws<ArgumentNullException>(() => {
                 codeClass.AddProperty(new CodeProperty[] {null});
@@ -76,7 +76,7 @@ namespace Kiota.Builder.Tests {
                 codeClass.AddInnerClass(null);
             });
             Assert.Throws<ArgumentOutOfRangeException>(() => {
-                codeClass.AddInnerClass(new CodeClass[] {});
+                codeClass.AddInnerClass(Array.Empty<CodeClass>());
             });
             Assert.Throws<ArgumentNullException>(() => {
                 codeClass.AddInnerClass(new CodeClass[] {null});
@@ -85,7 +85,7 @@ namespace Kiota.Builder.Tests {
         [Fact]
         public void AddsInnerElements() {
             var root = CodeNamespace.InitRootNamespace();
-            var child = root.AddNamespace(CodeNamespaceTests.childName);
+            var child = root.AddNamespace(CodeNamespaceTests.ChildName);
             var codeClass = child.AddClass(new CodeClass(child) {
                 Name = "class1"
             }).First();
@@ -105,7 +105,7 @@ namespace Kiota.Builder.Tests {
         [Fact]
         public void GetsParentAndGrandParent() {
             var root = CodeNamespace.InitRootNamespace();
-            var child = root.AddNamespace(CodeNamespaceTests.childName);
+            var child = root.AddNamespace(CodeNamespaceTests.ChildName);
             var grandParent = child.AddClass(new CodeClass(child) {
                 Name = "class1"
             }).First();
@@ -128,7 +128,7 @@ namespace Kiota.Builder.Tests {
         [Fact]
         public void ContainsMember() {
             var root = CodeNamespace.InitRootNamespace();
-            var child = root.AddNamespace(CodeNamespaceTests.childName);
+            var child = root.AddNamespace(CodeNamespaceTests.ChildName);
             var codeClass = child.AddClass(new CodeClass(child) {
                 Name = "class1"
             }).First();
