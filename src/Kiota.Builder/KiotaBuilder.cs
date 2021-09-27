@@ -708,10 +708,9 @@ namespace Kiota.Builder
         private CodeTypeBase CreateInheritedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation) {
             var allOfs = schema.AllOf.FlattenEmptyEntries(x => x.AllOf);
             CodeElement codeDeclaration = null;
-            var lastSchema = allOfs.LastOrDefault();
             var className = string.Empty;
             foreach(var currentSchema in allOfs) {
-                var referenceId = currentSchema.Reference == null && currentSchema == lastSchema ? schema.Reference?.Id : currentSchema.Reference?.Id;
+                var referenceId = GetReferenceIdFromOriginalSchema(currentSchema, schema);
                 var shortestNamespaceName = string.IsNullOrEmpty(referenceId) ? currentNode.GetNodeNamespaceFromPath(config.ClientNamespaceName) : GetModelsNamespaceNameFromReferenceId(referenceId);
                 var shortestNamespace = rootNamespace.FindNamespaceByName(shortestNamespaceName);
                 if(shortestNamespace == null)
@@ -724,6 +723,22 @@ namespace Kiota.Builder
                 TypeDefinition = codeDeclaration,
                 Name = className,
             };
+        }
+        private static string GetReferenceIdFromOriginalSchema(OpenApiSchema schema, OpenApiSchema parentSchema) {
+            var title = schema.Title;
+            if(!string.IsNullOrEmpty(schema.Reference?.Id)) return schema.Reference.Id;
+            if(parentSchema.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false) return parentSchema.Reference.Id;
+            if(parentSchema.Items?.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false) return parentSchema.Items.Reference.Id;
+            return (parentSchema.
+                            AllOf
+                            .FirstOrDefault(x => x.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false) ??
+                    parentSchema.
+                            AnyOf
+                            .FirstOrDefault(x => x.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false) ??
+                    parentSchema.
+                            OneOf
+                            .FirstOrDefault(x => x.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false))
+                ?.Reference?.Id;
         }
         private CodeTypeBase CreateUnionModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, string suffixForInlineSchema) {
             var schemas = schema.AnyOf.Union(schema.OneOf);
