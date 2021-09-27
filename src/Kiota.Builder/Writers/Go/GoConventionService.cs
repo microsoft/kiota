@@ -56,7 +56,7 @@ namespace Kiota.Builder.Writers.Go {
         {
             if(type.Name.StartsWith("map[")) return type.Name; //casing hack
 
-            return (type.Name) switch {
+            return type.Name switch {
                 "void" => string.Empty,
                 "string" => "string",
                 "float" => "float32",
@@ -67,24 +67,25 @@ namespace Kiota.Builder.Writers.Go {
                 "guid" => "uuid.UUID",
                 "datetimeoffset" => "time.Time",
                 "binary" => "[]byte",
-                ("String") => type.Name.ToFirstCharacterLowerCase(), //casing hack
+                "String" => type.Name.ToFirstCharacterLowerCase(), //casing hack
                 _ => type.Name.ToFirstCharacterUpperCase() ?? "Object",
             };
         }
-        private static bool IsPrimitiveType(string typeName) {
-            return typeName switch {
-                ("void" or "string" or "float" or "integer" or "long" or "double" or "boolean" or "guid" or "datetimeoffset") => true,
+        public bool IsPrimitiveType(string typeName) {
+            return typeName.TrimStart('*') switch {
+                "void" or "string" or "float" or "integer" or "long" or "double" or "boolean" or "guid" or "datetimeoffset"
+                or "bool" or "int32" or "int64" or "float32" or "UUID" or "Time" => true,
                 _ => false,
             };
         }
         public bool IsScalarType(string typeName) {
             if(typeName.StartsWith("map[")) return true;
             return typeName.ToLowerInvariant() switch {
-                ("binary" or "void" or "[]byte") => true,
+                "binary" or "void" or "[]byte" => true,
                 _ => false,
             };
         }
-        private static string GetImportSymbol(CodeTypeBase currentBaseType, CodeElement targetElement) {
+        private string GetImportSymbol(CodeTypeBase currentBaseType, CodeElement targetElement) {
             if(currentBaseType == null || IsPrimitiveType(currentBaseType.Name)) return string.Empty;
             var targetNamespace = targetElement.GetImmediateParentOfType<CodeNamespace>();
             if(currentBaseType is CodeType currentType) {

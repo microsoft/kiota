@@ -260,11 +260,11 @@ namespace Kiota.Builder.Writers.Go {
         private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, string returnType, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             if(returnType == null) throw new InvalidOperationException("return type cannot be null"); // string.Empty is a valid return type
-            var isScalar = conventions.IsScalarType(returnType);
+            var isPrimitive = conventions.IsPrimitiveType(returnType);
             var sendMethodName = returnType switch {
                 "void" => "SendNoContentAsync",
                 _ when string.IsNullOrEmpty(returnType) => "SendNoContentAsync",
-                _ when isScalar => "SendPrimitiveAsync",
+                _ when isPrimitive => "SendPrimitiveAsync",
                 _ => "SendAsync"
             };
             var responseHandlerParam = codeElement.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.ResponseHandler));
@@ -275,7 +275,7 @@ namespace Kiota.Builder.Writers.Go {
             var parsableImportSymbol = GetConversionHelperMethodImport(codeElement.Parent as CodeClass, "Parsable");
             var constructorFunction = returnType switch {
                 _ when isVoid => string.Empty,
-                _ when isScalar => $"\"{parsableImportSymbol}\", ",
+                _ when isPrimitive => $"\"{returnType.TrimStart('*')}\", ",
                 _ => $"func () {parsableImportSymbol} {{ return new({conventions.GetTypeString(codeElement.ReturnType, codeElement.Parent, true, false)}) }}, ",
             };
             var returnTypeDeclaration = isVoid ?
@@ -308,12 +308,11 @@ namespace Kiota.Builder.Writers.Go {
             var requestInfoParameters = paramsList.Where(x => x != null)
                                                 .Select(x => x.Name)
                                                 .ToList();
-            var shouldSkipBodyParam = requestBodyParam == null && (codeElement.HttpMethod == HttpMethod.Get || codeElement.HttpMethod == HttpMethod.Delete);
-            var skipIndex = shouldSkipBodyParam ? 1 : 0;
+            var skipIndex = requestBodyParam == null ? 1 : 0;
             if(codeElement.IsOverload && !codeElement.OriginalMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.QueryParameter)) || // we're on an overload and the original method has no query parameters
                 !codeElement.IsOverload && queryStringParam == null) // we're on the original method and there is no query string parameter
                 skipIndex++;// we skip the query string parameter null value
-            requestInfoParameters.AddRange(paramsList.Where(x => x == null).Skip(skipIndex).Select(x => "null"));
+            requestInfoParameters.AddRange(paramsList.Where(x => x == null).Skip(skipIndex).Select(x => "nil"));
             var paramsCall = requestInfoParameters.Any() ? requestInfoParameters.Aggregate((x,y) => $"{x}, {y}") : string.Empty;
             writer.WriteLine($"{prefix}m.{generatorMethodName}({paramsCall});");
         }
@@ -405,7 +404,7 @@ namespace Kiota.Builder.Writers.Go {
                     return $"n.GetEnum{(currentEnum.Flags ? "Set" : string.Empty)}Value(Parse{propertyTypeName.ToFirstCharacterUpperCase()})";
             }
             return propertyTypeName switch {
-                ("string" or "bool" or "int32" or "float32" or "int64" or "UUID" or "Time") => 
+                _ when conventions.IsPrimitiveType(propertyTypeName) => 
                     $"n.Get{propertyTypeName.ToFirstCharacterUpperCase()}Value()",
                 _ => $"n.{GetObjectValueMethodName}({GetTypeFactory(propType, parentClass, propertyTypeName)})",
             };
@@ -450,21 +449,12 @@ namespace Kiota.Builder.Writers.Go {
                     return;
                 }
             }
-            switch(propertyType) {
-                case "string":
-                case "bool":
-                case "int32":
-                case "float32":
-                case "int64":
-                case "UUID":
-                case "Time": 
-                    writer.WriteLine($"{errorPrefix}WritePrimitiveValue({serializationKey}, {valueGet})");
-                    WriteReturnError(writer);
-                break;
-                default:
-                    writer.WriteLine($"{errorPrefix}WriteObjectValue({serializationKey}, {valueGet})");
-                    WriteReturnError(writer);
-                break;
+            if(conventions.IsPrimitiveType(propertyType)) {
+                writer.WriteLine($"{errorPrefix}WritePrimitiveValue({serializationKey}, {valueGet})");
+                WriteReturnError(writer);
+            } else {
+                writer.WriteLine($"{errorPrefix}WriteObjectValue({serializationKey}, {valueGet})");
+                WriteReturnError(writer);
             }
         }
         private string GetConversionHelperMethodImport(CodeClass parentClass, string name) {
