@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using Kiota.Builder.Writers.Go;
 
 namespace Kiota.Builder.Refiners {
     public class GoRefiner : CommonLanguageRefiner
@@ -37,9 +37,7 @@ namespace Kiota.Builder.Refiners {
                 true);
             AddDefaultImports(
                 generatedCode,
-                defaultNamespaces,
-                defaultNamespacesForModels,
-                defaultNamespacesForRequestBuilders);
+                defaultNamespaces);
             CorrectCoreType(
                 generatedCode,
                 CorrectMethodType,
@@ -139,24 +137,25 @@ namespace Kiota.Builder.Refiners {
             }
             CrawlTree(currentElement, AddErrorImportForEnums);
         }
-        private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
-            new ("HttpCore", "github.com/microsoft/kiota/abstractions/go"),
-            new ("HttpMethod", "github.com/microsoft/kiota/abstractions/go"),
-            new ("RequestInformation", "github.com/microsoft/kiota/abstractions/go"),
-            new ("ResponseHandler", "github.com/microsoft/kiota/abstractions/go"),
-            new ("MiddlewareOption", "github.com/microsoft/kiota/abstractions/go"),
-            new ("QueryParametersBase", "github.com/microsoft/kiota/abstractions/go"),
-            new ("Parsable", "github.com/microsoft/kiota/abstractions/go/serialization"),
-        };
-        private static readonly Tuple<string, string>[] defaultNamespaces = new Tuple<string, string>[] { 
-            new ("SerializationWriter", "github.com/microsoft/kiota/abstractions/go/serialization"),
-        };
-        private static readonly Tuple<string, string>[] defaultNamespacesForModels = new Tuple<string, string>[] { 
-            new ("ParseNode", "github.com/microsoft/kiota/abstractions/go/serialization"),
-            new ("Parsable", "github.com/microsoft/kiota/abstractions/go/serialization"),
-            new ("ConvertToArrayOfParsable", "github.com/microsoft/kiota/abstractions/go/serialization"),
-            new ("ConvertToArrayOfPrimitives", "github.com/microsoft/kiota/abstractions/go/serialization"),
-        };
+        private static readonly GoConventionService conventions = new();
+        private static readonly Tuple<Func<CodeElement, bool>, string, string[]>[] defaultNamespaces = new Tuple<Func<CodeElement, bool>, string, string[]>[] { 
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.HttpCore),
+                "github.com/microsoft/kiota/abstractions/go", new string[] {"HttpCore"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+                "github.com/microsoft/kiota/abstractions/go", new string[] {"RequestInformation", "HttpMethod", "MiddlewareOption"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+                "github.com/microsoft/kiota/abstractions/go", new string[] {"ResponseHandler"}),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.QueryParameters),
+                "github.com/microsoft/kiota/abstractions/go", new string[] {"QueryParametersBase"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor) &&
+                        !method.ReturnType.Name.Equals("void", StringComparison.OrdinalIgnoreCase) &&
+                        !conventions.IsPrimitiveType(method.ReturnType.Name),
+                "github.com/microsoft/kiota/abstractions/go/serialization", new string[] {"Parsable"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
+                "github.com/microsoft/kiota/abstractions/go/serialization", new string[] {"SerializationWriter"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+                "github.com/microsoft/kiota/abstractions/go/serialization", new string[] {"ParseNode", "ConvertToArrayOfParsable", "ConvertToArrayOfPrimitives"}),
+        };//TODO add backing store types once we have them defined
         private static void CorrectMethodType(CodeMethod currentMethod) {
             if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) &&
                 currentMethod.Parent is CodeClass parentClass) {

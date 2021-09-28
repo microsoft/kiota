@@ -9,7 +9,7 @@ namespace Kiota.Builder.Refiners {
         public CSharpRefiner(GenerationConfiguration configuration) : base(configuration) {}
         public override void Refine(CodeNamespace generatedCode)
         {
-            AddDefaultImports(generatedCode);
+            AddDefaultImports(generatedCode, defaultNamespaces);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
@@ -64,16 +64,37 @@ namespace Kiota.Builder.Refiners {
             }
             CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
         }
-        private static readonly string[] defaultNamespacesForClasses = new string[] {"System", "System.Collections.Generic", "System.Linq"};
-        private static readonly string[] defaultNamespacesForRequestBuilders = new string[] { "System.Threading.Tasks", "System.IO", "Microsoft.Kiota.Abstractions", "Microsoft.Kiota.Abstractions.Serialization"};
-        private static void AddDefaultImports(CodeElement current) {
-            if(current is CodeClass currentClass) {
-                currentClass.AddUsing(defaultNamespacesForClasses.Select(x => new CodeUsing { Name = x }).ToArray());
-                if(currentClass.IsOfKind(CodeClassKind.RequestBuilder))
-                    currentClass.AddUsing(defaultNamespacesForRequestBuilders.Select(x => new CodeUsing { Name = x }).ToArray());
-            }
-            CrawlTree(current, AddDefaultImports);
-        }
+        private static readonly Tuple<Func<CodeElement, bool>, string, string[]>[] defaultNamespaces = new Tuple<Func<CodeElement, bool>, string, string[]>[] { 
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.HttpCore),
+                "Microsoft.Kiota.Abstractions", new string[] { "IHttpCore"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+                "Microsoft.Kiota.Abstractions", new string[] {"HttpMethod", "RequestInformation", "IMiddlewareOption"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+                "Microsoft.Kiota.Abstractions", new string[] {"IResponseHandler"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
+                "Microsoft.Kiota.Abstractions.Serialization", new string[] {"ISerializationWriter"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+                "Microsoft.Kiota.Abstractions.Serialization", new string[] {"IParseNode"}),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
+                "Microsoft.Kiota.Abstractions.Serialization", new string[] {"IParsable"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+                "Microsoft.Kiota.Abstractions.Serialization", new string[] {"IParsable"}),
+            new (x => x is CodeClass || x is CodeEnum,
+                "System", new string[] {"String"}),
+            new (x => x is CodeClass,
+                "System.Collections.Generic", new string[] {"List", "Dictionary"}),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder),
+                "System.IO", new string[] {"Stream"}),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
+                "System.Threading.Tasks", new string[] {"Task"}),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder),
+                "System.Linq", new string[] {"Enumerable"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
+                        method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
+                "Microsoft.Kiota.Abstractions.Store", new string[] { "IBackingStoreFactory", "IBackingStoreFactorySingleton"}),
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
+                "Microsoft.Kiota.Abstractions.Store", new string[] { "IBackingStore", "IBackedModel", "BackingStoreFactorySingleton" }),
+        };
         private static void CapitalizeNamespacesFirstLetters(CodeElement current) {
             if(current is CodeNamespace currentNamespace)
                 currentNamespace.Name = currentNamespace.Name?.Split('.')?.Select(x => x.ToFirstCharacterUpperCase())?.Aggregate((x, y) => $"{x}.{y}");

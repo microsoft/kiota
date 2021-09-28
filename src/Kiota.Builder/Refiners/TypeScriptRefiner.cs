@@ -8,10 +8,10 @@ namespace Kiota.Builder.Refiners {
         public TypeScriptRefiner(GenerationConfiguration configuration) : base(configuration) {}
         public override void Refine(CodeNamespace generatedCode)
         {
-            AddDefaultImports(generatedCode, Array.Empty<Tuple<string, string>>(), defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
+            AddDefaultImports(generatedCode, defaultImports);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
-            CorrectCoreTypesForBackingStore(generatedCode, "@microsoft/kiota-abstractions", "BackingStoreFactorySingleton.instance.createBackingStore()");
+            CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
             AliasUsingsWithSameSymbol(generatedCode);
             AddParsableInheritanceForModelClasses(generatedCode);
@@ -69,17 +69,26 @@ namespace Kiota.Builder.Refiners {
             }
             CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
         }
-        private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
-            new ("HttpCore", "@microsoft/kiota-abstractions"),
-            new ("HttpMethod", "@microsoft/kiota-abstractions"),
-            new ("RequestInformation", "@microsoft/kiota-abstractions"),
-            new ("ResponseHandler", "@microsoft/kiota-abstractions"),
-            new ("MiddlewareOption", "@microsoft/kiota-abstractions"),
-        };
-        private static readonly Tuple<string, string>[] defaultNamespacesForModels = new Tuple<string, string>[] { 
-            new ("SerializationWriter", "@microsoft/kiota-abstractions"),
-            new ("ParseNode", "@microsoft/kiota-abstractions"),
-            new ("Parsable", "@microsoft/kiota-abstractions"),
+        private static readonly Tuple<Func<CodeElement, bool>, string, string[]>[] defaultImports = new Tuple<Func<CodeElement, bool>, string, string[]>[] { 
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.HttpCore),
+                "@microsoft/kiota-abstractions", new string[] {"HttpCore"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+                "@microsoft/kiota-abstractions", new string[] {"HttpMethod", "RequestInformation", "MiddlewareOption"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+                "@microsoft/kiota-abstractions", new string[] {"ResponseHandler"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
+                "@microsoft/kiota-abstractions", new string[] {"SerializationWriter"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+                "@microsoft/kiota-abstractions", new string[] {"ParseNode"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+                "@microsoft/kiota-abstractions", new string[] {"Parsable"}),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
+                "@microsoft/kiota-abstractions", new string[] {"Parsable"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
+                        method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
+                "@microsoft/kiota-abstractions", new string[] { "BackingStoreFactory", "BackingStoreFactorySingleton"}),
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
+                "@microsoft/kiota-abstractions", new string[] { "BackingStore", "BackedModel", "BackingStoreFactorySingleton" }),
         };
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if(currentProperty.IsOfKind(CodePropertyKind.HttpCore))

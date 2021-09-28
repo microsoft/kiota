@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers.Java;
 
 namespace Kiota.Builder.Refiners {
     public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
@@ -13,9 +13,8 @@ namespace Kiota.Builder.Refiners {
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);
             ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
             ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
-            AddRequireNonNullImports(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
-            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
+            AddDefaultImports(generatedCode, defaultNamespaces);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             PatchHeaderParametersType(generatedCode, "Map<String, String>");
             AddParsableInheritanceForModelClasses(generatedCode);
@@ -28,7 +27,7 @@ namespace Kiota.Builder.Refiners {
                                                 }, _configuration.UsesBackingStore, true);
             SetSetterParametersToNullable(generatedCode, new Tuple<CodeMethodKind, CodePropertyKind>(CodeMethodKind.Setter, CodePropertyKind.AdditionalData));
             AddConstructorsForDefaultValues(generatedCode, true);
-            CorrectCoreTypesForBackingStore(generatedCode, "com.microsoft.kiota.store", "BackingStoreFactorySingleton.instance.createBackingStore()");
+            CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
             ReplaceDefaultSerializationModules(generatedCode, "com.microsoft.kiota.serialization.JsonSerializationWriterFactory");
             ReplaceDefaultDeserializationModules(generatedCode, "com.microsoft.kiota.serialization.JsonParseNodeFactory");
             AddSerializationModulesImport(generatedCode,
@@ -65,28 +64,43 @@ namespace Kiota.Builder.Refiners {
             }
             CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
         }
-        private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
-            new ("HttpCore", "com.microsoft.kiota"),
-            new ("HttpMethod", "com.microsoft.kiota"),
-            new ("RequestInformation", "com.microsoft.kiota"),
-            new ("ResponseHandler", "com.microsoft.kiota"),
-            new ("QueryParametersBase", "com.microsoft.kiota"),
-            new ("MiddlewareOption", "com.microsoft.kiota"),
-            new ("Map", "java.util"),
-            new ("URISyntaxException", "java.net"),
-            new ("InputStream", "java.io"),
-            new ("Function", "java.util.function"),
-            new ("Collection", "java.util"),
-        };
-        private static readonly Tuple<string, string>[] defaultNamespaces = new Tuple<string, string>[] { 
-            new ("SerializationWriter", "com.microsoft.kiota.serialization"),
-        };
-        private static readonly Tuple<string, string>[] defaultNamespacesForModels = new Tuple<string, string>[] { 
-            new ("ParseNode", "com.microsoft.kiota.serialization"),
-            new ("Parsable", "com.microsoft.kiota.serialization"),
-            new ("BiConsumer", "java.util.function"),
-            new ("Map", "java.util"),
-            new ("HashMap", "java.util"),
+        private static readonly JavaConventionService conventionService = new();
+        private static readonly Tuple<Func<CodeElement, bool>, string, string[]>[] defaultNamespaces = new Tuple<Func<CodeElement, bool>, string, string[]>[] { 
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.HttpCore),
+                "com.microsoft.kiota", new string[] { "HttpCore" }),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+                "com.microsoft.kiota", new string[] { "RequestInformation", "MiddlewareOption", "HttpMethod" }),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+                "java.net", new string[] { "URISyntaxException" }),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+                "java.util", new string[] { "Collection", "Map" }),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+                "com.microsoft.kiota", new string[] { "ResponseHandler"}),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.QueryParameters),
+                "com.microsoft.kiota", new string[] { "QueryParametersBase"}),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
+                "com.microsoft.kiota.serialization", new string[] { "Parsable" }),
+            new (x => x is CodeMethod method && method.Parameters.Any(x => !x.Optional),
+                    "java.util", new string[] { "Objects" }),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor) && 
+                        method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.RequestBody) &&
+                                            x.Type.Name.Equals(conventionService.StreamTypeName, StringComparison.OrdinalIgnoreCase)),
+                "java.io", new string[] { "InputStream" }),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
+                "com.microsoft.kiota.serialization", new string[] { "SerializationWriter" }),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+                "com.microsoft.kiota.serialization", new string[] { "ParseNode" }),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+                "com.microsoft.kiota.serialization", new string[] { "Parsable" }),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+                "java.util.function", new string[] { "BiConsumer" }),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+                "java.util", new string[] { "HashMap", "Map" }),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
+                        method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
+                "com.microsoft.kiota.store", new string[] { "BackingStoreFactory", "BackingStoreFactorySingleton"}),
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
+                "com.microsoft.kiota.store", new string[] { "BackingStore", "BackedModel", "BackingStoreFactorySingleton" }),
         };
         private const string OriginalDateTimeOffsetType = "DateTimeOffset";
         private const string JavaOffsetDateTimeType = "OffsetDateTime";
@@ -155,20 +169,6 @@ namespace Kiota.Builder.Refiners {
                 };
                 (currentMethod.Parent as CodeClass).AddUsing(nUsing);
             }
-        }
-        private static void AddRequireNonNullImports(CodeElement currentElement) {
-            if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => !x.Optional) &&
-                currentMethod.Parent is CodeClass parentClass) {
-                var newUsing = new CodeUsing {
-                    Name = "Objects",
-                    Declaration = new CodeType {
-                        Name = "java.util",
-                        IsExternal = true,
-                    },
-                };
-                parentClass.AddUsing(newUsing);
-            }
-            CrawlTree(currentElement, AddRequireNonNullImports);
         }
         private static void InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass) {

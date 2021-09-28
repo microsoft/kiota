@@ -432,21 +432,6 @@ namespace Kiota.Builder
                     }
                 };
                 constructor.AddParameter(backingStoreParam);
-                var backingStoreInterfaceUsing = new CodeUsing {
-                    Name = factoryInterfaceName,
-                    Declaration = new CodeType {
-                        Name = StoreNamespaceName,
-                        IsExternal = true,
-                    }
-                };
-                var backingStoreSingletonUsing = new CodeUsing {
-                    Name = BackingStoreSingleton,
-                    Declaration = new CodeType() {
-                        Name = StoreNamespaceName,
-                        IsExternal = true,
-                    }
-                };
-                currentClass.AddUsing(backingStoreInterfaceUsing, backingStoreSingletonUsing);
             }
         }
         private static readonly Func<CodeClass, int> shortestNamespaceOrder = (x) => x.GetNamespaceDepth();
@@ -937,28 +922,6 @@ namespace Kiota.Builder
                     },
                 };
                 model.AddProperty(backingStoreProperty);
-                var backingStoreUsing = new CodeUsing {
-                    Name = BackingStoreInterface,
-                    Declaration = new CodeType {
-                        Name = StoreNamespaceName,
-                        IsExternal = true
-                    },
-                };
-                var backedModelUsing = new CodeUsing {
-                    Name = BackedModelInterface,
-                    Declaration = new CodeType {
-                        Name = StoreNamespaceName,
-                        IsExternal = true
-                    },
-                };
-                var storeImplUsing = new CodeUsing {
-                    Name = BackingStoreSingleton,
-                    Declaration = new CodeType {
-                        Name = StoreNamespaceName,
-                        IsExternal = true,
-                    },
-                };
-                model.AddUsing(backingStoreUsing, backedModelUsing, storeImplUsing);
                 (model.StartBlock as CodeClass.Declaration).AddImplements(new CodeType {
                     Name = BackedModelInterface,
                     IsExternal = true,

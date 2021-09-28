@@ -69,10 +69,9 @@ namespace Kiota.Builder.Refiners {
         }
         internal const string GetterPrefix = "get-";
         internal const string SetterPrefix = "set-";
-        protected static void CorrectCoreTypesForBackingStore(CodeElement currentElement, string storeNamespace, string defaultPropertyValue) {
+        protected static void CorrectCoreTypesForBackingStore(CodeElement currentElement, string defaultPropertyValue) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder)
                 && currentClass.StartBlock is CodeClass.Declaration currentDeclaration) {
-                CorrectCoreTypeForBackingStoreUsings(currentDeclaration, storeNamespace, defaultPropertyValue);
                 var backedModelImplements = currentDeclaration.Implements.FirstOrDefault(x => "IBackedModel".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
                 if(backedModelImplements != null)
                     backedModelImplements.Name = backedModelImplements.Name[1..]; //removing the "I"
@@ -81,24 +80,7 @@ namespace Kiota.Builder.Refiners {
                     backingStoreProperty.DefaultValue = defaultPropertyValue;
                 
             }
-            CrawlTree(currentElement, (x) => CorrectCoreTypesForBackingStore(x, storeNamespace, defaultPropertyValue));
-        }
-        private static void CorrectCoreTypeForBackingStoreUsings(CodeClass.Declaration currentDeclaration, string storeNamespace, string defaultPropertyValue) {
-            foreach(var backingStoreUsing in currentDeclaration.Usings.Where(x => "Microsoft.Kiota.Abstractions.Store".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase))) {
-                if(backingStoreUsing?.Declaration != null) {
-                    if(backingStoreUsing.Name.StartsWith("I"))
-                        backingStoreUsing.Name = backingStoreUsing.Name[1..]; // removing the "I"
-                    backingStoreUsing.Declaration.Name = storeNamespace;
-                }
-            }
-            var defaultValueUsing = currentDeclaration
-                                        .Usings
-                                        .FirstOrDefault(x => "BackingStoreFactorySingleton".Equals(x.Name, StringComparison.OrdinalIgnoreCase) &&
-                                            x.Declaration != null &&
-                                            x.Declaration.IsExternal &&
-                                            x.Declaration.Name.Equals(storeNamespace, StringComparison.OrdinalIgnoreCase));
-            if(defaultValueUsing != null)
-                defaultValueUsing.Name = defaultPropertyValue.Split('.').First();
+            CrawlTree(currentElement, (x) => CorrectCoreTypesForBackingStore(x, defaultPropertyValue));
         }
         private static bool DoesAnyParentHaveAPropertyWithDefaultValue(CodeClass current) {
             if(current.StartBlock is Declaration currentDeclaration &&
@@ -231,23 +213,26 @@ namespace Kiota.Builder.Refiners {
                                                     x.Type.Name = replacement.Invoke(x.Type.Name);
                                                 });
         }
-        private static CodeUsing usingSelector(Tuple<string, string> x) =>
-            new()
+        private static IEnumerable<CodeUsing> usingSelector(Tuple<Func<CodeElement, bool>, string, string[]> x) =>
+        x.Item3.Select(y => 
+            new CodeUsing
             {
-                Name = x.Item1,
+                Name = y,
                 Declaration = new CodeType { Name = x.Item2, IsExternal = true },
-            };
-        protected static void AddDefaultImports(CodeElement current, Tuple<string, string>[] defaultNamespaces, Tuple<string, string>[] defaultNamespacesForModels, Tuple<string, string>[] defaultNamespacesForRequestBuilders) {
-            if(current is CodeClass currentClass) {
-                if (currentClass.IsOfKind(CodeClassKind.Model))
-                    (currentClass.Parent is CodeClass parentClass ? parentClass : currentClass).AddUsing(defaultNamespaces.Union(defaultNamespacesForModels)
-                                            .Select(usingSelector).ToArray());
-                if (currentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
-                    var usingsToAdd = defaultNamespaces.Union(defaultNamespacesForRequestBuilders);
-                    currentClass.AddUsing(usingsToAdd.Select(usingSelector).ToArray());
+            });
+        protected static void AddDefaultImports(CodeElement current, Tuple<Func<CodeElement, bool>, string, string[]>[] defaultNamespaces) {
+            var usingsToAdd = defaultNamespaces.Where(x => x.Item1.Invoke(current))
+                            .SelectMany(x => usingSelector(x))
+                            .ToArray();
+            if(usingsToAdd.Any()) 
+                if(current is CodeEnum currentEnum) 
+                    currentEnum.AddUsings(usingsToAdd);
+                else {
+                    var parentClass = current.GetImmediateParentOfType<CodeClass>();
+                    var targetClass = parentClass.Parent is CodeClass parentClassParent ? parentClassParent : parentClass;
+                    targetClass.AddUsing(usingsToAdd);
                 }
-            }
-            CrawlTree(current, c => AddDefaultImports(c, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders));
+            CrawlTree(current, c => AddDefaultImports(c, defaultNamespaces));
         }
         private const string BinaryType = "binary";
         protected static void ReplaceBinaryByNativeType(CodeElement currentElement, string symbol, string ns, bool addDeclaration = false) {

@@ -13,7 +13,7 @@ namespace Kiota.Builder.Refiners {
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddParsableInheritanceForModelClasses(generatedCode);
             AddInheritedAndMethodTypesImports(generatedCode);
-            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
+            AddDefaultImports(generatedCode, defaultNamespaces);
             AddGetterAndSetterMethods(generatedCode, new() {
                                                     CodePropertyKind.Custom,
                                                     CodePropertyKind.AdditionalData,
@@ -29,20 +29,26 @@ namespace Kiota.Builder.Refiners {
                                                 "microsoft_kiota_abstractions.SerializationWriterFactoryRegistry" },
                                         new [] { "microsoft_kiota_abstractions.ParseNodeFactoryRegistry" });
         }
-        private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
-            new ("HttpCore", "microsoft_kiota_abstractions"),
-            new ("HttpMethod", "microsoft_kiota_abstractions"),
-            new ("RequestInformation", "microsoft_kiota_abstractions"),
-            new ("ResponseHandler", "microsoft_kiota_abstractions"),
-            new ("QueryParametersBase", "microsoft_kiota_abstractions"),
-            new ("SerializationWriterFactory", "microsoft_kiota_abstractions"),
-        };
-        private static readonly Tuple<string, string>[] defaultNamespaces = new Tuple<string, string>[] { 
-            new ("SerializationWriter", "microsoft_kiota_abstractions"),
-        };
-        private static readonly Tuple<string, string>[] defaultNamespacesForModels = new Tuple<string, string>[] { 
-            new ("ParseNode", "microsoft_kiota_abstractions"),
-            new ("Parsable", "microsoft_kiota_abstractions"),
+        private static readonly Tuple<Func<CodeElement, bool>, string, string[]>[] defaultNamespaces = new Tuple<Func<CodeElement, bool>, string, string[]>[] { 
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.HttpCore),
+                "microsoft_kiota_abstractions", new string[] { "HttpCore"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+                "microsoft_kiota_abstractions", new string[] {"HttpMethod", "RequestInformation"}), //TODO add middleware options once ruby supports it
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+                "microsoft_kiota_abstractions", new string[] {"ResponseHandler"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
+                "microsoft_kiota_abstractions", new string[] {"SerializationWriter"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+                "microsoft_kiota_abstractions", new string[] {"ParseNode"}),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
+                "microsoft_kiota_abstractions", new string[] {"Parsable"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+                "microsoft_kiota_abstractions", new string[] {"Parsable"}),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
+                        method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
+                "microsoft_kiota_abstractions", new string[] { "BackingStoreFactory", "BackingStoreFactorySingleton"}),
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
+                "microsoft_kiota_abstractions", new string[] { "BackingStore", "BackedModel", "BackingStoreFactorySingleton" }),
         };
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 

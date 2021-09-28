@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes an issue where Go generation could use reserved keywords #573
 - Fixes a bug where Go generation could end up with circular dependencies in models #573
 - Fixes a bug where Go generation would map the wrong http core method for primitive types #573
+- Fixes a bug where Go generation would have unused imports making build fail #573
 
 ## [0.0.8] - 2021-08-25
 
