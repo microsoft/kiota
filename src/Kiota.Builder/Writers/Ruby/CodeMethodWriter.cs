@@ -233,7 +233,7 @@ namespace Kiota.Builder.Writers.Ruby {
             {
                 "string" or "boolean" or "number" or "float" or "Guid" => $"get_{propertyType.ToSnakeCase()}_value()",
                 "DateTimeOffset" or "Date" => $"get_date_value()",
-                _ => $"get_object_value({(propType as CodeType).TypeDefinition.Parent.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase()}::{propertyType.ToFirstCharacterUpperCase()})",
+                _ => $"get_object_value({(propType as CodeType).TypeDefinition?.Parent?.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase()}::{propertyType.ToFirstCharacterUpperCase()})",
             };
         }
         private static string TranslateObjectType(string typeName)

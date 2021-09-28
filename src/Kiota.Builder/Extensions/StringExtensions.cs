@@ -54,7 +54,9 @@ namespace Kiota.Builder.Extensions {
             return output;
         }
         public static string NormalizeNameSpaceName(this string original, string delimiter) => 
-            original?.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z,y) => z + delimiter + y);
+            string.IsNullOrEmpty(original) ? 
+                original :
+                original?.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z,y) => z + delimiter + y);
         private static readonly HashAlgorithm sha = SHA256.Create();
         public static string GetNamespaceImportSymbol(this string importName) {
             if(string.IsNullOrEmpty(importName)) return string.Empty;
