@@ -442,3 +442,6 @@ $RECYCLE.BIN/
 !.vscode/extensions.json
 
 reports/
+
+## Java preference files
+*.prefs
