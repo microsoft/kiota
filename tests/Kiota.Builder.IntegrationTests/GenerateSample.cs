@@ -14,6 +14,7 @@ namespace Kiota.Builder.integrationtests
         [InlineData(GenerationLanguage.Ruby, false)]
         [InlineData(GenerationLanguage.CSharp, true)]
         [InlineData(GenerationLanguage.Java, true)]
+        [InlineData(GenerationLanguage.PHP, true)]
         [InlineData(GenerationLanguage.TypeScript, true)]
         [Theory]
         public async Task GeneratesTodo(GenerationLanguage language, bool backingStore) {
