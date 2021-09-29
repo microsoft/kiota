@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
 
@@ -34,7 +35,7 @@ namespace Kiota.Builder.Writers.Go {
                 var importSymbol = GetImportSymbol(code, targetElement);
                 if(!string.IsNullOrEmpty(importSymbol))
                     importSymbol += ".";
-                var typeName = TranslateType(currentType);
+                var typeName = TranslateType(currentType, true);
                 var nullableSymbol = addPointerSymbol && 
                                     currentType.IsNullable &&
                                     currentType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None &&
@@ -52,29 +53,32 @@ namespace Kiota.Builder.Writers.Go {
             else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
 
-        public override string TranslateType(CodeType type)
+        public override string TranslateType(CodeType type) => throw new InvalidOperationException("use the overload instead.");
+        public string TranslateType(CodeTypeBase type, bool includeImportSymbol)
         {
             if(type.Name.StartsWith("map[")) return type.Name; //casing hack
 
             return type.Name switch {
                 "void" => string.Empty,
-                "string" => "string",
                 "float" => "float32",
                 "integer" => "int32",
                 "long" => "int64",
                 "double" => "float64",
                 "boolean" => "bool",
-                "guid" => "uuid.UUID",
-                "datetimeoffset" => "time.Time",
+                "guid" when includeImportSymbol => "uuid.UUID",
+                "guid" when !includeImportSymbol => "UUID",
+                "DateTimeOffset" or "Time" when includeImportSymbol => "i336074805fc853987abe6f7fe3ad97a6a6f3077a16391fec744f671a015fbd7e.Time",
+                "DateTimeOffset" or "Time" when !includeImportSymbol => "Time",
                 "binary" => "[]byte",
-                "String" => type.Name.ToFirstCharacterLowerCase(), //casing hack
+                "string" or "float32" or "float64" or "int32" or "int64" => type.Name,
+                "String" or "Int64" or "Int32" or "Float32" or "Float64" => type.Name.ToFirstCharacterLowerCase(), //casing hack
                 _ => type.Name.ToFirstCharacterUpperCase() ?? "Object",
             };
         }
         public bool IsPrimitiveType(string typeName) {
-            return typeName.TrimStart('*') switch {
-                "void" or "string" or "float" or "integer" or "long" or "double" or "boolean" or "guid" or "datetimeoffset"
-                or "bool" or "int32" or "int64" or "float32" or "UUID" or "Time" => true,
+            return typeName.TrimCollectionAndPointerSymbols() switch {
+                "void" or "string" or "float" or "integer" or "long" or "double" or "boolean" or "guid" or "DateTimeOffset"
+                or "bool" or "int32" or "int64" or "float32" or "float64" or "UUID" or "Time" => true,
                 _ => false,
             };
         }
@@ -98,9 +102,9 @@ namespace Kiota.Builder.Writers.Go {
                    targetNamespace != enumNS)
                        return enumNS.GetNamespaceImportSymbol();
                 else if(currentType.TypeDefinition is null &&
-                        targetElement is CodeClass targetClass &&
-                        targetClass.StartBlock is CodeClass.Declaration targetClassDeclaration) {
-                            var symbolUsing = targetClassDeclaration
+                        targetElement is CodeClass targetClass) {
+                            var symbolUsing = (targetClass.Parent is CodeClass parentClass ? parentClass : targetClass)
+                                                            .StartBlock
                                                             .Usings
                                                             .FirstOrDefault(x => currentBaseType.Name.Equals(x.Name, StringComparison.OrdinalIgnoreCase));
                             return symbolUsing == null ? string.Empty : symbolUsing.Declaration.Name.GetNamespaceImportSymbol();
@@ -114,13 +118,14 @@ namespace Kiota.Builder.Writers.Go {
             throw new NotImplementedException();
         }
 
-        internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default)
+        internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default, IEnumerable<CodeParameter> pathParameters = default)
         {
             var currentPath = addCurrentPath ? $"m.{CurrentPathPropertyName} + " : string.Empty;
             var splatImport = returnType.Split('.');
             var constructorName = splatImport.Last().ToFirstCharacterUpperCase();
-            var moduleName = returnType.Length > 1 ? splatImport.First() + "." : string.Empty;
-            writer.WriteLines($"return *{moduleName}New{constructorName}({currentPath}m.{PathSegmentPropertyName}{suffix}, m.{HttpCorePropertyName}, false);");
+            var moduleName = splatImport.Length > 1 ? $"{splatImport.First()}." : string.Empty;
+            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $"{string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}, ";
+            writer.WriteLines($"return *{moduleName}New{constructorName}({currentPath}m.{PathSegmentPropertyName}{suffix}, m.{HttpCorePropertyName}, {pathParametersSuffix}false);");
         }
     }
 }

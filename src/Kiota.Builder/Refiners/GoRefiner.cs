@@ -152,13 +152,16 @@ namespace Kiota.Builder.Refiners {
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.QueryParameters),
                 "github.com/microsoft/kiota/abstractions/go", new string[] {"QueryParametersBase"}),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor) &&
-                        !method.ReturnType.Name.Equals("void", StringComparison.OrdinalIgnoreCase) &&
+                        !conventions.IsScalarType(method.ReturnType.Name) &&
                         !conventions.IsPrimitiveType(method.ReturnType.Name),
                 "github.com/microsoft/kiota/abstractions/go/serialization", new string[] {"Parsable"}),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
                 "github.com/microsoft/kiota/abstractions/go/serialization", new string[] {"SerializationWriter"}),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
                 "github.com/microsoft/kiota/abstractions/go/serialization", new string[] {"ParseNode", "ConvertToArrayOfParsable", "ConvertToArrayOfPrimitives"}),
+            new (x => x is CodeMethod method &&
+                method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path) && "DateTimeOffset".Equals(x.Type.Name, StringComparison.OrdinalIgnoreCase)),
+                "time", new string[] {"Time"}),
         };//TODO add backing store types once we have them defined
         private static void CorrectMethodType(CodeMethod currentMethod) {
             if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) &&
