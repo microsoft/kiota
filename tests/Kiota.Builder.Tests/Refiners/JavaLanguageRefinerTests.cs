@@ -43,6 +43,10 @@ namespace Kiota.Builder.Refiners.Tests {
                 Name = "rb",
                 ClassKind = CodeClassKind.RequestBuilder,
             }).First();
+            requestBuilder.AddMethod(new CodeMethod {
+                Name = "get",
+                MethodKind = CodeMethodKind.RequestExecutor,
+            });
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
             Assert.NotEmpty(model.StartBlock.Usings);
             Assert.NotEmpty(requestBuilder.StartBlock.Usings);

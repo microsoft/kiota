@@ -90,26 +90,30 @@ namespace Kiota.Builder.Refiners {
             }
         }
         private static CodeNamespace FindFirstModelSubnamepaceWithClasses(CodeNamespace currentNamespace) {
-            if(currentNamespace.Classes.Any()) return currentNamespace;
-            else
-                foreach (var subNS in currentNamespace.Namespaces)
-                {
-                    var result = FindFirstModelSubnamepaceWithClasses(subNS);
-                    if (result != null) return result;
-                }
+            if(currentNamespace != null) {
+                if(currentNamespace.Classes.Any()) return currentNamespace;
+                else
+                    foreach (var subNS in currentNamespace.Namespaces)
+                    {
+                        var result = FindFirstModelSubnamepaceWithClasses(subNS);
+                        if (result != null) return result;
+                    }
+            }
             return null;
         }
         private static CodeNamespace FindRootModelsNamespace(CodeNamespace currentNamespace) {
-            if(!string.IsNullOrEmpty(currentNamespace.Name) &&
-                currentNamespace.Name.EndsWith("Models", StringComparison.OrdinalIgnoreCase))
-                return currentNamespace;
-            else
-                foreach(var subNS in currentNamespace.Namespaces)
-                {
-                    var result = FindRootModelsNamespace(subNS);
-                    if(result != null)
-                        return result;
-                }
+            if(currentNamespace != null) {
+                if(!string.IsNullOrEmpty(currentNamespace.Name) &&
+                    currentNamespace.Name.EndsWith("Models", StringComparison.OrdinalIgnoreCase))
+                    return currentNamespace;
+                else
+                    foreach(var subNS in currentNamespace.Namespaces)
+                    {
+                        var result = FindRootModelsNamespace(subNS);
+                        if(result != null)
+                            return result;
+                    }
+            }
             return null;
         }
         private static void ReplaceRequestBuilderPropertiesByMethods(CodeElement currentElement) {
