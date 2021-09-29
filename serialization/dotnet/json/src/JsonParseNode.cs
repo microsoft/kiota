@@ -49,7 +49,7 @@ namespace Microsoft.Kiota.Serialization.Json
         /// Get the float value from the json node
         /// </summary>
         /// <returns>A float value</returns>
-        public float? GetFloatValue() => (float)_jsonNode.GetDecimal();
+        public float? GetFloatValue() => _jsonNode.GetSingle();
 
         /// <summary>
         /// Get the Long value from the json node
