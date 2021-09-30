@@ -52,6 +52,7 @@ namespace Kiota.Builder.Writers.Ruby {
                 writer.WriteLine($"# {description}");
             }
         }
+        #pragma warning disable CA1822 // Method should be static
         public string GetNormalizedNamespacePrefixForType(CodeTypeBase type) {
             if(type is CodeType xType && 
                 (xType.TypeDefinition is CodeClass || xType.TypeDefinition is CodeEnum) &&
@@ -59,11 +60,14 @@ namespace Kiota.Builder.Writers.Ruby {
                 return $"{ns.Name.NormalizeNameSpaceName("::")}::";
             else return string.Empty;
         }
+        #pragma warning restore CA1822 // Method should be static
         internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "#");
+        #pragma warning disable CA1822 // Method should be static
         internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default, string prefix = default, IEnumerable<CodeParameter> pathParameters = default) {
             var currentPath = addCurrentPath ? $"@{CurrentPathPropertyName} + " : string.Empty;
             var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $"{string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}, ";
             writer.WriteLine($"{prefix}{returnType.ToFirstCharacterUpperCase()}.new({currentPath}@{PathSegmentPropertyName} {suffix}, @{HttpCorePropertyName}, {pathParametersSuffix}false)");
         }
+        #pragma warning restore CA1822 // Method should be static
     }
 }

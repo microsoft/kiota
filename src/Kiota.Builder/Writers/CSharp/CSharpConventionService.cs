@@ -28,11 +28,13 @@ namespace Kiota.Builder.Writers.CSharp {
                 _ => "private",
             };
         }
+        #pragma warning disable CA1822 // Method should be static
         internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default, string prefix = default, IEnumerable<CodeParameter> pathParameters = default) {
             var currentPath = addCurrentPath ? $"{CurrentPathPropertyName} + " : string.Empty;
             var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $"{string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}, ";
             writer.WriteLine($"{prefix}new {returnType}({currentPath}{PathSegmentPropertyName} {suffix}, {HttpCorePropertyName}, {pathParametersSuffix}false);");
         }
+        #pragma warning restore CA1822 // Method should be static
         internal bool ShouldTypeHaveNullableMarker(CodeTypeBase propType, string propTypeName) {
             return propType.IsNullable && (NullableTypes.Contains(propTypeName) || (propType is CodeType codeType && codeType.TypeDefinition is CodeEnum));
         }

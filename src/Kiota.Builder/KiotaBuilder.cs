@@ -849,9 +849,7 @@ namespace Kiota.Builder
         private const string AdditionalDataPropName = "AdditionalData";
         private const string BackingStorePropertyName = "BackingStore";
         private const string BackingStoreInterface = "IBackingStore";
-        private const string BackingStoreSingleton = "BackingStoreFactorySingleton";
         private const string BackedModelInterface = "IBackedModel";
-        private const string StoreNamespaceName = "Microsoft.Kiota.Abstractions.Store";
         internal static void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties, bool usesBackingStore) {
             var serializationPropsType = $"IDictionary<string, Action<T, IParseNode>>";
             if(!model.ContainsMember(FieldDeserializersMethodName)) {

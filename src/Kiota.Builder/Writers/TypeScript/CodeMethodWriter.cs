@@ -29,6 +29,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
             var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
             var currentPathProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
+            var requestParams = new RequestParams(requestBodyParam, queryStringParam, headersParam, optionsParam);
             if(!codeElement.IsOfKind(CodeMethodKind.Setter))
                 foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
                     writer.WriteLine($"if(!{parameter.Name}) throw new Error(\"{parameter.Name} cannot be undefined\");");
@@ -45,10 +46,10 @@ namespace Kiota.Builder.Writers.TypeScript {
                     WriteSerializerBody(inherits, parentClass, writer);
                     break;
                 case CodeMethodKind.RequestGenerator:
-                    WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, optionsParam, parentClass, writer);
+                    WriteRequestGeneratorBody(codeElement, requestParams, parentClass, writer);
                 break;
                 case CodeMethodKind.RequestExecutor:
-                    WriteRequestExecutorBody(codeElement, new List<CodeParameter> {requestBodyParam, queryStringParam, headersParam, optionsParam}, isVoid, returnType, writer);
+                    WriteRequestExecutorBody(codeElement, requestParams, isVoid, returnType, writer);
                     break;
                 case CodeMethodKind.Getter:
                     WriteGetterBody(codeElement, writer, parentClass);
@@ -180,7 +181,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             writer.DecreaseIndent();
             writer.WriteLine("]);");
         }
-        private void WriteRequestExecutorBody(CodeMethod codeElement, IEnumerable<CodeParameter> parameters, bool isVoid, string returnType, LanguageWriter writer) {
+        private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
             var generatorMethodName = (codeElement.Parent as CodeClass)
@@ -189,7 +190,8 @@ namespace Kiota.Builder.Writers.TypeScript {
                                                 ?.Name
                                                 ?.ToFirstCharacterLowerCase();
             writer.WriteLine($"const requestInfo = this.{generatorMethodName}(");
-            var requestInfoParameters = parameters.Select(x => x?.Name).Where(x => x != null);
+            var requestInfoParameters = new CodeParameter[] { requestParams.requestBody, requestParams.queryString, requestParams.headers, requestParams.options }
+                	                        .Select(x => x?.Name).Where(x => x != null);
             if(requestInfoParameters.Any()) {
                 writer.IncreaseIndent();
                 writer.WriteLine(requestInfoParameters.Aggregate((x,y) => $"{x}, {y}"));
@@ -209,7 +211,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             return conventions.GetTypeString(clone, codeElement);
         }
         private const string RequestInfoVarName = "requestInfo";
-        private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeParameter optionsParam, CodeClass currentClass, LanguageWriter writer) {
+        private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
             var currentPathProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.CurrentPath).FirstOrDefault();
@@ -219,20 +221,20 @@ namespace Kiota.Builder.Writers.TypeScript {
             writer.WriteLines($"const {RequestInfoVarName} = new RequestInformation();",
                                 $"{RequestInfoVarName}.setUri({GetPropertyCall(currentPathProperty, "''")}, {GetPropertyCall(pathSegmentProperty, "''")}, {GetPropertyCall(rawUrlProperty, "false")});",
                                 $"{RequestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.ToString().ToUpperInvariant()};");
-            if(headersParam != null)
-                writer.WriteLine($"{headersParam.Name} && {RequestInfoVarName}.setHeadersFromRawObject(h);");
-            if(queryStringParam != null)
-                writer.WriteLines($"{queryStringParam.Name} && {RequestInfoVarName}.setQueryStringParametersFromRawObject(q);");
-            if(requestBodyParam != null) {
-                if(requestBodyParam.Type.Name.Equals(localConventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                    writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestBodyParam.Name});");
+            if(requestParams.headers != null)
+                writer.WriteLine($"{requestParams.headers.Name} && {RequestInfoVarName}.setHeadersFromRawObject(h);");
+            if(requestParams.queryString != null)
+                writer.WriteLines($"{requestParams.queryString.Name} && {RequestInfoVarName}.setQueryStringParametersFromRawObject(q);");
+            if(requestParams.requestBody != null) {
+                if(requestParams.requestBody.Type.Name.Equals(localConventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
+                    writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name});");
                 else {
-                    var spreadOperator = requestBodyParam.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
-                    writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable(this.{httpCoreProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {spreadOperator}{requestBodyParam.Name});");
+                    var spreadOperator = requestParams.requestBody.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
+                    writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable(this.{httpCoreProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {spreadOperator}{requestParams.requestBody.Name});");
                 }
             }
-            if(optionsParam != null)
-                writer.WriteLine($"{optionsParam.Name} && {RequestInfoVarName}.addMiddlewareOptions(...{optionsParam.Name});");
+            if(requestParams.options != null)
+                writer.WriteLine($"{requestParams.options.Name} && {RequestInfoVarName}.addMiddlewareOptions(...{requestParams.options.Name});");
             writer.WriteLine($"return {RequestInfoVarName};");
         }
         private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"this.{property.Name}";

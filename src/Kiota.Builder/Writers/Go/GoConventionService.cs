@@ -16,7 +16,9 @@ namespace Kiota.Builder.Writers.Go {
         private const string CurrentPathPropertyName = "currentPath";
         private const string HttpCorePropertyName = "httpCore";
         public override string ParseNodeInterfaceName => "ParseNode";
+        #pragma warning disable CA1822 // Method should be static
         public object AbstractionsHash => "ida96af0f171bb75f894a4013a6b3146a4397c58f11adb81a2b7cbea9314783a9";
+        #pragma warning restore CA1822 // Method should be static
         public override string GetAccessModifier(AccessModifier access)
         {
             throw new InvalidOperationException("go uses a naming convention for access modifiers");
@@ -54,6 +56,7 @@ namespace Kiota.Builder.Writers.Go {
         }
 
         public override string TranslateType(CodeType type) => throw new InvalidOperationException("use the overload instead.");
+        #pragma warning disable CA1822 // Method should be static
         public string TranslateType(CodeTypeBase type, bool includeImportSymbol)
         {
             if(type.Name.StartsWith("map[")) return type.Name; //casing hack
@@ -89,6 +92,7 @@ namespace Kiota.Builder.Writers.Go {
                 _ => false,
             };
         }
+        #pragma warning restore CA1822 // Method should be static
         private string GetImportSymbol(CodeTypeBase currentBaseType, CodeElement targetElement) {
             if(currentBaseType == null || IsPrimitiveType(currentBaseType.Name)) return string.Empty;
             var targetNamespace = targetElement.GetImmediateParentOfType<CodeNamespace>();
@@ -117,7 +121,7 @@ namespace Kiota.Builder.Writers.Go {
         {
             throw new NotImplementedException();
         }
-
+        #pragma warning disable CA1822 // Method should be static
         internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default, IEnumerable<CodeParameter> pathParameters = default)
         {
             var currentPath = addCurrentPath ? $"m.{CurrentPathPropertyName} + " : string.Empty;
@@ -127,5 +131,6 @@ namespace Kiota.Builder.Writers.Go {
             var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $"{string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}, ";
             writer.WriteLines($"return *{moduleName}New{constructorName}({currentPath}m.{PathSegmentPropertyName}{suffix}, m.{HttpCorePropertyName}, {pathParametersSuffix}false);");
         }
+        #pragma warning restore CA1822 // Method should be static
     }
 }

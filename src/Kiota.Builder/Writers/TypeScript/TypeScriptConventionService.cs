@@ -22,11 +22,12 @@ namespace Kiota.Builder.Writers.TypeScript {
         public override string ParseNodeInterfaceName => "ParseNode";
         internal string DocCommentStart = "/**";
         internal string DocCommentEnd = " */";
+        #pragma warning disable CA1822 // Method should be static
         internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default, string additionalPathParameters = default) {
             var currentPath = addCurrentPath ? $"this.{CurrentPathPropertyName} + " : string.Empty;
             writer.WriteLines($"return new {returnType}({currentPath}this.{PathSegmentPropertyName}{suffix}, this.{HttpCorePropertyName}{additionalPathParameters}, false);");
         }
-
+        #pragma warning restore CA1822 // Method should be static
         public override string GetAccessModifier(AccessModifier access)
         {
             return access switch {
@@ -99,12 +100,14 @@ namespace Kiota.Builder.Writers.TypeScript {
                 _ => type.Name.ToFirstCharacterUpperCase() ?? "object",
             };
         }
+        #pragma warning disable CA1822 // Method should be static
         public bool IsPrimitiveType(string typeName) {
             return typeName switch {
                 "number" or "string" or "byte[]" or "boolean" or "void" => true,
                 _ => false,
             };
         }
+        #pragma warning restore CA1822 // Method should be static
         internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
         public override void WriteShortDescription(string description, LanguageWriter writer)
         {
