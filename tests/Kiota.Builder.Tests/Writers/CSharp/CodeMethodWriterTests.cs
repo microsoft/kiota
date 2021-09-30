@@ -353,6 +353,24 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
+        public void WritesPathParameterRequestBuilder() {
+            method.MethodKind = CodeMethodKind.RequestBuilderWithParameters;
+            method.PathSegment = "somePath";
+            method.AddParameter(new CodeParameter {
+                Name = "pathParam",
+                ParameterKind = CodeParameterKind.Path,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            });
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("HttpCore", result);
+            Assert.Contains("PathSegment", result);
+            Assert.Contains("pathParam", result);
+            Assert.Contains("return new", result);
+        }
+        [Fact]
         public void WritesConstructor() {
             method.MethodKind = CodeMethodKind.Constructor;
             var defaultValue = "someVal";

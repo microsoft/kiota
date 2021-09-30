@@ -357,6 +357,24 @@ namespace Kiota.Builder.Writers.Go.Tests {
             Assert.Contains(method.PathSegment, result);
         }
         [Fact]
+        public void WritesPathParameterRequestBuilder() {
+            method.MethodKind = CodeMethodKind.RequestBuilderWithParameters;
+            method.PathSegment = "somePath";
+            method.AddParameter(new CodeParameter {
+                Name = "pathParam",
+                ParameterKind = CodeParameterKind.Path,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            });
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("m.httpCore", result);
+            Assert.Contains("m.pathSegment", result);
+            Assert.Contains("pathParam", result);
+            Assert.Contains("return *New", result);
+        }
+        [Fact]
         public void WritesGetterToBackingStore() {
             parentClass.AddBackingStoreProperty();
             method.AddAccessedProperty();

@@ -375,6 +375,24 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             Assert.Contains(method.PathSegment, result);
         }
         [Fact]
+        public void WritesPathParameterRequestBuilder() {
+            method.MethodKind = CodeMethodKind.RequestBuilderWithParameters;
+            method.PathSegment = "somePath";
+            method.AddParameter(new CodeParameter {
+                Name = "pathParam",
+                ParameterKind = CodeParameterKind.Path,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            });
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("http_core", result);
+            Assert.Contains("path_segment", result);
+            Assert.Contains("pathParam", result);
+            Assert.Contains("return Somecustomtype.new", result);
+        }
+        [Fact]
         public void WritesSetterToField() {
             method.AddAccessedProperty();
             method.MethodKind = CodeMethodKind.Setter;

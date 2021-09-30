@@ -126,7 +126,7 @@ namespace Kiota.Builder.Writers.Go {
         {
             var currentPath = addCurrentPath ? $"m.{CurrentPathPropertyName} + " : string.Empty;
             var splatImport = returnType.Split('.');
-            var constructorName = splatImport.Last().ToFirstCharacterUpperCase();
+            var constructorName = splatImport.Last().TrimCollectionAndPointerSymbols().ToFirstCharacterUpperCase();
             var moduleName = splatImport.Length > 1 ? $"{splatImport.First()}." : string.Empty;
             var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $"{string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}, ";
             writer.WriteLines($"return *{moduleName}New{constructorName}({currentPath}m.{PathSegmentPropertyName}{suffix}, m.{HttpCorePropertyName}, {pathParametersSuffix}false);");
