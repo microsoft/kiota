@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [0.0.9] - 2021-10-01
+
+### Added
+
 - Adds support for path parameters #573
 - Adds missing type mappings in TypeScript #573
 - Adds a missing http core method for collections of primitives #573
