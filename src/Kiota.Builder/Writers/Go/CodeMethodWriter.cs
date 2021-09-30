@@ -170,13 +170,15 @@ namespace Kiota.Builder.Writers.Go {
                     writer.WriteLine($"{methodImportSymbol}(func() {interfaceImportSymbol} {{ return {moduleImportSymbol}.New{module}() }})");
                 }
         }
-        private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
+        private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
             writer.WriteLine($"m := &{parentClass.Name.ToFirstCharacterUpperCase()}{{");
             if(inherits &&
                 parentClass.StartBlock is CodeClass.Declaration declaration) {
                 writer.IncreaseIndent();
                 var parentClassName = declaration.Inherits.Name.ToFirstCharacterUpperCase();
-                writer.WriteLine($"{parentClassName}: *New{parentClassName}(),");
+                var parentClassFullSymbol = conventions.GetTypeString(declaration.Inherits, parentClass, false, false);
+                var moduleName = parentClassFullSymbol.Contains(dot) ? $"{parentClassFullSymbol.Split(dot).First()}." : string.Empty;
+                writer.WriteLine($"{parentClassName}: *{moduleName}New{parentClassName}(),");
                 writer.DecreaseIndent();
             }
             writer.WriteLine("}");
