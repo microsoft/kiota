@@ -440,6 +440,15 @@ namespace Kiota.Builder.Writers.Go.Tests {
             Assert.Contains($"m.{propName} = {defaultValue}", result);
         }
         [Fact]
+        public void WritesInheritedConstructor() {
+            method.MethodKind = CodeMethodKind.Constructor;
+            AddInheritanceClass();
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+            Assert.Contains("SomeParentClass: *NewSomeParentClass", result);
+        }
+        [Fact]
         public void WritesApiConstructor() {
             method.MethodKind = CodeMethodKind.ClientConstructor;
             var coreProp = parentClass.AddProperty(new CodeProperty {
