@@ -57,6 +57,9 @@ namespace Kiota.Builder.Writers.Ruby {
                     WriteMethodPrototype(codeElement, writer);
                     WriteConstructorBody(parentClass, codeElement, writer, inherits);
                     break;
+                case CodeMethodKind.RequestBuilderWithParameters:
+                    WriteRequestBuilderBody(parentClass, codeElement, writer);
+                    break;
                 case CodeMethodKind.RequestBuilderBackwardCompatibility:
                     throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
                 default:
@@ -66,6 +69,12 @@ namespace Kiota.Builder.Writers.Ruby {
             }
             writer.DecreaseIndent();
             writer.WriteLine("end");
+        }
+        private void WriteRequestBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
+        {
+            var importSymbol = conventions.GetTypeString(codeElement.ReturnType, parentClass);
+            var currentPathProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
+            conventions.AddRequestBuilderBody(currentPathProperty != null, importSymbol, writer, pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
         }
         private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
             var httpCoreProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));

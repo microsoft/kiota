@@ -67,6 +67,9 @@ namespace Kiota.Builder.Writers.Java {
                 case CodeMethodKind.Constructor:
                     WriteConstructorBody(parentClass, codeElement, writer, inherits);
                     break;
+                case CodeMethodKind.RequestBuilderWithParameters:
+                    WriteRequestBuilderBody(parentClass, codeElement, writer);
+                    break;
                 case CodeMethodKind.RequestBuilderBackwardCompatibility:
                     throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
                 default:
@@ -75,6 +78,12 @@ namespace Kiota.Builder.Writers.Java {
             }
             writer.DecreaseIndent();
             writer.WriteLine("}");
+        }
+        private void WriteRequestBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
+        {
+            var importSymbol = conventions.GetTypeString(codeElement.ReturnType, parentClass);
+            var currentPathProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
+            conventions.AddRequestBuilderBody(currentPathProperty != null, importSymbol, writer, pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
         }
         private static void AddNullChecks(CodeMethod codeElement, LanguageWriter writer) {
             if(!codeElement.IsOverload)

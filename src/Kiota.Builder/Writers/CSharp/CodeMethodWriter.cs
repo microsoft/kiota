@@ -52,6 +52,9 @@ namespace Kiota.Builder.Writers.CSharp {
                 case CodeMethodKind.Constructor:
                     WriteConstructorBody(parentClass, codeElement, writer);
                     break;
+                case CodeMethodKind.RequestBuilderWithParameters:
+                    WriteRequestBuilderBody(parentClass, codeElement, writer);
+                    break;
                 case CodeMethodKind.Getter:
                 case CodeMethodKind.Setter:
                     throw new InvalidOperationException("getters and setters are automatically added on fields in dotnet");
@@ -63,6 +66,12 @@ namespace Kiota.Builder.Writers.CSharp {
             }
             writer.DecreaseIndent();
             writer.WriteLine("}");
+        }
+        private void WriteRequestBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
+        {
+            var importSymbol = conventions.GetTypeString(codeElement.ReturnType, parentClass);
+            var currentPathProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
+            conventions.AddRequestBuilderBody(currentPathProperty != null, importSymbol, writer, prefix: "return ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
         }
         private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
             var httpCoreProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
