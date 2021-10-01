@@ -96,15 +96,15 @@ func (request *RequestInformation) SetStreamContent(content []byte) {
 	request.Content = content
 	request.Headers[contentTypeHeader] = binaryContentType
 }
-func (request *RequestInformation) SetContentFromParsable(coreService HttpCore, contentType string, items ...s.Parsable) error {
+func (request *RequestInformation) SetContentFromParsable(requestAdapter RequestAdapter, contentType string, items ...s.Parsable) error {
 	if contentType == "" {
 		return errors.New("content type cannot be empty")
-	} else if coreService == nil {
-		return errors.New("coreService cannot be nil")
-	} else if items == nil || len(items) == 0 {
+	} else if requestAdapter == nil {
+		return errors.New("requestAdapter cannot be nil")
+	} else if len(items) == 0 {
 		return errors.New("items cannot be nil or empty")
 	}
-	factory, err := coreService.GetSerializationWriterFactory()
+	factory, err := requestAdapter.GetSerializationWriterFactory()
 	if err != nil {
 		return err
 	} else if factory == nil {
