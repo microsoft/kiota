@@ -10,7 +10,7 @@ import com.microsoft.kiota.serialization.SerializationWriterFactory;
 import com.microsoft.kiota.store.BackingStoreFactory;
 
 /** Service responsible for translating abstract Request Info into concrete native HTTP requests. */
-public interface HttpCore {
+public interface RequestAdapter {
     /**
      * Enables the backing store proxies for the SerializationWriters and ParseNodes in use.
      * @param backingStoreFactory The backing store factory to use.

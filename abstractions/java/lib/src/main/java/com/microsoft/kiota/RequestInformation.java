@@ -15,7 +15,7 @@ import javax.annotation.Nullable;
 
 import com.microsoft.kiota.serialization.Parsable;
 import com.microsoft.kiota.serialization.SerializationWriter;
-import com.microsoft.kiota.HttpCore;
+import com.microsoft.kiota.RequestAdapter;
 
 /** This class represents an abstract HTTP request. */
 public class RequestInformation {
@@ -110,16 +110,16 @@ public class RequestInformation {
      * Sets the request body from a model with the specified content type.
      * @param values the models.
      * @param contentType the content type.
-     * @param httpCore The core service to get the serialization writer from.
+     * @param requestAdapter The adapter service to get the serialization writer from.
      * @param <T> the model type.
      */
-    public <T extends Parsable> void setContentFromParsable(@Nonnull final HttpCore httpCore, @Nonnull final String contentType, @Nonnull final T... values) {
-        Objects.requireNonNull(httpCore);
+    public <T extends Parsable> void setContentFromParsable(@Nonnull final RequestAdapter requestAdapter, @Nonnull final String contentType, @Nonnull final T... values) {
+        Objects.requireNonNull(requestAdapter);
         Objects.requireNonNull(values);
         Objects.requireNonNull(contentType);
         if(values.length == 0) throw new RuntimeException("values cannot be empty");
 
-        try(final SerializationWriter writer = httpCore.getSerializationWriterFactory().getSerializationWriter(contentType)) {
+        try(final SerializationWriter writer = requestAdapter.getSerializationWriterFactory().getSerializationWriter(contentType)) {
             headers.put(contentTypeHeader, contentType);
             if(values.length == 1) 
                 writer.writeObjectValue(null, values[0]);

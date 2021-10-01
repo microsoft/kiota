@@ -34,27 +34,27 @@ import okhttp3.ResponseBody;
 import okhttp3.Response;
 import okio.BufferedSink;
 
-public class HttpCore implements com.microsoft.kiota.HttpCore {
+public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter {
     private final static String contentTypeHeaderKey = "Content-Type";
     private final OkHttpClient client;
     private final AuthenticationProvider authProvider;
     private ParseNodeFactory pNodeFactory;
     private SerializationWriterFactory sWriterFactory;
-    public HttpCore(@Nonnull final AuthenticationProvider authenticationProvider){
+    public OkHttpRequestAdapter(@Nonnull final AuthenticationProvider authenticationProvider){
         this(authenticationProvider, null, null, null);
     }
-    public HttpCore(@Nonnull final AuthenticationProvider authenticationProvider, @Nonnull final ParseNodeFactory parseNodeFactory) {
+    public OkHttpRequestAdapter(@Nonnull final AuthenticationProvider authenticationProvider, @Nonnull final ParseNodeFactory parseNodeFactory) {
         this(authenticationProvider, parseNodeFactory, null, null);
         Objects.requireNonNull(parseNodeFactory, "parameter parseNodeFactory cannot be null");
     }
-    public HttpCore(@Nonnull final AuthenticationProvider authenticationProvider, @Nonnull final ParseNodeFactory parseNodeFactory, @Nullable final SerializationWriterFactory serializationWriterFactory) {
+    public OkHttpRequestAdapter(@Nonnull final AuthenticationProvider authenticationProvider, @Nonnull final ParseNodeFactory parseNodeFactory, @Nullable final SerializationWriterFactory serializationWriterFactory) {
         this(authenticationProvider, parseNodeFactory, serializationWriterFactory, null);
         Objects.requireNonNull(serializationWriterFactory, "parameter serializationWriterFactory cannot be null");
     }
-    public HttpCore(@Nonnull final AuthenticationProvider authenticationProvider, @Nullable final ParseNodeFactory parseNodeFactory, @Nullable final SerializationWriterFactory serializationWriterFactory, @Nullable final OkHttpClient client) {
+    public OkHttpRequestAdapter(@Nonnull final AuthenticationProvider authenticationProvider, @Nullable final ParseNodeFactory parseNodeFactory, @Nullable final SerializationWriterFactory serializationWriterFactory, @Nullable final OkHttpClient client) {
         this.authProvider = Objects.requireNonNull(authenticationProvider, "parameter authenticationProvider cannot be null");
         if(client == null) {
-            this.client = OkHttpClientBuilder.Create().build();
+            this.client = KiotaClientFactory.Create().build();
         } else {
             this.client = client;
         }
@@ -199,7 +199,7 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
     private CompletableFuture<Response> getHttpResponseMessage(@Nonnull final RequestInformation requestInfo) {
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
         return this.authProvider.authenticateRequest(requestInfo).thenCompose(x -> {
-            final HttpCoreCallbackFutureWrapper wrapper = new HttpCoreCallbackFutureWrapper();
+            final OkHttpCallbackFutureWrapper wrapper = new OkHttpCallbackFutureWrapper();
             this.client.newCall(getRequestFromRequestInformation(requestInfo)).enqueue(wrapper);
             return wrapper.future;
         });

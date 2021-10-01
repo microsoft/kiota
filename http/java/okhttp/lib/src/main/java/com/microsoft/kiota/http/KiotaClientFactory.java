@@ -3,8 +3,8 @@ package com.microsoft.kiota.http;
 import okhttp3.OkHttpClient;
 
 /** This class is used to build the HttpClient instance used by the core service. */
-public class OkHttpClientBuilder {
-    private OkHttpClientBuilder() { }
+public class KiotaClientFactory {
+    private KiotaClientFactory() { }
     /**
      * Creates an OkHttpClient Builder with the default configuration and middlewares.
      * @return an OkHttpClient Builder instance.

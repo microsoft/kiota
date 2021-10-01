@@ -12,7 +12,7 @@ plugins {
     id 'maven-publish'
 }
 
-archivesBaseName = 'kiota-http-okhttp'
+archivesBaseName = 'kiota-http-okhttplibrary'
 
 repositories {
     // Use Maven Central for resolving dependencies.
@@ -52,7 +52,7 @@ publishing {
     }
     publications {
         gpr(MavenPublication) {
-            artifactId 'kiota-http-okhttp'
+            artifactId 'kiota-http-okhttplibrary'
             version '1.0.9'
             from(components.java)
         }

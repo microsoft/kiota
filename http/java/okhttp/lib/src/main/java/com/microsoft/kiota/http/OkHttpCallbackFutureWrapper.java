@@ -11,7 +11,7 @@ import okhttp3.Response;
 /**
  * Wraps the HTTP execution in a future, not public by intention
  */
-class HttpCoreCallbackFutureWrapper implements Callback {
+class OkHttpCallbackFutureWrapper implements Callback {
     final CompletableFuture<Response> future = new CompletableFuture<>();
 	@Override
 	public void onFailure(Call arg0, IOException arg1) {

@@ -6,7 +6,7 @@ package com.microsoft.kiota.http;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-class HttpCoreTest {
+class OkHttpRequestAdapterTest {
     @Test void testSomeHttpCoreMethod() {
         assertTrue(true, "someLibraryMethod should return 'true'");
     }
