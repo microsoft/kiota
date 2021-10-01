@@ -368,7 +368,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             method.PathSegment = "somePath";
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("http_core", result);
+            Assert.Contains("request_adapter", result);
             Assert.Contains("path_segment", result);
             Assert.Contains("+ id", result);
             Assert.Contains("return Somecustomtype.new", result);
@@ -387,7 +387,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             });
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("http_core", result);
+            Assert.Contains("request_adapter", result);
             Assert.Contains("path_segment", result);
             Assert.Contains("pathParam", result);
             Assert.Contains("return Somecustomtype.new", result);
