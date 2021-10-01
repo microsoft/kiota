@@ -8,7 +8,7 @@ namespace Kiota.Builder.Refiners {
         public TypeScriptRefiner(GenerationConfiguration configuration) : base(configuration) {}
         public override void Refine(CodeNamespace generatedCode)
         {
-            AddDefaultImports(generatedCode, defaultImports);
+            AddDefaultImports(generatedCode, defaultUsingEvaluators);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
@@ -69,26 +69,26 @@ namespace Kiota.Builder.Refiners {
             }
             CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
         }
-        private static readonly Tuple<Func<CodeElement, bool>, string, string[]>[] defaultImports = new Tuple<Func<CodeElement, bool>, string, string[]>[] { 
+        private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.HttpCore),
-                "@microsoft/kiota-abstractions", new string[] {"HttpCore"}),
+                "@microsoft/kiota-abstractions", "HttpCore"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-                "@microsoft/kiota-abstractions", new string[] {"HttpMethod", "RequestInformation", "MiddlewareOption"}),
+                "@microsoft/kiota-abstractions", "HttpMethod", "RequestInformation", "MiddlewareOption"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-                "@microsoft/kiota-abstractions", new string[] {"ResponseHandler"}),
+                "@microsoft/kiota-abstractions", "ResponseHandler"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
-                "@microsoft/kiota-abstractions", new string[] {"SerializationWriter"}),
+                "@microsoft/kiota-abstractions", "SerializationWriter"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
-                "@microsoft/kiota-abstractions", new string[] {"ParseNode"}),
+                "@microsoft/kiota-abstractions", "ParseNode"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-                "@microsoft/kiota-abstractions", new string[] {"Parsable"}),
+                "@microsoft/kiota-abstractions", "Parsable"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
-                "@microsoft/kiota-abstractions", new string[] {"Parsable"}),
+                "@microsoft/kiota-abstractions", "Parsable"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
                         method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
-                "@microsoft/kiota-abstractions", new string[] { "BackingStoreFactory", "BackingStoreFactorySingleton"}),
+                "@microsoft/kiota-abstractions", "BackingStoreFactory", "BackingStoreFactorySingleton"),
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
-                "@microsoft/kiota-abstractions", new string[] { "BackingStore", "BackedModel", "BackingStoreFactorySingleton" }),
+                "@microsoft/kiota-abstractions", "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
         };
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if(currentProperty.IsOfKind(CodePropertyKind.HttpCore))

@@ -213,15 +213,15 @@ namespace Kiota.Builder.Refiners {
                                                     x.Type.Name = replacement.Invoke(x.Type.Name);
                                                 });
         }
-        private static IEnumerable<CodeUsing> usingSelector(Tuple<Func<CodeElement, bool>, string, string[]> x) =>
-        x.Item3.Select(y => 
+        private static IEnumerable<CodeUsing> usingSelector(AdditionalUsingEvaluator x) =>
+        x.ImportSymbols.Select(y => 
             new CodeUsing
             {
                 Name = y,
-                Declaration = new CodeType { Name = x.Item2, IsExternal = true },
+                Declaration = new CodeType { Name = x.NamespaceName, IsExternal = true },
             });
-        protected static void AddDefaultImports(CodeElement current, Tuple<Func<CodeElement, bool>, string, string[]>[] defaultNamespaces) {
-            var usingsToAdd = defaultNamespaces.Where(x => x.Item1.Invoke(current))
+        protected static void AddDefaultImports(CodeElement current, IEnumerable<AdditionalUsingEvaluator> evaluators) {
+            var usingsToAdd = evaluators.Where(x => x.CodeElementEvaluator.Invoke(current))
                             .SelectMany(x => usingSelector(x))
                             .ToArray();
             if(usingsToAdd.Any()) 
@@ -232,7 +232,7 @@ namespace Kiota.Builder.Refiners {
                     var targetClass = parentClass.Parent is CodeClass parentClassParent ? parentClassParent : parentClass;
                     targetClass.AddUsing(usingsToAdd);
                 }
-            CrawlTree(current, c => AddDefaultImports(c, defaultNamespaces));
+            CrawlTree(current, c => AddDefaultImports(c, evaluators));
         }
         private const string BinaryType = "binary";
         protected static void ReplaceBinaryByNativeType(CodeElement currentElement, string symbol, string ns, bool addDeclaration = false) {

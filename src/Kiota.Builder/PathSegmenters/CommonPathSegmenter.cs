@@ -23,12 +23,12 @@ namespace Kiota.Builder {
                                             .Replace(ClientNamespaceName, string.Empty)
                                             .TrimStart('.')
                                             .Split('.'));
-            namespacePathSegments.AddRange(GetAdditionalSegment(currentElement, fileName)); //Union removes duplicates
+            namespacePathSegments.AddRange(GetAdditionalSegment(currentElement, fileName)); //Union removes duplicates so we're building a list instead to conserve those.
             namespacePathSegments = namespacePathSegments.Where(x => !string.IsNullOrEmpty(x))
                                             .Select(x => NormalizeNamespaceSegment(x))
                                             .ToList();
-            var targetPath = Path.Combine(RootPath, (namespacePathSegments.Any() ? namespacePathSegments                                           
-                                            .Aggregate((x, y) => $"{x}{Path.DirectorySeparatorChar}{y}") : string.Empty),
+            var targetPath = Path.Combine(RootPath, namespacePathSegments.Any() ? namespacePathSegments                                           
+                                            .Aggregate((x, y) => $"{x}{Path.DirectorySeparatorChar}{y}") : string.Empty,
                                             fileName + FileSuffix);
             var directoryPath = Path.GetDirectoryName(targetPath);
             Directory.CreateDirectory(directoryPath);

@@ -37,7 +37,7 @@ namespace Kiota.Builder.Refiners {
                 true);
             AddDefaultImports(
                 generatedCode,
-                defaultNamespaces);
+                defaultUsingEvaluators);
             CorrectCoreType(
                 generatedCode,
                 CorrectMethodType,
@@ -142,26 +142,26 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(currentElement, AddErrorImportForEnums);
         }
         private static readonly GoConventionService conventions = new();
-        private static readonly Tuple<Func<CodeElement, bool>, string, string[]>[] defaultNamespaces = new Tuple<Func<CodeElement, bool>, string, string[]>[] { 
+        private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.HttpCore),
-                "github.com/microsoft/kiota/abstractions/go", new string[] {"HttpCore"}),
+                "github.com/microsoft/kiota/abstractions/go", "HttpCore"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-                "github.com/microsoft/kiota/abstractions/go", new string[] {"RequestInformation", "HttpMethod", "MiddlewareOption"}),
+                "github.com/microsoft/kiota/abstractions/go", "RequestInformation", "HttpMethod", "MiddlewareOption"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-                "github.com/microsoft/kiota/abstractions/go", new string[] {"ResponseHandler"}),
+                "github.com/microsoft/kiota/abstractions/go", "ResponseHandler"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.QueryParameters),
-                "github.com/microsoft/kiota/abstractions/go", new string[] {"QueryParametersBase"}),
+                "github.com/microsoft/kiota/abstractions/go", "QueryParametersBase"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor) &&
                         !conventions.IsScalarType(method.ReturnType.Name) &&
                         !conventions.IsPrimitiveType(method.ReturnType.Name),
-                "github.com/microsoft/kiota/abstractions/go/serialization", new string[] {"Parsable"}),
+                "github.com/microsoft/kiota/abstractions/go/serialization", "Parsable"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
-                "github.com/microsoft/kiota/abstractions/go/serialization", new string[] {"SerializationWriter"}),
+                "github.com/microsoft/kiota/abstractions/go/serialization", "SerializationWriter"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
-                "github.com/microsoft/kiota/abstractions/go/serialization", new string[] {"ParseNode", "ConvertToArrayOfParsable", "ConvertToArrayOfPrimitives"}),
+                "github.com/microsoft/kiota/abstractions/go/serialization", "ParseNode", "ConvertToArrayOfParsable", "ConvertToArrayOfPrimitives"),
             new (x => x is CodeMethod method &&
                 method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path) && "DateTimeOffset".Equals(x.Type.Name, StringComparison.OrdinalIgnoreCase)),
-                "time", new string[] {"Time"}),
+                "time", "Time"),
         };//TODO add backing store types once we have them defined
         private static void CorrectMethodType(CodeMethod currentMethod) {
             if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) &&

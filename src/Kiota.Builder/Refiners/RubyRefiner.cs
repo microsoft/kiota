@@ -13,7 +13,7 @@ namespace Kiota.Builder.Refiners {
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddParsableInheritanceForModelClasses(generatedCode);
             AddInheritedAndMethodTypesImports(generatedCode);
-            AddDefaultImports(generatedCode, defaultNamespaces);
+            AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddGetterAndSetterMethods(generatedCode, new() {
                                                     CodePropertyKind.Custom,
                                                     CodePropertyKind.AdditionalData,
@@ -29,26 +29,26 @@ namespace Kiota.Builder.Refiners {
                                                 "microsoft_kiota_abstractions.SerializationWriterFactoryRegistry" },
                                         new [] { "microsoft_kiota_abstractions.ParseNodeFactoryRegistry" });
         }
-        private static readonly Tuple<Func<CodeElement, bool>, string, string[]>[] defaultNamespaces = new Tuple<Func<CodeElement, bool>, string, string[]>[] { 
+        private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.HttpCore),
-                "microsoft_kiota_abstractions", new string[] { "HttpCore"}),
+                "microsoft_kiota_abstractions", "HttpCore"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-                "microsoft_kiota_abstractions", new string[] {"HttpMethod", "RequestInformation"}), //TODO add middleware options once ruby supports it
+                "microsoft_kiota_abstractions", "HttpMethod", "RequestInformation"), //TODO add middleware options once ruby supports it
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-                "microsoft_kiota_abstractions", new string[] {"ResponseHandler"}),
+                "microsoft_kiota_abstractions", "ResponseHandler"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
-                "microsoft_kiota_abstractions", new string[] {"SerializationWriter"}),
+                "microsoft_kiota_abstractions", "SerializationWriter"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
-                "microsoft_kiota_abstractions", new string[] {"ParseNode"}),
+                "microsoft_kiota_abstractions", "ParseNode"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
-                "microsoft_kiota_abstractions", new string[] {"Parsable"}),
+                "microsoft_kiota_abstractions", "Parsable"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-                "microsoft_kiota_abstractions", new string[] {"Parsable"}),
+                "microsoft_kiota_abstractions", "Parsable"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
                         method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
-                "microsoft_kiota_abstractions", new string[] { "BackingStoreFactory", "BackingStoreFactorySingleton"}),
+                "microsoft_kiota_abstractions", "BackingStoreFactory", "BackingStoreFactorySingleton"),
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
-                "microsoft_kiota_abstractions", new string[] { "BackingStore", "BackedModel", "BackingStoreFactorySingleton" }),
+                "microsoft_kiota_abstractions", "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
         };
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 

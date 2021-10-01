@@ -14,7 +14,7 @@ namespace Kiota.Builder.Refiners {
             ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
             ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
-            AddDefaultImports(generatedCode, defaultNamespaces);
+            AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             PatchHeaderParametersType(generatedCode, "Map<String, String>");
             AddParsableInheritanceForModelClasses(generatedCode);
@@ -65,42 +65,42 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
         }
         private static readonly JavaConventionService conventionService = new();
-        private static readonly Tuple<Func<CodeElement, bool>, string, string[]>[] defaultNamespaces = new Tuple<Func<CodeElement, bool>, string, string[]>[] { 
+        private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.HttpCore),
-                "com.microsoft.kiota", new string[] { "HttpCore" }),
+                "com.microsoft.kiota", "HttpCore"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-                "com.microsoft.kiota", new string[] { "RequestInformation", "MiddlewareOption", "HttpMethod" }),
+                "com.microsoft.kiota", "RequestInformation", "MiddlewareOption", "HttpMethod"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-                "java.net", new string[] { "URISyntaxException" }),
+                "java.net", "URISyntaxException"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-                "java.util", new string[] { "Collection", "Map" }),
+                "java.util", "Collection", "Map"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-                "com.microsoft.kiota", new string[] { "ResponseHandler"}),
+                "com.microsoft.kiota", "ResponseHandler"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.QueryParameters),
-                "com.microsoft.kiota", new string[] { "QueryParametersBase"}),
+                "com.microsoft.kiota", "QueryParametersBase"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
-                "com.microsoft.kiota.serialization", new string[] { "Parsable" }),
+                "com.microsoft.kiota.serialization", "Parsable"),
             new (x => x is CodeMethod method && method.Parameters.Any(x => !x.Optional),
-                    "java.util", new string[] { "Objects" }),
+                    "java.util", "Objects"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor) && 
                         method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.RequestBody) &&
                                             x.Type.Name.Equals(conventionService.StreamTypeName, StringComparison.OrdinalIgnoreCase)),
-                "java.io", new string[] { "InputStream" }),
+                "java.io", "InputStream"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
-                "com.microsoft.kiota.serialization", new string[] { "SerializationWriter" }),
+                "com.microsoft.kiota.serialization", "SerializationWriter"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
-                "com.microsoft.kiota.serialization", new string[] { "ParseNode" }),
+                "com.microsoft.kiota.serialization", "ParseNode"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-                "com.microsoft.kiota.serialization", new string[] { "Parsable" }),
+                "com.microsoft.kiota.serialization", "Parsable"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
-                "java.util.function", new string[] { "BiConsumer" }),
+                "java.util.function", "BiConsumer"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
-                "java.util", new string[] { "HashMap", "Map" }),
+                "java.util", "HashMap", "Map"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
                         method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
-                "com.microsoft.kiota.store", new string[] { "BackingStoreFactory", "BackingStoreFactorySingleton"}),
+                "com.microsoft.kiota.store", "BackingStoreFactory", "BackingStoreFactorySingleton"),
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
-                "com.microsoft.kiota.store", new string[] { "BackingStore", "BackedModel", "BackingStoreFactorySingleton" }),
+                "com.microsoft.kiota.store", "BackingStore", "BackedModel", "BackingStoreFactorySingleton"),
         };
         private const string OriginalDateTimeOffsetType = "DateTimeOffset";
         private const string JavaOffsetDateTimeType = "OffsetDateTime";
