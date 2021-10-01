@@ -33,7 +33,6 @@ namespace Kiota.Builder
 
     public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
     {
-        public CodeMethod(): base() {}
         public HttpMethod? HttpMethod {get;set;}
         public CodeMethodKind MethodKind {get;set;} = CodeMethodKind.Custom;
         public string ContentType { get; set; }

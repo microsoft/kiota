@@ -4,7 +4,6 @@ namespace Kiota.Builder
 {
     public class CodeIndexer : CodeTerminal, IDocumentedElement
     {
-        public CodeIndexer(): base() {}
         private CodeTypeBase indexType;
         public CodeTypeBase IndexType {get => indexType; set {
             AddMissingParent(value);

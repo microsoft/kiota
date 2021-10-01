@@ -22,7 +22,6 @@ namespace Kiota.Builder
 
     public class CodeParameter : CodeTerminal, ICloneable, IDocumentedElement
     {
-        public CodeParameter(): base() {}
         public CodeParameterKind ParameterKind {get;set;}= CodeParameterKind.Custom;
         private CodeTypeBase type;
         public CodeTypeBase Type {get => type; set {
