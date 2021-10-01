@@ -5,7 +5,7 @@
 namespace Microsoft.Kiota.Abstractions
 {
     /// <summary>
-    /// Represents a middleware option.
+    /// Represents a request option.
     /// </summary>
     public interface IRequestOption
     {

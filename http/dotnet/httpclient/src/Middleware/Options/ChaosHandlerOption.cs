@@ -10,7 +10,7 @@ using Microsoft.Kiota.Abstractions;
 namespace Microsoft.Kiota.Http.HttpClient.Middleware.Options
 {
     /// <summary>
-    /// The Chaos Handler Option middleware class
+    /// The Chaos Handler Option request class
     /// </summary>
     public class ChaosHandlerOption : IRequestOption
     {

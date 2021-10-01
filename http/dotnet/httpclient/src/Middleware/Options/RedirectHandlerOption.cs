@@ -9,7 +9,7 @@ using Microsoft.Kiota.Abstractions;
 namespace Microsoft.Kiota.Http.HttpClient.Middleware.Options
 {
     /// <summary>
-    /// The redirect middleware option class
+    /// The redirect request option class
     /// </summary>
     public class RedirectHandlerOption: IRequestOption
     {

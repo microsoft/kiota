@@ -669,7 +669,7 @@ namespace Kiota.Builder
                 Name = "o",
                 Optional = true,
                 ParameterKind = CodeParameterKind.Options,
-                Description = "Request options for HTTP middlewares",
+                Description = "Request options",
                 Type = new CodeType { Name = "IEnumerable<IRequestOption>", ActionOf = false, IsExternal = true },
             };
             method.AddParameter(optionsParam);

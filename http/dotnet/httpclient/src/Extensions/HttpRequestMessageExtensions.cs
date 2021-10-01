@@ -21,7 +21,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Extensions
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="httpRequestMessage">The <see cref="HttpRequestMessage"/> representation of the request.</param>
-        /// <returns>A middleware option</returns>
+        /// <returns>A request option</returns>
         public static T GetRequestOption<T>(this HttpRequestMessage httpRequestMessage) where T : IRequestOption
         {
             if(httpRequestMessage.Options.TryGetValue(

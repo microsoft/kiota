@@ -44,7 +44,7 @@ export class RequestInformation {
     /** The Request Headers. */
     public headers: Map<string, string> = new Map<string, string>(); //TODO: case insensitive
     private _requestOptions = new Map<string, RequestOption>(); //TODO: case insensitive
-    /** Gets the middleware options for the request. */
+    /** Gets the request options for the request. */
     public getRequestOptions() { return this._requestOptions.values(); }
     public addRequestOptions(...options: RequestOption[]) {
         if(!options || options.length === 0) return;
@@ -52,7 +52,7 @@ export class RequestInformation {
             this._requestOptions.set(option.getKey(), option);
         });
     }
-    /** Removes the middleware options for the request. */
+    /** Removes the request options for the request. */
     public removeRequestOptions(...options: RequestOption[]) {
         if(!options || options.length === 0) return;
         options.forEach(option => {

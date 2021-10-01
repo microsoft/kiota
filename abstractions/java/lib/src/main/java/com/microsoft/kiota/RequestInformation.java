@@ -71,13 +71,13 @@ public class RequestInformation {
     public InputStream content;
     private HashMap<String, RequestOption> _requestOptions = new HashMap<>();
     /**
-     * Gets the middleware options for this request. Options are unique by type. If an option of the same type is added twice, the last one wins.
-     * @return the middleware options for this request.
+     * Gets the request options for this request. Options are unique by type. If an option of the same type is added twice, the last one wins.
+     * @return the request options for this request.
      */
     public Collection<RequestOption> getRequestOptions() { return _requestOptions.values(); }
     /**
-     * Adds a middleware option to this request.
-     * @param option the middleware option to add.
+     * Adds a request option to this request.
+     * @param option the request option to add.
      */
     public void addRequestOptions(@Nullable final RequestOption... options) { 
         if(options == null || options.length == 0) return;
@@ -86,8 +86,8 @@ public class RequestInformation {
         }
     }
     /**
-     * Removes a middleware option from this request.
-     * @param option the middleware option to remove.
+     * Removes a request option from this request.
+     * @param option the request option to remove.
      */
     public void removeRequestOptions(@Nullable final RequestOption... options) {
         if(options == null || options.length == 0) return;

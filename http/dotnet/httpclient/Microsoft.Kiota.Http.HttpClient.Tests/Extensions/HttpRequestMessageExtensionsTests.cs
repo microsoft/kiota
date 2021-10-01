@@ -15,7 +15,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Extensions
     public class HttpRequestMessageExtensionsTests
     {
         [Fact]
-        public void GetRequestOptionCanExtractMiddleWareOptionFromHttpRequestMessage()
+        public void GetRequestOptionCanExtractRequestOptionFromHttpRequestMessage()
         {
             // Arrange
             var requestInfo = new RequestInformation()

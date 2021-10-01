@@ -5,7 +5,7 @@ using Microsoft.Kiota.Abstractions;
 namespace Microsoft.Kiota.Http.HttpClient.Middleware.Options
 {
     /// <summary>
-    /// The Telemetry middleware option class
+    /// The Telemetry request option class
     /// </summary>
     public class TelemetryHandlerOption : IRequestOption
     {

@@ -50,16 +50,16 @@ namespace Microsoft.Kiota.Abstractions.Tests
                 HttpMethod = HttpMethod.GET,
                 URI = new Uri("http://localhost")
             };
-            var testMiddleWareOption = new Mock<IRequestOption>().Object;
+            var testRequestOption = new Mock<IRequestOption>().Object;
             Assert.Empty(testRequest.RequestOptions);
             // Act
-            testRequest.AddRequestOptions(testMiddleWareOption);
+            testRequest.AddRequestOptions(testRequestOption);
             // Assert
             Assert.NotEmpty(testRequest.RequestOptions);
-            Assert.Equal(testMiddleWareOption, testRequest.RequestOptions.First());
+            Assert.Equal(testRequestOption, testRequest.RequestOptions.First());
 
             // Act by removing the option
-            testRequest.RemoveRequestOptions(testMiddleWareOption);
+            testRequest.RemoveRequestOptions(testRequestOption);
             Assert.Empty(testRequest.RequestOptions);
         }
     }

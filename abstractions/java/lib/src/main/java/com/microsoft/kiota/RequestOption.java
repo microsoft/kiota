@@ -1,6 +1,6 @@
 package com.microsoft.kiota;
 
-/** Represents a middleware option. */
+/** Represents a request option. */
 public interface RequestOption {
 
 }

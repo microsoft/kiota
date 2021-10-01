@@ -9,7 +9,7 @@ using Microsoft.Kiota.Abstractions;
 namespace Microsoft.Kiota.Http.HttpClient.Middleware.Options
 {
     /// <summary>
-    /// The retry middleware option class
+    /// The retry request option class
     /// </summary>
     public class RetryHandlerOption : IRequestOption
     {
