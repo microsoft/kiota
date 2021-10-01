@@ -5,13 +5,13 @@ using Microsoft.Kiota.Abstractions.Store;
 using Moq;
 using Xunit;
 
-namespace Microsoft.Kiota.Http.HttpClient.Tests
+namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests
 {
-    public class HttpCoreTests
+    public class HttpClientRequestAdapterTests
     {
         private readonly IAuthenticationProvider _authenticationProvider;
 
-        public HttpCoreTests()
+        public HttpClientRequestAdapterTests()
         {
             _authenticationProvider = new Mock<IAuthenticationProvider>().Object;
         }
@@ -19,7 +19,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests
         [Fact]
         public void ThrowsArgumentNullExceptionOnNullAuthenticationProvider()
         {
-            var exception = Assert.Throws<ArgumentNullException>(() => new HttpCore(null));
+            var exception = Assert.Throws<ArgumentNullException>(() => new HttpClientRequestAdapter(null));
             Assert.Equal("authenticationProvider", exception.ParamName);
         }
 
@@ -27,14 +27,14 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests
         public void EnablesBackingStore()
         {
             // Arrange
-            var httpCore = new HttpCore(_authenticationProvider);
+            var requestAdapter = new HttpClientRequestAdapter(_authenticationProvider);
             var backingStore = new Mock<IBackingStoreFactory>().Object;
 
             //Assert the that we originally have an in memory backing store
             Assert.IsAssignableFrom<InMemoryBackingStoreFactory>(BackingStoreFactorySingleton.Instance);
 
             // Act
-            httpCore.EnableBackingStore(backingStore);
+            requestAdapter.EnableBackingStore(backingStore);
 
             //Assert the backing store has been updated
             Assert.IsAssignableFrom(backingStore.GetType(), BackingStoreFactorySingleton.Instance);
@@ -56,7 +56,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests
             requestInfo.QueryParameters.Add(queryParam, queryParamObject);
 
             // Act
-            var requestMessage = HttpCore.GetRequestMessageFromRequestInformation(requestInfo);
+            var requestMessage = HttpClientRequestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
 
             // Assert
             Assert.NotNull(requestMessage.RequestUri);

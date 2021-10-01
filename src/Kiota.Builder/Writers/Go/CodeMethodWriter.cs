@@ -151,15 +151,15 @@ namespace Kiota.Builder.Writers.Go {
 
         }
         private void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
-            var httpCoreProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
-            var httpCoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.HttpCore));
-            var httpCorePropertyName = httpCoreProperty.Name.ToFirstCharacterLowerCase();
+            var requestAdapterProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.RequestAdapter));
+            var requestAdapterParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.RequestAdapter));
+            var requestAdapterPropertyName = requestAdapterProperty.Name.ToFirstCharacterLowerCase();
             var backingStoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.BackingStore));
-            writer.WriteLine($"m.{httpCorePropertyName} = {httpCoreParameter.Name};");
+            writer.WriteLine($"m.{requestAdapterPropertyName} = {requestAdapterParameter.Name};");
             WriteSerializationRegistration(method.SerializerModules, writer, parentClass, "RegisterDefaultSerializer", "SerializationWriterFactory");
             WriteSerializationRegistration(method.DeserializerModules, writer, parentClass, "RegisterDefaultDeserializer", "ParseNodeFactory");
             if(backingStoreParameter != null)
-                writer.WriteLine($"m.{httpCorePropertyName}.EnableBackingStore({backingStoreParameter.Name});");
+                writer.WriteLine($"m.{requestAdapterPropertyName}.EnableBackingStore({backingStoreParameter.Name});");
         }
         private void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, CodeClass parentClass, string methodName, string interfaceName) {
             var interfaceImportSymbol = conventions.GetTypeString(new CodeType { Name = interfaceName, IsExternal = true }, parentClass, false, false);
@@ -196,7 +196,7 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLine($"m.Set{propWithDefault.Name.ToFirstCharacterUpperCase()}({propWithDefault.DefaultValue});");
             }
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
-                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.HttpCore, CodePropertyKind.HttpCore, writer);
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.CurrentPath, CodePropertyKind.CurrentPath, writer);
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RawUrl, CodePropertyKind.RawUrl, writer);
             }
@@ -304,9 +304,9 @@ namespace Kiota.Builder.Writers.Go {
                         string.Empty :
                         "res, ";
             if(responseHandlerParam != null)
-                writer.WriteLine($"{assignmentPrefix}err := m.httpCore.{sendMethodName}(*{RequestInfoVarName}, {constructorFunction}*{responseHandlerParam.Name})()");
+                writer.WriteLine($"{assignmentPrefix}err := m.requestAdapter.{sendMethodName}(*{RequestInfoVarName}, {constructorFunction}*{responseHandlerParam.Name})()");
             else
-                writer.WriteLine($"{assignmentPrefix}err := m.httpCore.{sendMethodName}(*{RequestInfoVarName}, {constructorFunction}nil)()");
+                writer.WriteLine($"{assignmentPrefix}err := m.requestAdapter.{sendMethodName}(*{RequestInfoVarName}, {constructorFunction}nil)()");
             WriteReturnError(writer, returnType);
             var valueVarName = string.Empty;
             if(codeElement.ReturnType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None) {
@@ -349,7 +349,7 @@ namespace Kiota.Builder.Writers.Go {
             var currentPathProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.CurrentPath).FirstOrDefault();
             var pathSegmentProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.PathSegment).FirstOrDefault();
             var rawUrlProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.RawUrl).FirstOrDefault();
-            var httpCoreProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.HttpCore).FirstOrDefault();
+            var requestAdapterProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.RequestAdapter).FirstOrDefault();
             writer.WriteLine($"{RequestInfoVarName} := {conventions.AbstractionsHash}.NewRequestInformation()");
             writer.WriteLines($"err := {RequestInfoVarName}.SetUri({GetPropertyCall(currentPathProperty, "\"\"")}, {GetPropertyCall(pathSegmentProperty, "\"\"")}, {GetPropertyCall(rawUrlProperty, "false")})",
                         $"{RequestInfoVarName}.Method = {conventions.AbstractionsHash}.{codeElement.HttpMethod?.ToString().ToUpperInvariant()}");
@@ -358,7 +358,7 @@ namespace Kiota.Builder.Writers.Go {
                 if(requestParams.requestBody.Type.Name.Equals("binary", StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({requestParams.requestBody.Name})");
                 else
-                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable(m.{httpCoreProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {requestParams.requestBody.Name})");
+                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable(m.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {requestParams.requestBody.Name})");
             if(requestParams.queryString != null) {
                 var httpMethodPrefix = codeElement.HttpMethod.ToString().ToFirstCharacterUpperCase();
                 writer.WriteLine($"if {requestParams.queryString.Name} != nil {{");

@@ -12,7 +12,7 @@ namespace Microsoft.Kiota.Abstractions
     /// <summary>
     ///   Service responsible for translating abstract Request Info into concrete native HTTP requests.
     /// </summary>
-    public interface IHttpCore
+    public interface IRequestAdapter
     {
         /// <summary>
         ///  Enables the backing store proxies for the SerializationWriters and ParseNodes in use.

@@ -104,7 +104,7 @@ namespace Microsoft.Kiota.Abstractions
         /// <param name="items">The models to serialize.</param>
         /// <param name="contentType">The content type to set.</param>
         /// <typeparam name="T">The model type to serialize.</typeparam>
-        public void SetContentFromParsable<T>(IHttpCore coreService, string contentType, params T[] items) where T : IParsable
+        public void SetContentFromParsable<T>(IRequestAdapter coreService, string contentType, params T[] items) where T : IParsable
         {
             if(string.IsNullOrEmpty(contentType)) throw new ArgumentNullException(nameof(contentType));
             if(coreService == null) throw new ArgumentNullException(nameof(coreService));

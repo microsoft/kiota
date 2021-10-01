@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using Microsoft.Kiota.Abstractions;
 
-namespace Microsoft.Kiota.Http.HttpClient.Middleware.Options
+namespace Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options
 {
     /// <summary>
     /// The Chaos Handler Option request class

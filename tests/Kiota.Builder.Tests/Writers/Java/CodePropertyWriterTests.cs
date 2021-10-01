@@ -39,7 +39,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains($"return new {TypeName}", result);
-            Assert.Contains("httpCore", result);
+            Assert.Contains("requestAdapter", result);
             Assert.Contains("pathSegment", result);
         }
         [Fact]

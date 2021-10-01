@@ -15,30 +15,30 @@ using Microsoft.Kiota.Abstractions.Store;
 using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Abstractions.Extensions;
 
-namespace Microsoft.Kiota.Http.HttpClient
+namespace Microsoft.Kiota.Http.HttpClientLibrary
 {
     /// <summary>
-    /// The <see cref="IHttpCore"/> implementation for sending requests.
+    /// The <see cref="IRequestAdapter"/> implementation for sending requests.
     /// </summary>
-    public class HttpCore : IHttpCore, IDisposable
+    public class HttpClientRequestAdapter : IRequestAdapter, IDisposable
     {
-        private readonly System.Net.Http.HttpClient client;
+        private readonly HttpClient client;
         private readonly IAuthenticationProvider authProvider;
         private IParseNodeFactory pNodeFactory;
         private ISerializationWriterFactory sWriterFactory;
         private readonly bool createdClient;
         /// <summary>
-        /// Initializes a new instance of the <see cref="HttpCore"/> class.
+        /// Initializes a new instance of the <see cref="HttpClientRequestAdapter"/> class.
         /// <param name="authenticationProvider">The authentication provider.</param>
         /// <param name="parseNodeFactory">The parse node factory.</param>
         /// <param name="serializationWriterFactory">The serialization writer factory.</param>
         /// <param name="httpClient">The native HTTP client.</param>
         /// </summary>
-        public HttpCore(IAuthenticationProvider authenticationProvider, IParseNodeFactory parseNodeFactory = null, ISerializationWriterFactory serializationWriterFactory = null, System.Net.Http.HttpClient httpClient = null)
+        public HttpClientRequestAdapter(IAuthenticationProvider authenticationProvider, IParseNodeFactory parseNodeFactory = null, ISerializationWriterFactory serializationWriterFactory = null, HttpClient httpClient = null)
         {
             authProvider = authenticationProvider ?? throw new ArgumentNullException(nameof(authenticationProvider));
             createdClient = httpClient == null;
-            client = httpClient ?? HttpClientBuilder.Create();
+            client = httpClient ?? KiotaClientFactory.Create();
             pNodeFactory = parseNodeFactory ?? ParseNodeFactoryRegistry.DefaultInstance;
             sWriterFactory = serializationWriterFactory ?? SerializationWriterFactoryRegistry.DefaultInstance;
         }

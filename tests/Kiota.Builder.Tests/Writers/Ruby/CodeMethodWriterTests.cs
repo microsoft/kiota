@@ -419,7 +419,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             method.MethodKind = CodeMethodKind.ClientConstructor;
             var coreProp = parentClass.AddProperty(new CodeProperty {
                 Name = "core",
-                PropertyKind = CodePropertyKind.HttpCore,
+                PropertyKind = CodePropertyKind.RequestAdapter,
             }).First();
             coreProp.Type = new CodeType {
                 Name = "HttpCore",
@@ -427,7 +427,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             };
             method.AddParameter(new CodeParameter {
                 Name = "core",
-                ParameterKind = CodeParameterKind.HttpCore,
+                ParameterKind = CodeParameterKind.RequestAdapter,
                 Type = coreProp.Type,
             });
             writer.Write(method);
@@ -439,7 +439,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             method.MethodKind = CodeMethodKind.ClientConstructor;
             var coreProp = parentClass.AddProperty(new CodeProperty {
                 Name = "core",
-                PropertyKind = CodePropertyKind.HttpCore,
+                PropertyKind = CodePropertyKind.RequestAdapter,
             }).First();
             coreProp.Type = new CodeType {
                 Name = "HttpCore",
@@ -447,7 +447,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             };
             method.AddParameter(new CodeParameter {
                 Name = "core",
-                ParameterKind = CodeParameterKind.HttpCore,
+                ParameterKind = CodeParameterKind.RequestAdapter,
                 Type = coreProp.Type,
             });
             var backingStoreParam = new CodeParameter {

@@ -6,7 +6,7 @@ using System;
 using System.Net.Http;
 using Microsoft.Kiota.Abstractions;
 
-namespace Microsoft.Kiota.Http.HttpClient.Middleware.Options
+namespace Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options
 {
     /// <summary>
     /// The retry request option class

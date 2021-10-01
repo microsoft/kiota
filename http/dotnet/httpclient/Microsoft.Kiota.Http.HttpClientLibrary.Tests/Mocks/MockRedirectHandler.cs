@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Kiota.Http.HttpClient.Tests.Mocks
+namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Mocks
 {
     public class MockRedirectHandler : HttpMessageHandler
     {

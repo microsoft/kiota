@@ -4,11 +4,11 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Kiota.Abstractions;
-using Microsoft.Kiota.Http.HttpClient.Middleware;
-using Microsoft.Kiota.Http.HttpClient.Middleware.Options;
+using Microsoft.Kiota.Http.HttpClientLibrary.Middleware;
+using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
 using Xunit;
 
-namespace Microsoft.Kiota.Http.HttpClient.Tests.Middleware
+namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Middleware
 {
     public class TelemetryHandlerTests
     {
@@ -33,7 +33,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Middleware
                 URI = new Uri("http://localhost")
             };
             // Act and get a request message
-            var requestMessage = HttpCore.GetRequestMessageFromRequestInformation(requestInfo);
+            var requestMessage = HttpClientRequestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
             Assert.Empty(requestMessage.Headers);
 
             // Act
@@ -64,7 +64,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Middleware
             // Configures the telemetry at the request level
             requestInfo.AddRequestOptions(telemetryHandlerOption);
             // Act and get a request message
-            var requestMessage = HttpCore.GetRequestMessageFromRequestInformation(requestInfo);
+            var requestMessage = HttpClientRequestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
             Assert.Empty(requestMessage.Headers);
 
             // Act
@@ -102,7 +102,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Middleware
                 URI = new Uri("http://localhost")
             };
 
-            var requestMessage = HttpCore.GetRequestMessageFromRequestInformation(requestInfo);// get a request message
+            var requestMessage = HttpClientRequestAdapter.GetRequestMessageFromRequestInformation(requestInfo);// get a request message
             Assert.Empty(requestMessage.Headers);
 
             // Act

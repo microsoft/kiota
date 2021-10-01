@@ -7,25 +7,25 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using Microsoft.Kiota.Abstractions.Authentication;
-using Microsoft.Kiota.Http.HttpClient.Middleware;
+using Microsoft.Kiota.Http.HttpClientLibrary.Middleware;
 
-namespace Microsoft.Kiota.Http.HttpClient
+namespace Microsoft.Kiota.Http.HttpClientLibrary
 {
     /// <summary>
     /// This class is used to build the HttpClient instance used by the core service.
     /// </summary>
-    public static class HttpClientBuilder
+    public static class KiotaClientFactory
     {
         /// <summary>
         /// Initializes the <see cref="HttpClient"/> with the default configuration and middlewares including a authentication middleware using the <see cref="IAuthenticationProvider"/> if provided.
         /// </summary>
         /// <param name="finalHandler">The final <see cref="HttpMessageHandler"/> in the http pipeline. Can be configured for proxies, auto-decompression and auto-redirects </param>
         /// <returns>The <see cref="HttpClient"/> with the default middlewares.</returns>
-        public static System.Net.Http.HttpClient Create(HttpMessageHandler finalHandler = null)
+        public static HttpClient Create(HttpMessageHandler finalHandler = null)
         {
             var defaultHandlers = CreateDefaultHandlers();
             var handler = ChainHandlersCollectionAndGetFirstLink(finalHandler ?? GetDefaultHttpMessageHandler(), defaultHandlers.ToArray());
-            return handler != null ? new System.Net.Http.HttpClient(handler) : new System.Net.Http.HttpClient();
+            return handler != null ? new HttpClient(handler) : new HttpClient();
         }
         /// <summary>
         /// Creates a default set of middleware to be used by the <see cref="HttpClient"/>.

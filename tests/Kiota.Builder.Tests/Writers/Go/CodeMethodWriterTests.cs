@@ -43,8 +43,8 @@ namespace Kiota.Builder.Writers.Go.Tests {
         }
         private void AddRequestProperties() {
             parentClass.AddProperty(new CodeProperty {
-                Name = "httpCore",
-                PropertyKind = CodePropertyKind.HttpCore,
+                Name = "requestAdapter",
+                PropertyKind = CodePropertyKind.RequestAdapter,
             });
             parentClass.AddProperty(new CodeProperty {
                 Name = "isRawUrl",
@@ -153,7 +153,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("m.pathSegment", result);
-            Assert.Contains("m.httpCore", result);
+            Assert.Contains("m.requestAdapter", result);
             Assert.Contains("return", result);
             Assert.Contains("func (m", result);
             Assert.Contains("New", result);
@@ -173,7 +173,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("requestInfo, err :=", result);
-            Assert.Contains("m.httpCore.SendAsync", result);
+            Assert.Contains("m.requestAdapter.SendAsync", result);
             Assert.Contains("return res.(", result);
             Assert.Contains("err != nil", result);
             Assert.Contains("return func() (", result);
@@ -198,7 +198,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             Assert.Contains("qParams.AddQueryParameters(requestInfo.QueryParameters)", result);
             Assert.Contains("o != nil", result);
             Assert.Contains("requestInfo.AddRequestOptions(o)", result);
-            Assert.Contains("requestInfo.SetContentFromParsable(m.httpCore", result);
+            Assert.Contains("requestInfo.SetContentFromParsable(m.requestAdapter", result);
             Assert.Contains("return requestInfo, err", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
@@ -349,7 +349,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             method.PathSegment = "somePath";
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("m.httpCore", result);
+            Assert.Contains("m.requestAdapter", result);
             Assert.Contains("m.pathSegment", result);
             Assert.Contains("+ id", result);
             Assert.Contains("return", result);
@@ -369,7 +369,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             });
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("m.httpCore", result);
+            Assert.Contains("m.requestAdapter", result);
             Assert.Contains("m.pathSegment", result);
             Assert.Contains("pathParam", result);
             Assert.Contains("return *New", result);
@@ -453,7 +453,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             method.MethodKind = CodeMethodKind.ClientConstructor;
             var coreProp = parentClass.AddProperty(new CodeProperty {
                 Name = "core",
-                PropertyKind = CodePropertyKind.HttpCore,
+                PropertyKind = CodePropertyKind.RequestAdapter,
             }).First();
             coreProp.Type = new CodeType {
                 Name = "HttpCore",
@@ -461,7 +461,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             };
             method.AddParameter(new CodeParameter {
                 Name = "core",
-                ParameterKind = CodeParameterKind.HttpCore,
+                ParameterKind = CodeParameterKind.RequestAdapter,
                 Type = coreProp.Type,
             });
             method.DeserializerModules = new() {"github.com/microsoft/kiota/serialization/go/json.Deserializer"};
@@ -477,7 +477,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             method.MethodKind = CodeMethodKind.ClientConstructor;
             var coreProp = parentClass.AddProperty(new CodeProperty {
                 Name = "core",
-                PropertyKind = CodePropertyKind.HttpCore,
+                PropertyKind = CodePropertyKind.RequestAdapter,
             }).First();
             coreProp.Type = new CodeType {
                 Name = "HttpCore",
@@ -485,7 +485,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             };
             method.AddParameter(new CodeParameter {
                 Name = "core",
-                ParameterKind = CodeParameterKind.HttpCore,
+                ParameterKind = CodeParameterKind.RequestAdapter,
                 Type = coreProp.Type,
             });
             var backingStoreParam = new CodeParameter {

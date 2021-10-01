@@ -214,8 +214,8 @@ namespace Kiota.Builder
         }
         private static readonly string requestBuilderSuffix = "RequestBuilder";
         private static readonly string voidType = "void";
-        private static readonly string coreInterfaceType = "IHttpCore";
-        private static readonly string httpCoreParameterName = "httpCore";
+        private static readonly string coreInterfaceType = "IRequestAdapter";
+        private static readonly string requestAdapterParameterName = "requestAdapter";
         private static readonly string constructorMethodName = "constructor";
         /// <summary>
         /// Create a CodeClass instance that is a request builder class for the OpenApiUrlTreeNode
@@ -334,19 +334,19 @@ namespace Kiota.Builder
             };
             currentClass.AddProperty(pathProperty);
 
-            var httpCoreProperty = new CodeProperty {
-                Name = httpCoreParameterName,
+            var requestAdapterProperty = new CodeProperty {
+                Name = requestAdapterParameterName,
                 Description = "The http core service to use to execute the requests.",
-                PropertyKind = CodePropertyKind.HttpCore,
+                PropertyKind = CodePropertyKind.RequestAdapter,
                 Access = AccessModifier.Private,
                 ReadOnly = true,
             };
-            httpCoreProperty.Type = new CodeType {
+            requestAdapterProperty.Type = new CodeType {
                 Name = coreInterfaceType,
                 IsExternal = true,
                 IsNullable = false,
             };
-            currentClass.AddProperty(httpCoreProperty);
+            currentClass.AddProperty(requestAdapterProperty);
             var constructor = currentClass.AddMethod(new CodeMethod {
                 Name = constructorMethodName,
                 MethodKind = isApiClientClass ? CodeMethodKind.ClientConstructor : CodeMethodKind.Constructor,
@@ -413,11 +413,11 @@ namespace Kiota.Builder
                 }
             }
             constructor.AddParameter(new CodeParameter {
-                Name = httpCoreParameterName,
-                Type = httpCoreProperty.Type,
+                Name = requestAdapterParameterName,
+                Type = requestAdapterProperty.Type,
                 Optional = false,
-                Description = httpCoreProperty.Description,
-                ParameterKind = CodeParameterKind.HttpCore,
+                Description = requestAdapterProperty.Description,
+                ParameterKind = CodeParameterKind.RequestAdapter,
             });
             if(isApiClientClass && config.UsesBackingStore) {
                 var factoryInterfaceName = $"{BackingStoreInterface}Factory";

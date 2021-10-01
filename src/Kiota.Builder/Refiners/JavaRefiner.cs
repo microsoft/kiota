@@ -66,8 +66,8 @@ namespace Kiota.Builder.Refiners {
         }
         private static readonly JavaConventionService conventionService = new();
         private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
-            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.HttpCore),
-                "com.microsoft.kiota", "HttpCore"),
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
+                "com.microsoft.kiota", "RequestAdapter"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
                 "com.microsoft.kiota", "RequestInformation", "RequestOption", "HttpMethod"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
@@ -106,8 +106,8 @@ namespace Kiota.Builder.Refiners {
         private const string JavaOffsetDateTimeType = "OffsetDateTime";
         private const string JavaOffsetDateTimeTypePackage = "java.time";
         private static void CorrectPropertyType(CodeProperty currentProperty) {
-            if(currentProperty.IsOfKind(CodePropertyKind.HttpCore)) {
-                currentProperty.Type.Name = "HttpCore";
+            if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter)) {
+                currentProperty.Type.Name = "RequestAdapter";
                 currentProperty.Type.IsNullable = true;
             }
             else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
@@ -147,13 +147,13 @@ namespace Kiota.Builder.Refiners {
                 currentMethod.Name = "getFieldDeserializers";
             }
             else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor))
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore, CodeParameterKind.BackingStore))
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.BackingStore))
                     .Where(x => x.Type.Name.StartsWith("I", StringComparison.OrdinalIgnoreCase))
                     .ToList()
                     .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
             else if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore, CodeParameterKind.CurrentPath)).ToList().ForEach(x => x.Type.IsNullable = true);
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I" 
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.CurrentPath)).ToList().ForEach(x => x.Type.IsNullable = true);
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I" 
             }
             if (currentMethod.IsOfKind(CodeMethodKind.RequestBuilderWithParameters, CodeMethodKind.Constructor) &&
                     currentMethod.Parameters.Any(x => OriginalDateTimeOffsetType.Equals(x.Type.Name, StringComparison.OrdinalIgnoreCase)) &&

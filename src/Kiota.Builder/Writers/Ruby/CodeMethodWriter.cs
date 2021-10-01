@@ -77,10 +77,10 @@ namespace Kiota.Builder.Writers.Ruby {
             conventions.AddRequestBuilderBody(currentPathProperty != null, importSymbol, writer, prefix: "return ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
         }
         private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
-            var httpCoreProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
-            var httpCoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.HttpCore));
-            var httpCorePropertyName = httpCoreProperty.Name.ToSnakeCase();
-            writer.WriteLine($"@{httpCorePropertyName} = {httpCoreParameter.Name.ToSnakeCase()}");
+            var requestAdapterProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.RequestAdapter));
+            var requestAdapterParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.RequestAdapter));
+            var requestAdapterPropertyName = requestAdapterProperty.Name.ToSnakeCase();
+            writer.WriteLine($"@{requestAdapterPropertyName} = {requestAdapterParameter.Name.ToSnakeCase()}");
         }
         private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
             if(inherits)
@@ -93,7 +93,7 @@ namespace Kiota.Builder.Writers.Ruby {
                 writer.WriteLine($"@{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue}");
             }
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
-                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.HttpCore, CodePropertyKind.HttpCore, writer);
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.CurrentPath, CodePropertyKind.CurrentPath, writer);
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RawUrl, CodePropertyKind.RawUrl, writer);
             }

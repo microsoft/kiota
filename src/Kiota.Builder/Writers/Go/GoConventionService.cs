@@ -14,7 +14,7 @@ namespace Kiota.Builder.Writers.Go {
 
         private const string PathSegmentPropertyName = "pathSegment";
         private const string CurrentPathPropertyName = "currentPath";
-        private const string HttpCorePropertyName = "httpCore";
+        private const string HttpCorePropertyName = "requestAdapter";
         public override string ParseNodeInterfaceName => "ParseNode";
         #pragma warning disable CA1822 // Method should be static
         public string AbstractionsHash => "ida96af0f171bb75f894a4013a6b3146a4397c58f11adb81a2b7cbea9314783a9";

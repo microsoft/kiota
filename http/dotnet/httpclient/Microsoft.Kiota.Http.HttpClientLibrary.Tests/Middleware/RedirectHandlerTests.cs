@@ -4,12 +4,12 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Kiota.Http.HttpClient.Middleware;
-using Microsoft.Kiota.Http.HttpClient.Middleware.Options;
-using Microsoft.Kiota.Http.HttpClient.Tests.Mocks;
+using Microsoft.Kiota.Http.HttpClientLibrary.Middleware;
+using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
+using Microsoft.Kiota.Http.HttpClientLibrary.Tests.Mocks;
 using Xunit;
 
-namespace Microsoft.Kiota.Http.HttpClient.Tests.Middleware
+namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Middleware
 {
     public class RedirectHandlerTests: IDisposable
     {

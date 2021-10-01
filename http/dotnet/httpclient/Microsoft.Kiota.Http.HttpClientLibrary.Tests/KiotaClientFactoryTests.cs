@@ -1,17 +1,17 @@
 ﻿using System.Net;
 using System.Net.Http;
-using Microsoft.Kiota.Http.HttpClient.Tests.Mocks;
+using Microsoft.Kiota.Http.HttpClientLibrary.Tests.Mocks;
 using Xunit;
 
-namespace Microsoft.Kiota.Http.HttpClient.Tests
+namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests
 {
-    public class HttpClientBuilderTests
+    public class KiotaClientFactoryTests
     {
         [Fact]
         public void ChainHandlersCollectionAndGetFirstLinkReturnsNullOnDefaultParams()
         {
             // Act
-            var delegatingHandler = HttpClientBuilder.ChainHandlersCollectionAndGetFirstLink();
+            var delegatingHandler = KiotaClientFactory.ChainHandlersCollectionAndGetFirstLink();
             // Assert
             Assert.Null(delegatingHandler);
         }
@@ -22,7 +22,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests
             // Arrange
             var handler = new TestHttpMessageHandler();
             // Act
-            var delegatingHandler = HttpClientBuilder.ChainHandlersCollectionAndGetFirstLink(handler);
+            var delegatingHandler = KiotaClientFactory.ChainHandlersCollectionAndGetFirstLink(handler);
             // Assert
             Assert.NotNull(delegatingHandler);
             Assert.Null(delegatingHandler.InnerHandler);
@@ -35,7 +35,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests
             var handler1 = new TestHttpMessageHandler();
             var handler2 = new TestHttpMessageHandler();
             // Act
-            var delegatingHandler = HttpClientBuilder.ChainHandlersCollectionAndGetFirstLink(handler1, handler2);
+            var delegatingHandler = KiotaClientFactory.ChainHandlersCollectionAndGetFirstLink(handler1, handler2);
             // Assert
             Assert.NotNull(delegatingHandler);
             Assert.NotNull(delegatingHandler.InnerHandler); // first handler has an inner handler
@@ -53,11 +53,11 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests
             var handler2 = new TestHttpMessageHandler();
             var finalHandler = new HttpClientHandler();
             // Act
-            var delegatingHandler = HttpClientBuilder.ChainHandlersCollectionAndGetFirstLink(finalHandler, handler1, handler2);
+            var delegatingHandler = KiotaClientFactory.ChainHandlersCollectionAndGetFirstLink(finalHandler, handler1, handler2);
             // Assert
             Assert.NotNull(delegatingHandler);
             Assert.NotNull(delegatingHandler.InnerHandler); // first handler has an inner handler
-            
+
             var innerHandler = delegatingHandler.InnerHandler as DelegatingHandler;
             Assert.NotNull(innerHandler);
             Assert.NotNull(innerHandler.InnerHandler);
@@ -70,7 +70,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests
             // Arrange
             var proxy = new WebProxy("http://localhost:8888", false);
             // Act
-            var defaultHandler = HttpClientBuilder.GetDefaultHttpMessageHandler(proxy);
+            var defaultHandler = KiotaClientFactory.GetDefaultHttpMessageHandler(proxy);
             // Assert
             Assert.NotNull(defaultHandler);
             Assert.IsType<HttpClientHandler>(defaultHandler);

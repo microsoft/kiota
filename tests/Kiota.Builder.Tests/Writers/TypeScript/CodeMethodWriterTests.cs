@@ -43,8 +43,8 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         }
         private void AddRequestProperties() {
             parentClass.AddProperty(new CodeProperty {
-                Name = "httpCore",
-                PropertyKind = CodePropertyKind.HttpCore,
+                Name = "requestAdapter",
+                PropertyKind = CodePropertyKind.RequestAdapter,
             });
             parentClass.AddProperty(new CodeProperty {
                 Name = "isRawUrl",
@@ -370,7 +370,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             method.PathSegment = "somePath";
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("this.httpCore", result);
+            Assert.Contains("this.requestAdapter", result);
             Assert.Contains("this.pathSegment", result);
             Assert.Contains("+ id", result);
             Assert.Contains("return new", result);
@@ -389,7 +389,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             });
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("this.httpCore", result);
+            Assert.Contains("this.requestAdapter", result);
             Assert.Contains("this.pathSegment", result);
             Assert.Contains("pathParam", result);
             Assert.Contains("return new", result);
@@ -465,7 +465,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             method.IsAsync = false;
             var coreProp = parentClass.AddProperty(new CodeProperty {
                 Name = "core",
-                PropertyKind = CodePropertyKind.HttpCore,
+                PropertyKind = CodePropertyKind.RequestAdapter,
             }).First();
             coreProp.Type = new CodeType {
                 Name = "HttpCore",
@@ -473,7 +473,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             };
             method.AddParameter(new CodeParameter {
                 Name = "core",
-                ParameterKind = CodeParameterKind.HttpCore,
+                ParameterKind = CodeParameterKind.RequestAdapter,
                 Type = coreProp.Type,
             });
             method.DeserializerModules = new() {"com.microsoft.kiota.serialization.Deserializer"};
@@ -489,7 +489,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             method.MethodKind = CodeMethodKind.ClientConstructor;
             var coreProp = parentClass.AddProperty(new CodeProperty {
                 Name = "core",
-                PropertyKind = CodePropertyKind.HttpCore,
+                PropertyKind = CodePropertyKind.RequestAdapter,
             }).First();
             coreProp.Type = new CodeType {
                 Name = "HttpCore",
@@ -497,7 +497,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             };
             method.AddParameter(new CodeParameter {
                 Name = "core",
-                ParameterKind = CodeParameterKind.HttpCore,
+                ParameterKind = CodeParameterKind.RequestAdapter,
                 Type = coreProp.Type,
             });
             var backingStoreParam = new CodeParameter {

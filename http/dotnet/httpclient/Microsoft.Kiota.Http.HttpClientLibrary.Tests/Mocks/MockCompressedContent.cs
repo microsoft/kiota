@@ -4,7 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace Microsoft.Kiota.Http.HttpClient.Tests.Mocks
+namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Mocks
 {
     public class MockCompressedContent : HttpContent
     {
