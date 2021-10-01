@@ -156,7 +156,9 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(current, x => AddConstructorsForDefaultValues(x, addIfInherited));
         }
         protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement, HashSet<Type> codeElementExceptions = null) {
-            if(current is CodeClass currentClass && currentClass.StartBlock is Declaration currentDeclaration)
+            if(current is CodeClass currentClass && 
+                (!codeElementExceptions?.Contains(typeof(CodeUsing)) ?? true) &&
+                currentClass.StartBlock is Declaration currentDeclaration)
                 ReplaceReservedCodeUsings(currentDeclaration, provider, replacement);
             else if(current is CodeNamespace currentNamespace &&
                 (!codeElementExceptions?.Contains(typeof(CodeNamespace)) ?? true) &&
