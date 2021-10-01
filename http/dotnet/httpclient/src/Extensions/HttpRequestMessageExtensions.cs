@@ -17,18 +17,18 @@ namespace Microsoft.Kiota.Http.HttpClient.Extensions
     public static class HttpRequestMessageExtensions
     {
         /// <summary>
-        /// Gets a <see cref="IMiddlewareOption"/> from <see cref="HttpRequestMessage"/>
+        /// Gets a <see cref="IRequestOption"/> from <see cref="HttpRequestMessage"/>
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="httpRequestMessage">The <see cref="HttpRequestMessage"/> representation of the request.</param>
         /// <returns>A middleware option</returns>
-        public static T GetMiddlewareOption<T>(this HttpRequestMessage httpRequestMessage) where T : IMiddlewareOption
+        public static T GetRequestOption<T>(this HttpRequestMessage httpRequestMessage) where T : IRequestOption
         {
             if(httpRequestMessage.Options.TryGetValue(
-                new HttpRequestOptionsKey<IMiddlewareOption>(typeof(T).FullName),
-                out IMiddlewareOption middlewareOption))
+                new HttpRequestOptionsKey<IRequestOption>(typeof(T).FullName),
+                out IRequestOption requestOption))
             {
-                return (T)middlewareOption;
+                return (T)requestOption;
             }
             return default;
         }
@@ -58,7 +58,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Extensions
             {
                 // HttpClient doesn't rewind streams and we have to explicitly do so.
                 var contentStream = await originalRequest.Content.ReadAsStreamAsync();
-                
+
                 if(contentStream.CanSeek)
                     contentStream.Seek(0, SeekOrigin.Begin);
 

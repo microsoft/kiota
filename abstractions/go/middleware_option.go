@@ -1,4 +1,4 @@
 package abstractions
 
-type MiddlewareOption interface {
+type RequestOption interface {
 }

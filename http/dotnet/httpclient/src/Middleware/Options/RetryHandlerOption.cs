@@ -11,7 +11,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware.Options
     /// <summary>
     /// The retry middleware option class
     /// </summary>
-    public class RetryHandlerOption : IMiddlewareOption
+    public class RetryHandlerOption : IRequestOption
     {
         internal const int DefaultDelay = 3;
         internal const int DefaultMaxRetry = 3;

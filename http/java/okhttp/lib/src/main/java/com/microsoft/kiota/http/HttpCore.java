@@ -14,7 +14,7 @@ import javax.annotation.Nullable;
 
 import com.microsoft.kiota.ApiClientBuilder;
 import com.microsoft.kiota.RequestInformation;
-import com.microsoft.kiota.MiddlewareOption;
+import com.microsoft.kiota.RequestOption;
 import com.microsoft.kiota.ResponseHandler;
 import com.microsoft.kiota.authentication.AuthenticationProvider;
 import com.microsoft.kiota.serialization.ParseNodeFactoryRegistry;
@@ -242,7 +242,7 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
         for (final Map.Entry<String,String> header : requestInfo.headers.entrySet()) {
             requestBuilder.addHeader(header.getKey(), header.getValue());
         }
-        for(final MiddlewareOption option : requestInfo.getMiddlewareOptions()) {
+        for(final RequestOption option : requestInfo.getRequestOptions()) {
             requestBuilder.tag(option);
         }
         return requestBuilder.build();

@@ -69,30 +69,30 @@ public class RequestInformation {
     /** The Request Body. */
     @Nullable
     public InputStream content;
-    private HashMap<String, MiddlewareOption> _middlewareOptions = new HashMap<>();
+    private HashMap<String, RequestOption> _requestOptions = new HashMap<>();
     /**
      * Gets the middleware options for this request. Options are unique by type. If an option of the same type is added twice, the last one wins.
      * @return the middleware options for this request.
      */
-    public Collection<MiddlewareOption> getMiddlewareOptions() { return _middlewareOptions.values(); }
+    public Collection<RequestOption> getRequestOptions() { return _requestOptions.values(); }
     /**
      * Adds a middleware option to this request.
      * @param option the middleware option to add.
      */
-    public void addMiddlewareOptions(@Nullable final MiddlewareOption... options) { 
+    public void addRequestOptions(@Nullable final RequestOption... options) { 
         if(options == null || options.length == 0) return;
-        for(final MiddlewareOption option : options) {
-            _middlewareOptions.put(option.getClass().getCanonicalName(), option);
+        for(final RequestOption option : options) {
+            _requestOptions.put(option.getClass().getCanonicalName(), option);
         }
     }
     /**
      * Removes a middleware option from this request.
      * @param option the middleware option to remove.
      */
-    public void removeMiddlewareOptions(@Nullable final MiddlewareOption... options) {
+    public void removeRequestOptions(@Nullable final RequestOption... options) {
         if(options == null || options.length == 0) return;
-        for(final MiddlewareOption option : options) {
-            _middlewareOptions.remove(option.getClass().getCanonicalName());
+        for(final RequestOption option : options) {
+            _requestOptions.remove(option.getClass().getCanonicalName());
         }
     }
     private static String binaryContentType = "application/octet-stream";

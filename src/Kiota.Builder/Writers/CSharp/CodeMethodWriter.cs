@@ -192,7 +192,7 @@ namespace Kiota.Builder.Writers.CSharp {
             if(requestParams.headers != null)
                 writer.WriteLine($"{requestParams.headers.Name}?.Invoke({RequestInfoVarName}.Headers);");
             if(requestParams.options != null)
-                writer.WriteLine($"{RequestInfoVarName}.AddMiddlewareOptions({requestParams.options.Name}?.ToArray());");
+                writer.WriteLine($"{RequestInfoVarName}.AddRequestOptions({requestParams.options.Name}?.ToArray());");
             writer.WriteLine($"return {RequestInfoVarName};");
         }
         private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"{property.Name.ToFirstCharacterUpperCase()}";

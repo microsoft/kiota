@@ -212,8 +212,8 @@ namespace Microsoft.Kiota.Http.HttpClient
                                             string.Empty)),
             };
 
-            if(requestInfo.MiddlewareOptions.Any())
-                requestInfo.MiddlewareOptions.ToList().ForEach(x => message.Options.Set(new HttpRequestOptionsKey<IMiddlewareOption>(x.GetType().FullName), x));
+            if(requestInfo.RequestOptions.Any())
+                requestInfo.RequestOptions.ToList().ForEach(x => message.Options.Set(new HttpRequestOptionsKey<IRequestOption>(x.GetType().FullName), x));
             if(requestInfo.Headers?.Any() ?? false)
                 requestInfo.Headers.Where(x => !ContentTypeHeaderName.Equals(x.Key, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => message.Headers.Add(x.Key, x.Value));
             if(requestInfo.Content != null)

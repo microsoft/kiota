@@ -184,7 +184,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             Assert.Contains("setHeadersFromRawObject", result);
             Assert.Contains("setQueryStringParametersFromRawObject", result);
             Assert.Contains("setContentFromParsable", result);
-            Assert.Contains("addMiddlewareOptions", result);
+            Assert.Contains("addRequestOptions", result);
             Assert.Contains("return requestInfo;", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }

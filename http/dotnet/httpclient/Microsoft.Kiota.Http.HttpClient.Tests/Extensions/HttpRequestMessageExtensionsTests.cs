@@ -15,7 +15,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Extensions
     public class HttpRequestMessageExtensionsTests
     {
         [Fact]
-        public void GetMiddlewareOptionCanExtractMiddleWareOptionFromHttpRequestMessage()
+        public void GetRequestOptionCanExtractMiddleWareOptionFromHttpRequestMessage()
         {
             // Arrange
             var requestInfo = new RequestInformation()
@@ -27,10 +27,10 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Extensions
             {
                 MaxRedirect = 7
             };
-            requestInfo.AddMiddlewareOptions(redirectHandlerOption);
+            requestInfo.AddRequestOptions(redirectHandlerOption);
             // Act and get a request message
             var requestMessage = HttpCore.GetRequestMessageFromRequestInformation(requestInfo);
-            var extractedOption = requestMessage.GetMiddlewareOption<RedirectHandlerOption>();
+            var extractedOption = requestMessage.GetRequestOption<RedirectHandlerOption>();
             // Assert
             Assert.NotNull(extractedOption);
             Assert.Equal(redirectHandlerOption, extractedOption);
@@ -77,7 +77,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Extensions
         }
 
         [Fact]
-        public async Task CloneAsyncWithMiddlewareOption()
+        public async Task CloneAsyncWithRequestOption()
         {
             var requestInfo = new RequestInformation
             {
@@ -88,7 +88,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Tests.Extensions
             {
                 MaxRedirect = 7
             };
-            requestInfo.AddMiddlewareOptions(redirectHandlerOption);
+            requestInfo.AddRequestOptions(redirectHandlerOption);
             var originalRequest = HttpCore.GetRequestMessageFromRequestInformation(requestInfo);
             originalRequest.Content = new StringContent("contents");
 

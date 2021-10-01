@@ -11,7 +11,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware.Options
     /// <summary>
     /// The redirect middleware option class
     /// </summary>
-    public class RedirectHandlerOption: IMiddlewareOption
+    public class RedirectHandlerOption: IRequestOption
     {
         private const int DefaultMaxRedirect = 5;
         private const int MaxMaxRedirect = 20;
@@ -41,7 +41,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware.Options
         public Func<HttpResponseMessage, bool> ShouldRedirect { get; set; } = (response) => true;
 
         /// <summary>
-        /// A boolean value to determine if we redirects are allowed if the scheme changes(e.g. https to http). Defaults to false. 
+        /// A boolean value to determine if we redirects are allowed if the scheme changes(e.g. https to http). Defaults to false.
         /// </summary>
         public bool AllowRedirectOnSchemeChange { get; set; } = false;
     }

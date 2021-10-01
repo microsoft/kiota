@@ -146,7 +146,7 @@ namespace Kiota.Builder.Refiners {
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.HttpCore),
                 "github.com/microsoft/kiota/abstractions/go", "HttpCore"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-                "github.com/microsoft/kiota/abstractions/go", "RequestInformation", "HttpMethod", "MiddlewareOption"),
+                "github.com/microsoft/kiota/abstractions/go", "RequestInformation", "HttpMethod", "RequestOption"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
                 "github.com/microsoft/kiota/abstractions/go", "ResponseHandler"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.QueryParameters),
@@ -172,7 +172,7 @@ namespace Kiota.Builder.Refiners {
                     currentMethod.ReturnType.IsNullable = true;
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => {
                     x.Type.IsNullable = false;
-                    x.Type.Name = "MiddlewareOption";
+                    x.Type.Name = "RequestOption";
                     x.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
                 });
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.QueryParameter)).ToList().ForEach(x => x.Type.Name = $"{parentClass.Name}{x.Type.Name}");

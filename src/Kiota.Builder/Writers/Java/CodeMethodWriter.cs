@@ -276,7 +276,7 @@ namespace Kiota.Builder.Writers.Java {
             if(requestParams.options != null) {
                 writer.WriteLine($"if ({requestParams.options.Name} != null) {{");
                 writer.IncreaseIndent();
-                writer.WriteLine($"{RequestInfoVarName}.addMiddlewareOptions({requestParams.options.Name}.toArray(new MiddlewareOption[0]));");
+                writer.WriteLine($"{RequestInfoVarName}.addRequestOptions({requestParams.options.Name}.toArray(new RequestOption[0]));");
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
             }

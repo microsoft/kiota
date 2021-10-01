@@ -30,7 +30,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
         private const string Json = "application/json";
 
         /// <summary>
-        /// Create a ChaosHandler.  
+        /// Create a ChaosHandler.
         /// </summary>
         /// <param name="chaosHandlerOptions">Optional parameter to change default behavior of handler.</param>
         public ChaosHandler(ChaosHandlerOption chaosHandlerOptions = null)
@@ -52,7 +52,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
                 throw new ArgumentNullException(nameof(request));
 
             // Select global or per request options
-            var chaosHandlerOptions = request.GetMiddlewareOption<ChaosHandlerOption>() ?? _chaosHandlerOptions;
+            var chaosHandlerOptions = request.GetRequestOption<ChaosHandlerOption>() ?? _chaosHandlerOptions;
 
             HttpResponseMessage response = null;
             // Planned Chaos or Random?

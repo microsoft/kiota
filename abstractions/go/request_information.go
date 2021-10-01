@@ -18,7 +18,7 @@ type RequestInformation struct {
 	Headers         map[string]string
 	QueryParameters map[string]string
 	Content         []byte
-	options         map[string]MiddlewareOption
+	options         map[string]RequestOption
 }
 
 func NewRequestInformation() *RequestInformation {
@@ -26,7 +26,7 @@ func NewRequestInformation() *RequestInformation {
 		URI:             u.URL{},
 		Headers:         make(map[string]string),
 		QueryParameters: make(map[string]string),
-		options:         make(map[string]MiddlewareOption),
+		options:         make(map[string]RequestOption),
 	}
 }
 
@@ -63,12 +63,12 @@ func (request *RequestInformation) SetUri(currentPath string, pathSegment string
 	return nil
 }
 
-func (request *RequestInformation) AddMiddlewareOptions(options ...MiddlewareOption) error {
+func (request *RequestInformation) AddRequestOptions(options ...RequestOption) error {
 	if options == nil {
-		return errors.New("MiddlewareOptions cannot be nil")
+		return errors.New("RequestOptions cannot be nil")
 	}
 	if request.options == nil {
-		request.options = make(map[string]MiddlewareOption, len(options))
+		request.options = make(map[string]RequestOption, len(options))
 	}
 	for _, option := range options {
 		tp := reflect.TypeOf(option)
@@ -78,11 +78,11 @@ func (request *RequestInformation) AddMiddlewareOptions(options ...MiddlewareOpt
 	return nil
 }
 
-func (request *RequestInformation) GetMiddlewareOptions() []MiddlewareOption {
+func (request *RequestInformation) GetRequestOptions() []RequestOption {
 	if request.options == nil {
-		return []MiddlewareOption{}
+		return []RequestOption{}
 	}
-	result := make([]MiddlewareOption, len(request.options))
+	result := make([]RequestOption, len(request.options))
 	for _, option := range request.options {
 		result = append(result, option)
 	}

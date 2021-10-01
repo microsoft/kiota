@@ -9,4 +9,4 @@ export * from "./nativeResponseWrapper";
 export * from './serialization';
 export * from './utils';
 export * from './store';
-export * from './middlewareOption';
+export * from './requestOption';

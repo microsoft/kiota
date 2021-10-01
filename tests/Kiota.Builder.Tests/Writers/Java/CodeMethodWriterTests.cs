@@ -196,7 +196,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             Assert.Contains("h.accept(requestInfo.headers)", result);
             Assert.Contains("AddQueryParameters", result);
             Assert.Contains("setContentFromParsable", result);
-            Assert.Contains("addMiddlewareOptions", result);
+            Assert.Contains("addRequestOptions", result);
             Assert.Contains("return requestInfo;", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
@@ -213,7 +213,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             Assert.DoesNotContain("h.accept(requestInfo.headers)", result);
             Assert.DoesNotContain("AddQueryParameters", result);
             Assert.DoesNotContain("setContentFromParsable", result);
-            Assert.DoesNotContain("addMiddlewareOptions", result);
+            Assert.DoesNotContain("addRequestOptions", result);
             Assert.DoesNotContain("return requestInfo;", result);
             Assert.Contains("return methodName(b, q, h, o)", result);
             AssertExtensions.CurlyBracesAreClosed(result);
