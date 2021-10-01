@@ -1,6 +1,7 @@
 import { Middleware } from "./middleware";
 import { fetch } from 'cross-fetch';
 import { RequestOption } from "@microsoft/kiota-abstractions";
+import { getDefaultMiddlewares, getDefaultRequestSettings } from "./kiotaClientFactory";
 
 /** Default fetch client with options and a middleware pipleline for requests execution. */
 export class HttpClient {
@@ -9,7 +10,7 @@ export class HttpClient {
      * @param middlewares middlewares to be used for requests execution.
      * @param defaultRequestSettings default request settings to be used for requests execution.
      */
-    public constructor(private readonly middlewares: Middleware[] = HttpClient.getDefaultMiddlewares(), private readonly defaultRequestSettings: RequestInit = HttpClient.getDefaultRequestSettings()) {
+    public constructor(private readonly middlewares: Middleware[] = getDefaultMiddlewares(), private readonly defaultRequestSettings: RequestInit = getDefaultRequestSettings()) {
         this.middlewares = [...this.middlewares, new FetchMiddleware()];
         this.middlewares.forEach((middleware, idx) => {
             if(idx < this.middlewares.length)
@@ -28,20 +29,6 @@ export class HttpClient {
             return this.middlewares[0].execute(url, finalOptions, requestOptions);
         else
             throw new Error("No middlewares found");
-    }
-    /**
-     * Gets the default middlewares in use for the client.
-     * @returns the default middlewares.
-     */
-    public static getDefaultMiddlewares(): Middleware[] {
-        return []; //TODO add default middlewares
-    }
-    /**
-     * Gets the default request settings to be used for the client.
-     * @returns the default request settings.
-     */
-    public static getDefaultRequestSettings(): RequestInit {
-        return {}; //TODO add default request settings
     }
 }
 /** Default middleware executing a request. Internal use only. */

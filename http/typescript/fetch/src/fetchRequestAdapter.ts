@@ -1,9 +1,9 @@
-import { AuthenticationProvider, BackingStoreFactory, BackingStoreFactorySingleton, HttpCore as IHttpCore, Parsable, ParseNodeFactory, RequestInformation, ResponseHandler, ParseNodeFactoryRegistry, enableBackingStoreForParseNodeFactory, SerializationWriterFactoryRegistry, enableBackingStoreForSerializationWriterFactory, SerializationWriterFactory } from '@microsoft/kiota-abstractions';
+import { AuthenticationProvider, BackingStoreFactory, BackingStoreFactorySingleton, RequestAdapter, Parsable, ParseNodeFactory, RequestInformation, ResponseHandler, ParseNodeFactoryRegistry, enableBackingStoreForParseNodeFactory, SerializationWriterFactoryRegistry, enableBackingStoreForSerializationWriterFactory, SerializationWriterFactory } from '@microsoft/kiota-abstractions';
 import { Headers as FetchHeadersCtor } from 'cross-fetch';
 import { ReadableStream } from 'web-streams-polyfill';
 import { URLSearchParams } from 'url';
 import { HttpClient } from './httpClient';
-export class HttpCore implements IHttpCore {
+export class FetchRequestAdapter implements RequestAdapter {
     public getSerializationWriterFactory(): SerializationWriterFactory {
         return this.serializationWriterFactory;
     }

@@ -1,7 +1,7 @@
 {
-  "name": "@microsoft/kiota-http-fetch",
+  "name": "@microsoft/kiota-http-fetchlibrary",
   "version": "1.0.9",
-  "description": "Kiota HttpCore implementation with fetch",
+  "description": "Kiota request adapter implementation with fetch",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

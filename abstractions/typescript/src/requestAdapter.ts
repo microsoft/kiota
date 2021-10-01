@@ -4,7 +4,7 @@ import { Parsable, SerializationWriterFactory } from "./serialization";
 import { BackingStoreFactory } from "./store";
 
 /** Service responsible for translating abstract Request Info into concrete native HTTP requests. */
-export interface HttpCore {
+export interface RequestAdapter {
     /**
      * Gets the serialization writer factory currently in use for the HTTP core service.
      * @return the serialization writer factory currently in use for the HTTP core service.
