@@ -182,7 +182,7 @@ namespace Kiota.Builder.Writers.Ruby {
                 if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"request_info.set_stream_content({requestBodyParam.Name})");
                 else
-                    writer.WriteLine($"request_info.set_content_from_parsable(self.{RubyConventionService.SerializerFactoryPropertyName}, \"{codeElement.ContentType}\", {requestBodyParam.Name})");
+                    writer.WriteLine($"request_info.set_content_from_parsable(self.{RubyConventionService.HttpCorePropertyName}, \"{codeElement.ContentType}\", {requestBodyParam.Name})");
             }
             writer.WriteLine("return request_info;");
         }

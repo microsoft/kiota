@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require_relative "lib/microsoft_kiota_nethttp/version"
+require_relative "lib/microsoft_kiota_nethttplibrary/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "microsoft_kiota_nethttp"
+  spec.name          = "microsoft_kiota_nethttplibrary"
   spec.version       = MicrosoftKiotaNethttp::VERSION
   spec.authors       = 'Microsoft Corporation'
   spec.email         = 'graphsdkpub@microsoft.com'

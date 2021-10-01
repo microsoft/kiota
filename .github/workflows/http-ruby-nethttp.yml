@@ -11,7 +11,7 @@ on:
 jobs:
   build:
     env:
-      relativePath: ./http/ruby/nethttp/microsoft_kiota_nethttp
+      relativePath: ./http/ruby/nethttp/microsoft_kiota_nethttplibrary
       BUNDLE_HTTPS://RUBYGEMS__PKG__GITHUB__COM/MICROSOFT/: "${{ secrets.PUBLISH_GH_USERNAME }}:${{ secrets.PUBLISH_GH_TOKEN }}"
     strategy:
       fail-fast: false
@@ -46,7 +46,7 @@ jobs:
       name: staging_feeds
     runs-on: ubuntu-latest
     env:
-      relativePath: ./http/ruby/nethttp/microsoft_kiota_nethttp
+      relativePath: ./http/ruby/nethttp/microsoft_kiota_nethttplibrary
       BUNDLE_HTTPS://RUBYGEMS__PKG__GITHUB__COM/MICROSOFT/: "${{ secrets.PUBLISH_GH_USERNAME }}:${{ secrets.PUBLISH_GH_TOKEN }}"
     needs: [build]
     steps:
@@ -79,7 +79,7 @@ jobs:
   #     name: production_feeds
   #   runs-on: ubuntu-latest
   #   env:
-  #     relativePath: ./http/ruby/nethttp/microsoft_kiota_nethttp
+  #     relativePath: ./http/ruby/nethttp/microsoft_kiota_nethttplibrary
   #   needs: [build]
   #   steps:
   #     - uses: actions/checkout@v2

@@ -3,9 +3,9 @@ require 'net/https'
 require 'net/http'
 require 'concurrent'
 
-module MicrosoftKiotaNethttp
-  class HttpCore
-    include MicrosoftKiotaAbstractions::HttpCore
+module MicrosoftKiotaNethttplibrary
+  class NetHttpRequestAdapter
+    include MicrosoftKiotaAbstractions::RequestAdapter
     include Concurrent::Async
 
     attr_accessor :authentication_provider, :content_type_header_key, :parse_node_factory, :serialization_writer_factory, :client
@@ -21,6 +21,10 @@ module MicrosoftKiotaNethttp
       @parse_node_factory = parse_node_factory 
       @serialization_writer_factory = serialization_writer_factory 
       @client = client
+    end
+
+    def get_serialization_writer_factory()
+      @serialization_writer_factory
     end
 
     def send_async(request_info, type, response_handler)

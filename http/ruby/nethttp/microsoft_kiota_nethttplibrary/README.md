@@ -29,7 +29,7 @@ Add this line to your application's Gemfile:
 
 ```ruby
 source "https://rubygems.pkg.github.com/microsoft" do
-  gem "microsoft_kiota_nethttp", "0.1.0"
+  gem "microsoft_kiota_nethttplibrary", "0.1.0"
 end
 ```
 
@@ -42,7 +42,7 @@ bundle install
 Or install it yourself as:
 
 ```shell
-gem install microsoft_kiota_nethttp --version "0.1.0" --source "https://{USERNAME}{PASSWORD/TOKEN}rubygems.pkg.github.com/microsoft"
+gem install microsoft_kiota_nethttplibrary --version "0.1.0" --source "https://{USERNAME}{PASSWORD/TOKEN}rubygems.pkg.github.com/microsoft"
 ```
 
 ## Contributing
