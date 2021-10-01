@@ -6,7 +6,7 @@ namespace Kiota.Builder
 {
     public class CodeUnionType : CodeTypeBase, ICloneable {
         public void AddType(params CodeType[] codeTypes) {
-            AddMissingParent(codeTypes);
+            EnsureElementsAreChildren(codeTypes);
             foreach(var codeType in codeTypes.Where(x => x != null && !Types.Contains(x)))
                 types.Add(codeType);
         }

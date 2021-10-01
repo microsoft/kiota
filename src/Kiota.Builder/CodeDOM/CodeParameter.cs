@@ -25,7 +25,7 @@ namespace Kiota.Builder
         public CodeParameterKind ParameterKind {get;set;}= CodeParameterKind.Custom;
         private CodeTypeBase type;
         public CodeTypeBase Type {get => type; set {
-            AddMissingParent(type);
+            EnsureElementsAreChildren(type);
             type = value;
         }}
         public bool Optional {get;set;}= false;

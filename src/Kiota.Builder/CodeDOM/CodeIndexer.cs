@@ -6,12 +6,12 @@ namespace Kiota.Builder
     {
         private CodeTypeBase indexType;
         public CodeTypeBase IndexType {get => indexType; set {
-            AddMissingParent(value);
+            EnsureElementsAreChildren(value);
             indexType = value;
         }}
         private CodeTypeBase returnType;
         public CodeTypeBase ReturnType {get => returnType; set {
-            AddMissingParent(value);
+            EnsureElementsAreChildren(value);
             returnType = value;
         }}
         public string Description {get; set;}

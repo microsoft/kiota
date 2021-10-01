@@ -12,7 +12,7 @@ namespace Kiota.Builder
         public IEnumerable<CodeUsing> Usings { get => usings; }
         public void AddUsings(params CodeUsing[] usingsToAdd) {
             if(usingsToAdd == null || !usingsToAdd.Any()) throw new ArgumentNullException(nameof(usingsToAdd));
-            AddMissingParent(usingsToAdd);
+            EnsureElementsAreChildren(usingsToAdd);
             usings.AddRange(usingsToAdd);
         }
     }

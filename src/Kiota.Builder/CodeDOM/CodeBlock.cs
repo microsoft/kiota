@@ -37,7 +37,7 @@ namespace Kiota.Builder
         public void AddUsing(params CodeUsing[] codeUsings) => StartBlock.AddUsings(codeUsings);
         protected IEnumerable<T> AddRange<T>(params T[] elements) where T : CodeElement {
             if(elements == null) return Enumerable.Empty<T>();
-            AddMissingParent(elements);
+            EnsureElementsAreChildren(elements);
             var innerChildElements = InnerChildElements as ConcurrentDictionary<string, CodeElement>; // to avoid calling the non thread-safe extension method
             var result = new T[elements.Length]; // not using yield return as they'll only get called if the result is assigned
 
@@ -108,7 +108,7 @@ namespace Kiota.Builder
             public void AddUsings(params CodeUsing[] codeUsings) {
                 if(codeUsings == null || codeUsings.Any(x => x == null))
                     throw new ArgumentNullException(nameof(codeUsings));
-                AddMissingParent(codeUsings);
+                EnsureElementsAreChildren(codeUsings);
                 usings.AddRange(codeUsings);
             }
             public void RemoveUsingsByDeclarationName(string name) {

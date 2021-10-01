@@ -39,7 +39,7 @@ namespace Kiota.Builder
         public AccessModifier Access {get;set;} = AccessModifier.Public;
         private CodeTypeBase returnType;
         public CodeTypeBase ReturnType {get => returnType;set {
-            AddMissingParent(value);
+            EnsureElementsAreChildren(value);
             returnType = value;
         }}
         private readonly List<CodeParameter> parameters = new ();
@@ -102,7 +102,7 @@ namespace Kiota.Builder
                 throw new ArgumentNullException(nameof(methodParameters));
             if(!methodParameters.Any())
                 throw new ArgumentOutOfRangeException(nameof(methodParameters));
-            AddMissingParent(methodParameters);
+            EnsureElementsAreChildren(methodParameters);
             parameters.AddRange(methodParameters);
         }
     }

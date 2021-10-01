@@ -102,14 +102,14 @@ namespace Kiota.Builder
         {
             private CodeType inherits;
             public CodeType Inherits { get => inherits; set {
-                AddMissingParent(value);
+                EnsureElementsAreChildren(value);
                 inherits = value;
             } }
             private readonly List<CodeType> implements = new ();
             public void AddImplements(params CodeType[] types) {
                 if(types == null || types.Any(x => x == null))
                     throw new ArgumentNullException(nameof(types));
-                AddMissingParent(types);
+                EnsureElementsAreChildren(types);
                 implements.AddRange(types);
             }
             public IEnumerable<CodeType> Implements => implements;

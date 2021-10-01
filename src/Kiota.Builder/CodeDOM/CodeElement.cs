@@ -23,7 +23,7 @@ namespace Kiota.Builder
         {
             get; set;
         }
-        protected void AddMissingParent(params CodeElement[] elements) {
+        protected void EnsureElementsAreChildren(params CodeElement[] elements) {
             foreach(var element in elements.Where(x => x != null && (x.Parent == null || x.Parent != this)))
                 element.Parent = this;
         }

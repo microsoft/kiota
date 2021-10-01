@@ -4,7 +4,7 @@
     {
         private CodeType declaration;
         public CodeType Declaration { get => declaration; set {
-            AddMissingParent(declaration);
+            EnsureElementsAreChildren(declaration);
             declaration = value;
         } }
         public bool IsExternal {

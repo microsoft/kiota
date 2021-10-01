@@ -22,7 +22,7 @@ namespace Kiota.Builder
         public AccessModifier Access {get;set;} = AccessModifier.Public;
         private CodeTypeBase type;
         public CodeTypeBase Type {get => type ;set {
-            AddMissingParent(value);
+            EnsureElementsAreChildren(value);
             type = value;
         }}
         public string DefaultValue {get;set;}
