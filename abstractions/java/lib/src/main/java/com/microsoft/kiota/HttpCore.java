@@ -1,7 +1,6 @@
 package com.microsoft.kiota;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.List;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
