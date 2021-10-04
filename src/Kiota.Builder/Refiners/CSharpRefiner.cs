@@ -20,7 +20,11 @@ namespace Kiota.Builder.Refiners {
             ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");
             MakeEnumPropertiesNullable(generatedCode);
             // Exclude code classes, declarations and properties as they will be capitalized making the change unnecessary in this case sensitive language
-            ReplaceReservedNames(generatedCode, new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}", new HashSet<Type>{ typeof(CodeClass), typeof(CodeClass.Declaration), typeof(CodeProperty) }); 
+            ReplaceReservedNames(
+                generatedCode,
+                new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}",
+                new HashSet<Type>{ typeof(CodeClass), typeof(CodeClass.Declaration), typeof(CodeProperty), typeof(CodeUsing)
+            }); 
             DisambiguatePropertiesWithClassNames(generatedCode);
             AddConstructorsForDefaultValues(generatedCode, false);
             AddSerializationModulesImport(generatedCode);
