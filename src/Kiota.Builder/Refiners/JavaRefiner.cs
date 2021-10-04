@@ -156,7 +156,8 @@ namespace Kiota.Builder.Refiners {
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I" 
             }
             if (currentMethod.IsOfKind(CodeMethodKind.RequestBuilderWithParameters, CodeMethodKind.Constructor) &&
-                    currentMethod.Parameters.Any(x => OriginalDateTimeOffsetType.Equals(x.Type.Name, StringComparison.OrdinalIgnoreCase))) {
+                    currentMethod.Parameters.Any(x => OriginalDateTimeOffsetType.Equals(x.Type.Name, StringComparison.OrdinalIgnoreCase)) &&
+                    currentMethod.Parent is CodeClass parentClass) {
                 currentMethod.Parameters.Where(x => OriginalDateTimeOffsetType.Equals(x.Type.Name, StringComparison.OrdinalIgnoreCase))
                                         .ToList()
                                         .ForEach(x => x.Type.Name = JavaOffsetDateTimeType);
@@ -167,7 +168,7 @@ namespace Kiota.Builder.Refiners {
                         IsExternal = true,
                     },
                 };
-                (currentMethod.Parent as CodeClass).AddUsing(nUsing);
+                parentClass.AddUsing(nUsing);
             }
         }
         private static void InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(CodeElement currentElement) {

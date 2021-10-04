@@ -486,13 +486,11 @@ namespace Kiota.Builder.Writers.Go {
                 }
             }
             var propertyType = conventions.TranslateType(propType, false);
-            if(conventions.IsPrimitiveType(propertyType) || conventions.IsScalarType(propertyType)) {
+            if(conventions.IsPrimitiveType(propertyType) || conventions.IsScalarType(propertyType))
                 writer.WriteLine($"{errorPrefix}WritePrimitiveValue({serializationKey}, {valueGet})");
-                WriteReturnError(writer);
-            } else {
+            else
                 writer.WriteLine($"{errorPrefix}WriteObjectValue({serializationKey}, {valueGet})");
-                WriteReturnError(writer);
-            }
+            WriteReturnError(writer);
             writer.DecreaseIndent();
             writer.WriteLine("}");
         }

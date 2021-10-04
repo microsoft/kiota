@@ -12,7 +12,7 @@ namespace Kiota.Builder.Writers.CSharp {
         private const string PathSegmentPropertyName = "PathSegment";
         private const string CurrentPathPropertyName = "CurrentPath";
         private const string HttpCorePropertyName = "HttpCore";
-        public HashSet<string> NullableTypes { get; } = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "float", "double", "decimal", "long", "Guid", "DateTimeOffset" };
+        private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "float", "double", "decimal", "long", "Guid", "DateTimeOffset" };
         public static readonly char NullableMarker = '?';
         public static string NullableMarkerAsString => "?";
         public override string ParseNodeInterfaceName => "IParseNode";
@@ -38,18 +38,18 @@ namespace Kiota.Builder.Writers.CSharp {
         internal bool ShouldTypeHaveNullableMarker(CodeTypeBase propType, string propTypeName) {
             return propType.IsNullable && (NullableTypes.Contains(propTypeName) || (propType is CodeType codeType && codeType.TypeDefinition is CodeEnum));
         }
-        private static HashSet<string> _reservedNames;
-        private static readonly object _reservedNamesLock = new();
-        private static HashSet<string> GetReservedNames(CodeElement currentElement) {
-            if(_reservedNames == null) {
-                lock(_reservedNamesLock) {
+        private static HashSet<string> _namespaceSegmentsNames;
+        private static readonly object _namespaceSegmentsNamesLock = new();
+        private static HashSet<string> GetNamesInUseByNamespaceSegments(CodeElement currentElement) {
+            if(_namespaceSegmentsNames == null) {
+                lock(_namespaceSegmentsNamesLock) {
                     var rootNamespace = currentElement.GetImmediateParentOfType<CodeNamespace>().GetRootNamespace();
                     var names = new List<string>(GetNamespaceNameSegments(rootNamespace).Distinct(StringComparer.OrdinalIgnoreCase));
-                    _reservedNames = new (names, StringComparer.OrdinalIgnoreCase);
-                    _reservedNames.Add("keyvaluepair"); //workaround as System.Collections.Generic imports keyvalue pair
+                    _namespaceSegmentsNames = new (names, StringComparer.OrdinalIgnoreCase);
+                    _namespaceSegmentsNames.Add("keyvaluepair"); //workaround as System.Collections.Generic imports keyvalue pair
                 }
             }
-            return _reservedNames;
+            return _namespaceSegmentsNames;
         }
         private static IEnumerable<string> GetNamespaceNameSegments(CodeNamespace ns) {
             if(!string.IsNullOrEmpty(ns.Name))
@@ -64,7 +64,7 @@ namespace Kiota.Builder.Writers.CSharp {
             if(code is CodeUnionType)
                 throw new InvalidOperationException($"CSharp does not support union types, the union type {code.Name} should have been filtered out by the refiner");
             else if (code is CodeType currentType) {
-                var typeName = TranslateTypeAndAvoidUsingReservedNames(currentType, targetElement);
+                var typeName = TranslateTypeAndAvoidUsingNamespaceSegmentNames(currentType, targetElement);
                 var nullableSuffix = ShouldTypeHaveNullableMarker(code, typeName) ? NullableMarkerAsString : string.Empty;
                 var collectionPrefix = currentType.CollectionKind == CodeTypeCollectionKind.Complex && includeCollectionInformation ? "List<" : string.Empty;
                 var collectionSuffix = currentType.CollectionKind switch {
@@ -79,11 +79,11 @@ namespace Kiota.Builder.Writers.CSharp {
             }
             else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
         }
-        private string TranslateTypeAndAvoidUsingReservedNames(CodeType currentType, CodeElement targetElement)
+        private string TranslateTypeAndAvoidUsingNamespaceSegmentNames(CodeType currentType, CodeElement targetElement)
         {
             var typeName = TranslateType(currentType);
             if(currentType.TypeDefinition != null &&
-                GetReservedNames(targetElement).Contains(typeName))
+                GetNamesInUseByNamespaceSegments(targetElement).Contains(typeName))
                 return $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
             else
                 return typeName;

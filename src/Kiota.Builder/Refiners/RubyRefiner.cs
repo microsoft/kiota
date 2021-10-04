@@ -96,10 +96,10 @@ namespace Kiota.Builder.Refiners {
             const string dot = ".";
             if(current is CodeClass currentClass) {
                 var Module = currentClass.GetImmediateParentOfType<CodeNamespace>();
-                if(!String.IsNullOrEmpty(Module.Name)){
+                if(!string.IsNullOrEmpty(Module.Name)){
                     var modulesProperties = Module.Name.Replace(clientNamespaceName+dot, string.Empty).Split(dot);
                     for (int i = modulesProperties.Length - 1; i >= 0; i--){
-                        var prefix = String.Concat(Enumerable.Repeat("../", modulesProperties.Length -i-1));
+                        var prefix = string.Concat(Enumerable.Repeat("../", modulesProperties.Length -i-1));
                         var usingName = modulesProperties[i].ToSnakeCase();
                         currentClass.AddUsing(new CodeUsing { 
                             Name = usingName,
