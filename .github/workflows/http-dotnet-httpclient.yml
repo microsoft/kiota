@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       relativePath: ./http/dotnet/httpclient
-      solutionName: Microsoft.Kiota.Http.HttpClient.sln
+      solutionName: Microsoft.Kiota.Http.HttpClientLibrary.sln
     steps:
       - uses: actions/checkout@v2.3.4
       - name: Setup .NET
@@ -42,7 +42,7 @@ jobs:
         with:
           name: codeCoverage
           path: |
-            ${{ env.relativePath }}/Microsoft.Kiota.Http.HttpClient.Tests/TestResults  
+            ${{ env.relativePath }}/Microsoft.Kiota.Http.HttpClientLibrary.Tests/TestResults  
       - name: Upload Nuget package
         uses: actions/upload-artifact@v2
         with:
