@@ -11,16 +11,16 @@ namespace Kiota.Builder.Refiners
 
         private static readonly Tuple<string, string>[] defaultNamespaces = 
         {
-            new("AbstractParseNode", "Microsoft\\Kiota\\Abstractions\\Serialization")
+            new("ParseNode", "Microsoft\\Kiota\\Abstractions\\Serialization")
         };
 
         private static readonly Tuple<string, string>[] defaultRequestBuilderNamespaces =
         {
             new("HttpMethod", "Microsoft\\Kiota\\Abstractions"),
-            new("HttpCoreInterface","Microsoft\\Kiota\\Abstractions"),
-            new("RequestInfo", "Microsoft\\Kiota\\Abstractions\\RequestInfo"),
-            new("AbstractResponseHandler", "Microsoft\\Kiota\\Abstractions"),
-            new("AbstractQueryParametersBase", "Microsoft\\Kiota\\Abstractions"),
+            new("HttpCore","Microsoft\\Kiota\\Abstractions"),
+            new("RequestInformation", "Microsoft\\Kiota\\Abstractions"),
+            new("ResponseHandler", "Microsoft\\Kiota\\Abstractions"),
+            new("QueryParametersBase", "Microsoft\\Kiota\\Abstractions"),
             new("MiddlewareOption", "Microsoft\\Kiota\\Abstractions")
         };
 
