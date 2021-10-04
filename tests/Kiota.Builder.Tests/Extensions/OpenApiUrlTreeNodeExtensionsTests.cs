@@ -7,9 +7,8 @@ namespace Kiota.Builder.Extensions.Tests {
     public class OpenApiUrlTreeNodeExtensionsTests {
         [Fact]
         public void Defensive() {
-            Assert.Empty(OpenApiUrlTreeNodeExtensions.GetIdentifier(null));
-            Assert.False(OpenApiUrlTreeNodeExtensions.IsFunction(null));
-            Assert.False(OpenApiUrlTreeNodeExtensions.IsParameter(null));
+            Assert.False(OpenApiUrlTreeNodeExtensions.IsComplexPathWithAnyNumberOfParameters(null));
+            Assert.False(OpenApiUrlTreeNodeExtensions.IsPathSegmentWithSingleSimpleParamter((OpenApiUrlTreeNode)null));
             Assert.False(OpenApiUrlTreeNodeExtensions.DoesNodeBelongToItemSubnamespace(null));
             Assert.Empty(OpenApiUrlTreeNodeExtensions.GetComponentsReferenceIndex(null, null));
             Assert.Empty(OpenApiUrlTreeNodeExtensions.GetComponentsReferenceIndex(null, Label));
@@ -34,24 +33,24 @@ namespace Kiota.Builder.Extensions.Tests {
             Assert.Equal("summary", node.GetPathItemDescription(Label, Label));
         }
         [Fact]
-        public void IsFunction() {
+        public void IsComplexPathWithAnyNumberOfParameters() {
             var doc = new OpenApiDocument {
                 Paths = new(),
             };
             doc.Paths.Add("function()", new() {});
             var node = OpenApiUrlTreeNode.Create(doc, Label);
-            Assert.False(node.IsFunction());
-            Assert.True(node.Children.First().Value.IsFunction());
+            Assert.False(node.IsComplexPathWithAnyNumberOfParameters());
+            Assert.True(node.Children.First().Value.IsComplexPathWithAnyNumberOfParameters());
         }
         [Fact]
-        public void IsParameter() {
+        public void IsPathWithSingleSimpleParamter() {
             var doc = new OpenApiDocument {
                 Paths = new(),
             };
             doc.Paths.Add("{param}", new() {});
             var node = OpenApiUrlTreeNode.Create(doc, Label);
-            Assert.False(node.IsParameter());
-            Assert.True(node.Children.First().Value.IsParameter());
+            Assert.False(node.IsPathSegmentWithSingleSimpleParamter());
+            Assert.True(node.Children.First().Value.IsPathSegmentWithSingleSimpleParamter());
         }
         [Fact]
         public void DoesNodeBelongToItemSubnamespace() {
@@ -76,15 +75,6 @@ namespace Kiota.Builder.Extensions.Tests {
             doc.Paths.Add("{param", new() {});
             node = OpenApiUrlTreeNode.Create(doc, Label);
             Assert.False(node.Children.First().Value.DoesNodeBelongToItemSubnamespace());
-        }
-        [Fact]
-        public void GetIdentifier() {
-            var doc = new OpenApiDocument {
-                Paths = new(),
-            };
-            doc.Paths.Add("function(parm1)", new() {});
-            var node = OpenApiUrlTreeNode.Create(doc, Label);
-            Assert.DoesNotContain("(", node.Children.First().Value.GetIdentifier());
         }
         [Fact]
         public void GetNodeNamespaceFromPath() {

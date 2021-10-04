@@ -46,6 +46,12 @@ public interface ParseNode {
     @Nonnull
     Float getFloatValue();
     /**
+     * Gets the Double value of the node.
+     * @return the Double value of the node.
+     */
+    @Nonnull
+    Double getDoubleValue();
+    /**
      * Gets the Long value of the node.
      * @return the Long value of the node.
      */
@@ -88,6 +94,12 @@ public interface ParseNode {
     @Nonnull
     <T extends Parsable> List<T> getCollectionOfObjectValues(@Nonnull final Class<T> targetClass);
     /**
+     * Gets the collection of Enum values of the node.
+     * @return the collection of Enum values of the node.
+     */
+    @Nullable
+    <T extends Enum<T>> List<T> getCollectionOfEnumValues(@Nonnull final Class<T> targetEnum);
+    /**
      * Gets the model object value of the node.
      * @return the model object value of the node.
      */
@@ -115,4 +127,9 @@ public interface ParseNode {
      * @param value the callback called after the node is deserialized.
      */
     void setOnAfterAssignFieldValues(@Nullable final Consumer<Parsable> value);
+    /**
+     * Gets the byte array value of the node.
+     * @return The byte array value of the node.
+     */
+    byte[] getByteArrayValue();
 }

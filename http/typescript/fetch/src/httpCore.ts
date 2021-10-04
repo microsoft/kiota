@@ -35,14 +35,44 @@ export class HttpCore implements IHttpCore {
         if(segments.length === 0) return undefined;
         else return segments[0];
     }
+    public sendCollectionOfPrimitiveAsync = async <ResponseType>(requestInfo: RequestInformation, responseType: "string" | "number" | "boolean" | "Date", responseHandler: ResponseHandler | undefined): Promise<ResponseType[] | undefined> => {
+        if(!requestInfo) {
+            throw new Error('requestInfo cannot be null');
+        }
+        const response = await this.getHttpResponseMessage(requestInfo);
+        if(responseHandler) {
+            return await responseHandler.handleResponseAsync(response);
+        } else {
+            switch(responseType) {
+                case 'string':
+                case 'number':
+                case 'boolean':
+                case 'Date':
+                    const payload = await response.arrayBuffer();
+                    const responseContentType = this.getResponseContentType(response);
+                    if(!responseContentType)
+                        throw new Error("no response content type found for deserialization");
+                    
+                    const rootNode = this.parseNodeFactory.getRootParseNode(responseContentType, payload);
+                    if(responseType === 'string') {
+                        return rootNode.getCollectionOfPrimitiveValues<string>() as unknown as ResponseType[];
+                    } else if (responseType === 'number') {
+                        return rootNode.getCollectionOfPrimitiveValues<number>() as unknown as ResponseType[];
+                    } else if(responseType === 'boolean') {
+                        return rootNode.getCollectionOfPrimitiveValues<boolean>() as unknown as ResponseType[];
+                    } else if (responseType === 'Date') {
+                        return rootNode.getCollectionOfPrimitiveValues<Date>() as unknown as ResponseType[];
+                    } else {
+                        throw new Error("unexpected type to deserialize");
+                    }
+            }
+        }
+    }
     public sendCollectionAsync = async <ModelType extends Parsable>(requestInfo: RequestInformation, type: new() => ModelType, responseHandler: ResponseHandler | undefined): Promise<ModelType[]> => {
         if(!requestInfo) {
             throw new Error('requestInfo cannot be null');
         }
-        await this.authenticationProvider.authenticateRequest(requestInfo);
-        
-        const request = this.getRequestFromRequestInformation(requestInfo);
-        const response = await this.httpClient.fetch(this.getRequestUrl(requestInfo), request);
+        const response = await this.getHttpResponseMessage(requestInfo);
         if(responseHandler) {
             return await responseHandler.handleResponseAsync(response);
         } else {
@@ -60,10 +90,7 @@ export class HttpCore implements IHttpCore {
         if(!requestInfo) {
             throw new Error('requestInfo cannot be null');
         }
-        await this.authenticationProvider.authenticateRequest(requestInfo);
-        
-        const request = this.getRequestFromRequestInformation(requestInfo);
-        const response = await this.httpClient.fetch(this.getRequestUrl(requestInfo), request);
+        const response = await this.getHttpResponseMessage(requestInfo);
         if(responseHandler) {
             return await responseHandler.handleResponseAsync(response);
         } else {
@@ -81,10 +108,7 @@ export class HttpCore implements IHttpCore {
         if(!requestInfo) {
             throw new Error('requestInfo cannot be null');
         }
-        await this.authenticationProvider.authenticateRequest(requestInfo);
-        
-        const request = this.getRequestFromRequestInformation(requestInfo);
-        const response = await this.httpClient.fetch(this.getRequestUrl(requestInfo), request);
+        const response = await this.getHttpResponseMessage(requestInfo);
         if(responseHandler) {
             return await responseHandler.handleResponseAsync(response);
         } else {
@@ -129,10 +153,7 @@ export class HttpCore implements IHttpCore {
         if(!requestInfo) {
             throw new Error('requestInfo cannot be null');
         }
-        await this.authenticationProvider.authenticateRequest(requestInfo);
-        
-        const request = this.getRequestFromRequestInformation(requestInfo);
-        const response = await this.httpClient.fetch(this.getRequestUrl(requestInfo), request);
+        const response = await this.getHttpResponseMessage(requestInfo);
         if(responseHandler) {
             return await responseHandler.handleResponseAsync(response);
         }
@@ -145,6 +166,15 @@ export class HttpCore implements IHttpCore {
         if(backingStoreFactory) {
             BackingStoreFactorySingleton.instance = backingStoreFactory;
         }
+    }
+    private getHttpResponseMessage = async(requestInfo: RequestInformation): Promise<Response> => {
+        if(!requestInfo) {
+            throw new Error('requestInfo cannot be null');
+        }
+        await this.authenticationProvider.authenticateRequest(requestInfo);
+        
+        const request = this.getRequestFromRequestInformation(requestInfo);
+        return await this.httpClient.fetch(this.getRequestUrl(requestInfo), request);
     }
     private getRequestFromRequestInformation = (requestInfo: RequestInformation): RequestInit => {
         const request = {

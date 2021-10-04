@@ -4,15 +4,14 @@ namespace Kiota.Builder.Tests {
     public class CodeTypeTests {
         [Fact]
         public void ClonesTypeProperly() {
-            var root = CodeNamespace.InitRootNamespace();
-            var type = new CodeType(root) {
+            var type = new CodeType {
                 Name = "type1",
                 ActionOf = true,
                 CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
                 IsExternal = true,
                 IsNullable = true,
             };
-            type.TypeDefinition = new CodeClass(type) {
+            type.TypeDefinition = new CodeClass {
                 Name = "class1"
             };
             var clone = type.Clone() as CodeType;

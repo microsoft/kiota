@@ -17,17 +17,17 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
-            parentClass = new CodeClass(root) {
+            parentClass = new CodeClass {
                 Name = "parentClass"
             };
             root.AddClass(parentClass);
-            indexer = new CodeIndexer(parentClass) {
+            indexer = new CodeIndexer {
                 Name = "idx",
             };
-            indexer.IndexType = new CodeType(indexer) {
+            indexer.IndexType = new CodeType {
                 Name = "string",
             };
-            indexer.ReturnType = new CodeType(indexer) {
+            indexer.ReturnType = new CodeType {
                 Name = "SomeRequestBuilder"
             };
             parentClass.SetIndexer(indexer);

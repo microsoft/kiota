@@ -45,6 +45,13 @@ namespace Microsoft.Kiota.Abstractions
         /// <returns>The deserialized primitive response model.</returns>
         Task<ModelType> SendPrimitiveAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default);
         /// <summary>
+        /// Executes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model collection.
+        /// </summary>
+        /// <param name="requestInfo">The RequestInformation object to use for the HTTP request.</param>
+        /// <param name="responseHandler">The response handler to use for the HTTP request instead of the default handler.</param>
+        /// <returns>The deserialized primitive response model collection.</returns>
+        Task<IEnumerable<ModelType>> SendPrimitiveCollectionAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default);
+        /// <summary>
         /// Executes the HTTP request specified by the given RequestInformation with no return content.
         /// </summary>
         /// <param name="requestInfo">The RequestInformation object to use for the HTTP request.</param>

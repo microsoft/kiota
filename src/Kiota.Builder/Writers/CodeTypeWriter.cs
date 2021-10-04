@@ -4,7 +4,7 @@ namespace Kiota.Builder.Writers {
         public CodeTypeWriter(ILanguageConventionService conventionService) : base(conventionService){}
         public override void WriteCodeElement(CodeType codeElement, LanguageWriter writer)
         {
-            writer.Write(conventions.GetTypeString(codeElement), includeIndent: false);
+            writer.Write(conventions.GetTypeString(codeElement, codeElement), includeIndent: false);
         }
     }
 }

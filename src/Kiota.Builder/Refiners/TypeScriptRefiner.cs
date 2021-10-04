@@ -1,5 +1,6 @@
 using System.Linq;
 using System;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners {
     public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
@@ -7,13 +8,12 @@ namespace Kiota.Builder.Refiners {
         public TypeScriptRefiner(GenerationConfiguration configuration) : base(configuration) {}
         public override void Refine(CodeNamespace generatedCode)
         {
-            PatchResponseHandlerType(generatedCode);
-            AddDefaultImports(generatedCode, Array.Empty<Tuple<string, string>>(), defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
+            AddDefaultImports(generatedCode, defaultUsingEvaluators);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
-            CorrectCoreTypesForBackingStore(generatedCode, "@microsoft/kiota-abstractions", "BackingStoreFactorySingleton.instance.createBackingStore()");
-            FixReferencesToEntityType(generatedCode);
+            CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
+            AliasUsingsWithSameSymbol(generatedCode);
             AddParsableInheritanceForModelClasses(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "ReadableStream", "web-streams-polyfill/es2018", true);
             ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
@@ -22,7 +22,6 @@ namespace Kiota.Builder.Refiners {
                                                     CodePropertyKind.AdditionalData,
                                                 }, _configuration.UsesBackingStore, false);
             AddConstructorsForDefaultValues(generatedCode, true);
-            ReplaceRelativeImportsByImportPath(generatedCode, '.');
             ReplaceDefaultSerializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory");
             ReplaceDefaultDeserializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonParseNodeFactory");
             AddSerializationModulesImport(generatedCode,
@@ -32,27 +31,64 @@ namespace Kiota.Builder.Refiners {
                 new[] { "@microsoft/kiota-abstractions.registerDefaultDeserializer",
                         "@microsoft/kiota-abstractions.ParseNodeFactoryRegistry" });
         }
+        private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
+        private static void AliasUsingsWithSameSymbol(CodeElement currentElement) {
+            if(currentElement is CodeClass currentClass &&
+                currentClass.StartBlock is CodeClass.Declaration currentDeclaration &&
+                currentDeclaration.Usings.Any(x => !x.IsExternal)) {
+                    var duplicatedSymbolsUsings = currentDeclaration.Usings.Where(x => !x.IsExternal)
+                                                                            .Distinct(usingComparer)
+                                                                            .GroupBy(x => x.Declaration.Name, StringComparer.OrdinalIgnoreCase)
+                                                                            .Where(x => x.Count() > 1)
+                                                                            .SelectMany(x => x)
+                                                                            .Union(currentDeclaration
+                                                                                    .Usings
+                                                                                    .Where(x => !x.IsExternal)
+                                                                                    .Where(x => x.Declaration
+                                                                                                    .Name
+                                                                                                    .Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase)));
+                    foreach(var usingElement in duplicatedSymbolsUsings)
+                            usingElement.Alias = (usingElement.Declaration
+                                                            .TypeDefinition
+                                                            .GetImmediateParentOfType<CodeNamespace>()
+                                                            .Name +
+                                                usingElement.Declaration
+                                                            .TypeDefinition
+                                                            .Name)
+                                                .GetNamespaceImportSymbol();
+                }
+            CrawlTree(currentElement, AliasUsingsWithSameSymbol);
+        }
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
                 var declaration = currentClass.StartBlock as CodeClass.Declaration;
-                declaration.Implements.Add(new CodeType(currentClass) {
+                declaration.AddImplements(new CodeType{
                     IsExternal = true,
                     Name = "Parsable",
                 });
             }
             CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
         }
-        private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
-            new ("HttpCore", "@microsoft/kiota-abstractions"),
-            new ("HttpMethod", "@microsoft/kiota-abstractions"),
-            new ("RequestInformation", "@microsoft/kiota-abstractions"),
-            new ("ResponseHandler", "@microsoft/kiota-abstractions"),
-            new ("MiddlewareOption", "@microsoft/kiota-abstractions"),
-        };
-        private static readonly Tuple<string, string>[] defaultNamespacesForModels = new Tuple<string, string>[] { 
-            new ("SerializationWriter", "@microsoft/kiota-abstractions"),
-            new ("ParseNode", "@microsoft/kiota-abstractions"),
-            new ("Parsable", "@microsoft/kiota-abstractions"),
+        private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.HttpCore),
+                "@microsoft/kiota-abstractions", "HttpCore"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+                "@microsoft/kiota-abstractions", "HttpMethod", "RequestInformation", "MiddlewareOption"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+                "@microsoft/kiota-abstractions", "ResponseHandler"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
+                "@microsoft/kiota-abstractions", "SerializationWriter"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+                "@microsoft/kiota-abstractions", "ParseNode"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+                "@microsoft/kiota-abstractions", "Parsable"),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
+                "@microsoft/kiota-abstractions", "Parsable"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
+                        method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
+                "@microsoft/kiota-abstractions", "BackingStoreFactory", "BackingStoreFactorySingleton"),
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
+                "@microsoft/kiota-abstractions", "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
         };
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if(currentProperty.IsOfKind(CodePropertyKind.HttpCore))
@@ -76,16 +112,11 @@ namespace Kiota.Builder.Refiners {
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
             else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer))
                 currentMethod.ReturnType.Name = $"Map<string, (item: T, node: ParseNode) => void>";
-            else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
+            else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor))
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore, CodeParameterKind.BackingStore))
                     .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                     .ToList()
                     .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
-        }
-        private static void PatchResponseHandlerType(CodeElement current) {
-            if(current is CodeMethod currentMethod && currentMethod.Name.Equals("defaultResponseHandler", StringComparison.OrdinalIgnoreCase)) 
-                currentMethod.Parameters.First().Type.Name = "ReadableStream";
-            CrawlTree(current, PatchResponseHandlerType);
         }
     }
 }
