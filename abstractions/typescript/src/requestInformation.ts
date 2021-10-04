@@ -1,5 +1,4 @@
 import { HttpMethod } from "./httpMethod";
-import { ReadableStream } from 'web-streams-polyfill/es2018';
 import { Parsable } from "./serialization";
 import { HttpCore } from "./httpCore";
 import { MiddlewareOption } from "./middlewareOption";
@@ -44,7 +43,7 @@ export class RequestInformation{
     /** The Request Headers. */
     public headers: Headers = new Headers(); //TODO: case insensitive
     
-    public options?: Map<string,unknown>;
+    public options?: Map<string,unknown> = new Map<string,unknown>();
     
     private _middlewareOptions = new Map<string, MiddlewareOption>(); //TODO: case insensitive
     /** Gets the middleware options for the request. */

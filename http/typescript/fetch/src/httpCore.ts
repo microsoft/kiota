@@ -1,5 +1,4 @@
 import { AuthenticationProvider, BackingStoreFactory, BackingStoreFactorySingleton, HttpCore as IHttpCore, Parsable, ParseNodeFactory, RequestInformation, ResponseHandler, ParseNodeFactoryRegistry, enableBackingStoreForParseNodeFactory, SerializationWriterFactoryRegistry, enableBackingStoreForSerializationWriterFactory, SerializationWriterFactory } from '@microsoft/kiota-abstractions';
-import { ReadableStream } from 'web-streams-polyfill/es2018';
 import { URLSearchParams } from 'url';
 import { HttpClient } from './httpClient';
 import  {Headers as crossHeaders} from "cross-fetch"
@@ -90,17 +89,7 @@ export class HttpCore implements IHttpCore {
         } else {
             switch (responseType) {
                 case "ReadableStream":
-                    const buffer = await response.arrayBuffer();
-                    let bufferPulled = false;
-                    const stream = new ReadableStream({
-                        pull: (controller) => {
-                            if (!bufferPulled) {
-                                controller.enqueue(buffer.slice(0))
-                                bufferPulled = true;
-                            }
-                        },
-                    });
-                    return stream as unknown as ResponseType;
+                    return  response.body as unknown as ResponseType;
                 case 'string':
                 case 'number':
                 case 'boolean':
@@ -147,10 +136,10 @@ export class HttpCore implements IHttpCore {
     private getRequestFromRequestInformation = (requestInfo: RequestInformation): RequestInit => {
         const request = {
             method: requestInfo.httpMethod?.toString(),
-            headers: new crossHeaders(),
             body: requestInfo.content,
         } as RequestInit;
 
+        const headers: string[][] = [];
         requestInfo.headers?.forEach((v, k) => (request.headers as Headers).set(k, v));
 
         requestInfo.options?.forEach((v, k) => {

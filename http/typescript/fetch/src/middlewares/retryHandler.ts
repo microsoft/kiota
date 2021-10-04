@@ -11,7 +11,6 @@
 
 import { MiddlewareContext } from "./middlewareContext";
 import { HttpMethod } from "@microsoft/kiota-abstractions";
-import { FetchOptions } from "../fetchInit";
 import { Middleware } from "./middleware";
 import { getRequestHeader, setRequestHeader } from "./middlewareUtil";
 import { RetryHandlerOptions } from "./options/retryHandlerOptions";
@@ -86,10 +85,10 @@ export class RetryHandler implements Middleware {
 	 * @private
 	 * To check whether the payload is buffered or not
 	 * @param {RequestInfo} request - The url string or the request object value
-	 * @param {FetchOptions} options - The options of a request
+	 * @param {RequestInit} options - The options of a request
 	 * @returns Whether the payload is buffered or not
 	 */
-	private isBuffered(request: RequestInfo, options: FetchOptions | undefined): boolean {
+	private isBuffered(request: RequestInfo, options: RequestInit | undefined): boolean {
 		const method = typeof request === "string" ? options.method : (request as Request).method;
 		const isPutPatchOrPost: boolean = method === HttpMethod.PUT || method === HttpMethod.PATCH || method === HttpMethod.POST;
 		if (isPutPatchOrPost) {

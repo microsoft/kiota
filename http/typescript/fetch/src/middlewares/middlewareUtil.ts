@@ -9,17 +9,15 @@
  * @module MiddlewareUtil
  */
 
-import { FetchOptions } from "../fetchInit";
-
 /**
  * @constant
  * To get the request header from the request
  * @param {RequestInfo} request - The request object or the url string
- * @param {FetchOptions|undefined} options - The request options object
+ * @param {RequestInit|undefined} options - The request options object
  * @param {string} key - The header key string
  * @returns A header value for the given key from the request
  */
-export const getRequestHeader = (request: RequestInfo, options: FetchOptions | undefined, key: string): string | null => {
+export const getRequestHeader = (request: RequestInfo, options: RequestInit | undefined, key: string): string | null => {
 	let value: string = null;
 	if (typeof Request !== "undefined" && request instanceof Request) {
 		value = (request as Request).headers.get(key);
@@ -45,12 +43,12 @@ export const getRequestHeader = (request: RequestInfo, options: FetchOptions | u
  * @constant
  * To set the header value to the given request
  * @param {RequestInfo} request - The request object or the url string
- * @param {FetchOptions|undefined} options - The request options object
+ * @param {RequestInit|undefined} options - The request options object
  * @param {string} key - The header key string
  * @param {string } value - The header value string
  * @returns Nothing
  */
-export const setRequestHeader = (request: RequestInfo, options: FetchOptions | undefined, key: string, value: string): void => {
+export const setRequestHeader = (request: RequestInfo, options: RequestInit | undefined, key: string, value: string): void => {
 	if (typeof Request !== "undefined" && request instanceof Request) {
 		(request as Request).headers.set(key, value);
 	} else if (typeof options !== "undefined") {
@@ -85,12 +83,12 @@ export const setRequestHeader = (request: RequestInfo, options: FetchOptions | u
  * @constant
  * To append the header value to the given request
  * @param {RequestInfo} request - The request object or the url string
- * @param {FetchOptions|undefined} options - The request options object
+ * @param {RequestInit|undefined} options - The request options object
  * @param {string} key - The header key string
  * @param {string } value - The header value string
  * @returns Nothing
  */
-export const appendRequestHeader = (request: RequestInfo, options: FetchOptions | undefined, key: string, value: string): void => {
+export const appendRequestHeader = (request: RequestInfo, options: RequestInit | undefined, key: string, value: string): void => {
 	if (typeof Request !== "undefined" && request instanceof Request) {
 		(request as Request).headers.append(key, value);
 	} else if (typeof options !== "undefined") {
