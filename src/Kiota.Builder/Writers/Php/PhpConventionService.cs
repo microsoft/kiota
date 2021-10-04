@@ -67,7 +67,7 @@ namespace Kiota.Builder.Writers.Php
             {
                 CodeParameterKind.Headers => "array $headers",
                 CodeParameterKind.RequestBody => $"{typeString} $body",
-                CodeParameterKind.HttpCore => "HttpCoreInterface $httpCore",
+                CodeParameterKind.HttpCore => "HttpCore $httpCore",
                 CodeParameterKind.Options => "array $options",
                 CodeParameterKind.ResponseHandler => "ResponseHandlerInterface $responseHandler",
                 _ => $"{GetTypeString(parameter.Type)} ${parameter.Name.ToFirstCharacterLowerCase()}"

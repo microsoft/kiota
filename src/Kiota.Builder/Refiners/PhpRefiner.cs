@@ -32,6 +32,7 @@ namespace Kiota.Builder.Refiners
                 defaultNamespacesForModels, 
                 defaultRequestBuilderNamespaces);
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
+            ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             AddGetterAndSetterMethods(generatedCode,new HashSet<CodePropertyKind>()
             {
                 CodePropertyKind.Custom,
