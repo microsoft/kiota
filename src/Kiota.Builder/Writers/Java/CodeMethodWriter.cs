@@ -213,7 +213,7 @@ namespace Kiota.Builder.Writers.Java {
         private string GetSendRequestMethodName(bool isCollection, string returnType) {
             if(conventions.PrimitiveTypes.Contains(returnType)) 
                 if(isCollection)
-                    return $"sendPrimitiveCollectionAsync";
+                    return "sendPrimitiveCollectionAsync";
                 else
                     return $"sendPrimitiveAsync";
             else if(isCollection) return $"sendCollectionAsync";
@@ -348,7 +348,7 @@ namespace Kiota.Builder.Writers.Java {
             return propertyType switch
             {
                 "byte[]" => "n.getByteArrayValue()",
-                "String" or "Boolean" or "Integer" or "Float" or "Long" or "Guid" or "OffsetDateTime" or "Double" => $"n.get{propertyType.ToFirstCharacterUpperCase()}Value()",
+                "String" or "Boolean" or "Integer" or "Float" or "Long" or "Guid" or "OffsetDateTime" or "Double" => $"n.get{propertyType}Value()",
                 _ => $"n.getObjectValue({propertyType.ToFirstCharacterUpperCase()}.class)",
             };
         }

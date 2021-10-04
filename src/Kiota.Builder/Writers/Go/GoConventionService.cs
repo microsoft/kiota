@@ -17,7 +17,7 @@ namespace Kiota.Builder.Writers.Go {
         private const string HttpCorePropertyName = "httpCore";
         public override string ParseNodeInterfaceName => "ParseNode";
         #pragma warning disable CA1822 // Method should be static
-        public object AbstractionsHash => "ida96af0f171bb75f894a4013a6b3146a4397c58f11adb81a2b7cbea9314783a9";
+        public string AbstractionsHash => "ida96af0f171bb75f894a4013a6b3146a4397c58f11adb81a2b7cbea9314783a9";
         #pragma warning restore CA1822 // Method should be static
         public override string GetAccessModifier(AccessModifier access)
         {

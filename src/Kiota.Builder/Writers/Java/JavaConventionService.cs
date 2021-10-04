@@ -71,7 +71,7 @@ namespace Kiota.Builder.Writers.Java {
         public override string TranslateType(CodeType type) {
             return type.Name switch {
                 "int64" => "Long",
-                "void" or "boolean" when !type.IsNullable => type.Name.ToFirstCharacterLowerCase(), //little casing hack
+                "void" or "boolean" when !type.IsNullable => type.Name, //little casing hack
                 "binary" => "byte[]",
                 _ => type.Name.ToFirstCharacterUpperCase() ?? "Object",
             };
