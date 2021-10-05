@@ -49,7 +49,13 @@ namespace Microsoft.Kiota.Serialization.Json
         /// Get the float value from the json node
         /// </summary>
         /// <returns>A float value</returns>
-        public decimal? GetFloatValue() => _jsonNode.GetDecimal();
+        public float? GetFloatValue() => _jsonNode.GetSingle();
+
+        /// <summary>
+        /// Get the Long value from the json node
+        /// </summary>
+        /// <returns>A Long value</returns>
+        public long? GetLongValue() => _jsonNode.GetInt64();
 
         /// <summary>
         /// Get the double value from the json node
@@ -105,6 +111,32 @@ namespace Microsoft.Kiota.Serialization.Json
                 };
                 yield return currentParseNode.GetObjectValue<T>();
             }
+        }
+        /// <summary>
+        /// Gets the collection of enum values of the node.
+        /// </summary>
+        /// <returns>The collection of enum values.</returns>
+        public IEnumerable<T?> GetCollectionOfEnumValues<T>() where T : struct, Enum
+        {
+            var enumerator = _jsonNode.EnumerateArray();
+            while(enumerator.MoveNext())
+            {
+                var currentParseNode = new JsonParseNode(enumerator.Current)
+                {
+                    OnAfterAssignFieldValues = OnAfterAssignFieldValues,
+                    OnBeforeAssignFieldValues = OnBeforeAssignFieldValues
+                };
+                yield return currentParseNode.GetEnumValue<T>();
+            }
+        }
+        /// <summary>
+        /// Gets the byte array value of the node.
+        /// </summary>
+        /// <returns>The byte array value of the node.</returns>
+        public byte[] GetByteArrayValue() {
+            var rawValue = _jsonNode.GetString();
+            if(string.IsNullOrEmpty(rawValue)) return null;
+            return Convert.FromBase64String(rawValue);
         }
         private static Type booleanType = typeof(bool?);
         private static Type stringType = typeof(string);

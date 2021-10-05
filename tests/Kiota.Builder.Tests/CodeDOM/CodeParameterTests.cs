@@ -5,8 +5,7 @@ namespace Kiota.Builder.Tests {
     public class CodeParameterTests {
         [Fact]
         public void Defensive() {
-            var root = CodeNamespace.InitRootNamespace();
-            var parameter = new CodeParameter(root) {
+            var parameter = new CodeParameter {
                 Name = "class",
             };
             Assert.False(parameter.IsOfKind((CodeParameterKind[])null));
@@ -14,8 +13,7 @@ namespace Kiota.Builder.Tests {
         }
         [Fact]
         public void IsOfKind() {
-            var root = CodeNamespace.InitRootNamespace();
-            var parameter = new CodeParameter(root) {
+            var parameter = new CodeParameter {
                 Name = "class",
             };
             Assert.False(parameter.IsOfKind(CodeParameterKind.Headers));

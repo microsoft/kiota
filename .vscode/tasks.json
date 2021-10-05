@@ -2,6 +2,19 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "clean:target",
+            "type": "shell",
+            "command": "rm -r C:/sources/github/msgraph-sdk-typescript/src/*",
+        },
+        {
+            "label": "cleantargetandbuild",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "clean:target",
+                "build"
+            ]
+        },
+        {
             "label": "build",
             "command": "dotnet",
             "type": "process",

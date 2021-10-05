@@ -17,7 +17,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
-            currentEnum = root.AddEnum(new CodeEnum(root) {
+            currentEnum = root.AddEnum(new CodeEnum {
                 Name = EnumName,
             }).First();
         }

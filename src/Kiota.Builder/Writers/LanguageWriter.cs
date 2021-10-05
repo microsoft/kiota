@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using Kiota.Builder.Writers.CSharp;
 using Kiota.Builder.Writers.Go;
 using Kiota.Builder.Writers.Java;
@@ -16,7 +17,7 @@ namespace Kiota.Builder.Writers
     {
         private TextWriter writer;
         private const int IndentSize = 4;
-        private static readonly string indentString = "                                                                                             ";
+        private static readonly string indentString = Enumerable.Repeat(" ", 1000).Aggregate((x, y) => x + y);
         private int currentIndent = 0;
 
         /// <summary>

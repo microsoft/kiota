@@ -8,8 +8,9 @@ namespace Kiota.Builder.Writers.Ruby {
         public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
         {
             conventions.WriteShortDescription(codeElement.Description, writer);
-            var returnType = conventions.GetTypeString(codeElement.Type);
-            var currentPathProperty = codeElement.Parent.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
+            var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
+            var parentClass = codeElement.Parent as CodeClass;
+            var currentPathProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
             switch(codeElement.PropertyKind) {
                 case CodePropertyKind.RequestBuilder:
                     writer.WriteLine($"def {codeElement.Name.ToSnakeCase()}()");

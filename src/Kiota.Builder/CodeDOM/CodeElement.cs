@@ -9,21 +9,22 @@ namespace Kiota.Builder
     /// </summary>
     public abstract class CodeElement : ICodeElement
     {
-        protected CodeElement(CodeElement parent)
-        {
-            if(parent == null && !(this is CodeNamespace))
-                throw new ArgumentNullException(nameof(parent));
-            Parent = parent;
-        }
         public CodeElement Parent { get; set; }
+        public int GetNamespaceDepth(int currentDepth = 0) {
+            return this switch {
+                _ when Parent is null => currentDepth,
+                CodeNamespace ns => ns.Parent.GetNamespaceDepth(++currentDepth),
+                _ => Parent.GetNamespaceDepth(currentDepth),
+            };
+        }
         public virtual IEnumerable<CodeElement> GetChildElements(bool innerOnly = false) => Enumerable.Empty<CodeElement>();
 
         public virtual string Name
         {
             get; set;
         }
-        protected void AddMissingParent(params CodeElement[] elements) {
-            foreach(var element in elements.Where(x => x.Parent == null || x.Parent != this))
+        protected void EnsureElementsAreChildren(params CodeElement[] elements) {
+            foreach(var element in elements.Where(x => x != null && (x.Parent == null || x.Parent != this)))
                 element.Parent = this;
         }
         public T GetImmediateParentOfType<T>(CodeElement item = null) {

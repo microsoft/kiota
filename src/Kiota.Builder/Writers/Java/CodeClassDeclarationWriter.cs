@@ -17,6 +17,9 @@ namespace Kiota.Builder.Writers.Java {
                                      $"import {x.Declaration.Name}.{x.Name.ToFirstCharacterUpperCase()};" :
                                      $"import {x.Name}.{x.Declaration.Name.ToFirstCharacterUpperCase()};")
                     .Distinct()
+                    .GroupBy(x => x.Split('.').Last())
+                    .Where(x => x.Count() == 1) // we don't want to import the same symbol twice
+                    .SelectMany(x => x)
                     .OrderBy(x => x)
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));

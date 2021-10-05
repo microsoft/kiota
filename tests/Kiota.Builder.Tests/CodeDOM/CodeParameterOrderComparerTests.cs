@@ -8,7 +8,7 @@ namespace Kiota.Builder.Tests {
             var comparer = new CodeParameterOrderComparer();
             Assert.NotNull(comparer);
             var root = CodeNamespace.InitRootNamespace();
-            var mockParameter = new Mock<CodeParameter>(root).Object;
+            var mockParameter = new Mock<CodeParameter>().Object;
             Assert.Equal(0, comparer.Compare(null, null));
             Assert.Equal(-1, comparer.Compare(null, mockParameter));
             Assert.Equal(1, comparer.Compare(mockParameter, null));

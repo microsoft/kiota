@@ -24,14 +24,14 @@ namespace Kiota.Builder.Writers.Java.Tests {
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
-            parentClass = new CodeClass(root) {
+            parentClass = new CodeClass {
                 Name = "parentClass"
             };
             root.AddClass(parentClass);
-            method = new CodeMethod(parentClass) {
+            method = new CodeMethod {
                 Name = MethodName,
             };
-            method.ReturnType = new CodeType(method) {
+            method.ReturnType = new CodeType {
                 Name = ReturnTypeName
             };
             parentClass.AddMethod(method);
@@ -41,77 +41,95 @@ namespace Kiota.Builder.Writers.Java.Tests {
             tw?.Dispose();
             GC.SuppressFinalize(this);
         }
+        private void AddRequestProperties() {
+            parentClass.AddProperty(new CodeProperty {
+                Name = "httpCore",
+                PropertyKind = CodePropertyKind.HttpCore,
+            });
+            parentClass.AddProperty(new CodeProperty {
+                Name = "isRawUrl",
+                PropertyKind = CodePropertyKind.RawUrl,
+            });
+            parentClass.AddProperty(new CodeProperty {
+                Name = "currentPath",
+                PropertyKind = CodePropertyKind.CurrentPath,
+            });
+            parentClass.AddProperty(new CodeProperty {
+                Name = "pathSegment",
+                PropertyKind = CodePropertyKind.PathSegment,
+            });
+        }
         private void AddSerializationProperties() {
-            var addData = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var addData = parentClass.AddProperty(new CodeProperty {
                 Name = "additionalData",
                 PropertyKind = CodePropertyKind.AdditionalData,
             }).First();
-            addData.Type = new CodeType(addData) {
+            addData.Type = new CodeType {
                 Name = "string"
             };
-            var dummyProp = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var dummyProp = parentClass.AddProperty(new CodeProperty {
                 Name = "dummyProp",
             }).First();
-            dummyProp.Type = new CodeType(dummyProp) {
+            dummyProp.Type = new CodeType {
                 Name = "string"
             };
-            var dummyCollectionProp = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var dummyCollectionProp = parentClass.AddProperty(new CodeProperty {
                 Name = "dummyColl",
             }).First();
-            dummyCollectionProp.Type = new CodeType(dummyCollectionProp) {
+            dummyCollectionProp.Type = new CodeType {
                 Name = "string",
                 CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
             };
-            var dummyComplexCollection = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var dummyComplexCollection = parentClass.AddProperty(new CodeProperty {
                 Name = "dummyComplexColl"
             }).First();
-            dummyComplexCollection.Type = new CodeType(dummyComplexCollection) {
+            dummyComplexCollection.Type = new CodeType {
                 Name = "Complex",
                 CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-                TypeDefinition = new CodeClass(parentClass.Parent) {
+                TypeDefinition = new CodeClass {
                     Name = "SomeComplexType"
                 }
             };
-            var dummyEnumProp = parentClass.AddProperty(new CodeProperty(parentClass){
+            var dummyEnumProp = parentClass.AddProperty(new CodeProperty{
                 Name = "dummyEnumCollection",
             }).First();
-            dummyEnumProp.Type = new CodeType(dummyEnumProp) {
+            dummyEnumProp.Type = new CodeType {
                 Name = "SomeEnum",
-                TypeDefinition = new CodeEnum(parentClass.Parent) {
+                TypeDefinition = new CodeEnum {
                     Name = "EnumType"
                 }
             };
         }
         private void AddInheritanceClass() {
-            (parentClass.StartBlock as CodeClass.Declaration).Inherits = new CodeType(parentClass) {
+            (parentClass.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
                 Name = "someParentClass"
             };
         }
         private void AddRequestBodyParameters() {
-            var stringType = new CodeType(method) {
+            var stringType = new CodeType {
                 Name = "string",
             };
-            method.AddParameter(new CodeParameter(method) {
+            method.AddParameter(new CodeParameter {
                 Name = "h",
                 ParameterKind = CodeParameterKind.Headers,
                 Type = stringType,
             });
-            method.AddParameter(new CodeParameter(method){
+            method.AddParameter(new CodeParameter{
                 Name = "q",
                 ParameterKind = CodeParameterKind.QueryParameter,
                 Type = stringType,
             });
-            method.AddParameter(new CodeParameter(method){
+            method.AddParameter(new CodeParameter{
                 Name = "b",
                 ParameterKind = CodeParameterKind.RequestBody,
                 Type = stringType,
             });
-            method.AddParameter(new CodeParameter(method){
+            method.AddParameter(new CodeParameter{
                 Name = "r",
                 ParameterKind = CodeParameterKind.ResponseHandler,
                 Type = stringType,
             });
-            method.AddParameter(new CodeParameter(method) {
+            method.AddParameter(new CodeParameter {
                 Name = "o",
                 ParameterKind = CodeParameterKind.Options,
                 Type = stringType,
@@ -121,7 +139,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
         public void WritesNullableVoidTypeForExecutor(){
             method.MethodKind = CodeMethodKind.RequestExecutor;
             method.HttpMethod = HttpMethod.Get;
-            method.ReturnType = new CodeType(method) {
+            method.ReturnType = new CodeType {
                 Name = "void",
             };
             writer.Write(method);
@@ -168,6 +186,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
         public void WritesRequestGeneratorBody() {
             method.MethodKind = CodeMethodKind.RequestGenerator;
             method.HttpMethod = HttpMethod.Get;
+            AddRequestProperties();
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
@@ -212,11 +231,11 @@ namespace Kiota.Builder.Writers.Java.Tests {
         }
         [Fact]
         public void WritesDeSerializerBody() {
-            var parameter = new CodeParameter(method){
+            var parameter = new CodeParameter{
                 Description = ParamDescription,
                 Name = ParamName
             };
-            parameter.Type = new CodeType(parameter) {
+            parameter.Type = new CodeType {
                 Name = "string"
             };
             method.MethodKind = CodeMethodKind.Deserializer;
@@ -243,11 +262,11 @@ namespace Kiota.Builder.Writers.Java.Tests {
         }
         [Fact]
         public void WritesSerializerBody() {
-            var parameter = new CodeParameter(method){
+            var parameter = new CodeParameter{
                 Description = ParamDescription,
                 Name = ParamName
             };
-            parameter.Type = new CodeType(parameter) {
+            parameter.Type = new CodeType {
                 Name = "string"
             };
             method.MethodKind = CodeMethodKind.Serializer;
@@ -266,11 +285,11 @@ namespace Kiota.Builder.Writers.Java.Tests {
         public void WritesMethodAsyncDescription() {
             
             method.Description = MethodDescription;
-            var parameter = new CodeParameter(method){
+            var parameter = new CodeParameter{
                 Description = ParamDescription,
                 Name = ParamName
             };
-            parameter.Type = new CodeType(parameter) {
+            parameter.Type = new CodeType {
                 Name = "string"
             };
             method.AddParameter(parameter);
@@ -290,11 +309,11 @@ namespace Kiota.Builder.Writers.Java.Tests {
             
             method.Description = MethodDescription;
             method.IsAsync = false;
-            var parameter = new CodeParameter(method){
+            var parameter = new CodeParameter{
                 Description = ParamDescription,
                 Name = ParamName
             };
-            parameter.Type = new CodeType(parameter) {
+            parameter.Type = new CodeType {
                 Name = "string"
             };
             method.AddParameter(parameter);
@@ -377,6 +396,24 @@ namespace Kiota.Builder.Writers.Java.Tests {
             Assert.Contains(method.PathSegment, result);
         }
         [Fact]
+        public void WritesPathParameterRequestBuilder() {
+            method.MethodKind = CodeMethodKind.RequestBuilderWithParameters;
+            method.PathSegment = "somePath";
+            method.AddParameter(new CodeParameter {
+                Name = "pathParam",
+                ParameterKind = CodeParameterKind.Path,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            });
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("httpCore", result);
+            Assert.Contains("pathSegment", result);
+            Assert.Contains("pathParam", result);
+            Assert.Contains("return new", result);
+        }
+        [Fact]
         public void WritesGetterToBackingStore() {
             parentClass.AddBackingStoreProperty();
             method.AddAccessedProperty();
@@ -389,7 +426,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
         public void WritesGetterToBackingStoreWithNonnullProperty() {
             method.AddAccessedProperty();
             parentClass.AddBackingStoreProperty();
-            method.AccessedProperty.Type = new CodeType(method.AccessedProperty) {
+            method.AccessedProperty.Type = new CodeType {
                 Name = "string",
                 IsNullable = false,
             };
@@ -431,7 +468,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             method.MethodKind = CodeMethodKind.Constructor;
             var defaultValue = "someVal";
             var propName = "propWithDefaultValue";
-            parentClass.AddProperty(new CodeProperty(parentClass) {
+            parentClass.AddProperty(new CodeProperty {
                 Name = propName,
                 DefaultValue = defaultValue,
                 PropertyKind = CodePropertyKind.PathSegment,
@@ -444,15 +481,15 @@ namespace Kiota.Builder.Writers.Java.Tests {
         [Fact]
         public void WritesApiConstructor() {
             method.MethodKind = CodeMethodKind.ClientConstructor;
-            var coreProp = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var coreProp = parentClass.AddProperty(new CodeProperty {
                 Name = "core",
                 PropertyKind = CodePropertyKind.HttpCore,
             }).First();
-            coreProp.Type = new CodeType(coreProp) {
+            coreProp.Type = new CodeType {
                 Name = "HttpCore",
                 IsExternal = true,
             };
-            method.AddParameter(new CodeParameter(method) {
+            method.AddParameter(new CodeParameter {
                 Name = "core",
                 ParameterKind = CodeParameterKind.HttpCore,
                 Type = coreProp.Type,
@@ -468,24 +505,24 @@ namespace Kiota.Builder.Writers.Java.Tests {
         [Fact]
         public void WritesApiConstructorWithBackingStore() {
             method.MethodKind = CodeMethodKind.ClientConstructor;
-            var coreProp = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var coreProp = parentClass.AddProperty(new CodeProperty {
                 Name = "core",
                 PropertyKind = CodePropertyKind.HttpCore,
             }).First();
-            coreProp.Type = new CodeType(coreProp) {
+            coreProp.Type = new CodeType {
                 Name = "HttpCore",
                 IsExternal = true,
             };
-            method.AddParameter(new CodeParameter(method) {
+            method.AddParameter(new CodeParameter {
                 Name = "core",
                 ParameterKind = CodeParameterKind.HttpCore,
                 Type = coreProp.Type,
             });
-            var backingStoreParam = new CodeParameter(method) {
+            var backingStoreParam = new CodeParameter {
                 Name = "backingStore",
                 ParameterKind = CodeParameterKind.BackingStore,
             };
-            backingStoreParam.Type = new CodeType(backingStoreParam) {
+            backingStoreParam.Type = new CodeType {
                 Name = "BackingStore",
                 IsExternal = true,
             };

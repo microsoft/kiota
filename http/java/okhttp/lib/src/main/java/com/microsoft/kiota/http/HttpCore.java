@@ -31,6 +31,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
+import okhttp3.Response;
 import okio.BufferedSink;
 
 public class HttpCore implements com.microsoft.kiota.HttpCore {
@@ -83,11 +84,7 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
     public <ModelType extends Parsable> CompletableFuture<Iterable<ModelType>> sendCollectionAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
 
-        return this.authProvider.authenticateRequest(requestInfo).thenCompose(x -> {
-            final HttpCoreCallbackFutureWrapper wrapper = new HttpCoreCallbackFutureWrapper();
-            this.client.newCall(getRequestFromRequestInformation(requestInfo)).enqueue(wrapper);
-            return wrapper.future;
-        }).thenCompose(response -> {
+        return this.getHttpResponseMessage(requestInfo).thenCompose(response -> {
             if(responseHandler == null) {
                 final ResponseBody body = response.body();
                 try {
@@ -110,11 +107,7 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
     public <ModelType extends Parsable> CompletableFuture<ModelType> sendAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
 
-        return this.authProvider.authenticateRequest(requestInfo).thenCompose(x -> {
-            final HttpCoreCallbackFutureWrapper wrapper = new HttpCoreCallbackFutureWrapper();
-            this.client.newCall(getRequestFromRequestInformation(requestInfo)).enqueue(wrapper);
-            return wrapper.future;
-        }).thenCompose(response -> {
+        return this.getHttpResponseMessage(requestInfo).thenCompose(response -> {
             if(responseHandler == null) {
                 final ResponseBody body = response.body();
                 try {
@@ -138,11 +131,7 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
     }
     @Nonnull
     public <ModelType> CompletableFuture<ModelType> sendPrimitiveAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
-        return this.authProvider.authenticateRequest(requestInfo).thenCompose(x -> {
-            final HttpCoreCallbackFutureWrapper wrapper = new HttpCoreCallbackFutureWrapper();
-            this.client.newCall(getRequestFromRequestInformation(requestInfo)).enqueue(wrapper);
-            return wrapper.future;
-        }).thenCompose(response -> {
+        return this.getHttpResponseMessage(requestInfo).thenCompose(response -> {
             if(responseHandler == null) {
                 final ResponseBody body = response.body();
                 try {
@@ -183,6 +172,36 @@ public class HttpCore implements com.microsoft.kiota.HttpCore {
             } else {
                 return responseHandler.handleResponseAsync(response);
             }
+        });
+    }
+    public <ModelType> CompletableFuture<Iterable<ModelType>> sendPrimitiveCollectionAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
+        Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
+
+        return this.getHttpResponseMessage(requestInfo).thenCompose(response -> {
+            if(responseHandler == null) {
+                final ResponseBody body = response.body();
+                try {
+                    try (final InputStream rawInputStream = body.byteStream()) {
+                        final ParseNode rootNode = pNodeFactory.getParseNode(getMediaTypeAndSubType(body.contentType()), rawInputStream);
+                        final Iterable<ModelType> result = rootNode.getCollectionOfPrimitiveValues(targetClass);
+                        return CompletableFuture.completedStage(result);
+                    }
+                } catch(IOException ex) {
+                    return CompletableFuture.failedFuture(new RuntimeException("failed to read the response body", ex));
+                } finally {
+                    response.close();
+                }
+            } else {
+                return responseHandler.handleResponseAsync(response);
+            }
+        });
+    }
+    private CompletableFuture<Response> getHttpResponseMessage(@Nonnull final RequestInformation requestInfo) {
+        Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
+        return this.authProvider.authenticateRequest(requestInfo).thenCompose(x -> {
+            final HttpCoreCallbackFutureWrapper wrapper = new HttpCoreCallbackFutureWrapper();
+            this.client.newCall(getRequestFromRequestInformation(requestInfo)).enqueue(wrapper);
+            return wrapper.future;
         });
     }
     private Request getRequestFromRequestInformation(@Nonnull final RequestInformation requestInfo) {

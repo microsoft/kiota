@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Go {
     public static class GoNamespaceExtensions {
@@ -17,19 +16,10 @@ namespace Kiota.Builder.Writers.Go {
             var urlPrefixIndex = ns.Name.LastIndexOf('/') + 1;
             return (ns.Name[0..urlPrefixIndex] + ns.Name[urlPrefixIndex..].Split('.', StringSplitOptions.RemoveEmptyEntries).Aggregate((x, y) => $"{x}/{y}")).ToLowerInvariant();
         }
-        private static readonly HashAlgorithm sha = SHA256.Create();
         public static string GetNamespaceImportSymbol(this CodeElement ns) {
             if(ns == null) return string.Empty;
             var importName = ns.GetInternalNamespaceImport();
             return importName.GetNamespaceImportSymbol();
-        }
-        public static string GetNamespaceImportSymbol(this string importName) {
-            if(string.IsNullOrEmpty(importName)) return string.Empty;
-            return "i" + HashString(importName).ToLowerInvariant();
-        }
-        private static string HashString(string input) {
-            var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
-            return hash.Select(b => b.ToString("x2")).Aggregate((x, y) => x + y);
         }
     }
 }

@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using Kiota.Builder.Extensions;
 using Xunit;
 
@@ -22,27 +21,27 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var emptyRoot = CodeNamespace.InitRootNamespace();
-            EmptyClass = new CodeClass(emptyRoot) {
+            EmptyClass = new CodeClass {
                 Name = "emptyClass"
             };
-            emptyProperty = new CodeProperty(EmptyClass) {
+            emptyProperty = new CodeProperty {
                 Name = PropertyName,
             };
-            emptyProperty.Type = new CodeType(emptyProperty) {
+            emptyProperty.Type = new CodeType {
                 Name = TypeName
             };
             EmptyClass.AddProperty(emptyProperty);
             
             var root = CodeNamespace.InitRootNamespace();
             root.Name = RootNamespaceName;
-            parentClass = new CodeClass(root) {
+            parentClass = new CodeClass {
                 Name = "parentClass"
             };
             root.AddClass(parentClass);
-            property = new CodeProperty(parentClass) {
+            property = new CodeProperty {
                 Name = PropertyName,
             };
-            property.Type = new CodeType(property) {
+            property.Type = new CodeType {
                 Name = TypeName,
                 TypeDefinition = parentClass
             };

@@ -14,14 +14,15 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
 
         public CodeClassDeclarationWriterTests() {
             writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
-            codeElementWriter = new CodeClassDeclarationWriter(new TypeScriptConventionService(writer));
+            codeElementWriter = new CodeClassDeclarationWriter(new TypeScriptConventionService(writer), "graphtests");
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
-            parentClass = new (root) {
+            var ns = root.AddNamespace("graphtests.models");
+            parentClass = new () {
                 Name = "parentClass"
             };
-            root.AddClass(parentClass);
+            ns.AddClass(parentClass);
         }
         public void Dispose() {
             tw?.Dispose();
@@ -36,7 +37,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         [Fact]
         public void WritesImplementation() {
             var declaration = parentClass.StartBlock as CodeClass.Declaration;
-            declaration.Implements.Add(new (parentClass){
+            declaration.AddImplements(new CodeType {
                 Name = "someInterface"
             });
             codeElementWriter.WriteCodeElement(declaration, writer);
@@ -46,7 +47,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         [Fact]
         public void WritesInheritance() {
             var declaration = parentClass.StartBlock as CodeClass.Declaration;
-            declaration.Inherits = new (parentClass){
+            declaration.Inherits = new () {
                 Name = "someInterface"
             };
             codeElementWriter.WriteCodeElement(declaration, writer);
@@ -56,9 +57,9 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         [Fact]
         public void WritesImports() {
             var declaration = parentClass.StartBlock as CodeClass.Declaration;
-            declaration.Usings.Add(new (parentClass) {
+            declaration.AddUsings(new CodeUsing {
                 Name = "Objects",
-                Declaration = new(parentClass) {
+                Declaration = new () {
                     Name = "util",
                     IsExternal = true,
                 }

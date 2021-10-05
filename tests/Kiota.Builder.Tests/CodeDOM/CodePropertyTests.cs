@@ -5,8 +5,7 @@ namespace Kiota.Builder.Tests {
     public class CodePropertyTests {
         [Fact]
         public void Defensive() {
-            var root = CodeNamespace.InitRootNamespace();
-            var property = new CodeProperty(root) {
+            var property = new CodeProperty {
                 Name = "prop",
             };
             Assert.False(property.IsOfKind((CodePropertyKind[])null));
@@ -14,8 +13,7 @@ namespace Kiota.Builder.Tests {
         }
         [Fact]
         public void IsOfKind() {
-            var root = CodeNamespace.InitRootNamespace();
-            var property = new CodeProperty(root) {
+            var property = new CodeProperty {
                 Name = "prop",
             };
             Assert.False(property.IsOfKind(CodePropertyKind.BackingStore));

@@ -38,6 +38,12 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// <param name="value">The float value to be written.</param>
         void WriteFloatValue(string key, float? value);
         /// <summary>
+        /// Writes the specified long value to the stream with an optional given key.
+        /// </summary>
+        /// <param name="key">The key to be used for the written value. May be null.</param>
+        /// <param name="value">The long value to be written.</param>
+        void WriteLongValue(string key, long? value);
+        /// <summary>
         /// Writes the specified double value to the stream with an optional given key.
         /// </summary>
         /// <param name="key">The key to be used for the written value. May be null.</param>
@@ -67,6 +73,18 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// <param name="key">The key to be used for the written value. May be null.</param>
         /// <param name="values">The collection of model objects to be written.</param>
         void WriteCollectionOfObjectValues<T>(string key, IEnumerable<T> values) where T : IParsable;
+        /// <summary>
+        /// Writes the specified collection of enum values to the stream with an optional given key.
+        /// </summary>
+        /// <param name="key">The key to be used for the written value. May be null.</param>
+        /// <param name="values">The enum values to be written.</param>
+        void WriteCollectionOfEnumValues<T>(string key, IEnumerable<T?> values) where T : struct, Enum;
+        /// <summary>
+        /// Writes the specified byte array as a base64 string to the stream with an optional given key.
+        /// </summary>
+        /// <param name="key">The key to be used for the written value. May be null.</param>
+        /// <param name="value">The byte array to be written.</param>
+        void WriteByteArrayValue(string key, byte[] value);
         /// <summary>
         /// Writes the specified model object to the stream with an optional given key.
         /// </summary>
