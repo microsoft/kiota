@@ -168,7 +168,7 @@ namespace Kiota.Builder.Refiners {
                 (!codeElementExceptions?.Contains(typeof(CodeMethod)) ?? true)) {
                 if(currentMethod.ReturnType is CodeType returnType &&
                     !returnType.IsExternal &&
-                    provider.ReservedNames.Contains(currentMethod.ReturnType.Name))
+                    provider.ReservedNames.Contains(returnType.Name))
                     returnType.Name = replacement.Invoke(returnType.Name);
                 ReplaceReservedParameterNamesTypes(currentMethod, provider, replacement);
             } else if (current is CodeProperty currentProperty &&
