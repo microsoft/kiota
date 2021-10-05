@@ -23,8 +23,8 @@ namespace Kiota.Builder.Refiners {
             ReplaceReservedNames(
                 generatedCode,
                 new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}",
-                new HashSet<Type>{ typeof(CodeClass), typeof(CodeClass.Declaration), typeof(CodeProperty), typeof(CodeUsing)
-            }); 
+                new HashSet<Type>{ typeof(CodeClass), typeof(CodeClass.Declaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace) }
+            ); 
             DisambiguatePropertiesWithClassNames(generatedCode);
             AddConstructorsForDefaultValues(generatedCode, false);
             AddSerializationModulesImport(generatedCode);
