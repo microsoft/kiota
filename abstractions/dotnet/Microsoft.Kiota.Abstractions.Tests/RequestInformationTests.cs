@@ -19,7 +19,7 @@ namespace Microsoft.Kiota.Abstractions.Tests
             // Act
             testRequest.QueryParameters.Add("foo", "bar");
             // Assert
-            Assert.Equal("http://localhost/me?me?foo=bar", testRequest.URI.ToString());
+            Assert.Equal("http://localhost/me?foo=bar", testRequest.URI.ToString());
             Assert.NotEmpty(testRequest.QueryParameters);
             Assert.Equal("foo",testRequest.QueryParameters.First().Key);
             Assert.Equal("bar", testRequest.QueryParameters.First().Value.ToString());
