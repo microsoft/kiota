@@ -13,7 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Core" Version="1.19.0" />
+    <PackageReference Include="Azure.Core" Version="1.20.0" />
     <PackageReference Include="Microsoft.Kiota.Abstractions" Version="1.0.19" />
   </ItemGroup>
 
