@@ -12,11 +12,10 @@ namespace Kiota.Builder
         RequestBody,
         SetterValue,
         RequestAdapter,
-        CurrentPath,
+        UrlTemplateParameters,
         Options,
         Serializer,
         BackingStore,
-        RawUrl,
         Path
     }
 

@@ -126,7 +126,7 @@ namespace Kiota.Builder.Refiners {
             } else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
                 currentProperty.Type.Name = "Map<String, Object>";
                 currentProperty.DefaultValue = "new HashMap<>()";
-            } else if(currentProperty.IsOfKind(CodePropertyKind.PathSegment, CodePropertyKind.CurrentPath))
+            } else if(currentProperty.IsOfKind(CodePropertyKind.UrlTemplate, CodePropertyKind.UrlTemplateParameters))
                 currentProperty.Type.IsNullable = true;
         }
         private static void CorrectMethodType(CodeMethod currentMethod) {
@@ -152,7 +152,7 @@ namespace Kiota.Builder.Refiners {
                     .ToList()
                     .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
             else if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.CurrentPath)).ToList().ForEach(x => x.Type.IsNullable = true);
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.UrlTemplateParameters)).ToList().ForEach(x => x.Type.IsNullable = true);
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I" 
             }
             if (currentMethod.IsOfKind(CodeMethodKind.RequestBuilderWithParameters, CodeMethodKind.Constructor) &&
@@ -194,9 +194,10 @@ namespace Kiota.Builder.Refiners {
                                                 .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers, CodeParameterKind.Options)))
                                         .Where(x => x != null);
                     var originalConstructors = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.Constructor));
-                    var constructorsToAdd = originalConstructors
-                                            .Select(x => GetMethodClone(x, CodeParameterKind.RawUrl))
-                                            .Where(x => x != null);
+                    var constructorsToAdd = Enumerable.Empty<CodeMethod>(); //originalConstructors
+                                            // .Select(x => GetMethodClone(x, CodeParameterKind.RawUrl))
+                                            // .Where(x => x != null);
+                                            //TODO add overrides without the parameters
                     if(executorMethodsToAdd.Any() || generatorMethodsToAdd.Any() || constructorsToAdd.Any())
                         currentClass.AddMethod(executorMethodsToAdd
                                                 .Union(generatorMethodsToAdd)

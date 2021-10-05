@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Kiota.Builder
+﻿namespace Kiota.Builder
 {
     public class CodeIndexer : CodeTerminal, IDocumentedElement
     {
@@ -14,6 +12,7 @@ namespace Kiota.Builder
             EnsureElementsAreChildren(value);
             returnType = value;
         }}
+        public string ParameterName { get; set; }
         public string Description {get; set;}
     }
 }

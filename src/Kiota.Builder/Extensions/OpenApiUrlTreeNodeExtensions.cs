@@ -40,7 +40,7 @@ namespace Kiota.Builder.Extensions {
         }
         private static string GetDotIfBothNotNullOfEmpty(string x, string y) => string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) ? string.Empty : ".";
         private static readonly Func<string, string> replaceSingleParameterSegementByItem =
-        x => x.IsPathSegmentWithSingleSimpleParamter() ? "item" : x;
+        x => x.IsPathSegmentWithSingleSimpleParameter() ? "item" : x;
         public static string GetNamespaceFromPath(this string currentPath, string prefix) => 
             prefix + 
                     ((currentPath?.Contains(pathNameSeparator) ?? false) ?
@@ -107,10 +107,10 @@ namespace Kiota.Builder.Extensions {
                 currentNode.PathItems[label].Summary ??
                 defaultValue :
             defaultValue;
-        public static bool DoesNodeBelongToItemSubnamespace(this OpenApiUrlTreeNode currentNode) => currentNode.IsPathSegmentWithSingleSimpleParamter();
-        public static bool IsPathSegmentWithSingleSimpleParamter(this OpenApiUrlTreeNode currentNode) =>
-            currentNode?.Segment.IsPathSegmentWithSingleSimpleParamter() ?? false;
-        public static bool IsPathSegmentWithSingleSimpleParamter(this string currentSegment)
+        public static bool DoesNodeBelongToItemSubnamespace(this OpenApiUrlTreeNode currentNode) => currentNode.IsPathSegmentWithSingleSimpleParameter();
+        public static bool IsPathSegmentWithSingleSimpleParameter(this OpenApiUrlTreeNode currentNode) =>
+            currentNode?.Segment.IsPathSegmentWithSingleSimpleParameter() ?? false;
+        private static bool IsPathSegmentWithSingleSimpleParameter(this string currentSegment)
         {
             return (currentSegment?.StartsWith(requestParametersChar) ?? false) &&
                     currentSegment.EndsWith(requestParametersEndChar) &&
@@ -119,6 +119,10 @@ namespace Kiota.Builder.Extensions {
         public static bool IsComplexPathWithAnyNumberOfParameters(this OpenApiUrlTreeNode currentNode)
         {
             return (currentNode?.Segment?.Contains(requestParametersSectionChar) ?? false) && currentNode.Segment.EndsWith(requestParametersSectionEndChar);
+        }
+        public static string GetUrlTemplate(this OpenApiUrlTreeNode currentNode, string rootUrl) {
+            if(string.IsNullOrEmpty(rootUrl)) throw new ArgumentNullException(nameof(rootUrl));
+            return rootUrl + currentNode.Path.Replace('\\', '/'); //TODO explode path items and operation parameters
         }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers.Extensions;
 
 namespace Kiota.Builder.Writers.Go {
     public class GoConventionService : CommonLanguageConventionService
@@ -11,10 +12,6 @@ namespace Kiota.Builder.Writers.Go {
         public override string VoidTypeName => string.Empty;
 
         public override string DocCommentPrefix => string.Empty;
-
-        private const string PathSegmentPropertyName = "pathSegment";
-        private const string CurrentPathPropertyName = "currentPath";
-        private const string HttpCorePropertyName = "requestAdapter";
         public override string ParseNodeInterfaceName => "ParseNode";
         #pragma warning disable CA1822 // Method should be static
         public string AbstractionsHash => "ida96af0f171bb75f894a4013a6b3146a4397c58f11adb81a2b7cbea9314783a9";
@@ -122,14 +119,16 @@ namespace Kiota.Builder.Writers.Go {
             throw new NotImplementedException();
         }
         #pragma warning disable CA1822 // Method should be static
-        internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default, IEnumerable<CodeParameter> pathParameters = default)
+        internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default)
         {
-            var currentPath = addCurrentPath ? $"m.{CurrentPathPropertyName} + " : string.Empty;
+            var urlTemplateParamsProp = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
+            var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
+            var urlTemplateParams = urlTemplateVarName ?? $"m.{urlTemplateParamsProp.Name}";
             var splatImport = returnType.Split('.');
             var constructorName = splatImport.Last().TrimCollectionAndPointerSymbols().ToFirstCharacterUpperCase();
             var moduleName = splatImport.Length > 1 ? $"{splatImport.First()}." : string.Empty;
-            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $"{string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}, ";
-            writer.WriteLines($"return *{moduleName}New{constructorName}({currentPath}m.{PathSegmentPropertyName}{suffix}, m.{HttpCorePropertyName}, {pathParametersSuffix}false);");
+            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}";
+            writer.WriteLines($"return *{moduleName}New{constructorName}({urlTemplateParams}, m.{requestAdapterProp.Name}{pathParametersSuffix});");
         }
         #pragma warning restore CA1822 // Method should be static
     }

@@ -47,7 +47,6 @@ namespace Kiota.Builder
             parameters.RemoveAll(p => p.IsOfKind(kinds));
         }
         public IEnumerable<CodeParameter> Parameters { get => parameters; }
-        public string PathSegment { get; set; }
         public bool IsStatic {get;set;} = false;
         public bool IsAsync {get;set;} = true;
         public string Description {get; set;}
@@ -85,7 +84,6 @@ namespace Kiota.Builder
                 Description = Description?.Clone() as string,
                 ContentType = ContentType?.Clone() as string,
                 AccessedProperty = AccessedProperty,
-                PathSegment = PathSegment?.Clone() as string,
                 SerializerModules = SerializerModules == null ? null : new (SerializerModules),
                 DeserializerModules = DeserializerModules == null ? null : new (DeserializerModules),
                 OriginalMethod = OriginalMethod,

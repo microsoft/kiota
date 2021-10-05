@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
 using static Kiota.Builder.CodeTypeBase;
@@ -16,16 +17,16 @@ namespace Kiota.Builder.Writers.TypeScript {
         public override string VoidTypeName => throw new System.NotImplementedException();
 
         public override string DocCommentPrefix => " * ";
-        private const string PathSegmentPropertyName = "pathSegment";
-        private const string CurrentPathPropertyName = "currentPath";
-        private const string HttpCorePropertyName = "requestAdapter";
         public override string ParseNodeInterfaceName => "ParseNode";
         internal string DocCommentStart = "/**";
         internal string DocCommentEnd = " */";
         #pragma warning disable CA1822 // Method should be static
-        internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default, string additionalPathParameters = default) {
-            var currentPath = addCurrentPath ? $"this.{CurrentPathPropertyName} + " : string.Empty;
-            writer.WriteLines($"return new {returnType}({currentPath}this.{PathSegmentPropertyName}{suffix}, this.{HttpCorePropertyName}{additionalPathParameters}, false);");
+        internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default) {
+            var codePathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}";
+            var urlTemplateParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
+            var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
+            var urlTemplateParams = urlTemplateVarName ?? $"this.{urlTemplateParametersProperty.Name}";
+            writer.WriteLines($"return new {returnType}({urlTemplateParams}, this.{requestAdapterProp.Name}{codePathParametersSuffix});");
         }
         #pragma warning restore CA1822 // Method should be static
         public override string GetAccessModifier(AccessModifier access)

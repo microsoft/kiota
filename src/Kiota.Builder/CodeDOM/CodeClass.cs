@@ -54,6 +54,8 @@ namespace Kiota.Builder
                 throw new ArgumentOutOfRangeException(nameof(properties));
             return AddRange(properties);
         }
+        public CodeProperty GetPropertyOfKind(CodePropertyKind kind) =>
+        Properties.FirstOrDefault(x => x.IsOfKind(kind));
         public IEnumerable<CodeProperty> Properties => InnerChildElements.Values.OfType<CodeProperty>();
         public IEnumerable<CodeMethod> Methods => InnerChildElements.Values.OfType<CodeMethod>();
 

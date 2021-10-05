@@ -47,16 +47,15 @@ namespace Kiota.Builder.Writers.Java.Tests {
                 PropertyKind = CodePropertyKind.RequestAdapter,
             });
             parentClass.AddProperty(new CodeProperty {
-                Name = "isRawUrl",
-                PropertyKind = CodePropertyKind.RawUrl,
+                Name = "urlTemplateParameters",
+                PropertyKind = CodePropertyKind.UrlTemplateParameters,
+                Type = new CodeType {
+                    Name = "string",
+                }
             });
             parentClass.AddProperty(new CodeProperty {
-                Name = "currentPath",
-                PropertyKind = CodePropertyKind.CurrentPath,
-            });
-            parentClass.AddProperty(new CodeProperty {
-                Name = "pathSegment",
-                PropertyKind = CodePropertyKind.PathSegment,
+                Name = "urlTemplate",
+                PropertyKind = CodePropertyKind.UrlTemplate,
             });
         }
         private void AddSerializationProperties() {
@@ -385,20 +384,19 @@ namespace Kiota.Builder.Writers.Java.Tests {
         }
         [Fact]
         public void WritesIndexer() {
+            AddRequestProperties();
             method.MethodKind = CodeMethodKind.IndexerBackwardCompatibility;
-            method.PathSegment = "somePath";
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("requestAdapter", result);
-            Assert.Contains("pathSegment", result);
-            Assert.Contains("+ id", result);
+            Assert.Contains("urlTemplateParameters", result);
+            Assert.Contains("id", result);
             Assert.Contains("return new", result);
-            Assert.Contains(method.PathSegment, result);
         }
         [Fact]
         public void WritesPathParameterRequestBuilder() {
+            AddRequestProperties();
             method.MethodKind = CodeMethodKind.RequestBuilderWithParameters;
-            method.PathSegment = "somePath";
             method.AddParameter(new CodeParameter {
                 Name = "pathParam",
                 ParameterKind = CodeParameterKind.Path,
@@ -409,7 +407,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("requestAdapter", result);
-            Assert.Contains("pathSegment", result);
+            Assert.Contains("urlTemplateParameters", result);
             Assert.Contains("pathParam", result);
             Assert.Contains("return new", result);
         }
@@ -471,7 +469,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             parentClass.AddProperty(new CodeProperty {
                 Name = propName,
                 DefaultValue = defaultValue,
-                PropertyKind = CodePropertyKind.PathSegment,
+                PropertyKind = CodePropertyKind.UrlTemplate,
             });
             writer.Write(method);
             var result = tw.ToString();

@@ -28,7 +28,13 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             property.Type = new CodeType {
                 Name = TypeName
             };
-            parentClass.AddProperty(property);
+            parentClass.AddProperty(property, new() {
+                Name = "urlTemplateParameters",
+                PropertyKind = CodePropertyKind.UrlTemplateParameters,
+            }, new() {
+                Name = "requestAdapter",
+                PropertyKind = CodePropertyKind.RequestAdapter,
+            });
         }
         public void Dispose() {
             tw?.Dispose();
@@ -41,7 +47,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             var result = tw.ToString();
             Assert.Contains($"return new {TypeName}", result);
             Assert.Contains("this.requestAdapter", result);
-            Assert.Contains("this.pathSegment", result);
+            Assert.Contains("this.urlTemplateParameters", result);
         }
         [Fact]
         public void WritesCustomProperty() {

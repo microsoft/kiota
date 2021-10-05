@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Kiota.Abstractions.Serialization;
+using Tavis.UriTemplates;
 
 namespace Microsoft.Kiota.Abstractions
 {
@@ -15,35 +16,41 @@ namespace Microsoft.Kiota.Abstractions
     /// </summary>
     public class RequestInformation
     {
+        private Uri _rawUri;
         /// <summary>
         ///  The URI of the request.
         /// </summary>
-        public Uri URI { get; set; }
-        /// <summary>
-        /// Sets the URI of the request.
-        /// </summary>
-        /// <param name="currentPath">the current path (scheme, host, port, path, query parameters) of the request.</param>
-        /// <param name="pathSegment">the segment to append to the current path.</param>
-        /// <param name="isRawUrl">whether the path segment is a raw url. When true, the segment is not happened and the current path is parsed for query parameters.</param>
-        /// <exception cref="UriFormatException">Thrown when the built URI is an invalid format.</exception>
-        public void SetURI(string currentPath, string pathSegment, bool isRawUrl)
-        {
-            if (isRawUrl)
-            {
-                if(string.IsNullOrEmpty(currentPath))
-                    throw new ArgumentNullException(nameof(currentPath));
-                var parseUri = new Uri(currentPath);
-                var parseQueryString = parseUri.Query.TrimStart('?'); //remove leading ? if needed
-                foreach(var qsp in parseQueryString.Split('&').Select(x => x.Split('=')).Where(x => !string.IsNullOrEmpty(x[0]))) {
-                    QueryParameters.Add(qsp[0], qsp.Length > 1 ? qsp[1] : null);
-                }
-                URI = new Uri(parseUri.GetComponents(UriComponents.SchemeAndServer | UriComponents.Path, UriFormat.Unescaped));
+        public Uri URI {
+            set {
+                if(value == null)
+                    throw new ArgumentNullException(nameof(value));
+                QueryParameters.Clear();
+                UrlTemplateParameters.Clear();
+                _rawUri = value;
             }
-            else
-            {
-                URI = new Uri(currentPath + pathSegment);
+            get {
+                if(_rawUri != null)
+                    return _rawUri;
+                else
+                {
+                    var parsedUrlTemplate = new UriTemplate(UrlTemplate);
+                    foreach(var urlTemplateParameter in UrlTemplateParameters)
+                        parsedUrlTemplate.SetParameter(urlTemplateParameter.Key, urlTemplateParameter.Value);
+
+                    foreach(var queryStringParameter in QueryParameters)
+                        parsedUrlTemplate.SetParameter(queryStringParameter.Key, queryStringParameter.Value);
+                    return new Uri(parsedUrlTemplate.Resolve());
+                }
             }
         }
+        /// <summary>
+        /// The Url template for the current request.
+        /// </summary>
+        public string UrlTemplate { get; set; }
+        /// <summary>
+        /// The parameters to use for the URL template when generating the URI in addition to the query parameters.
+        /// </summary>
+        public IDictionary<string, string> UrlTemplateParameters { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         /// <summary>
         ///  The <see cref="HttpMethod">HTTP method</see> of the request.
         /// </summary>

@@ -24,11 +24,17 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             root.AddClass(parentClass);
             property = new CodeProperty {
                 Name = PropertyName,
+                Type = new CodeType {
+                    Name = TypeName
+                },
             };
-            property.Type = new CodeType {
-                Name = TypeName
-            };
-            parentClass.AddProperty(property);
+            parentClass.AddProperty(property, new() {
+                Name = "urlTemplateParameters",
+                PropertyKind = CodePropertyKind.UrlTemplateParameters,
+            }, new() {
+                Name = "requestAdapter",
+                PropertyKind = CodePropertyKind.RequestAdapter,
+            });
         }
         public void Dispose() {
             tw?.Dispose();
@@ -42,7 +48,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             Assert.Contains("get =>", result);
             Assert.Contains($"new {TypeName}", result);
             Assert.Contains("RequestAdapter", result);
-            Assert.Contains("PathSegment", result);
+            Assert.Contains("UrlTemplateParameters", result);
         }
         [Fact]
         public void WritesCustomProperty() {

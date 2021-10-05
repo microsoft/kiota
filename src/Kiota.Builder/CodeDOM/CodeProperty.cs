@@ -9,10 +9,9 @@ namespace Kiota.Builder
         RequestBuilder,
         AdditionalData,
         BackingStore,
-        PathSegment,
-        CurrentPath,
+        UrlTemplate,
+        UrlTemplateParameters,
         RequestAdapter,
-        RawUrl
     }
 
     public class CodeProperty : CodeTerminal, IDocumentedElement

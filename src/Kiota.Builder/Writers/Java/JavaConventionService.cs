@@ -12,9 +12,6 @@ namespace Kiota.Builder.Writers.Java {
         private const string InternalVoidTypeName = "Void";
         public override string VoidTypeName => InternalVoidTypeName;
         public override string DocCommentPrefix => " * ";
-        private const string PathSegmentPropertyName = "pathSegment";
-        private const string CurrentPathPropertyName = "currentPath";
-        private const string HttpCorePropertyName = "requestAdapter";
         internal HashSet<string> PrimitiveTypes = new() {"String", "Boolean", "Integer", "Float", "Long", "Guid", "OffsetDateTime", InternalVoidTypeName, InternalStreamTypeName };
         public override string ParseNodeInterfaceName => "ParseNode";
         internal string DocCommentStart = "/**";
@@ -83,11 +80,12 @@ namespace Kiota.Builder.Writers.Java {
         }
         internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
         #pragma warning disable CA1822 // Method should be static
-        internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default, IEnumerable<CodeParameter> pathParameters = default) {
-            // because if currentPath is null it'll add "null" to the string...
-            var currentPath = addCurrentPath ? $"{CurrentPathPropertyName} + " : string.Empty;
-            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $"{string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}, ";
-            writer.WriteLines($"return new {returnType}({currentPath}{PathSegmentPropertyName}{suffix}, {HttpCorePropertyName}, {pathParametersSuffix}false);");
+        internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default) {
+            var urlTemplateParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
+            var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
+            var urlTemplateParams = urlTemplateVarName ?? urlTemplateParametersProperty.Name;
+            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}";
+            writer.WriteLines($"return new {returnType}({urlTemplateParams}, {requestAdapterProp.Name}{pathParametersSuffix});");
         }
         #pragma warning restore CA1822 // Method should be static
     }

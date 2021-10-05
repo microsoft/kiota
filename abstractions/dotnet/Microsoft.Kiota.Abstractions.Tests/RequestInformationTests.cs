@@ -8,33 +8,18 @@ namespace Microsoft.Kiota.Abstractions.Tests
     public class RequestInformationTests
     {
         [Fact]
-        public void SetUriAppendsUrlSegments()
-        {
-            // Arrange
-            var testRequest = new RequestInformation()
-            {
-                HttpMethod = HttpMethod.GET,
-                URI = new Uri("http://localhost")
-            };
-            // Act
-            testRequest.SetURI(testRequest.URI.OriginalString,"/me",false);
-            // Assert
-            Assert.Equal("http://localhost/me", testRequest.URI.OriginalString);
-        }
-
-        [Fact]
         public void SetUriExtractsQueryParameters()
         {
             // Arrange
             var testRequest = new RequestInformation()
             {
                 HttpMethod = HttpMethod.GET,
-                URI = new Uri("http://localhost")
+                UrlTemplate = "http://localhost/me?foo={foo}"
             };
             // Act
-            testRequest.SetURI("http://localhost/me?foo=bar", "", true);
+            testRequest.QueryParameters.Add("foo", "bar");
             // Assert
-            Assert.Equal("http://localhost/me", testRequest.URI.OriginalString);
+            Assert.Equal("http://localhost/me?me?foo=bar", testRequest.URI.ToString());
             Assert.NotEmpty(testRequest.QueryParameters);
             Assert.Equal("foo",testRequest.QueryParameters.First().Key);
             Assert.Equal("bar", testRequest.QueryParameters.First().Value.ToString());

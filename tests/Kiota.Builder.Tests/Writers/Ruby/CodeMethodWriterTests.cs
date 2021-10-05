@@ -50,6 +50,23 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             tw?.Dispose();
             GC.SuppressFinalize(this);
         }
+        private void AddRequestProperties() {
+            parentClass.AddProperty(new CodeProperty {
+                Name = "requestAdapter",
+                PropertyKind = CodePropertyKind.RequestAdapter,
+            });
+            parentClass.AddProperty(new CodeProperty {
+                Name = "urlTemplateParameters",
+                PropertyKind = CodePropertyKind.UrlTemplateParameters,
+                Type = new CodeType {
+                    Name = "string",
+                }
+            });
+            parentClass.AddProperty(new CodeProperty {
+                Name = "urlTemplate",
+                PropertyKind = CodePropertyKind.UrlTemplate,
+            });
+        }
         private void AddSerializationProperties() {
             var addData = parentClass.AddProperty(new CodeProperty {
                 Name = "additionalData",
@@ -187,6 +204,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         public void WritesRequestGeneratorBody() {
             method.MethodKind = CodeMethodKind.RequestGenerator;
             method.HttpMethod = HttpMethod.Get;
+            AddRequestProperties();
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
@@ -364,20 +382,19 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         }
         [Fact]
         public void WritesIndexer() {
+            AddRequestProperties();
             method.MethodKind = CodeMethodKind.IndexerBackwardCompatibility;
-            method.PathSegment = "somePath";
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("request_adapter", result);
-            Assert.Contains("path_segment", result);
-            Assert.Contains("+ id", result);
+            Assert.Contains("url_template_parameters", result);
+            Assert.Contains("= id", result);
             Assert.Contains("return Somecustomtype.new", result);
-            Assert.Contains(method.PathSegment, result);
         }
         [Fact]
         public void WritesPathParameterRequestBuilder() {
+            AddRequestProperties();
             method.MethodKind = CodeMethodKind.RequestBuilderWithParameters;
-            method.PathSegment = "somePath";
             method.AddParameter(new CodeParameter {
                 Name = "pathParam",
                 ParameterKind = CodeParameterKind.Path,
@@ -388,7 +405,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("request_adapter", result);
-            Assert.Contains("path_segment", result);
+            Assert.Contains("url_template_parameters", result);
             Assert.Contains("pathParam", result);
             Assert.Contains("return Somecustomtype.new", result);
         }
@@ -408,7 +425,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             parentClass.AddProperty(new CodeProperty {
                 Name = propName,
                 DefaultValue = defaultValue,
-                PropertyKind = CodePropertyKind.PathSegment,
+                PropertyKind = CodePropertyKind.UrlTemplate,
             });
             writer.Write(method);
             var result = tw.ToString();

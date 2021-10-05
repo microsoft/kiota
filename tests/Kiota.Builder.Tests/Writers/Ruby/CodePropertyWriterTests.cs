@@ -30,7 +30,13 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             emptyProperty.Type = new CodeType {
                 Name = TypeName
             };
-            EmptyClass.AddProperty(emptyProperty);
+            EmptyClass.AddProperty(emptyProperty, new() {
+                Name = "urlTemplateParameters",
+                PropertyKind = CodePropertyKind.UrlTemplateParameters,
+            }, new() {
+                Name = "requestAdapter",
+                PropertyKind = CodePropertyKind.RequestAdapter,
+            });
             
             var root = CodeNamespace.InitRootNamespace();
             root.Name = RootNamespaceName;
@@ -45,7 +51,13 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
                 Name = TypeName,
                 TypeDefinition = parentClass
             };
-            parentClass.AddProperty(property);
+            parentClass.AddProperty(property, new() {
+                Name = "urlTemplateParameters",
+                PropertyKind = CodePropertyKind.UrlTemplateParameters,
+            }, new() {
+                Name = "requestAdapter",
+                PropertyKind = CodePropertyKind.RequestAdapter,
+            });
         }
         public void Dispose() {
             tw?.Dispose();
@@ -59,7 +71,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             Assert.Contains($"def {PropertyName.ToSnakeCase()}", result);
             Assert.Contains($"{RootNamespaceName}::{TypeName}.new", result);
             Assert.Contains("request_adapter", result);
-            Assert.Contains("path_segment", result);
+            Assert.Contains("url_template_parameters", result);
         }
         [Fact]
         public void WritesRequestBuilderWithoutNamespace() {
@@ -69,7 +81,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             Assert.Contains($"def {PropertyName.ToSnakeCase()}", result);
             Assert.Contains($"{TypeName}.new", result);
             Assert.Contains("request_adapter", result);
-            Assert.Contains("path_segment", result);
+            Assert.Contains("url_template_parameters", result);
             Assert.DoesNotContain($"::{TypeName}.new", result);
         }
         [Fact]

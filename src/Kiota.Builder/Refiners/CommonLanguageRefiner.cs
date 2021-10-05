@@ -75,7 +75,7 @@ namespace Kiota.Builder.Refiners {
                 var backedModelImplements = currentDeclaration.Implements.FirstOrDefault(x => "IBackedModel".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
                 if(backedModelImplements != null)
                     backedModelImplements.Name = backedModelImplements.Name[1..]; //removing the "I"
-                var backingStoreProperty = currentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.BackingStore));
+                var backingStoreProperty = currentClass.GetPropertyOfKind(CodePropertyKind.BackingStore);
                 if(backingStoreProperty != null)
                     backingStoreProperty.DefaultValue = defaultPropertyValue;
                 
@@ -264,7 +264,6 @@ namespace Kiota.Builder.Refiners {
             }
             CrawlTree(currentElement, c => ReplaceBinaryByNativeType(c, symbol, ns, addDeclaration));
         }
-        private const string PathSegmentPropertyName = "pathSegment";
         protected static void ConvertUnionTypesToWrapper(CodeElement currentElement, bool usesBackingStore) {
             var parentClass = currentElement.Parent as CodeClass;
             if(currentElement is CodeMethod currentMethod) {
@@ -328,15 +327,13 @@ namespace Kiota.Builder.Refiners {
             if(currentElement is CodeIndexer currentIndexer &&
                 currentElement.Parent is CodeClass currentParentClass) {
                 currentParentClass.RemoveChildElement(currentElement);
-                var pathSegment = currentParentClass
-                                    .FindChildByName<CodeProperty>(PathSegmentPropertyName)
-                                    ?.DefaultValue;
-                if(!string.IsNullOrEmpty(pathSegment))
+                var urlTemplate = currentParentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate)?.DefaultValue;
+                if(!string.IsNullOrEmpty(urlTemplate))
                     foreach(var returnType in currentIndexer.ReturnType.AllTypes)
                         AddIndexerMethod(rootNamespace,
                                         currentParentClass,
                                         returnType.TypeDefinition as CodeClass,
-                                        pathSegment.Trim('\"').TrimStart('/'),
+                                        urlTemplate.Trim('\"').TrimStart('/'),
                                         methodNameSuffix,
                                         currentIndexer.Description,
                                         parameterNullable);
@@ -359,7 +356,6 @@ namespace Kiota.Builder.Refiners {
                         Name = indexerClass.Name,
                     },
                 };
-                method.PathSegment = pathSegment;
                 var parameter = new CodeParameter {
                     Name = "id",
                     Optional = false,

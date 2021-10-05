@@ -249,7 +249,7 @@ namespace Kiota.Builder
             {
                 var propIdentifier = child.Value.GetClassName();
                 var propType = propIdentifier + requestBuilderSuffix;
-                if (child.Value.IsPathSegmentWithSingleSimpleParamter())
+                if (child.Value.IsPathSegmentWithSingleSimpleParameter())
                 {
                     var prop = CreateIndexer($"{propIdentifier}-indexer", propType, child.Value);
                     codeClass.SetIndexer(prop);
@@ -274,7 +274,7 @@ namespace Kiota.Builder
                                         .Where(x => x.Value.RequestBody?.Content?.Any(y => !config.IgnoredRequestContentTypes.Contains(y.Key)) ?? true))
                     CreateOperationMethods(currentNode, operation.Key, operation.Value, codeClass);
             }
-            CreatePathManagement(codeClass, currentNode, isApiClientClass);
+            CreateUrlManagement(codeClass, currentNode, isApiClientClass);
            
             Parallel.ForEach(currentNode.Children.Values, childNode =>
             {
@@ -312,31 +312,26 @@ namespace Kiota.Builder
                 }
             codeClass.AddMethod(methodToAdd);
         }
-        private static readonly string currentPathParameterName = "currentPath";
-        private static readonly string rawUrlParameterName = "isRawUrl";
-        private void CreatePathManagement(CodeClass currentClass, OpenApiUrlTreeNode currentNode, bool isApiClientClass) {
+        private static readonly string urlTemplateParametersParameterName = "urlTemplateParameters";
+        private void CreateUrlManagement(CodeClass currentClass, OpenApiUrlTreeNode currentNode, bool isApiClientClass) {
             var pathProperty = new CodeProperty {
                 Access = AccessModifier.Private,
-                Name = "pathSegment",
-                DefaultValue = (isApiClientClass, currentNode.IsPathSegmentWithSingleSimpleParamter()) switch {
-                    (true, _) => $"\"{config.ApiRootUrl}\"",
-                    (false, true) => "\"\"",
-                    (_, _) => $"\"/{currentNode.Segment}\"",
-                },
+                Name = "urlTemplate",
+                DefaultValue = $"\"{currentNode.GetUrlTemplate(config.ApiRootUrl)}\"",
                 ReadOnly = true,
-                Description = "Path segment to use to build the URL for the current request builder",
-                PropertyKind = CodePropertyKind.PathSegment
-            };
-            pathProperty.Type = new CodeType {
-                Name = "string",
-                IsNullable = false,
-                IsExternal = true,
+                Description = "Url template to use to build the URL for the current request builder",
+                PropertyKind = CodePropertyKind.UrlTemplate,
+                Type = new CodeType {
+                    Name = "string",
+                    IsNullable = false,
+                    IsExternal = true,
+                },
             };
             currentClass.AddProperty(pathProperty);
 
             var requestAdapterProperty = new CodeProperty {
                 Name = requestAdapterParameterName,
-                Description = "The http core service to use to execute the requests.",
+                Description = "The request adapter to use to execute the requests.",
                 PropertyKind = CodePropertyKind.RequestAdapter,
                 Access = AccessModifier.Private,
                 ReadOnly = true,
@@ -356,50 +351,30 @@ namespace Kiota.Builder
                 Access = AccessModifier.Public,
             }).First();
             constructor.ReturnType = new CodeType { Name = voidType, IsExternal = true };
+            var urlTemplateParametersProperty = new CodeProperty {
+                Name = urlTemplateParametersParameterName,
+                Description = "Url template parameters for the request",
+                PropertyKind = CodePropertyKind.UrlTemplateParameters,
+                Access = AccessModifier.Private,
+                ReadOnly = true,
+                Type = new CodeType {
+                    Name = "Dictionary<string, string>",
+                    IsExternal = true,
+                    IsNullable = false,
+                },
+            };
+            currentClass.AddProperty(urlTemplateParametersProperty);
             if(isApiClientClass) {
                 constructor.SerializerModules = config.Serializers;
                 constructor.DeserializerModules = config.Deserializers;
+                urlTemplateParametersProperty.DefaultValue = $"new {urlTemplateParametersProperty.Type.Name}()";
             } else {
-                var currentPathProperty = new CodeProperty {
-                    Name = currentPathParameterName,
-                    Description = "Current path for the request",
-                    PropertyKind = CodePropertyKind.CurrentPath,
-                    Access = AccessModifier.Private,
-                    ReadOnly = true,
-                    Type = new CodeType {
-                        Name = "string",
-                        IsExternal = true,
-                        IsNullable = false,
-                    }
-                };
-                currentClass.AddProperty(currentPathProperty);
                 constructor.AddParameter(new CodeParameter {
-                    Name = currentPathParameterName,
-                    Type = currentPathProperty.Type,
+                    Name = urlTemplateParametersParameterName,
+                    Type = urlTemplateParametersProperty.Type,
                     Optional = false,
-                    Description = currentPathProperty.Description,
-                    ParameterKind = CodeParameterKind.CurrentPath,
-                });
-                var isRawURLPproperty = new CodeProperty {
-                    Name = rawUrlParameterName,
-                    Description = "Whether the current path is a raw URL",
-                    PropertyKind = CodePropertyKind.RawUrl,
-                    Access = AccessModifier.Private,
-                    ReadOnly = true,
-                    Type = new CodeType {
-                        Name = "boolean",
-                        IsExternal = true,
-                        IsNullable = false,
-                    }
-                };
-                currentClass.AddProperty(isRawURLPproperty);
-                constructor.AddParameter(new CodeParameter {
-                    Name = rawUrlParameterName,
-                    Type = isRawURLPproperty.Type,
-                    Optional = true,
-                    Description = isRawURLPproperty.Description,
-                    ParameterKind = CodeParameterKind.RawUrl,
-                    DefaultValue = "true",
+                    Description = urlTemplateParametersProperty.Description,
+                    ParameterKind = CodeParameterKind.UrlTemplateParameters,
                 });
                 foreach(var parameter in currentNode.GetPathParametersForCurrentSegment()) {
                     var mParameter = new CodeParameter {
@@ -510,6 +485,7 @@ namespace Kiota.Builder
                 Description = $"Gets an item from the {currentNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName)} collection",
                 IndexType = new CodeType { Name = "string", IsExternal = true, },
                 ReturnType = new CodeType { Name = childType },
+                ParameterName = currentNode.Segment.TrimStart('{').TrimEnd('}'),
             };
         }
 
