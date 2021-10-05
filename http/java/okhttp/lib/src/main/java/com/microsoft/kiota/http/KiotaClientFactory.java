@@ -1,4 +1,4 @@
-package com.microsoft.kiota.http;
+package src.main.java.com.microsoft.kiota.http;
 
 import okhttp3.OkHttpClient;
 
