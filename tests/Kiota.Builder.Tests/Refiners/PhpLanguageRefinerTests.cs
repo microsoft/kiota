@@ -85,7 +85,6 @@ namespace Kiota.Builder.Refiners.Tests
             }).First();
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
             Assert.NotEmpty(model.StartBlock.Usings);
-            Assert.NotEmpty(requestBuilder.StartBlock.Usings);
         }
 
         [Fact]
