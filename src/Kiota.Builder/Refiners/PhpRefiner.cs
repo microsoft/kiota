@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners
@@ -7,30 +8,11 @@ namespace Kiota.Builder.Refiners
     public class PhpRefiner: CommonLanguageRefiner
     {
         public PhpRefiner(GenerationConfiguration configuration) : base(configuration) { }
-
-
-        private static readonly Tuple<string, string>[] defaultNamespaces = 
-        {
-            new("ParseNode", "Microsoft\\Kiota\\Abstractions\\Serialization")
-        };
-
-        private static readonly Tuple<string, string>[] defaultRequestBuilderNamespaces =
-        {
-            new("HttpMethod", "Microsoft\\Kiota\\Abstractions"),
-            new("HttpCore","Microsoft\\Kiota\\Abstractions"),
-            new("RequestInformation", "Microsoft\\Kiota\\Abstractions"),
-            new("ResponseHandler", "Microsoft\\Kiota\\Abstractions"),
-            new("QueryParametersBase", "Microsoft\\Kiota\\Abstractions"),
-            new("MiddlewareOption", "Microsoft\\Kiota\\Abstractions")
-        };
-
-        private static readonly Tuple<string, string>[] defaultNamespacesForModels = { };
+        
         public override void Refine(CodeNamespace generatedCode)
         {
             //AddInnerClasses(generatedCode);
-            AddDefaultImports(generatedCode, defaultNamespaces, 
-                defaultNamespacesForModels, 
-                defaultRequestBuilderNamespaces);
+            AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             AddGetterAndSetterMethods(generatedCode,new HashSet<CodePropertyKind>()
@@ -43,5 +25,27 @@ namespace Kiota.Builder.Refiners
             ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
         }
+        
+        private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.HttpCore),
+                "Microsoft\\Kiota\\Abstractions", "HttpCore"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+                "Microsoft\\Kiota\\Abstractions", "HttpMethod", "RequestInformation", "MiddlewareOption"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+                "Microsoft\\Kiota\\Abstractions", "ResponseHandler"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
+                "Microsoft\\Kiota\\Abstractions\\Serialization", "SerializationWriter"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+                "Microsoft\\Kiota\\Abstractions\\Serialization", "ParseNode"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+                "Microsoft\\Kiota\\Abstractions\\Serialization", "Parsable"),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
+                "Microsoft\\Kiota\\Abstractions\\Serialization", "Parsable"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
+                      method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
+                "Microsoft\\Kiota\\Abstractions\\Store", "BackingStoreFactory", "BackingStoreFactorySingleton"),
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
+                "Microsoft\\Kiota\\Abstractions\\Store", "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
+        };
     }
 }

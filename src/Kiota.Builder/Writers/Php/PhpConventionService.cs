@@ -15,40 +15,31 @@ namespace Kiota.Builder.Writers.Php
                 _ => "private"
             };
         }
-
         public override string StreamTypeName => "StreamInterface";
 
         public override string VoidTypeName => "void";
 
         public override string DocCommentPrefix => " * ";
 
-        public override string PathSegmentPropertyName => "$pathSegment";
+        private static string PathSegmentPropertyName => "$pathSegment";
 
-        public override string CurrentPathPropertyName => "$currentPath";
+        private static string CurrentPathPropertyName => "$currentPath";
 
-        public override string HttpCorePropertyName => "$httpCore";
-        public override string RawUrlPropertyName
-        {
-            get;
-        }
+        private static string HttpCorePropertyName => "$httpCore";
 
         public override string ParseNodeInterfaceName => "ParseNode";
 
         public string DocCommentStart = "/**";
         public string DocCommentEnd = "*/";
 
-        public override string GetTypeString(CodeTypeBase code)
+        public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
         {
-            return TranslateType(code.Name);
+            return TranslateType(code);
         }
 
         public override string TranslateType(CodeType type)
         {
-            throw new NotImplementedException();
-        }
-
-        public string TranslateType(string typeName)
-        {
+            string typeName = type.Name;
             return (typeName) switch
             {
                 "boolean" => "bool",
@@ -59,10 +50,10 @@ namespace Kiota.Builder.Writers.Php
             };
         }
 
-        public override string GetParameterSignature(CodeParameter parameter)
+        public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
         {
             
-            var typeString = GetTypeString(parameter.Type);
+            var typeString = GetTypeString(parameter.Type, parameter);
             var parameterSuffix = parameter.ParameterKind switch
             {
                 CodeParameterKind.Headers => "array $headers",
@@ -70,7 +61,7 @@ namespace Kiota.Builder.Writers.Php
                 CodeParameterKind.HttpCore => "HttpCore $httpCore",
                 CodeParameterKind.Options => "array $options",
                 CodeParameterKind.ResponseHandler => "ResponseHandlerInterface $responseHandler",
-                _ => $"{GetTypeString(parameter.Type)} ${parameter.Name.ToFirstCharacterLowerCase()}"
+                _ => $"{GetTypeString(parameter.Type, parameter)} ${parameter.Name.ToFirstCharacterLowerCase()}"
 
             };
             return $"{(parameter.Optional ? String.Empty : "?")}{parameterSuffix}";
@@ -82,12 +73,13 @@ namespace Kiota.Builder.Writers.Php
             {
                 return "array $value";
             }
-            return GetParameterSignature(parameter);
+            
+            return GetParameterSignature(parameter, codeMethod as CodeElement);
         }
 
-        public string GetParameterDocNullable(CodeParameter parameter)
+        public string GetParameterDocNullable(CodeParameter parameter, CodeElement codeElement)
         {
-            var parameterSignature = GetParameterSignature(parameter).Trim().Split(' ');
+            var parameterSignature = GetParameterSignature(parameter, codeElement).Trim().Split(' ');
             return parameter.Optional switch
             {
                 true => $"{parameterSignature[0]}|null {parameterSignature[1]}",

@@ -13,17 +13,17 @@ namespace Kiota.Builder.Refiners.Tests
         [Fact]
         public void ReplacesRequestBuilderPropertiesByMethods()
         {
-            var model = root.AddClass(new CodeClass(root)
+            var model = root.AddClass(new CodeClass()
             {
                 Name = "userRequestBuilder",
                 ClassKind = CodeClassKind.RequestBuilder
             }).First();
 
-            var requestBuilder = model.AddProperty(new CodeProperty(model)
+            var requestBuilder = model.AddProperty(new CodeProperty()
             {
                 Name = "breaks", 
                 PropertyKind = CodePropertyKind.RequestBuilder,
-                Type = new CodeType(model)
+                Type = new CodeType()
                 {
                     Name = "string"
                 }
@@ -36,17 +36,17 @@ namespace Kiota.Builder.Refiners.Tests
         [Fact]
         public void PrefixReservedWordPropertyNamesWith()
         {
-            var model = root.AddClass(new CodeClass(root)
+            var model = root.AddClass(new CodeClass()
             {
                 Name = "userRequestBuilder",
                 ClassKind = CodeClassKind.RequestBuilder
             }).First();
 
-            var property = model.AddProperty(new CodeProperty(model)
+            var property = model.AddProperty(new CodeProperty()
             {
                 Name = "continue", 
                 PropertyKind = CodePropertyKind.RequestBuilder,
-                Type = new CodeType(model)
+                Type = new CodeType()
                 {
                     Name = "string"
                 }
@@ -59,14 +59,14 @@ namespace Kiota.Builder.Refiners.Tests
         [Fact]
         public void ReplacesBinaryWithNativeType()
         {
-            var model = root.AddClass(new CodeClass (root) {
+            var model = root.AddClass(new CodeClass () {
                 Name = "model",
                 ClassKind = CodeClassKind.Model
             }).First();
-            var method = model.AddMethod(new CodeMethod(model) {
+            var method = model.AddMethod(new CodeMethod() {
                 Name = "method"
             }).First();
-            method.ReturnType = new CodeType(method) {
+            method.ReturnType = new CodeType() {
                 Name = "binary"
             };
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP}, root);
@@ -75,11 +75,11 @@ namespace Kiota.Builder.Refiners.Tests
 
         [Fact]
         public void AddsDefaultImports() {
-            var model = root.AddClass(new CodeClass (root) {
+            var model = root.AddClass(new CodeClass () {
                 Name = "model",
                 ClassKind = CodeClassKind.Model
             }).First();
-            var requestBuilder = root.AddClass(new CodeClass(root) {
+            var requestBuilder = root.AddClass(new CodeClass() {
                 Name = "rb",
                 ClassKind = CodeClassKind.RequestBuilder,
             }).First();

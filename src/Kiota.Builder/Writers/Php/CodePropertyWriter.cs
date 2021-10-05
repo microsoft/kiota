@@ -11,7 +11,7 @@ namespace Kiota.Builder.Writers.Php
         public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
         {
             
-            var returnType = conventions.GetTypeString(codeElement.Type);
+            var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
             var currentPathProperty = codeElement.Parent.GetChildElements(true)
                 .OfType<CodeProperty>()
                 .FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
@@ -44,7 +44,7 @@ namespace Kiota.Builder.Writers.Php
         {
             var propertyDescription = codeProperty.Description;
             var hasDescription = !string.IsNullOrEmpty(codeProperty.Description);
-            writer.WriteLine($"{conventions.DocCommentStart} @var {conventions.GetTypeString(codeProperty.Type)} ${codeProperty.Name} " +
+            writer.WriteLine($"{conventions.DocCommentStart} @var {conventions.GetTypeString(codeProperty.Type, codeProperty)} ${codeProperty.Name} " +
                              $"{(hasDescription ? propertyDescription : string.Empty)} {conventions.DocCommentEnd}");
         }
     }

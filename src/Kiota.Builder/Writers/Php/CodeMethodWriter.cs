@@ -72,13 +72,14 @@ namespace Kiota.Builder.Writers.Php
 
             var hasMethodDescription = !string.IsNullOrEmpty(methodDescription.Trim(' '));
             var parametersWithDescription = codeMethod.Parameters;
-            if (!hasMethodDescription && !parametersWithDescription.Any())
+            var withDescription = parametersWithDescription as CodeParameter[] ?? parametersWithDescription.ToArray();
+            if (!hasMethodDescription && !withDescription.Any())
             {
                 return;
             }
 
             writer.WriteLine(conventions.DocCommentStart);
-            var isVoidable = "void".Equals(conventions.GetTypeString(codeMethod.ReturnType),
+            var isVoidable = "void".Equals(conventions.GetTypeString(codeMethod.ReturnType, codeMethod),
                 StringComparison.OrdinalIgnoreCase);
             if(hasMethodDescription){
                 writer.WriteLine(
@@ -92,12 +93,12 @@ namespace Kiota.Builder.Writers.Php
                                              accessedProperty.IsOfKind(CodePropertyKind.AdditionalData));
             
             
-            parametersWithDescription.Select(x =>
+            withDescription.Select(x =>
                 {
                     return codeMethod.MethodKind switch
                     {
-                        CodeMethodKind.Setter => $"{conventions.DocCommentPrefix} @param {(isSetterForAdditionalData ? "array<string,object> $value": conventions.GetParameterDocNullable(x))} {x?.Description}",
-                        _ => $"{conventions.DocCommentPrefix}@param {conventions.GetParameterDocNullable(x)} ${x.Name} {x.Description}"
+                        CodeMethodKind.Setter => $"{conventions.DocCommentPrefix} @param {(isSetterForAdditionalData ? "array<string,object> $value": conventions.GetParameterDocNullable(x, x))} {x?.Description}",
+                        _ => $"{conventions.DocCommentPrefix}@param {conventions.GetParameterDocNullable(x, x)} ${x.Name} {x.Description}"
                     };
                 })
                 .ToList()
@@ -107,8 +108,8 @@ namespace Kiota.Builder.Writers.Php
                     CodeMethodKind.Deserializer => "array<string, callable>",
                     CodeMethodKind.Getter => isGetterForAdditionalData
                         ? "array<string, object>"
-                        : conventions.GetTypeString(codeMethod.ReturnType),
-                    _ => conventions.GetTypeString(codeMethod.ReturnType)
+                        : conventions.GetTypeString(codeMethod.ReturnType, codeMethod),
+                    _ => conventions.GetTypeString(codeMethod.ReturnType, codeMethod)
                 };
             if (!isVoidable)
             {
@@ -153,12 +154,12 @@ namespace Kiota.Builder.Writers.Php
                 writer.IncreaseIndent();
                 return;
             }
-            var isVoidable = "void".Equals(conventions.GetTypeString(codeMethod.ReturnType),
+            var isVoidable = "void".Equals(conventions.GetTypeString(codeMethod.ReturnType, codeMethod),
                 StringComparison.OrdinalIgnoreCase);
             var optionalCharacterReturn = isVoidable ? string.Empty : orNullReturn[0];
             var returnValue = isConstructor
                 ? string.Empty
-                : $": {optionalCharacterReturn}{conventions.GetTypeString(codeMethod.ReturnType)}";
+                : $": {optionalCharacterReturn}{conventions.GetTypeString(codeMethod.ReturnType, codeMethod)}";
             writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodPrefix}{methodName}({methodParameters}){returnValue} {{");
             writer.IncreaseIndent();
             
@@ -179,7 +180,7 @@ namespace Kiota.Builder.Writers.Php
         
         private string GetSerializationMethodName(CodeTypeBase propType) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-            var propertyType = conventions.TranslateType(propType.Name);
+            var propertyType = conventions.TranslateType(propType);
             if(propType is CodeType currentType) {
                 if(isCollection) 
                     return $"writeCollectionOfObjectValues";
