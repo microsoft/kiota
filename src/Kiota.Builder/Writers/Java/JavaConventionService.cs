@@ -14,7 +14,7 @@ namespace Kiota.Builder.Writers.Java {
         public override string DocCommentPrefix => " * ";
         private const string PathSegmentPropertyName = "pathSegment";
         private const string CurrentPathPropertyName = "currentPath";
-        private const string HttpCorePropertyName = "httpCore";
+        private const string HttpCorePropertyName = "requestAdapter";
         internal HashSet<string> PrimitiveTypes = new() {"String", "Boolean", "Integer", "Float", "Long", "Guid", "OffsetDateTime", InternalVoidTypeName, InternalStreamTypeName };
         public override string ParseNodeInterfaceName => "ParseNode";
         internal string DocCommentStart = "/**";

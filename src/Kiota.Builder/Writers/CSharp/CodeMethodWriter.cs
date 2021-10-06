@@ -75,15 +75,15 @@ namespace Kiota.Builder.Writers.CSharp {
             conventions.AddRequestBuilderBody(currentPathProperty != null, importSymbol, writer, prefix: "return ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
         }
         private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
-            var httpCoreProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.HttpCore));
-            var httpCoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.HttpCore));
+            var requestAdapterProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.RequestAdapter));
+            var requestAdapterParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.RequestAdapter));
             var backingStoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.BackingStore));
-            var httpCorePropertyName = httpCoreProperty.Name.ToFirstCharacterUpperCase();
-            writer.WriteLine($"{httpCorePropertyName} = {httpCoreParameter.Name};");
+            var requestAdapterPropertyName = requestAdapterProperty.Name.ToFirstCharacterUpperCase();
+            writer.WriteLine($"{requestAdapterPropertyName} = {requestAdapterParameter.Name};");
             WriteSerializationRegistration(method.SerializerModules, writer, "RegisterDefaultSerializer");
             WriteSerializationRegistration(method.DeserializerModules, writer, "RegisterDefaultDeserializer");
             if(backingStoreParameter != null)
-                writer.WriteLine($"{httpCorePropertyName}.EnableBackingStore({backingStoreParameter.Name});");
+                writer.WriteLine($"{requestAdapterPropertyName}.EnableBackingStore({backingStoreParameter.Name});");
         }
         private static void WriteSerializationRegistration(List<string> serializationClassNames, LanguageWriter writer, string methodName) {
             if(serializationClassNames != null)
@@ -99,7 +99,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterUpperCase()} = {propWithDefault.DefaultValue};");
             }
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
-                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.HttpCore, CodePropertyKind.HttpCore, writer);
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.CurrentPath, CodePropertyKind.CurrentPath, writer);
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RawUrl, CodePropertyKind.RawUrl, writer);
             }
@@ -157,7 +157,7 @@ namespace Kiota.Builder.Writers.CSharp {
             var parametersList = new CodeParameter[] { requestParams.requestBody, requestParams.queryString, requestParams.headers, requestParams.options }
                                 .Select(x => x?.Name).Where(x => x != null).Aggregate((x,y) => $"{x}, {y}");
             writer.WriteLine($"var requestInfo = {generatorMethodName}({parametersList});");
-            writer.WriteLine($"{(isVoid ? string.Empty : "return ")}await HttpCore.{GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnType)}(requestInfo, responseHandler);");
+            writer.WriteLine($"{(isVoid ? string.Empty : "return ")}await RequestAdapter.{GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnType)}(requestInfo, responseHandler);");
         }
         private const string RequestInfoVarName = "requestInfo";
         private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer) {
@@ -167,7 +167,7 @@ namespace Kiota.Builder.Writers.CSharp {
             var currentPathProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.CurrentPath).FirstOrDefault();
             var pathSegmentProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.PathSegment).FirstOrDefault();
             var rawUrlProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.RawUrl).FirstOrDefault();
-            var httpCoreProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.HttpCore).FirstOrDefault();
+            var requestAdapterProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.RequestAdapter).FirstOrDefault();
             writer.WriteLine($"var {RequestInfoVarName} = new RequestInformation {{");
             writer.IncreaseIndent();
             writer.WriteLine($"HttpMethod = HttpMethod.{operationName?.ToUpperInvariant()},");
@@ -178,7 +178,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({requestParams.requestBody.Name});");
                 else
-                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable({httpCoreProperty.Name.ToFirstCharacterUpperCase()}, \"{codeElement.ContentType}\", {requestParams.requestBody.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable({requestAdapterProperty.Name.ToFirstCharacterUpperCase()}, \"{codeElement.ContentType}\", {requestParams.requestBody.Name});");
             }
             if(requestParams.queryString != null) {
                 writer.WriteLine($"if ({requestParams.queryString.Name} != null) {{");
@@ -192,7 +192,7 @@ namespace Kiota.Builder.Writers.CSharp {
             if(requestParams.headers != null)
                 writer.WriteLine($"{requestParams.headers.Name}?.Invoke({RequestInfoVarName}.Headers);");
             if(requestParams.options != null)
-                writer.WriteLine($"{RequestInfoVarName}.AddMiddlewareOptions({requestParams.options.Name}?.ToArray());");
+                writer.WriteLine($"{RequestInfoVarName}.AddRequestOptions({requestParams.options.Name}?.ToArray());");
             writer.WriteLine($"return {RequestInfoVarName};");
         }
         private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"{property.Name.ToFirstCharacterUpperCase()}";

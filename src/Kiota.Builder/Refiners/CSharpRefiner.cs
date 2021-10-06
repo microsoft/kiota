@@ -72,10 +72,10 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
         }
         private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
-            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.HttpCore),
-                "Microsoft.Kiota.Abstractions", "IHttpCore"),
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
+                "Microsoft.Kiota.Abstractions", "IRequestAdapter"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-                "Microsoft.Kiota.Abstractions", "HttpMethod", "RequestInformation", "IMiddlewareOption"),
+                "Microsoft.Kiota.Abstractions", "HttpMethod", "RequestInformation", "IRequestOption"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
                 "Microsoft.Kiota.Abstractions", "IResponseHandler"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),

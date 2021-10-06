@@ -40,7 +40,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         public void WritesIndexer() {
             writer.Write(indexer);
             var result = tw.ToString();
-            Assert.Contains("HttpCore", result);
+            Assert.Contains("RequestAdapter", result);
             Assert.Contains("PathSegment", result);
             Assert.Contains("+ position", result);
             Assert.Contains("public SomeRequestBuilder this[string position]", result);

@@ -40,7 +40,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains($"return new {TypeName}", result);
-            Assert.Contains("this.httpCore", result);
+            Assert.Contains("this.requestAdapter", result);
             Assert.Contains("this.pathSegment", result);
         }
         [Fact]

@@ -11,7 +11,7 @@ namespace Kiota.Builder
         ResponseHandler,
         RequestBody,
         SetterValue,
-        HttpCore,
+        RequestAdapter,
         CurrentPath,
         Options,
         Serializer,

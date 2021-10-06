@@ -7,10 +7,10 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Kiota.Http.HttpClient.Extensions;
-using Microsoft.Kiota.Http.HttpClient.Middleware.Options;
+using Microsoft.Kiota.Http.HttpClientLibrary.Extensions;
+using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
 
-namespace Microsoft.Kiota.Http.HttpClient.Middleware
+namespace Microsoft.Kiota.Http.HttpClientLibrary.Middleware
 {
     /// <summary>
     /// A <see cref="DelegatingHandler"/> implementation for handling redirection of requests.
@@ -18,7 +18,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
     public class RedirectHandler: DelegatingHandler
     {
         /// <summary>
-        /// Constructs a new <see cref="RedirectHandler"/> 
+        /// Constructs a new <see cref="RedirectHandler"/>
         /// </summary>
         /// <param name="redirectOption">An OPTIONAL <see cref="RedirectHandlerOption"/> to configure <see cref="RedirectHandler"/></param>
         public RedirectHandler(RedirectHandlerOption redirectOption = null)
@@ -44,7 +44,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
         {
             if(httpRequestMessage == null) throw new ArgumentNullException(nameof(httpRequestMessage));
 
-            RedirectOption = httpRequestMessage.GetMiddlewareOption<RedirectHandlerOption>() ?? RedirectOption;
+            RedirectOption = httpRequestMessage.GetRequestOption<RedirectHandlerOption>() ?? RedirectOption;
 
             // send request first time to get response
             var response = await base.SendAsync(httpRequestMessage, cancellationToken);
@@ -66,7 +66,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
                     // Drain response content to free responses.
                     await response.Content.ReadAsByteArrayAsync(cancellationToken);
 
-                    // general clone request with internal CloneAsync (see CloneAsync for details) extension method 
+                    // general clone request with internal CloneAsync (see CloneAsync for details) extension method
                     var newRequest = await response.RequestMessage.CloneAsync();
 
                     // status code == 303: change request method from post to get and content to be null

@@ -2,12 +2,12 @@
 using System.Net.Http;
 using Microsoft.Kiota.Abstractions;
 
-namespace Microsoft.Kiota.Http.HttpClient.Middleware.Options
+namespace Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options
 {
     /// <summary>
-    /// The Telemetry middleware option class
+    /// The Telemetry request option class
     /// </summary>
-    public class TelemetryHandlerOption : IMiddlewareOption
+    public class TelemetryHandlerOption : IRequestOption
     {
         /// <summary>
         /// A delegate that's called to configure the <see cref="HttpRequestMessage"/> with the appropriate telemetry values.

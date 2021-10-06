@@ -12,7 +12,7 @@ plugins {
     id 'maven-publish'
 }
 
-archivesBaseName = 'kiota-http-okhttp'
+archivesBaseName = 'kiota-http-okhttplibrary'
 
 repositories {
     // Use Maven Central for resolving dependencies.
@@ -36,7 +36,7 @@ dependencies {
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation 'com.google.guava:guava:30.1.1-jre'
     api 'com.squareup.okhttp3:okhttp:4.9.1'
-    api 'com.microsoft.kiota:kiota-abstractions:1.0.20'
+    api 'com.microsoft.kiota:kiota-abstractions:1.0.21'
 }
 
 publishing {
@@ -52,8 +52,8 @@ publishing {
     }
     publications {
         gpr(MavenPublication) {
-            artifactId 'kiota-http-okhttp'
-            version '1.0.9'
+            artifactId 'kiota-http-okhttplibrary'
+            version '1.0.10'
             from(components.java)
         }
     }

@@ -15,7 +15,7 @@ import javax.annotation.Nullable;
 
 import com.microsoft.kiota.serialization.Parsable;
 import com.microsoft.kiota.serialization.SerializationWriter;
-import com.microsoft.kiota.HttpCore;
+import com.microsoft.kiota.RequestAdapter;
 
 /** This class represents an abstract HTTP request. */
 public class RequestInformation {
@@ -69,30 +69,30 @@ public class RequestInformation {
     /** The Request Body. */
     @Nullable
     public InputStream content;
-    private HashMap<String, MiddlewareOption> _middlewareOptions = new HashMap<>();
+    private HashMap<String, RequestOption> _requestOptions = new HashMap<>();
     /**
-     * Gets the middleware options for this request. Options are unique by type. If an option of the same type is added twice, the last one wins.
-     * @return the middleware options for this request.
+     * Gets the request options for this request. Options are unique by type. If an option of the same type is added twice, the last one wins.
+     * @return the request options for this request.
      */
-    public Collection<MiddlewareOption> getMiddlewareOptions() { return _middlewareOptions.values(); }
+    public Collection<RequestOption> getRequestOptions() { return _requestOptions.values(); }
     /**
-     * Adds a middleware option to this request.
-     * @param option the middleware option to add.
+     * Adds a request option to this request.
+     * @param option the request option to add.
      */
-    public void addMiddlewareOptions(@Nullable final MiddlewareOption... options) { 
+    public void addRequestOptions(@Nullable final RequestOption... options) { 
         if(options == null || options.length == 0) return;
-        for(final MiddlewareOption option : options) {
-            _middlewareOptions.put(option.getClass().getCanonicalName(), option);
+        for(final RequestOption option : options) {
+            _requestOptions.put(option.getClass().getCanonicalName(), option);
         }
     }
     /**
-     * Removes a middleware option from this request.
-     * @param option the middleware option to remove.
+     * Removes a request option from this request.
+     * @param option the request option to remove.
      */
-    public void removeMiddlewareOptions(@Nullable final MiddlewareOption... options) {
+    public void removeRequestOptions(@Nullable final RequestOption... options) {
         if(options == null || options.length == 0) return;
-        for(final MiddlewareOption option : options) {
-            _middlewareOptions.remove(option.getClass().getCanonicalName());
+        for(final RequestOption option : options) {
+            _requestOptions.remove(option.getClass().getCanonicalName());
         }
     }
     private static String binaryContentType = "application/octet-stream";
@@ -110,16 +110,16 @@ public class RequestInformation {
      * Sets the request body from a model with the specified content type.
      * @param values the models.
      * @param contentType the content type.
-     * @param httpCore The core service to get the serialization writer from.
+     * @param requestAdapter The adapter service to get the serialization writer from.
      * @param <T> the model type.
      */
-    public <T extends Parsable> void setContentFromParsable(@Nonnull final HttpCore httpCore, @Nonnull final String contentType, @Nonnull final T... values) {
-        Objects.requireNonNull(httpCore);
+    public <T extends Parsable> void setContentFromParsable(@Nonnull final RequestAdapter requestAdapter, @Nonnull final String contentType, @Nonnull final T... values) {
+        Objects.requireNonNull(requestAdapter);
         Objects.requireNonNull(values);
         Objects.requireNonNull(contentType);
         if(values.length == 0) throw new RuntimeException("values cannot be empty");
 
-        try(final SerializationWriter writer = httpCore.getSerializationWriterFactory().getSerializationWriter(contentType)) {
+        try(final SerializationWriter writer = requestAdapter.getSerializationWriterFactory().getSerializationWriter(contentType)) {
             headers.put(contentTypeHeader, contentType);
             if(values.length == 1) 
                 writer.writeObjectValue(null, values[0]);

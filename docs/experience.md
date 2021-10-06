@@ -6,7 +6,7 @@ Basic read and write syntax for a resource.
 
 ```csharp
 var authProvider = ; /** An authentication provider from the supported language table https://github.com/microsoft/kiota#supported-languages, or your own implementation **/
-var coreService = new HttpCore(authProvider);
+var coreService = new HttpClientRequestAdapter(authProvider);
 var client = new ApiClient(coreService);
 var user = await client.Users["bob@contoso.com"].GetAsync();
 
@@ -23,7 +23,7 @@ Resources are accessed via relation properties starting from the client object. 
 
 ```csharp
 var authProvider = ; /** An authentication provider from the supported language table https://github.com/microsoft/kiota#supported-languages, or your own implementation **/
-var coreService = new HttpCore(authProvider);
+var coreService = new HttpClientRequestAdapter(authProvider);
 var client = new ApiClient(coreService);
 var message = await client.Users["bob@contoso.com"]
                           .MailFolders["Inbox"]
@@ -38,7 +38,7 @@ Requests can be further refined by providing query parameters. Each HTTP operati
 
 ```csharp
 var authProvider = ; /** An authentication provider from the supported language table https://github.com/microsoft/kiota#supported-languages, or your own implementation **/
-var coreService = new HttpCore(authProvider);
+var coreService = new HttpClientRequestAdapter(authProvider);
 var client = new ApiClient(coreService);
 var message = await client.Users["bob@contoso.com"]
                           .Events

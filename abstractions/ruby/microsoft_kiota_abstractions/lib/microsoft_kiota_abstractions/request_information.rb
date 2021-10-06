@@ -52,9 +52,9 @@ module MicrosoftKiotaAbstractions
       @headers[@@content_type_header] = @@binary_content_type
     end
 
-    def set_content_from_parsable(serializer_factory, content_type, values)
+    def set_content_from_parsable(request_adapter, content_type, values)
       begin
-        writer  = serializer_factory.get_serialization_writer(content_type)
+        writer  = request_adapter.get_serialization_writer_factory().get_serialization_writer(content_type)
         headers[@@content_type_header] = content_type
         if values != nil && values.kind_of?(Array)
           writer.write_collection_of_object_values(nil, values)

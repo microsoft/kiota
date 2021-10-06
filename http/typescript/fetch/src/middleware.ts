@@ -1,4 +1,4 @@
-import { MiddlewareOption } from "@microsoft/kiota-abstractions";
+import { RequestOption } from "@microsoft/kiota-abstractions";
 
 /** Defines the contract for a middleware in the request execution pipeline. */
 export interface Middleware {
@@ -10,5 +10,5 @@ export interface Middleware {
      * @param url The URL of the request.
      * @return A promise that resolves to the response object.
      */
-    execute(url: string, req: RequestInit, middlewareOptions?: MiddlewareOption[]): Promise<Response>;
+    execute(url: string, req: RequestInit, requestOptions?: RequestOption[]): Promise<Response>;
 }

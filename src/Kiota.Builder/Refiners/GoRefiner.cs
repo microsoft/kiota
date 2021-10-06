@@ -143,10 +143,10 @@ namespace Kiota.Builder.Refiners {
         }
         private static readonly GoConventionService conventions = new();
         private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
-            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.HttpCore),
-                "github.com/microsoft/kiota/abstractions/go", "HttpCore"),
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
+                "github.com/microsoft/kiota/abstractions/go", "RequestAdapter"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-                "github.com/microsoft/kiota/abstractions/go", "RequestInformation", "HttpMethod", "MiddlewareOption"),
+                "github.com/microsoft/kiota/abstractions/go", "RequestInformation", "HttpMethod", "RequestOption"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
                 "github.com/microsoft/kiota/abstractions/go", "ResponseHandler"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.QueryParameters),
@@ -172,7 +172,7 @@ namespace Kiota.Builder.Refiners {
                     currentMethod.ReturnType.IsNullable = true;
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => {
                     x.Type.IsNullable = false;
-                    x.Type.Name = "MiddlewareOption";
+                    x.Type.Name = "RequestOption";
                     x.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
                 });
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.QueryParameter)).ToList().ForEach(x => x.Type.Name = $"{parentClass.Name}{x.Type.Name}");
@@ -183,7 +183,7 @@ namespace Kiota.Builder.Refiners {
                 currentMethod.ReturnType.Name = "map[string]func(interface{}, i04eb5309aeaafadd28374d79c8471df9b267510b4dc2e3144c378c50f6fd7b55.ParseNode)(error)";
                 currentMethod.Name = "getFieldDeserializers";
             } else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor))
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore))
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter))
                     .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                     .ToList()
                     .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
@@ -192,8 +192,8 @@ namespace Kiota.Builder.Refiners {
         }
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if (currentProperty.Type != null) {
-                if(currentProperty.IsOfKind(CodePropertyKind.HttpCore))
-                    currentProperty.Type.Name = "HttpCore";
+                if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))
+                    currentProperty.Type.Name = "RequestAdapter";
                 else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
                     currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
                 else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase)) {

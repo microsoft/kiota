@@ -58,7 +58,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             var result = tw.ToString();
             Assert.Contains($"def {PropertyName.ToSnakeCase()}", result);
             Assert.Contains($"{RootNamespaceName}::{TypeName}.new", result);
-            Assert.Contains("http_core", result);
+            Assert.Contains("request_adapter", result);
             Assert.Contains("path_segment", result);
         }
         [Fact]
@@ -68,7 +68,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             var result = tw.ToString();
             Assert.Contains($"def {PropertyName.ToSnakeCase()}", result);
             Assert.Contains($"{TypeName}.new", result);
-            Assert.Contains("http_core", result);
+            Assert.Contains("request_adapter", result);
             Assert.Contains("path_segment", result);
             Assert.DoesNotContain($"::{TypeName}.new", result);
         }

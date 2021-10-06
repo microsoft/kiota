@@ -43,8 +43,8 @@ namespace Kiota.Builder.Writers.Java.Tests {
         }
         private void AddRequestProperties() {
             parentClass.AddProperty(new CodeProperty {
-                Name = "httpCore",
-                PropertyKind = CodePropertyKind.HttpCore,
+                Name = "requestAdapter",
+                PropertyKind = CodePropertyKind.RequestAdapter,
             });
             parentClass.AddProperty(new CodeProperty {
                 Name = "isRawUrl",
@@ -196,7 +196,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             Assert.Contains("h.accept(requestInfo.headers)", result);
             Assert.Contains("AddQueryParameters", result);
             Assert.Contains("setContentFromParsable", result);
-            Assert.Contains("addMiddlewareOptions", result);
+            Assert.Contains("addRequestOptions", result);
             Assert.Contains("return requestInfo;", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
@@ -213,7 +213,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             Assert.DoesNotContain("h.accept(requestInfo.headers)", result);
             Assert.DoesNotContain("AddQueryParameters", result);
             Assert.DoesNotContain("setContentFromParsable", result);
-            Assert.DoesNotContain("addMiddlewareOptions", result);
+            Assert.DoesNotContain("addRequestOptions", result);
             Assert.DoesNotContain("return requestInfo;", result);
             Assert.Contains("return methodName(b, q, h, o)", result);
             AssertExtensions.CurlyBracesAreClosed(result);
@@ -389,7 +389,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             method.PathSegment = "somePath";
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("httpCore", result);
+            Assert.Contains("requestAdapter", result);
             Assert.Contains("pathSegment", result);
             Assert.Contains("+ id", result);
             Assert.Contains("return new", result);
@@ -408,7 +408,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             });
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("httpCore", result);
+            Assert.Contains("requestAdapter", result);
             Assert.Contains("pathSegment", result);
             Assert.Contains("pathParam", result);
             Assert.Contains("return new", result);
@@ -483,7 +483,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             method.MethodKind = CodeMethodKind.ClientConstructor;
             var coreProp = parentClass.AddProperty(new CodeProperty {
                 Name = "core",
-                PropertyKind = CodePropertyKind.HttpCore,
+                PropertyKind = CodePropertyKind.RequestAdapter,
             }).First();
             coreProp.Type = new CodeType {
                 Name = "HttpCore",
@@ -491,7 +491,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             };
             method.AddParameter(new CodeParameter {
                 Name = "core",
-                ParameterKind = CodeParameterKind.HttpCore,
+                ParameterKind = CodeParameterKind.RequestAdapter,
                 Type = coreProp.Type,
             });
             method.DeserializerModules = new() {"com.microsoft.kiota.serialization.Deserializer"};
@@ -507,7 +507,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             method.MethodKind = CodeMethodKind.ClientConstructor;
             var coreProp = parentClass.AddProperty(new CodeProperty {
                 Name = "core",
-                PropertyKind = CodePropertyKind.HttpCore,
+                PropertyKind = CodePropertyKind.RequestAdapter,
             }).First();
             coreProp.Type = new CodeType {
                 Name = "HttpCore",
@@ -515,7 +515,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             };
             method.AddParameter(new CodeParameter {
                 Name = "core",
-                ParameterKind = CodeParameterKind.HttpCore,
+                ParameterKind = CodeParameterKind.RequestAdapter,
                 Type = coreProp.Type,
             });
             var backingStoreParam = new CodeParameter {
