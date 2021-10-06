@@ -10,10 +10,6 @@ namespace Kiota.Builder.Extensions.Tests {
             Assert.False(OpenApiUrlTreeNodeExtensions.IsComplexPathWithAnyNumberOfParameters(null));
             Assert.False(OpenApiUrlTreeNodeExtensions.IsPathSegmentWithSingleSimpleParameter((OpenApiUrlTreeNode)null));
             Assert.False(OpenApiUrlTreeNodeExtensions.DoesNodeBelongToItemSubnamespace(null));
-            Assert.Empty(OpenApiUrlTreeNodeExtensions.GetComponentsReferenceIndex(null, null));
-            Assert.Empty(OpenApiUrlTreeNodeExtensions.GetComponentsReferenceIndex(null, Label));
-            Assert.Empty(OpenApiUrlTreeNodeExtensions.GetComponentsReferenceIndex(OpenApiUrlTreeNode.Create(), null));
-            Assert.Empty(OpenApiUrlTreeNodeExtensions.GetComponentsReferenceIndex(OpenApiUrlTreeNode.Create(), Label));
             Assert.Null(OpenApiUrlTreeNodeExtensions.GetPathItemDescription(null, null));
             Assert.Null(OpenApiUrlTreeNodeExtensions.GetPathItemDescription(null, Label));
             Assert.Null(OpenApiUrlTreeNodeExtensions.GetPathItemDescription(OpenApiUrlTreeNode.Create(), null));

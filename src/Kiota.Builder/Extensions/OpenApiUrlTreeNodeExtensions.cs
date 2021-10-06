@@ -7,37 +7,6 @@ using Microsoft.OpenApi.Services;
 
 namespace Kiota.Builder.Extensions {
     public static class OpenApiUrlTreeNodeExtensions {
-
-        // where component id and the value is the set of openapiurlNode referencing it
-        public static Dictionary<string, HashSet<OpenApiUrlTreeNode>> GetComponentsReferenceIndex(this OpenApiUrlTreeNode rootNode, string label) {
-            var result = new Dictionary<string, HashSet<OpenApiUrlTreeNode>>(StringComparer.OrdinalIgnoreCase);
-            AddAllPathsEntries(rootNode, result, label);
-            return result;
-        }
-        private static void AddAllPathsEntries(OpenApiUrlTreeNode currentNode, Dictionary<string, HashSet<OpenApiUrlTreeNode>> index, string label) {
-            if(currentNode == null || string.IsNullOrEmpty(label))
-                return;
-            
-            if(currentNode.PathItems.ContainsKey(label) && currentNode.HasOperations(label)) {
-                var nodeOperations = currentNode.PathItems[label].Operations.Values;
-                var requestSchemasFirstLevel = nodeOperations.SelectMany(x => x.RequestBody?.Content?.Values?.Select(y => y.Schema) ?? Enumerable.Empty<OpenApiSchema>());
-                var responseSchemasFirstLevel = nodeOperations.SelectMany(x => 
-                                                    x?.Responses?.Values?.SelectMany(y => 
-                                                                    y?.Content?.Values?.Select(z => z.Schema) ?? Enumerable.Empty<OpenApiSchema>()) ?? Enumerable.Empty<OpenApiSchema>());
-                var operationFirstLevelSchemas = requestSchemasFirstLevel.Union(responseSchemasFirstLevel);
-
-                operationFirstLevelSchemas.SelectMany(x => x.GetSchemaReferenceIds()).ToList().ForEach(x => {
-                    if(index.TryGetValue(x, out var entry))
-                        entry.Add(currentNode);
-                    else
-                        index.Add(x, new(new [] { currentNode}));
-                });
-            }
-            
-            if(currentNode.Children != null)
-                foreach(var child in currentNode.Children.Values)
-                    AddAllPathsEntries(child, index, label);
-        }
         private static string GetDotIfBothNotNullOfEmpty(string x, string y) => string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) ? string.Empty : ".";
         private static readonly Func<string, string> replaceSingleParameterSegementByItem =
         x => x.IsPathSegmentWithSingleSimpleParameter() ? "item" : x;
@@ -122,7 +91,32 @@ namespace Kiota.Builder.Extensions {
         }
         public static string GetUrlTemplate(this OpenApiUrlTreeNode currentNode, string rootUrl) {
             if(string.IsNullOrEmpty(rootUrl)) throw new ArgumentNullException(nameof(rootUrl));
-            return rootUrl + currentNode.Path.Replace('\\', '/'); //TODO explode path items and operation parameters
+            var queryStringParameters = string.Empty;
+            if(currentNode.HasOperations(Constants.DefaultOpenApiLabel))
+            {
+                var pathItem = currentNode.PathItems[Constants.DefaultOpenApiLabel];
+                var parameters = pathItem.Parameters.Where(x => x.In == ParameterLocation.Query).ToList();
+                parameters.AddRange(pathItem.Operations.SelectMany(x => x.Value.Parameters).Where(x => x.In == ParameterLocation.Query));
+                if(parameters.Any())
+                    queryStringParameters = "{?" + 
+                                            parameters.Select(x => 
+                                                                x.Name.TrimStart('$') +
+                                                                (x.Explode ? 
+                                                                    "*" : string.Empty))
+                                                    .Aggregate((x, y) => $"{x},{y}") +
+                                            '}';
+            }
+            return rootUrl + 
+                    SanitizePathParameterNames(currentNode.Path.Replace('\\', '/')) +
+                    queryStringParameters;
+        }
+        private static readonly Regex pathParamMatcher = new(@"{[\w-]+}");
+        private static string SanitizePathParameterNames(string original) {
+            if(string.IsNullOrEmpty(original) || !original.Contains('{')) return original;
+            var parameters = pathParamMatcher.Matches(original);
+            foreach(Match parameter in parameters)
+                original = original.Replace(parameter.Value, parameter.Value.Replace('-', '_'));
+            return original;
         }
     }
 }

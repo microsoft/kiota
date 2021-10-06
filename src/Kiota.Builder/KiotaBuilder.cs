@@ -482,10 +482,10 @@ namespace Kiota.Builder
             return new CodeIndexer
             {
                 Name = childIdentifier,
-                Description = $"Gets an item from the {currentNode.GetNodeNamespaceFromPath(this.config.ClientNamespaceName)} collection",
+                Description = $"Gets an item from the {currentNode.GetNodeNamespaceFromPath(config.ClientNamespaceName)} collection",
                 IndexType = new CodeType { Name = "string", IsExternal = true, },
                 ReturnType = new CodeType { Name = childType },
-                ParameterName = currentNode.Segment.TrimStart('{').TrimEnd('}'),
+                ParameterName = currentNode.Segment.SanitizeUrlTemplateParameterName().TrimStart('{').TrimEnd('}'),
             };
         }
 

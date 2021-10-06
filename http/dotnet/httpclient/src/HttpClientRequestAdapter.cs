@@ -204,12 +204,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
             var message = new HttpRequestMessage
             {
                 Method = new System.Net.Http.HttpMethod(requestInfo.HttpMethod.ToString().ToUpperInvariant()),
-                RequestUri = new Uri(requestInfo.URI +
-                                        ((requestInfo.QueryParameters?.Any() ?? false) ?
-                                            "?" + requestInfo.QueryParameters
-                                                        .Select(x => $"{x.Key}{(x.Value == null ? string.Empty : "=")}{GetStringForQueryParameter(x.Value)}")
-                                                        .Aggregate((x, y) => $"{x}&{y}") :
-                                            string.Empty)),
+                RequestUri = requestInfo.URI,
             };
 
             if(requestInfo.RequestOptions.Any())

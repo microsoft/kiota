@@ -38,7 +38,8 @@ namespace Microsoft.Kiota.Abstractions
                         parsedUrlTemplate.SetParameter(urlTemplateParameter.Key, urlTemplateParameter.Value);
 
                     foreach(var queryStringParameter in QueryParameters)
-                        parsedUrlTemplate.SetParameter(queryStringParameter.Key, queryStringParameter.Value);
+                        if(queryStringParameter.Value != null)
+                            parsedUrlTemplate.SetParameter(queryStringParameter.Key, queryStringParameter.Value);
                     return new Uri(parsedUrlTemplate.Resolve());
                 }
             }
