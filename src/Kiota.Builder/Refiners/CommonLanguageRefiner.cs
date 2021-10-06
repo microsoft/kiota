@@ -336,11 +336,12 @@ namespace Kiota.Builder.Refiners {
                                         urlTemplate.Trim('\"').TrimStart('/'),
                                         methodNameSuffix,
                                         currentIndexer.Description,
-                                        parameterNullable);
+                                        parameterNullable,
+                                        currentIndexer);
             }
             CrawlTree(currentElement, c => ReplaceIndexersByMethodsWithParameter(c, rootNamespace, parameterNullable, methodNameSuffix));
         }
-        private static void AddIndexerMethod(CodeElement currentElement, CodeClass targetClass, CodeClass indexerClass, string pathSegment, string methodNameSuffix, string description, bool parameterNullable) {
+        private static void AddIndexerMethod(CodeElement currentElement, CodeClass targetClass, CodeClass indexerClass, string pathSegment, string methodNameSuffix, string description, bool parameterNullable, CodeIndexer currentIndexer) {
             if(currentElement is CodeProperty currentProperty && currentProperty.Type.AllTypes.Any(x => x.TypeDefinition == targetClass)) {
                 var parentClass = currentElement.Parent as CodeClass;
                 var method = new CodeMethod {
@@ -355,6 +356,7 @@ namespace Kiota.Builder.Refiners {
                         TypeDefinition = indexerClass,
                         Name = indexerClass.Name,
                     },
+                    OriginalIndexer = currentIndexer,
                 };
                 var parameter = new CodeParameter {
                     Name = "id",
@@ -370,7 +372,7 @@ namespace Kiota.Builder.Refiners {
                 method.AddParameter(parameter);
                 parentClass.AddMethod(method);
             }
-            CrawlTree(currentElement, c => AddIndexerMethod(c, targetClass, indexerClass, pathSegment, methodNameSuffix, description, parameterNullable));
+            CrawlTree(currentElement, c => AddIndexerMethod(c, targetClass, indexerClass, pathSegment, methodNameSuffix, description, parameterNullable, currentIndexer));
         }
         internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName) {
             if(current is CodeClass currentClass) {

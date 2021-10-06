@@ -118,7 +118,7 @@ namespace Kiota.Builder.Writers.Ruby {
             var urlTemplateParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
             var prefix = conventions.GetNormalizedNamespacePrefixForType(codeElement.ReturnType);
             writer.WriteLines($"{TempMapVarName} = @{urlTemplateParametersProperty.Name.ToSnakeCase()}.clone",
-                            $"{TempMapVarName}[\"position\"] = id"); //TODO get the parameter name from the path segment
+                            $"{TempMapVarName}[\"{codeElement.OriginalIndexer.ParameterName}\"] = id");
             conventions.AddRequestBuilderBody(parentClass, returnType, writer, TempMapVarName, $"return {prefix}");
         }
         private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer) {

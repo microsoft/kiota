@@ -78,7 +78,7 @@ namespace Kiota.Builder.Writers.TypeScript {
         private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer) {
             var urlTemplateParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
             writer.WriteLines($"const {TempMapVarName} = new {urlTemplateParametersProperty.Type.Name}(...this.{urlTemplateParametersProperty.Name});",
-                            $"{TempMapVarName}.set(\"position\", id);");//TODO read the parameter name for segment path
+                            $"{TempMapVarName}.set(\"{codeElement.OriginalIndexer.ParameterName}\", id);");
             localConventions.AddRequestBuilderBody(parentClass, returnType, writer, TempMapVarName);
         }
         private void WriteRequestBuilderWithParametersBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer)

@@ -222,7 +222,7 @@ namespace Kiota.Builder.Writers.Go {
             writer.WriteLine($"{TempMapVarName}[idx] = item");
             writer.DecreaseIndent();
             writer.WriteLines("}",
-                            $"{TempMapVarName}[\"position\"] = id"); //TODO get the parameter name from path segment
+                            $"{TempMapVarName}[\"{codeElement.OriginalIndexer.ParameterName}\"] = id");
             conventions.AddRequestBuilderBody(parentClass, returnType, writer, urlTemplateVarName: TempMapVarName);
         }
         private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {

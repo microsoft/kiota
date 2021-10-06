@@ -172,7 +172,7 @@ namespace Kiota.Builder.Writers.Java {
             var urlTemplateParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
             var mapTypeName = urlTemplateParametersProperty.Type.Name;
             writer.WriteLines($"final {mapTypeName} {TempMapVarName} = ({mapTypeName})this.{urlTemplateParametersProperty.Name}.clone();",
-                            $"{TempMapVarName}.put(\"position\", id.toString());"); //TODO read parameter name from path segment
+                            $"{TempMapVarName}.put(\"{codeElement.OriginalIndexer.ParameterName}\", id.toString());");
             conventions.AddRequestBuilderBody(parentClass, returnType, writer, TempMapVarName);
         }
         private void WriteDeserializerBody(CodeMethod codeElement, CodeMethod method, CodeClass parentClass, LanguageWriter writer) {
