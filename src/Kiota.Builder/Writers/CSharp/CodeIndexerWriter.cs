@@ -6,7 +6,6 @@ namespace Kiota.Builder.Writers.CSharp {
     public class CodeIndexerWriter : BaseElementWriter<CodeIndexer, CSharpConventionService>
     {
         public CodeIndexerWriter(CSharpConventionService conventionService) : base(conventionService) {}
-        private const string TempDictionaryVarName = "urlTplParams";
         public override void WriteCodeElement(CodeIndexer codeElement, LanguageWriter writer)
         {
             var parentClass = codeElement.Parent as CodeClass;
@@ -15,10 +14,10 @@ namespace Kiota.Builder.Writers.CSharp {
             conventions.WriteShortDescription(codeElement.Description, writer);
             writer.WriteLine($"public {returnType} this[{conventions.GetTypeString(codeElement.IndexType, codeElement)} position] {{ get {{");
             writer.IncreaseIndent();
-            var stringSuffix = codeElement.IndexType.Name.Equals("string", StringComparison.OrdinalIgnoreCase) ? string.Empty : ".ToString()";
-            writer.WriteLines($"var {TempDictionaryVarName} = new {urlTemplateParametersProp.Type.Name}({urlTemplateParametersProp.Name.ToFirstCharacterUpperCase()});",
-                                $"{TempDictionaryVarName}.Add(\"{codeElement.ParameterName}\", position{stringSuffix});");
-            conventions.AddRequestBuilderBody(parentClass, returnType, writer, TempDictionaryVarName, "return ");
+            conventions.AddParametersAssignment(writer, urlTemplateParametersProp, new (CodeTypeBase, string, string)[] {
+                (codeElement.IndexType, codeElement.ParameterName, "position")
+            });
+            conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, "return ");
             writer.DecreaseIndent();
             writer.WriteLine("} }");
         }

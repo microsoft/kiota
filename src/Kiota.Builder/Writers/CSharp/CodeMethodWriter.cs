@@ -89,7 +89,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 foreach(var serializationClassName in serializationClassNames)
                     writer.WriteLine($"ApiClientBuilder.{methodName}<{serializationClassName}>();");
         }
-        private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer) {
+        private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer) {
             foreach(var propWithDefault in parentClass
                                             .Properties
                                             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
@@ -97,16 +97,28 @@ namespace Kiota.Builder.Writers.CSharp {
                                             .ThenBy(x => x.Name)) {
                 writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterUpperCase()} = {propWithDefault.DefaultValue};");
             }
+            var pathParameters = currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path));
+            var urlTemplateParametersProp = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
+            conventions.AddParametersAssignment(writer, 
+                                                urlTemplateParametersProp,
+                                                currentMethod.Parameters
+                                                            .Where(x => x.IsOfKind(CodeParameterKind.Path))
+                                                            .Select(x => (x.Type, x.UrlTemplateParameterName, x.Name.ToFirstCharacterLowerCase()))
+                                                            .ToArray());
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
-                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.UrlTemplateParameters, CodePropertyKind.UrlTemplateParameters, writer);
+                var tempParametersVarName = urlTemplateParametersProp == null ? string.Empty : conventions.TempDictionaryVarName;
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.UrlTemplateParameters, CodePropertyKind.UrlTemplateParameters, writer, tempParametersVarName);
             }
         }
-        private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
+        private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer, string variableName = default) {
             var property = parentClass.GetPropertyOfKind(propertyKind);
-            var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
-            if(property != null && parameter != null) {
-                writer.WriteLine($"{property.Name.ToFirstCharacterUpperCase()} = {parameter.Name};");
+            if(property != null) {
+                var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
+                if(!string.IsNullOrEmpty(variableName))
+                    writer.WriteLine($"{property.Name.ToFirstCharacterUpperCase()} = {variableName};");
+                else if(parameter != null)
+                    writer.WriteLine($"{property.Name.ToFirstCharacterUpperCase()} = {parameter.Name};");
             }
         }
         private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {

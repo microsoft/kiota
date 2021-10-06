@@ -30,6 +30,10 @@ namespace Kiota.Builder
         public bool Optional {get;set;}= false;
         public string Description {get; set;}
         public string DefaultValue {get; set;}
+        /// <summary>
+        /// The name of the url template parameter this path parameter maps to.
+        /// </summary>
+        public string UrlTemplateParameterName { get; set; }
         public bool IsOfKind(params CodeParameterKind[] kinds) {
             return kinds?.Contains(ParameterKind) ?? false;
         }
@@ -42,7 +46,8 @@ namespace Kiota.Builder
                 Type = Type?.Clone() as CodeTypeBase,
                 Description = Description?.Clone() as string,
                 DefaultValue = DefaultValue?.Clone() as string,
-                Parent = Parent
+                Parent = Parent,
+                UrlTemplateParameterName = UrlTemplateParameterName?.Clone() as string,
             };
         }
     }

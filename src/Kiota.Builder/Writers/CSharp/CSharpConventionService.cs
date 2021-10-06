@@ -33,6 +33,16 @@ namespace Kiota.Builder.Writers.CSharp {
             var urlTplRef = urlTemplateVarName ?? urlTemplateParametersProp.Name.ToFirstCharacterUpperCase();
             writer.WriteLine($"{prefix}new {returnType}({urlTplRef}, {requestAdapterProp.Name.ToFirstCharacterUpperCase()}{pathParametersSuffix});");
         }
+        internal string TempDictionaryVarName = "urlTplParams";
+        internal void AddParametersAssignment(LanguageWriter writer, CodeProperty urlTemplateParametersProp, params (CodeTypeBase, string, string)[] parameters) {
+            if(urlTemplateParametersProp == null) return;
+            writer.WriteLine($"var {TempDictionaryVarName} = new {urlTemplateParametersProp.Type.Name}({urlTemplateParametersProp.Name.ToFirstCharacterUpperCase()});");
+            if(parameters.Any())
+                writer.WriteLines(parameters.Select(p => {
+                    var stringSuffix = p.Item1.Name.Equals("string", StringComparison.OrdinalIgnoreCase) ? string.Empty : ".ToString()";
+                    return $"{TempDictionaryVarName}.Add(\"{p.Item2}\", {p.Item3}{stringSuffix});";
+                }).ToArray());
+        }
         #pragma warning restore CA1822 // Method should be static
         internal bool ShouldTypeHaveNullableMarker(CodeTypeBase propType, string propTypeName) {
             return propType.IsNullable && (NullableTypes.Contains(propTypeName) || (propType is CodeType codeType && codeType.TypeDefinition is CodeEnum));
@@ -116,7 +126,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 _ when parameter.Optional => " = default",
                 _ => string.Empty,
             };
-            return $"{parameterType} {parameter.Name}{defaultValue}";
+            return $"{parameterType} {parameter.Name.ToFirstCharacterLowerCase()}{defaultValue}";
         }
     }
 }

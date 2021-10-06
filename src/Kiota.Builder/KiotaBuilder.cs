@@ -300,17 +300,21 @@ namespace Kiota.Builder
                 IsExternal = false,
                 IsNullable = false,
             };
-                foreach(var parameter in currentNode.GetPathParametersForCurrentSegment()) {
-                        var mParameter = new CodeParameter {
-                            Name = parameter.Name,
-                            Optional = false,
-                            Description = parameter.Description,
-                            ParameterKind = CodeParameterKind.Path,
-                        };
-                        mParameter.Type = GetPrimitiveType(parameter.Schema);
-                        methodToAdd.AddParameter(mParameter);
-                }
+            AddPathParametersToMethod(currentNode, methodToAdd, false);
             codeClass.AddMethod(methodToAdd);
+        }
+        private static void AddPathParametersToMethod(OpenApiUrlTreeNode currentNode, CodeMethod methodToAdd, bool asOptional) {
+            foreach(var parameter in currentNode.GetPathParametersForCurrentSegment()) {
+                var mParameter = new CodeParameter {
+                    Name = parameter.Name,
+                    Optional = asOptional,
+                    Description = parameter.Description,
+                    ParameterKind = CodeParameterKind.Path,
+                    UrlTemplateParameterName = parameter.Name,
+                };
+                mParameter.Type = GetPrimitiveType(parameter.Schema);
+                methodToAdd.AddParameter(mParameter);
+            }
         }
         private static readonly string urlTemplateParametersParameterName = "urlTemplateParameters";
         private void CreateUrlManagement(CodeClass currentClass, OpenApiUrlTreeNode currentNode, bool isApiClientClass) {
@@ -376,16 +380,7 @@ namespace Kiota.Builder
                     Description = urlTemplateParametersProperty.Description,
                     ParameterKind = CodeParameterKind.UrlTemplateParameters,
                 });
-                foreach(var parameter in currentNode.GetPathParametersForCurrentSegment()) {
-                    var mParameter = new CodeParameter {
-                        Name = parameter.Name,
-                        Optional = true,
-                        Description = parameter.Description,
-                        ParameterKind = CodeParameterKind.Path,
-                    };
-                    mParameter.Type = GetPrimitiveType(parameter.Schema);
-                    constructor.AddParameter(mParameter);
-                }
+                AddPathParametersToMethod(currentNode, constructor, true);
             }
             constructor.AddParameter(new CodeParameter {
                 Name = requestAdapterParameterName,
