@@ -1,6 +1,6 @@
-package com.microsoft.kiota.http.middlewareoption;
-import okhttp3.Request;
-import okhttp3.Response;
+package com.microsoft.kiota.http.middleware.options;
+
+import com.microsoft.kiota.http.middleware.IShouldRetry;
 
 import javax.annotation.Nullable;
 import javax.annotation.Nonnull;

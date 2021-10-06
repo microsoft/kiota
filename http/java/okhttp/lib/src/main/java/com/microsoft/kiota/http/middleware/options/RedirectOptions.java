@@ -1,6 +1,6 @@
-package com.microsoft.kiota.http.middlewareoption;
+package com.microsoft.kiota.http.middleware.options;
 
-import okhttp3.Response;
+import com.microsoft.kiota.http.middleware.IShouldRedirect;
 
 import javax.annotation.Nullable;
 import javax.annotation.Nonnull;

@@ -1,4 +1,4 @@
-package com.microsoft.kiota.http.middlewareoption;
+package com.microsoft.kiota.http.middleware;
 
 /**
  * The type of middleware to applied to the request/response

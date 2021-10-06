@@ -1,12 +1,12 @@
-package com.microsoft.kiota.http;
+package com.microsoft.kiota.http.middleware;
 
 import java.io.IOException;
 import java.util.concurrent.ThreadLocalRandom;
 
 import javax.annotation.Nonnull;
 
-import com.microsoft.kiota.http.middlewareoption.MiddlewareType;
-import com.microsoft.kiota.http.middlewareoption.TelemetryOptions;
+import com.microsoft.kiota.http.middleware.MiddlewareType;
+import com.microsoft.kiota.http.middleware.options.TelemetryOptions;
 
 import okhttp3.Interceptor;
 import okhttp3.MediaType;

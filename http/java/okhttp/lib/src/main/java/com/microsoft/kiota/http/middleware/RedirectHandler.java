@@ -1,4 +1,4 @@
-package com.microsoft.kiota.http;
+package com.microsoft.kiota.http.middleware;
 
 import static java.net.HttpURLConnection.HTTP_MOVED_PERM;
 import static java.net.HttpURLConnection.HTTP_MOVED_TEMP;
@@ -12,9 +12,9 @@ import java.net.ProtocolException;
 import javax.annotation.Nullable;
 import javax.annotation.Nonnull;
 
-import com.microsoft.kiota.http.middlewareoption.MiddlewareType;
-import com.microsoft.kiota.http.middlewareoption.RedirectOptions;
-import com.microsoft.kiota.http.middlewareoption.TelemetryOptions;
+import com.microsoft.kiota.http.middleware.MiddlewareType;
+import com.microsoft.kiota.http.middleware.options.RedirectOptions;
+import com.microsoft.kiota.http.middleware.options.TelemetryOptions;
 
 import okhttp3.HttpUrl;
 import okhttp3.Interceptor;

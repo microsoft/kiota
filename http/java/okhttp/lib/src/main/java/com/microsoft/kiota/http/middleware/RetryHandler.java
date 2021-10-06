@@ -1,4 +1,4 @@
-package com.microsoft.kiota.http;
+package com.microsoft.kiota.http.middleware;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -6,10 +6,10 @@ import java.util.Objects;
 import javax.annotation.Nullable;
 import javax.annotation.Nonnull;
 
-import com.microsoft.kiota.http.middlewareoption.IShouldRetry;
-import com.microsoft.kiota.http.middlewareoption.MiddlewareType;
-import com.microsoft.kiota.http.middlewareoption.RetryOptions;
-import com.microsoft.kiota.http.middlewareoption.TelemetryOptions;
+import com.microsoft.kiota.http.middleware.IShouldRetry;
+import com.microsoft.kiota.http.middleware.MiddlewareType;
+import com.microsoft.kiota.http.middleware.options.RetryOptions;
+import com.microsoft.kiota.http.middleware.options.TelemetryOptions;
 import com.microsoft.kiota.http.logger.DefaultLogger;
 import com.microsoft.kiota.http.logger.ILogger;
 

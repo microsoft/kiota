@@ -1,4 +1,4 @@
-package com.microsoft.kiota.http.middlewareoption;
+package com.microsoft.kiota.http.middleware.options;
 
 import java.util.Objects;
 import java.util.UUID;
