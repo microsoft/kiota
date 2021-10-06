@@ -9,15 +9,17 @@
  * @module FetchHandler
  */
 
-import fetch from "cross-fetch";
+import fetch from "node-fetch";
 import { MiddlewareContext } from "./middlewareContext";
 import { Middleware } from "./middleware";
+import { FetchResponse, FetchRequestInfo, FetchRequestInit } from "../utils/fetchDefinitions";
 
 /**
  * @class
  * @implements Middleware
  * Class for FetchHandler
  */
+
 export class FetchHandler implements Middleware {
 
     /**
@@ -26,7 +28,7 @@ export class FetchHandler implements Middleware {
 	 */
 	next: Middleware;
 
-    constructor(private customFetch?: (input: RequestInfo, init:RequestInit) => Promise<Response>) {};
+    constructor(private customFetch?: (input: FetchRequestInfo, init: FetchRequestInit) => Promise<Response>) {};
 
     /**
      * @public
@@ -37,10 +39,10 @@ export class FetchHandler implements Middleware {
      */
     public async execute(context: MiddlewareContext): Promise<void> {
         if (this.customFetch) {
-            context.response = await this.customFetch(context.request, context.options);
+            context.response = await this.customFetch(context.request, context.options) as FetchResponse;
         }
         else {
-            context.response = await fetch(context.request, context.options);
+            context.response = await fetch(context.request, context.options) as FetchResponse;
         } 
         return;
     }

@@ -15,7 +15,7 @@ import { MiddlewareOption } from "./middlewareOption";
  * @type
  * A type declaration for shouldRetry callback
  */
-export type ShouldRetry = (delay: number, attempt: number, request: RequestInfo, options: RequestInit | undefined, response: Response) => boolean;
+export type ShouldRetry = (delay: number, attempt: number, request: RequestInit, options: RequestInit | undefined, response: Response) => boolean;
 
 /**
  * @class

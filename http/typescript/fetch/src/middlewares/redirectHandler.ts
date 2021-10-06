@@ -14,6 +14,8 @@ import { MiddlewareContext } from "./middlewareContext";
 import { Middleware } from "./middleware";
 import { cloneRequestWithNewUrl } from "./middlewareUtil";
 import { RedirectHandlerOptions } from "./options/redirectHandlerOption";
+import {FetchResponse, FetchRequestInfo, FetchRequest} from "../utils/fetchDefinitions"
+
 
 /**
  * @class
@@ -61,7 +63,7 @@ export class RedirectHandler implements Middleware {
      * @static
      * A member holding the manual redirect value
      */
-    private static MANUAL_REDIRECT: RequestRedirect = "manual";
+    private static MANUAL_REDIRECT = "manual";
 
     /** Next middleware to be executed*/
     next: Middleware | undefined;
@@ -84,7 +86,7 @@ export class RedirectHandler implements Middleware {
      * @param {Response} response - The response object
      * @returns A boolean representing whether the response contains the redirect status code or not
      */
-    private isRedirect(response: Response): boolean {
+    private isRedirect(response: FetchResponse): boolean {
         return RedirectHandler.REDIRECT_STATUS_CODES.indexOf(response.status) !== -1;
     }
 
@@ -94,7 +96,7 @@ export class RedirectHandler implements Middleware {
      * @param {Response} response - The response object
      * @returns A boolean representing the whether the response has location header or not
      */
-    private hasLocationHeader(response: Response): boolean {
+    private hasLocationHeader(response: FetchResponse): boolean {
         return response.headers.has(RedirectHandler.LOCATION_HEADER);
     }
 
@@ -104,7 +106,7 @@ export class RedirectHandler implements Middleware {
      * @param {Response} response - The response object
      * @returns A redirect url from location header
      */
-    private getLocationHeader(response: Response): string {
+    private getLocationHeader(response: FetchResponse): string {
         return response.headers.get(RedirectHandler.LOCATION_HEADER);
     }
 
@@ -149,7 +151,7 @@ export class RedirectHandler implements Middleware {
      * @returns Nothing
      */
     private async updateRequestUrl(redirectUrl: string, context: MiddlewareContext): Promise<void> {
-        context.request = typeof context.request === "string" ? redirectUrl : await cloneRequestWithNewUrl(redirectUrl, context.request as Request);
+        context.request = typeof context.request === "string" ? redirectUrl : await cloneRequestWithNewUrl(redirectUrl, context.request);
     }
 
     /**
@@ -184,7 +186,7 @@ export class RedirectHandler implements Middleware {
         if (redirectCount < options.maxRedirects && this.isRedirect(response) && this.hasLocationHeader(response) && options.shouldRedirect(response)) {
             ++redirectCount;
             if (response.status === RedirectHandler.STATUS_CODE_SEE_OTHER) {
-                context.options.method = HttpMethod.GET;
+                context.options["method"] = HttpMethod.GET;
                 delete context.options.body;
             } else {
                 const redirectUrl: string = this.getLocationHeader(response);

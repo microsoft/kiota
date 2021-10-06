@@ -1,3 +1,4 @@
+import { FetchRequestInfo, FetchRequestInit, FetchResponse } from "../utils/fetchDefinitions";
 import { MiddlewareControl } from "./MiddlewareControl";
 
 /**
@@ -11,8 +12,8 @@ import { MiddlewareControl } from "./MiddlewareControl";
  */
 
 export interface MiddlewareContext {
-    request:RequestInfo,
-    response?: Response,
-    options?:RequestInit,
+    request:FetchRequestInfo,
+    response?: FetchResponse,
+    options?:FetchRequestInit,
     middlewareControl?: MiddlewareControl
 }

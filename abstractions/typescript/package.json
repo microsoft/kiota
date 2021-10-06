@@ -1,35 +1,35 @@
 {
-  "name": "@microsoft/kiota-abstractions",
-  "version": "1.0.19",
-  "description": "Core abstractions for kiota generated libraries in TypeScript and JavaScript",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "clean": "rm -r ./dist"
-  },
-  "repository": "git://github.com/microsoft/kiota.git",
-  "keywords": [
-    "kiota",
-    "openAPI",
-    "Microsoft",
-    "Graph"
-  ],
-  "author": "Microsoft",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/microsoft/kiota/issues"
-  },
-  "homepage": "https://github.com/microsoft/kiota#readme",
-  "devDependencies": {
-    "@types/uuid": "^8.3.1",
-    "typescript": "^4.4.3"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
-  "dependencies": {
-    "uuid": "^8.3.2"
-  }
+    "name": "@microsoft/kiota-abstractions",
+    "version": "1.0.19",
+    "description": "Core abstractions for kiota generated libraries in TypeScript and JavaScript",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc -p tsconfig.json",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "clean": "rm -r ./dist"
+    },
+    "repository": "git://github.com/microsoft/kiota.git",
+    "keywords": [
+        "kiota",
+        "openAPI",
+        "Microsoft",
+        "Graph"
+    ],
+    "author": "Microsoft",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/microsoft/kiota/issues"
+    },
+    "homepage": "https://github.com/microsoft/kiota#readme",
+    "devDependencies": {
+        "@types/uuid": "^8.3.1",
+        "typescript": "^4.4.3"
+    },
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com"
+    },
+    "dependencies": {
+        "uuid": "^8.3.2"
+    }
 }

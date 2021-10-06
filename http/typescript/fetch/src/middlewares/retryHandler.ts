@@ -15,6 +15,7 @@ import { Middleware } from "./middleware";
 import { getRequestHeader, setRequestHeader } from "./middlewareUtil";
 import { RetryHandlerOptions } from "./options/retryHandlerOptions";
 import { MiddlewareControl } from "./MiddlewareControl";
+import {FetchResponse, FetchRequestInit, FetchRequestInfo} from "../utils/fetchDefinitions"
 
 /**
  * @class
@@ -77,7 +78,7 @@ export class RetryHandler implements Middleware {
 	 * @param {Response} response - The response object
 	 * @returns Whether the response has retry status code or not
 	 */
-	private isRetry(response: Response): boolean {
+	private isRetry(response: FetchResponse): boolean {
 		return RetryHandler.RETRY_STATUS_CODES.indexOf(response.status) !== -1;
 	}
 
@@ -88,8 +89,8 @@ export class RetryHandler implements Middleware {
 	 * @param {RequestInit} options - The options of a request
 	 * @returns Whether the payload is buffered or not
 	 */
-	private isBuffered(request: RequestInfo, options: RequestInit | undefined): boolean {
-		const method = typeof request === "string" ? options.method : (request as Request).method;
+	private isBuffered(request: FetchRequestInfo, options: FetchRequestInit | undefined): boolean {
+		const method = typeof request === "string" ? options.method : request.method;
 		const isPutPatchOrPost: boolean = method === HttpMethod.PUT || method === HttpMethod.PATCH || method === HttpMethod.POST;
 		if (isPutPatchOrPost) {
 			const isStream = getRequestHeader(request, options, "Content-Type") === "application/octet-stream";
@@ -108,7 +109,7 @@ export class RetryHandler implements Middleware {
 	 * @param {number} delay - The delay value in seconds
 	 * @returns A delay for a retry
 	 */
-	private getDelay(response: Response, retryAttempts: number, delay: number): number {
+	private getDelay(response: FetchResponse, retryAttempts: number, delay: number): number {
 		const getRandomness = () => Number(Math.random().toFixed(3));
 		const retryAfter = response.headers !== undefined ? response.headers.get(RetryHandler.RETRY_AFTER_HEADER) : null;
 		let newDelay: number;
