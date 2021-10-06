@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [0.0.10] - 2021-10-06
+
+### Changed
+
 - Renames middlewareoption into requestoption to stay agnostic from implementation #635
 - Aligned http packages on naming convention #444
 
