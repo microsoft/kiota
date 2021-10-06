@@ -29,4 +29,4 @@ RUN wget -q https://packages.microsoft.com/config/ubuntu/20.04/packages-microsof
     && apt-get install -y powershell
 
 # install ruby
-RUN apt-get install ruby -y
+RUN apt-get install ruby-full bundler -y
