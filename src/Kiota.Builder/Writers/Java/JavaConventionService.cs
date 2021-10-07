@@ -84,7 +84,7 @@ namespace Kiota.Builder.Writers.Java {
             var urlTemplateParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
             var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             var urlTemplateParams = urlTemplateVarName ?? urlTemplateParametersProperty.Name;
-            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}";
+            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
             writer.WriteLines($"return new {returnType}({urlTemplateParams}, {requestAdapterProp.Name}{pathParametersSuffix});");
         }
         internal string TempDictionaryVarName = "urlTplParams";

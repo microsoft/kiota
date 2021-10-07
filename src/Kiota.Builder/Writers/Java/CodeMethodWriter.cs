@@ -89,7 +89,7 @@ namespace Kiota.Builder.Writers.Java {
         private static void AddNullChecks(CodeMethod codeElement, LanguageWriter writer) {
             if(!codeElement.IsOverload)
                 foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name))
-                    writer.WriteLine($"Objects.requireNonNull({parameter.Name});");
+                    writer.WriteLine($"Objects.requireNonNull({parameter.Name.ToFirstCharacterLowerCase()});");
         }
         private static void WriteRequestBuilderConstructorCall(CodeMethod codeElement, LanguageWriter writer)
         {
