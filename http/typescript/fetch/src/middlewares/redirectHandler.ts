@@ -12,9 +12,8 @@
 import { HttpMethod } from "@microsoft/kiota-abstractions";
 import { MiddlewareContext } from "./middlewareContext";
 import { Middleware } from "./middleware";
-import { cloneRequestWithNewUrl } from "./middlewareUtil";
 import { RedirectHandlerOptions } from "./options/redirectHandlerOption";
-import {FetchResponse, FetchRequestInfo, FetchRequest} from "../utils/fetchDefinitions"
+import {FetchResponse} from "../utils/fetchDefinitions"
 
 
 /**
@@ -151,7 +150,7 @@ export class RedirectHandler implements Middleware {
      * @returns Nothing
      */
     private async updateRequestUrl(redirectUrl: string, context: MiddlewareContext): Promise<void> {
-        context.request = typeof context.request === "string" ? redirectUrl : await cloneRequestWithNewUrl(redirectUrl, context.request);
+        context.request = redirectUrl;
     }
 
     /**

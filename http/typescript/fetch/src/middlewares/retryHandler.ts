@@ -90,7 +90,7 @@ export class RetryHandler implements Middleware {
 	 * @returns Whether the payload is buffered or not
 	 */
 	private isBuffered(request: FetchRequestInfo, options: FetchRequestInit | undefined): boolean {
-		const method = typeof request === "string" ? options.method : request.method;
+		const method = options
 		const isPutPatchOrPost: boolean = method === HttpMethod.PUT || method === HttpMethod.PATCH || method === HttpMethod.POST;
 		if (isPutPatchOrPost) {
 			const isStream = getRequestHeader(request, options, "Content-Type") === "application/octet-stream";
@@ -148,7 +148,7 @@ export class RetryHandler implements Middleware {
 	 */
 	private async sleep(delaySeconds: number): Promise<void> {
 		const delayMilliseconds = delaySeconds * 1000;
-		return new Promise((resolve) => setTimeout(resolve, delayMilliseconds));
+		return new Promise((resolve) => setTimeout(resolve, delayMilliseconds)); // browser or node
 	}
 
 	private getOptions(context: MiddlewareContext): RetryHandlerOptions {

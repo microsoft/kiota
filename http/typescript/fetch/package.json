@@ -34,6 +34,7 @@
     },
     "dependencies": {
         "@microsoft/kiota-abstractions": "file:../../../abstractions/typescript",
+        "@types/node": "^16.10.3",
         "node-fetch": "^2.6.5",
         "tslib": "^2.3.1"
     },

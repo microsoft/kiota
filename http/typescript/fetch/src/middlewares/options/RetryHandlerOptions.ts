@@ -10,12 +10,12 @@
  */
 
 import { MiddlewareOption } from "./middlewareOption";
-
+import {FetchResponse, FetchRequestInit, FetchRequestInfo} from "../../utils/fetchDefinitions"
 /**
  * @type
  * A type declaration for shouldRetry callback
  */
-export type ShouldRetry = (delay: number, attempt: number, request: RequestInit, options: RequestInit | undefined, response: Response) => boolean;
+export type ShouldRetry = (delay: number, attempt: number, request: string, options: FetchRequestInit | undefined, response: FetchResponse) => boolean;
 
 /**
  * @class

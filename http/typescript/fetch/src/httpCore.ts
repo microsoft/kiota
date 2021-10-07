@@ -1,7 +1,7 @@
 import { AuthenticationProvider, BackingStoreFactory, BackingStoreFactorySingleton, HttpCore as IHttpCore, Parsable, ParseNodeFactory, RequestInformation, ResponseHandler, ParseNodeFactoryRegistry, enableBackingStoreForParseNodeFactory, SerializationWriterFactoryRegistry, enableBackingStoreForSerializationWriterFactory, SerializationWriterFactory } from '@microsoft/kiota-abstractions';
-import { URLSearchParams } from 'url';
 import { HttpClient } from './httpClient';
-import  {Headers as crossHeaders} from "cross-fetch"
+import { FetchRequestInfo, FetchRequestInit , FetchResponse } from "./utils/fetchDefinitions";
+import {URLSearchParams} from "./utils/utils"
 
 import { MiddlewareContext } from './middlewares/middlewareContext';
 
@@ -30,7 +30,7 @@ export class HttpCore implements IHttpCore {
             throw new Error('http client cannot be null');
         }
     }
-    private getResponseContentType = (response: Response): string | undefined => {
+    private getResponseContentType = (response: FetchResponse): string | undefined => {
         const header = response.headers.get("content-type")?.toLowerCase();
         if (!header) return undefined;
         const segments = header.split(';');
@@ -47,7 +47,7 @@ export class HttpCore implements IHttpCore {
         if (responseHandler) {
             return await responseHandler.handleResponseAsync(response);
         } else {
-            const payload = await response.arrayBuffer();
+            const payload = await response.arrayBuffer() as ArrayBuffer;
             const responseContentType = this.getResponseContentType(response);
             if (!responseContentType)
                 throw new Error("no response content type found for deserialization");
@@ -67,7 +67,7 @@ export class HttpCore implements IHttpCore {
         if (responseHandler) {
             return await responseHandler.handleResponseAsync(response);
         } else {
-            const payload = await response.arrayBuffer();
+            const payload = await response.arrayBuffer() as ArrayBuffer;
             const responseContentType = this.getResponseContentType(response);
             if (!responseContentType)
                 throw new Error("no response content type found for deserialization");
@@ -94,7 +94,7 @@ export class HttpCore implements IHttpCore {
                 case 'number':
                 case 'boolean':
                 case 'Date':
-                    const payload = await response.arrayBuffer();
+                    const payload = await response.arrayBuffer() as ArrayBuffer;
                     const responseContentType = this.getResponseContentType(response);
                     if (!responseContentType)
                         throw new Error("no response content type found for deserialization");
@@ -133,14 +133,14 @@ export class HttpCore implements IHttpCore {
             BackingStoreFactorySingleton.instance = backingStoreFactory;
         }
     }
-    private getRequestFromRequestInformation = (requestInfo: RequestInformation): RequestInit => {
-        const request = {
+    private getRequestFromRequestInformation = (requestInfo: RequestInformation): FetchRequestInit => {
+        const request: FetchRequestInit = {
             method: requestInfo.httpMethod?.toString(),
             body: requestInfo.content,
-        } as RequestInit;
+        }
 
         const headers: string[][] = [];
-        requestInfo.headers?.forEach((v, k) => (request.headers as Headers).set(k, v));
+        requestInfo.headers?.forEach((v, k) => (request.headers[k] = v));
 
         requestInfo.options?.forEach((v, k) => {
             if (k in request) {
@@ -168,7 +168,7 @@ export class HttpCore implements IHttpCore {
         const context: MiddlewareContext = {
             request: url,
             options: this.getRequestFromRequestInformation(requestInformation),
-            //middlewareControl //set from middleware options
+            //middlewareControl : getMiddlewareOptions//set from middleware options
         }
         return context;
 

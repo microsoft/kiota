@@ -2,6 +2,7 @@ import { Middleware } from "./middlewares/middleware";
 import { MiddlewareContext } from "./middlewares/middlewareContext";
 import { FetchHandler } from "./middlewares/fetchHandler";
 import { MiddlewareFactory } from "./middlewares/middlewareFactory";
+import { FetchRequestInfo, FetchRequestInit , FetchResponse } from "./utils/fetchDefinitions";
 
 /** Default fetch client with options and a middleware pipleline for requests execution. */
 export class HttpClient {
@@ -11,7 +12,7 @@ export class HttpClient {
      * @param middlewares middlewares to be used for requests execution.
      * @param defaultRequestSettings default request settings to be used for requests execution.
      */
-    public constructor(private customFetch?: (request: RequestInfo, init?: RequestInit) => Promise<Response>, ...middlewares: Middleware[]) {
+    public constructor(private customFetch?: (request: FetchRequestInfo, init?: FetchRequestInit) => Promise<FetchResponse>, ...middlewares: Middleware[]) {
 
         // Use default middleware chain if middlewares and custom fetch function are not defined
         if(!middlewares && !customFetch){
@@ -66,7 +67,7 @@ export class HttpClient {
      * @param options request options.
      * @returns the promise resolving the response.
      */
-    public async executeFetch(context: MiddlewareContext): Promise<Response> {
+    public async executeFetch(context: MiddlewareContext): Promise<FetchResponse> {
 
         if (this.customFetch && !this.middleware) {
             return this.customFetch(context.request, context.options);

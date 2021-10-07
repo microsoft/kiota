@@ -28,7 +28,7 @@ export class FetchHandler implements Middleware {
 	 */
 	next: Middleware;
 
-    constructor(private customFetch?: (input: FetchRequestInfo, init: FetchRequestInit) => Promise<Response>) {};
+    constructor(private customFetch?: (input: FetchRequestInfo, init: FetchRequestInit) => Promise<FetchResponse>) {};
 
     /**
      * @public
