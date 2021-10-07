@@ -478,7 +478,7 @@ namespace Kiota.Builder.Refiners {
                     var overloadCtor = currentMethod.Clone() as CodeMethod;
                     overloadCtor.MethodKind = CodeMethodKind.RawUrlConstructor;
                     overloadCtor.OriginalMethod = currentMethod;
-                    overloadCtor.RemoveParametersByKind(CodeParameterKind.UrlTemplateParameters);
+                    overloadCtor.RemoveParametersByKind(CodeParameterKind.UrlTemplateParameters, CodeParameterKind.Path);
                     overloadCtor.AddParameter(new CodeParameter {
                         Name = "rawUrl",
                         Type = new CodeType { Name = "string", IsExternal = true },

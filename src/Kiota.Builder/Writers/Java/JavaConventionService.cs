@@ -29,7 +29,7 @@ namespace Kiota.Builder.Writers.Java {
         {
             var nullKeyword = parameter.Optional ? "Nullable" : "Nonnull";
             var nullAnnotation = parameter.Type.IsNullable ? $"@javax.annotation.{nullKeyword} " : string.Empty;
-            return $"{nullAnnotation}final {GetTypeString(parameter.Type, targetElement)} {parameter.Name}";
+            return $"{nullAnnotation}final {GetTypeString(parameter.Type, targetElement)} {parameter.Name.ToFirstCharacterLowerCase()}";
         }
 
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
