@@ -28,10 +28,11 @@ namespace Kiota.Builder.Writers.CSharp {
             var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
             var requestParams = new RequestParams(requestBodyParam, queryStringParam, headersParam, optionsParam);
             foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
+                var parameterName = parameter.Name.ToFirstCharacterLowerCase();
                 if(nameof(String).Equals(parameter.Type.Name, StringComparison.OrdinalIgnoreCase))
-                    writer.WriteLine($"if(string.IsNullOrEmpty({parameter.Name})) throw new ArgumentNullException(nameof({parameter.Name}));");
+                    writer.WriteLine($"if(string.IsNullOrEmpty({parameterName})) throw new ArgumentNullException(nameof({parameterName}));");
                 else
-                    writer.WriteLine($"_ = {parameter.Name} ?? throw new ArgumentNullException(nameof({parameter.Name}));");
+                    writer.WriteLine($"_ = {parameterName} ?? throw new ArgumentNullException(nameof({parameterName}));");
             }
             switch(codeElement.MethodKind) {
                 case CodeMethodKind.Serializer:
@@ -97,17 +98,17 @@ namespace Kiota.Builder.Writers.CSharp {
                                             .ThenBy(x => x.Name)) {
                 writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterUpperCase()} = {propWithDefault.DefaultValue};");
             }
-            var pathParameters = currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path));
-            var urlTemplateParametersProp = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
-            conventions.AddParametersAssignment(writer, 
-                                                urlTemplateParametersProp,
-                                                currentMethod.Parameters
-                                                            .Where(x => x.IsOfKind(CodeParameterKind.Path))
-                                                            .Select(x => (x.Type, x.UrlTemplateParameterName, x.Name.ToFirstCharacterLowerCase()))
-                                                            .ToArray());
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
+                var urlTemplateParametersParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.UrlTemplateParameters));
+                conventions.AddParametersAssignment(writer, 
+                                                    urlTemplateParametersParam?.Type,
+                                                    urlTemplateParametersParam?.Name?.ToFirstCharacterLowerCase(),
+                                                    currentMethod.Parameters
+                                                                .Where(x => x.IsOfKind(CodeParameterKind.Path))
+                                                                .Select(x => (x.Type, x.UrlTemplateParameterName, x.Name.ToFirstCharacterLowerCase()))
+                                                                .ToArray());
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
-                var tempParametersVarName = urlTemplateParametersProp == null ? string.Empty : conventions.TempDictionaryVarName;
+                var tempParametersVarName = urlTemplateParametersParam == null ? string.Empty : conventions.TempDictionaryVarName;
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.UrlTemplateParameters, CodePropertyKind.UrlTemplateParameters, writer, tempParametersVarName);
             }
         }

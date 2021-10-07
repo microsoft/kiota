@@ -14,7 +14,7 @@ namespace Kiota.Builder.Writers.CSharp {
             conventions.WriteShortDescription(codeElement.Description, writer);
             writer.WriteLine($"public {returnType} this[{conventions.GetTypeString(codeElement.IndexType, codeElement)} position] {{ get {{");
             writer.IncreaseIndent();
-            conventions.AddParametersAssignment(writer, urlTemplateParametersProp, new (CodeTypeBase, string, string)[] {
+            conventions.AddParametersAssignment(writer, urlTemplateParametersProp.Type, urlTemplateParametersProp.Name.ToFirstCharacterUpperCase(), new (CodeTypeBase, string, string)[] {
                 (codeElement.IndexType, codeElement.ParameterName, "position")
             });
             conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, "return ");

@@ -29,14 +29,14 @@ namespace Kiota.Builder.Writers.CSharp {
         internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, string prefix = default, IEnumerable<CodeParameter> pathParameters = default) {
             var urlTemplateParametersProp = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
             var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
-            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}";
+            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
             var urlTplRef = urlTemplateVarName ?? urlTemplateParametersProp.Name.ToFirstCharacterUpperCase();
             writer.WriteLine($"{prefix}new {returnType}({urlTplRef}, {requestAdapterProp.Name.ToFirstCharacterUpperCase()}{pathParametersSuffix});");
         }
         internal string TempDictionaryVarName = "urlTplParams";
-        internal void AddParametersAssignment(LanguageWriter writer, CodeProperty urlTemplateParametersProp, params (CodeTypeBase, string, string)[] parameters) {
-            if(urlTemplateParametersProp == null) return;
-            writer.WriteLine($"var {TempDictionaryVarName} = new {urlTemplateParametersProp.Type.Name}({urlTemplateParametersProp.Name.ToFirstCharacterUpperCase()});");
+        internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase urlTemplateParametersType, string urlTemplateParametersReference, params (CodeTypeBase, string, string)[] parameters) {
+            if(urlTemplateParametersType == null) return;
+            writer.WriteLine($"var {TempDictionaryVarName} = new {urlTemplateParametersType.Name}({urlTemplateParametersReference});");
             if(parameters.Any())
                 writer.WriteLines(parameters.Select(p => {
                     var stringSuffix = p.Item1.Name.Equals("string", StringComparison.OrdinalIgnoreCase) ? string.Empty : ".ToString()";
