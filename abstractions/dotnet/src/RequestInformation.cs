@@ -31,6 +31,10 @@ namespace Microsoft.Kiota.Abstractions
             get {
                 if(_rawUri != null)
                     return _rawUri;
+                else if(UrlTemplateParameters.TryGetValue("request-raw-url", out var rawUrl)) {
+                    URI = new Uri(rawUrl);
+                    return _rawUri;
+                }
                 else
                 {
                     var parsedUrlTemplate = new UriTemplate(UrlTemplate);

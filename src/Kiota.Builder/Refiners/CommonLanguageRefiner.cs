@@ -472,5 +472,25 @@ namespace Kiota.Builder.Refiners {
                             .ForEach(x => x.Type.IsNullable = true);
             CrawlTree(currentElement, MakeModelPropertiesNullable);
         }
+        protected static void AddRawUrlConstructorOverload(CodeElement currentElement) {
+            if(currentElement is CodeMethod currentMethod &&
+                currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
+                currentElement.Parent is CodeClass parentClass &&
+                parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
+                    var overloadCtor = currentMethod.Clone() as CodeMethod;
+                    overloadCtor.MethodKind = CodeMethodKind.RawUrlConstructor;
+                    overloadCtor.OriginalMethod = currentMethod;
+                    overloadCtor.RemoveParametersByKind(CodeParameterKind.UrlTemplateParameters);
+                    overloadCtor.AddParameter(new CodeParameter {
+                        Name = "rawUrl",
+                        Type = new CodeType { Name = "string", IsExternal = true },
+                        Optional = false,
+                        Description = "The raw URL to use for the request builder.",
+                        ParameterKind = CodeParameterKind.RawUrl,
+                    });
+                    parentClass.AddMethod(overloadCtor);
+                }
+            CrawlTree(currentElement, AddRawUrlConstructorOverload);
+        }
     }
 }

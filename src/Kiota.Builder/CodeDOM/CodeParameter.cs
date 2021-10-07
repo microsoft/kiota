@@ -16,7 +16,8 @@ namespace Kiota.Builder
         Options,
         Serializer,
         BackingStore,
-        Path
+        Path,
+        RawUrl
     }
 
     public class CodeParameter : CodeTerminal, ICloneable, IDocumentedElement

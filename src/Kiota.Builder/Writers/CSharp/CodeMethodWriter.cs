@@ -52,6 +52,7 @@ namespace Kiota.Builder.Writers.CSharp {
                     WriteApiConstructorBody(parentClass, codeElement, writer);
                     break;
                 case CodeMethodKind.Constructor:
+                case CodeMethodKind.RawUrlConstructor:
                     WriteConstructorBody(parentClass, codeElement, writer);
                     break;
                 case CodeMethodKind.RequestBuilderWithParameters:
@@ -76,10 +77,8 @@ namespace Kiota.Builder.Writers.CSharp {
         }
         private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
             var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
-            var requestAdapterParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.RequestAdapter));
             var backingStoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.BackingStore));
             var requestAdapterPropertyName = requestAdapterProperty.Name.ToFirstCharacterUpperCase();
-            writer.WriteLine($"{requestAdapterPropertyName} = {requestAdapterParameter.Name};");
             WriteSerializationRegistration(method.SerializerModules, writer, "RegisterDefaultSerializer");
             WriteSerializationRegistration(method.DeserializerModules, writer, "RegisterDefaultDeserializer");
             if(backingStoreParameter != null)
@@ -98,18 +97,28 @@ namespace Kiota.Builder.Writers.CSharp {
                                             .ThenBy(x => x.Name)) {
                 writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterUpperCase()} = {propWithDefault.DefaultValue};");
             }
-            if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
-                var urlTemplateParametersParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.UrlTemplateParameters));
-                conventions.AddParametersAssignment(writer, 
-                                                    urlTemplateParametersParam?.Type,
-                                                    urlTemplateParametersParam?.Name?.ToFirstCharacterLowerCase(),
-                                                    currentMethod.Parameters
-                                                                .Where(x => x.IsOfKind(CodeParameterKind.Path))
-                                                                .Select(x => (x.Type, x.UrlTemplateParameterName, x.Name.ToFirstCharacterLowerCase()))
-                                                                .ToArray());
+            if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
+                if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
+                    var urlTemplateParametersParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.UrlTemplateParameters));
+                    conventions.AddParametersAssignment(writer, 
+                                                        urlTemplateParametersParam.Type,
+                                                        urlTemplateParametersParam.Name.ToFirstCharacterLowerCase(),
+                                                        currentMethod.Parameters
+                                                                    .Where(x => x.IsOfKind(CodeParameterKind.Path))
+                                                                    .Select(x => (x.Type, x.UrlTemplateParameterName, x.Name.ToFirstCharacterLowerCase()))
+                                                                    .ToArray());
+                    AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.UrlTemplateParameters, CodePropertyKind.UrlTemplateParameters, writer, conventions.TempDictionaryVarName);
+                }
+                else if(currentMethod.IsOfKind(CodeMethodKind.RawUrlConstructor)) {
+                    var urlTemplateParametersProp = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
+                    var rawUrlParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.RawUrl));
+                    conventions.AddParametersAssignment(writer,
+                                                        urlTemplateParametersProp.Type,
+                                                        string.Empty,
+                                                        (rawUrlParam.Type, "request-raw-url", rawUrlParam.Name.ToFirstCharacterLowerCase()));
+                    AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.UrlTemplateParameters, CodePropertyKind.UrlTemplateParameters, writer, conventions.TempDictionaryVarName);
+                }
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
-                var tempParametersVarName = urlTemplateParametersParam == null ? string.Empty : conventions.TempDictionaryVarName;
-                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.UrlTemplateParameters, CodePropertyKind.UrlTemplateParameters, writer, tempParametersVarName);
             }
         }
         private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer, string variableName = default) {
@@ -248,7 +257,7 @@ namespace Kiota.Builder.Writers.CSharp {
             var hideModifier = inherits && code.IsSerializationMethod ? "new " : string.Empty;
             var genericTypePrefix = isVoid ? string.Empty : "<";
             var genericTypeSuffix = code.IsAsync && !isVoid ? ">": string.Empty;
-            var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor);
+            var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
             var asyncPrefix = code.IsAsync ? "async Task" + genericTypePrefix : string.Empty;
             var voidCorrectedTaskReturnType = code.IsAsync && isVoid ? string.Empty : returnType;
             if(code.ReturnType.IsArray && code.IsOfKind(CodeMethodKind.RequestExecutor))
