@@ -2,6 +2,7 @@ package com.microsoft.kiota;
 
 import java.lang.reflect.Field;
 import java.lang.IllegalAccessException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nonnull;
@@ -12,7 +13,14 @@ public abstract class QueryParametersBase {
         final Field[] fields = this.getClass().getFields();
         for(final Field field : fields) {
             try {
-                target.put(field.getName(), field.get(this));
+                var value = field.get(this);
+                if(value != null) {
+                    if(value.getClass().isArray()) {
+                        target.put(field.getName(), Arrays.asList((Object[])value));
+                    } else {
+                        target.put(field.getName(), value);
+                    }
+                }
             } catch (IllegalAccessException ex) {
                 //TODO log
             }

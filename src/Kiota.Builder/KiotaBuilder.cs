@@ -251,7 +251,7 @@ namespace Kiota.Builder
                 var propType = propIdentifier + requestBuilderSuffix;
                 if (child.Value.IsPathSegmentWithSingleSimpleParameter())
                 {
-                    var prop = CreateIndexer($"{propIdentifier}-indexer", propType, child.Value);
+                    var prop = CreateIndexer($"{propIdentifier}-indexer", propType, child.Value, currentNode);
                     codeClass.SetIndexer(prop);
                 }
                 else if (child.Value.IsComplexPathWithAnyNumberOfParameters())
@@ -471,7 +471,7 @@ namespace Kiota.Builder
                 _ => childElementsUnmappedTypes,
             };
         }
-        private CodeIndexer CreateIndexer(string childIdentifier, string childType, OpenApiUrlTreeNode currentNode)
+        private CodeIndexer CreateIndexer(string childIdentifier, string childType, OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode parentNode)
         {
             logger.LogTrace("Creating indexer {name}", childIdentifier);
             return new CodeIndexer
@@ -481,6 +481,7 @@ namespace Kiota.Builder
                 IndexType = new CodeType { Name = "string", IsExternal = true, },
                 ReturnType = new CodeType { Name = childType },
                 ParameterName = currentNode.Segment.SanitizeUrlTemplateParameterName().TrimStart('{').TrimEnd('}'),
+                PathSegment = parentNode.GetNodeNamespaceFromPath(string.Empty).Split('.').Last(),
             };
         }
 

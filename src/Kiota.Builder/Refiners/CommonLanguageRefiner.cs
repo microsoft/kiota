@@ -327,17 +327,15 @@ namespace Kiota.Builder.Refiners {
             if(currentElement is CodeIndexer currentIndexer &&
                 currentElement.Parent is CodeClass currentParentClass) {
                 currentParentClass.RemoveChildElement(currentElement);
-                var urlTemplate = currentParentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate)?.DefaultValue;
-                if(!string.IsNullOrEmpty(urlTemplate))
-                    foreach(var returnType in currentIndexer.ReturnType.AllTypes)
-                        AddIndexerMethod(rootNamespace,
-                                        currentParentClass,
-                                        returnType.TypeDefinition as CodeClass,
-                                        urlTemplate.Trim('\"').TrimStart('/'),
-                                        methodNameSuffix,
-                                        currentIndexer.Description,
-                                        parameterNullable,
-                                        currentIndexer);
+                foreach(var returnType in currentIndexer.ReturnType.AllTypes)
+                    AddIndexerMethod(rootNamespace,
+                                    currentParentClass,
+                                    returnType.TypeDefinition as CodeClass,
+                                    currentIndexer.PathSegment,
+                                    methodNameSuffix,
+                                    currentIndexer.Description,
+                                    parameterNullable,
+                                    currentIndexer);
             }
             CrawlTree(currentElement, c => ReplaceIndexersByMethodsWithParameter(c, rootNamespace, parameterNullable, methodNameSuffix));
         }

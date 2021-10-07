@@ -8,55 +8,53 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Objects;
-import java.util.function.Function;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.microsoft.kiota.serialization.Parsable;
 import com.microsoft.kiota.serialization.SerializationWriter;
-import com.microsoft.kiota.RequestAdapter;
+
+import com.github.hal4j.uritemplate.URITemplate;
 
 /** This class represents an abstract HTTP request. */
 public class RequestInformation {
-    /** The URI of the request. */
-    @Nullable
-    public URI uri;
-    /**
-     * Sets the URI of the request.
-     * @param currentPath the current path (scheme, host, port, path, query parameters) of the request.
-     * @param pathSegment the segment to append to the current path.
-     * @param isRawUrl whether the path segment is a raw url. When true, the segment is not happened and the current path is parsed for query parameters.
+    /** The url template for the current request */
+    public String urlTemplate;
+    /** The url template parameters for the current request */
+    public HashMap<String, String> urlTemplateParameters = new HashMap<>();
+    private URI uri;
+    /** Gets the URI of the request. 
+     * @throws URISyntaxException
      */
-    public void setUri(@Nullable final String currentPath, @Nullable final String pathSegment, final boolean isRawUrl) {
-        if (isRawUrl) {
-            if(currentPath == null || currentPath.isEmpty()) {
-                throw new IllegalArgumentException("currentPath cannot be null or empty");
-            }
-            final var questionMarkSplat = currentPath.split("\\?");
-            final var schemeHostAndPath = questionMarkSplat[0];
-            this.setUriFromString(schemeHostAndPath);
-            if (questionMarkSplat.length > 1) {
-                final var queryString = questionMarkSplat[1];
-                final var rawQueryParameters = queryString.split("&");
-                for (var queryParameter : rawQueryParameters) {
-                    final var queryParameterNameValue = queryParameter.split("=");
-                    if (!queryParameterNameValue[0].isEmpty()) {
-                        this.queryParameters.put(queryParameterNameValue[0], queryParameterNameValue.length > 1 ? queryParameterNameValue[1] : null);
-                    }
-                }
-            }
+    @Nullable
+    public URI getUri() throws URISyntaxException {
+        if(uri != null) {
+            return uri;
+        } else if(urlTemplateParameters.containsKey(RAW_URL_KEY)) {
+            setUri(new URI(urlTemplateParameters.get(RAW_URL_KEY)));
+            return uri;
         } else {
-            this.setUriFromString(currentPath + pathSegment);
+            Objects.requireNonNull(urlTemplate);
+            Objects.requireNonNull(queryParameters);
+            var template = new URITemplate(urlTemplate)
+                            .expandOnly(new HashMap<String, Object>(queryParameters) {{
+                                putAll(urlTemplateParameters);
+                            }});
+            return template.toURI();
         }
     }
-    private void setUriFromString(final String uriString) {
-        try {
-            this.uri = new URI(uriString);
-        } catch (final URISyntaxException e) {
-            throw new RuntimeException(e);
+    /** Sets the URI of the request. */
+    public void setUri(@Nonnull final URI uri) {
+        this.uri = Objects.requireNonNull(uri);
+        if(queryParameters != null) {
+            queryParameters.clear();
+        }
+        if(urlTemplateParameters != null) {
+            urlTemplateParameters.clear();
         }
     }
+    private static String RAW_URL_KEY = "request-raw-url";
     /** The HTTP method for the request */
     @Nullable
     public HttpMethod httpMethod;

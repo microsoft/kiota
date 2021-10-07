@@ -12,6 +12,7 @@ namespace Kiota.Builder.Refiners {
             InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);
             ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
+            AddRawUrlConstructorOverload(generatedCode);
             ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
@@ -68,6 +69,8 @@ namespace Kiota.Builder.Refiners {
         private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
                 "com.microsoft.kiota", "RequestAdapter"),
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.UrlTemplateParameters),
+                "java.util", "HashMap"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
                 "com.microsoft.kiota", "RequestInformation", "RequestOption", "HttpMethod"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
@@ -126,8 +129,14 @@ namespace Kiota.Builder.Refiners {
             } else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
                 currentProperty.Type.Name = "Map<String, Object>";
                 currentProperty.DefaultValue = "new HashMap<>()";
-            } else if(currentProperty.IsOfKind(CodePropertyKind.UrlTemplate, CodePropertyKind.UrlTemplateParameters))
+            } else if(currentProperty.IsOfKind(CodePropertyKind.UrlTemplate)) {
                 currentProperty.Type.IsNullable = true;
+            } else if(currentProperty.IsOfKind(CodePropertyKind.UrlTemplateParameters)) {
+                currentProperty.Type.IsNullable = true;
+                currentProperty.Type.Name = "HashMap<String, String>";
+                if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
+                    currentProperty.DefaultValue = "new HashMap<>()";
+            }
         }
         private static void CorrectMethodType(CodeMethod currentMethod) {
             if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
@@ -146,13 +155,16 @@ namespace Kiota.Builder.Refiners {
                 currentMethod.ReturnType.Name = $"Map<String, BiConsumer<T, ParseNode>>";
                 currentMethod.Name = "getFieldDeserializers";
             }
-            else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor))
+            else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor))
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.BackingStore))
                     .Where(x => x.Type.Name.StartsWith("I", StringComparison.OrdinalIgnoreCase))
                     .ToList()
                     .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
             else if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.UrlTemplateParameters)).ToList().ForEach(x => x.Type.IsNullable = true);
+                var urlTplParams = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.UrlTemplateParameters));
+                if(urlTplParams != null) 
+                    urlTplParams.Type.Name = "HashMap<String, String>";
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I" 
             }
             if (currentMethod.IsOfKind(CodeMethodKind.RequestBuilderWithParameters, CodeMethodKind.Constructor) &&

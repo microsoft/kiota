@@ -115,7 +115,7 @@ namespace Kiota.Builder.Writers.CSharp {
                     conventions.AddParametersAssignment(writer,
                                                         urlTemplateParametersProp.Type,
                                                         string.Empty,
-                                                        (rawUrlParam.Type, "request-raw-url", rawUrlParam.Name.ToFirstCharacterLowerCase()));
+                                                        (rawUrlParam.Type, Constants.RawUrlParameterName, rawUrlParam.Name.ToFirstCharacterLowerCase()));
                     AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.UrlTemplateParameters, CodePropertyKind.UrlTemplateParameters, writer, conventions.TempDictionaryVarName);
                 }
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
