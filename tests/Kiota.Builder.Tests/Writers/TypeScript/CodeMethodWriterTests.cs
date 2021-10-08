@@ -178,7 +178,8 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             var result = tw.ToString();
             Assert.Contains("const requestInfo = new RequestInformation()", result);
             Assert.Contains("requestInfo.httpMethod = HttpMethod", result);
-            Assert.Contains("requestInfo.setUri", result);
+            Assert.Contains("requestInfo.urlTemplate = ", result);
+            Assert.Contains("requestInfo.urlTemplateParameters = ", result);
             Assert.Contains("setHeadersFromRawObject", result);
             Assert.Contains("setQueryStringParametersFromRawObject", result);
             Assert.Contains("setContentFromParsable", result);
@@ -366,6 +367,14 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         public void WritesIndexer() {
             AddRequestProperties();
             method.MethodKind = CodeMethodKind.IndexerBackwardCompatibility;
+            method.OriginalIndexer = new () {
+                Name = "indx",
+                ParameterName = "id",
+                IndexType = new CodeType {
+                    Name = "string",
+                    IsNullable = true,
+                }
+            };
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("this.requestAdapter", result);

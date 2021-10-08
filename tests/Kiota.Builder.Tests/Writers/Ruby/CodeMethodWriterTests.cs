@@ -384,6 +384,14 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         public void WritesIndexer() {
             AddRequestProperties();
             method.MethodKind = CodeMethodKind.IndexerBackwardCompatibility;
+            method.OriginalIndexer = new () {
+                Name = "indx",
+                ParameterName = "id",
+                IndexType = new CodeType {
+                    Name = "string",
+                    IsNullable = true,
+                }
+            };
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("request_adapter", result);

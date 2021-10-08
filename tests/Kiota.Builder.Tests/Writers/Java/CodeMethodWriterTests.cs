@@ -190,7 +190,8 @@ namespace Kiota.Builder.Writers.Java.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("final RequestInformation requestInfo = new RequestInformation()", result);
-            Assert.Contains("this.setUri", result);
+            Assert.Contains("urlTemplate =", result);
+            Assert.Contains("urlTemplateParameters =", result);
             Assert.Contains("httpMethod = HttpMethod.GET", result);
             Assert.Contains("h.accept(requestInfo.headers)", result);
             Assert.Contains("AddQueryParameters", result);
@@ -386,8 +387,16 @@ namespace Kiota.Builder.Writers.Java.Tests {
         public void WritesIndexer() {
             AddRequestProperties();
             method.MethodKind = CodeMethodKind.IndexerBackwardCompatibility;
+            method.OriginalIndexer = new CodeIndexer {
+                Name = "idx",
+                IndexType = new CodeType {
+                    Name = "int"
+                },
+                ParameterName = "collectionId"
+            };
             writer.Write(method);
             var result = tw.ToString();
+            Assert.Contains("collectionId", result);
             Assert.Contains("requestAdapter", result);
             Assert.Contains("urlTemplateParameters", result);
             Assert.Contains("id", result);

@@ -206,14 +206,9 @@ namespace Kiota.Builder.Refiners {
                                                 .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers, CodeParameterKind.Options)))
                                         .Where(x => x != null);
                     var originalConstructors = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.Constructor));
-                    var constructorsToAdd = Enumerable.Empty<CodeMethod>(); //originalConstructors
-                                            // .Select(x => GetMethodClone(x, CodeParameterKind.RawUrl))
-                                            // .Where(x => x != null);
-                                            //TODO add overrides without the parameters
-                    if(executorMethodsToAdd.Any() || generatorMethodsToAdd.Any() || constructorsToAdd.Any())
+                    if(executorMethodsToAdd.Any() || generatorMethodsToAdd.Any())
                         currentClass.AddMethod(executorMethodsToAdd
                                                 .Union(generatorMethodsToAdd)
-                                                .Union(constructorsToAdd)
                                                 .ToArray());
                 }
             }

@@ -28,6 +28,17 @@ namespace Kiota.Builder.Writers.TypeScript {
             var urlTemplateParams = urlTemplateVarName ?? $"this.{urlTemplateParametersProperty.Name}";
             writer.WriteLines($"return new {returnType}({urlTemplateParams}, this.{requestAdapterProp.Name}{codePathParametersSuffix});");
         }
+        internal string TempDictionaryVarName = "urlTplParams";
+        internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase urlTemplateParametersType, string urlTemplateParametersReference, params (CodeTypeBase, string, string)[] parameters) {
+            if(urlTemplateParametersType == null) return;
+            var mapTypeName = urlTemplateParametersType.Name;
+            writer.WriteLine($"const {TempDictionaryVarName} = getUrlTemplateParameters({urlTemplateParametersReference});");
+            if(parameters.Any())
+                writer.WriteLines(parameters.Select(p => {
+                    var stringSuffix = p.Item1.Name.Equals("string", StringComparison.OrdinalIgnoreCase) ? string.Empty : ".toString()";
+                    return $"{TempDictionaryVarName}.set(\"{p.Item2}\", {p.Item3}{stringSuffix});";
+                }).ToArray());
+        }
         #pragma warning restore CA1822 // Method should be static
         public override string GetAccessModifier(AccessModifier access)
         {
@@ -97,7 +108,7 @@ namespace Kiota.Builder.Writers.TypeScript {
                 "integer" or "int64" or "float" or "double" => "number",
                 "binary" => "string",
                 "DateTimeOffset" => "Date",
-                "string" or "object" or "boolean" or "void" => type.Name, // little casing hack
+                "String" or "Object" or "Boolean" or "Void" or "string" or "object" or "boolean" or "void" => type.Name.ToFirstCharacterLowerCase(), // little casing hack
                 _ => type.Name.ToFirstCharacterUpperCase() ?? "object",
             };
         }
