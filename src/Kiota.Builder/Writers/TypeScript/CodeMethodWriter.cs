@@ -248,8 +248,11 @@ namespace Kiota.Builder.Writers.TypeScript {
             if(inherits)
                 writer.WriteLine("super.serialize(writer);");
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
-                var spreadOperator = otherProp.Type is CodeType cType && cType.IsCollection && cType.TypeDefinition is CodeEnum ? "..." : string.Empty;
-                writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", {spreadOperator}this.{otherProp.Name.ToFirstCharacterLowerCase()});");
+                var isCollectionOfEnum = otherProp.Type is CodeType cType && cType.IsCollection && cType.TypeDefinition is CodeEnum;
+                var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
+                var otherPropName = otherProp.Name.ToFirstCharacterLowerCase();
+                var undefinedPrefix = isCollectionOfEnum ? $"this.{otherPropName} && " : string.Empty;
+                writer.WriteLine($"{undefinedPrefix}writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherPropName}\", {spreadOperator}this.{otherPropName});");
             }
             if(additionalDataProperty != null)
                 writer.WriteLine($"writer.writeAdditionalData(this.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
