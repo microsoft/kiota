@@ -9,8 +9,12 @@
     ],
     "types": "dist/index.d.ts",
     "scripts": {
-        "build": "tsc -p tsconfig.json",
-        "test": "echo \"Error: no test specified\" && exit 1",
+        "build": "npm run build:cjs && npm run build:es",
+        "build:cjs": "tsc -p tsconfig.cjs.json",
+        "build:es": "tsc -p tsconfig.es.json",
+        "test:cjs": "tsc -b tsconfig.test.json   && mocha  'dist/cjs/test/common/**/*.js'",
+        "test:es": " tsc -b tsconfig.test.json && mocha 'dist/es/test/common/**/*.js'  --require  esm",
+        "test": "npm run test:cjs && npm run test:es",
         "clean": "rm -r ./dist"
     },
     "repository": {
@@ -34,11 +38,26 @@
     },
     "dependencies": {
         "@microsoft/kiota-abstractions": "file:../../../abstractions/typescript",
-        "@types/node": "^16.10.3",
-        "node-fetch": "^2.6.5",
-        "tslib": "^2.3.1"
+        "sinon": "^11.1.2"
     },
     "devDependencies": {
+        "@types/chai": "^4.2.22",
+        "@types/mocha": "^9.0.0",
+        "@types/node": "^16.10.3",
+        "@types/sinon": "^10.0.4",
+        "chai": "^4.3.4",
+        "esm": "^3.2.25",
+        "karma": "^6.3.4",
+        "karma-chai": "^0.1.0",
+        "karma-chrome-launcher": "^3.1.0",
+        "karma-firefox-launcher": "^2.1.1",
+        "karma-mocha": "^2.0.1",
+        "karma-typescript": "^5.5.2",
+        "mocha": "^8.4.0",
+        "node-fetch": "^2.6.5",
+        "nyc": "^15.1.0",
+        "ts-node": "^10.2.1",
+        "tslib": "^2.3.1",
         "typescript": "^4.4.3"
     }
 }

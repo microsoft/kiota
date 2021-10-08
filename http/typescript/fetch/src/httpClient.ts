@@ -1,6 +1,6 @@
 import { Middleware } from "./middlewares/middleware";
 import { MiddlewareContext } from "./middlewares/middlewareContext";
-import { FetchHandler } from "./middlewares/fetchHandler";
+import { customFetchHandler } from "./middlewares/customFetchHandler";
 import { MiddlewareFactory } from "./middlewares/middlewareFactory";
 import { FetchRequestInfo, FetchRequestInit , FetchResponse } from "./utils/fetchDefinitions";
 
@@ -21,7 +21,7 @@ export class HttpClient {
 
         if (middlewares) {
             if(customFetch){
-                this.setMiddleware(...middlewares, new FetchHandler(customFetch));
+                this.setMiddleware(...middlewares, new customFetchHandler(customFetch));
             }
             else {
                 this.setMiddleware(...middlewares);

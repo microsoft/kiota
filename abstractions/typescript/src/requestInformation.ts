@@ -41,7 +41,7 @@ export class RequestInformation{
     /** The Query Parameters of the request. */
     public queryParameters: Map<string, string | number | boolean | undefined> = new Map<string, string | number | boolean | undefined>(); //TODO: case insensitive
     /** The Request Headers. */
-    public headers: Headers = new Headers(); //TODO: case insensitive
+    public headers: Map<string,string> = new Map<string,string>(); //TODO: case insensitive
     
     public options?: Map<string,unknown> = new Map<string,unknown>();
     

@@ -52,7 +52,6 @@ export type FetchResponse = Response & FetchBody & {
 }
 
 
-
 /** This Fetch API interface represents a resource request. */
 export type FetchRequest = Request | FetchBody & {
     /**

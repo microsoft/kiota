@@ -1,5 +1,5 @@
 import { FetchRequestInfo, FetchRequestInit, FetchResponse } from "../utils/fetchDefinitions";
-import { MiddlewareControl } from "./MiddlewareControl";
+import { MiddlewareControl } from "./middlewareControl";
 
 /**
  * @interface

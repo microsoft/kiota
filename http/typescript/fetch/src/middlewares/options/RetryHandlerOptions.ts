@@ -10,7 +10,7 @@
  */
 
 import { MiddlewareOption } from "./middlewareOption";
-import {FetchResponse, FetchRequestInit, FetchRequestInfo} from "../../utils/fetchDefinitions"
+import {FetchResponse, FetchRequestInit} from "../../utils/fetchDefinitions"
 /**
  * @type
  * A type declaration for shouldRetry callback
@@ -19,7 +19,8 @@ export type ShouldRetry = (delay: number, attempt: number, request: string, opti
 
 /**
  * @class
- * @implements MiddlewareOptions
+ * @implements Middleware
+ * Options
  * Class for RetryHandlerOptions
  */
 
