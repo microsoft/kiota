@@ -13,5 +13,3 @@
     ```Shell
     docker run -v ${PWD}:/app/output ghcr.io/microsoft/kiota/generator --language typescript -n gfx -d https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml
     ```
-
-> Note: steps 1-4 only need to be done once per machine.
