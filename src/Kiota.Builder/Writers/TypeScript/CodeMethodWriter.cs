@@ -31,7 +31,8 @@ namespace Kiota.Builder.Writers.TypeScript {
             var requestParams = new RequestParams(requestBodyParam, queryStringParam, headersParam, optionsParam);
             if(!codeElement.IsOfKind(CodeMethodKind.Setter))
                 foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
-                    writer.WriteLine($"if(!{parameter.Name}) throw new Error(\"{parameter.Name} cannot be undefined\");");
+                    var parameterName = parameter.Name.ToFirstCharacterLowerCase();
+                    writer.WriteLine($"if(!{parameterName}) throw new Error(\"{parameterName} cannot be undefined\");");
                 }
             switch(codeElement.MethodKind) {
                 case CodeMethodKind.IndexerBackwardCompatibility:
