@@ -4,27 +4,19 @@
  * See License in the project root for license information.
  * -------------------------------------------------------------------------------------------
  */
-
 import { assert } from "chai";
-import * as sinon from "sinon";
 
 import { MiddlewareContext } from "../../../src/middlewares/middlewareContext";
 import { FetchRequestInit } from "../../../src/utils/fetchDefinitions";
 import { MiddlewareControl } from "../../../src/middlewares/middlewareControl";
 import { RetryHandlerOptions, ShouldRetry } from "../../../src/middlewares/options/retryHandlerOptions";
 import { RetryHandler } from "../../../src/middlewares/RetryHandler";
-import { FetchHandler } from "../../../src/middlewares/fetchHandler";
-console.log(typeof Response)
+import { DummyFetchHandler } from "./dummyFetchHandler";
+import { getResponse } from "../testUtils"
 
 var Response = Response;
-if(typeof Response != "object"){
- getResponse().then((res)=>{ console.log(res);Response = res});
- 
-}
-async function getResponse(){
-	const s = await import("node-fetch");
-    console.log(s)
-	return s["Response"];
+if (typeof Response != "object") {
+	Response = getResponse();
 
 }
 describe("RetryHandler.ts", function () {
@@ -106,8 +98,7 @@ describe("RetryHandler.ts", function () {
 		});
 
 		it("Should fail for stream request", () => {
-			const options: FetchRequestInit
-				= {
+			const options: FetchRequestInit = {
 				method: "PUT",
 				headers: {
 					"Content-Type": "application/octet-stream",
@@ -195,10 +186,8 @@ describe("RetryHandler.ts", function () {
 	describe("executeWithRetry", async () => {
 		const options = new RetryHandlerOptions();
 		const handler = new RetryHandler(options);
-		const fetchHandler = new FetchHandler();
-		handler.next = fetchHandler;
-
-
+		const dummyFetchHandler = new DummyFetchHandler();
+		handler.next = dummyFetchHandler;
 		const cxt: MiddlewareContext = {
 			request: "url",
 			options: {
@@ -206,48 +195,44 @@ describe("RetryHandler.ts", function () {
 			},
 		};
 		it("Should return non retried response incase of maxRetries busted out", async () => {
-			sinon.stub(fetchHandler, "execute").callsFake((ctx: MiddlewareContext): Promise<void> => {
-				console.log("calls fake");
-				ctx.response = new Response(null, { status: 429 }), new Response("ok", { status: 200 });
-				return;
-			})
+			dummyFetchHandler.setResponses([new Response(null, { status: 429 }), new Response("ok", { status: 200 })]);
 			await handler["executeWithRetry"](cxt, RetryHandlerOptions["MAX_MAX_RETRIES"], options);
 			assert.equal(cxt.response.status, 429);
 		});
 
-		// it("Should return succeeded response for non retry response", async () => {
-		// 	dummyHTTPHandler.setResponses([new Response("ok", { status: 200 })]);
-		// 	await handler["executeWithRetry"](cxt, 0, options);
-		// 	assert.equal(cxt.response.status, 200);
-		// });
+		it("Should return succeeded response for non retry response", async () => {
+			dummyFetchHandler.setResponses([new Response("ok", { status: 200 })]);
+			await handler["executeWithRetry"](cxt, 0, options);
+			assert.equal(cxt.response.status, 200);
+		});
 
-		// it("Should return non retried response for streaming request", async () => {
-		// 	const c: MiddlewareContext = {
-		// 		request: "url",
-		// 		options: {
-		// 			method: "POST",
-		// 			headers: {
-		// 				"Content-Type": "application/octet-stream",
-		// 			},
-		// 		},
-		// 	};
-		// 	dummyHTTPHandler.setResponses([new Response(null, { status: 429 }), new Response("ok", { status: 200 })]);
-		// 	await handler["executeWithRetry"](c, 0, options);
-		// 	assert.equal(c.response.status, 429);
-		// });
+		it("Should return non retried response for streaming request", async () => {
+			const c: MiddlewareContext = {
+				request: "url",
+				options: {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/octet-stream",
+					},
+				},
+			};
+			dummyFetchHandler.setResponses([new Response(null, { status: 429 }), new Response("ok", { status: 200 })]);
+			await handler["executeWithRetry"](c, 0, options);
+			assert.equal(c.response.status, 429);
+		});
 
-		// it("Should successfully retry and return ok response", async () => {
-		// 	const opts = new RetryHandlerOptions(1);
-		// 	dummyHTTPHandler.setResponses([new Response(null, { status: 429 }), new Response(null, { status: 429 }), new Response("ok", { status: 200 })]);
-		// 	await handler["executeWithRetry"](cxt, 0, opts);
-		// 	assert.equal(cxt.response.status, 200);
-		// });
+		it("Should successfully retry and return ok response", async () => {
+			const opts = new RetryHandlerOptions(1);
+			dummyFetchHandler.setResponses([new Response(null, { status: 429 }), new Response(null, { status: 429 }), new Response("ok", { status: 200 })]);
+			await handler["executeWithRetry"](cxt, 0, opts);
+			assert.equal(cxt.response.status, 200);
+		});
 
-		// it("Should fail by exceeding max retries", async () => {
-		// const opts = new RetryHandlerOptions(1, 2);
-		// dummyHTTPHandler.setResponses([new Response(null, { status: 429 }), new Response(null, { status: 429 }), new Response(null, { status: 429 }), new Response("ok", { status: 200 })]);
-		// await handler["executeWithRetry"](cxt, 0, opts);
-		// assert.equal(cxt.response.status, 429);
-	//});
-});
+		it("Should fail by exceeding max retries", async () => {
+			const opts = new RetryHandlerOptions(1, 2);
+			dummyFetchHandler.setResponses([new Response(null, { status: 429 }), new Response(null, { status: 429 }), new Response(null, { status: 429 }), new Response("ok", { status: 200 })]);
+			await handler["executeWithRetry"](cxt, 0, opts);
+			assert.equal(cxt.response.status, 429);
+		});
+	});
 });

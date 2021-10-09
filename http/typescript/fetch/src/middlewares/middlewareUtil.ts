@@ -26,7 +26,7 @@ export const getRequestHeader = (request: FetchRequestInfo, options: FetchReques
 		console.log(" inside ! string" + value);
 		value = (request as FetchRequest).headers.get(key);
 	} else if (typeof options !== "undefined" && options.headers !== undefined) {
-		console.log(" inside option =svalue" + value);
+		console.log(options.headers);
 		value = options.headers[key];
 		console.log(" inside option =svalue" + value);
 	}
@@ -47,6 +47,10 @@ export const setRequestHeader = (request: FetchRequestInfo, options: FetchReques
 	if (typeof request !== 'string') {
 		(request as FetchRequest).headers.set(key, value);
 	} else if (typeof options !== "undefined") {
+		if(!options.headers){
+			options.headers = {};
+		}
+		console.log(options.headers);
 		options.headers[key] = value;
 	}
 };
@@ -64,6 +68,9 @@ export const appendRequestHeader = (request: FetchRequestInfo, options: FetchReq
 	if (typeof request !== "string") {
 		(request as FetchRequest).headers.append(key, value);
 	} else if (typeof options !== "undefined") {
+		if(!options.headers){
+			options.headers = {};
+		}
 		if (options.headers[key] === undefined) {
 			options.headers[key] = value;
 		} else {

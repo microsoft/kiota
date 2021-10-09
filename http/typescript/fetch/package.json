@@ -12,7 +12,7 @@
         "build": "npm run build:cjs && npm run build:es",
         "build:cjs": "tsc -p tsconfig.cjs.json",
         "build:es": "tsc -p tsconfig.es.json",
-        "test:cjs": "tsc -b tsconfig.test.json   && mocha  'dist/cjs/test/common/**/*.js'",
+        "test:cjs": "tsc -b tsconfig.test.json   && mocha  'dist/cjs/test/common/**/*.js' -grep MiddlewareUtil.ts",
         "test:es": " tsc -b tsconfig.test.json && mocha 'dist/es/test/common/**/*.js'  --require  esm",
         "test": "npm run test:cjs && npm run test:es",
         "clean": "rm -r ./dist"

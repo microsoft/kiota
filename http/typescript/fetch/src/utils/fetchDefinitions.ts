@@ -110,7 +110,7 @@ export type FetchRequest = Request | FetchBody & {
 }
 
 
-export type FetchRequestInit = RequestInit |{
+export type FetchRequestInit = Omit<RequestInit, "headers"|"redirect"> &{
     /**
      * A BodyInit object or null to set request's body.
      */
