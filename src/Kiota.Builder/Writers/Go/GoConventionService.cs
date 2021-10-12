@@ -22,7 +22,7 @@ namespace Kiota.Builder.Writers.Go {
         }
         public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
         {
-            return $"{parameter.Name} {GetTypeString(parameter.Type, targetElement)}";
+            return $"{parameter.Name.ToFirstCharacterLowerCase()} {GetTypeString(parameter.Type, targetElement)}";
         }
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true) =>
             GetTypeString(code, targetElement, includeCollectionInformation, true);
@@ -127,7 +127,7 @@ namespace Kiota.Builder.Writers.Go {
             var splatImport = returnType.Split('.');
             var constructorName = splatImport.Last().TrimCollectionAndPointerSymbols().ToFirstCharacterUpperCase();
             var moduleName = splatImport.Length > 1 ? $"{splatImport.First()}." : string.Empty;
-            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}";
+            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
             writer.WriteLines($"return *{moduleName}New{constructorName}Internal({urlTemplateParams}, m.{requestAdapterProp.Name}{pathParametersSuffix});");
         }
         internal string TempDictionaryVarName = "urlTplParams";
@@ -135,13 +135,35 @@ namespace Kiota.Builder.Writers.Go {
             if(urlTemplateParametersType == null) return;
             var mapTypeName = urlTemplateParametersType.Name;
             writer.WriteLines($"{TempDictionaryVarName} := make({mapTypeName})",
-                            $"for idx, item := range {urlTemplateParametersReference} {{");
+                            $"if {urlTemplateParametersReference} != nil {{");
+            writer.IncreaseIndent();
+            writer.WriteLine($"for idx, item := range {urlTemplateParametersReference} {{");
             writer.IncreaseIndent();
             writer.WriteLine($"{TempDictionaryVarName}[idx] = item");
             writer.CloseCurly();
+            writer.CloseCurly();
             if(parameters.Any())
-                writer.WriteLines(parameters.Select(p => $"{TempDictionaryVarName}[\"{p.Item2}\"] = {p.Item3}").ToArray());
+                foreach(var p in parameters) {
+                    var isStringStruct = !p.Item1.IsNullable && p.Item1.Name.Equals("string", StringComparison.OrdinalIgnoreCase);
+                    var defaultValue = isStringStruct ? "\"\"" : "nil";
+                    var pointerDereference = isStringStruct ? string.Empty : "*";
+                    writer.WriteLines($"if {p.Item3} != {defaultValue} {{");
+                    writer.IncreaseIndent();
+                    writer.WriteLine($"{TempDictionaryVarName}[\"{p.Item2}\"] = {GetValueStringConversion(p.Item1.Name, pointerDereference+p.Item3)}");
+                    writer.CloseCurly();
+                }
         }
         #pragma warning restore CA1822 // Method should be static
+        private const string StrConvHash = "i53ac87e8cb3cc9276228f74d38694a208cacb99bb8ceb705eeae99fb88d4d274";
+        private static string GetValueStringConversion(string typeName, string reference) {
+            return typeName switch {
+                "boolean" => $"{StrConvHash}.FormatBool({reference})",
+                "integer" => $"{StrConvHash}.FormatInt(int64({reference}), 10)",
+                "long" => $"{StrConvHash}.FormatInt({reference}, 10)",
+                "float" or "double" => $"{StrConvHash}.FormatFloat({reference}, 'E', -1, 64)",
+                "DateTimeOffset" or "Time" => $"({reference}).String()",
+                _ => reference,
+            };
+        }
     }
 }

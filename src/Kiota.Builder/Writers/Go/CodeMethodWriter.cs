@@ -76,10 +76,12 @@ namespace Kiota.Builder.Writers.Go {
         {
             var rawUrlParam = codeElement.Parameters.OfKind(CodeParameterKind.RawUrl);
             var requestAdapterParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestAdapter);
+            var pathParamsSuffix = string.Join(", ", codeElement.OriginalMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)).Select(x => "nil").ToArray());
+            if(!string.IsNullOrEmpty(pathParamsSuffix)) pathParamsSuffix = ", " + pathParamsSuffix;
             var tempParamsVarName = "urlParams";
             writer.WriteLines($"{tempParamsVarName} := make(map[string]string)",
                             $"{tempParamsVarName}[\"raw-request-url\"] = {rawUrlParam.Name.ToFirstCharacterLowerCase()}",
-                            $"return New{parentClass.Name.ToFirstCharacterUpperCase()}Internal({tempParamsVarName}, {requestAdapterParam.Name.ToFirstCharacterLowerCase()})");
+                            $"return New{parentClass.Name.ToFirstCharacterUpperCase()}Internal({tempParamsVarName}, {requestAdapterParam.Name.ToFirstCharacterLowerCase()}{pathParamsSuffix})");
         }
 
         private void WriteRequestBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
@@ -241,8 +243,9 @@ namespace Kiota.Builder.Writers.Go {
         private const string TempMapVarName = "urlTplParams";
         private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType) {
             var urlTemplateParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
+            var idParameter = codeElement.Parameters.First();
             conventions.AddParametersAssignment(writer, urlTemplateParametersProperty.Type, $"m.{urlTemplateParametersProperty.Name.ToFirstCharacterLowerCase()}",
-                (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.ParameterName, "id"));
+                (idParameter.Type, codeElement.OriginalIndexer.ParameterName, "id"));
             conventions.AddRequestBuilderBody(parentClass, returnType, writer, urlTemplateVarName: TempMapVarName);
         }
         private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {

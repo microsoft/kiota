@@ -158,6 +158,11 @@ namespace Kiota.Builder.Refiners {
                         !conventions.IsScalarType(method.ReturnType.Name) &&
                         !conventions.IsPrimitiveType(method.ReturnType.Name),
                 "github.com/microsoft/kiota/abstractions/go/serialization", "Parsable"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor) &&
+                        method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path) &&
+                                                !x.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase) &&
+                                                !x.Type.Name.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase)),
+                "strconv", "FormatBool"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
                 "github.com/microsoft/kiota/abstractions/go/serialization", "SerializationWriter"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
@@ -203,7 +208,7 @@ namespace Kiota.Builder.Refiners {
                 else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
                     currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
                 else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase)) {
-                    currentProperty.Type.Name = $"Time";
+                    currentProperty.Type.Name = "Time";
                     var nUsing = new CodeUsing {
                         Name = "Time",
                         Declaration = new CodeType {
