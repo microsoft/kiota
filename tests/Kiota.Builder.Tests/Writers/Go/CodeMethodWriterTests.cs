@@ -189,7 +189,8 @@ namespace Kiota.Builder.Writers.Go.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains($"requestInfo := {AbstractionsPackageHash}.NewRequestInformation()", result);
-            Assert.Contains("err := requestInfo.SetUri", result);
+            Assert.Contains("requestInfo.UrlTemplate = ", result);
+            Assert.Contains("requestInfo.UrlTemplateParameters", result);
             Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
             Assert.Contains("err != nil", result);
             Assert.Contains("h != nil", result);
@@ -199,7 +200,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             Assert.Contains("o != nil", result);
             Assert.Contains("requestInfo.AddRequestOptions(o)", result);
             Assert.Contains("requestInfo.SetContentFromParsable(m.requestAdapter", result);
-            Assert.Contains("return requestInfo, err", result);
+            Assert.Contains("return requestInfo, nil", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]

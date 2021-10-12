@@ -155,17 +155,17 @@ namespace Kiota.Builder.Refiners {
                 currentMethod.ReturnType.Name = $"Map<String, BiConsumer<T, ParseNode>>";
                 currentMethod.Name = "getFieldDeserializers";
             }
-            else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor))
+            else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor)) {
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.BackingStore))
                     .Where(x => x.Type.Name.StartsWith("I", StringComparison.OrdinalIgnoreCase))
                     .ToList()
                     .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
-            else if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.UrlTemplateParameters)).ToList().ForEach(x => x.Type.IsNullable = true);
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.UrlTemplateParameters))
+                    .ToList()
+                    .ForEach(x => x.Type.IsNullable = true);
                 var urlTplParams = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.UrlTemplateParameters));
                 if(urlTplParams != null) 
                     urlTplParams.Type.Name = "HashMap<String, String>";
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I" 
             }
             if (currentMethod.IsOfKind(CodeMethodKind.RequestBuilderWithParameters, CodeMethodKind.Constructor) &&
                     currentMethod.Parameters.Any(x => OriginalDateTimeOffsetType.Equals(x.Type.Name, StringComparison.OrdinalIgnoreCase)) &&

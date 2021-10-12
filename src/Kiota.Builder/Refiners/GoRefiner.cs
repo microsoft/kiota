@@ -23,6 +23,9 @@ namespace Kiota.Builder.Refiners {
                 generatedCode,
                 _configuration.UsesBackingStore
             );
+            AddRawUrlConstructorOverload(
+                generatedCode
+            );
             MoveAllModelsToTopLevel(
                 generatedCode
             );
@@ -182,12 +185,15 @@ namespace Kiota.Builder.Refiners {
             else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer)) {
                 currentMethod.ReturnType.Name = "map[string]func(interface{}, i04eb5309aeaafadd28374d79c8471df9b267510b4dc2e3144c378c50f6fd7b55.ParseNode)(error)";
                 currentMethod.Name = "getFieldDeserializers";
-            } else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor))
+            } else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor)) {
+                var rawUrlParam = currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl);
+                if(rawUrlParam != null)
+                    rawUrlParam.Type.IsNullable = false;
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter))
                     .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                     .ToList()
                     .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
-            else if(currentMethod.IsOfKind(CodeMethodKind.RequestGenerator))
+            } else if(currentMethod.IsOfKind(CodeMethodKind.RequestGenerator))
                 currentMethod.ReturnType.IsNullable = true;
         }
         private static void CorrectPropertyType(CodeProperty currentProperty) {
@@ -209,6 +215,11 @@ namespace Kiota.Builder.Refiners {
                 } else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
                     currentProperty.Type.Name = "map[string]interface{}";
                     currentProperty.DefaultValue = $"make({currentProperty.Type.Name})";
+                } else if(currentProperty.IsOfKind(CodePropertyKind.UrlTemplateParameters)) {
+                    currentProperty.Type.IsNullable = true;
+                    currentProperty.Type.Name = "map[string]string";
+                    if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
+                        currentProperty.DefaultValue = $"make({currentProperty.Type.Name})";
                 }
             }
         }

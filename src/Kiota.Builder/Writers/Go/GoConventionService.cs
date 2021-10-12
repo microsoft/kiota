@@ -128,7 +128,19 @@ namespace Kiota.Builder.Writers.Go {
             var constructorName = splatImport.Last().TrimCollectionAndPointerSymbols().ToFirstCharacterUpperCase();
             var moduleName = splatImport.Length > 1 ? $"{splatImport.First()}." : string.Empty;
             var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}";
-            writer.WriteLines($"return *{moduleName}New{constructorName}({urlTemplateParams}, m.{requestAdapterProp.Name}{pathParametersSuffix});");
+            writer.WriteLines($"return *{moduleName}New{constructorName}Internal({urlTemplateParams}, m.{requestAdapterProp.Name}{pathParametersSuffix});");
+        }
+        internal string TempDictionaryVarName = "urlTplParams";
+        internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase urlTemplateParametersType, string urlTemplateParametersReference, params (CodeTypeBase, string, string)[] parameters) {
+            if(urlTemplateParametersType == null) return;
+            var mapTypeName = urlTemplateParametersType.Name;
+            writer.WriteLines($"{TempDictionaryVarName} := make({mapTypeName})",
+                            $"for idx, item := range {urlTemplateParametersReference} {{");
+            writer.IncreaseIndent();
+            writer.WriteLine($"{TempDictionaryVarName}[idx] = item");
+            writer.CloseCurly();
+            if(parameters.Any())
+                writer.WriteLines(parameters.Select(p => $"{TempDictionaryVarName}[\"{p.Item2}\"] = {p.Item3}").ToArray());
         }
         #pragma warning restore CA1822 // Method should be static
     }
