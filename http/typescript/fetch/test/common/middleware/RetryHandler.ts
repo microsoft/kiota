@@ -10,9 +10,9 @@ import { MiddlewareContext } from "../../../src/middlewares/middlewareContext";
 import { FetchRequestInit } from "../../../src/utils/fetchDefinitions";
 import { MiddlewareControl } from "../../../src/middlewares/middlewareControl";
 import { RetryHandlerOptions, ShouldRetry } from "../../../src/middlewares/options/retryHandlerOptions";
-import { RetryHandler } from "../../../src/middlewares/RetryHandler";
+import { RetryHandler } from "../../../src/middlewares/retryHandler";
 import { DummyFetchHandler } from "./dummyFetchHandler";
-import { getResponse } from "../testUtils"
+import { getResponse } from "../../testUtils"
 
 var Response = Response;
 if (typeof Response != "object") {

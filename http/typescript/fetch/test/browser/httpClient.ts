@@ -8,6 +8,7 @@
 import { assert } from "chai";
 
 import { HttpClient } from "../../src/httpClient";
+import { defaultFetchHandler } from "../../src/middlewares/defaultFetchHandler";
 import { MiddlewareContext } from "../../src/middlewares/middlewareContext";
 import { FetchRequestInfo, FetchRequestInit } from "../../src/utils/fetchDefinitions";
 import { DummyFetchHandler } from "../common/middleware/dummyFetchHandler";
@@ -58,6 +59,7 @@ describe("HTTPClient.ts", () => {
 					}
 				};
 				console.log("erer");
+				assert.isTrue(httpClient["middleware"] instanceof defaultFetchHandler)
 				await httpClient.executeFetch(context);
 				//throw new Error("Test Failed - Something wrong with the context validation");
 			} catch (error) {

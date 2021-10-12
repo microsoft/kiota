@@ -21,16 +21,11 @@ import { FetchRequest, FetchRequestInfo, FetchRequestInit } from "../utils/fetch
  */
 export const getRequestHeader = (request: FetchRequestInfo, options: FetchRequestInit | undefined, key: string): string | null => {
 	let value: string = null;
-	console.log(" inside  get requestheader" + value);
 	if (typeof request !== 'string') {
-		console.log(" inside ! string" + value);
 		value = (request as FetchRequest).headers.get(key);
 	} else if (typeof options !== "undefined" && options.headers !== undefined) {
-		console.log(options.headers);
 		value = options.headers[key];
-		console.log(" inside option =svalue" + value);
 	}
-	console.log("value" + value);
 	return value;
 };
 
@@ -50,7 +45,6 @@ export const setRequestHeader = (request: FetchRequestInfo, options: FetchReques
 		if(!options.headers){
 			options.headers = {};
 		}
-		console.log(options.headers);
 		options.headers[key] = value;
 	}
 };

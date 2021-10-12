@@ -9,10 +9,9 @@
  * @module FetchHandler
  */
 
-import {fetch as nodeFetch} from "node-fetch";
-import { MiddlewareContext } from "./middlewareContext";
-import { Middleware } from "./middleware";
-import { FetchResponse } from "../utils/fetchDefinitions";
+import { MiddlewareContext } from "../middlewareContext";
+import { Middleware } from "../middleware";
+import { FetchResponse } from "../../utils/fetchDefinitions";
 
 /**
  * @class
@@ -20,13 +19,17 @@ import { FetchResponse } from "../utils/fetchDefinitions";
  * Class for FetchHandler
  */
 
-export class FetchHandler implements Middleware {
+export class defaultFetchHandler implements Middleware {
 
     /**
-	 * @private
-	 * The next middleware in the middleware chain
-	 */
-	next: Middleware;
+     * @private
+     * The next middleware in the middleware chain
+     */
+    next: Middleware;
+
+    constructor(){
+        console.log("from browser sds");
+    }
 
     /**
      * @public
@@ -36,7 +39,8 @@ export class FetchHandler implements Middleware {
      * @returns A promise that resolves to nothing
      */
     public async execute(context: MiddlewareContext): Promise<void> {
-        context.response = await nodeFetch(context.request, context.options) as FetchResponse;
+        console.log("from browser *************************");
+        context.response = await fetch(context.request, context.options as RequestInit) as FetchResponse;
         return;
     }
 }

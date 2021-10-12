@@ -12,10 +12,13 @@
         "build": "npm run build:cjs && npm run build:es",
         "build:cjs": "tsc -p tsconfig.cjs.json",
         "build:es": "tsc -p tsconfig.es.json",
-        "test:cjs": "tsc -b tsconfig.test.json   && mocha  'dist/cjs/test/common/**/*.js' -grep MiddlewareUtil.ts",
-        "test:es": " tsc -b tsconfig.test.json && mocha 'dist/es/test/common/**/*.js'  --require  esm",
+        "test:cjs": "npm run build:cjs   && mocha  'dist/cjs/test/common/**/*.js' && mocha  'dist/cjs/test/node/**/*.js'",
+        "test:es": " npm run build:es && mocha 'dist/es/test/common/**/*.js'  --require  esm && && mocha 'dist/es/test/node/**/*.js'  --require  esm",
         "test": "npm run test:cjs && npm run test:es",
-        "clean": "rm -r ./dist"
+        "clean": "rm -r ./dist",
+        "testn": "npm run build:cjs && mocha  'dist/cjs/test/node/**/*.js'",
+        "karma": "karma  start --single-run --browsers ChromeHeadless karma.conf.js"
+
     },
     "repository": {
         "type": "git",

@@ -3,6 +3,7 @@ import { MiddlewareContext } from "./middlewares/middlewareContext";
 import { customFetchHandler } from "./middlewares/customFetchHandler";
 import { MiddlewareFactory } from "./middlewares/middlewareFactory";
 import { FetchRequestInfo, FetchRequestInit , FetchResponse } from "./utils/fetchDefinitions";
+import { defaultFetchHandler } from "./middlewares/defaultFetchHandler";
 
 /** Default fetch client with options and a middleware pipleline for requests execution. */
 export class HttpClient {
@@ -15,11 +16,15 @@ export class HttpClient {
     public constructor(private customFetch?: (request: FetchRequestInfo, init?: FetchRequestInit) => Promise<FetchResponse>, ...middlewares: Middleware[]) {
 
         // Use default middleware chain if middlewares and custom fetch function are not defined
-        if(!middlewares && !customFetch){
+        if( middlewares === undefined && !customFetch){
             this.setMiddleware(...(MiddlewareFactory.getDefaultMiddlewareChain()));
         }
 
-        if (middlewares) {
+        if((middlewares === null || middlewares.length === 0)  && !customFetch){
+            console.log("hhhererrrr")
+            this.setMiddleware(new defaultFetchHandler());
+        }
+        if (middlewares && middlewares.length >= 1) {
             if(customFetch){
                 this.setMiddleware(...middlewares, new customFetchHandler(customFetch));
             }
@@ -73,8 +78,9 @@ export class HttpClient {
             return this.customFetch(context.request, context.options);
         }
         if (this.middleware) {
-            await this.middleware.execute(context);
-
+            console.log("execute from browser");
+            const s= await this.middleware.execute(context);
+        
             return context.response;
         }
         else

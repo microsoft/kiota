@@ -7,11 +7,11 @@
 
 import { assert } from "chai";
 
-import { MiddlewareContext } from "../../../src/middlewares/middlewareContext";
-import { MiddlewareControl } from "../../../src/middlewares/middlewareControl";
-import { RedirectHandlerOptions } from "../../../src/middlewares/options/redirectHandlerOption";
-import { RedirectHandler } from "../../../src/middlewares/redirectHandler";
-import { DummyFetchHandler } from "./dummyFetchHandler";
+import { MiddlewareContext } from "../../src/middlewares/middlewareContext";
+import { MiddlewareControl } from "../../src/middlewares/middlewareControl";
+import { RedirectHandlerOptions } from "../../src/middlewares/options/redirectHandlerOption";
+import { RedirectHandler } from "../../src/middlewares/redirectHandler";
+import { DummyFetchHandler } from "../common/middleware/dummyFetchHandler";
 import { getResponse } from "../testUtils"
 
 var Response = Response;

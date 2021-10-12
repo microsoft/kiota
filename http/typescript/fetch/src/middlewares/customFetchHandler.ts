@@ -9,7 +9,7 @@
  * @module FetchHandler
  */
 
-import fetch from "node-fetch";
+
 import { MiddlewareContext } from "./middlewareContext";
 import { Middleware } from "./middleware";
 import { FetchResponse, FetchRequestInfo, FetchRequestInit } from "../utils/fetchDefinitions";

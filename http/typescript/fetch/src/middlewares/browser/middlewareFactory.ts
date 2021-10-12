@@ -10,11 +10,9 @@
  */
 
 import { defaultFetchHandler} from "./defaultFetchHandler";
-import { Middleware } from "./middleware";
-import { RedirectHandlerOptions } from "./options/redirectHandlerOption";
-import { RetryHandlerOptions } from "./options/retryHandlerOptions";
-import { RedirectHandler } from "./redirectHandler";
-import { RetryHandler } from "./retryHandler";
+import { Middleware } from "../middleware";
+import { RetryHandlerOptions } from "../options/retryHandlerOptions";
+import { RetryHandler } from "../retryHandler";
 
 
 /**
@@ -30,14 +28,11 @@ export class MiddlewareFactory {
 	 * @returns an array of the middleware handlers of the default middleware chain
 	 */
 	public static getDefaultMiddlewareChain(): Middleware[] {
-		const middlewareArray: Middleware[] = [];
+		const middleware: Middleware[] = [];
 		const retryHandler = new RetryHandler(new RetryHandlerOptions());
-		middlewareArray.push(retryHandler);
-		const redirectHandler = new RedirectHandler(new RedirectHandlerOptions());
-		middlewareArray.push(redirectHandler);
+		middleware.push(retryHandler);
+		middleware.push(new defaultFetchHandler());
 
-		middlewareArray.push(new defaultFetchHandler());
-
-		return middlewareArray;
+		return middleware;
 	}
 }
