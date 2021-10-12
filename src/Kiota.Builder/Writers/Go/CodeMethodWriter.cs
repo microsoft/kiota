@@ -80,7 +80,7 @@ namespace Kiota.Builder.Writers.Go {
             if(!string.IsNullOrEmpty(pathParamsSuffix)) pathParamsSuffix = ", " + pathParamsSuffix;
             var tempParamsVarName = "urlParams";
             writer.WriteLines($"{tempParamsVarName} := make(map[string]string)",
-                            $"{tempParamsVarName}[\"raw-request-url\"] = {rawUrlParam.Name.ToFirstCharacterLowerCase()}",
+                            $"{tempParamsVarName}[\"request-raw-url\"] = {rawUrlParam.Name.ToFirstCharacterLowerCase()}",
                             $"return New{parentClass.Name.ToFirstCharacterUpperCase()}Internal({tempParamsVarName}, {requestAdapterParam.Name.ToFirstCharacterLowerCase()}{pathParamsSuffix})");
         }
 
