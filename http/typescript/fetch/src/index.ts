@@ -11,3 +11,5 @@ export * from './middlewares/middlewareContext';
 export * from './middlewares/middlewareFactory';
 export * from './middlewares/middlewareControl';
 export * from './middlewares/middlewareUtil';
+export * from './utils/fetchDefinitions';
+export * from './utils/utils';

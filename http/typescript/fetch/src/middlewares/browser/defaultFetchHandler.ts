@@ -27,10 +27,6 @@ export class defaultFetchHandler implements Middleware {
      */
     next: Middleware;
 
-    constructor(){
-        console.log("from browser sds");
-    }
-
     /**
      * @public
      * @async
@@ -39,7 +35,6 @@ export class defaultFetchHandler implements Middleware {
      * @returns A promise that resolves to nothing
      */
     public async execute(context: MiddlewareContext): Promise<void> {
-        console.log("from browser *************************");
         context.response = await fetch(context.request, context.options as RequestInit) as FetchResponse;
         return;
     }

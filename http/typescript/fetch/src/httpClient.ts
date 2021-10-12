@@ -2,7 +2,7 @@ import { Middleware } from "./middlewares/middleware";
 import { MiddlewareContext } from "./middlewares/middlewareContext";
 import { customFetchHandler } from "./middlewares/customFetchHandler";
 import { MiddlewareFactory } from "./middlewares/middlewareFactory";
-import { FetchRequestInfo, FetchRequestInit , FetchResponse } from "./utils/fetchDefinitions";
+import { FetchRequestInfo, FetchRequestInit, FetchResponse } from "./utils/fetchDefinitions";
 import { defaultFetchHandler } from "./middlewares/defaultFetchHandler";
 
 /** Default fetch client with options and a middleware pipleline for requests execution. */
@@ -11,25 +11,35 @@ export class HttpClient {
     /**
      * Instantiates a new HttpClient.
      * @param middlewares middlewares to be used for requests execution.
-     * @param defaultRequestSettings default request settings to be used for requests execution.
+     * @param custom fetch function
      */
     public constructor(private customFetch?: (request: FetchRequestInfo, init?: FetchRequestInit) => Promise<FetchResponse>, ...middlewares: Middleware[]) {
 
         // Use default middleware chain if middlewares and custom fetch function are not defined
-        if( middlewares === undefined && !customFetch){
-            this.setMiddleware(...(MiddlewareFactory.getDefaultMiddlewareChain()));
-        }
+        if (!middlewares.length) {
 
-        if((middlewares === null || middlewares.length === 0)  && !customFetch){
-            console.log("hhhererrrr")
-            this.setMiddleware(new defaultFetchHandler());
-        }
-        if (middlewares && middlewares.length >= 1) {
-            if(customFetch){
-                this.setMiddleware(...middlewares, new customFetchHandler(customFetch));
+            if (this.customFetch) {
+                this.setMiddleware(...(MiddlewareFactory.getDefaultMiddlewareChain(customFetch)));
             }
             else {
-                this.setMiddleware(...middlewares);
+                this.setMiddleware(...(MiddlewareFactory.getDefaultMiddlewareChain()));
+            }
+        }
+        else {
+            if (middlewares[0] === null) {
+                if(!customFetch){
+                    this.setMiddleware((new defaultFetchHandler()));
+                }
+                return;
+               
+            }
+            else {
+                if (this.customFetch) {
+                    this.setMiddleware(...middlewares, new customFetchHandler(customFetch));
+                }
+                else {
+                    this.setMiddleware(...middlewares);
+                }
             }
         }
     }
@@ -73,14 +83,12 @@ export class HttpClient {
      * @returns the promise resolving the response.
      */
     public async executeFetch(context: MiddlewareContext): Promise<FetchResponse> {
-
         if (this.customFetch && !this.middleware) {
             return this.customFetch(context.request, context.options);
         }
+
         if (this.middleware) {
-            console.log("execute from browser");
-            const s= await this.middleware.execute(context);
-        
+            await this.middleware.execute(context);
             return context.response;
         }
         else

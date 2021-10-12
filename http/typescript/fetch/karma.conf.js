@@ -1,7 +1,8 @@
 module.exports = function(config) {
     config.set({
         frameworks: ["mocha", "chai", "karma-typescript"],
-        files: ["test/common/**/*.ts", "src/**/*.ts", "test/browser/**/*.ts", "src/*.ts", "test/testUtils.ts"],
+        //files: ["src/browser/index.ts", "test/common/**/*.ts", "test/browser/**/*.ts", "test/testUtils.ts"],
+        files: [{ pattern: "dist/es/test/rolledup.js", type: "module" }],
         preprocessors: {
             "**/*.ts": ["karma-typescript"],
         },

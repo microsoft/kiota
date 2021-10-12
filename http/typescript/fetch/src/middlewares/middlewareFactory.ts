@@ -9,12 +9,14 @@
  * @module MiddlewareFactory
  */
 
-import { defaultFetchHandler} from "./defaultFetchHandler";
+import { customFetchHandler } from "./customFetchHandler";
+import { defaultFetchHandler } from "./defaultFetchHandler";
 import { Middleware } from "./middleware";
 import { RedirectHandlerOptions } from "./options/redirectHandlerOption";
 import { RetryHandlerOptions } from "./options/retryHandlerOptions";
 import { RedirectHandler } from "./redirectHandler";
 import { RetryHandler } from "./retryHandler";
+import { FetchRequestInfo, FetchRequestInit, FetchResponse } from "../utils/fetchDefinitions";
 
 
 /**
@@ -29,15 +31,19 @@ export class MiddlewareFactory {
 	 * @param {AuthenticationProvider} authProvider - The authentication provider instance
 	 * @returns an array of the middleware handlers of the default middleware chain
 	 */
-	public static getDefaultMiddlewareChain(): Middleware[] {
+	public static getDefaultMiddlewareChain(customFetch?: (request: FetchRequestInfo, init?: FetchRequestInit) => Promise<FetchResponse>): Middleware[] {
 		const middlewareArray: Middleware[] = [];
 		const retryHandler = new RetryHandler(new RetryHandlerOptions());
 		middlewareArray.push(retryHandler);
 		const redirectHandler = new RedirectHandler(new RedirectHandlerOptions());
 		middlewareArray.push(redirectHandler);
+		if (customFetch) {
+			middlewareArray.push(new customFetchHandler(customFetch));
+		} else {
+			middlewareArray.push(new defaultFetchHandler());
+		}
 
-		middlewareArray.push(new defaultFetchHandler());
-
+		
 		return middlewareArray;
 	}
 }

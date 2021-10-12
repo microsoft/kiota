@@ -13,6 +13,7 @@ import { defaultFetchHandler} from "./defaultFetchHandler";
 import { Middleware } from "../middleware";
 import { RetryHandlerOptions } from "../options/retryHandlerOptions";
 import { RetryHandler } from "../retryHandler";
+import { FetchRequestInfo, FetchRequestInit } from "../../utils/fetchDefinitions";
 
 
 /**
