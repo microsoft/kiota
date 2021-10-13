@@ -125,10 +125,8 @@ func (request *RequestInformation) SetContentFromParsable(requestAdapter Request
 	} else if len(items) == 0 {
 		return errors.New("items cannot be nil or empty")
 	}
-	factory, err := requestAdapter.GetSerializationWriterFactory()
-	if err != nil {
-		return err
-	} else if factory == nil {
+	factory := requestAdapter.GetSerializationWriterFactory()
+	if factory == nil {
 		return errors.New("factory cannot be nil")
 	}
 	writer, err := factory.GetSerializationWriter(contentType)

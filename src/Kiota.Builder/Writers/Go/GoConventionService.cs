@@ -15,6 +15,7 @@ namespace Kiota.Builder.Writers.Go {
         public override string ParseNodeInterfaceName => "ParseNode";
         #pragma warning disable CA1822 // Method should be static
         public string AbstractionsHash => "ida96af0f171bb75f894a4013a6b3146a4397c58f11adb81a2b7cbea9314783a9";
+        public string SerializationHash => "i04eb5309aeaafadd28374d79c8471df9b267510b4dc2e3144c378c50f6fd7b55";
         #pragma warning restore CA1822 // Method should be static
         public override string GetAccessModifier(AccessModifier access)
         {

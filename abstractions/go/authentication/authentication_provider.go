@@ -5,5 +5,5 @@ import (
 )
 
 type AuthenticationProvider interface {
-	Authenticate(request abs.RequestInformation) error
+	AuthenticateRequest(request abs.RequestInformation) error
 }

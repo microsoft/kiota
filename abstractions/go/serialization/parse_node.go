@@ -8,10 +8,10 @@ import (
 
 type ParseNode interface {
 	GetChildNode(index string) (ParseNode, error)
-	GetCollectionOfObjectValues(func() interface{}) ([]Parsable, error)
+	GetCollectionOfObjectValues(func() Parsable) ([]Parsable, error)
 	GetCollectionOfPrimitiveValues(targetType string) ([]interface{}, error)
 	GetCollectionOfEnumValues(func(string) (interface{}, error)) ([]interface{}, error)
-	GetObjectValue(func() interface{}) (Parsable, error)
+	GetObjectValue(func() Parsable) (Parsable, error)
 	GetStringValue() (*string, error)
 	GetBoolValue() (*bool, error)
 	GetFloat32Value() (*float32, error)

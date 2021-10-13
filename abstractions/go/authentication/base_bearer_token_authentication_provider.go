@@ -16,7 +16,7 @@ func NewBaseBearerTokenAuthenticationProvider(getAuthorizationToken func(request
 	return &BaseBearerTokenAuthenticationProvider{getAuthorizationToken}
 }
 
-func (provider *BaseBearerTokenAuthenticationProvider) Authenticate(request abs.RequestInformation) error {
+func (provider *BaseBearerTokenAuthenticationProvider) AuthenticateRequest(request abs.RequestInformation) error {
 	if request.Headers == nil {
 		request.Headers = make(map[string]string)
 	}

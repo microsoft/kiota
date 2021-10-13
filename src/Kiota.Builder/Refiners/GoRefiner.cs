@@ -188,7 +188,7 @@ namespace Kiota.Builder.Refiners {
             else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
                 currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
             else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer)) {
-                currentMethod.ReturnType.Name = "map[string]func(interface{}, i04eb5309aeaafadd28374d79c8471df9b267510b4dc2e3144c378c50f6fd7b55.ParseNode)(error)";
+                currentMethod.ReturnType.Name = $"map[string]func(interface{{}}, {conventions.SerializationHash}.ParseNode)(error)";
                 currentMethod.Name = "getFieldDeserializers";
             } else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor)) {
                 var rawUrlParam = currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl);
