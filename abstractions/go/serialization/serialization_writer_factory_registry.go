@@ -7,7 +7,7 @@ type SerializationWriterFactoryRegistry struct {
 	ContentTypeAssociatedFactories map[string]SerializationWriterFactory
 }
 
-var DefaultSerializationWriterFactoryInstance = SerializationWriterFactoryRegistry{
+var DefaultSerializationWriterFactoryInstance = &SerializationWriterFactoryRegistry{
 	ContentTypeAssociatedFactories: make(map[string]SerializationWriterFactory),
 }
 

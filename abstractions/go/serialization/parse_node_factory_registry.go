@@ -7,12 +7,12 @@ type ParseNodeFactoryRegistry struct {
 	ContentTypeAssociatedFactories map[string]ParseNodeFactory
 }
 
-var DefaultParseNodeFactoryInstance = ParseNodeFactoryRegistry{
+var DefaultParseNodeFactoryInstance = &ParseNodeFactoryRegistry{
 	ContentTypeAssociatedFactories: make(map[string]ParseNodeFactory),
 }
 
 func (m *ParseNodeFactoryRegistry) GetValidContentType() (string, error) {
-	return "", errors.New("The registry supports multiple content types. Get the registered factory instead.")
+	return "", errors.New("the registry supports multiple content types. Get the registered factory instead.")
 }
 
 func (m *ParseNodeFactoryRegistry) GetRootParseNode(contentType string, content []byte) (ParseNode, error) {

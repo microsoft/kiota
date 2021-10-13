@@ -1,6 +1,7 @@
 package nethttplibrary
 
 import (
+	"bytes"
 	"errors"
 	"io/ioutil"
 
@@ -44,7 +45,12 @@ func NewNetHttpRequestAdapterWithParseNodeFactoryAndSerializationWriterFactoryAn
 		}
 		result.httpClient = defaultClient
 	}
-	//TODO get parse node and serialization writers from factories singleton if nil
+	if result.serializationWriterFactory == nil {
+		result.serializationWriterFactory = absser.DefaultSerializationWriterFactoryInstance
+	}
+	if result.parseNodeFactory == nil {
+		result.parseNodeFactory = absser.DefaultParseNodeFactoryInstance
+	}
 	return result, nil
 }
 func (a *NetHttpRequestAdapter) GetSerializationWriterFactory() absser.SerializationWriterFactory {
@@ -69,10 +75,13 @@ func (a *NetHttpRequestAdapter) getRequestFromRequestInformation(requestInfo abs
 	if err != nil {
 		return nil, err
 	}
-	//TODO body 3rd argument
 	request, err := nethttp.NewRequest(requestInfo.Method.String(), uri.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+	if len(requestInfo.Content) > 0 {
+		reader := bytes.NewReader(requestInfo.Content)
+		request.Body = ioutil.NopCloser(reader)
 	}
 	if request.Header == nil {
 		request.Header = make(nethttp.Header)
