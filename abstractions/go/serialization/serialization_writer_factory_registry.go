@@ -12,11 +12,11 @@ var DefaultSerializationWriterFactoryInstance = &SerializationWriterFactoryRegis
 }
 
 func (m *SerializationWriterFactoryRegistry) GetValidContentType() (string, error) {
-	return "", errors.New("The registry supports multiple content types. Get the registered factory instead.")
+	return "", errors.New("the registry supports multiple content types. Get the registered factory instead")
 }
 func (m *SerializationWriterFactoryRegistry) GetSerializationWriter(contentType string) (SerializationWriter, error) {
 	if contentType == "" {
-		return nil, errors.New("The content type is empty")
+		return nil, errors.New("the content type is empty")
 	}
 	factory := m.ContentTypeAssociatedFactories[contentType]
 	if factory == nil {

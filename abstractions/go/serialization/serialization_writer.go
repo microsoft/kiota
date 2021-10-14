@@ -11,7 +11,7 @@ type SerializationWriter interface {
 	WriteCollectionOfObjectValues(key string, collection []Parsable) error
 	WriteCollectionOfPrimitiveValues(key string, collection []interface{}) error
 	GetSerializedContent() ([]byte, error)
-	WriteAdditionalData(map[string]interface{}) error
+	WriteAdditionalData(value map[string]interface{}) error
 }
 
 func ConvertToArrayOfParsable(params ...interface{}) []Parsable {

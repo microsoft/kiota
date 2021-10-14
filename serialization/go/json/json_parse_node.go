@@ -1,4 +1,4 @@
-package json
+package jsonserialization
 
 type JsonParseNode struct {
 }
