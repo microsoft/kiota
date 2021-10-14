@@ -17,26 +17,25 @@ const copyRight = `/**
 */`;
 
 const config = [{
-    input: ["dist/es/test/commmon/**/*.js,dist/es/test/browser/**/*.js"],
+    input: ["dist/es/test/browser/index.js"],
     output: {
         file: "dist/es/test/rolledup.js",
         format: "esm",
         name: "MicrosoftGraph",
     },
-    external: ['@microsoft/kiota-abstractions'],
     plugins: [
-        // resolve({
-        //     browser: true,
-        //     preferBuiltins: false,
+        commonjs({ include: ["node_modules/**"] }),
+        resolve({
+            browser: true,
+            preferBuiltins: false,
 
-        // }),
-        commonjs({ include: "node_modules/**" }),
-        terser({
-            format: {
-                comments: false,
-                preamble: copyRight,
-            },
         }),
+        // terser({
+        //     format: {
+        //         comments: false,
+        //         preamble: copyRight,
+        //     },
+        // }),
     ],
 }];
 

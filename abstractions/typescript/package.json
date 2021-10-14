@@ -4,7 +4,10 @@
     "description": "Core abstractions for kiota generated libraries in TypeScript and JavaScript",
     "main": "dist/cjs/index.js",
     "types": "dist/cjs/index.d.ts",
-    "module": "dist/esm/index.js",
+    "module": "dist/es/index.js",
+    "browser": {
+        "dist/cjs/index.js": "dist/es/index.js"
+    },
     "scripts": {
         "build": "npm run build:cjs && npm run build:es",
         "build:cjs": "tsc -p tsconfig.cjs.json",

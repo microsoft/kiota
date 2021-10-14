@@ -13,7 +13,8 @@ import { defaultFetchHandler} from "./defaultFetchHandler";
 import { Middleware } from "../middleware";
 import { RetryHandlerOptions } from "../options/retryHandlerOptions";
 import { RetryHandler } from "../retryHandler";
-import { FetchRequestInfo, FetchRequestInit } from "../../utils/fetchDefinitions";
+import { FetchRequestInfo, FetchRequestInit, FetchResponse } from "../../utils/fetchDefinitions";
+import { customFetchHandler } from "../customFetchHandler";
 
 
 /**
@@ -28,12 +29,16 @@ export class MiddlewareFactory {
 	 * @param {AuthenticationProvider} authProvider - The authentication provider instance
 	 * @returns an array of the middleware handlers of the default middleware chain
 	 */
-	public static getDefaultMiddlewareChain(): Middleware[] {
-		const middleware: Middleware[] = [];
+	public static getDefaultMiddlewareChain(customFetch?: (request: FetchRequestInfo, init?: FetchRequestInit)=> Promise<FetchResponse>): Middleware[] {
+		console.log("getting the browser default middleware chain **************************");
+		const middlewareArray: Middleware[] = [];
 		const retryHandler = new RetryHandler(new RetryHandlerOptions());
-		middleware.push(retryHandler);
-		middleware.push(new defaultFetchHandler());
-
-		return middleware;
+		middlewareArray.push(retryHandler);
+		if (customFetch) {
+			middlewareArray.push(new customFetchHandler(customFetch));
+		} else {
+			middlewareArray.push(new defaultFetchHandler());
+		}
+		return middlewareArray;
 	}
 }
