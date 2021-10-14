@@ -8,10 +8,10 @@ import (
 
 type ParseNode interface {
 	GetChildNode(index string) (ParseNode, error)
-	GetCollectionOfObjectValues(func() Parsable) ([]Parsable, error)
+	GetCollectionOfObjectValues(ctor func() Parsable) ([]Parsable, error)
 	GetCollectionOfPrimitiveValues(targetType string) ([]interface{}, error)
-	GetCollectionOfEnumValues(func(string) (interface{}, error)) ([]interface{}, error)
-	GetObjectValue(func() Parsable) (Parsable, error)
+	GetCollectionOfEnumValues(parser func(string) (interface{}, error)) ([]interface{}, error)
+	GetObjectValue(ctor func() Parsable) (Parsable, error)
 	GetStringValue() (*string, error)
 	GetBoolValue() (*bool, error)
 	GetFloat32Value() (*float32, error)
@@ -20,6 +20,6 @@ type ParseNode interface {
 	GetInt64Value() (*int64, error)
 	GetTimeValue() (*time.Time, error)
 	GetUUIDValue() (*uuid.UUID, error)
-	GetEnumValue(func(string) (interface{}, error)) (interface{}, error)
+	GetEnumValue(parser func(string) (interface{}, error)) (interface{}, error)
 	GetByteArrayValue() ([]byte, error)
 }
