@@ -1,12 +1,19 @@
-﻿namespace Kiota.Builder
+﻿using System;
+
+namespace Kiota.Builder
 {
     public class CodeIndexer : CodeTerminal, IDocumentedElement
     {
-        public CodeIndexer(CodeElement parent): base(parent) {
-            
-        }
-        public CodeTypeBase IndexType {get; set;}
-        public CodeTypeBase ReturnType {get; set;}
+        private CodeTypeBase indexType;
+        public CodeTypeBase IndexType {get => indexType; set {
+            EnsureElementsAreChildren(value);
+            indexType = value;
+        }}
+        private CodeTypeBase returnType;
+        public CodeTypeBase ReturnType {get => returnType; set {
+            EnsureElementsAreChildren(value);
+            returnType = value;
+        }}
         public string Description {get; set;}
     }
 }

@@ -1,4 +1,5 @@
 import { MiddlewareContext } from "./middlewareContext";
+import { RequestOption } from "@microsoft/kiota-abstractions";
 
 /** Defines the contract for a middleware in the request execution pipeline. */
 export interface Middleware {

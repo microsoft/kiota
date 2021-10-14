@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using Kiota.Builder.Writers.Go;
 
 namespace Kiota.Builder.Refiners {
     public class GoRefiner : CommonLanguageRefiner
@@ -19,9 +19,17 @@ namespace Kiota.Builder.Refiners {
             ReplaceRequestBuilderPropertiesByMethods(
                 generatedCode
             );
-            MoveModelsInDedicatedNamespace(
+            ConvertUnionTypesToWrapper(
+                generatedCode,
+                _configuration.UsesBackingStore
+            );
+            MoveAllModelsToTopLevel(
                 generatedCode
             );
+            ReplaceReservedNames(
+                generatedCode,
+                new GoReservedNamesProvider(),
+                x => $"{x}_escpaped");
             AddPropertiesAndMethodTypesImports(
                 generatedCode,
                 true,
@@ -29,9 +37,7 @@ namespace Kiota.Builder.Refiners {
                 true);
             AddDefaultImports(
                 generatedCode,
-                defaultNamespaces,
-                defaultNamespacesForModels,
-                defaultNamespacesForRequestBuilders);
+                defaultUsingEvaluators);
             CorrectCoreType(
                 generatedCode,
                 CorrectMethodType,
@@ -65,13 +71,58 @@ namespace Kiota.Builder.Refiners {
                 new string[] {"github.com/microsoft/kiota/abstractions/go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota/abstractions/go.RegisterDefaultSerializer"},
                 new string[] {"github.com/microsoft/kiota/abstractions/go/serialization.ParseNodeFactory", "github.com/microsoft/kiota/abstractions/go.RegisterDefaultDeserializer"});
         }
+        private static void MoveAllModelsToTopLevel(CodeElement currentElement, CodeNamespace targetNamespace = null) {
+            if(currentElement is CodeNamespace currentNamespace) {
+                if(targetNamespace == null) {
+                    var rootModels = FindRootModelsNamespace(currentNamespace);
+                    targetNamespace = FindFirstModelSubnamepaceWithClasses(rootModels);
+                }
+                if(currentNamespace != targetNamespace &&
+                    !string.IsNullOrEmpty(currentNamespace.Name) &&
+                    currentNamespace.Name.Contains(targetNamespace.Name, StringComparison.OrdinalIgnoreCase)) {
+                    foreach (var codeClass in currentNamespace.Classes)
+                    {
+                        currentNamespace.RemoveChildElement(codeClass);
+                        targetNamespace.AddClass(codeClass);
+                    }
+                }
+                CrawlTree(currentElement, x => MoveAllModelsToTopLevel(x, targetNamespace));
+            }
+        }
+        private static CodeNamespace FindFirstModelSubnamepaceWithClasses(CodeNamespace currentNamespace) {
+            if(currentNamespace != null) {
+                if(currentNamespace.Classes.Any()) return currentNamespace;
+                else
+                    foreach (var subNS in currentNamespace.Namespaces)
+                    {
+                        var result = FindFirstModelSubnamepaceWithClasses(subNS);
+                        if (result != null) return result;
+                    }
+            }
+            return null;
+        }
+        private static CodeNamespace FindRootModelsNamespace(CodeNamespace currentNamespace) {
+            if(currentNamespace != null) {
+                if(!string.IsNullOrEmpty(currentNamespace.Name) &&
+                    currentNamespace.Name.EndsWith("Models", StringComparison.OrdinalIgnoreCase))
+                    return currentNamespace;
+                else
+                    foreach(var subNS in currentNamespace.Namespaces)
+                    {
+                        var result = FindRootModelsNamespace(subNS);
+                        if(result != null)
+                            return result;
+                    }
+            }
+            return null;
+        }
         private static void ReplaceRequestBuilderPropertiesByMethods(CodeElement currentElement) {
             if(currentElement is CodeProperty currentProperty &&
                 currentProperty.IsOfKind(CodePropertyKind.RequestBuilder) &&
                 currentElement.Parent is CodeClass parentClass) {
                     parentClass.RemoveChildElement(currentProperty);
                     currentProperty.Type.IsNullable = false;
-                    parentClass.AddMethod(new CodeMethod(parentClass) {
+                    parentClass.AddMethod(new CodeMethod {
                         Name = currentProperty.Name,
                         ReturnType = currentProperty.Type,
                         Access = AccessModifier.Public,
@@ -84,30 +135,34 @@ namespace Kiota.Builder.Refiners {
         }
         private static void AddErrorImportForEnums(CodeElement currentElement) {
             if(currentElement is CodeEnum currentEnum) {
-                currentEnum.Usings.Add(new CodeUsing(currentElement) {
+                currentEnum.AddUsings(new CodeUsing {
                     Name = "errors",
                 });
             }
             CrawlTree(currentElement, AddErrorImportForEnums);
         }
-        private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
-            new ("HttpCore", "github.com/microsoft/kiota/abstractions/go"),
-            new ("HttpMethod", "github.com/microsoft/kiota/abstractions/go"),
-            new ("RequestInformation", "github.com/microsoft/kiota/abstractions/go"),
-            new ("ResponseHandler", "github.com/microsoft/kiota/abstractions/go"),
-            new ("MiddlewareOption", "github.com/microsoft/kiota/abstractions/go"),
-            new ("QueryParametersBase", "github.com/microsoft/kiota/abstractions/go"),
-            new ("Parsable", "github.com/microsoft/kiota/abstractions/go/serialization"),
-        };
-        private static readonly Tuple<string, string>[] defaultNamespaces = new Tuple<string, string>[] { 
-            new ("SerializationWriter", "github.com/microsoft/kiota/abstractions/go/serialization"),
-        };
-        private static readonly Tuple<string, string>[] defaultNamespacesForModels = new Tuple<string, string>[] { 
-            new ("ParseNode", "github.com/microsoft/kiota/abstractions/go/serialization"),
-            new ("Parsable", "github.com/microsoft/kiota/abstractions/go/serialization"),
-            new ("ConvertToArrayOfParsable", "github.com/microsoft/kiota/abstractions/go/serialization"),
-            new ("ConvertToArrayOfPrimitives", "github.com/microsoft/kiota/abstractions/go/serialization"),
-        };
+        private static readonly GoConventionService conventions = new();
+        private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
+                "github.com/microsoft/kiota/abstractions/go", "RequestAdapter"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+                "github.com/microsoft/kiota/abstractions/go", "RequestInformation", "HttpMethod", "RequestOption"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+                "github.com/microsoft/kiota/abstractions/go", "ResponseHandler"),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.QueryParameters),
+                "github.com/microsoft/kiota/abstractions/go", "QueryParametersBase"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor) &&
+                        !conventions.IsScalarType(method.ReturnType.Name) &&
+                        !conventions.IsPrimitiveType(method.ReturnType.Name),
+                "github.com/microsoft/kiota/abstractions/go/serialization", "Parsable"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
+                "github.com/microsoft/kiota/abstractions/go/serialization", "SerializationWriter"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+                "github.com/microsoft/kiota/abstractions/go/serialization", "ParseNode", "ConvertToArrayOfParsable", "ConvertToArrayOfPrimitives"),
+            new (x => x is CodeMethod method &&
+                method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path) && "DateTimeOffset".Equals(x.Type.Name, StringComparison.OrdinalIgnoreCase)),
+                "time", "Time"),
+        };//TODO add backing store types once we have them defined
         private static void CorrectMethodType(CodeMethod currentMethod) {
             if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) &&
                 currentMethod.Parent is CodeClass parentClass) {
@@ -117,7 +172,7 @@ namespace Kiota.Builder.Refiners {
                     currentMethod.ReturnType.IsNullable = true;
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => {
                     x.Type.IsNullable = false;
-                    x.Type.Name = "MiddlewareOption";
+                    x.Type.Name = "RequestOption";
                     x.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
                 });
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.QueryParameter)).ToList().ForEach(x => x.Type.Name = $"{parentClass.Name}{x.Type.Name}");
@@ -127,8 +182,8 @@ namespace Kiota.Builder.Refiners {
             else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer)) {
                 currentMethod.ReturnType.Name = "map[string]func(interface{}, i04eb5309aeaafadd28374d79c8471df9b267510b4dc2e3144c378c50f6fd7b55.ParseNode)(error)";
                 currentMethod.Name = "getFieldDeserializers";
-            } else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.HttpCore))
+            } else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor))
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter))
                     .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                     .ToList()
                     .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
@@ -137,18 +192,18 @@ namespace Kiota.Builder.Refiners {
         }
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if (currentProperty.Type != null) {
-                if(currentProperty.IsOfKind(CodePropertyKind.HttpCore))
-                    currentProperty.Type.Name = "HttpCore";
+                if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))
+                    currentProperty.Type.Name = "RequestAdapter";
                 else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
                     currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
                 else if("DateTimeOffset".Equals(currentProperty.Type.Name, StringComparison.OrdinalIgnoreCase)) {
                     currentProperty.Type.Name = $"Time";
-                    var nUsing = new CodeUsing(currentProperty.Parent) {
+                    var nUsing = new CodeUsing {
                         Name = "Time",
-                    };
-                    nUsing.Declaration = new CodeType(nUsing) {
-                        Name = "time",
-                        IsExternal = true,
+                        Declaration = new CodeType {
+                            Name = "time",
+                            IsExternal = true,
+                        },
                     };
                     (currentProperty.Parent as CodeClass).AddUsing(nUsing);
                 } else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
@@ -156,28 +211,6 @@ namespace Kiota.Builder.Refiners {
                     currentProperty.DefaultValue = $"make({currentProperty.Type.Name})";
                 }
             }
-        }
-        private static void MoveModelsInDedicatedNamespace(CodeElement currentElement, CodeNamespace targetNamespace = default) {
-            if(targetNamespace == default &&
-                currentElement is CodeNamespace currentNS &&
-                !string.IsNullOrEmpty(currentNS.Name) &&
-                currentNS.Name.Contains('/'))
-                    targetNamespace = currentNS.AddNamespace($"{currentNS.Name}.models");
-            if(currentElement.Parent is CodeNamespace parentNS &&
-                targetNamespace != null &&
-                parentNS != targetNamespace) {
-                if(currentElement is CodeClass currentClass &&
-                    currentClass.IsOfKind(CodeClassKind.Model) &&
-                    !currentClass.Name.EndsWith("response", StringComparison.OrdinalIgnoreCase)) {
-                        targetNamespace.AddClass(currentClass);
-                        parentNS.RemoveChildElement(currentClass);
-                    }
-                if(currentElement is CodeEnum currentEnum) {
-                    targetNamespace.AddEnum(currentEnum);
-                    parentNS.RemoveChildElement(currentEnum);
-                }
-            }
-            CrawlTree(currentElement, (x) => MoveModelsInDedicatedNamespace(x, targetNamespace));
         }
     }
 }

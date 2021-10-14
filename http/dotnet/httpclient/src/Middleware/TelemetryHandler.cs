@@ -6,10 +6,10 @@ using System;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Kiota.Http.HttpClient.Extensions;
-using Microsoft.Kiota.Http.HttpClient.Middleware.Options;
+using Microsoft.Kiota.Http.HttpClientLibrary.Extensions;
+using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
 
-namespace Microsoft.Kiota.Http.HttpClient.Middleware
+namespace Microsoft.Kiota.Http.HttpClientLibrary.Middleware
 {
     /// <summary>
     /// A <see cref="TelemetryHandler"/> implementation using standard .NET libraries.
@@ -28,7 +28,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
         }
 
         /// <summary>
-        /// Send a HTTP request 
+        /// Send a HTTP request
         /// </summary>
         /// <param name="httpRequest">The HTTP request<see cref="HttpRequestMessage"/>needs to be sent.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> for the request.</param>
@@ -38,7 +38,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
             if(httpRequest == null)
                 throw new ArgumentNullException(nameof(httpRequest));
 
-            var telemetryHandlerOption = httpRequest.GetMiddlewareOption<TelemetryHandlerOption>() ?? _telemetryHandlerOption;
+            var telemetryHandlerOption = httpRequest.GetRequestOption<TelemetryHandlerOption>() ?? _telemetryHandlerOption;
 
             // use the enriched request from the handler
             if(telemetryHandlerOption.TelemetryConfigurator != null)

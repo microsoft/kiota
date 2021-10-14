@@ -16,33 +16,33 @@ namespace Kiota {
     public class KiotaHost {
         public RootCommand GetRootCommand()
         {
-            var outputOption = new Option("--output", "The output directory path for the generated code files.") { Argument = new Argument<string>(() => "./output") };
+            var outputOption = new Option<string>("--output", () => "./output", "The output directory path for the generated code files.");
             outputOption.AddAlias("-o");
             
-            var languageOption = new Option("--language", "The target language for the generated code files.") { Argument = new Argument<GenerationLanguage?>(() => GenerationLanguage.CSharp) };
+            var languageOption = new Option<GenerationLanguage>("--language", () => GenerationLanguage.CSharp, "The target language for the generated code files.");
             languageOption.AddAlias("-l");
-            AddEnumValidator<GenerationLanguage>(languageOption.Argument, "language");
-            var classOption = new Option("--class-name", "The class name to use for the core client class.") { Argument = new Argument<string>(() => "ApiClient") };
+            AddEnumValidator(languageOption, "language");
+            var classOption = new Option<string>("--class-name", () => "ApiClient", "The class name to use for the core client class.");
             classOption.AddAlias("-c");
-            AddStringRegexValidator(classOption.Argument, @"^[a-zA-Z_][\w_-]+", "class name");
+            AddStringRegexValidator(classOption, @"^[a-zA-Z_][\w_-]+", "class name");
 
-            var namespaceOption = new Option("--namespace-name", "The namespace to use for the core client class specified with the --class-name option.") { Argument = new Argument<string>(() => "ApiSdk") };
+            var namespaceOption = new Option<string>("--namespace-name", () => "ApiSdk", "The namespace to use for the core client class specified with the --class-name option.");
             namespaceOption.AddAlias("-n");
-            AddStringRegexValidator(namespaceOption.Argument, @"^[\w][\w\._-]+", "namespace name");
+            AddStringRegexValidator(namespaceOption, @"^[\w][\w\._-]+", "namespace name");
 
-            var logLevelOption = new Option("--loglevel", "The log level to use when logging messages to the main output.") { Argument = new Argument<LogLevel>(() => LogLevel.Warning)};
+            var logLevelOption = new Option<LogLevel>("--loglevel", () => LogLevel.Warning, "The log level to use when logging messages to the main output.");
             logLevelOption.AddAlias("--ll");
-            AddEnumValidator<LogLevel>(logLevelOption.Argument, "log level");
-            var descriptionOption = new Option("--openapi", "The path to the OpenAPI description file used to generate the code files.") {Argument = new Argument<string>(() => "openapi.yml")};
+            AddEnumValidator(logLevelOption, "log level");
+            var descriptionOption = new Option<string>("--openapi", () => "openapi.yml", "The path to the OpenAPI description file used to generate the code files.");
             descriptionOption.AddAlias("-d");
 
-            var backingStoreOption = new Option("--backing-store", "Enables backing store for models.") {Argument = new Argument<bool>()};
+            var backingStoreOption = new Option<bool>("--backing-store", () => false, "Enables backing store for models.");
             backingStoreOption.AddAlias("-b");
 
-            var serializerOption = new Option<List<String>>("--serializer", "The fully qualified class names for serializers.") { Argument = new Argument<List<string>>(() => new List<string> {"Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory"}) };
+            var serializerOption = new Option<List<string>>("--serializer", () => new List<string> {"Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory"}, "The fully qualified class names for serializers. Accepts multiple values.");
             serializerOption.AddAlias("-s");
 
-            var deserializerOption = new Option<List<String>>("--deserializer", "The fully qualified class names for deserializers.") { Argument = new Argument<List<string>>(() => new List<string> {"Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory"}) };
+            var deserializerOption = new Option<List<string>>("--deserializer", () => new List<string> {"Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory"}, "The fully qualified class names for deserializers. Accepts multiple values.");
             deserializerOption.AddAlias("--ds");
 
             var command = new RootCommand {
@@ -97,17 +97,17 @@ namespace Kiota {
 
             await new KiotaBuilder(logger, Configuration).GenerateSDK();
         }
-        private static void AddStringRegexValidator(Argument argument, string pattern, string parameterName) {
+        private static void AddStringRegexValidator(Option<string> option, string pattern, string parameterName) {
             var validator = new Regex(pattern);
-            argument.AddValidator((input) => {
+            option.AddValidator((input) => {
                 if(input.Tokens.Any() &&
                     !validator.IsMatch(input.Tokens[0].Value))
                         return $"{input.Tokens[0].Value} is not a valid {parameterName} for the client, the {parameterName} must conform to {pattern}";
                 return null;
             });
         }
-        private static void AddEnumValidator<T>(Argument argument, string parameterName) where T: struct, Enum {
-            argument.AddValidator((input) => {
+        private static void AddEnumValidator<T>(Option<T> option, string parameterName) where T: struct, Enum {
+            option.AddValidator((input) => {
                 if(input.Tokens.Any() &&
                     !Enum.TryParse<T>(input.Tokens[0].Value, true, out var _)) {
                         var validOptionsList = Enum.GetValues<T>().Select(x => x.ToString()).Aggregate((x, y) => x + ", " + y);

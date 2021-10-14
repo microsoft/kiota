@@ -11,20 +11,20 @@ namespace Kiota.Builder
         BackingStore,
         PathSegment,
         CurrentPath,
-        HttpCore,
+        RequestAdapter,
         RawUrl
     }
 
     public class CodeProperty : CodeTerminal, IDocumentedElement
     {
-        public CodeProperty(CodeElement parent): base(parent)
-        {
-            
-        }
         public CodePropertyKind PropertyKind {get;set;} = CodePropertyKind.Custom;
         public bool ReadOnly {get;set;} = false;
         public AccessModifier Access {get;set;} = AccessModifier.Public;
-        public CodeTypeBase Type {get;set;}
+        private CodeTypeBase type;
+        public CodeTypeBase Type {get => type ;set {
+            EnsureElementsAreChildren(value);
+            type = value;
+        }}
         public string DefaultValue {get;set;}
         public string Description {get; set;}
         public string SerializationName { get; set; }

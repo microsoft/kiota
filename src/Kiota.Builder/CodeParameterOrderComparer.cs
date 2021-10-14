@@ -16,18 +16,19 @@ namespace Kiota.Builder {
         private static int getKindOrderHint(CodeParameterKind kind) {
             return kind switch {
                 CodeParameterKind.CurrentPath => 1,
-                CodeParameterKind.HttpCore => 2,
-                CodeParameterKind.RawUrl => 3,
-                CodeParameterKind.QueryParameter => 4,
-                CodeParameterKind.Headers => 5,
-                CodeParameterKind.Options => 6,
-                CodeParameterKind.ResponseHandler => 7,
-                CodeParameterKind.Serializer => 8,
-                CodeParameterKind.BackingStore => 9,
-                CodeParameterKind.SetterValue => 10,
-                CodeParameterKind.RequestBody => 11,
-                CodeParameterKind.Custom => 12,
-                _ => 13,
+                CodeParameterKind.RequestAdapter => 2,
+                CodeParameterKind.Path => 3,
+                CodeParameterKind.RawUrl => 4,
+                CodeParameterKind.QueryParameter => 5,
+                CodeParameterKind.Headers => 6,
+                CodeParameterKind.Options => 7,
+                CodeParameterKind.ResponseHandler => 8,
+                CodeParameterKind.Serializer => 9,
+                CodeParameterKind.BackingStore => 10,
+                CodeParameterKind.SetterValue => 11,
+                CodeParameterKind.RequestBody => 12,
+                CodeParameterKind.Custom => 13,
+                _ => 14,
             };
         }
         private static readonly int optionalWeight = 1000;

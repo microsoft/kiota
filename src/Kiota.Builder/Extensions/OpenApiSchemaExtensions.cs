@@ -26,6 +26,15 @@ namespace Kiota.Builder.Extensions {
                 return new List<string>{schema.Xml.Name};
             else return Enumerable.Empty<string>();
         }
+        public static IEnumerable<OpenApiSchema> GetSchemasWithValidReferenceId(this OpenApiSchema schema) {
+            if(schema == null) return Enumerable.Empty<OpenApiSchema>();
+            else if(!string.IsNullOrEmpty(schema.Reference?.Id)) return new OpenApiSchema[] { schema };
+            else if(schema.Items != null) return schema.Items.GetSchemasWithValidReferenceId();
+            else if(schema.AnyOf.Any()) return schema.AnyOf.SelectMany(x => x.GetSchemasWithValidReferenceId());
+            else if(schema.AllOf.Any()) return schema.AllOf.SelectMany(x => x.GetSchemasWithValidReferenceId());
+            else if(schema.OneOf.Any()) return schema.OneOf.SelectMany(x => x.GetSchemasWithValidReferenceId());
+            else return Enumerable.Empty<OpenApiSchema>();            
+        }
         private static IEnumerable<string> FlattenIfRequired(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter) {
             var resultSet = schemas;
             if(schemas.Count == 1 && string.IsNullOrEmpty(schemas.First().Title))
@@ -35,7 +44,7 @@ namespace Kiota.Builder.Extensions {
         }
 
         public static string GetSchemaTitle(this OpenApiSchema schema) {
-            return schema.GetSchemaTitles().LastOrDefault();
+            return schema.GetSchemaTitles().LastOrDefault()?.TrimStart('$');// OData $ref
         }
 
         public static bool IsReferencedSchema(this OpenApiSchema schema) {
@@ -67,15 +76,17 @@ namespace Kiota.Builder.Extensions {
         }
 
         public static IEnumerable<string> GetSchemaReferenceIds(this OpenApiSchema schema, HashSet<OpenApiSchema> visitedSchemas = null) {
-            if(visitedSchemas == null)
-                visitedSchemas = new();            
+            visitedSchemas ??= new();            
             if(schema != null && !visitedSchemas.Contains(schema)) {
                 visitedSchemas.Add(schema);
                 var result = new List<string>();
                 if(!string.IsNullOrEmpty(schema.Reference?.Id))
                     result.Add(schema.Reference.Id);
-                if(!string.IsNullOrEmpty(schema.Items?.Reference?.Id))
-                    result.Add(schema.Items.Reference.Id);
+                if(schema.Items != null) {
+                    if(!string.IsNullOrEmpty(schema.Items.Reference?.Id))
+                        result.Add(schema.Items.Reference.Id);
+                    result.AddRange(schema.Items.GetSchemaReferenceIds(visitedSchemas));
+                }
                 var subSchemaReferences = (schema.Properties?.Values ?? Enumerable.Empty<OpenApiSchema>())
                                             .Union(schema.AnyOf ?? Enumerable.Empty<OpenApiSchema>())
                                             .Union(schema.AllOf ?? Enumerable.Empty<OpenApiSchema>())
@@ -84,7 +95,7 @@ namespace Kiota.Builder.Extensions {
                                             .ToList();// this to list is important otherwise the any marks the schemas as visited and add range doesn't find anything
                 if(subSchemaReferences.Any())
                     result.AddRange(subSchemaReferences);
-                return result;
+                return result.Distinct();
             } else 
                 return Enumerable.Empty<string>();
         }

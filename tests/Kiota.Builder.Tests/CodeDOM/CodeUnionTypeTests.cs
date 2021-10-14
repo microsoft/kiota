@@ -6,10 +6,10 @@ namespace Kiota.Builder.Tests {
         [Fact]
         public void ClonesProperly() {
             var root = CodeNamespace.InitRootNamespace();
-            var type = new CodeUnionType(root) {
+            var type = new CodeUnionType {
                 Name = "type1",
             };
-            type.AddType(new CodeType(type) {
+            type.AddType(new CodeType {
                 Name = "subtype"
             });
             var clone = type.Clone() as CodeUnionType;

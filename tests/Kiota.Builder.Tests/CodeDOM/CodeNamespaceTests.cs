@@ -91,9 +91,6 @@ namespace Kiota.Builder.Tests
             Assert.Throws<ArgumentNullException>(() => {
                 child.AddUsing(null);
             });
-            Assert.Throws<ArgumentOutOfRangeException>(() => {
-                child.AddUsing(Array.Empty<CodeUsing>());
-            });
             Assert.Throws<ArgumentNullException>(() => {
                 child.AddUsing(new CodeUsing[] {null});
             });

@@ -1,6 +1,6 @@
 {
-    "name": "@microsoft/kiota-http-fetch",
-    "version": "1.0.8",
+    "name": "@microsoft/kiota-http-fetchlibrary",
+    "version": "1.0.10",
     "description": "Kiota HttpCore implementation with fetch",
     "main": "dist/cjs/src/index.js",
     "files": [

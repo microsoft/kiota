@@ -27,7 +27,7 @@ Once the pacakge feed is accessible the following packages can be added to the p
 
 ```Shell
 dotnet add package Microsoft.Kiota.Abstractions
-dotnet add package Microsoft.Kiota.Http.HttpClient
+dotnet add package Microsoft.Kiota.Http.HttpClientLibrary
 dotnet add package Microsoft.Kiota.Serialization.Json
 dotnet add package Microsoft.Kiota.Authentication.Azure
 dotnet add package Azure.Identity
@@ -99,7 +99,7 @@ using System.Threading.Tasks;
 using GraphClient;
 using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Authentication.Azure;
-using Microsoft.Kiota.Http.HttpClient;
+using Microsoft.Kiota.Http.HttpClientLibrary;
 using Azure.Identity;
 
 namespace GraphApp
@@ -110,7 +110,7 @@ namespace GraphApp
         {
             var credential = new InteractiveBrowserCredential("<insert clientId from $app.ClientId>");
             var authProvider = new AzureIdentityAuthenticationProvider(credential, new string[] {"User.Read"});
-            var core = new HttpCore(authProvider);
+            var core = new HttpClientRequestAdapter(authProvider);
             var apiClient = new ApiClient(core);
             var me = await apiClient.Me.GetAsync();
             Console.WriteLine(me.DisplayName);

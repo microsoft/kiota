@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using Kiota.Builder.Tests;
 using Xunit;
 
@@ -19,14 +18,14 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
-            parentClass = new CodeClass(root) {
+            parentClass = new CodeClass {
                 Name = "parentClass"
             };
             root.AddClass(parentClass);
-            property = new CodeProperty(parentClass) {
+            property = new CodeProperty {
                 Name = PropertyName,
             };
-            property.Type = new CodeType(property) {
+            property.Type = new CodeType {
                 Name = TypeName
             };
             parentClass.AddProperty(property);
@@ -42,7 +41,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             var result = tw.ToString();
             Assert.Contains("get =>", result);
             Assert.Contains($"new {TypeName}", result);
-            Assert.Contains("HttpCore", result);
+            Assert.Contains("RequestAdapter", result);
             Assert.Contains("PathSegment", result);
         }
         [Fact]

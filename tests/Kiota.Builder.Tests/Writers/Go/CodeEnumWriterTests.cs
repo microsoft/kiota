@@ -18,7 +18,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
-            currentEnum = root.AddEnum(new CodeEnum(root) {
+            currentEnum = root.AddEnum(new CodeEnum {
                 Name = EnumName,
             }).First();
         }
@@ -54,7 +54,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
         }
         [Fact]
         public void WritesUsing() {
-            currentEnum.Usings.Add(new CodeUsing(currentEnum) {
+            currentEnum.AddUsings(new CodeUsing {
                 Name = "using1",
             });
             currentEnum.Options.Add("o");

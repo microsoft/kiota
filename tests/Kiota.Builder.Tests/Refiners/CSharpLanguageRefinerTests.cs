@@ -8,14 +8,14 @@ namespace Kiota.Builder.Refiners.Tests {
         [Fact]
         public void DoesNotEscapesReservedKeywordsForClassOrPropertyKind() {
             // Arrange
-            var model = root.AddClass(new CodeClass (root) {
+            var model = root.AddClass(new CodeClass {
                 Name = "break", // this a keyword
                 ClassKind = CodeClassKind.Model,
             }).First();
-            var property = model.AddProperty(new CodeProperty(model)
+            var property = model.AddProperty(new CodeProperty
             {
                 Name = "alias",// this a keyword
-                Type = new CodeType(model)
+                Type = new CodeType
                 {
                     Name = "string"
                 }
@@ -30,34 +30,34 @@ namespace Kiota.Builder.Refiners.Tests {
         }
         [Fact]
         public void ConvertsUnionTypesToWrapper() {
-            var model = root.AddClass(new CodeClass (root) {
+            var model = root.AddClass(new CodeClass {
                 Name = "model",
                 ClassKind = CodeClassKind.Model
             }).First();
-            var union = new CodeUnionType(model) {
+            var union = new CodeUnionType {
                 Name = "union",
             };
-            union.AddType(new (model) {
+            union.AddType(new () {
                 Name = "type1",
-            }, new(model) {
+            }, new() {
                 Name = "type2"
             });
-            var property = model.AddProperty(new CodeProperty(model) {
+            var property = model.AddProperty(new CodeProperty {
                 Name = "deserialize",
                 PropertyKind = CodePropertyKind.Custom,
-                Type = union,
+                Type = union.Clone() as CodeTypeBase,
             }).First();
-            var method = model.AddMethod(new CodeMethod(model) {
+            var method = model.AddMethod(new CodeMethod {
                 Name = "method",
-                ReturnType = union
+                ReturnType = union.Clone() as CodeTypeBase
             }).First();
-            var parameter = new CodeParameter(method) {
+            var parameter = new CodeParameter {
                 Name = "param1",
-                Type = union
+                Type = union.Clone() as CodeTypeBase
             };
-            var indexer = new CodeIndexer(model) {
+            var indexer = new CodeIndexer {
                 Name = "idx",
-                ReturnType = union,
+                ReturnType = union.Clone() as CodeTypeBase,
             };
             model.SetIndexer(indexer);
             method.AddParameter(parameter);
@@ -71,7 +71,7 @@ namespace Kiota.Builder.Refiners.Tests {
         public void MovesClassesWithNamespaceNamesUnderNamespace() {
             var graphNS = root.AddNamespace("graph");
             var modelNS = graphNS.AddNamespace("graph.model");
-            var model = graphNS.AddClass(new CodeClass (graphNS) {
+            var model = graphNS.AddClass(new CodeClass {
                 Name = "model",
                 ClassKind = CodeClassKind.Model
             }).First();
@@ -85,13 +85,13 @@ namespace Kiota.Builder.Refiners.Tests {
         #region CSharp
         [Fact]
         public void DisambiguatePropertiesWithClassNames() {
-            var model = root.AddClass(new CodeClass (root) {
+            var model = root.AddClass(new CodeClass {
                 Name = "Model",
                 ClassKind = CodeClassKind.Model
             }).First();
-            var propToAdd = model.AddProperty(new CodeProperty(model){
+            var propToAdd = model.AddProperty(new CodeProperty{
                 Name = "model",
-                Type = new CodeType(model) {
+                Type = new CodeType {
                     Name = "string"
                 }
             }).First();
@@ -102,13 +102,13 @@ namespace Kiota.Builder.Refiners.Tests {
         [Fact]
         public void DisambiguatePropertiesWithClassNames_DoesntReplaceSerializationName() {
             var serializationName = "serializationName";
-            var model = root.AddClass(new CodeClass (root) {
+            var model = root.AddClass(new CodeClass {
                 Name = "Model",
                 ClassKind = CodeClassKind.Model
             }).First();
-            var propToAdd = model.AddProperty(new CodeProperty(model){
+            var propToAdd = model.AddProperty(new CodeProperty{
                 Name = "model",
-                Type = new CodeType(model) {
+                Type = new CodeType {
                     Name = "string"
                 },
                 SerializationName = serializationName,

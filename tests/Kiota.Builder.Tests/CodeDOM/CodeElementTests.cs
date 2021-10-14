@@ -5,18 +5,12 @@ using Xunit;
 namespace Kiota.Builder.Tests {
     public class CodeElementTests {
         [Fact]
-        public void ThrowsOnEmptyParent() {
-            Assert.Throws<ArgumentNullException>(() => {
-                var element = new CodeClass(null);
-            });
-        }
-        [Fact]
         public void GetImmediateParentOfType() {
             var root = CodeNamespace.InitRootNamespace();
-            var childClass = root.AddClass(new CodeClass(root) {
+            var childClass = root.AddClass(new CodeClass {
                 Name = "class1"
             }).First();
-            var method = childClass.AddMethod(new CodeMethod(childClass) {
+            var method = childClass.AddMethod(new CodeMethod {
                 Name = "method"
             }).First();
             Assert.Equal(root, childClass.GetImmediateParentOfType<CodeNamespace>());
@@ -29,10 +23,10 @@ namespace Kiota.Builder.Tests {
         [Fact]
         public void IsChildOf() {
             var root = CodeNamespace.InitRootNamespace();
-            var childClass = root.AddClass(new CodeClass(root) {
+            var childClass = root.AddClass(new CodeClass {
                 Name = "class1"
             }).First();
-            var method = childClass.AddMethod(new CodeMethod(childClass) {
+            var method = childClass.AddMethod(new CodeMethod {
                 Name = "method"
             }).First();
             Assert.True(method.IsChildOf(childClass));

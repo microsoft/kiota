@@ -6,17 +6,17 @@ namespace Kiota.Builder.Tests {
         [Fact]
         public void ComparesWithDeclaration() {
             var root = CodeNamespace.InitRootNamespace();
-            var cUsing = new CodeUsing(root) {
+            var cUsing = new CodeUsing {
                 Name = "using1",
             };
-            cUsing.Declaration = new CodeType(cUsing) {
+            cUsing.Declaration = new CodeType {
                 Name = "type1"
             };
 
-            var cUsing2 = new CodeUsing(root) {
+            var cUsing2 = new CodeUsing {
                 Name = "using2",
             };
-            cUsing2.Declaration = new CodeType(cUsing2) {
+            cUsing2.Declaration = new CodeType {
                 Name = "type2"
             };
             var comparer = new CodeUsingComparer(true);

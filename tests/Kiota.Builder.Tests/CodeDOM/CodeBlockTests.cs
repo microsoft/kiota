@@ -8,7 +8,9 @@ namespace Kiota.Builder.Tests {
         [Fact]
         public void Defensive() {
             var root = CodeNamespace.InitRootNamespace();
-            var child = new NeverBlock(root);
+            var child = new NeverBlock() {
+                Parent = root,
+            };
             child.AddRange();
             Assert.Empty(child.GetChildElements(true));
         }
@@ -17,7 +19,7 @@ namespace Kiota.Builder.Tests {
             public void AddRange() {
                 base.AddRange((CodeClass[]) null);
             }
-            public NeverBlock(CodeElement parent) : base(parent){
+            public NeverBlock() : base(){
             }
 
             public override string Name
@@ -59,8 +61,8 @@ namespace Kiota.Builder.Tests {
         public void RemovesElements() {
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-            var elements = child.AddClass(new CodeClass(child) { Name = "class1"},
-                            new CodeClass(child) { Name = "class2"});
+            var elements = child.AddClass(new CodeClass { Name = "class1"},
+                            new CodeClass { Name = "class2"});
             child.RemoveChildElement(elements.First());
             Assert.Single(child.GetChildElements(true));
 
@@ -70,7 +72,7 @@ namespace Kiota.Builder.Tests {
         public void AddsUsing() {
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-            child.AddUsing(new CodeUsing(child) {
+            child.AddUsing(new CodeUsing {
                 Name = "someNS"
             });
             Assert.Single(child.StartBlock.Usings);
@@ -80,10 +82,10 @@ namespace Kiota.Builder.Tests {
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(CodeNamespaceTests.ChildName);
             Assert.Throws<InvalidOperationException>(() => {
-                child.AddClass(new CodeClass(child) {
+                child.AddClass(new CodeClass {
                     Name = "class1"
                 });
-                child.AddEnum(new CodeEnum(child) {
+                child.AddEnum(new CodeEnum {
                     Name = "class1"
                 });
             });
@@ -92,15 +94,15 @@ namespace Kiota.Builder.Tests {
         public void DoesntThrowWhenAddingOverloads() {
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-            var codeClass = child.AddClass(new CodeClass(child) {
+            var codeClass = child.AddClass(new CodeClass {
                 Name = "class1"
             }).First();
-            var method = new CodeMethod(codeClass) {
+            var method = new CodeMethod {
                 Name = "method",
                 MethodKind = CodeMethodKind.RequestExecutor,
             };
             var overload = method.Clone() as CodeMethod;
-            overload.Parameters.Add(new CodeParameter(overload) {
+            overload.AddParameter(new CodeParameter {
                 Name = "param1"
             });
             codeClass.AddMethod(method, overload);
@@ -109,14 +111,14 @@ namespace Kiota.Builder.Tests {
         public void DoesntThrowWhenAddingIndexersWithPropName() {
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-            var codeClass = child.AddClass(new CodeClass(child) {
+            var codeClass = child.AddClass(new CodeClass {
                 Name = "class1"
             }).First();
-            var property = new CodeProperty(codeClass) {
+            var property = new CodeProperty {
                 Name = "method",
                 PropertyKind = CodePropertyKind.RequestBuilder,
             };
-            var indexer = new CodeMethod(child) {
+            var indexer = new CodeMethod {
                 Name = "method",
                 MethodKind = CodeMethodKind.IndexerBackwardCompatibility
             };
@@ -139,7 +141,7 @@ namespace Kiota.Builder.Tests {
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(CodeNamespaceTests.ChildName);
             var className = "class1";
-            var class1 = child.AddClass(new CodeClass(child) {
+            var class1 = child.AddClass(new CodeClass {
                 Name = className
             }).First();
             Assert.Equal(class1, child.FindChildByName<CodeClass>(className));
@@ -151,11 +153,11 @@ namespace Kiota.Builder.Tests {
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(CodeNamespaceTests.ChildName);
             var className = "class1";
-            child.AddClass(new CodeClass(child) {
+            child.AddClass(new CodeClass {
                 Name = className
             });
             var subchild = child.AddNamespace($"{child.Name}.four");
-            subchild.AddClass(new CodeClass(subchild) {
+            subchild.AddClass(new CodeClass {
                 Name = className
             });
             Assert.Equal(2, root.FindChildrenByName<CodeClass>(className).Count());

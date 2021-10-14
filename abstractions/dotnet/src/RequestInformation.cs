@@ -60,31 +60,31 @@ namespace Microsoft.Kiota.Abstractions
         /// The Request Body.
         /// </summary>
         public Stream Content { get; set; }
-        private Dictionary<string, IMiddlewareOption> _middlewareOptions = new Dictionary<string, IMiddlewareOption>(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, IRequestOption> _requestOptions = new Dictionary<string, IRequestOption>(StringComparer.OrdinalIgnoreCase);
         /// <summary>
-        /// Gets the middleware options for this request. Options are unique by type. If an option of the same type is added twice, the last one wins.
+        /// Gets the options for this request. Options are unique by type. If an option of the same type is added twice, the last one wins.
         /// </summary>
-        public IEnumerable<IMiddlewareOption> MiddlewareOptions { get { return _middlewareOptions.Values; } }
+        public IEnumerable<IRequestOption> RequestOptions { get { return _requestOptions.Values; } }
         /// <summary>
-        /// Adds a middleware option to the request.
+        /// Adds an option to the request.
         /// </summary>
-        /// <param name="options">The middleware option to add.</param>
-        public void AddMiddlewareOptions(params IMiddlewareOption[] options)
+        /// <param name="options">The option to add.</param>
+        public void AddRequestOptions(params IRequestOption[] options)
         {
             if(!(options?.Any() ?? false)) return; // it's a no-op if there are no options and this avoid having to check in the code gen.
             foreach(var option in options.Where(x => x != null))
-                if(!_middlewareOptions.TryAdd(option.GetType().FullName, option))
-                    _middlewareOptions[option.GetType().FullName] = option;
+                if(!_requestOptions.TryAdd(option.GetType().FullName, option))
+                    _requestOptions[option.GetType().FullName] = option;
         }
         /// <summary>
-        /// Removes given middleware options from the current request.
+        /// Removes given options from the current request.
         /// </summary>
-        /// <param name="options">Middleware options to remove.</param>
-        public void RemoveMiddlewareOptions(params IMiddlewareOption[] options)
+        /// <param name="options">Options to remove.</param>
+        public void RemoveRequestOptions(params IRequestOption[] options)
         {
             if(!options?.Any() ?? false) throw new ArgumentNullException(nameof(options));
             foreach(var optionName in options.Where(x => x != null).Select(x => x.GetType().FullName))
-                _middlewareOptions.Remove(optionName);
+                _requestOptions.Remove(optionName);
         }
         private const string BinaryContentType = "application/octet-stream";
         private const string ContentTypeHeader = "Content-Type";
@@ -100,17 +100,17 @@ namespace Microsoft.Kiota.Abstractions
         /// <summary>
         /// Sets the request body from a model with the specified content type.
         /// </summary>
-        /// <param name="coreService">The core service to get the serialization writer from.</param>
+        /// <param name="requestAdapter">The core service to get the serialization writer from.</param>
         /// <param name="items">The models to serialize.</param>
         /// <param name="contentType">The content type to set.</param>
         /// <typeparam name="T">The model type to serialize.</typeparam>
-        public void SetContentFromParsable<T>(IHttpCore coreService, string contentType, params T[] items) where T : IParsable
+        public void SetContentFromParsable<T>(IRequestAdapter requestAdapter, string contentType, params T[] items) where T : IParsable
         {
             if(string.IsNullOrEmpty(contentType)) throw new ArgumentNullException(nameof(contentType));
-            if(coreService == null) throw new ArgumentNullException(nameof(coreService));
+            if(requestAdapter == null) throw new ArgumentNullException(nameof(requestAdapter));
             if(items == null || !items.Any()) throw new InvalidOperationException($"{nameof(items)} cannot be null or empty");
 
-            using var writer = coreService.SerializationWriterFactory.GetSerializationWriter(contentType);
+            using var writer = requestAdapter.SerializationWriterFactory.GetSerializationWriter(contentType);
             if(items.Count() == 1)
                 writer.WriteObjectValue(null, items[0]);
             else

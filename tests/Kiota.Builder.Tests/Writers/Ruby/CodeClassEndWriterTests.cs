@@ -18,10 +18,11 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
-            parentClass = new CodeClass(root) {
+            parentClass = new CodeClass {
                 Name = "parentClass"
             };
-            root.AddClass(parentClass);
+            var main = root.AddNamespace("main");
+            main.AddClass(parentClass);
         }
         public void Dispose() {
             tw?.Dispose();
@@ -29,7 +30,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         }
         [Fact]
         public void ClosesNestedClasses() {
-            var child = parentClass.AddInnerClass(new CodeClass(parentClass) {
+            var child = parentClass.AddInnerClass(new CodeClass {
                 Name = "child"
             }).First();
             codeElementWriter.WriteCodeElement(child.EndBlock as CodeClass.End, writer);

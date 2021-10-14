@@ -1,13 +1,15 @@
-﻿using System.Collections.Generic;
-
-namespace Kiota.Builder
+﻿namespace Kiota.Builder
 {
     public class CodeUsing : CodeElement
     {
-        public CodeUsing(CodeElement parent): base(parent)
-        {
-            
+        private CodeType declaration;
+        public CodeType Declaration { get => declaration; set {
+            EnsureElementsAreChildren(declaration);
+            declaration = value;
+        } }
+        public bool IsExternal {
+            get => Declaration?.IsExternal ?? true;
         }
-        public CodeType Declaration { get; set; }
+        public string Alias { get; set; }
     }
 }

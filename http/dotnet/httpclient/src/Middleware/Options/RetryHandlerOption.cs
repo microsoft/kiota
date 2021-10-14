@@ -6,12 +6,12 @@ using System;
 using System.Net.Http;
 using Microsoft.Kiota.Abstractions;
 
-namespace Microsoft.Kiota.Http.HttpClient.Middleware.Options
+namespace Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options
 {
     /// <summary>
-    /// The retry middleware option class
+    /// The retry request option class
     /// </summary>
-    public class RetryHandlerOption : IMiddlewareOption
+    public class RetryHandlerOption : IRequestOption
     {
         internal const int DefaultDelay = 3;
         internal const int DefaultMaxRetry = 3;

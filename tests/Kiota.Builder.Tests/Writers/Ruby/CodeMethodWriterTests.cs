@@ -19,26 +19,27 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         private const string MethodDescription = "some description";
         private const string ParamDescription = "some parameter description";
         private const string ParamName = "paramName";
+        private readonly CodeNamespace root;
         public CodeMethodWriterTests()
         {
             writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Ruby, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
-            var root = CodeNamespace.InitRootNamespace();
-            parentClass = new CodeClass(root) {
+            root = CodeNamespace.InitRootNamespace();
+            parentClass = new CodeClass {
                 Name = "parentClass"
             };
             root.AddClass(parentClass);
-            method = new CodeMethod(parentClass) {
+            method = new CodeMethod {
                 Name = MethodName,
             };
-            method.ReturnType = new CodeType(method) {
+            method.ReturnType = new CodeType {
                 Name = ReturnTypeName
             };
-            voidMethod = new CodeMethod(parentClass) {
+            voidMethod = new CodeMethod {
                 Name = MethodName,
             };
-            voidMethod.ReturnType = new CodeType(voidMethod) {
+            voidMethod.ReturnType = new CodeType {
                 Name = "void"
             };
             parentClass.AddMethod(voidMethod);
@@ -50,96 +51,98 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             GC.SuppressFinalize(this);
         }
         private void AddSerializationProperties() {
-            var addData = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var addData = parentClass.AddProperty(new CodeProperty {
                 Name = "additionalData",
                 PropertyKind = CodePropertyKind.AdditionalData,
             }).First();
-            addData.Type = new CodeType(addData) {
+            addData.Type = new CodeType {
                 Name = "string"
             };
-            var dummyProp = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var dummyProp = parentClass.AddProperty(new CodeProperty {
                 Name = "dummyProp",
             }).First();
-            dummyProp.Type = new CodeType(dummyProp) {
+            dummyProp.Type = new CodeType {
                 Name = "string"
             };
-            var dummyCollectionProp = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var dummyCollectionProp = parentClass.AddProperty(new CodeProperty {
                 Name = "dummyColl",
             }).First();
-            dummyCollectionProp.Type = new CodeType(dummyCollectionProp) {
+            dummyCollectionProp.Type = new CodeType {
                 Name = "string",
                 CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
             };
-            var dummyComplexCollection = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var dummyComplexCollection = parentClass.AddProperty(new CodeProperty {
                 Name = "dummyComplexColl"
             }).First();
-            dummyComplexCollection.Type = new CodeType(dummyComplexCollection) {
+            dummyComplexCollection.Type = new CodeType {
                 Name = "Complex",
                 CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-                TypeDefinition = new CodeClass(parentClass.Parent) {
-                    Name = "SomeComplexType"
+                TypeDefinition = new CodeClass {
+                    Name = "SomeComplexType",
+                    Parent = root.AddNamespace("models")
                 }
             };
-            var dummyEnumProp = parentClass.AddProperty(new CodeProperty(parentClass){
+            var dummyEnumProp = parentClass.AddProperty(new CodeProperty {
                 Name = "dummyEnumCollection",
             }).First();
-            dummyEnumProp.Type = new CodeType(dummyEnumProp) {
+            dummyEnumProp.Type = new CodeType {
                 Name = "SomeEnum",
-                TypeDefinition = new CodeEnum(parentClass.Parent) {
-                    Name = "EnumType"
+                TypeDefinition = new CodeEnum {
+                    Name = "EnumType",
+                    Parent = root.AddNamespace("models")
                 }
             };
         }
         private void AddInheritanceClass() {
-            (parentClass.StartBlock as CodeClass.Declaration).Inherits = new CodeType(parentClass) {
+            (parentClass.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
                 Name = "someParentClass"
             };
         }
         private void AddRequestBodyParameters() {
-            var stringType = new CodeType(method) {
+            var stringType = new CodeType {
                 Name = "string",
             };
-            method.AddParameter(new CodeParameter(method) {
+            method.AddParameter(new CodeParameter {
                 Name = "h",
                 ParameterKind = CodeParameterKind.Headers,
                 Type = stringType,
             });
-            method.AddParameter(new CodeParameter(method){
+            method.AddParameter(new CodeParameter{
                 Name = "q",
                 ParameterKind = CodeParameterKind.QueryParameter,
                 Type = stringType,
             });
-            method.AddParameter(new CodeParameter(method){
+            method.AddParameter(new CodeParameter{
                 Name = "b",
                 ParameterKind = CodeParameterKind.RequestBody,
                 Type = stringType,
             });
-            method.AddParameter(new CodeParameter(method){
+            method.AddParameter(new CodeParameter{
                 Name = "r",
                 ParameterKind = CodeParameterKind.ResponseHandler,
                 Type = stringType,
             });
         }
         private void AddVoidRequestBodyParameters() {
-            var stringType = new CodeType(voidMethod) {
+            var stringType = new CodeType {
                 Name = "string",
             };
-            voidMethod.AddParameter(new CodeParameter(voidMethod) {
+            voidMethod.AddParameter(new CodeParameter {
                 Name = "h",
                 ParameterKind = CodeParameterKind.Headers,
                 Type = stringType,
             });
-            voidMethod.AddParameter(new CodeParameter(voidMethod){
+            voidMethod.AddParameter(new CodeParameter{
                 Name = "q",
                 ParameterKind = CodeParameterKind.QueryParameter,
                 Type = stringType,
             });
-            voidMethod.AddParameter(new CodeParameter(voidMethod){
+            voidMethod.AddParameter(new CodeParameter{
                 Name = "b",
                 ParameterKind = CodeParameterKind.RequestBody,
                 Type = stringType,
             });
-            voidMethod.AddParameter(new CodeParameter(voidMethod){
+            voidMethod.AddParameter(new CodeParameter{
                 Name = "r",
                 ParameterKind = CodeParameterKind.ResponseHandler,
                 Type = stringType,
@@ -207,11 +210,11 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         }
         [Fact]
         public void WritesDeSerializerBody() {
-            var parameter = new CodeParameter(method){
+            var parameter = new CodeParameter{
                 Description = ParamDescription,
                 Name = ParamName
             };
-            parameter.Type = new CodeType(parameter) {
+            parameter.Type = new CodeType {
                 Name = "string"
             };
             method.MethodKind = CodeMethodKind.Deserializer;
@@ -236,11 +239,11 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         }
         [Fact]
         public void WritesSerializerBody() {
-            var parameter = new CodeParameter(method){
+            var parameter = new CodeParameter{
                 Description = ParamDescription,
                 Name = ParamName
             };
-            parameter.Type = new CodeType(parameter) {
+            parameter.Type = new CodeType {
                 Name = "string"
             };
             method.MethodKind = CodeMethodKind.Serializer;
@@ -256,45 +259,45 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         }
         [Fact]
         public void WritesTranslatedTypesDeSerializerBody() {
-            var dummyCollectionProp1 = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var dummyCollectionProp1 = parentClass.AddProperty(new CodeProperty {
                 Name = "guidId",
             }).First();
-            dummyCollectionProp1.Type = new CodeType(dummyCollectionProp1) {
+            dummyCollectionProp1.Type = new CodeType {
                 Name = "guid",
                 CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
             };
-            var dummyCollectionProp2 = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var dummyCollectionProp2 = parentClass.AddProperty(new CodeProperty {
                 Name = "dateTime",
             }).First();
-            dummyCollectionProp2.Type = new CodeType(dummyCollectionProp2) {
+            dummyCollectionProp2.Type = new CodeType {
                 Name = "date",
                 CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
             };
-            var dummyCollectionProp3 = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var dummyCollectionProp3 = parentClass.AddProperty(new CodeProperty {
                 Name = "isTrue",
             }).First();
-            dummyCollectionProp3.Type = new CodeType(dummyCollectionProp3) {
+            dummyCollectionProp3.Type = new CodeType {
                 Name = "boolean",
                 CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
             };
-            var dummyCollectionProp4 = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var dummyCollectionProp4 = parentClass.AddProperty(new CodeProperty {
                 Name = "numberTest",
             }).First();
-            dummyCollectionProp4.Type = new CodeType(dummyCollectionProp4) {
+            dummyCollectionProp4.Type = new CodeType {
                 Name = "number",
                 CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
             };
-            var dummyCollectionProp5 = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var dummyCollectionProp5 = parentClass.AddProperty(new CodeProperty {
                 Name = "DatetimeValueType",
             }).First();
-            dummyCollectionProp5.Type = new CodeType(dummyCollectionProp5) {
+            dummyCollectionProp5.Type = new CodeType {
                 Name = "dateTimeOffset",
                 CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
             };
-            var dummyCollectionProp6 = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var dummyCollectionProp6 = parentClass.AddProperty(new CodeProperty {
                 Name = "messages",
             }).First();
-            dummyCollectionProp6.Type = new CodeType(dummyCollectionProp6) {
+            dummyCollectionProp6.Type = new CodeType {
                 Name = "NewObjectName",
                 CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
             };
@@ -315,11 +318,11 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             
             method.Description = MethodDescription;
             method.IsAsync = false;
-            var parameter = new CodeParameter(method){
+            var parameter = new CodeParameter {
                 Description = ParamDescription,
                 Name = ParamName
             };
-            parameter.Type = new CodeType(parameter) {
+            parameter.Type = new CodeType {
                 Name = "string"
             };
             method.AddParameter(parameter);
@@ -365,11 +368,29 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             method.PathSegment = "somePath";
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("http_core", result);
+            Assert.Contains("request_adapter", result);
             Assert.Contains("path_segment", result);
             Assert.Contains("+ id", result);
             Assert.Contains("return Somecustomtype.new", result);
             Assert.Contains(method.PathSegment, result);
+        }
+        [Fact]
+        public void WritesPathParameterRequestBuilder() {
+            method.MethodKind = CodeMethodKind.RequestBuilderWithParameters;
+            method.PathSegment = "somePath";
+            method.AddParameter(new CodeParameter {
+                Name = "pathParam",
+                ParameterKind = CodeParameterKind.Path,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            });
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("request_adapter", result);
+            Assert.Contains("path_segment", result);
+            Assert.Contains("pathParam", result);
+            Assert.Contains("return Somecustomtype.new", result);
         }
         [Fact]
         public void WritesSetterToField() {
@@ -384,7 +405,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             method.MethodKind = CodeMethodKind.Constructor;
             var defaultValue = "someval";
             var propName = "propWithDefaultValue";
-            parentClass.AddProperty(new CodeProperty(parentClass) {
+            parentClass.AddProperty(new CodeProperty {
                 Name = propName,
                 DefaultValue = defaultValue,
                 PropertyKind = CodePropertyKind.PathSegment,
@@ -396,17 +417,17 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         [Fact]
         public void WritesApiConstructor() {
             method.MethodKind = CodeMethodKind.ClientConstructor;
-            var coreProp = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var coreProp = parentClass.AddProperty(new CodeProperty {
                 Name = "core",
-                PropertyKind = CodePropertyKind.HttpCore,
+                PropertyKind = CodePropertyKind.RequestAdapter,
             }).First();
-            coreProp.Type = new CodeType(coreProp) {
+            coreProp.Type = new CodeType {
                 Name = "HttpCore",
                 IsExternal = true,
             };
-            method.AddParameter(new CodeParameter(method) {
+            method.AddParameter(new CodeParameter {
                 Name = "core",
-                ParameterKind = CodeParameterKind.HttpCore,
+                ParameterKind = CodeParameterKind.RequestAdapter,
                 Type = coreProp.Type,
             });
             writer.Write(method);
@@ -416,24 +437,24 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         [Fact]
         public void WritesApiConstructorWithBackingStore() {
             method.MethodKind = CodeMethodKind.ClientConstructor;
-            var coreProp = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var coreProp = parentClass.AddProperty(new CodeProperty {
                 Name = "core",
-                PropertyKind = CodePropertyKind.HttpCore,
+                PropertyKind = CodePropertyKind.RequestAdapter,
             }).First();
-            coreProp.Type = new CodeType(coreProp) {
+            coreProp.Type = new CodeType {
                 Name = "HttpCore",
                 IsExternal = true,
             };
-            method.AddParameter(new CodeParameter(method) {
+            method.AddParameter(new CodeParameter {
                 Name = "core",
-                ParameterKind = CodeParameterKind.HttpCore,
+                ParameterKind = CodeParameterKind.RequestAdapter,
                 Type = coreProp.Type,
             });
-            var backingStoreParam = new CodeParameter(method) {
+            var backingStoreParam = new CodeParameter {
                 Name = "backingStore",
                 ParameterKind = CodeParameterKind.BackingStore,
             };
-            backingStoreParam.Type = new CodeType(backingStoreParam) {
+            backingStoreParam.Type = new CodeType {
                 Name = "BackingStore",
                 IsExternal = true,
             };

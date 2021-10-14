@@ -7,21 +7,23 @@ namespace Kiota.Builder.Tests {
         [Fact]
         public void Defensive() {
             var root = CodeNamespace.InitRootNamespace();
-            var codeClass = new CodeClass(root) {
+            var codeClass = new CodeClass {
                 Name = "class",
             };
+            root.AddClass(codeClass);
             Assert.False(codeClass.IsOfKind((CodeClassKind[])null));
             Assert.False(codeClass.IsOfKind(Array.Empty<CodeClassKind>()));
 
-            codeClass.StartBlock = new CodeBlock.BlockDeclaration(codeClass);
+            codeClass.StartBlock = new CodeBlock.BlockDeclaration();
             Assert.Null(codeClass.GetParentClass());
         }
         [Fact]
         public void IsOfKind() {
             var root = CodeNamespace.InitRootNamespace();
-            var codeClass = new CodeClass(root) {
+            var codeClass = new CodeClass {
                 Name = "class",
             };
+            root.AddClass(codeClass);
             Assert.False(codeClass.IsOfKind(CodeClassKind.Model));
             codeClass.ClassKind = CodeClassKind.RequestBuilder;
             Assert.True(codeClass.IsOfKind(CodeClassKind.RequestBuilder));
@@ -32,17 +34,17 @@ namespace Kiota.Builder.Tests {
         public void SetsIndexer() {
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-            var codeClass = child.AddClass(new CodeClass(child) {
+            var codeClass = child.AddClass(new CodeClass {
                 Name = "class1"
             }).First();
-            codeClass.SetIndexer(new CodeIndexer(codeClass) {
+            codeClass.SetIndexer(new CodeIndexer {
                 Name = "idx"
             });
             Assert.Throws<ArgumentNullException>(() => {
                 codeClass.SetIndexer(null);
             });
             Assert.Throws<InvalidOperationException>(() => {
-                codeClass.SetIndexer(new CodeIndexer(codeClass) {
+                codeClass.SetIndexer(new CodeIndexer {
                     Name = "idx2"
                 });
             });
@@ -51,7 +53,7 @@ namespace Kiota.Builder.Tests {
         public void ThrowsOnAddingEmptyCollections() {
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-            var codeClass = child.AddClass(new CodeClass(child) {
+            var codeClass = child.AddClass(new CodeClass {
                 Name = "class1"
             }).First();
             Assert.Throws<ArgumentNullException>(() => {
@@ -86,18 +88,18 @@ namespace Kiota.Builder.Tests {
         public void AddsInnerElements() {
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-            var codeClass = child.AddClass(new CodeClass(child) {
+            var codeClass = child.AddClass(new CodeClass {
                 Name = "class1"
             }).First();
-            codeClass.AddInnerClass(new CodeClass(codeClass) {
+            codeClass.AddInnerClass(new CodeClass {
                 Name = "subclass"
             });
             Assert.Single(codeClass.GetChildElements(true));
-            codeClass.AddMethod(new CodeMethod(codeClass) {
+            codeClass.AddMethod(new CodeMethod {
                 Name = "submethod"
             });
             Assert.Equal(2, codeClass.GetChildElements(true).Count());
-            codeClass.AddProperty(new CodeProperty(codeClass) {
+            codeClass.AddProperty(new CodeProperty {
                 Name = "subprop"
             });
             Assert.Equal(3, codeClass.GetChildElements(true).Count());
@@ -106,19 +108,19 @@ namespace Kiota.Builder.Tests {
         public void GetsParentAndGrandParent() {
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-            var grandParent = child.AddClass(new CodeClass(child) {
+            var grandParent = child.AddClass(new CodeClass {
                 Name = "class1"
             }).First();
-            var parent = child.AddClass(new CodeClass(child) {
+            var parent = child.AddClass(new CodeClass {
                 Name = "parent"
             }).First();
-            var childClass = child.AddClass(new CodeClass(child) {
+            var childClass = child.AddClass(new CodeClass {
                 Name = "child"
             }).First();
-            (childClass.StartBlock as CodeClass.Declaration).Inherits = new CodeType(childClass) {
+            (childClass.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
                 TypeDefinition = parent,
             };
-            (parent.StartBlock as CodeClass.Declaration).Inherits = new CodeType(parent) {
+            (parent.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
                 TypeDefinition = grandParent,
             };
             Assert.Equal(grandParent, parent.GetParentClass());
@@ -129,10 +131,10 @@ namespace Kiota.Builder.Tests {
         public void ContainsMember() {
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(CodeNamespaceTests.ChildName);
-            var codeClass = child.AddClass(new CodeClass(child) {
+            var codeClass = child.AddClass(new CodeClass {
                 Name = "class1"
             }).First();
-            codeClass.AddInnerClass(new CodeClass(codeClass) {
+            codeClass.AddInnerClass(new CodeClass {
                 Name = "subclass"
             });
             Assert.True(codeClass.ContainsMember("subclass"));

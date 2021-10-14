@@ -1,4 +1,4 @@
-export * from './httpCore';
+export * from './fetchRequestAdapter';
 export * from './httpClient';
 export * from './middlewares/middleware';
 export * from './middlewares/defaultFetchHandler';
@@ -13,3 +13,5 @@ export * from './middlewares/middlewareControl';
 export * from './middlewares/middlewareUtil';
 export * from './utils/fetchDefinitions';
 export * from './utils/utils';
+export * from './kiotaClientFactory';
+export * from './middleware';

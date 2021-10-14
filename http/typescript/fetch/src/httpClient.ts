@@ -4,6 +4,10 @@ import { customFetchHandler } from "./middlewares/customFetchHandler";
 import { MiddlewareFactory } from "./middlewares/middlewareFactory";
 import { FetchRequestInfo, FetchRequestInit, FetchResponse } from "./utils/fetchDefinitions";
 import { defaultFetchHandler } from "./middlewares/defaultFetchHandler";
+import { Middleware } from "./middleware";
+import { fetch } from 'cross-fetch';
+import { RequestOption } from "@microsoft/kiota-abstractions";
+import { getDefaultMiddlewares, getDefaultRequestSettings } from "./kiotaClientFactory";
 
 /** Default fetch client with options and a middleware pipleline for requests execution. */
 export class HttpClient {

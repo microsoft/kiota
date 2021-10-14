@@ -15,12 +15,11 @@ namespace Kiota.Builder
         public BlockDeclaration StartBlock {get; set;}
         protected IDictionary<string, CodeElement> InnerChildElements {get; private set;} = new ConcurrentDictionary<string, CodeElement>(StringComparer.OrdinalIgnoreCase);
         public BlockEnd EndBlock {get; set;}
-        public CodeBlock(CodeElement parent):base(parent)
+        public CodeBlock():base()
         {
-            StartBlock = new BlockDeclaration(this);
-            EndBlock = new BlockEnd(this);
+            StartBlock = new BlockDeclaration() { Parent = this };
+            EndBlock = new BlockEnd() { Parent = this};
         }
-
         public override IEnumerable<CodeElement> GetChildElements(bool innerOnly = false)
         {
             if(innerOnly)
@@ -35,18 +34,10 @@ namespace Kiota.Builder
                 InnerChildElements.Remove(element.Name);
             }
         }
-        public void AddUsing(params CodeUsing[] codeUsings)
-        {
-            if(codeUsings == null || codeUsings.Any(x => x == null))
-                throw new ArgumentNullException(nameof(codeUsings));
-            if(!codeUsings.Any())
-                throw new ArgumentOutOfRangeException(nameof(codeUsings));
-            AddMissingParent(codeUsings);
-            StartBlock.Usings.AddRange(codeUsings);
-        }
+        public void AddUsing(params CodeUsing[] codeUsings) => StartBlock.AddUsings(codeUsings);
         protected IEnumerable<T> AddRange<T>(params T[] elements) where T : CodeElement {
             if(elements == null) return Enumerable.Empty<T>();
-            AddMissingParent(elements);
+            EnsureElementsAreChildren(elements);
             var innerChildElements = InnerChildElements as ConcurrentDictionary<string, CodeElement>; // to avoid calling the non thread-safe extension method
             var result = new T[elements.Length]; // not using yield return as they'll only get called if the result is assigned
 
@@ -100,8 +91,8 @@ namespace Kiota.Builder
             if(!InnerChildElements.Any())
                 return default;
 
-            if(InnerChildElements.TryGetValue(childName, out var result) && result is T)
-                return (T)(object)result;
+            if(InnerChildElements.TryGetValue(childName, out var result) && result is T castResult)
+                return castResult;
             else if(findInChildElements)
                 foreach(var childElement in InnerChildElements.Values.OfType<CodeBlock>()) {
                     var childResult = childElement.FindChildByName<T>(childName, true);
@@ -112,19 +103,23 @@ namespace Kiota.Builder
         }
         public class BlockDeclaration : CodeTerminal
         {
-            public List<CodeUsing> Usings {get; set;} = new List<CodeUsing>();
-            public BlockDeclaration(CodeElement parent): base(parent)
-            {
-                
+            private readonly List<CodeUsing> usings = new ();
+            public IEnumerable<CodeUsing> Usings => usings;
+            public void AddUsings(params CodeUsing[] codeUsings) {
+                if(codeUsings == null || codeUsings.Any(x => x == null))
+                    throw new ArgumentNullException(nameof(codeUsings));
+                EnsureElementsAreChildren(codeUsings);
+                usings.AddRange(codeUsings);
+            }
+            public void RemoveUsingsByDeclarationName(string name) {
+                if(string.IsNullOrEmpty(name))
+                    throw new ArgumentNullException(nameof(name));
+                usings.RemoveAll(x => name.Equals(x.Declaration?.Name, StringComparison.OrdinalIgnoreCase));
             }
         }
 
         public class BlockEnd : CodeTerminal
         {
-            public BlockEnd(CodeElement parent): base(parent)
-            {
-                
-            }
         }
     }
 }

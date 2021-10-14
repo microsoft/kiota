@@ -9,9 +9,6 @@ namespace Kiota.Builder {
             Array,
             Complex
         }
-        protected CodeTypeBase(CodeElement parent) : base(parent) {
-            
-        }
         public bool ActionOf {get;set;} = false;
         public bool IsNullable {get;set;} = true;
         public CodeTypeCollectionKind CollectionKind {get;set;} = CodeTypeCollectionKind.None;
@@ -23,6 +20,7 @@ namespace Kiota.Builder {
             IsNullable = source.IsNullable;
             CollectionKind = source.CollectionKind;
             Name = source.Name.Clone() as string;
+            Parent = source.Parent;
             return this as ChildType;
         }
 

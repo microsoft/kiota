@@ -7,19 +7,19 @@ using System.Collections.Generic;
 using System.Net.Http;
 using Microsoft.Kiota.Abstractions;
 
-namespace Microsoft.Kiota.Http.HttpClient.Middleware.Options
+namespace Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options
 {
     /// <summary>
-    /// The Chaos Handler Option middleware class
+    /// The Chaos Handler Option request class
     /// </summary>
-    public class ChaosHandlerOption : IMiddlewareOption
+    public class ChaosHandlerOption : IRequestOption
     {
         /// <summary>
         /// Percentage of responses that will have KnownChaos responses injected, assuming no PlannedChaosFactory is provided
         /// </summary>
         public int ChaosPercentLevel { get; set; } = 10;
         /// <summary>
-        /// List of failure responses that potentially could be returned when 
+        /// List of failure responses that potentially could be returned when
         /// </summary>
         public List<HttpResponseMessage> KnownChaos { get; set; }
         /// <summary>
