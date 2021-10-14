@@ -7,6 +7,7 @@ namespace Kiota.Builder.Writers.Swift {
             AddCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
             AddCodeElementWriter(new CodeClassEndWriter());
             AddCodeElementWriter(new CodePropertyWriter(conventionService));
+            AddCodeElementWriter(new CodeNamespaceWriter(conventionService));
             AddCodeElementWriter(new CodeEnumWriter(conventionService));
             AddCodeElementWriter(new CodeMethodWriter(conventionService));
         }
