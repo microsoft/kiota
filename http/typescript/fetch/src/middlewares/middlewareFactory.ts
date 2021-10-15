@@ -9,6 +9,7 @@
  * @module MiddlewareFactory
  */
 
+import { FetchRequestInfo, FetchRequestInit, FetchResponse } from "../utils/fetchDefinitions";
 import { customFetchHandler } from "./customFetchHandler";
 import { defaultFetchHandler } from "./defaultFetchHandler";
 import { Middleware } from "./middleware";
@@ -16,8 +17,6 @@ import { RedirectHandlerOptions } from "./options/redirectHandlerOption";
 import { RetryHandlerOptions } from "./options/retryHandlerOptions";
 import { RedirectHandler } from "./redirectHandler";
 import { RetryHandler } from "./retryHandler";
-import { FetchRequestInfo, FetchRequestInit, FetchResponse } from "../utils/fetchDefinitions";
-
 
 /**
  * @class
@@ -43,7 +42,6 @@ export class MiddlewareFactory {
 			middlewareArray.push(new defaultFetchHandler());
 		}
 
-		
 		return middlewareArray;
 	}
 }

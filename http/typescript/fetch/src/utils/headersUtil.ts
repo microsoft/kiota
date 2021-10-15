@@ -65,6 +65,4 @@ export const appendRequestHeader = (options: FetchRequestInit | undefined, key: 
 			options.headers[key] += `, ${value}`;
 		}
 	}
-
 };
-

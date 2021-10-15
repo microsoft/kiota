@@ -12,8 +12,8 @@ import { MiddlewareControl } from "./middlewareControl";
  */
 
 export interface MiddlewareContext {
-    request:FetchRequestInfo,
-    response?: FetchResponse,
-    options?:FetchRequestInit,
-    middlewareControl?: MiddlewareControl
+	request: FetchRequestInfo;
+	response?: FetchResponse;
+	options?: FetchRequestInit;
+	middlewareControl?: MiddlewareControl;
 }

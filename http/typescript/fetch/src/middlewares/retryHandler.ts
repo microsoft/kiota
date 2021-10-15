@@ -9,13 +9,14 @@
  * @module RetryHandler
  */
 
-import { MiddlewareContext } from "./middlewareContext";
 import { HttpMethod } from "@microsoft/kiota-abstractions";
-import { Middleware } from "./middleware";
+
+import { FetchRequestInfo, FetchRequestInit, FetchResponse } from "../utils/fetchDefinitions";
 import { getRequestHeader, setRequestHeader } from "../utils/headersUtil";
-import { RetryHandlerOptions } from "./options/retryHandlerOptions";
+import { Middleware } from "./middleware";
+import { MiddlewareContext } from "./middlewareContext";
 import { MiddlewareControl } from "./middlewareControl";
-import {FetchResponse, FetchRequestInit, FetchRequestInfo} from "../utils/fetchDefinitions"
+import { RetryHandlerOptions } from "./options/retryHandlerOptions";
 
 /**
  * @class
@@ -114,12 +115,11 @@ export class RetryHandler implements Middleware {
 		const retryAfter = response.headers !== undefined ? response.headers.get(RetryHandler.RETRY_AFTER_HEADER) : null;
 		let newDelay: number;
 		if (retryAfter !== null) {
-
-            // Retry-After: <http-date>
+			// Retry-After: <http-date>
 			if (Number.isNaN(Number(retryAfter))) {
 				newDelay = Math.round((new Date(retryAfter).getTime() - Date.now()) / 1000);
 			} else {
-            // Retry-After: <delay-seconds>
+				// Retry-After: <delay-seconds>
 				newDelay = Number(retryAfter);
 			}
 		} else {
@@ -173,10 +173,10 @@ export class RetryHandler implements Middleware {
 	 */
 	private async executeWithRetry(context: MiddlewareContext, retryAttempts: number, options: RetryHandlerOptions): Promise<void> {
 		await this.next.execute(context);
-		if (retryAttempts < options.maxRetries && this.isRetry(context.response) && this.isBuffered(context.request, context.options) && options.shouldRetry(options.delay, retryAttempts, context.request, context.options, context.response!)) {
+		if (retryAttempts < options.maxRetries && this.isRetry(context.response) && this.isBuffered(context.request, context.options) && options.shouldRetry(options.delay, retryAttempts, context.request, context.options, context.response)) {
 			++retryAttempts;
 			setRequestHeader(context.options, RetryHandler.RETRY_ATTEMPT_HEADER, retryAttempts.toString());
-			const delay = this.getDelay(context.response!, retryAttempts, options.delay);
+			const delay = this.getDelay(context.response, retryAttempts, options.delay);
 			await this.sleep(delay);
 			return await this.executeWithRetry(context, retryAttempts, options);
 		} else {

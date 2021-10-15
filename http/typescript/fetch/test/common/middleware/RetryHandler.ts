@@ -7,19 +7,19 @@
 import { assert } from "chai";
 
 import { MiddlewareContext } from "../../../src/middlewares/middlewareContext";
-import { FetchRequestInit } from "../../../src/utils/fetchDefinitions";
 import { MiddlewareControl } from "../../../src/middlewares/middlewareControl";
 import { RetryHandlerOptions, ShouldRetry } from "../../../src/middlewares/options/retryHandlerOptions";
 import { RetryHandler } from "../../../src/middlewares/retryHandler";
+import { FetchRequestInit } from "../../../src/utils/fetchDefinitions";
+import { getResponse } from "../../testUtils";
 import { DummyFetchHandler } from "./dummyFetchHandler";
-import { getResponse } from "../../testUtils"
 
+// eslint-disable-next-line no-var
 var Response = Response;
-if (typeof Response != "object") {
+if (typeof Response !== "object") {
 	Response = getResponse();
-
 }
-describe("RetryHandler.ts", function () {
+describe("RetryHandler.ts", function() {
 	this.timeout(20 * 1000);
 	const retryHandler = new RetryHandler();
 	const retryHandlerOptions = new RetryHandlerOptions();

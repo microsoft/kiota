@@ -9,8 +9,8 @@
  * @module DummyHTTPMessageHandler
  */
 
-import { MiddlewareContext } from "../../../src/middlewares/middlewareContext";
 import { Middleware } from "../../../src/middlewares/middleware";
+import { MiddlewareContext } from "../../../src/middlewares/middlewareContext";
 
 /**
  * @class

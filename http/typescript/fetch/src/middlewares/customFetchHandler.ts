@@ -9,10 +9,9 @@
  * @module FetchHandler
  */
 
-
-import { MiddlewareContext } from "./middlewareContext";
+import { FetchRequestInfo, FetchRequestInit, FetchResponse } from "../utils/fetchDefinitions";
 import { Middleware } from "./middleware";
-import { FetchResponse, FetchRequestInfo, FetchRequestInit } from "../utils/fetchDefinitions";
+import { MiddlewareContext } from "./middlewareContext";
 
 /**
  * @class
@@ -20,25 +19,24 @@ import { FetchResponse, FetchRequestInfo, FetchRequestInit } from "../utils/fetc
  * Class for FetchHandler
  */
 
-export class customFetchHandler implements Middleware {
+export class CustomFetchHandler implements Middleware {
+	/**
+	 * @private
+	 * The next middleware in the middleware chain
+	 */
+	next: Middleware;
 
-    /**
-     * @private
-     * The next middleware in the middleware chain
-     */
-    next: Middleware;
+	constructor(private customFetch?: (input: FetchRequestInfo, init: FetchRequestInit) => Promise<FetchResponse>) {}
 
-    constructor(private customFetch?: (input: FetchRequestInfo, init: FetchRequestInit) => Promise<FetchResponse>) { };
-
-    /**
-     * @public
-     * @async
-     * To execute the current middleware
-     * @param {Context} context - The request context object
-     * @returns A promise that resolves to nothing
-     */
-    public async execute(context: MiddlewareContext): Promise<void> {
-        context.response = await this.customFetch(context.request, context.options) as FetchResponse;
-        return;
-    }
+	/**
+	 * @public
+	 * @async
+	 * To execute the current middleware
+	 * @param {Context} context - The request context object
+	 * @returns A promise that resolves to nothing
+	 */
+	public async execute(context: MiddlewareContext): Promise<void> {
+		context.response = (await this.customFetch(context.request, context.options)) as FetchResponse;
+		return;
+	}
 }

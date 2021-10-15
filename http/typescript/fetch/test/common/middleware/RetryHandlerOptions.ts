@@ -4,7 +4,7 @@
  * See License in the project root for license information.
  * -------------------------------------------------------------------------------------------
  */
-
+/* eslint-disable @typescript-eslint/no-unused-vars*/
 import { assert } from "chai";
 
 import { RetryHandlerOptions, ShouldRetry } from "../../../src/middlewares/options/retryHandlerOptions";

@@ -10,7 +10,8 @@
  */
 
 import { RequestOption } from "@microsoft/kiota-abstractions";
-import {FetchResponse, FetchRequestInit} from "../../utils/fetchDefinitions"
+
+import { FetchRequestInit, FetchResponse } from "../../utils/fetchDefinitions";
 
 /**
  * @type
@@ -25,7 +26,7 @@ export type ShouldRetry = (delay: number, attempt: number, request: string, opti
  * Class for RetryHandlerOptions
  */
 
- export class RetryHandlerOptions implements RequestOption {
+export class RetryHandlerOptions implements RequestOption {
 	/**
 	 * @private
 	 * @static
@@ -127,8 +128,8 @@ export type ShouldRetry = (delay: number, attempt: number, request: string, opti
 		return RetryHandlerOptions.MAX_DELAY;
 	}
 
-	public getKey():string {
-	// TODO
-    return "";
-    }
+	public getKey(): string {
+		// TODO
+		return "";
+	}
 }

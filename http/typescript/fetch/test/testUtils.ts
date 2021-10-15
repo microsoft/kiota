@@ -1,5 +1,5 @@
-import {Response} from "node-fetch"
+import { Response } from "node-fetch";
 
-export function getResponse(){
-    return Response;
+export function getResponse() {
+	return Response;
 }

@@ -2,6 +2,7 @@ import { HttpMethod } from "./httpMethod";
 import { Parsable } from "./serialization";
 import { RequestOption } from "./requestOption";
 import { RequestAdapter } from "./requestAdapter";
+import {ReadableStreamContent} from "./readableStreamContent";
 
 /** This class represents an abstract HTTP request. */
 export class RequestInformation {

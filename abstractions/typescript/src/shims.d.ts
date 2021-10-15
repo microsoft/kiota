@@ -3,5 +3,3 @@ interface RequestInit { }
 interface Response { }
 interface Headers { }
 interface ReadableStream { }
-
-interface ReadableStreamContent { }

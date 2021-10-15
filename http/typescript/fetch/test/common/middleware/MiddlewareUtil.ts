@@ -4,6 +4,7 @@
  * See License in the project root for license information.
  * -------------------------------------------------------------------------------------------
  */
+/* eslint-disable @typescript-eslint/no-unused-vars*/
 
 import { assert } from "chai";
 
@@ -61,7 +62,7 @@ describe("HeaderUtil", async () => {
 		it("Should set header for empty headers", () => {
 			const options: FetchRequestInit = {
 				method: "test",
-				headers: {}
+				headers: {},
 			};
 			setRequestHeader(options, key, value);
 			assert.isDefined(options.headers);
