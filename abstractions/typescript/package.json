@@ -2,18 +2,19 @@
     "name": "@microsoft/kiota-abstractions",
     "version": "1.0.21",
     "description": "Core abstractions for kiota generated libraries in TypeScript and JavaScript",
-    "main": "dist/cjs/index.js",
-    "types": "dist/cjs/index.d.ts",
-    "module": "dist/es/index.js",
-    "browser": {
-        "dist/cjs/index.js": "dist/es/index.js"
-    },
+    "main": "dist/cjs/src/index.js",
+    "types": "dist/cjs/src/index.d.ts",
+    "module": "dist/es/src/index.js",
     "scripts": {
         "build": "npm run build:cjs && npm run build:es",
         "build:cjs": "tsc -p tsconfig.cjs.json",
         "build:es": "tsc -p tsconfig.es.json",
-        "test": "echo \"Error: no test specified\" && exit 1",
-        "clean": "rm -r ./dist"
+        "test:cjs": "npm run build:cjs   && mocha  'dist/cjs/test/common/**/*.js' && mocha  'dist/cjs/test/node/**/*.js'",
+        "test:es": " npm run build:es && mocha 'dist/es/test/common/**/*.js'  --require  esm && mocha 'dist/es/test/node/**/*.js'  --require  esm",
+        "test": "npm run test:cjs && npm run test:es",
+        "clean": "rm -r ./dist",
+        "karma": "npm run rollup && karma  start --single-run --browsers ChromeHeadless karma.conf.js",
+        "rollup": "rollup -c"
     },
     "repository": "git://github.com/microsoft/kiota.git",
     "keywords": [
@@ -29,8 +30,25 @@
     },
     "homepage": "https://github.com/microsoft/kiota#readme",
     "devDependencies": {
+        "@types/chai": "^4.2.22",
+        "@types/mocha": "^9.0.0",
+        "@types/sinon": "^10.0.4",
+        "chai": "^4.3.4",
+        "esm": "^3.2.25",
+        "karma": "^6.3.4",
+        "karma-chai": "^0.1.0",
+        "karma-chrome-launcher": "^3.1.0",
+        "karma-firefox-launcher": "^2.1.1",
+        "karma-mocha": "^2.0.1",
+        "karma-typescript": "^5.5.2",
+        "mocha": "^8.4.0",
+        "@types/node": "^16.10.5",
         "@types/uuid": "^8.3.1",
-        "typescript": "^4.4.3"
+        "typescript": "^4.4.3",
+        "@rollup/plugin-commonjs": "^21.0.0",
+        "@rollup/plugin-node-resolve": "^13.0.5",
+        "rollup": "^2.58.0",
+        "rollup-plugin-terser": "^7.0.2"
     },
     "publishConfig": {
         "registry": "https://npm.pkg.github.com"

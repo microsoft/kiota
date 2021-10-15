@@ -9,7 +9,7 @@
  * @module MiddlewareControl
  */
 
-import { MiddlewareOption } from "./options/middlewareOption";
+import { RequestOption } from "@microsoft/kiota-abstractions";
 
 /**
  * @class
@@ -20,7 +20,7 @@ export class MiddlewareControl {
 	 * @private
 	 * A member holding map of MiddlewareOptions
 	 */
-	private middlewareOptions: Map<Function, MiddlewareOption>;
+	private middlewareOptions: Map<Function, RequestOption>;
 
 	/**
 	 * @public
@@ -29,8 +29,8 @@ export class MiddlewareControl {
 	 * @param {MiddlewareOptions[]} [middlewareOptions = []] - The array of middlewareOptions
 	 * @returns The instance of MiddlewareControl
 	 */
-	public constructor(middlewareOptions: MiddlewareOption[] = []) {
-		this.middlewareOptions = new Map<Function, MiddlewareOption>();
+	public constructor(middlewareOptions: RequestOption[] = []) {
+		this.middlewareOptions = new Map<Function, RequestOption>();
 		for (const option of middlewareOptions) {
 			const fn = option.constructor;
 			this.middlewareOptions.set(fn, option);
@@ -47,7 +47,7 @@ export class MiddlewareControl {
 	 * // call this function like this:
 	 * getMiddlewareOptions(MiddlewareControl)
 	 */
-	public getMiddlewareOptions(fn: Function): MiddlewareOption {
+	public getMiddlewareOptions(fn: Function): RequestOption {
 		return this.middlewareOptions.get(fn);
 	}
 
@@ -58,7 +58,7 @@ export class MiddlewareControl {
 	 * @param {MiddlewareOptions} option - The strongly typed middleware option
 	 * @returns nothing
 	 */
-	public setMiddlewareOptions(fn: Function, option: MiddlewareOption): void {
+	public setMiddlewareOptions(fn: Function, option: RequestOption): void {
 		this.middlewareOptions.set(fn, option);
 	}
 }

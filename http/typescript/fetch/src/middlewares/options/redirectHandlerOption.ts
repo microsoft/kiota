@@ -9,7 +9,7 @@
  * @module RedirectHandlerOptions
  */
 
-import { MiddlewareOption } from "./middlewareOption";
+import { RequestOption } from "@microsoft/kiota-abstractions";
 
 /**
  * @type
@@ -22,7 +22,7 @@ export type ShouldRedirect = (response: Response) => boolean;
  * @implements MiddlewareOptions
  * A class representing RedirectHandlerOptions
  */
-export class RedirectHandlerOptions implements MiddlewareOption {
+export class RedirectHandlerOptions implements RequestOption {
     /**
      * @private
      * @static
@@ -76,6 +76,11 @@ export class RedirectHandlerOptions implements MiddlewareOption {
         }
         this.maxRedirects = maxRedirects;
         this.shouldRedirect = shouldRedirect;
+    }
+
+    public getKey():string {
+    // TODO
+    return "";
     }
 }
 

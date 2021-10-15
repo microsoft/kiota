@@ -9,8 +9,9 @@
  * @module RetryHandlerOptions
  */
 
-import { MiddlewareOption } from "./middlewareOption";
+import { RequestOption } from "@microsoft/kiota-abstractions";
 import {FetchResponse, FetchRequestInit} from "../../utils/fetchDefinitions"
+
 /**
  * @type
  * A type declaration for shouldRetry callback
@@ -24,7 +25,7 @@ export type ShouldRetry = (delay: number, attempt: number, request: string, opti
  * Class for RetryHandlerOptions
  */
 
- export class RetryHandlerOptions implements MiddlewareOption {
+ export class RetryHandlerOptions implements RequestOption {
 	/**
 	 * @private
 	 * @static
@@ -125,4 +126,9 @@ export type ShouldRetry = (delay: number, attempt: number, request: string, opti
 	public getMaxDelay(): number {
 		return RetryHandlerOptions.MAX_DELAY;
 	}
+
+	public getKey():string {
+	// TODO
+    return "";
+    }
 }

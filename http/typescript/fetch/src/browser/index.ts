@@ -1,4 +1,4 @@
-export * from '../httpCore';
+export * from '../fetchRequestAdapter';
 export * from '../httpClient';
 export * from '../middlewares/middleware';
 export * from '../middlewares/browser/defaultFetchHandler';
@@ -8,4 +8,4 @@ export * from '../middlewares/options/retryHandlerOptions';
 export * from '../middlewares/middlewareContext';
 export * from '../middlewares/browser/middlewareFactory';
 export * from '../middlewares/middlewareControl';
-export * from '../middlewares/middlewareUtil';
+export * from '../utils/headersUtil';

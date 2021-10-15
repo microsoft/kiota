@@ -20,11 +20,10 @@
         "build:cjs": "tsc -p tsconfig.cjs.json",
         "build:es": "tsc -p tsconfig.es.json",
         "test:cjs": "npm run build:cjs   && mocha  'dist/cjs/test/common/**/*.js' && mocha  'dist/cjs/test/node/**/*.js'",
-        "test:es": " npm run build:es && mocha 'dist/es/test/common/**/*.js'  --require  esm && && mocha 'dist/es/test/node/**/*.js'  --require  esm",
-        "test": "npm run test:cjs && npm run test:es",
+        "test:es": " npm run build:es && mocha 'dist/es/test/common/**/*.js'  --require  esm && mocha 'dist/es/test/node/**/*.js'  --require  esm",
+        "test": "npm run test:cjs && npm run test:es && npm run karma",
         "clean": "rm -r ./dist",
-        "testn": "npm run build:cjs && mocha  'dist/cjs/test/node/**/*.js' --grep HTTPClient.ts",
-        "karma": "karma  start --single-run --browsers ChromeHeadless karma.conf.js",
+        "karma": "npm run rollup && karma  start --single-run --browsers ChromeHeadless karma.conf.js",
         "rollup": "rollup -c"
     },
     "repository": {
@@ -47,12 +46,7 @@
         "registry": "https://npm.pkg.github.com"
     },
     "dependencies": {
-        "@microsoft/kiota-abstractions": "file:../../../abstractions/typescript",
-        "@rollup/plugin-commonjs": "^21.0.0",
-        "@rollup/plugin-node-resolve": "^13.0.5",
-        "rollup": "^2.58.0",
-        "rollup-plugin-terser": "^7.0.2",
-        "sinon": "^11.1.2"
+        "@microsoft/kiota-abstractions": "file:../../../abstractions/typescript"
     },
     "devDependencies": {
         "@types/chai": "^4.2.22",
@@ -72,6 +66,11 @@
         "nyc": "^15.1.0",
         "ts-node": "^10.2.1",
         "tslib": "^2.3.1",
-        "typescript": "^4.4.3"
+        "typescript": "^4.4.3",
+        "@rollup/plugin-commonjs": "^21.0.0",
+        "@rollup/plugin-node-resolve": "^13.0.5",
+        "rollup": "^2.58.0",
+        "rollup-plugin-terser": "^7.0.2",
+        "sinon": "^11.1.2"
     }
 }

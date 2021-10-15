@@ -30,7 +30,6 @@ export class MiddlewareFactory {
 	 * @returns an array of the middleware handlers of the default middleware chain
 	 */
 	public static getDefaultMiddlewareChain(customFetch?: (request: FetchRequestInfo, init?: FetchRequestInit)=> Promise<FetchResponse>): Middleware[] {
-		console.log("getting the browser default middleware chain **************************");
 		const middlewareArray: Middleware[] = [];
 		const retryHandler = new RetryHandler(new RetryHandlerOptions());
 		middlewareArray.push(retryHandler);

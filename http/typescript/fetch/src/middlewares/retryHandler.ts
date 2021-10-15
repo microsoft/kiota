@@ -12,7 +12,7 @@
 import { MiddlewareContext } from "./middlewareContext";
 import { HttpMethod } from "@microsoft/kiota-abstractions";
 import { Middleware } from "./middleware";
-import { getRequestHeader, setRequestHeader } from "./middlewareUtil";
+import { getRequestHeader, setRequestHeader } from "../utils/headersUtil";
 import { RetryHandlerOptions } from "./options/retryHandlerOptions";
 import { MiddlewareControl } from "./middlewareControl";
 import {FetchResponse, FetchRequestInit, FetchRequestInfo} from "../utils/fetchDefinitions"
@@ -93,7 +93,7 @@ export class RetryHandler implements Middleware {
 		const method = options.method;
 		const isPutPatchOrPost: boolean = method === HttpMethod.PUT || method === HttpMethod.PATCH || method === HttpMethod.POST;
 		if (isPutPatchOrPost) {
-			const isStream = getRequestHeader(request, options, "Content-Type") === "application/octet-stream";
+			const isStream = getRequestHeader(options, "Content-Type") === "application/octet-stream";
 			if (isStream) {
 				return false;
 			}
@@ -175,7 +175,7 @@ export class RetryHandler implements Middleware {
 		await this.next.execute(context);
 		if (retryAttempts < options.maxRetries && this.isRetry(context.response) && this.isBuffered(context.request, context.options) && options.shouldRetry(options.delay, retryAttempts, context.request, context.options, context.response!)) {
 			++retryAttempts;
-			setRequestHeader(context.request, context.options, RetryHandler.RETRY_ATTEMPT_HEADER, retryAttempts.toString());
+			setRequestHeader(context.options, RetryHandler.RETRY_ATTEMPT_HEADER, retryAttempts.toString());
 			const delay = this.getDelay(context.response!, retryAttempts, options.delay);
 			await this.sleep(delay);
 			return await this.executeWithRetry(context, retryAttempts, options);

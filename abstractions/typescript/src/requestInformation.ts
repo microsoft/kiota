@@ -4,7 +4,7 @@ import { RequestOption } from "./requestOption";
 import { RequestAdapter } from "./requestAdapter";
 
 /** This class represents an abstract HTTP request. */
-export class RequestInformation{
+export class RequestInformation {
     /** The URI of the request. */
     public URI?: string;
     /**
@@ -13,18 +13,18 @@ export class RequestInformation{
      * @param pathSegment the segment to append to the current path.
      * @param isRawUrl whether the path segment is a raw url. When true, the segment is not happened and the current path is parsed for query parameters.
      */
-    public setUri(currentPath: string, pathSegment: string, isRawUrl: boolean) : void {
-        if(isRawUrl) {
+    public setUri(currentPath: string, pathSegment: string, isRawUrl: boolean): void {
+        if (isRawUrl) {
             const questionMarkSplat = currentPath.split('?');
             const schemeHostAndPath = questionMarkSplat[0];
             this.URI = schemeHostAndPath;
-            if(questionMarkSplat.length > 1) {
+            if (questionMarkSplat.length > 1) {
                 const queryString = questionMarkSplat[1];
-                queryString?.split('&').forEach(queryPair => {
+                queryString ?.split('&').forEach(queryPair => {
                     const keyValue = queryPair.split('=');
-                    if(keyValue.length > 0) {
+                    if (keyValue.length > 0) {
                         const key = keyValue[0];
-                        if(key) {
+                        if (key) {
                             this.queryParameters.set(key, keyValue.length > 1 ? keyValue[1] : undefined);
                         }
                     }
@@ -37,23 +37,32 @@ export class RequestInformation{
     /** The HTTP method for the request */
     public httpMethod?: HttpMethod;
     /** The Request Body. */
-    public content?: ReadableStream;
+    public content?: ReadableStreamContent;
     /** The Query Parameters of the request. */
     public queryParameters: Map<string, string | number | boolean | undefined> = new Map<string, string | number | boolean | undefined>(); //TODO: case insensitive
     /** The Request Headers. */
-    public headers: Map<string, string> = new Map<string, string>(); //TODO: case insensitive
-    private _requestOptions = new Map<string, RequestOption>(); //TODO: case insensitive
+    public headers: Record<string, string>; //TODO: case insensitive
+
+    /**
+     * /TODO: case insensitive
+     * TODO: Determine the scope of  request options
+     * Request Options should also consider specific request configurations such as : 
+     * Axios : https://axios-http.com/docs/req_config
+     * Fetch Request Options : https://developer.mozilla.org/en-US/docs/Web/API/Request#properties
+     * https://github.com/microsoftgraph/msgraph-sdk-javascript/pull/105
+     */
+    private _requestOptions = new Map<string, RequestOption>(); 
     /** Gets the request options for the request. */
     public getRequestOptions() { return this._requestOptions.values(); }
     public addRequestOptions(...options: RequestOption[]) {
-        if(!options || options.length === 0) return;
+        if (!options || options.length === 0) return;
         options.forEach(option => {
             this._requestOptions.set(option.getKey(), option);
         });
     }
     /** Removes the request options for the request. */
     public removeRequestOptions(...options: RequestOption[]) {
-        if(!options || options.length === 0) return;
+        if (!options || options.length === 0) return;
         options.forEach(option => {
             this._requestOptions.delete(option.getKey());
         });
@@ -68,13 +77,16 @@ export class RequestInformation{
      * @typeParam T the model type.
      */
     public setContentFromParsable = <T extends Parsable>(requestAdapter?: RequestAdapter | undefined, contentType?: string | undefined, ...values: T[]): void => {
-        if(!requestAdapter) throw new Error("httpCore cannot be undefined");
-        if(!contentType) throw new Error("contentType cannot be undefined");
-        if(!values || values.length === 0) throw new Error("values cannot be undefined or empty");
+        if (!requestAdapter) throw new Error("httpCore cannot be undefined");
+        if (!contentType) throw new Error("contentType cannot be undefined");
+        if (!values || values.length === 0) throw new Error("values cannot be undefined or empty");
 
         const writer = requestAdapter.getSerializationWriterFactory().getSerializationWriter(contentType);
-        this.headers.set(RequestInformation.contentTypeHeader, contentType);
-        if(values.length === 1) 
+        if(!this.headers){
+            this.headers = {};
+        }
+        this.headers[RequestInformation.contentTypeHeader] = contentType;
+        if (values.length === 1)
             writer.writeObjectValue(undefined, values[0]);
         else
             writer.writeCollectionOfObjectValues(undefined, values);
@@ -84,17 +96,23 @@ export class RequestInformation{
      * Sets the request body to be a binary stream.
      * @param value the binary stream
      */
-    public setStreamContent = (value: ReadableStream): void => {
-        this.headers.set(RequestInformation.contentTypeHeader, RequestInformation.binaryContentType);
+    public setStreamContent = (value: ReadableStreamContent): void => {
+        if(!this.headers){
+            this.headers = {};
+        }
+        this.headers[RequestInformation.contentTypeHeader] = RequestInformation.binaryContentType;
         this.content = value;
     }
     /**
      * Sets the request headers from a raw object.
      * @param headers the headers.
      */
-    public setHeadersFromRawObject = (h: object) : void => {
+    public setHeadersFromRawObject = (h: object): void => {
+        if(!this.headers){
+            this.headers = {};
+        }
         Object.entries(h).forEach(([k, v]) => {
-            this.headers.set(k, v as string);
+            this.headers[k] = v as string;
         });
     }
     /**
@@ -103,7 +121,7 @@ export class RequestInformation{
      */
     public setQueryStringParametersFromRawObject = (q: object): void => {
         Object.entries(q).forEach(([k, v]) => {
-            this.headers.set(k, v as string);
+            this.queryParameters.set(k, v as string);
         });
     }
 }

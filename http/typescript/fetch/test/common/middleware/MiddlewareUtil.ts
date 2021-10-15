@@ -4,13 +4,13 @@
  * See License in the project root for license information.
  * -------------------------------------------------------------------------------------------
  */
-/* tslint:disable */
+
 import { assert } from "chai";
 
 import { FetchRequestInit } from "../../../src/utils/fetchDefinitions";
-import { appendRequestHeader, getRequestHeader, setRequestHeader } from "../../../src/middlewares/middlewareUtil";
+import { appendRequestHeader, getRequestHeader, setRequestHeader } from "../../../src/utils/headersUtil";
 
-describe("MiddlewareUtil.ts", async () => {
+describe("HeaderUtil", async () => {
 	describe("getRequestHeader", () => {
 		const value = "application/json";
 		const url = "dummy_url";
@@ -23,8 +23,8 @@ describe("MiddlewareUtil.ts", async () => {
 					"Content-Type": value,
 				},
 			};
-			const headerValue: string = getRequestHeader(url, options, "Content-Type");
-			const headerVersion: string = getRequestHeader(url, options, "version");
+			const headerValue: string = getRequestHeader(options, "Content-Type");
+			const headerVersion: string = getRequestHeader(options, "version");
 			assert.equal(headerValue, value);
 			assert.equal(headerVersion, "version");
 		});
@@ -37,8 +37,8 @@ describe("MiddlewareUtil.ts", async () => {
 					"Content-Type": value,
 				},
 			};
-			const headerValue: string = getRequestHeader(url, options, "Content-Type");
-			const headerVersion: string = getRequestHeader(url, options, "version");
+			const headerValue: string = getRequestHeader(options, "Content-Type");
+			const headerVersion: string = getRequestHeader(options, "version");
 			assert.equal(headerValue, value);
 			assert.equal(headerVersion, "version");
 		});
@@ -53,7 +53,7 @@ describe("MiddlewareUtil.ts", async () => {
 			const options: FetchRequestInit = {
 				method: "test",
 			};
-			setRequestHeader(url, options, key, value);
+			setRequestHeader(options, key, value);
 			assert.isDefined(options.headers);
 			assert.equal(options.headers[key], value);
 		});
@@ -63,7 +63,7 @@ describe("MiddlewareUtil.ts", async () => {
 				method: "test",
 				headers: {}
 			};
-			setRequestHeader(url, options, key, value);
+			setRequestHeader(options, key, value);
 			assert.isDefined(options.headers);
 			assert.equal(options.headers[key], value);
 		});
@@ -75,7 +75,7 @@ describe("MiddlewareUtil.ts", async () => {
 					version: "version",
 				},
 			};
-			setRequestHeader(url, options, key, value);
+			setRequestHeader(options, key, value);
 			assert.equal(options.headers[key], value);
 		});
 
@@ -87,7 +87,7 @@ describe("MiddlewareUtil.ts", async () => {
 					[key]: value,
 				},
 			};
-			setRequestHeader(url, options, key, value);
+			setRequestHeader(options, key, value);
 			assert.equal(options.headers[key], value);
 		});
 	});
@@ -102,7 +102,7 @@ describe("MiddlewareUtil.ts", async () => {
 			const options: FetchRequestInit = {
 				method: "test",
 			};
-			appendRequestHeader(url, options, key, value);
+			appendRequestHeader(options, key, value);
 			assert.isDefined(options.headers);
 			assert.equal(options.headers[key], value);
 		});
@@ -114,7 +114,7 @@ describe("MiddlewareUtil.ts", async () => {
 					version: "version",
 				},
 			};
-			appendRequestHeader(url, options, key, value);
+			appendRequestHeader(options, key, value);
 			assert.equal(options.headers[key], value);
 		});
 
@@ -126,7 +126,7 @@ describe("MiddlewareUtil.ts", async () => {
 					[key]: firstValue,
 				},
 			};
-			appendRequestHeader(url, options, key, value);
+			appendRequestHeader(options, key, value);
 			assert.equal(options.headers[key], `${firstValue}, ${value}`);
 		});
 
@@ -138,7 +138,7 @@ describe("MiddlewareUtil.ts", async () => {
 					[key]: value,
 				},
 			};
-			appendRequestHeader(url, options, key, value);
+			appendRequestHeader(options, key, value);
 			assert.equal(options.headers[key], `${value}, ${value}`);
 		});
 	});

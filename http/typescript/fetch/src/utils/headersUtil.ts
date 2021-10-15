@@ -5,7 +5,7 @@
  * -------------------------------------------------------------------------------------------
  */
 
-import { FetchRequest, FetchRequestInfo, FetchRequestInit } from "../utils/fetchDefinitions";
+import { FetchRequest, FetchRequestInfo, FetchRequestInit } from "./fetchDefinitions";
 
 /**
  * @module MiddlewareUtil
@@ -19,11 +19,9 @@ import { FetchRequest, FetchRequestInfo, FetchRequestInit } from "../utils/fetch
  * @param {string} key - The header key string
  * @returns A header value for the given key from the request
  */
-export const getRequestHeader = (request: FetchRequestInfo, options: FetchRequestInit | undefined, key: string): string | null => {
+export const getRequestHeader = (options: FetchRequestInit | undefined, key: string): string | null => {
 	let value: string = null;
-	if (typeof request !== 'string') {
-		value = (request as FetchRequest).headers.get(key);
-	} else if (typeof options !== "undefined" && options.headers !== undefined) {
+	if (typeof options !== "undefined" && options.headers !== undefined) {
 		value = options.headers[key];
 	}
 	return value;
@@ -38,11 +36,9 @@ export const getRequestHeader = (request: FetchRequestInfo, options: FetchReques
  * @param {string } value - The header value string
  * @returns Nothing
  */
-export const setRequestHeader = (request: FetchRequestInfo, options: FetchRequestInit | undefined, key: string, value: string): void => {
-	if (typeof request !== 'string') {
-		(request as FetchRequest).headers.set(key, value);
-	} else if (typeof options !== "undefined") {
-		if(!options.headers){
+export const setRequestHeader = (options: FetchRequestInit | undefined, key: string, value: string): void => {
+	if (typeof options !== "undefined") {
+		if (!options.headers) {
 			options.headers = {};
 		}
 		options.headers[key] = value;
@@ -58,11 +54,9 @@ export const setRequestHeader = (request: FetchRequestInfo, options: FetchReques
  * @param {string } value - The header value string
  * @returns Nothing
  */
-export const appendRequestHeader = (request: FetchRequestInfo, options: FetchRequestInit | undefined, key: string, value: string): void => {
-	if (typeof request !== "string") {
-		(request as FetchRequest).headers.append(key, value);
-	} else if (typeof options !== "undefined") {
-		if(!options.headers){
+export const appendRequestHeader = (options: FetchRequestInit | undefined, key: string, value: string): void => {
+	if (typeof options !== "undefined") {
+		if (!options.headers) {
 			options.headers = {};
 		}
 		if (options.headers[key] === undefined) {
