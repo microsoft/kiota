@@ -51,9 +51,7 @@ describe("HTTPClient.ts", () => {
 			assert.isNotNull(client[""]);
 	
 			const next = client["middleware"].next;
-
-			console.log("browser test")
-			console.log(client["middleware"]);
+			
 			assert.isTrue(client["middleware"] instanceof RetryHandler);
 			assert.isTrue(next instanceof customFetchHandler);
 

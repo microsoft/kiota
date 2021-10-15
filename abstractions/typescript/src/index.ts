@@ -1,3 +1,5 @@
+/// <reference path= "./shims.d.ts" />
+
 export * from './apiClientBuilder';
 export * from './requestOption';
 export * from './serialization';

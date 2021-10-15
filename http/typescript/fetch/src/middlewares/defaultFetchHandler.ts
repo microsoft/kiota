@@ -9,7 +9,7 @@
  * @module FetchHandler
  */
 
-import {fetch as nodeFetch} from "node-fetch";
+import fetch from "node-fetch";
 import { MiddlewareContext } from "./middlewareContext";
 import { Middleware } from "./middleware";
 import { FetchResponse } from "../utils/fetchDefinitions";
@@ -36,7 +36,7 @@ export class defaultFetchHandler implements Middleware {
      * @returns A promise that resolves to nothing
      */
     public async execute(context: MiddlewareContext): Promise<void> {
-        context.response = await nodeFetch(context.request, context.options) as FetchResponse;
+        context.response = await fetch(context.request, context.options) as FetchResponse;
         return;
     }
 }

@@ -1,3 +1,4 @@
+/// <reference path= "./dom.shim.d.ts" />
 export * from './fetchRequestAdapter';
 export * from './httpClient';
 export * from './middlewares/middleware';
