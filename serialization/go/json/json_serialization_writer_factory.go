@@ -9,6 +9,10 @@ import (
 type JsonSerializationWriterFactory struct {
 }
 
+func NewJsonSerializationWriterFactory() *JsonSerializationWriterFactory {
+	return &JsonSerializationWriterFactory{}
+}
+
 func (f *JsonSerializationWriterFactory) GetValidContentType() (string, error) {
 	return "application/json", nil
 }

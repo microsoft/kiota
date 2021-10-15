@@ -41,10 +41,7 @@ func NewAzureIdentityAuthenticationProviderWithScopes(credential azcore.TokenCre
 		scopes:                                scopes,
 	}
 
-	if result.scopes == nil {
-		result.scopes = []string{}
-	}
-	if len(result.scopes) == 0 {
+	if result.scopes == nil || len(result.scopes) == 0 {
 		result.scopes = []string{"https://graph.microsoft.com/.default"} //TODO: init from the request URL host instead for national clouds
 	}
 

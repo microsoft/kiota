@@ -17,7 +17,9 @@ func NewNetHttpMiddlewareClient(middlewares []Middleware) (*NetHttpMiddlewareCli
 			return nil, err
 		}
 	}
-	return &NetHttpMiddlewareClient{}, nil
+	return &NetHttpMiddlewareClient{
+		middlewares: middlewares,
+	}, nil
 }
 
 func (c *NetHttpMiddlewareClient) Do(req *nethttp.Request) (*nethttp.Response, error) {

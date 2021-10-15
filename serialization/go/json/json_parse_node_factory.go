@@ -9,6 +9,10 @@ import (
 type JsonParseNodeFactory struct {
 }
 
+func NewJsonParseNodeFactory() *JsonParseNodeFactory {
+	return &JsonParseNodeFactory{}
+}
+
 func (f *JsonParseNodeFactory) GetValidContentType() (string, error) {
 	return "application/json", nil
 }

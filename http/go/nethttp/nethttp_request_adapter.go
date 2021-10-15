@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"io/ioutil"
+	"strings"
 
 	nethttp "net/http"
 
@@ -70,6 +71,14 @@ func (a *NetHttpRequestAdapter) getHttpResponseMessage(requestInfo abs.RequestIn
 	}
 	return (*a.httpClient).Do(request)
 }
+func (a *NetHttpRequestAdapter) getResponsePrimaryContentType(response *nethttp.Response) string {
+	if response.Header == nil {
+		return ""
+	}
+	rawType := response.Header.Get("Content-Type")
+	splat := strings.Split(rawType, ";")
+	return strings.ToLower(splat[0])
+}
 func (a *NetHttpRequestAdapter) getRequestFromRequestInformation(requestInfo abs.RequestInformation) (*nethttp.Request, error) {
 	uri, err := requestInfo.GetUri()
 	if err != nil {
@@ -109,7 +118,7 @@ func (a *NetHttpRequestAdapter) SendAsync(requestInfo abs.RequestInformation, co
 		if err != nil {
 			return nil, err
 		}
-		parseNode, err := a.parseNodeFactory.GetRootParseNode(response.Header.Get("Content-Type"), body)
+		parseNode, err := a.parseNodeFactory.GetRootParseNode(a.getResponsePrimaryContentType(response), body)
 		if err != nil {
 			return nil, err
 		}
@@ -135,7 +144,7 @@ func (a *NetHttpRequestAdapter) SendCollectionAsync(requestInfo abs.RequestInfor
 		if err != nil {
 			return nil, err
 		}
-		parseNode, err := a.parseNodeFactory.GetRootParseNode(response.Header.Get("Content-Type"), body)
+		parseNode, err := a.parseNodeFactory.GetRootParseNode(a.getResponsePrimaryContentType(response), body)
 		if err != nil {
 			return nil, err
 		}
@@ -161,7 +170,7 @@ func (a *NetHttpRequestAdapter) SendPrimitiveAsync(requestInfo abs.RequestInform
 		if err != nil {
 			return nil, err
 		}
-		parseNode, err := a.parseNodeFactory.GetRootParseNode(response.Header.Get("Content-Type"), body)
+		parseNode, err := a.parseNodeFactory.GetRootParseNode(a.getResponsePrimaryContentType(response), body)
 		if err != nil {
 			return nil, err
 		}
@@ -205,7 +214,7 @@ func (a *NetHttpRequestAdapter) SendPrimitiveCollectionAsync(requestInfo abs.Req
 		if err != nil {
 			return nil, err
 		}
-		parseNode, err := a.parseNodeFactory.GetRootParseNode(response.Header.Get("Content-Type"), body)
+		parseNode, err := a.parseNodeFactory.GetRootParseNode(a.getResponsePrimaryContentType(response), body)
 		if err != nil {
 			return nil, err
 		}
