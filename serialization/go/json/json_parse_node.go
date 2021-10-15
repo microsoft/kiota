@@ -1,8 +1,11 @@
 package jsonserialization
 
 import (
+	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
+	"io"
 	"time"
 
 	"github.com/google/uuid"
@@ -10,19 +13,87 @@ import (
 )
 
 type JsonParseNode struct {
-	childNodes map[string]*JsonParseNode
-	value      interface{}
+	value interface{}
 }
 
 func NewJsonParseNode(content []byte) (*JsonParseNode, error) {
-	value := JsonParseNode{
-		childNodes: make(map[string]*JsonParseNode),
-	}
+	value := &JsonParseNode{}
 	if content != nil {
-		//TODO build the tree node putting properties in child nodes, arrays and scalars in value
-		// https://pkg.go.dev/encoding/json#Decoder.Token
+		decoder := json.NewDecoder(bytes.NewReader(content))
+		err := value.loadJsonTree(decoder)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return &value, nil
+	return value, nil
+}
+func (c *JsonParseNode) loadJsonTree(decoder *json.Decoder) error {
+	for {
+		token, err := decoder.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		switch token.(type) {
+		case json.Delim:
+			switch token {
+			case '{':
+				result := make(map[string]*JsonParseNode)
+				for decoder.More() {
+					key, err := decoder.Token()
+					if err != nil {
+						return err
+					}
+					keyStr, ok := key.(string)
+					if !ok {
+						return errors.New("key is not a string")
+					}
+					childNode := &JsonParseNode{}
+					err = childNode.loadJsonTree(decoder)
+					if err != nil {
+						return err
+					}
+					result[keyStr] = childNode
+				}
+				c.SetValue(result)
+			case '[':
+				result := make([]JsonParseNode, 0)
+				for decoder.More() {
+					node := JsonParseNode{}
+					err := node.loadJsonTree(decoder)
+					if err != nil {
+						return err
+					}
+					result = append(result, node)
+				}
+				c.SetValue(result)
+			case ']':
+			case '}':
+			}
+		case json.Number:
+			number := token.(json.Number)
+			i, err := number.Int64()
+			if err == nil {
+				c.SetValue(&i)
+			} else {
+				f, err := number.Float64()
+				if err == nil {
+					c.SetValue(&f)
+				} else {
+					return err
+				}
+			}
+		case string:
+			c.SetValue(token.(*string))
+		case bool:
+			c.SetValue(token.(*bool))
+		case nil:
+		default:
+		}
+	}
+	return nil
 }
 func (n *JsonParseNode) SetValue(value interface{}) {
 	n.value = value
@@ -31,10 +102,11 @@ func (n *JsonParseNode) GetChildNode(index string) (absser.ParseNode, error) {
 	if index == "" {
 		return nil, errors.New("index is empty")
 	}
-	if len(n.childNodes) == 0 {
+	childNodes, ok := n.value.(map[string]*JsonParseNode)
+	if !ok || len(childNodes) == 0 {
 		return nil, errors.New("no child node available")
 	}
-	return n.childNodes[index], nil
+	return childNodes[index], nil
 }
 func (n *JsonParseNode) GetObjectValue(ctor func() absser.Parsable) (absser.Parsable, error) {
 	//TODO onbefore when implementing backing store
