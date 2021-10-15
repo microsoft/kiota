@@ -40,7 +40,7 @@ namespace Kiota.Builder.Writers.Go {
             writer.WriteLines("}",
                             $"func Parse{typeName}(v string) (interface{{}}, error) {{");
             writer.IncreaseIndent();
-            writer.WriteLine($"switch v {{");
+            writer.WriteLine($"switch strings.ToUpper(v) {{");
             writer.IncreaseIndent();
             foreach (var item in codeElement.Options) {
                 writer.WriteLine($"case \"{item.ToUpperInvariant()}\":");

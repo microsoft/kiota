@@ -266,11 +266,13 @@ namespace Kiota.Builder.Writers.Go {
             var deserializationMethodName = GetDeserializationMethodName(property.Type, parentClass);
             writer.WriteLine($"val, err := {deserializationMethodName}");
             WriteReturnError(writer);
-            var valueCast = property.Type.AllTypes.First().TypeDefinition is CodeClass ||
-                            property.Type.AllTypes.First().TypeDefinition is CodeEnum ? 
-                            $".(*{propertyTypeImportName})":
-                            string.Empty;
-            var valueArgument = $"val{valueCast}";
+            if (property.Type.AllTypes.First().TypeDefinition is CodeEnum)
+                writer.WriteLine($"cast := val.({propertyTypeImportName})");
+            var valueArgument = property.Type.AllTypes.First().TypeDefinition switch {
+                CodeClass => $"val.(*{propertyTypeImportName})",
+                CodeEnum => $"&cast",
+                _ => "val",
+            };
             if(property.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None) {
                 var isTargetTypeObject = property.Type is CodeType currentType && 
                     (currentType.TypeDefinition is CodeEnum ||
@@ -278,7 +280,7 @@ namespace Kiota.Builder.Writers.Go {
                 WriteCollectionCast(propertyTypeImportName, isTargetTypeObject, "val", "res", writer);
                 valueArgument = "res";
             }
-            writer.WriteLines($"o.(*{parentClass.Name.ToFirstCharacterUpperCase()}).Set{property.Name.ToFirstCharacterUpperCase()}({valueArgument})", 
+            writer.WriteLines($"m.Set{property.Name.ToFirstCharacterUpperCase()}({valueArgument})", 
                             "return nil");
             writer.CloseBlock();
         }
@@ -311,19 +313,18 @@ namespace Kiota.Builder.Writers.Go {
             WriteGeneratorMethodCall(codeElement, requestParams, writer, $"{RequestInfoVarName}, err := ");
             WriteReturnError(writer, returnType);
             var parsableImportSymbol = GetConversionHelperMethodImport(codeElement.Parent as CodeClass, "Parsable");
+            var typeString = conventions.GetTypeString(codeElement.ReturnType, codeElement.Parent, false, false)?.Split(dot);
+            var importSymbol = typeString == null || typeString.Length < 2 ? string.Empty : typeString.First() + dot;
             var constructorFunction = returnType switch {
                 _ when isVoid => string.Empty,
                 _ when isPrimitive || isBinary => $"\"{returnType.TrimCollectionAndPointerSymbols()}\", ",
-                _ => $"func () {parsableImportSymbol} {{ return new({conventions.GetTypeString(codeElement.ReturnType, codeElement.Parent, false, false)}) }}, ",
+                _ => $"func () {parsableImportSymbol} {{ return {importSymbol}New{typeString.Last()}() }}, ",
             };
-            var returnTypeDeclaration = isVoid ?
-                        string.Empty :
-                        $"{returnType}, ";
             var assignmentPrefix = isVoid ?
                         "err =" :
                         "res, err :=";
             if(responseHandlerParam != null)
-                writer.WriteLine($"{assignmentPrefix} m.requestAdapter.{sendMethodName}(*{RequestInfoVarName}, {constructorFunction}*{responseHandlerParam.Name})");
+                writer.WriteLine($"{assignmentPrefix} m.requestAdapter.{sendMethodName}(*{RequestInfoVarName}, {constructorFunction}{responseHandlerParam.Name})");
             else
                 writer.WriteLine($"{assignmentPrefix} m.requestAdapter.{sendMethodName}(*{RequestInfoVarName}, {constructorFunction}nil)");
             WriteReturnError(writer, returnType);

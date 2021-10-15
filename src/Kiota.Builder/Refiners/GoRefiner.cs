@@ -170,12 +170,16 @@ namespace Kiota.Builder.Refiners {
             new (x => x is CodeMethod method &&
                 method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path) && "DateTimeOffset".Equals(x.Type.Name, StringComparison.OrdinalIgnoreCase)),
                 "time", "Time"),
+            new (x => x is CodeEnum num, "ToUpper", "strings"),
         };//TODO add backing store types once we have them defined
         private static void CorrectMethodType(CodeMethod currentMethod) {
             if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) &&
                 currentMethod.Parent is CodeClass parentClass) {
                 if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
-                    currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x => x.Type.Name = "ResponseHandler");
+                    currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x => {
+                        x.Type.Name = "ResponseHandler";
+                        x.Type.IsNullable = false; //no pointers
+                    });
                 else if(currentMethod.IsOfKind(CodeMethodKind.RequestGenerator))
                     currentMethod.ReturnType.IsNullable = true;
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => {
@@ -198,8 +202,9 @@ namespace Kiota.Builder.Refiners {
                     .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                     .ToList()
                     .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
-            } else if(currentMethod.IsOfKind(CodeMethodKind.RequestGenerator))
+            } else if(currentMethod.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility, CodeMethodKind.RequestBuilderWithParameters, CodeMethodKind.RequestBuilderBackwardCompatibility)) {
                 currentMethod.ReturnType.IsNullable = true;
+            }
         }
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if (currentProperty.Type != null) {
