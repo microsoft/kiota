@@ -11,3 +11,4 @@ interface Response { }
 interface Headers { }
 interface ReadableStream { }
 interface fetch { }
+interface Blob {}

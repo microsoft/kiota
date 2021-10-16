@@ -11,10 +11,10 @@ import { RequestInformation } from "../../src/";
 
 describe("RequestInformation", () => {
 	it("Should set request information uri", () => {
-        const requestInformation = new RequestInformation();
-        const browserReadableStream = new ReadableStream();
-        requestInformation.setStreamContent(browserReadableStream);
+		const requestInformation = new RequestInformation();
+		const browserReadableStream = new ReadableStream();
+		requestInformation.setStreamContent(browserReadableStream);
 
-        assert.equal(requestInformation["content"], browserReadableStream)
-    });
+		assert.equal(requestInformation["content"], browserReadableStream);
+	});
 });

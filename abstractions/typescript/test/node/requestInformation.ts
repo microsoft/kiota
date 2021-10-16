@@ -6,16 +6,16 @@
  */
 
 import { assert } from "chai";
+import { Readable } from "stream";
 
 import { RequestInformation } from "../../src/";
-import { Readable } from "stream";
 
 describe("RequestInformation", () => {
 	it("Should set request information uri", () => {
-        const requestInformation = new RequestInformation();
-        const nodeReadableStream = new Readable();
-        requestInformation.setStreamContent(nodeReadableStream);
+		const requestInformation = new RequestInformation();
+		const nodeReadableStream = new Readable();
+		requestInformation.setStreamContent(nodeReadableStream);
 
-        assert.equal(requestInformation["content"], nodeReadableStream)
-    });
+		assert.equal(requestInformation["content"], nodeReadableStream);
+	});
 });

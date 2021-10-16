@@ -1,13 +1,24 @@
 {
     "name": "@microsoft/kiota-http-fetchlibrary",
     "version": "1.0.10",
-    "description": "Kiota HttpCore implementation with fetch",
-    "main": "dist/cjs/src/index.js",
-    "files": [
-        "dist/",
-        "src/"
+    "description": "Kiota request adapter implementation with fetch",
+    "keywords": [
+        "Kiota",
+        "OpenAPI",
+        "HTTP",
+        "fetch"
     ],
-    "types": "dist/cjs/src/index.d.ts",
+    "homepage": "https://github.com/microsoft/kiota#readme",
+    "bugs": {
+        "url": "https://github.com/microsoft/kiota/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/microsoft/kiota.git"
+    },
+    "license": "MIT",
+    "author": "Microsoft",
+    "main": "dist/cjs/src/index.js",
     "browser": {
         "./dist/es/src/index.js": "./dist/es/src/browser/index.js",
         "./dist/es/src/utils/utils.js": "./dist/es/src/utils/browser/utils.js",
@@ -15,37 +26,23 @@
         "./dist/es/src/middlewares/middlewareFactory.js": "./dist/es/src/middlewares/browser/middlewareFactory.js",
         "./dist/cjs/src/middlewares/middlewareFactory.js": "./dist/es/src/middlewares/browser/middlewareFactory.js"
     },
+    "types": "dist/cjs/src/index.d.ts",
+    "files": [
+        "dist/",
+        "src/"
+    ],
     "scripts": {
         "build": "npm run build:cjs && npm run build:es",
         "build:cjs": "tsc -p tsconfig.cjs.json",
         "build:es": "tsc -p tsconfig.es.json",
-        "test:cjs": "npm run build:cjs   && mocha  'dist/cjs/test/common/**/*.js' && mocha  'dist/cjs/test/node/**/*.js'",
-        "test:es": " npm run build:es && mocha 'dist/es/test/common/**/*.js'  --require  esm && mocha 'dist/es/test/node/**/*.js'  --require  esm",
-        "test": "npm run test:cjs && npm run test:es && npm run karma",
         "clean": "rm -r ./dist",
         "karma": "npm run rollup && karma  start --single-run --browsers ChromeHeadless karma.conf.js",
-        "rollup": "rollup -c",
         "lint": "eslint . --ext .ts",
-        "lint:fix": "eslint . --ext .ts --fix"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git://github.com/microsoft/kiota.git"
-    },
-    "keywords": [
-        "Kiota",
-        "OpenAPI",
-        "HTTP",
-        "fetch"
-    ],
-    "author": "Microsoft",
-    "license": "MIT",
-    "bugs": {
-        "url": "https://github.com/microsoft/kiota/issues"
-    },
-    "homepage": "https://github.com/microsoft/kiota#readme",
-    "publishConfig": {
-        "registry": "https://npm.pkg.github.com"
+        "lint:fix": "eslint . --ext .ts --fix",
+        "rollup": "rollup -c",
+        "test": "npm run test:cjs && npm run test:es && npm run karma",
+        "test:cjs": "npm run build:cjs   && mocha  'dist/cjs/test/common/**/*.js' && mocha  'dist/cjs/test/node/**/*.js'",
+        "test:es": " npm run build:es && mocha 'dist/es/test/common/**/*.js'  --require  esm && mocha 'dist/es/test/node/**/*.js'  --require  esm"
     },
     "dependencies": {
         "@microsoft/kiota-abstractions": "file:../../../abstractions/typescript",
@@ -81,5 +78,8 @@
         "sinon": "^11.1.2",
         "tslib": "^2.3.1",
         "typescript": "^4.4.3"
+    },
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com"
     }
 }

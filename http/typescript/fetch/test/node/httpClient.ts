@@ -7,7 +7,7 @@
 
 import { assert } from "chai";
 
-import { customFetchHandler, defaultFetchHandler, HttpClient, RedirectHandler, RetryHandler } from "../../src";
+import { CustomFetchHandler, DefaultFetchHandler, HttpClient, RedirectHandler, RetryHandler } from "../../src";
 import { DummyFetchHandler } from "../common/middleware/dummyFetchHandler";
 
 describe("HTTPClient.ts", () => {
@@ -37,7 +37,7 @@ describe("HTTPClient.ts", () => {
 
 			assert.isTrue(client["middleware"] instanceof RetryHandler);
 			assert.isTrue(next instanceof RedirectHandler);
-			assert.isTrue(next.next instanceof defaultFetchHandler);
+			assert.isTrue(next.next instanceof DefaultFetchHandler);
 		});
 
 		it("Should set default middleware array with customFetchHandler if middleware parameter is undefined && customFetch is defined", () => {
@@ -50,7 +50,7 @@ describe("HTTPClient.ts", () => {
 
 			assert.isTrue(client["middleware"] instanceof RetryHandler);
 			assert.isTrue(next instanceof RedirectHandler);
-			assert.isTrue(next.next instanceof customFetchHandler);
+			assert.isTrue(next.next instanceof CustomFetchHandler);
 		});
 
 		it("Should set to default fetch handler middleware array if middleware parameter is null && customFetch is undefined", () => {
@@ -58,7 +58,7 @@ describe("HTTPClient.ts", () => {
 
 			assert.isNotNull(client["middleware"]);
 
-			assert.isTrue(client["middleware"] instanceof defaultFetchHandler);
+			assert.isTrue(client["middleware"] instanceof DefaultFetchHandler);
 		});
 
 		it("Should only set custom fetch if middleware parameter is null && customFetch is defined", () => {
@@ -68,48 +68,4 @@ describe("HTTPClient.ts", () => {
 			assert.equal(client["customFetch"], dummyCustomFetch);
 		});
 	});
-
-	// describe("sendRequest", async () => {
-	// 	it("Should throw error for invalid request options incase if the url and options are passed", async () => {
-	// 		try {
-	// 			const url = "dummy_url";
-	// 			const context: MiddlewareContext = {
-	// 				request: url,
-	// 				options: {
-	// 					method: "GET"
-	// 				}
-	// 			};
-
-	// 			assert.isTrue(httpClient["middleware"] instanceof defaultFetchHandler)
-	// 			await httpClient.executeFetch(context);
-	// 			throw new Error("Test Failed - Something wrong with the context validation");
-	// 		} catch (error) {
-	// 			assert.equal(error.name, "InvalidRequestOptions");
-	// 		}
-	// 	});
-
-	// 	it("Should execute for context object with Request instance", async () => {
-	// 		const request: FetchRequestInfo = "dummy_url";
-	// 		const options: FetchRequestInit = {
-	// 			method: "GET"
-	// 		};
-	// 		const context: MiddlewareContext = {
-	// 			request,
-	// 			options
-	// 		};
-	// 		await httpClient.executeFetch(context);
-	// 	});
-
-	// 	it("Should execute for context object with request uri and options", async () => {
-	// 		const url = "dummy_url";
-	// 		const options: FetchRequestInit = {
-	// 			method: "GET",
-	// 		};
-	// 		const context: MiddlewareContext = {
-	// 			request: url,
-	// 			options,
-	// 		};
-	// 		await httpClient.executeFetch(context);
-	// 	});
-	// });
 });

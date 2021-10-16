@@ -6,7 +6,7 @@
  */
 
 /**
- * @module FetchHandler
+ * @module DefaultFetchHandler
  */
 
 import { FetchResponse } from "../../utils/fetchDefinitions";
@@ -16,9 +16,8 @@ import { MiddlewareContext } from "../middlewareContext";
 /**
  * @class
  * @implements Middleware
- * Class for FetchHandler
+ * Class for DefaultFetchHandler
  */
-
 export class DefaultFetchHandler implements Middleware {
 	/**
 	 * @private

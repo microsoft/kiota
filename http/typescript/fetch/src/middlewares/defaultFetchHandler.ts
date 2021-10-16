@@ -6,7 +6,7 @@
  */
 
 /**
- * @module FetchHandler
+ * @module DefaultFetchHandler
  */
 
 import fetch from "node-fetch";

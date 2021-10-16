@@ -1,1 +1,4 @@
 tsconfig.json
+doc/
+dist/cjs/test
+dist/es/test

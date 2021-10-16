@@ -10,8 +10,8 @@
  */
 
 import { FetchRequestInfo, FetchRequestInit, FetchResponse } from "../utils/fetchDefinitions";
-import { customFetchHandler } from "./customFetchHandler";
-import { defaultFetchHandler } from "./defaultFetchHandler";
+import { CustomFetchHandler } from "./customFetchHandler";
+import { DefaultFetchHandler } from "./defaultFetchHandler";
 import { Middleware } from "./middleware";
 import { RedirectHandlerOptions } from "./options/redirectHandlerOption";
 import { RetryHandlerOptions } from "./options/retryHandlerOptions";
@@ -37,9 +37,9 @@ export class MiddlewareFactory {
 		const redirectHandler = new RedirectHandler(new RedirectHandlerOptions());
 		middlewareArray.push(redirectHandler);
 		if (customFetch) {
-			middlewareArray.push(new customFetchHandler(customFetch));
+			middlewareArray.push(new CustomFetchHandler(customFetch));
 		} else {
-			middlewareArray.push(new defaultFetchHandler());
+			middlewareArray.push(new DefaultFetchHandler());
 		}
 
 		return middlewareArray;

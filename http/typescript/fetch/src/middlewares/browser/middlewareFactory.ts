@@ -10,11 +10,11 @@
  */
 
 import { FetchRequestInfo, FetchRequestInit, FetchResponse } from "../../utils/fetchDefinitions";
-import { customFetchHandler } from "../customFetchHandler";
+import { CustomFetchHandler } from "../customFetchHandler";
 import { Middleware } from "../middleware";
 import { RetryHandlerOptions } from "../options/retryHandlerOptions";
 import { RetryHandler } from "../retryHandler";
-import { defaultFetchHandler } from "./defaultFetchHandler";
+import { DefaultFetchHandler } from "./defaultFetchHandler";
 
 /**
  * @class
@@ -33,9 +33,9 @@ export class MiddlewareFactory {
 		const retryHandler = new RetryHandler(new RetryHandlerOptions());
 		middlewareArray.push(retryHandler);
 		if (customFetch) {
-			middlewareArray.push(new customFetchHandler(customFetch));
+			middlewareArray.push(new CustomFetchHandler(customFetch));
 		} else {
-			middlewareArray.push(new defaultFetchHandler());
+			middlewareArray.push(new DefaultFetchHandler());
 		}
 		return middlewareArray;
 	}

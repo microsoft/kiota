@@ -11,12 +11,12 @@ import { RequestInformation } from "../../src/";
 
 describe("RequestInformation", () => {
 	it("Should set request information uri", () => {
-        const requestInformation = new RequestInformation();
-        const currentPath = "CURRENT_PATH";
-        const pathSegment = "PATH_SEGMENT"
-        requestInformation.setUri( currentPath, pathSegment, false);
-        assert.isNotNull(URL);
-        console.log(requestInformation.URI);
-        assert.equal(requestInformation.URI, currentPath+ "" +pathSegment);
-    });
+		const requestInformation = new RequestInformation();
+		const currentPath = "CURRENT_PATH";
+		const pathSegment = "PATH_SEGMENT";
+		requestInformation.setUri(currentPath, pathSegment, false);
+		assert.isNotNull(URL);
+		console.log(requestInformation.URI);
+		assert.equal(requestInformation.URI, currentPath + "" + pathSegment);
+	});
 });
