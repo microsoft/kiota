@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -250,7 +250,7 @@ namespace Kiota.Builder.Writers.CSharp {
             if(isConstructor && inherits)
                 baseSuffix = " : base()";
             var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> conventions.GetParameterSignature(p, code)).ToList());
-            var methodName = isConstructor ? code.Parent.Name.ToFirstCharacterUpperCase() : code.Name;
+            var methodName = isConstructor ? code.Parent.Name.ToFirstCharacterUpperCase() : code.Name.ToFirstCharacterUpperCase();
             writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({parameters}){baseSuffix} {{");
         }
         private string GetSerializationMethodName(CodeTypeBase propType, CodeMethod method) {
