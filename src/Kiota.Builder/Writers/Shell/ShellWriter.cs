@@ -16,7 +16,7 @@ namespace Kiota.Builder.Writers.Shell
             AddCodeElementWriter(new CodeClassEndWriter(conventionService));
             AddCodeElementWriter(new CodeEnumWriter(conventionService));
             AddCodeElementWriter(new CodeIndexerWriter(conventionService));
-            AddCodeElementWriter(new CodeMethodWriter(conventionService));
+            AddCodeElementWriter(new ShellCodeMethodWriter(conventionService));
             AddCodeElementWriter(new CodePropertyWriter(conventionService));
             AddCodeElementWriter(new CodeTypeWriter(conventionService));
         }
