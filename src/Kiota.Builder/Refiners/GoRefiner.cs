@@ -166,7 +166,7 @@ namespace Kiota.Builder.Refiners {
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
                 "github.com/microsoft/kiota/abstractions/go/serialization", "SerializationWriter"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
-                "github.com/microsoft/kiota/abstractions/go/serialization", "ParseNode", "ConvertToArrayOfParsable", "ConvertToArrayOfPrimitives"),
+                "github.com/microsoft/kiota/abstractions/go/serialization", "ParseNode", "ConvertToArrayOfParsable"),
             new (x => x is CodeMethod method &&
                 method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path) && "DateTimeOffset".Equals(x.Type.Name, StringComparison.OrdinalIgnoreCase)),
                 "time", "Time"),

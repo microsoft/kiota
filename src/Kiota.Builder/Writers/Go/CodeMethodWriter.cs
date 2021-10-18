@@ -143,6 +143,12 @@ namespace Kiota.Builder.Writers.Go {
         }
         private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass) {
             var backingStore = parentClass.GetBackingStoreProperty();
+            writer.WriteLine("if m == nil {");
+            writer.IncreaseIndent();
+            writer.WriteLine("return nil");
+            writer.DecreaseIndent();
+            writer.WriteLine("} else {");
+            writer.IncreaseIndent();
             if(backingStore == null || (codeElement.AccessedProperty?.IsOfKind(CodePropertyKind.BackingStore) ?? false))
                 writer.WriteLine($"return m.{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}");
             else 
@@ -158,6 +164,7 @@ namespace Kiota.Builder.Writers.Go {
                     writer.WriteLine("return value;");
                 } else
                     writer.WriteLine($"return m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\");");
+            writer.CloseCurly();
 
         }
         private void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
@@ -266,11 +273,12 @@ namespace Kiota.Builder.Writers.Go {
             var deserializationMethodName = GetDeserializationMethodName(property.Type, parentClass);
             writer.WriteLine($"val, err := {deserializationMethodName}");
             WriteReturnError(writer);
-            if (property.Type.AllTypes.First().TypeDefinition is CodeEnum)
+            if (!property.Type.IsCollection && property.Type.AllTypes.First().TypeDefinition is CodeEnum)
                 writer.WriteLine($"cast := val.({propertyTypeImportName})");
             var valueArgument = property.Type.AllTypes.First().TypeDefinition switch {
-                CodeClass => $"val.(*{propertyTypeImportName})",
-                CodeEnum => $"&cast",
+                CodeClass when !property.Type.IsCollection => $"val.(*{propertyTypeImportName})",
+                CodeEnum when !property.Type.IsCollection => $"&cast",
+                _ when property.Type.IsCollection => "res",
                 _ => "val",
             };
             if(property.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None) {
@@ -278,7 +286,6 @@ namespace Kiota.Builder.Writers.Go {
                     (currentType.TypeDefinition is CodeEnum ||
                     currentType.TypeDefinition is CodeClass);
                 WriteCollectionCast(propertyTypeImportName, isTargetTypeObject, "val", "res", writer);
-                valueArgument = "res";
             }
             writer.WriteLines($"m.Set{property.Name.ToFirstCharacterUpperCase()}({valueArgument})", 
                             "return nil");
@@ -453,41 +460,40 @@ namespace Kiota.Builder.Writers.Go {
         }
 
         private const string ParsableConversionMethodName = "ConvertToArrayOfParsable";
-        private const string PrimitiveConversionMethodName = "ConvertToArrayOfPrimitives";
         private void WriteSerializationMethodCall(CodeTypeBase propType, CodeClass parentClass, string serializationKey, string valueGet, bool shouldDeclareErrorVar, LanguageWriter writer) {
             serializationKey = $"\"{serializationKey}\"";
-            var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
             var errorPrefix = $"err {errorVarDeclaration(shouldDeclareErrorVar)}= writer.";
-            writer.WriteLine("{");// so the err var scope is limited
-            writer.IncreaseIndent();
-            if(propType is CodeType currentType) {
-                if (isCollection) {
-                    if(currentType.TypeDefinition == null) {
-                        var conversionMethodImport = GetConversionHelperMethodImport(parentClass, PrimitiveConversionMethodName);
-                        writer.WriteLine($"{errorPrefix}WriteCollectionOfPrimitiveValues({serializationKey}, {conversionMethodImport}({valueGet}))");
-                        WriteReturnError(writer);
-                    } else {
-                        var conversionMethodImport = GetConversionHelperMethodImport(parentClass, ParsableConversionMethodName);
-                        writer.WriteLine($"{errorPrefix}WriteCollectionOfObjectValues({serializationKey}, {conversionMethodImport}({valueGet}))");
-                        WriteReturnError(writer);
-                    }
-                    writer.CloseBlock(); //closing the scope for the err var
-                    return;
-                } else if (currentType.TypeDefinition is CodeEnum) {
-                    writer.WriteLine($"if {valueGet} != nil {{");
-                    writer.IncreaseIndent();
-                    writer.WriteLine($"{errorPrefix}WritePrimitiveValue({serializationKey}, {valueGet}.String())");
-                    WriteReturnError(writer);
-                    writer.CloseBlock();
-                    writer.CloseBlock(); //closing the scope for the err var
-                    return;
-                }
-            }
-            var propertyType = conventions.TranslateType(propType, false);
-            if(conventions.IsPrimitiveType(propertyType) || conventions.IsScalarType(propertyType))
-                writer.WriteLine($"{errorPrefix}WritePrimitiveValue({serializationKey}, {valueGet})");
+            var isEnum = propType is CodeType eType && eType.TypeDefinition is CodeEnum;
+            if(isEnum && !propType.IsCollection)
+                writer.WriteLine($"if {valueGet} != nil {{");
             else
-                writer.WriteLine($"{errorPrefix}WriteObjectValue({serializationKey}, {valueGet})");
+                writer.WriteLine("{");// so the err var scope is limited
+            writer.IncreaseIndent();
+            if(isEnum && !propType.IsCollection)
+                writer.WriteLine($"cast := {valueGet}.String()");
+            var collectionPrefix = propType.IsCollection ? "CollectionOf" : string.Empty;
+            var collectionSuffix = propType.IsCollection ? "s" : string.Empty;
+            var propertyTypeName = conventions.GetTypeString(propType, parentClass, false, false)
+                                    .Split('.')
+                                    .Last()
+                                    .ToFirstCharacterUpperCase();
+            var reference = (isEnum, propType.IsCollection) switch {
+                (true, false) => $"&cast",
+                (true, true) => $"{conventions.GetTypeString(propType, parentClass, false, false).Replace(propertyTypeName, "Serialize" + propertyTypeName)}({valueGet})", //importSymbol.SerializeEnumName
+                (_, _) => valueGet,
+            };
+            if(propType is CodeType cType) {
+                if(cType.TypeDefinition is CodeClass)
+                    propertyTypeName = "Object";
+                else if(cType.TypeDefinition is CodeEnum)
+                    propertyTypeName = "String";
+                else if (cType.TypeDefinition == null && propertyTypeName.Equals("[]byte", StringComparison.OrdinalIgnoreCase))
+                    propertyTypeName = "ByteArray";
+            }
+            var needsCollectionConversion = propType.IsCollection && propType is CodeType currentType && currentType.TypeDefinition is CodeClass;
+            var conversionMethod = needsCollectionConversion ? GetConversionHelperMethodImport(parentClass, ParsableConversionMethodName) + "(" : string.Empty;
+            var conversionMethodSuffix = needsCollectionConversion ? ")" : string.Empty;
+            writer.WriteLine($"{errorPrefix}Write{collectionPrefix}{propertyTypeName}Value{collectionSuffix}({serializationKey}, {conversionMethod}{reference}{conversionMethodSuffix})");
             WriteReturnError(writer);
             writer.CloseBlock();
         }

@@ -164,8 +164,8 @@ func (n *JsonParseNode) GetObjectValue(ctor func() absser.Parsable) (absser.Pars
 	return result, nil
 }
 func (n *JsonParseNode) GetCollectionOfObjectValues(ctor func() absser.Parsable) ([]absser.Parsable, error) {
-	if n.value == nil {
-		return nil, errors.New("value is nil")
+	if n == nil || n.value == nil {
+		return nil, nil
 	}
 	if ctor == nil {
 		return nil, errors.New("ctor is nil")
@@ -185,8 +185,8 @@ func (n *JsonParseNode) GetCollectionOfObjectValues(ctor func() absser.Parsable)
 	return result, nil
 }
 func (n *JsonParseNode) GetCollectionOfPrimitiveValues(targetType string) ([]interface{}, error) {
-	if n.value == nil {
-		return nil, errors.New("value is nil")
+	if n == nil || n.value == nil {
+		return nil, nil
 	}
 	if targetType == "" {
 		return nil, errors.New("targetType is empty")
@@ -230,8 +230,8 @@ func (n *JsonParseNode) getPrimitiveValue(targetType string) (interface{}, error
 	}
 }
 func (n *JsonParseNode) GetCollectionOfEnumValues(parser func(string) (interface{}, error)) ([]interface{}, error) {
-	if n.value == nil {
-		return nil, errors.New("value is nil")
+	if n == nil || n.value == nil {
+		return nil, nil
 	}
 	if parser == nil {
 		return nil, errors.New("parser is nil")
@@ -251,14 +251,14 @@ func (n *JsonParseNode) GetCollectionOfEnumValues(parser func(string) (interface
 	return result, nil
 }
 func (n *JsonParseNode) GetStringValue() (*string, error) {
-	if n.value == nil {
-		return nil, errors.New("value is nil")
+	if n == nil || n.value == nil {
+		return nil, nil
 	}
 	return n.value.(*string), nil
 }
 func (n *JsonParseNode) GetBoolValue() (*bool, error) {
-	if n.value == nil {
-		return nil, errors.New("value is nil")
+	if n == nil || n.value == nil {
+		return nil, nil
 	}
 	return n.value.(*bool), nil
 }
@@ -271,8 +271,8 @@ func (n *JsonParseNode) GetFloat32Value() (*float32, error) {
 	return &cast, nil
 }
 func (n *JsonParseNode) GetFloat64Value() (*float64, error) {
-	if n.value == nil {
-		return nil, errors.New("value is nil")
+	if n == nil || n.value == nil {
+		return nil, nil
 	}
 	return n.value.(*float64), nil
 }
