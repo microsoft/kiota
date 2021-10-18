@@ -113,6 +113,10 @@ namespace Kiota.Builder
                 implements.AddRange(types);
             }
             public IEnumerable<CodeType> Implements => implements;
+            public Boolean IsStatic
+            {
+                get; set;
+            }
         }
 
         public class End : BlockEnd

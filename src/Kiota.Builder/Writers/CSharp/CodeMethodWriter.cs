@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -146,7 +146,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 _ => $"GetObjectValue<{propertyType.ToFirstCharacterUpperCase()}>",
             };
         }
-        private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer) {
+        protected virtual void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
             var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
@@ -209,7 +209,7 @@ namespace Kiota.Builder.Writers.CSharp {
             if(additionalDataProperty != null)
                 writer.WriteLine($"writer.WriteAdditionalData({additionalDataProperty.Name});");
         }
-        private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType) {
+        protected string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType) {
             if(isVoid) return "SendNoContentAsync";
             else if(isStream || conventions.IsPrimitiveType(returnType))
                 if(isCollection)
