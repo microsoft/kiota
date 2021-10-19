@@ -143,7 +143,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             };
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("(func() (error))", result);
+            Assert.Contains("(error)", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
@@ -176,7 +176,6 @@ namespace Kiota.Builder.Writers.Go.Tests {
             Assert.Contains("m.requestAdapter.SendAsync", result);
             Assert.Contains("return res.(", result);
             Assert.Contains("err != nil", result);
-            Assert.Contains("return func() (", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         private const string AbstractionsPackageHash = "ida96af0f171bb75f894a4013a6b3146a4397c58f11adb81a2b7cbea9314783a9";
@@ -259,10 +258,9 @@ namespace Kiota.Builder.Writers.Go.Tests {
             AddSerializationProperties();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("WritePrimitiveValue", result);
-            Assert.Contains("WriteCollectionOfPrimitiveValues", result);
+            Assert.Contains("WriteStringValue", result);
+            Assert.Contains("WriteCollectionOfStringValues", result);
             Assert.Contains("WriteCollectionOfObjectValues", result);
-            // Assert.Contains("WriteEnumValue", result); update when implementing enum serialization
             Assert.Contains("WriteAdditionalData(m.GetAdditionalData())", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
@@ -310,7 +308,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
         public void WritesReturnType() {
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains($"{MethodName.ToFirstCharacterUpperCase()}()({TaskPrefix}*{ReturnTypeName}, error)", result);// async default
+            Assert.Contains($"{MethodName.ToFirstCharacterUpperCase()}()(*{ReturnTypeName}, error)", result);// async default
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
@@ -389,7 +387,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             Assert.Contains("m.requestAdapter", result);
             Assert.Contains("m.pathParameters", result);
             Assert.Contains("pathParam", result);
-            Assert.Contains("return *New", result);
+            Assert.Contains("return New", result);
         }
         [Fact]
         public void WritesGetterToBackingStore() {
