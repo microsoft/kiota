@@ -31,16 +31,3 @@ type SerializationWriter interface {
 	GetSerializedContent() ([]byte, error)
 	WriteAdditionalData(value map[string]interface{}) error
 }
-
-func ConvertToArrayOfParsable(params interface{}) []Parsable {
-	var result []Parsable
-	if params != nil {
-		cast, ok := params.([]interface{})
-		if ok {
-			for _, param := range cast {
-				result = append(result, param.(Parsable))
-			}
-		}
-	}
-	return result
-}

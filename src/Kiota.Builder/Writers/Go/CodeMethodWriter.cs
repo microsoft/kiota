@@ -463,15 +463,15 @@ namespace Kiota.Builder.Writers.Go {
             if(propTypeBase is CodeType propType) {
                 var importSymbol = conventions.GetTypeString(propType, parentClass, false, false);
                 var importNS = importSymbol.Contains(dot) ? importSymbol.Split(dot).First() + dot : string.Empty;
-                return $"func () {conventions.SerializationHash}.Parsable {{ return {importNS}New{propertyTypeName.ToFirstCharacterUpperCase()}() }}";
+                var parsableSymbol = GetConversionHelperMethodImport(parentClass, "Parsable");
+                return $"func () {parsableSymbol} {{ return {importNS}New{propertyTypeName.ToFirstCharacterUpperCase()}() }}";
             } else return GetTypeFactory(propTypeBase.AllTypes.First(), parentClass, propertyTypeName);
         }
-
-        private const string ParsableConversionMethodName = "ConvertToArrayOfParsable";
         private void WriteSerializationMethodCall(CodeTypeBase propType, CodeClass parentClass, string serializationKey, string valueGet, bool shouldDeclareErrorVar, LanguageWriter writer) {
             serializationKey = $"\"{serializationKey}\"";
             var errorPrefix = $"err {errorVarDeclaration(shouldDeclareErrorVar)}= writer.";
             var isEnum = propType is CodeType eType && eType.TypeDefinition is CodeEnum;
+            var isClass = propType is CodeType cType && cType.TypeDefinition is CodeClass;
             if(isEnum && !propType.IsCollection)
                 writer.WriteLine($"if {valueGet} != nil {{");
             else
@@ -479,29 +479,34 @@ namespace Kiota.Builder.Writers.Go {
             writer.IncreaseIndent();
             if(isEnum && !propType.IsCollection)
                 writer.WriteLine($"cast := {valueGet}.String()");
+            else if(isClass && propType.IsCollection) {
+                var parsableSymbol = GetConversionHelperMethodImport(parentClass, "Parsable");
+                writer.WriteLines($"cast := make([]{parsableSymbol}, len({valueGet}))",
+                                $"for i, v := range {valueGet} {{");
+                writer.IncreaseIndent();
+                writer.WriteLines($"temp := v", // temporary creating a new reference to avoid pointers to the same object
+                    $"cast[i] = {parsableSymbol}(&temp)");
+                writer.CloseCurly();
+            }
             var collectionPrefix = propType.IsCollection ? "CollectionOf" : string.Empty;
             var collectionSuffix = propType.IsCollection ? "s" : string.Empty;
             var propertyTypeName = conventions.GetTypeString(propType, parentClass, false, false)
                                     .Split('.')
                                     .Last()
                                     .ToFirstCharacterUpperCase();
-            var reference = (isEnum, propType.IsCollection) switch {
-                (true, false) => $"&cast",
-                (true, true) => $"{conventions.GetTypeString(propType, parentClass, false, false).Replace(propertyTypeName, "Serialize" + propertyTypeName)}({valueGet})", //importSymbol.SerializeEnumName
-                (_, _) => valueGet,
+            var reference = (isEnum, isClass, propType.IsCollection) switch {
+                (true, false, false) => $"&cast",
+                (true, false, true) => $"{conventions.GetTypeString(propType, parentClass, false, false).Replace(propertyTypeName, "Serialize" + propertyTypeName)}({valueGet})", //importSymbol.SerializeEnumName
+                (false, true, true) => $"cast",
+                (_, _, _) => valueGet,
             };
-            if(propType is CodeType cType) {
-                if(cType.TypeDefinition is CodeClass)
-                    propertyTypeName = "Object";
-                else if(cType.TypeDefinition is CodeEnum)
-                    propertyTypeName = "String";
-                else if (cType.TypeDefinition == null && propertyTypeName.Equals("[]byte", StringComparison.OrdinalIgnoreCase))
-                    propertyTypeName = "ByteArray";
-            }
-            var needsCollectionConversion = propType.IsCollection && propType is CodeType currentType && currentType.TypeDefinition is CodeClass;
-            var conversionMethod = needsCollectionConversion ? GetConversionHelperMethodImport(parentClass, ParsableConversionMethodName) + "(" : string.Empty;
-            var conversionMethodSuffix = needsCollectionConversion ? ")" : string.Empty;
-            writer.WriteLine($"{errorPrefix}Write{collectionPrefix}{propertyTypeName}Value{collectionSuffix}({serializationKey}, {conversionMethod}{reference}{conversionMethodSuffix})");
+            if(isClass)
+                propertyTypeName = "Object";
+            else if(isEnum)
+                propertyTypeName = "String";
+            else if (propertyTypeName.Equals("[]byte", StringComparison.OrdinalIgnoreCase))
+                propertyTypeName = "ByteArray";
+            writer.WriteLine($"{errorPrefix}Write{collectionPrefix}{propertyTypeName}Value{collectionSuffix}({serializationKey}, {reference})");
             WriteReturnError(writer);
             writer.CloseBlock();
         }
