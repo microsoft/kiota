@@ -57,9 +57,8 @@ func (w *JsonSerializationWriter) WriteStringValue(key string, value *string) er
 	}
 	if value != nil {
 		w.writeStringValue(*value)
-		return nil
 	}
-	if key != "" || value != nil {
+	if key != "" && value != nil {
 		w.writePropertySeparator()
 	}
 	return nil
@@ -70,9 +69,8 @@ func (w *JsonSerializationWriter) WriteBoolValue(key string, value *bool) error 
 	}
 	if value != nil {
 		w.writeRawValue(strconv.FormatBool(*value))
-		return nil
 	}
-	if key != "" || value != nil {
+	if key != "" && value != nil {
 		w.writePropertySeparator()
 	}
 	return nil
@@ -90,9 +88,8 @@ func (w *JsonSerializationWriter) WriteInt64Value(key string, value *int64) erro
 	}
 	if value != nil {
 		w.writeRawValue(strconv.FormatInt(*value, 10))
-		return nil
 	}
-	if key != "" || value != nil {
+	if key != "" && value != nil {
 		w.writePropertySeparator()
 	}
 	return nil
@@ -111,7 +108,7 @@ func (w *JsonSerializationWriter) WriteFloat64Value(key string, value *float64) 
 	if value != nil {
 		w.writeRawValue(strconv.FormatFloat(*value, 'f', -1, 64))
 	}
-	if key != "" || value != nil {
+	if key != "" && value != nil {
 		w.writePropertySeparator()
 	}
 	return nil
@@ -122,9 +119,8 @@ func (w *JsonSerializationWriter) WriteTimeValue(key string, value *time.Time) e
 	}
 	if value != nil {
 		w.writeRawValue((*value).String())
-		return nil
 	}
-	if key != "" || value != nil {
+	if key != "" && value != nil {
 		w.writePropertySeparator()
 	}
 	return nil
@@ -135,9 +131,8 @@ func (w *JsonSerializationWriter) WriteUUIDValue(key string, value *uuid.UUID) e
 	}
 	if value != nil {
 		w.writeStringValue((*value).String())
-		return nil
 	}
-	if key != "" || value != nil {
+	if key != "" && value != nil {
 		w.writePropertySeparator()
 	}
 	return nil
@@ -148,15 +143,14 @@ func (w *JsonSerializationWriter) WriteByteArrayValue(key string, value []byte) 
 	}
 	if value != nil {
 		w.writeStringValue(base64.StdEncoding.EncodeToString(value))
-		return nil
 	}
-	if key != "" || value != nil {
+	if key != "" && value != nil {
 		w.writePropertySeparator()
 	}
 	return nil
 }
 func (w *JsonSerializationWriter) WriteObjectValue(key string, item absser.Parsable) error {
-	if item != nil {
+	if !item.IsNil() {
 		if key != "" {
 			w.writePropertyName(key)
 		}
@@ -374,7 +368,7 @@ func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface
 		for key, value := range value {
 			p, ok := value.(absser.Parsable)
 			if ok {
-				err := w.WriteObjectValue("", p)
+				err := w.WriteObjectValue(key, p)
 				if err != nil {
 					return err
 				}
@@ -382,7 +376,7 @@ func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface
 			}
 			c, ok := value.([]absser.Parsable)
 			if ok {
-				err := w.WriteCollectionOfObjectValues("", c)
+				err := w.WriteCollectionOfObjectValues(key, c)
 				if err != nil {
 					return err
 				}
@@ -390,7 +384,7 @@ func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface
 			}
 			sc, ok := value.([]string)
 			if ok {
-				err := w.WriteCollectionOfStringValues("", sc)
+				err := w.WriteCollectionOfStringValues(key, sc)
 				if err != nil {
 					return err
 				}
@@ -398,7 +392,7 @@ func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface
 			}
 			bc, ok := value.([]bool)
 			if ok {
-				err := w.WriteCollectionOfBoolValues("", bc)
+				err := w.WriteCollectionOfBoolValues(key, bc)
 				if err != nil {
 					return err
 				}
@@ -406,7 +400,7 @@ func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface
 			}
 			i32c, ok := value.([]int32)
 			if ok {
-				err := w.WriteCollectionOfInt32Values("", i32c)
+				err := w.WriteCollectionOfInt32Values(key, i32c)
 				if err != nil {
 					return err
 				}
@@ -414,7 +408,7 @@ func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface
 			}
 			i64c, ok := value.([]int64)
 			if ok {
-				err := w.WriteCollectionOfInt64Values("", i64c)
+				err := w.WriteCollectionOfInt64Values(key, i64c)
 				if err != nil {
 					return err
 				}
@@ -422,7 +416,7 @@ func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface
 			}
 			f32c, ok := value.([]float32)
 			if ok {
-				err := w.WriteCollectionOfFloat32Values("", f32c)
+				err := w.WriteCollectionOfFloat32Values(key, f32c)
 				if err != nil {
 					return err
 				}
@@ -430,7 +424,7 @@ func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface
 			}
 			f64c, ok := value.([]float64)
 			if ok {
-				err := w.WriteCollectionOfFloat64Values("", f64c)
+				err := w.WriteCollectionOfFloat64Values(key, f64c)
 				if err != nil {
 					return err
 				}
@@ -438,7 +432,7 @@ func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface
 			}
 			uc, ok := value.([]uuid.UUID)
 			if ok {
-				err := w.WriteCollectionOfUUIDValues("", uc)
+				err := w.WriteCollectionOfUUIDValues(key, uc)
 				if err != nil {
 					return err
 				}
@@ -516,7 +510,6 @@ func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface
 				}
 				continue
 			}
-			w.writePropertySeparator()
 		}
 		w.trimLastPropertySeparator()
 	}

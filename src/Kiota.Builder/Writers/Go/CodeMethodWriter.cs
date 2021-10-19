@@ -65,11 +65,18 @@ namespace Kiota.Builder.Writers.Go {
                 case CodeMethodKind.RequestBuilderWithParameters:
                     WriteRequestBuilderBody(parentClass, codeElement, writer);
                     break;
+                case CodeMethodKind.NullCheck:
+                    WriteNullCheckBody(writer);
+                    break;
                 default:
                     writer.WriteLine("return nil");
                 break;
             }
             writer.CloseBlock();
+        }
+        private static void WriteNullCheckBody(LanguageWriter writer)
+        {
+            writer.WriteLine("return m == nil");
         }
         private const string TempParamsVarName = "urlParams";
         private static void WriteRawUrlConstructorBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
@@ -134,7 +141,8 @@ namespace Kiota.Builder.Writers.Go {
                                                 CodeMethodKind.Deserializer,
                                                 CodeMethodKind.RequestBuilderWithParameters,
                                                 CodeMethodKind.RequestBuilderBackwardCompatibility,
-                                                CodeMethodKind.RawUrlConstructor) || code.IsAsync ? 
+                                                CodeMethodKind.RawUrlConstructor,
+                                                CodeMethodKind.NullCheck) || code.IsAsync ? 
                                                     string.Empty :
                                                     "error";
             if(!string.IsNullOrEmpty(finalReturnType) && !string.IsNullOrEmpty(errorDeclaration))

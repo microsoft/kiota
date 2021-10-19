@@ -23,6 +23,9 @@ namespace Kiota.Builder.Refiners {
                 generatedCode,
                 _configuration.UsesBackingStore
             );
+            AddNullCheckMethods(
+                generatedCode
+            );
             AddRawUrlConstructorOverload(
                 generatedCode
             );
@@ -73,6 +76,21 @@ namespace Kiota.Builder.Refiners {
                 generatedCode,
                 new string[] {"github.com/microsoft/kiota/abstractions/go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota/abstractions/go.RegisterDefaultSerializer"},
                 new string[] {"github.com/microsoft/kiota/abstractions/go/serialization.ParseNodeFactory", "github.com/microsoft/kiota/abstractions/go.RegisterDefaultDeserializer"});
+        }
+        private static void AddNullCheckMethods(CodeElement currentElement) {
+            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
+                currentClass.AddMethod(new CodeMethod {
+                    Name = "IsNil",
+                    IsAsync = false,
+                    MethodKind = CodeMethodKind.NullCheck,
+                    ReturnType = new CodeType {
+                        Name = "boolean",
+                        IsExternal = true,
+                        IsNullable = false,
+                    },
+                });
+            }
+            CrawlTree(currentElement, AddNullCheckMethods);
         }
         private static void MoveAllModelsToTopLevel(CodeElement currentElement, CodeNamespace targetNamespace = null) {
             if(currentElement is CodeNamespace currentNamespace) {
