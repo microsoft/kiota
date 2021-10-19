@@ -150,8 +150,8 @@ namespace Kiota.Builder.Refiners
             var codeMethod = new CodeMethod();
             codeMethod.IsAsync = false;
             codeMethod.IsStatic = true;
-            codeMethod.Name = $"Build{navProperty.Name}Command";
-            codeMethod.MethodKind = CodeMethodKind.RequestBuilderBackwardCompatibility;
+            codeMethod.Name = $"Build{navProperty.Name.ToFirstCharacterUpperCase()}Command";
+            codeMethod.MethodKind = CodeMethodKind.RequestBuilderWithParameters;
             codeMethod.ReturnType = CreateCommandType(codeMethod);
             return codeMethod;
         }
