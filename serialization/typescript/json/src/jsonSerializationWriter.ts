@@ -82,6 +82,7 @@ export class JsonSerializationWriter implements SerializationWriter {
                 this.writer.pop();
             }
             this.writer.push(`}`);
+            key && this.writer.push(JsonSerializationWriter.propertySeparator);
         }
     }
     public writeEnumValue = <T>(key?: string | undefined, ...values: (T | undefined)[]): void => {
