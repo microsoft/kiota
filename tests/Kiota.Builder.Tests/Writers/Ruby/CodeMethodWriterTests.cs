@@ -56,8 +56,8 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
                 PropertyKind = CodePropertyKind.RequestAdapter,
             });
             parentClass.AddProperty(new CodeProperty {
-                Name = "urlTemplateParameters",
-                PropertyKind = CodePropertyKind.UrlTemplateParameters,
+                Name = "pathParameters",
+                PropertyKind = CodePropertyKind.PathParameters,
                 Type = new CodeType {
                     Name = "string",
                 }
@@ -395,7 +395,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("request_adapter", result);
-            Assert.Contains("url_template_parameters", result);
+            Assert.Contains("path_parameters", result);
             Assert.Contains("= id", result);
             Assert.Contains("return Somecustomtype.new", result);
         }
@@ -413,7 +413,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("request_adapter", result);
-            Assert.Contains("url_template_parameters", result);
+            Assert.Contains("path_parameters", result);
             Assert.Contains("pathParam", result);
             Assert.Contains("return Somecustomtype.new", result);
         }

@@ -316,7 +316,7 @@ namespace Kiota.Builder
                 methodToAdd.AddParameter(mParameter);
             }
         }
-        private static readonly string urlTemplateParametersParameterName = "urlTemplateParameters";
+        private static readonly string PathParametersParameterName = "pathParameters";
         private void CreateUrlManagement(CodeClass currentClass, OpenApiUrlTreeNode currentNode, bool isApiClientClass) {
             var pathProperty = new CodeProperty {
                 Access = AccessModifier.Private,
@@ -355,10 +355,10 @@ namespace Kiota.Builder
                 Access = AccessModifier.Public,
             }).First();
             constructor.ReturnType = new CodeType { Name = voidType, IsExternal = true };
-            var urlTemplateParametersProperty = new CodeProperty {
-                Name = urlTemplateParametersParameterName,
+            var pathParametersProperty = new CodeProperty {
+                Name = PathParametersParameterName,
                 Description = "Url template parameters for the request",
-                PropertyKind = CodePropertyKind.UrlTemplateParameters,
+                PropertyKind = CodePropertyKind.PathParameters,
                 Access = AccessModifier.Private,
                 ReadOnly = true,
                 Type = new CodeType {
@@ -367,18 +367,18 @@ namespace Kiota.Builder
                     IsNullable = false,
                 },
             };
-            currentClass.AddProperty(urlTemplateParametersProperty);
+            currentClass.AddProperty(pathParametersProperty);
             if(isApiClientClass) {
                 constructor.SerializerModules = config.Serializers;
                 constructor.DeserializerModules = config.Deserializers;
-                urlTemplateParametersProperty.DefaultValue = $"new {urlTemplateParametersProperty.Type.Name}()";
+                pathParametersProperty.DefaultValue = $"new {pathParametersProperty.Type.Name}()";
             } else {
                 constructor.AddParameter(new CodeParameter {
-                    Name = urlTemplateParametersParameterName,
-                    Type = urlTemplateParametersProperty.Type,
+                    Name = PathParametersParameterName,
+                    Type = pathParametersProperty.Type,
                     Optional = false,
-                    Description = urlTemplateParametersProperty.Description,
-                    ParameterKind = CodeParameterKind.UrlTemplateParameters,
+                    Description = pathParametersProperty.Description,
+                    ParameterKind = CodeParameterKind.PathParameters,
                 });
                 AddPathParametersToMethod(currentNode, constructor, true);
             }

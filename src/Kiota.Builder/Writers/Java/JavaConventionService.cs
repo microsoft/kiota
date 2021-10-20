@@ -81,17 +81,17 @@ namespace Kiota.Builder.Writers.Java {
         internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
         #pragma warning disable CA1822 // Method should be static
         internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default) {
-            var urlTemplateParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
+            var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
-            var urlTemplateParams = urlTemplateVarName ?? urlTemplateParametersProperty.Name;
+            var urlTemplateParams = urlTemplateVarName ?? pathParametersProperty.Name;
             var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
             writer.WriteLines($"return new {returnType}({urlTemplateParams}, {requestAdapterProp.Name}{pathParametersSuffix});");
         }
         internal string TempDictionaryVarName = "urlTplParams";
-        internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase urlTemplateParametersType, string urlTemplateParametersReference, params (CodeTypeBase, string, string)[] parameters) {
-            if(urlTemplateParametersType == null) return;
-            var mapTypeName = urlTemplateParametersType.Name;
-            writer.WriteLine($"var {TempDictionaryVarName} = new {mapTypeName}({urlTemplateParametersReference});");
+        internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
+            if(pathParametersType == null) return;
+            var mapTypeName = pathParametersType.Name;
+            writer.WriteLine($"var {TempDictionaryVarName} = new {mapTypeName}({pathParametersReference});");
             if(parameters.Any())
                 writer.WriteLines(parameters.Select(p => {
                     var stringSuffix = p.Item1.Name.Equals("string", StringComparison.OrdinalIgnoreCase) ? string.Empty : ".toString()";

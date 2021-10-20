@@ -11,12 +11,12 @@ export class RequestInformation {
     /** The URI of the request. */
     private uri?: URL;
     /** The URL template parameters for the request. */
-    public urlTemplateParameters: Map<string, string> = new Map<string, string>();
+    public pathParameters: Map<string, string> = new Map<string, string>();
     /** The URL template for the request */
     public urlTemplate?: string;
     /** Gets the URL of the request  */
     public get URL(): URL {
-        const rawUrl = this.urlTemplateParameters.get(RequestInformation.raw_url_key);
+        const rawUrl = this.pathParameters.get(RequestInformation.raw_url_key);
         if(this.uri) {
             return this.uri;
         } else if (rawUrl) {
@@ -25,8 +25,8 @@ export class RequestInformation {
             return value;
         } else if(!this.queryParameters) {
             throw new Error("queryParameters cannot be undefined");
-        } else if(!this.urlTemplateParameters) {
-            throw new Error("urlTemplateParameters cannot be undefined");
+        } else if(!this.pathParameters) {
+            throw new Error("pathParameters cannot be undefined");
         } else if(!this.urlTemplate) {
             throw new Error("urlTemplate cannot be undefined");
         } else {
@@ -35,7 +35,7 @@ export class RequestInformation {
             this.queryParameters.forEach((v, k) => {
                 if(v) data[k] = v;
             });
-            this.urlTemplateParameters.forEach((v, k) => {
+            this.pathParameters.forEach((v, k) => {
                 if(v) data[k] = v;
             });
             const result = template.expand(data);
@@ -47,7 +47,7 @@ export class RequestInformation {
         if(!url) throw new Error("URL cannot be undefined");
         this.uri = url;
         this.queryParameters.clear();
-        this.urlTemplateParameters.clear();
+        this.pathParameters.clear();
     }
     public static raw_url_key = "request-raw-url";
     /** The HTTP method for the request */

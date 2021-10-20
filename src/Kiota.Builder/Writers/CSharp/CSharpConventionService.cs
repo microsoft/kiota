@@ -27,16 +27,16 @@ namespace Kiota.Builder.Writers.CSharp {
         }
         #pragma warning disable CA1822 // Method should be static
         internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, string prefix = default, IEnumerable<CodeParameter> pathParameters = default) {
-            var urlTemplateParametersProp = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
+            var pathParametersProp = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
-            var urlTplRef = urlTemplateVarName ?? urlTemplateParametersProp.Name.ToFirstCharacterUpperCase();
+            var urlTplRef = urlTemplateVarName ?? pathParametersProp.Name.ToFirstCharacterUpperCase();
             writer.WriteLine($"{prefix}new {returnType}({urlTplRef}, {requestAdapterProp.Name.ToFirstCharacterUpperCase()}{pathParametersSuffix});");
         }
         internal string TempDictionaryVarName = "urlTplParams";
-        internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase urlTemplateParametersType, string urlTemplateParametersReference, params (CodeTypeBase, string, string)[] parameters) {
-            if(urlTemplateParametersType == null) return;
-            writer.WriteLine($"var {TempDictionaryVarName} = new {urlTemplateParametersType.Name}({urlTemplateParametersReference});");
+        internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
+            if(pathParametersType == null) return;
+            writer.WriteLine($"var {TempDictionaryVarName} = new {pathParametersType.Name}({pathParametersReference});");
             if(parameters.Any())
                 writer.WriteLines(parameters.Select(p => {
                     var stringSuffix = p.Item1.Name.Equals("string", StringComparison.OrdinalIgnoreCase) ? string.Empty : ".ToString()";

@@ -12,24 +12,24 @@ import (
 
 /* This type represents an abstract HTTP request. */
 type RequestInformation struct {
-	Method                HttpMethod
-	uri                   *u.URL
-	Headers               map[string]string
-	QueryParameters       map[string]string
-	Content               []byte
-	UrlTemplateParameters map[string]string
-	UrlTemplate           string
-	options               map[string]RequestOption
+	Method          HttpMethod
+	uri             *u.URL
+	Headers         map[string]string
+	QueryParameters map[string]string
+	Content         []byte
+	PathParameters  map[string]string
+	UrlTemplate     string
+	options         map[string]RequestOption
 }
 
 const raw_url_key = "request-raw-url"
 
 func NewRequestInformation() *RequestInformation {
 	return &RequestInformation{
-		Headers:               make(map[string]string),
-		QueryParameters:       make(map[string]string),
-		options:               make(map[string]RequestOption),
-		UrlTemplateParameters: make(map[string]string),
+		Headers:         make(map[string]string),
+		QueryParameters: make(map[string]string),
+		options:         make(map[string]RequestOption),
+		PathParameters:  make(map[string]string),
 	}
 }
 
@@ -38,12 +38,12 @@ func (request *RequestInformation) GetUri() (*u.URL, error) {
 		return request.uri, nil
 	} else if request.UrlTemplate == "" {
 		return nil, errors.New("uri cannot be empty")
-	} else if request.UrlTemplateParameters == nil {
+	} else if request.PathParameters == nil {
 		return nil, errors.New("uri template parameters cannot be nil")
 	} else if request.QueryParameters == nil {
 		return nil, errors.New("uri query parameters cannot be nil")
-	} else if request.UrlTemplateParameters[raw_url_key] != "" {
-		uri, err := u.Parse(request.UrlTemplateParameters[raw_url_key])
+	} else if request.PathParameters[raw_url_key] != "" {
+		uri, err := u.Parse(request.PathParameters[raw_url_key])
 		if err != nil {
 			return nil, err
 		}
@@ -58,7 +58,7 @@ func (request *RequestInformation) GetUri() (*u.URL, error) {
 			return nil, err
 		}
 		values := t.Values{}
-		for key, value := range request.UrlTemplateParameters {
+		for key, value := range request.PathParameters {
 			values.Set(key, t.String(value))
 		}
 		for key, value := range request.QueryParameters {
@@ -75,8 +75,8 @@ func (request *RequestInformation) GetUri() (*u.URL, error) {
 
 func (request *RequestInformation) SetUri(url u.URL) error {
 	request.uri = &url
-	for k := range request.UrlTemplateParameters {
-		delete(request.UrlTemplateParameters, k)
+	for k := range request.PathParameters {
+		delete(request.PathParameters, k)
 	}
 	for k := range request.QueryParameters {
 		delete(request.QueryParameters, k)

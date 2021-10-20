@@ -47,8 +47,8 @@ namespace Kiota.Builder.Writers.Go.Tests {
                 PropertyKind = CodePropertyKind.RequestAdapter,
             });
             parentClass.AddProperty(new CodeProperty {
-                Name = "urlTemplateParameters",
-                PropertyKind = CodePropertyKind.UrlTemplateParameters,
+                Name = "pathParameters",
+                PropertyKind = CodePropertyKind.PathParameters,
                 Type = new CodeType {
                     Name = "string"
                 },
@@ -152,7 +152,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             method.MethodKind = CodeMethodKind.RequestBuilderBackwardCompatibility;
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("m.urlTemplateParameters", result);
+            Assert.Contains("m.pathParameters", result);
             Assert.Contains("m.requestAdapter", result);
             Assert.Contains("return", result);
             Assert.Contains("func (m", result);
@@ -190,7 +190,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             var result = tw.ToString();
             Assert.Contains($"requestInfo := {AbstractionsPackageHash}.NewRequestInformation()", result);
             Assert.Contains("requestInfo.UrlTemplate = ", result);
-            Assert.Contains("requestInfo.UrlTemplateParameters", result);
+            Assert.Contains("requestInfo.PathParameters", result);
             Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
             Assert.Contains("err != nil", result);
             Assert.Contains("h != nil", result);
@@ -356,11 +356,20 @@ namespace Kiota.Builder.Writers.Go.Tests {
                     IsNullable = true,
                 }
             };
+            method.AddParameter(new CodeParameter {
+                Name = "id",
+                ParameterKind = CodeParameterKind.Custom,
+                Type = new CodeType {
+                    Name = "string",
+                    IsNullable = true,
+                },
+                Optional = true
+            });
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("m.requestAdapter", result);
-            Assert.Contains("m.urlTemplateParameters", result);
-            Assert.Contains("= id", result);
+            Assert.Contains("m.pathParameters", result);
+            Assert.Contains("= *id", result);
             Assert.Contains("return", result);
             Assert.Contains("New", result);
         }
@@ -378,7 +387,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("m.requestAdapter", result);
-            Assert.Contains("m.urlTemplateParameters", result);
+            Assert.Contains("m.pathParameters", result);
             Assert.Contains("pathParam", result);
             Assert.Contains("return *New", result);
         }

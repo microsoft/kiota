@@ -121,7 +121,7 @@ namespace Kiota.Builder.Writers.Go {
         #pragma warning disable CA1822 // Method should be static
         internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default)
         {
-            var urlTemplateParamsProp = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
+            var urlTemplateParamsProp = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             var urlTemplateParams = urlTemplateVarName ?? $"m.{urlTemplateParamsProp.Name}";
             var splatImport = returnType.Split('.');
@@ -131,13 +131,13 @@ namespace Kiota.Builder.Writers.Go {
             writer.WriteLines($"return *{moduleName}New{constructorName}Internal({urlTemplateParams}, m.{requestAdapterProp.Name}{pathParametersSuffix});");
         }
         internal string TempDictionaryVarName = "urlTplParams";
-        internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase urlTemplateParametersType, string urlTemplateParametersReference, params (CodeTypeBase, string, string)[] parameters) {
-            if(urlTemplateParametersType == null) return;
-            var mapTypeName = urlTemplateParametersType.Name;
+        internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
+            if(pathParametersType == null) return;
+            var mapTypeName = pathParametersType.Name;
             writer.WriteLines($"{TempDictionaryVarName} := make({mapTypeName})",
-                            $"if {urlTemplateParametersReference} != nil {{");
+                            $"if {pathParametersReference} != nil {{");
             writer.IncreaseIndent();
-            writer.WriteLine($"for idx, item := range {urlTemplateParametersReference} {{");
+            writer.WriteLine($"for idx, item := range {pathParametersReference} {{");
             writer.IncreaseIndent();
             writer.WriteLine($"{TempDictionaryVarName}[idx] = item");
             writer.CloseCurly();

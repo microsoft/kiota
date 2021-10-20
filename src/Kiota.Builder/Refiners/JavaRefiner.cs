@@ -69,7 +69,7 @@ namespace Kiota.Builder.Refiners {
         private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
                 "com.microsoft.kiota", "RequestAdapter"),
-            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.UrlTemplateParameters),
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.PathParameters),
                 "java.util", "HashMap"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
                 "com.microsoft.kiota", "RequestInformation", "RequestOption", "HttpMethod"),
@@ -131,7 +131,7 @@ namespace Kiota.Builder.Refiners {
                 currentProperty.DefaultValue = "new HashMap<>()";
             } else if(currentProperty.IsOfKind(CodePropertyKind.UrlTemplate)) {
                 currentProperty.Type.IsNullable = true;
-            } else if(currentProperty.IsOfKind(CodePropertyKind.UrlTemplateParameters)) {
+            } else if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
                 currentProperty.Type.IsNullable = true;
                 currentProperty.Type.Name = "HashMap<String, String>";
                 if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
@@ -160,10 +160,10 @@ namespace Kiota.Builder.Refiners {
                     .Where(x => x.Type.Name.StartsWith("I", StringComparison.OrdinalIgnoreCase))
                     .ToList()
                     .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.UrlTemplateParameters))
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.PathParameters))
                     .ToList()
                     .ForEach(x => x.Type.IsNullable = true);
-                var urlTplParams = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.UrlTemplateParameters));
+                var urlTplParams = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
                 if(urlTplParams != null) 
                     urlTplParams.Type.Name = "HashMap<String, String>";
             }

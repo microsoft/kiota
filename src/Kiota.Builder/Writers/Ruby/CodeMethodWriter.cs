@@ -93,7 +93,7 @@ namespace Kiota.Builder.Writers.Ruby {
             }
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
-                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.UrlTemplateParameters, CodePropertyKind.UrlTemplateParameters, writer);
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer);
             }
         }
         private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
@@ -115,9 +115,9 @@ namespace Kiota.Builder.Writers.Ruby {
         }
         private const string TempMapVarName = "url_tpl_params";
         private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType) {
-            var urlTemplateParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
+            var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var prefix = conventions.GetNormalizedNamespacePrefixForType(codeElement.ReturnType);
-            writer.WriteLines($"{TempMapVarName} = @{urlTemplateParametersProperty.Name.ToSnakeCase()}.clone",
+            writer.WriteLines($"{TempMapVarName} = @{pathParametersProperty.Name.ToSnakeCase()}.clone",
                             $"{TempMapVarName}[\"{codeElement.OriginalIndexer.ParameterName}\"] = id");
             conventions.AddRequestBuilderBody(parentClass, returnType, writer, TempMapVarName, $"return {prefix}");
         }
@@ -168,7 +168,7 @@ namespace Kiota.Builder.Writers.Ruby {
         private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeClass parentClass, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
-            var urlTemplateParamsProperty = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
+            var urlTemplateParamsProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var urlTemplateProperty = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate);
             var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             writer.WriteLines("request_info = MicrosoftKiotaAbstractions::RequestInformation.new()",

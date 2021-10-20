@@ -220,7 +220,7 @@ namespace Kiota.Builder.Refiners {
                 } else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
                     currentProperty.Type.Name = "map[string]interface{}";
                     currentProperty.DefaultValue = $"make({currentProperty.Type.Name})";
-                } else if(currentProperty.IsOfKind(CodePropertyKind.UrlTemplateParameters)) {
+                } else if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
                     currentProperty.Type.IsNullable = true;
                     currentProperty.Type.Name = "map[string]string";
                     if(!string.IsNullOrEmpty(currentProperty.DefaultValue))

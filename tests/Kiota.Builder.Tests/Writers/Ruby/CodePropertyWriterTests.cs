@@ -31,8 +31,8 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
                 Name = TypeName
             };
             EmptyClass.AddProperty(emptyProperty, new() {
-                Name = "urlTemplateParameters",
-                PropertyKind = CodePropertyKind.UrlTemplateParameters,
+                Name = "pathParameters",
+                PropertyKind = CodePropertyKind.PathParameters,
             }, new() {
                 Name = "requestAdapter",
                 PropertyKind = CodePropertyKind.RequestAdapter,
@@ -52,8 +52,8 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
                 TypeDefinition = parentClass
             };
             parentClass.AddProperty(property, new() {
-                Name = "urlTemplateParameters",
-                PropertyKind = CodePropertyKind.UrlTemplateParameters,
+                Name = "pathParameters",
+                PropertyKind = CodePropertyKind.PathParameters,
             }, new() {
                 Name = "requestAdapter",
                 PropertyKind = CodePropertyKind.RequestAdapter,
@@ -71,7 +71,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             Assert.Contains($"def {PropertyName.ToSnakeCase()}", result);
             Assert.Contains($"{RootNamespaceName}::{TypeName}.new", result);
             Assert.Contains("request_adapter", result);
-            Assert.Contains("url_template_parameters", result);
+            Assert.Contains("path_parameters", result);
         }
         [Fact]
         public void WritesRequestBuilderWithoutNamespace() {
@@ -81,7 +81,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             Assert.Contains($"def {PropertyName.ToSnakeCase()}", result);
             Assert.Contains($"{TypeName}.new", result);
             Assert.Contains("request_adapter", result);
-            Assert.Contains("url_template_parameters", result);
+            Assert.Contains("path_parameters", result);
             Assert.DoesNotContain($"::{TypeName}.new", result);
         }
         [Fact]

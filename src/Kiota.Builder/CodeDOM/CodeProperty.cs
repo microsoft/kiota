@@ -10,7 +10,10 @@ namespace Kiota.Builder
         AdditionalData,
         BackingStore,
         UrlTemplate,
-        UrlTemplateParameters,
+        /// <summary>
+        /// The set of parameters to be carried over to the next request builder.
+        /// </summary>
+        PathParameters,
         RequestAdapter,
     }
 

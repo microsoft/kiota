@@ -46,8 +46,8 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
                 PropertyKind = CodePropertyKind.RequestAdapter,
             });
             parentClass.AddProperty(new CodeProperty {
-                Name = "urlTemplateParameters",
-                PropertyKind = CodePropertyKind.UrlTemplateParameters,
+                Name = "pathParameters",
+                PropertyKind = CodePropertyKind.PathParameters,
                 Type = new CodeType {
                     Name = "string"
                 },
@@ -179,7 +179,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             Assert.Contains("const requestInfo = new RequestInformation()", result);
             Assert.Contains("requestInfo.httpMethod = HttpMethod", result);
             Assert.Contains("requestInfo.urlTemplate = ", result);
-            Assert.Contains("requestInfo.urlTemplateParameters = ", result);
+            Assert.Contains("requestInfo.pathParameters = ", result);
             Assert.Contains("setHeadersFromRawObject", result);
             Assert.Contains("setQueryStringParametersFromRawObject", result);
             Assert.Contains("setContentFromParsable", result);
@@ -378,7 +378,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("this.requestAdapter", result);
-            Assert.Contains("this.urlTemplateParameters", result);
+            Assert.Contains("this.pathParameters", result);
             Assert.Contains("id", result);
             Assert.Contains("return new", result);
         }
@@ -396,7 +396,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("this.requestAdapter", result);
-            Assert.Contains("this.urlTemplateParameters", result);
+            Assert.Contains("this.pathParameters", result);
             Assert.Contains("pathParam", result);
             Assert.Contains("return new", result);
         }

@@ -25,20 +25,20 @@ namespace Microsoft.Kiota.Abstractions
                 if(value == null)
                     throw new ArgumentNullException(nameof(value));
                 QueryParameters.Clear();
-                UrlTemplateParameters.Clear();
+                PathParameters.Clear();
                 _rawUri = value;
             }
             get {
                 if(_rawUri != null)
                     return _rawUri;
-                else if(UrlTemplateParameters.TryGetValue("request-raw-url", out var rawUrl)) {
+                else if(PathParameters.TryGetValue("request-raw-url", out var rawUrl)) {
                     URI = new Uri(rawUrl);
                     return _rawUri;
                 }
                 else
                 {
                     var parsedUrlTemplate = new UriTemplate(UrlTemplate);
-                    foreach(var urlTemplateParameter in UrlTemplateParameters)
+                    foreach(var urlTemplateParameter in PathParameters)
                         parsedUrlTemplate.SetParameter(urlTemplateParameter.Key, urlTemplateParameter.Value);
 
                     foreach(var queryStringParameter in QueryParameters)
@@ -55,7 +55,7 @@ namespace Microsoft.Kiota.Abstractions
         /// <summary>
         /// The parameters to use for the URL template when generating the URI in addition to the query parameters.
         /// </summary>
-        public IDictionary<string, string> UrlTemplateParameters { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        public IDictionary<string, string> PathParameters { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         /// <summary>
         ///  The <see cref="HttpMethod">HTTP method</see> of the request.
         /// </summary>

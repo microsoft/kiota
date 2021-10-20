@@ -198,7 +198,7 @@ namespace Kiota.Builder.Writers.Go {
             foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
                                                                             CodePropertyKind.RequestBuilder,
                                                                             CodePropertyKind.UrlTemplate,
-                                                                            CodePropertyKind.UrlTemplateParameters)
+                                                                            CodePropertyKind.PathParameters)
                                             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
                                             .OrderBy(x => x.Name)) {
                 writer.WriteLine($"m.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
@@ -210,15 +210,15 @@ namespace Kiota.Builder.Writers.Go {
             }
             if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
                 if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
-                    var urlTemplateParametersParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.UrlTemplateParameters));
+                    var pathParametersParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
                     conventions.AddParametersAssignment(writer, 
-                                                        urlTemplateParametersParam.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
-                                                        urlTemplateParametersParam.Name.ToFirstCharacterLowerCase(),
+                                                        pathParametersParam.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
+                                                        pathParametersParam.Name.ToFirstCharacterLowerCase(),
                                                         currentMethod.Parameters
                                                                     .Where(x => x.IsOfKind(CodeParameterKind.Path))
                                                                     .Select(x => (x.Type, x.UrlTemplateParameterName, x.Name.ToFirstCharacterLowerCase()))
                                                                     .ToArray());
-                    AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.UrlTemplateParameters, CodePropertyKind.UrlTemplateParameters, writer, conventions.TempDictionaryVarName);
+                    AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
                 }
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
             }
@@ -242,9 +242,9 @@ namespace Kiota.Builder.Writers.Go {
         }
         private const string TempMapVarName = "urlTplParams";
         private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType) {
-            var urlTemplateParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
+            var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var idParameter = codeElement.Parameters.First();
-            conventions.AddParametersAssignment(writer, urlTemplateParametersProperty.Type, $"m.{urlTemplateParametersProperty.Name.ToFirstCharacterLowerCase()}",
+            conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"m.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}",
                 (idParameter.Type, codeElement.OriginalIndexer.ParameterName, "id"));
             conventions.AddRequestBuilderBody(parentClass, returnType, writer, urlTemplateVarName: TempMapVarName);
         }
@@ -371,12 +371,12 @@ namespace Kiota.Builder.Writers.Go {
         private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, CodeClass parentClass, string returnType) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
-            var urlTemplateParamsProperty = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
+            var urlTemplateParamsProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var urlTemplateProperty = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate);
             var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             writer.WriteLine($"{RequestInfoVarName} := {conventions.AbstractionsHash}.NewRequestInformation()");
             writer.WriteLines($"{RequestInfoVarName}.UrlTemplate = {GetPropertyCall(urlTemplateProperty, "\"\"")}",
-                        $"{RequestInfoVarName}.UrlTemplateParameters = {GetPropertyCall(urlTemplateParamsProperty, "\"\"")}",
+                        $"{RequestInfoVarName}.PathParameters = {GetPropertyCall(urlTemplateParamsProperty, "\"\"")}",
                         $"{RequestInfoVarName}.Method = {conventions.AbstractionsHash}.{codeElement.HttpMethod?.ToString().ToUpperInvariant()}");
             if(requestParams.requestBody != null)
                 if(requestParams.requestBody.Type.Name.Equals("binary", StringComparison.OrdinalIgnoreCase))

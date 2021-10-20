@@ -15,7 +15,7 @@ namespace Kiota.Builder {
         }
         private static int getKindOrderHint(CodeParameterKind kind) {
             return kind switch {
-                CodeParameterKind.UrlTemplateParameters => 1,
+                CodeParameterKind.PathParameters => 1,
                 CodeParameterKind.RawUrl => 2,
                 CodeParameterKind.RequestAdapter => 3,
                 CodeParameterKind.Path => 4,

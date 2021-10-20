@@ -47,8 +47,8 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
                 PropertyKind = CodePropertyKind.RequestAdapter,
             });
             parentClass.AddProperty(new CodeProperty {
-                Name = "urlTemplateParameters",
-                PropertyKind = CodePropertyKind.UrlTemplateParameters,
+                Name = "pathParameters",
+                PropertyKind = CodePropertyKind.PathParameters,
             });
             parentClass.AddProperty(new CodeProperty {
                 Name = "urlTemplate",
@@ -178,7 +178,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             Assert.Contains("var requestInfo = new RequestInformation", result);
             Assert.Contains("HttpMethod = HttpMethod.GET", result);
             Assert.Contains("UrlTemplate = ", result);
-            Assert.Contains("UrlTemplateParameters = ", result);
+            Assert.Contains("PathParameters = ", result);
             Assert.Contains("h?.Invoke", result);
             Assert.Contains("AddQueryParameters", result);
             Assert.Contains("SetContentFromParsable", result);
@@ -363,7 +363,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("RequestAdapter", result);
-            Assert.Contains("UrlTemplateParameters", result);
+            Assert.Contains("PathParameters", result);
             Assert.Contains("pathParam", result);
             Assert.Contains("return new", result);
         }

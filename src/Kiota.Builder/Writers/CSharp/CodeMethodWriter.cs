@@ -99,24 +99,24 @@ namespace Kiota.Builder.Writers.CSharp {
             }
             if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
                 if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
-                    var urlTemplateParametersParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.UrlTemplateParameters));
+                    var pathParametersParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
                     conventions.AddParametersAssignment(writer, 
-                                                        urlTemplateParametersParam.Type,
-                                                        urlTemplateParametersParam.Name.ToFirstCharacterLowerCase(),
+                                                        pathParametersParam.Type,
+                                                        pathParametersParam.Name.ToFirstCharacterLowerCase(),
                                                         currentMethod.Parameters
                                                                     .Where(x => x.IsOfKind(CodeParameterKind.Path))
                                                                     .Select(x => (x.Type, x.UrlTemplateParameterName, x.Name.ToFirstCharacterLowerCase()))
                                                                     .ToArray());
-                    AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.UrlTemplateParameters, CodePropertyKind.UrlTemplateParameters, writer, conventions.TempDictionaryVarName);
+                    AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
                 }
                 else if(currentMethod.IsOfKind(CodeMethodKind.RawUrlConstructor)) {
-                    var urlTemplateParametersProp = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
+                    var pathParametersProp = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
                     var rawUrlParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.RawUrl));
                     conventions.AddParametersAssignment(writer,
-                                                        urlTemplateParametersProp.Type,
+                                                        pathParametersProp.Type,
                                                         string.Empty,
                                                         (rawUrlParam.Type, Constants.RawUrlParameterName, rawUrlParam.Name.ToFirstCharacterLowerCase()));
-                    AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.UrlTemplateParameters, CodePropertyKind.UrlTemplateParameters, writer, conventions.TempDictionaryVarName);
+                    AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
                 }
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
             }
@@ -184,14 +184,14 @@ namespace Kiota.Builder.Writers.CSharp {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
             var operationName = codeElement.HttpMethod.ToString();
-            var urlTemplateParamsProperty = currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
+            var urlTemplateParamsProperty = currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var urlTemplateProperty = currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate);
             var requestAdapterProperty = currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             writer.WriteLine($"var {RequestInfoVarName} = new RequestInformation {{");
             writer.IncreaseIndent();
             writer.WriteLines($"HttpMethod = HttpMethod.{operationName?.ToUpperInvariant()},",
                             $"UrlTemplate = {GetPropertyCall(urlTemplateProperty, "string.Empty")},",
-                            $"UrlTemplateParameters = {GetPropertyCall(urlTemplateParamsProperty, "string.Empty")},");
+                            $"PathParameters = {GetPropertyCall(urlTemplateParamsProperty, "string.Empty")},");
             writer.DecreaseIndent();
             writer.WriteLine("};");
             if(requestParams.requestBody != null) {

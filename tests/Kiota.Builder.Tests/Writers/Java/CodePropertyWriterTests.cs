@@ -28,8 +28,8 @@ namespace Kiota.Builder.Writers.Java.Tests {
                 Name = TypeName
             };
             parentClass.AddProperty(property, new() {
-                Name = "urlTemplateParameters",
-                PropertyKind = CodePropertyKind.UrlTemplateParameters,
+                Name = "pathParameters",
+                PropertyKind = CodePropertyKind.PathParameters,
             }, new() {
                 Name = "requestAdapter",
                 PropertyKind = CodePropertyKind.RequestAdapter,
@@ -46,7 +46,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             var result = tw.ToString();
             Assert.Contains($"return new {TypeName}", result);
             Assert.Contains("requestAdapter", result);
-            Assert.Contains("urlTemplateParameters", result);
+            Assert.Contains("pathParameters", result);
         }
         [Fact]
         public void WritesCustomProperty() {

@@ -12,10 +12,16 @@ namespace Kiota.Builder
         RequestBody,
         SetterValue,
         RequestAdapter,
-        UrlTemplateParameters,
+        /// <summary>
+        /// The set of parameters to be carried over to the next request builder.
+        /// </summary>
+        PathParameters,
         Options,
         Serializer,
         BackingStore,
+        /// <summary>
+        /// A single parameter to be provided by the SDK user which will be added to the path parameters.
+        /// </summary>
         Path,
         RawUrl
     }

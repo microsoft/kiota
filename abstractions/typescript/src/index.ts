@@ -1,6 +1,6 @@
 export * from './apiClientBuilder';
 export * from './authentication';
-export * from './getUrlTemplateParameters';
+export * from './getPathParameters';
 export * from './httpMethod';
 export * from './nativeResponseHandler';
 export * from './nativeResponseWrapper';

@@ -94,7 +94,7 @@ namespace Kiota.Builder.Writers.Java {
         private static void WriteRequestBuilderConstructorCall(CodeMethod codeElement, LanguageWriter writer)
         {
             var requestAdapterParameter = codeElement.Parameters.OfKind(CodeParameterKind.RequestAdapter);
-            var urlTemplateParamsParameter = codeElement.Parameters.OfKind(CodeParameterKind.UrlTemplateParameters);
+            var urlTemplateParamsParameter = codeElement.Parameters.OfKind(CodeParameterKind.PathParameters);
             var pathParameters = codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path));
             var pathParametersRef = pathParameters.Any() ? (", " + pathParameters.Select(x => x.Name).Aggregate((x, y) => $"{x}, {y}")) : string.Empty;
             writer.WriteLine($"this({urlTemplateParamsParameter.Name}, {requestAdapterParameter.Name}{pathParametersRef});");
@@ -119,7 +119,7 @@ namespace Kiota.Builder.Writers.Java {
             foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
                                                                             CodePropertyKind.RequestBuilder,
                                                                             CodePropertyKind.UrlTemplate,
-                                                                            CodePropertyKind.UrlTemplateParameters)
+                                                                            CodePropertyKind.PathParameters)
                                             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
                                             .OrderBy(x => x.Name)) {
                 writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
@@ -131,24 +131,24 @@ namespace Kiota.Builder.Writers.Java {
             }
             if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
                 if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
-                    var urlTemplateParametersParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.UrlTemplateParameters));
+                    var pathParametersParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
                     conventions.AddParametersAssignment(writer, 
-                                                        urlTemplateParametersParam.Type,
-                                                        urlTemplateParametersParam.Name.ToFirstCharacterLowerCase(),
+                                                        pathParametersParam.Type,
+                                                        pathParametersParam.Name.ToFirstCharacterLowerCase(),
                                                         currentMethod.Parameters
                                                                     .Where(x => x.IsOfKind(CodeParameterKind.Path))
                                                                     .Select(x => (x.Type, x.UrlTemplateParameterName, x.Name.ToFirstCharacterLowerCase()))
                                                                     .ToArray());
-                    AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.UrlTemplateParameters, CodePropertyKind.UrlTemplateParameters, writer, conventions.TempDictionaryVarName);
+                    AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
                 }
                 else if(currentMethod.IsOfKind(CodeMethodKind.RawUrlConstructor)) {
-                    var urlTemplateParametersProp = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
+                    var pathParametersProp = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
                     var rawUrlParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.RawUrl));
                     conventions.AddParametersAssignment(writer,
-                                                        urlTemplateParametersProp.Type,
+                                                        pathParametersProp.Type,
                                                         string.Empty,
                                                         (rawUrlParam.Type, Constants.RawUrlParameterName, rawUrlParam.Name.ToFirstCharacterLowerCase()));
-                    AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.UrlTemplateParameters, CodePropertyKind.UrlTemplateParameters, writer, conventions.TempDictionaryVarName);
+                    AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
                 }
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
             }
@@ -190,8 +190,8 @@ namespace Kiota.Builder.Writers.Java {
 
         }
         private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType) {
-            var urlTemplateParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
-            conventions.AddParametersAssignment(writer, urlTemplateParametersProperty.Type, $"this.{urlTemplateParametersProperty.Name}",
+            var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
+            conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"this.{pathParametersProperty.Name}",
                 (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.ParameterName, "id"));
             conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName);
         }
@@ -261,7 +261,7 @@ namespace Kiota.Builder.Writers.Java {
         private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
-            var urlTemplateParamsProperty = currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplateParameters);
+            var urlTemplateParamsProperty = currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var urlTemplateProperty = currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate);
             var requestAdapterProperty = currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             writer.WriteLine($"final RequestInformation {RequestInfoVarName} = new RequestInformation() {{{{");
@@ -270,7 +270,7 @@ namespace Kiota.Builder.Writers.Java {
             writer.DecreaseIndent();
             writer.WriteLine("}};");
             writer.WriteLines($"{RequestInfoVarName}.urlTemplate = {GetPropertyCall(urlTemplateProperty, "\"\"")};",
-                            $"{RequestInfoVarName}.urlTemplateParameters = {GetPropertyCall(urlTemplateParamsProperty, "null")};");
+                            $"{RequestInfoVarName}.pathParameters = {GetPropertyCall(urlTemplateParamsProperty, "null")};");
             if(requestParams.requestBody != null)
                 if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name});");

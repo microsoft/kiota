@@ -47,8 +47,8 @@ namespace Kiota.Builder.Writers.Java.Tests {
                 PropertyKind = CodePropertyKind.RequestAdapter,
             });
             parentClass.AddProperty(new CodeProperty {
-                Name = "urlTemplateParameters",
-                PropertyKind = CodePropertyKind.UrlTemplateParameters,
+                Name = "pathParameters",
+                PropertyKind = CodePropertyKind.PathParameters,
                 Type = new CodeType {
                     Name = "string",
                 }
@@ -191,7 +191,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             var result = tw.ToString();
             Assert.Contains("final RequestInformation requestInfo = new RequestInformation()", result);
             Assert.Contains("urlTemplate =", result);
-            Assert.Contains("urlTemplateParameters =", result);
+            Assert.Contains("pathParameters =", result);
             Assert.Contains("httpMethod = HttpMethod.GET", result);
             Assert.Contains("h.accept(requestInfo.headers)", result);
             Assert.Contains("AddQueryParameters", result);
@@ -398,7 +398,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             var result = tw.ToString();
             Assert.Contains("collectionId", result);
             Assert.Contains("requestAdapter", result);
-            Assert.Contains("urlTemplateParameters", result);
+            Assert.Contains("pathParameters", result);
             Assert.Contains("id", result);
             Assert.Contains("return new", result);
         }
@@ -416,7 +416,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("requestAdapter", result);
-            Assert.Contains("urlTemplateParameters", result);
+            Assert.Contains("pathParameters", result);
             Assert.Contains("pathParam", result);
             Assert.Contains("return new", result);
         }

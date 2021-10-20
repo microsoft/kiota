@@ -22,7 +22,7 @@ public class RequestInformation {
     /** The url template for the current request */
     public String urlTemplate;
     /** The url template parameters for the current request */
-    public HashMap<String, String> urlTemplateParameters = new HashMap<>();
+    public HashMap<String, String> pathParameters = new HashMap<>();
     private URI uri;
     /** Gets the URI of the request. 
      * @throws URISyntaxException
@@ -31,15 +31,15 @@ public class RequestInformation {
     public URI getUri() throws URISyntaxException {
         if(uri != null) {
             return uri;
-        } else if(urlTemplateParameters.containsKey(RAW_URL_KEY)) {
-            setUri(new URI(urlTemplateParameters.get(RAW_URL_KEY)));
+        } else if(pathParameters.containsKey(RAW_URL_KEY)) {
+            setUri(new URI(pathParameters.get(RAW_URL_KEY)));
             return uri;
         } else {
             Objects.requireNonNull(urlTemplate);
             Objects.requireNonNull(queryParameters);
             var template = new URITemplate(urlTemplate)
                             .expandOnly(new HashMap<String, Object>(queryParameters) {{
-                                putAll(urlTemplateParameters);
+                                putAll(pathParameters);
                             }});
             return template.toURI();
         }
@@ -50,8 +50,8 @@ public class RequestInformation {
         if(queryParameters != null) {
             queryParameters.clear();
         }
-        if(urlTemplateParameters != null) {
-            urlTemplateParameters.clear();
+        if(pathParameters != null) {
+            pathParameters.clear();
         }
     }
     private static String RAW_URL_KEY = "request-raw-url";
