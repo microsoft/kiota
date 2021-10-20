@@ -357,7 +357,7 @@ namespace Kiota.Builder
             constructor.ReturnType = new CodeType { Name = voidType, IsExternal = true };
             var pathParametersProperty = new CodeProperty {
                 Name = PathParametersParameterName,
-                Description = "Url template parameters for the request",
+                Description = "Path parameters for the request",
                 PropertyKind = CodePropertyKind.PathParameters,
                 Access = AccessModifier.Private,
                 ReadOnly = true,

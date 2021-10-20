@@ -53,7 +53,7 @@ namespace Microsoft.Kiota.Abstractions
         /// </summary>
         public string UrlTemplate { get; set; }
         /// <summary>
-        /// The parameters to use for the URL template when generating the URI in addition to the query parameters.
+        /// The path parameters to use for the URL template when generating the URI.
         /// </summary>
         public IDictionary<string, string> PathParameters { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         /// <summary>

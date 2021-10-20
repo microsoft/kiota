@@ -10,7 +10,7 @@ import * as urlTpl from "uri-template-lite";
 export class RequestInformation {
     /** The URI of the request. */
     private uri?: URL;
-    /** The URL template parameters for the request. */
+    /** The path parameters for the request. */
     public pathParameters: Map<string, string> = new Map<string, string>();
     /** The URL template for the request */
     public urlTemplate?: string;

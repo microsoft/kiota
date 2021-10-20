@@ -21,7 +21,7 @@ import com.github.hal4j.uritemplate.URITemplate;
 public class RequestInformation {
     /** The url template for the current request */
     public String urlTemplate;
-    /** The url template parameters for the current request */
+    /** The path parameters for the current request */
     public HashMap<String, String> pathParameters = new HashMap<>();
     private URI uri;
     /** Gets the URI of the request. 
