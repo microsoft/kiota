@@ -331,15 +331,13 @@ namespace Kiota.Builder.Refiners {
                     AddIndexerMethod(rootNamespace,
                                     currentParentClass,
                                     returnType.TypeDefinition as CodeClass,
-                                    currentIndexer.PathSegment,
                                     methodNameSuffix,
-                                    currentIndexer.Description,
                                     parameterNullable,
                                     currentIndexer);
             }
             CrawlTree(currentElement, c => ReplaceIndexersByMethodsWithParameter(c, rootNamespace, parameterNullable, methodNameSuffix));
         }
-        private static void AddIndexerMethod(CodeElement currentElement, CodeClass targetClass, CodeClass indexerClass, string pathSegment, string methodNameSuffix, string description, bool parameterNullable, CodeIndexer currentIndexer) {
+        private static void AddIndexerMethod(CodeElement currentElement, CodeClass targetClass, CodeClass indexerClass, string methodNameSuffix, bool parameterNullable, CodeIndexer currentIndexer) {
             if(currentElement is CodeProperty currentProperty && currentProperty.Type.AllTypes.Any(x => x.TypeDefinition == targetClass)) {
                 var parentClass = currentElement.Parent as CodeClass;
                 var method = new CodeMethod {
@@ -347,8 +345,8 @@ namespace Kiota.Builder.Refiners {
                     IsStatic = false,
                     Access = AccessModifier.Public,
                     MethodKind = CodeMethodKind.IndexerBackwardCompatibility,
-                    Name = pathSegment + methodNameSuffix,
-                    Description = description,
+                    Name = currentIndexer.PathSegment + methodNameSuffix,
+                    Description = currentIndexer.Description,
                     ReturnType = new CodeType {
                         IsNullable = false,
                         TypeDefinition = indexerClass,
@@ -370,7 +368,7 @@ namespace Kiota.Builder.Refiners {
                 method.AddParameter(parameter);
                 parentClass.AddMethod(method);
             }
-            CrawlTree(currentElement, c => AddIndexerMethod(c, targetClass, indexerClass, pathSegment, methodNameSuffix, description, parameterNullable, currentIndexer));
+            CrawlTree(currentElement, c => AddIndexerMethod(c, targetClass, indexerClass, methodNameSuffix, parameterNullable, currentIndexer));
         }
         internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName) {
             if(current is CodeClass currentClass) {
@@ -453,10 +451,10 @@ namespace Kiota.Builder.Refiners {
         protected static void CorrectCoreType(CodeElement currentElement, Action<CodeMethod> correctMethodType, Action<CodeProperty> correctPropertyType) {
             switch(currentElement) {
                 case CodeProperty property:
-                    correctPropertyType.Invoke(property);
+                    correctPropertyType?.Invoke(property);
                     break;
                 case CodeMethod method:
-                    correctMethodType.Invoke(method);
+                    correctMethodType?.Invoke(method);
                     break;
             }
             CrawlTree(currentElement, x => CorrectCoreType(x, correctMethodType, correctPropertyType));

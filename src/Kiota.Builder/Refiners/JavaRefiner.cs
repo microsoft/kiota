@@ -205,7 +205,6 @@ namespace Kiota.Builder.Refiners {
                                         .Union(originalGeneratorMethods
                                                 .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers, CodeParameterKind.Options)))
                                         .Where(x => x != null);
-                    var originalConstructors = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.Constructor));
                     if(executorMethodsToAdd.Any() || generatorMethodsToAdd.Any())
                         currentClass.AddMethod(executorMethodsToAdd
                                                 .Union(generatorMethodsToAdd)

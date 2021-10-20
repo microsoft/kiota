@@ -114,8 +114,8 @@ namespace Kiota.Builder.Extensions {
         private static string SanitizePathParameterNames(string original) {
             if(string.IsNullOrEmpty(original) || !original.Contains('{')) return original;
             var parameters = pathParamMatcher.Matches(original);
-            foreach(Match parameter in parameters)
-                original = original.Replace(parameter.Value, parameter.Value.Replace('-', '_'));
+            foreach(var value in parameters.Select(x => x.Value))
+                original = original.Replace(value, value.Replace('-', '_'));
             return original;
         }
     }

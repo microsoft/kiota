@@ -14,7 +14,7 @@ namespace Kiota.Builder.Refiners {
             AddParsableInheritanceForModelClasses(generatedCode);
             AddInheritedAndMethodTypesImports(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
-            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
+            CorrectCoreType(generatedCode, null, CorrectPropertyType);
             AddGetterAndSetterMethods(generatedCode, new() {
                                                     CodePropertyKind.Custom,
                                                     CodePropertyKind.AdditionalData,
@@ -37,7 +37,6 @@ namespace Kiota.Builder.Refiners {
                     currentProperty.DefaultValue = "Hash.new";
             }
         }
-        private static void CorrectMethodType(CodeMethod currentMethod) {}
         private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
                 "microsoft_kiota_abstractions", "RequestAdapter"),

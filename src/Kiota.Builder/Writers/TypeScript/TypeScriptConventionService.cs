@@ -31,7 +31,6 @@ namespace Kiota.Builder.Writers.TypeScript {
         internal string TempDictionaryVarName = "urlTplParams";
         internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
             if(pathParametersType == null) return;
-            var mapTypeName = pathParametersType.Name;
             writer.WriteLine($"const {TempDictionaryVarName} = getPathParameters({pathParametersReference});");
             if(parameters.Any())
                 writer.WriteLines(parameters.Select(p => {
