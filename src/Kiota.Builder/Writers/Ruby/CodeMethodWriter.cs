@@ -86,13 +86,22 @@ namespace Kiota.Builder.Writers.Ruby {
                 writer.WriteLine("super");
             foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
                                                                             CodePropertyKind.RequestBuilder,
-                                                                            CodePropertyKind.UrlTemplate)
+                                                                            CodePropertyKind.UrlTemplate,
+                                                                            CodePropertyKind.PathParameters)
                                             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
                                             .OrderBy(x => x.Name)) {
                 writer.WriteLine($"@{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue}");
             }
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
+                if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
+                    var pathParametersParam = currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters);
+                    var pathParametersParamName = pathParametersParam.Name.ToSnakeCase();
+                    writer.WriteLine($"if {pathParametersParamName}.is_a? String");
+                    writer.IncreaseIndent();
+                    writer.WriteLine($"{pathParametersParamName} = {{ \"request-raw-url\" => {pathParametersParamName} }}");
+                    writer.CloseCurly("end");
+                }
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer);
             }
         }
@@ -172,7 +181,8 @@ namespace Kiota.Builder.Writers.Ruby {
             var urlTemplateProperty = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate);
             var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             writer.WriteLines("request_info = MicrosoftKiotaAbstractions::RequestInformation.new()",
-                                $"request_info.set_uri({GetPropertyCall(urlTemplateParamsProperty, "''")}, {GetPropertyCall(urlTemplateProperty, "''")})",
+                                $"request_info.url_template = {GetPropertyCall(urlTemplateProperty, "''")}",
+                                $"request_info.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}",
                                 $"request_info.http_method = :{codeElement.HttpMethod?.ToString().ToUpperInvariant()}");
             if(headersParam != null)
                 writer.WriteLine($"request_info.set_headers_from_raw_object(h)");

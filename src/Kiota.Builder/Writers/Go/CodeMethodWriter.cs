@@ -194,7 +194,7 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLine($"{parentClassName}: *{moduleName}New{parentClassName}(),");
                 writer.DecreaseIndent();
             }
-            writer.CloseCurly(false);
+            writer.CloseCurly(decreaseIndent: false);
             foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
                                                                             CodePropertyKind.RequestBuilder,
                                                                             CodePropertyKind.UrlTemplate,

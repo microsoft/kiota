@@ -63,11 +63,11 @@ namespace Kiota.Builder.Writers
                 WriteLine(line, true);
             }
         }
-        internal void CloseCurly(bool decreaseIndent = true)
+        internal void CloseCurly(string symbol = "}", bool decreaseIndent = true)
         {
             if (decreaseIndent)
                 DecreaseIndent();
-            WriteLine("}");
+            WriteLine(symbol);
         }
 
         internal void Write(string text, bool includeIndent = true)
