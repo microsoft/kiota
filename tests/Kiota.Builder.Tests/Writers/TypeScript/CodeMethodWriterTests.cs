@@ -456,14 +456,24 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             method.IsAsync = false;
             var defaultValue = "someVal";
             var propName = "propWithDefaultValue";
+            parentClass.ClassKind = CodeClassKind.RequestBuilder;
             parentClass.AddProperty(new CodeProperty {
                 Name = propName,
                 DefaultValue = defaultValue,
                 PropertyKind = CodePropertyKind.UrlTemplate,
             });
+            AddRequestProperties();
+            method.AddParameter(new CodeParameter {
+                Name = "pathParameters",
+                ParameterKind = CodeParameterKind.PathParameters,
+                Type = new CodeType {
+                    Name = "Map<string,string>"
+                }
+            });
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains($"this.{propName} = {defaultValue}", result);
+            Assert.Contains("getPathParameters", result);
         }
         [Fact]
         public void WritesApiConstructor() {

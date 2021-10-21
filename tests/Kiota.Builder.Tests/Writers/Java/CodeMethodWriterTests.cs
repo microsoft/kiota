@@ -475,15 +475,50 @@ namespace Kiota.Builder.Writers.Java.Tests {
             method.MethodKind = CodeMethodKind.Constructor;
             var defaultValue = "someVal";
             var propName = "propWithDefaultValue";
+            parentClass.ClassKind = CodeClassKind.RequestBuilder;
             parentClass.AddProperty(new CodeProperty {
                 Name = propName,
                 DefaultValue = defaultValue,
                 PropertyKind = CodePropertyKind.UrlTemplate,
             });
+            AddRequestProperties();
+            method.AddParameter(new CodeParameter {
+                Name = "pathParameters",
+                ParameterKind = CodeParameterKind.PathParameters,
+                Type = new CodeType {
+                    Name = "Map<String, String>"
+                }
+            });
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
             Assert.Contains($"this.{propName} = {defaultValue}", result);
+            Assert.Contains("new Map<String, String>(pathParameters)", result);
+        }
+        [Fact]
+        public void WritesRawUrlConstructor() {
+            method.MethodKind = CodeMethodKind.RawUrlConstructor;
+            var defaultValue = "someVal";
+            var propName = "propWithDefaultValue";
+            parentClass.ClassKind = CodeClassKind.RequestBuilder;
+            parentClass.AddProperty(new CodeProperty {
+                Name = propName,
+                DefaultValue = defaultValue,
+                PropertyKind = CodePropertyKind.UrlTemplate,
+            });
+            AddRequestProperties();
+            method.AddParameter(new CodeParameter {
+                Name = "rawUrl",
+                ParameterKind = CodeParameterKind.RawUrl,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            });
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+            Assert.Contains($"this.{propName} = {defaultValue}", result);
+            Assert.Contains($"urlTplParams.put(\"request-raw-url\", rawUrl);", result);
         }
         [Fact]
         public void WritesApiConstructor() {

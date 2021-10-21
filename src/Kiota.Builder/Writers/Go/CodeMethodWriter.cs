@@ -71,25 +71,22 @@ namespace Kiota.Builder.Writers.Go {
             }
             writer.CloseCurly();
         }
-
+        private const string TempParamsVarName = "urlParams";
         private static void WriteRawUrlConstructorBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
         {
             var rawUrlParam = codeElement.Parameters.OfKind(CodeParameterKind.RawUrl);
             var requestAdapterParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestAdapter);
             var pathParamsSuffix = string.Join(", ", codeElement.OriginalMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)).Select(x => "nil").ToArray());
             if(!string.IsNullOrEmpty(pathParamsSuffix)) pathParamsSuffix = ", " + pathParamsSuffix;
-            var tempParamsVarName = "urlParams";
-            writer.WriteLines($"{tempParamsVarName} := make(map[string]string)",
-                            $"{tempParamsVarName}[\"request-raw-url\"] = {rawUrlParam.Name.ToFirstCharacterLowerCase()}",
-                            $"return New{parentClass.Name.ToFirstCharacterUpperCase()}Internal({tempParamsVarName}, {requestAdapterParam.Name.ToFirstCharacterLowerCase()}{pathParamsSuffix})");
+            writer.WriteLines($"{TempParamsVarName} := make(map[string]string)",
+                            $"{TempParamsVarName}[\"request-raw-url\"] = {rawUrlParam.Name.ToFirstCharacterLowerCase()}",
+                            $"return New{parentClass.Name.ToFirstCharacterUpperCase()}Internal({TempParamsVarName}, {requestAdapterParam.Name.ToFirstCharacterLowerCase()}{pathParamsSuffix})");
         }
-
         private void WriteRequestBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
         {
             var importSymbol = conventions.GetTypeString(codeElement.ReturnType, parentClass);
             conventions.AddRequestBuilderBody(parentClass, importSymbol, writer, pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
         }
-
         private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer) {
             var additionalDataProperty = parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData);
             var shouldDeclareErrorVar = true;

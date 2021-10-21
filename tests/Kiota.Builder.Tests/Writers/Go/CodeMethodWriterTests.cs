@@ -446,15 +446,58 @@ namespace Kiota.Builder.Writers.Go.Tests {
             method.MethodKind = CodeMethodKind.Constructor;
             var defaultValue = "someVal";
             var propName = "propWithDefaultValue";
+            parentClass.ClassKind = CodeClassKind.RequestBuilder;
             parentClass.AddProperty(new CodeProperty {
                 Name = propName,
                 DefaultValue = defaultValue,
                 PropertyKind = CodePropertyKind.UrlTemplate,
             });
+            AddRequestProperties();
+            method.AddParameter(new CodeParameter {
+                Name = "pathParameters",
+                ParameterKind = CodeParameterKind.PathParameters,
+                Type = new CodeType {
+                    Name = "map[string]string"
+                }
+            });
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
             Assert.Contains($"m.{propName} = {defaultValue}", result);
+            Assert.Contains("make(map[string]string)", result);
+        }
+        [Fact]
+        public void WritesRawUrlConstructor() {
+            method.MethodKind = CodeMethodKind.RawUrlConstructor;
+            var defaultValue = "someVal";
+            var propName = "propWithDefaultValue";
+            parentClass.ClassKind = CodeClassKind.RequestBuilder;
+            parentClass.AddProperty(new CodeProperty {
+                Name = propName,
+                DefaultValue = defaultValue,
+                PropertyKind = CodePropertyKind.UrlTemplate,
+            });
+            AddRequestProperties();
+            method.AddParameter(new CodeParameter {
+                Name = "rawUrl",
+                ParameterKind = CodeParameterKind.RawUrl,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            });
+            method.AddParameter(new CodeParameter {
+                Name = "requestAdapter",
+                ParameterKind = CodeParameterKind.RequestAdapter,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            });
+            method.OriginalMethod = new ();
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+            Assert.Contains($"urlParams := make(map[string]string)", result);
+            Assert.Contains($"urlParams[\"request-raw-url\"] = rawUrl", result);
         }
         [Fact]
         public void WritesInheritedConstructor() {
