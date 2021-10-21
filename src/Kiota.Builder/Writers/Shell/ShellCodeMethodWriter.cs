@@ -24,7 +24,7 @@ namespace Kiota.Builder.Writers.Shell
                                                 ?.Name;
             var parametersList = new CodeParameter[] { requestParams.requestBody, requestParams.queryString, requestParams.headers, requestParams.options }
                                 .Select(x => x?.Name).Where(x => x != null).Aggregate((x, y) => $"{x}, {y}");
-            writer.WriteLine($"var command = new Command(\"<pathsegment>\") {{");
+            writer.WriteLine($"var command = new Command(\"{codeElement.HttpMethod.ToString().ToLower()}\") {{");
             writer.IncreaseIndent();
             writer.WriteLine($"Handler = CommandHandler.Create<>(async () => {{");
             writer.IncreaseIndent();
@@ -34,6 +34,18 @@ namespace Kiota.Builder.Writers.Shell
             writer.WriteLine("})");
             writer.DecreaseIndent();
             writer.WriteLine("};");
+
+            CodeElement element = codeElement;
+
+            //while (element != null)
+            //{
+            //    foreach (CodeParameter p in element.)
+            //    {
+
+            //    }
+
+            //    element = element.Parent;
+            //}
             writer.WriteLine("// Create options for all the parameters");
         }
     }

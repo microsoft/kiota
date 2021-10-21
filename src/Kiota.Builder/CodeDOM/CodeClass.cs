@@ -6,6 +6,7 @@ namespace Kiota.Builder
 {
     public enum CodeClassKind {
         Custom,
+        CommandBuilder,
         RequestBuilder,
         Model,
         QueryParameters,
