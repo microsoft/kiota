@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using Kiota.Builder.Tests;
 using Xunit;
 
@@ -42,7 +41,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             var result = tw.ToString();
             Assert.Contains("get =>", result);
             Assert.Contains($"new {TypeName}", result);
-            Assert.Contains("HttpCore", result);
+            Assert.Contains("RequestAdapter", result);
             Assert.Contains("PathSegment", result);
         }
         [Fact]

@@ -37,7 +37,7 @@ namespace Kiota.Builder.Refiners.Tests {
         }
         [Fact]
         public void CorrectsCoreType() {
-            const string httpCoreDefaultName = "IHttpCore";
+            const string requestAdapterDefaultName = "IRequestAdapter";
             const string factoryDefaultName = "ISerializationWriterFactory";
             const string deserializeDefaultName = "IDictionary<string, Action<Model, IParseNode>>";
             const string dateTimeOffsetDefaultName = "DateTimeOffset";
@@ -48,9 +48,9 @@ namespace Kiota.Builder.Refiners.Tests {
             }).First();
             model.AddProperty(new () {
                 Name = "core",
-                PropertyKind = CodePropertyKind.HttpCore,
+                PropertyKind = CodePropertyKind.RequestAdapter,
                 Type = new CodeType {
-                    Name = httpCoreDefaultName
+                    Name = requestAdapterDefaultName
                 }
             }, new () {
                 Name = "someDate",
@@ -109,7 +109,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 }
             });
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-            Assert.Empty(model.Properties.Where(x => httpCoreDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.Properties.Where(x => requestAdapterDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.Properties.Where(x => factoryDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.Properties.Where(x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.Properties.Where(x => addiationalDataDefaultName.Equals(x.Type.Name)));

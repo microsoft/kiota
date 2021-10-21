@@ -18,7 +18,7 @@ namespace Kiota.Builder.Writers.TypeScript {
         public override string DocCommentPrefix => " * ";
         private const string PathSegmentPropertyName = "pathSegment";
         private const string CurrentPathPropertyName = "currentPath";
-        private const string HttpCorePropertyName = "httpCore";
+        private const string HttpCorePropertyName = "requestAdapter";
         public override string ParseNodeInterfaceName => "ParseNode";
         internal string DocCommentStart = "/**";
         internal string DocCommentEnd = " */";

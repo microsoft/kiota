@@ -1,9 +1,9 @@
-import { MiddlewareOption } from "./middlewareOption";
+import { RequestOption } from "./requestOption";
 import { NativeResponseHandler } from "./nativeResponseHandler";
 import { ResponseHandler } from "./responseHandler";
 
-type originalCallType<modelType, queryParametersType, headersType> = (q?: queryParametersType, h?: headersType, o?: MiddlewareOption[] | undefined, responseHandler?: ResponseHandler) => Promise<modelType>;
-type originalCallWithBodyType<modelType, queryParametersType, headersType, requestBodyType> = (requestBody: requestBodyType, q?: queryParametersType, h?: headersType, o?: MiddlewareOption[] | undefined, responseHandler?: ResponseHandler) => Promise<modelType>;
+type originalCallType<modelType, queryParametersType, headersType> = (q?: queryParametersType, h?: headersType, o?: RequestOption[] | undefined, responseHandler?: ResponseHandler) => Promise<modelType>;
+type originalCallWithBodyType<modelType, queryParametersType, headersType, requestBodyType> = (requestBody: requestBodyType, q?: queryParametersType, h?: headersType, o?: RequestOption[] | undefined, responseHandler?: ResponseHandler) => Promise<modelType>;
 
 /** This class can be used to wrap a request using the fluent API and get the native response object in return. */
 export class NativeResponseWrapper {
@@ -11,7 +11,7 @@ export class NativeResponseWrapper {
         originalCall: originalCallType<modelType, queryParametersType, headersType>,
         q?: queryParametersType,
         h?: headersType,
-        o?: MiddlewareOption[] | undefined
+        o?: RequestOption[] | undefined
     ) : Promise<nativeResponseType> => {
         const responseHandler = new NativeResponseHandler();
         await originalCall(q, h, o, responseHandler);
@@ -22,7 +22,7 @@ export class NativeResponseWrapper {
         requestBody: requestBodyType,
         q?: queryParametersType,
         h?: headersType,
-        o?: MiddlewareOption[] | undefined
+        o?: RequestOption[] | undefined
     ) : Promise<nativeResponseType> => {
         const responseHandler = new NativeResponseHandler();
         await originalCall(requestBody, q, h, o, responseHandler);

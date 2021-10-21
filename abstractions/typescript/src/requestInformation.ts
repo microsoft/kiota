@@ -1,8 +1,8 @@
 import { HttpMethod } from "./httpMethod";
 import { ReadableStream } from 'web-streams-polyfill/es2018';
 import { Parsable } from "./serialization";
-import { HttpCore } from "./httpCore";
-import { MiddlewareOption } from "./middlewareOption";
+import { RequestOption } from "./requestOption";
+import { RequestAdapter } from "./requestAdapter";
 
 /** This class represents an abstract HTTP request. */
 export class RequestInformation {
@@ -43,20 +43,20 @@ export class RequestInformation {
     public queryParameters: Map<string, string | number | boolean | undefined> = new Map<string, string | number | boolean | undefined>(); //TODO: case insensitive
     /** The Request Headers. */
     public headers: Map<string, string> = new Map<string, string>(); //TODO: case insensitive
-    private _middlewareOptions = new Map<string, MiddlewareOption>(); //TODO: case insensitive
-    /** Gets the middleware options for the request. */
-    public getMiddlewareOptions() { return this._middlewareOptions.values(); }
-    public addMiddlewareOptions(...options: MiddlewareOption[]) {
+    private _requestOptions = new Map<string, RequestOption>(); //TODO: case insensitive
+    /** Gets the request options for the request. */
+    public getRequestOptions() { return this._requestOptions.values(); }
+    public addRequestOptions(...options: RequestOption[]) {
         if(!options || options.length === 0) return;
         options.forEach(option => {
-            this._middlewareOptions.set(option.getKey(), option);
+            this._requestOptions.set(option.getKey(), option);
         });
     }
-    /** Removes the middleware options for the request. */
-    public removeMiddlewareOptions(...options: MiddlewareOption[]) {
+    /** Removes the request options for the request. */
+    public removeRequestOptions(...options: RequestOption[]) {
         if(!options || options.length === 0) return;
         options.forEach(option => {
-            this._middlewareOptions.delete(option.getKey());
+            this._requestOptions.delete(option.getKey());
         });
     }
     private static binaryContentType = "application/octet-stream";
@@ -65,15 +65,15 @@ export class RequestInformation {
      * Sets the request body from a model with the specified content type.
      * @param values the models.
      * @param contentType the content type.
-     * @param httpCore The core service to get the serialization writer from.
+     * @param requestAdapter The adapter service to get the serialization writer from.
      * @typeParam T the model type.
      */
-    public setContentFromParsable = <T extends Parsable>(httpCore?: HttpCore | undefined, contentType?: string | undefined, ...values: T[]): void => {
-        if(!httpCore) throw new Error("httpCore cannot be undefined");
+    public setContentFromParsable = <T extends Parsable>(requestAdapter?: RequestAdapter | undefined, contentType?: string | undefined, ...values: T[]): void => {
+        if(!requestAdapter) throw new Error("httpCore cannot be undefined");
         if(!contentType) throw new Error("contentType cannot be undefined");
         if(!values || values.length === 0) throw new Error("values cannot be undefined or empty");
 
-        const writer = httpCore.getSerializationWriterFactory().getSerializationWriter(contentType);
+        const writer = requestAdapter.getSerializationWriterFactory().getSerializationWriter(contentType);
         this.headers.set(RequestInformation.contentTypeHeader, contentType);
         if(values.length === 1) 
             writer.writeObjectValue(undefined, values[0]);

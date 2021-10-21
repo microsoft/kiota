@@ -15,7 +15,7 @@ namespace Kiota.Builder.Refiners.Tests {
             graphNS.AddClass(parentClass);
         }
 #region typescript
-        private const string HttpCoreDefaultName = "IHttpCore";
+        private const string HttpCoreDefaultName = "IRequestAdapter";
         private const string FactoryDefaultName = "ISerializationWriterFactory";
         private const string DeserializeDefaultName = "IDictionary<string, Action<Model, IParseNode>>";
         private const string DateTimeOffsetDefaultName = "DateTimeOffset";
@@ -40,7 +40,7 @@ namespace Kiota.Builder.Refiners.Tests {
             }).First();
             model.AddProperty(new CodeProperty() {
                 Name = "core",
-                PropertyKind = CodePropertyKind.HttpCore,
+                PropertyKind = CodePropertyKind.RequestAdapter,
                 Type = new CodeType {
                     Name = HttpCoreDefaultName
                 }

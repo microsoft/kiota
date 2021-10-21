@@ -11,7 +11,7 @@ namespace Kiota.Builder.Writers.CSharp {
         public override string DocCommentPrefix => "/// ";
         private const string PathSegmentPropertyName = "PathSegment";
         private const string CurrentPathPropertyName = "CurrentPath";
-        private const string HttpCorePropertyName = "HttpCore";
+        private const string RequestAdapterPropertyName = "RequestAdapter";
         private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "float", "double", "decimal", "long", "Guid", "DateTimeOffset" };
         public static readonly char NullableMarker = '?';
         public static string NullableMarkerAsString => "?";
@@ -32,7 +32,7 @@ namespace Kiota.Builder.Writers.CSharp {
         internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default, string prefix = default, IEnumerable<CodeParameter> pathParameters = default) {
             var currentPath = addCurrentPath ? $"{CurrentPathPropertyName} + " : string.Empty;
             var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $"{string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}, ";
-            writer.WriteLine($"{prefix}new {returnType}({currentPath}{PathSegmentPropertyName} {suffix}, {HttpCorePropertyName}, {pathParametersSuffix}false);");
+            writer.WriteLine($"{prefix}new {returnType}({currentPath}{PathSegmentPropertyName} {suffix}, {RequestAdapterPropertyName}, {pathParametersSuffix}false);");
         }
         #pragma warning restore CA1822 // Method should be static
         internal bool ShouldTypeHaveNullableMarker(CodeTypeBase propType, string propTypeName) {

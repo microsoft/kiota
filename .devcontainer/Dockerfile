@@ -29,4 +29,13 @@ RUN wget -q https://packages.microsoft.com/config/ubuntu/20.04/packages-microsof
     && apt-get install -y powershell
 
 # install ruby
-RUN apt-get install ruby -y
+RUN apt-get install ruby-full bundler -y
+
+# install github CLI
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0 \
+    && apt-add-repository https://cli.github.com/packages \
+    && apt update \
+    && apt install gh -y
+
+# General updates for sanity
+RUN apt-get dist-upgrade -y

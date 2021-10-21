@@ -6,14 +6,13 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.Ruby {
     public class RubyConventionService : CommonLanguageConventionService
     {
-        public static string SerializerFactoryPropertyName => "serializer_factory";
         public override string StreamTypeName => "stdin";
         private const string InternalVoidTypeName = "nil";
         public override string VoidTypeName => InternalVoidTypeName;
         public override string DocCommentPrefix => "## ";
         private const string PathSegmentPropertyName = "path_segment";
         private const string CurrentPathPropertyName = "current_path";
-        private const string HttpCorePropertyName = "http_core";
+        public const string HttpCorePropertyName = "request_adapter";
         public override string ParseNodeInterfaceName => "parse_node";
         internal string DocCommentStart = "## ";
         internal string DocCommentEnd = "## ";

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -43,8 +43,8 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         }
         private void AddRequestProperties() {
             parentClass.AddProperty(new CodeProperty {
-                Name = "httpCore",
-                PropertyKind = CodePropertyKind.HttpCore,
+                Name = "RequestAdapter",
+                PropertyKind = CodePropertyKind.RequestAdapter,
             });
             parentClass.AddProperty(new CodeProperty {
                 Name = "isRawUrl",
@@ -185,7 +185,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             Assert.Contains("h?.Invoke", result);
             Assert.Contains("AddQueryParameters", result);
             Assert.Contains("SetContentFromParsable", result);
-            Assert.Contains("AddMiddlewareOptions", result);
+            Assert.Contains("AddRequestOptions", result);
             Assert.Contains("return requestInfo;", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
@@ -311,7 +311,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         public void WritesReturnType() {
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains($"{AsyncKeyword} {TaskPrefix}{ReturnTypeName}> {MethodName}", result); // async default
+            Assert.Contains($"{AsyncKeyword} {TaskPrefix}{ReturnTypeName}> {MethodName.ToFirstCharacterUpperCase()}", result); // async default
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
@@ -365,7 +365,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             });
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("HttpCore", result);
+            Assert.Contains("RequestAdapter", result);
             Assert.Contains("PathSegment", result);
             Assert.Contains("pathParam", result);
             Assert.Contains("return new", result);
@@ -390,15 +390,15 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             method.MethodKind = CodeMethodKind.ClientConstructor;
             var coreProp = parentClass.AddProperty(new CodeProperty {
                 Name = "core",
-                PropertyKind = CodePropertyKind.HttpCore,
+                PropertyKind = CodePropertyKind.RequestAdapter,
             }).First();
             coreProp.Type = new CodeType {
-                Name = "HttpCore",
+                Name = "RequestAdapter",
                 IsExternal = true,
             };
             method.AddParameter(new CodeParameter {
                 Name = "core",
-                ParameterKind = CodeParameterKind.HttpCore,
+                ParameterKind = CodeParameterKind.RequestAdapter,
                 Type = coreProp.Type,
             });
             method.DeserializerModules = new() {"com.microsoft.kiota.serialization.Deserializer"};
@@ -414,15 +414,15 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             method.MethodKind = CodeMethodKind.ClientConstructor;
             var coreProp = parentClass.AddProperty(new CodeProperty {
                 Name = "core",
-                PropertyKind = CodePropertyKind.HttpCore,
+                PropertyKind = CodePropertyKind.RequestAdapter,
             }).First();
             coreProp.Type = new CodeType {
-                Name = "HttpCore",
+                Name = "RequestAdapter",
                 IsExternal = true,
             };
             method.AddParameter(new CodeParameter {
                 Name = "core",
-                ParameterKind = CodeParameterKind.HttpCore,
+                ParameterKind = CodeParameterKind.RequestAdapter,
                 Type = coreProp.Type,
             });
             var backingStoreParam = new CodeParameter {
