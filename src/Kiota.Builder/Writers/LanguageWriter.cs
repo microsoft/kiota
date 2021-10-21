@@ -111,7 +111,7 @@ namespace Kiota.Builder.Writers
             else if(!(code is CodeClass) && !(code is CodeNamespace.BlockDeclaration) && !(code is CodeNamespace.BlockEnd))
                 throw new InvalidOperationException($"Dispatcher missing for type {code.GetType()}");
         }
-        protected void AddCodeElementWriter<T>(ICodeElementWriter<T> writer) where T: CodeElement {
+        protected void AddOrReplaceCodeElementWriter<T>(ICodeElementWriter<T> writer) where T: CodeElement {
             if (!Writers.TryAdd(typeof(T), writer))
                 Writers[typeof(T)] = writer;
         }

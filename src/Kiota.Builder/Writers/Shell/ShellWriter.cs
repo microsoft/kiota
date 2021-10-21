@@ -12,13 +12,13 @@ namespace Kiota.Builder.Writers.Shell
         public ShellWriter(string rootPath, string clientNamespaceName) : base(rootPath, clientNamespaceName)
         {
             var conventionService = new CSharpConventionService();
-            AddCodeElementWriter(new ShellCodeClassDeclarationWriter(conventionService));
-            AddCodeElementWriter(new CodeClassEndWriter(conventionService));
-            AddCodeElementWriter(new CodeEnumWriter(conventionService));
-            AddCodeElementWriter(new CodeIndexerWriter(conventionService));
-            AddCodeElementWriter(new ShellCodeMethodWriter(conventionService));
-            AddCodeElementWriter(new CodePropertyWriter(conventionService));
-            AddCodeElementWriter(new CodeTypeWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new ShellCodeClassDeclarationWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeClassEndWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeIndexerWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new ShellCodeMethodWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeTypeWriter(conventionService));
         }
     }
 }
