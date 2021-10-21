@@ -34,18 +34,6 @@ namespace Kiota.Builder.Writers.Shell
             writer.WriteLine("})");
             writer.DecreaseIndent();
             writer.WriteLine("};");
-
-            CodeElement element = codeElement;
-
-            //while (element != null)
-            //{
-            //    foreach (CodeParameter p in element.)
-            //    {
-
-            //    }
-
-            //    element = element.Parent;
-            //}
             writer.WriteLine("// Create options for all the parameters");
         }
     }
