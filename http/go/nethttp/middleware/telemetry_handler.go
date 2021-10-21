@@ -13,10 +13,12 @@ type TelemetryHandler struct {
 }
 
 func NewTelemetryHandler(callback func(request *nethttp.Request) error) *TelemetryHandler {
-	return &TelemetryHandler{callback}
+	return &TelemetryHandler{
+		callback: callback,
+	}
 }
 
-func (c *TelemetryHandler) Do(req *netthttp.Request) (*netthttp.Response, error) {
+func (c *TelemetryHandler) Do(req *nethttp.Request) (*nethttp.Response, error) {
 	if c.callback == nil {
 		return nil, errors.New("telemetry handler: the callback is nil")
 	}
