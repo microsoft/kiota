@@ -140,8 +140,8 @@ namespace Kiota.Builder.Writers.Go {
             writer.WriteLine($"for idx, item := range {pathParametersReference} {{");
             writer.IncreaseIndent();
             writer.WriteLine($"{TempDictionaryVarName}[idx] = item");
-            writer.CloseCurly();
-            writer.CloseCurly();
+            writer.CloseBlock();
+            writer.CloseBlock();
             if(parameters.Any())
                 foreach(var p in parameters) {
                     var isStringStruct = !p.Item1.IsNullable && p.Item1.Name.Equals("string", StringComparison.OrdinalIgnoreCase);
@@ -150,7 +150,7 @@ namespace Kiota.Builder.Writers.Go {
                     writer.WriteLines($"if {p.Item3} != {defaultValue} {{");
                     writer.IncreaseIndent();
                     writer.WriteLine($"{TempDictionaryVarName}[\"{p.Item2}\"] = {GetValueStringConversion(p.Item1.Name, pointerDereference+p.Item3)}");
-                    writer.CloseCurly();
+                    writer.CloseBlock();
                 }
         }
         #pragma warning restore CA1822 // Method should be static

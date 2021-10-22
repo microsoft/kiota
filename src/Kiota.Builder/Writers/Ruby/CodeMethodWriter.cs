@@ -100,7 +100,7 @@ namespace Kiota.Builder.Writers.Ruby {
                     writer.WriteLine($"if {pathParametersParamName}.is_a? String");
                     writer.IncreaseIndent();
                     writer.WriteLine($"{pathParametersParamName} = {{ \"request-raw-url\" => {pathParametersParamName} }}");
-                    writer.CloseCurly("end");
+                    writer.CloseBlock("end");
                 }
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer);
             }
