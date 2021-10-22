@@ -33,7 +33,7 @@ namespace Kiota.Builder.Writers.CSharp {
             var urlTplRef = urlTemplateVarName ?? pathParametersProp.Name.ToFirstCharacterUpperCase();
             writer.WriteLine($"{prefix}new {returnType}({urlTplRef}, {requestAdapterProp.Name.ToFirstCharacterUpperCase()}{pathParametersSuffix});");
         }
-        internal string TempDictionaryVarName = "urlTplParams";
+        public override string TempDictionaryVarName => "urlTplParams";
         internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
             if(pathParametersType == null) return;
             writer.WriteLine($"var {TempDictionaryVarName} = new {pathParametersType.Name}({pathParametersReference});");

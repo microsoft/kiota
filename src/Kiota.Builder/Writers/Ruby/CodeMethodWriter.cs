@@ -122,13 +122,12 @@ namespace Kiota.Builder.Writers.Ruby {
             writer.IncreaseIndent();
             writer.WriteLine($"return @{codeElement.AccessedProperty?.Name?.ToSnakeCase()}");
         }
-        private const string TempMapVarName = "url_tpl_params";
         private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType) {
             var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var prefix = conventions.GetNormalizedNamespacePrefixForType(codeElement.ReturnType);
-            writer.WriteLines($"{TempMapVarName} = @{pathParametersProperty.Name.ToSnakeCase()}.clone",
-                            $"{TempMapVarName}[\"{codeElement.OriginalIndexer.ParameterName}\"] = id");
-            conventions.AddRequestBuilderBody(parentClass, returnType, writer, TempMapVarName, $"return {prefix}");
+            writer.WriteLines($"{conventions.TempDictionaryVarName} = @{pathParametersProperty.Name.ToSnakeCase()}.clone",
+                            $"{conventions.TempDictionaryVarName}[\"{codeElement.OriginalIndexer.ParameterName}\"] = id");
+            conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, $"return {prefix}");
         }
         private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer) {
             if((parentClass.StartBlock as CodeClass.Declaration).Inherits != null)

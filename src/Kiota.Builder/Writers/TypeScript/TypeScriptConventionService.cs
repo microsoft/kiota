@@ -28,7 +28,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             var urlTemplateParams = urlTemplateVarName ?? $"this.{pathParametersProperty.Name}";
             writer.WriteLines($"return new {returnType}({urlTemplateParams}, this.{requestAdapterProp.Name}{codePathParametersSuffix});");
         }
-        internal string TempDictionaryVarName = "urlTplParams";
+        public override string TempDictionaryVarName => "urlTplParams";
         internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
             if(pathParametersType == null) return;
             writer.WriteLine($"const {TempDictionaryVarName} = getPathParameters({pathParametersReference});");

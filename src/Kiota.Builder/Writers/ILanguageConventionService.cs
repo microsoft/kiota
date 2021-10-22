@@ -6,6 +6,7 @@ namespace Kiota.Builder.Writers {
         string VoidTypeName {get; }
         string DocCommentPrefix {get; }
         string ParseNodeInterfaceName {get; }
+        string TempDictionaryVarName {get;}
         string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true);
         string TranslateType(CodeType type);
         string GetParameterSignature(CodeParameter parameter, CodeElement targetElement);

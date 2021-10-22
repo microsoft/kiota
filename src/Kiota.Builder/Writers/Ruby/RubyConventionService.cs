@@ -13,6 +13,7 @@ namespace Kiota.Builder.Writers.Ruby {
         public override string ParseNodeInterfaceName => "parse_node";
         internal string DocCommentStart = "## ";
         internal string DocCommentEnd = "## ";
+        public override string TempDictionaryVarName => "url_tpl_params";
         public override string GetAccessModifier(AccessModifier access)
         {
             return access switch {

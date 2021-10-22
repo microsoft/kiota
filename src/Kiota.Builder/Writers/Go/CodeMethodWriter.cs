@@ -237,13 +237,12 @@ namespace Kiota.Builder.Writers.Go {
             else
                 writer.WriteLine($"m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Set(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\", value)");
         }
-        private const string TempMapVarName = "urlTplParams";
         private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType) {
             var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var idParameter = codeElement.Parameters.First();
             conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"m.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}",
                 (idParameter.Type, codeElement.OriginalIndexer.ParameterName, "id"));
-            conventions.AddRequestBuilderBody(parentClass, returnType, writer, urlTemplateVarName: TempMapVarName);
+            conventions.AddRequestBuilderBody(parentClass, returnType, writer, urlTemplateVarName: conventions.TempDictionaryVarName);
         }
         private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
             var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);

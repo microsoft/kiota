@@ -87,7 +87,7 @@ namespace Kiota.Builder.Writers.Java {
             var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
             writer.WriteLines($"return new {returnType}({urlTemplateParams}, {requestAdapterProp.Name}{pathParametersSuffix});");
         }
-        internal string TempDictionaryVarName = "urlTplParams";
+        public override string TempDictionaryVarName => "urlTplParams";
         internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
             if(pathParametersType == null) return;
             var mapTypeName = pathParametersType.Name;
