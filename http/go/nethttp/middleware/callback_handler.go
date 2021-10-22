@@ -4,6 +4,7 @@ import (
 	"errors"
 	nethttp "net/http"
 
+	abs "github.com/microsoft/kiota/abstractions/go"
 	http "github.com/microsoft/kiota/http/go/nethttp"
 )
 
@@ -30,7 +31,7 @@ func NewCallbackHandler(requestCallback func(*nethttp.Request) error, responseCa
 	}
 }
 
-func (c *CallbackHandler) Do(req *nethttp.Request) (*nethttp.Response, error) {
+func (c *CallbackHandler) Do(req *nethttp.Request, options []abs.RequestOption) (*nethttp.Response, error) {
 	if c.next == nil {
 		return nil, errors.New("telemetry handler: the next middleware is nil")
 	}
@@ -40,7 +41,7 @@ func (c *CallbackHandler) Do(req *nethttp.Request) (*nethttp.Response, error) {
 			return nil, err
 		}
 	}
-	response, err := c.next.Do(req)
+	response, err := c.next.Do(req, options)
 	if err != nil {
 		return nil, err
 	}

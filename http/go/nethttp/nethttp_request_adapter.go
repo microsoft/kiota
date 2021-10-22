@@ -103,7 +103,7 @@ func (a *NetHttpRequestAdapter) getHttpResponseMessage(requestInfo abs.RequestIn
 	if err != nil {
 		return nil, err
 	}
-	return (*a.httpClient).Do(request)
+	return (*a.httpClient).Do(request, requestInfo.GetRequestOptions())
 }
 func (a *NetHttpRequestAdapter) getResponsePrimaryContentType(response *nethttp.Response) string {
 	if response.Header == nil {

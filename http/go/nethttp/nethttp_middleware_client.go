@@ -3,6 +3,8 @@ package nethttplibrary
 import (
 	"errors"
 	nethttp "net/http"
+
+	abs "github.com/microsoft/kiota/abstractions/go"
 )
 
 // Http client with middleware infrastructure to use by the request adapter service.
@@ -42,9 +44,9 @@ func NewNetHttpMiddlewareClientWithMiddlewares(middlewares []Middleware) (*NetHt
 // 		req: the request to be executed.
 // Returns:
 // 		the response of the request.
-func (c *NetHttpMiddlewareClient) Do(req *nethttp.Request) (*nethttp.Response, error) {
+func (c *NetHttpMiddlewareClient) Do(req *nethttp.Request, options []abs.RequestOption) (*nethttp.Response, error) {
 	if c.middlewares == nil || len(c.middlewares) == 0 {
 		return nil, errors.New("middlewares cannot be nil or empty")
 	}
-	return c.middlewares[0].Do(req)
+	return c.middlewares[0].Do(req, options)
 }

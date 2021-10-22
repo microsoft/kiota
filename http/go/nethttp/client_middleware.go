@@ -3,6 +3,8 @@ package nethttplibrary
 import (
 	"errors"
 	nethttp "net/http"
+
+	abs "github.com/microsoft/kiota/abstractions/go"
 )
 
 // ClientMiddleware is a middleware that wraps a net/http.Client
@@ -22,7 +24,7 @@ func NewClientMiddleware(client *nethttp.Client) *ClientMiddleware {
 	}
 	return &ClientMiddleware{client: client}
 }
-func (c *ClientMiddleware) Do(req *nethttp.Request) (*nethttp.Response, error) {
+func (c *ClientMiddleware) Do(req *nethttp.Request, options []abs.RequestOption) (*nethttp.Response, error) {
 	if c.client == nil {
 		return nil, errors.New("client cannot be nil")
 	}
