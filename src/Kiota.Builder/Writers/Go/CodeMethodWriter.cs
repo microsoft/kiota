@@ -172,7 +172,7 @@ namespace Kiota.Builder.Writers.Go {
                     writer.WriteLine("return value;");
                 } else
                     writer.WriteLine($"return m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\");");
-            writer.CloseCurly();
+            writer.CloseBlock();
 
         }
         private void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
@@ -486,7 +486,7 @@ namespace Kiota.Builder.Writers.Go {
                 writer.IncreaseIndent();
                 writer.WriteLines($"temp := v", // temporary creating a new reference to avoid pointers to the same object
                     $"cast[i] = {parsableSymbol}(&temp)");
-                writer.CloseCurly();
+                writer.CloseBlock();
             }
             var collectionPrefix = propType.IsCollection ? "CollectionOf" : string.Empty;
             var collectionSuffix = propType.IsCollection ? "s" : string.Empty;

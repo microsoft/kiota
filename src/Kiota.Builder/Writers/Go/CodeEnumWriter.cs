@@ -51,16 +51,16 @@ namespace Kiota.Builder.Writers.Go {
             writer.DecreaseIndent();
             writer.WriteLines("}",
                             $"return 0, errors.New(\"Unknown {typeName} value: \" + v)");
-            writer.CloseCurly();
+            writer.CloseBlock();
             writer.WriteLine($"func Serialize{typeName}(values []{typeName}) []string {{");
             writer.IncreaseIndent();
             writer.WriteLines("result := make([]string, len(values))",
                                 "for i, v := range values {");
             writer.IncreaseIndent();
             writer.WriteLine("result[i] = v.String()");
-            writer.CloseCurly();
+            writer.CloseBlock();
             writer.WriteLine("return result");
-            writer.CloseCurly();
+            writer.CloseBlock();
         }
     }
 }
