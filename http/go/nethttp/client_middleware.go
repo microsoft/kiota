@@ -5,10 +5,17 @@ import (
 	nethttp "net/http"
 )
 
+// ClientMiddleware is a middleware that wraps a net/http.Client
 type ClientMiddleware struct {
+	// client is the net/http.Client that will be used to make the request
 	client *nethttp.Client
 }
 
+// NewClientMiddleware returns a new ClientMiddleware
+// Parameters:
+// 		client: the net/http.Client that will be used to make the request
+// Returns:
+// 		*ClientMiddleware: the new ClientMiddleware
 func NewClientMiddleware(client *nethttp.Client) *ClientMiddleware {
 	if client == nil {
 		client = GetDefaultClient()

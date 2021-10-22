@@ -7,13 +7,23 @@ import (
 	http "github.com/microsoft/kiota/http/go/nethttp"
 )
 
+// CallbackHandler is a middleware that calls callback functions before and after executing the next middleware.
 type CallbackHandler struct {
-	requestCallback  func(request *nethttp.Request) error
+	// Callback to execute before the next middleware.
+	requestCallback func(request *nethttp.Request) error
+	// Callback to execute after the next middleware.
 	responseCallback func(response *nethttp.Response) error
-	next             http.Middleware
+	// The next middleware.
+	next http.Middleware
 }
 
-func NewTelemetryHandler(requestCallback func(*nethttp.Request) error, responseCallback func(*nethttp.Response) error) *CallbackHandler {
+// NewCallbackHandler creates a new instance of CallbackHandler.
+// Parameters:
+// 		requestCallback: the callback to execute before the next middleware.
+// 		responseCallback: the callback to execute after the next middleware.
+// Returns:
+// 		a new instance of CallbackHandler.
+func NewCallbackHandler(requestCallback func(*nethttp.Request) error, responseCallback func(*nethttp.Response) error) *CallbackHandler {
 	return &CallbackHandler{
 		requestCallback:  requestCallback,
 		responseCallback: responseCallback,

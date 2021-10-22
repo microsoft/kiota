@@ -13,22 +13,56 @@ import (
 	absser "github.com/microsoft/kiota/abstractions/go/serialization"
 )
 
+// NetHttpRequestAdapter implements the RequestAdapter interface using net/http
 type NetHttpRequestAdapter struct {
+	// serializationWriterFactory is the factory used to create serialization writers
 	serializationWriterFactory absser.SerializationWriterFactory
-	parseNodeFactory           absser.ParseNodeFactory
-	httpClient                 *NetHttpMiddlewareClient
-	authenticationProvider     absauth.AuthenticationProvider
+	// parseNodeFactory is the factory used to create parse nodes
+	parseNodeFactory absser.ParseNodeFactory
+	// httpClient is the client used to send requests
+	httpClient *NetHttpMiddlewareClient
+	// authenticationProvider is the provider used to authenticate requests
+	authenticationProvider absauth.AuthenticationProvider
 }
 
+// NewNetHttpRequestAdapter creates a new NetHttpRequestAdapter with the given parameters
+// Parameters:
+// authenticationProvider: the provider used to authenticate requests
+// Returns:
+// a new NetHttpRequestAdapter
 func NewNetHttpRequestAdapter(authenticationProvider absauth.AuthenticationProvider) (*NetHttpRequestAdapter, error) {
 	return NewNetHttpRequestAdapterWithParseNodeFactory(authenticationProvider, nil)
 }
+
+// NewNetHttpRequestAdapterWithParseNodeFactory creates a new NetHttpRequestAdapter with the given parameters
+// Parameters:
+// authenticationProvider: the provider used to authenticate requests
+// parseNodeFactory: the factory used to create parse nodes
+// Returns:
+// a new NetHttpRequestAdapter
 func NewNetHttpRequestAdapterWithParseNodeFactory(authenticationProvider absauth.AuthenticationProvider, parseNodeFactory absser.ParseNodeFactory) (*NetHttpRequestAdapter, error) {
 	return NewNetHttpRequestAdapterWithParseNodeFactoryAndSerializationWriterFactory(authenticationProvider, parseNodeFactory, nil)
 }
+
+// NewNetHttpRequestAdapterWithParseNodeFactoryAndSerializationWriterFactory creates a new NetHttpRequestAdapter with the given parameters
+// Parameters:
+// authenticationProvider: the provider used to authenticate requests
+// parseNodeFactory: the factory used to create parse nodes
+// serializationWriterFactory: the factory used to create serialization writers
+// Returns:
+// a new NetHttpRequestAdapter
 func NewNetHttpRequestAdapterWithParseNodeFactoryAndSerializationWriterFactory(authenticationProvider absauth.AuthenticationProvider, parseNodeFactory absser.ParseNodeFactory, serializationWriterFactory absser.SerializationWriterFactory) (*NetHttpRequestAdapter, error) {
 	return NewNetHttpRequestAdapterWithParseNodeFactoryAndSerializationWriterFactoryAndHttpClient(authenticationProvider, parseNodeFactory, serializationWriterFactory, nil)
 }
+
+// NewNetHttpRequestAdapterWithParseNodeFactoryAndSerializationWriterFactoryAndHttpClient creates a new NetHttpRequestAdapter with the given parameters
+// Parameters:
+// authenticationProvider: the provider used to authenticate requests
+// parseNodeFactory: the factory used to create parse nodes
+// serializationWriterFactory: the factory used to create serialization writers
+// httpClient: the client used to send requests
+// Returns:
+// a new NetHttpRequestAdapter
 func NewNetHttpRequestAdapterWithParseNodeFactoryAndSerializationWriterFactoryAndHttpClient(authenticationProvider absauth.AuthenticationProvider, parseNodeFactory absser.ParseNodeFactory, serializationWriterFactory absser.SerializationWriterFactory, httpClient *NetHttpMiddlewareClient) (*NetHttpRequestAdapter, error) {
 	if authenticationProvider == nil {
 		return nil, errors.New("authenticationProvider cannot be nil")
@@ -40,7 +74,7 @@ func NewNetHttpRequestAdapterWithParseNodeFactoryAndSerializationWriterFactoryAn
 		authenticationProvider:     authenticationProvider,
 	}
 	if result.httpClient == nil {
-		defaultClient, err := NewNetHttpMiddlewareClient(nil)
+		defaultClient, err := NewNetHttpMiddlewareClient()
 		if err != nil {
 			return nil, err
 		}
