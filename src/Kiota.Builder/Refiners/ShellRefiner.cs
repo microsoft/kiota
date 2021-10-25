@@ -23,7 +23,7 @@ namespace Kiota.Builder.Refiners
             RemoveModelClasses(generatedCode);
             RemoveEnums(generatedCode);
             RemoveConstructors(generatedCode);
-            TurnRequestBuildersIntoCommandBuilders(generatedCode);
+            CreateCommandBuilders(generatedCode);
             AddAsyncSuffix(generatedCode);
             AddInnerClasses(generatedCode, false);
             CapitalizeNamespacesFirstLetters(generatedCode);
@@ -92,13 +92,10 @@ namespace Kiota.Builder.Refiners
             CrawlTree(currentElement, RemoveConstructors);
         }
 
-        private static void TurnRequestBuildersIntoCommandBuilders(CodeElement currentElement)
+        private static void CreateCommandBuilders(CodeElement currentElement)
         {
             if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
             {
-
-                (currentClass.StartBlock as CodeClass.Declaration).IsStatic = true;
-
                 // Replace Nav Properties with BuildXXXCommand methods
                 var navProperties = currentClass.GetChildElements().Where(e => e is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestBuilder)).Cast<CodeProperty>();
                 foreach (var navProp in navProperties)
@@ -107,21 +104,23 @@ namespace Kiota.Builder.Refiners
                     currentClass.AddMethod(method);
                     currentClass.RemoveChildElement(navProp);
                 }
-                // Change signtature of RequestExecutors
+                // Clone executors & convert to build command
                 var requestMethods = currentClass.GetChildElements().Where(e => e is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor)).Cast<CodeMethod>();
                 foreach (var requestMethod in requestMethods)
                 {
-                    requestMethod.IsAsync = false;
-                    requestMethod.IsStatic = true;
-                    requestMethod.Name = $"Build{requestMethod.Name}Command";
-                    requestMethod.ReturnType = CreateCommandType(requestMethod);
+                    CodeMethod clone = requestMethod.Clone() as CodeMethod;
+                    clone.IsAsync = false;
+                    clone.Name = $"Build{clone.Name}Command";
+                    clone.ReturnType = CreateCommandType(requestMethod);
+                    clone.MethodKind = CodeMethodKind.CommandBuilder;
+                    currentClass.AddMethod(clone);
                 }
 
                 var buildMethod = new CodeMethod
                 {
                     Name = "Build",
-                    IsStatic = true,
-                    IsAsync = false
+                    IsAsync = false,
+                    MethodKind = CodeMethodKind.CommandBuilder
                 };
                 buildMethod.AddParameter(new CodeParameter { Name = "httpCore", Type = new CodeType { Name = "IHttpCore", IsExternal = true } });
                 // Add calls to BuildMethods here..
@@ -133,7 +132,7 @@ namespace Kiota.Builder.Refiners
                 currentClass.AddMethod(buildMethod);
 
             }
-            CrawlTree(currentElement, TurnRequestBuildersIntoCommandBuilders);
+            CrawlTree(currentElement, CreateCommandBuilders);
         }
 
         private static CodeType CreateCommandType(CodeElement parent)
@@ -151,7 +150,7 @@ namespace Kiota.Builder.Refiners
             codeMethod.IsAsync = false;
             codeMethod.IsStatic = true;
             codeMethod.Name = $"Build{navProperty.Name.ToFirstCharacterUpperCase()}Command";
-            codeMethod.MethodKind = CodeMethodKind.RequestBuilderWithParameters;
+            codeMethod.MethodKind = CodeMethodKind.CommandBuilder;
             codeMethod.ReturnType = CreateCommandType(codeMethod);
             return codeMethod;
         }

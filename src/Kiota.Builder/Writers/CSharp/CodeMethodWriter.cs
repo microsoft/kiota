@@ -22,11 +22,6 @@ namespace Kiota.Builder.Writers.CSharp {
             WriteMethodDocumentation(codeElement, writer);
             WriteMethodPrototype(codeElement, writer, returnType, inherits, isVoid);
             writer.IncreaseIndent();
-            var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
-            var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
-            var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
-            var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
-            var requestParams = new RequestParams(requestBodyParam, queryStringParam, headersParam, optionsParam);
             foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
                 var parameterName = parameter.Name.ToFirstCharacterLowerCase();
                 if(nameof(String).Equals(parameter.Type.Name, StringComparison.OrdinalIgnoreCase))
@@ -34,10 +29,24 @@ namespace Kiota.Builder.Writers.CSharp {
                 else
                     writer.WriteLine($"_ = {parameterName} ?? throw new ArgumentNullException(nameof({parameterName}));");
             }
-            switch(codeElement.MethodKind) {
+            HandleMethodKind(codeElement, writer, inherits, parentClass, isVoid);
+            writer.DecreaseIndent();
+            writer.WriteLine("}");
+        }
+
+        protected virtual void HandleMethodKind(CodeMethod codeElement, LanguageWriter writer, bool inherits, CodeClass parentClass, bool isVoid)
+        {
+            var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
+            var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
+            var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
+            var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
+            var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
+            var requestParams = new RequestParams(requestBodyParam, queryStringParam, headersParam, optionsParam);
+            switch (codeElement.MethodKind)
+            {
                 case CodeMethodKind.Serializer:
                     WriteSerializerBody(inherits, codeElement, parentClass, writer);
-                break;
+                    break;
                 case CodeMethodKind.RequestGenerator:
                     WriteRequestGeneratorBody(codeElement, requestParams, parentClass, writer);
                     break;
@@ -63,12 +72,12 @@ namespace Kiota.Builder.Writers.CSharp {
                     throw new InvalidOperationException("getters and setters are automatically added on fields in dotnet");
                 case CodeMethodKind.RequestBuilderBackwardCompatibility:
                     throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
+                case CodeMethodKind.CommandBuilder:
+                    break;
                 default:
                     writer.WriteLine("return null;");
-                break;
+                    break;
             }
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
         }
         private void WriteRequestBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
         {

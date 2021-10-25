@@ -18,7 +18,8 @@ namespace Kiota.Builder
         ClientConstructor,
         RequestBuilderBackwardCompatibility,
         RequestBuilderWithParameters,
-        RawUrlConstructor
+        RawUrlConstructor,
+        CommandBuilder
     }
     public enum HttpMethod {
         Get,

@@ -34,8 +34,7 @@ namespace Kiota.Builder.Writers.Shell
             var derivation = derivedTypes.Any() ? ": " + derivedTypes.Select(x => x.ToFirstCharacterUpperCase()).Aggregate((x, y) => $"{x}, {y}") + " " : string.Empty;
             if (codeElement.Parent is CodeClass parentClass)
                 conventions.WriteShortDescription(parentClass.Description, writer);
-            var staticModifier = codeElement.IsStatic ? "static " : string.Empty;
-            writer.WriteLine($"public {staticModifier}class {codeElement.Name.ToFirstCharacterUpperCase()} {derivation}{{");
+            writer.WriteLine($"public class {codeElement.Name.ToFirstCharacterUpperCase()} {derivation}{{");
             writer.IncreaseIndent();
         }
     }
