@@ -64,7 +64,7 @@ namespace Kiota.Builder.Writers.Go {
                 "float" => "float32",
                 "integer" => "int32",
                 "long" => "int64",
-                "double" => "float64",
+                "double" or "decimal" => "float64",
                 "boolean" => "bool",
                 "guid" when includeImportSymbol => "uuid.UUID",
                 "guid" when !includeImportSymbol => "UUID",
@@ -79,7 +79,7 @@ namespace Kiota.Builder.Writers.Go {
         public bool IsPrimitiveType(string typeName) {
             return typeName.TrimCollectionAndPointerSymbols() switch {
                 "void" or "string" or "float" or "integer" or "long" or "double" or "boolean" or "guid" or "DateTimeOffset"
-                or "bool" or "int32" or "int64" or "float32" or "float64" or "UUID" or "Time" => true,
+                or "bool" or "int32" or "int64" or "float32" or "float64" or "UUID" or "Time" or "decimal" => true,
                 _ => false,
             };
         }
@@ -161,7 +161,7 @@ namespace Kiota.Builder.Writers.Go {
                 "boolean" => $"{StrConvHash}.FormatBool({reference})",
                 "integer" => $"{StrConvHash}.FormatInt(int64({reference}), 10)",
                 "long" => $"{StrConvHash}.FormatInt({reference}, 10)",
-                "float" or "double" => $"{StrConvHash}.FormatFloat({reference}, 'E', -1, 64)",
+                "float" or "double" or "decimal" => $"{StrConvHash}.FormatFloat({reference}, 'E', -1, 64)",
                 "DateTimeOffset" or "Time" => $"({reference}).String()",
                 _ => reference,
             };
