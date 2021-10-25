@@ -20,9 +20,9 @@ namespace Kiota.Builder.Refiners
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
-            RemoveModelClasses(generatedCode);
-            RemoveEnums(generatedCode);
-            RemoveConstructors(generatedCode);
+            //RemoveModelClasses(generatedCode);
+            //RemoveEnums(generatedCode);
+            //RemoveConstructors(generatedCode);
             CreateCommandBuilders(generatedCode);
             AddAsyncSuffix(generatedCode);
             AddInnerClasses(generatedCode, false);

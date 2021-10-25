@@ -2,11 +2,7 @@
   "profiles": {
     "kiota": {
       "commandName": "Project",
-      "commandLineArgs": "--output output/shell --openapi C:\\src\\msgraph-sdk-powershell\\openApiDocs\\beta\\Users.yml --language Shell --loglevel Information"
-    },
-    "kiotaLocal": {
-      "commandName": "Project",
-      "commandLineArgs": "--openapi C:\\\\Users\\\\calebmagiya\\\\Documents\\\\projects\\\\microsoft\\\\microsoftgraph\\\\msgraph-sdk-powershell\\\\openApiDocs\\\\v1.0\\\\mail.yml -o C:\\\\Users\\\\calebmagiya\\\\Documents\\\\projects\\\\practice\\\\msgraph-cli\\\\generated -c GraphClient --loglevel Debug --language Shell"
+      "commandLineArgs": "--openapi C:\\src\\msgraph-sdk-powershell\\openApiDocs\\v1.0\\mail.yml -o C:\\Users\\darrmi\\source\\github\\darrelmiller\\OpenApiClient\\Generated -c GraphClient --loglevel Information"
     }
   }
 }

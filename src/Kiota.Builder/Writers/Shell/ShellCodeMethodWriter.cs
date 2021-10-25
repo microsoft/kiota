@@ -38,9 +38,9 @@ namespace Kiota.Builder.Writers.Shell
             } else
             {
                 var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
-                var generatorMethodName = (codeElement.Parent as CodeClass)
+                var executorMethodName = (codeElement.Parent as CodeClass)
                                                     .Methods
-                                                    .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
+                                                    .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == codeElement.HttpMethod)
                                                     ?.Name;
                 var origParams = codeElement.OriginalMethod.Parameters;
                 var parametersList = new CodeParameter[] {
@@ -48,17 +48,8 @@ namespace Kiota.Builder.Writers.Shell
                     origParams.OfKind(CodeParameterKind.QueryParameter),
                     origParams.OfKind(CodeParameterKind.Headers),
                     origParams.OfKind(CodeParameterKind.Options)
-                }.Select(x => x?.Name).Where(x => x != null).Aggregate((x, y) => $"{x}, {y}");
-                writer.WriteLine($"var command = new Command(\"{codeElement.HttpMethod.ToString().ToLower()}\") {{");
-                writer.IncreaseIndent();
-                writer.WriteLine($"Handler = CommandHandler.Create<>(async () => {{");
-                writer.IncreaseIndent();
-                writer.WriteLine($"var requestInfo = {generatorMethodName}({parametersList});");
-                writer.WriteLine($"{(isVoid ? string.Empty : "return ")}await HttpCore.{GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnType)}(requestInfo, responseHandler);");
-                writer.DecreaseIndent();
-                writer.WriteLine("})");
-                writer.DecreaseIndent();
-                writer.WriteLine("};");
+                }.Where(x => x?.Name != null);
+                writer.WriteLine($"var command = new Command(\"{codeElement.HttpMethod.ToString().ToLower()}\");");
                 writer.WriteLine("// Create options for all the parameters"); // investigate exploding query params
 
                 foreach (var option in origParams)
@@ -81,8 +72,17 @@ namespace Kiota.Builder.Writers.Shell
 
                     optionBuilder.Append(')');
                     writer.WriteLine($"command.AddOption({optionBuilder});");
-                    writer.WriteLine($"// {option.Type.Name}"); //GetTypeString
                 }
+
+                var paramTypes = parametersList.Select(x => conventions.GetTypeString(x.Type, x)).Aggregate((x, y) => $"{x}, {y}");
+                var paramNames = parametersList.Select(x => x.Name).Aggregate((x, y) => $"{x}, {y}");
+                writer.WriteLine($"command.Handler = CommandHandler.Create<{paramTypes}>(async ({paramNames}) => {{");
+                writer.IncreaseIndent();
+                writer.WriteLine($"var result = await {executorMethodName}({paramNames});");
+                writer.WriteLine("// Print request output");
+                writer.DecreaseIndent();
+                writer.WriteLine("});");
+                writer.WriteLine("return command;");
             }
         }
     }
