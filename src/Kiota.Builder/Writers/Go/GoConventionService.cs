@@ -11,7 +11,7 @@ namespace Kiota.Builder.Writers.Go {
 
         public override string VoidTypeName => string.Empty;
 
-        public override string DocCommentPrefix => string.Empty;
+        public override string DocCommentPrefix => "// ";
         public override string ParseNodeInterfaceName => "ParseNode";
         #pragma warning disable CA1822 // Method should be static
         public string AbstractionsHash => "ida96af0f171bb75f894a4013a6b3146a4397c58f11adb81a2b7cbea9314783a9";
@@ -117,7 +117,7 @@ namespace Kiota.Builder.Writers.Go {
 
         public override void WriteShortDescription(string description, LanguageWriter writer)
         {
-            throw new NotImplementedException();
+            writer.WriteLine($"{DocCommentPrefix}{description}");
         }
         #pragma warning disable CA1822 // Method should be static
         internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default)

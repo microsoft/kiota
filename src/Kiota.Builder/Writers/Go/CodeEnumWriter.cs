@@ -17,6 +17,7 @@ namespace Kiota.Builder.Writers.Go {
             writer.DecreaseIndent();
             writer.WriteLine(")");
             var typeName = codeElement.Name.ToFirstCharacterUpperCase();
+            conventions.WriteShortDescription(codeElement.Description, writer);
             writer.WriteLines($"type {typeName} int",
                             string.Empty,
                             "const (");

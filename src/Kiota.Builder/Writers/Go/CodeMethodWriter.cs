@@ -18,6 +18,7 @@ namespace Kiota.Builder.Writers.Go {
             var parentClass = codeElement.Parent as CodeClass;
             var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
             var returnType = conventions.GetTypeString(codeElement.ReturnType, parentClass);
+            WriteMethodDocumentation(codeElement, writer);
             WriteMethodPrototype(codeElement, writer, returnType, parentClass);
             writer.IncreaseIndent();
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
@@ -73,6 +74,16 @@ namespace Kiota.Builder.Writers.Go {
                 break;
             }
             writer.CloseBlock();
+        }
+        private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer) {
+            var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Description));
+            if(!string.IsNullOrEmpty(code.Description))
+                conventions.WriteShortDescription(code.Description, writer);
+            if (parametersWithDescription.Any()) {
+                writer.WriteLine($"{conventions.DocCommentPrefix}Parameters:");
+                foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
+                    writer.WriteLine($"{conventions.DocCommentPrefix} - {paramWithDescription.Name} : {paramWithDescription.Description}");
+            }
         }
         private static void WriteNullCheckBody(LanguageWriter writer)
         {
