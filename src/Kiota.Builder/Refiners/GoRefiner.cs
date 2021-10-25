@@ -35,7 +35,7 @@ namespace Kiota.Builder.Refiners {
             ReplaceReservedNames(
                 generatedCode,
                 new GoReservedNamesProvider(),
-                x => $"{x}_escpaped");
+                x => $"{x}_escaped");
             AddPropertiesAndMethodTypesImports(
                 generatedCode,
                 true,
