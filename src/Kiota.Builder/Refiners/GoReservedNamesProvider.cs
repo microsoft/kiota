@@ -29,7 +29,8 @@ namespace Kiota.Builder.Refiners {
             "struct",
             "switch",
             "type",
-            "var"
+            "var",
+            "vendor" // cannot be used as a package name
         });
         public HashSet<string> ReservedNames => _reservedNames.Value;
     }
