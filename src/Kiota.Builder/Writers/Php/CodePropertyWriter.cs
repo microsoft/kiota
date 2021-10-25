@@ -26,8 +26,8 @@ namespace Kiota.Builder.Writers.Php
                     writer.DecreaseIndent();
                     writer.WriteLine("}");
                     break;
-                case CodePropertyKind.HttpCore:
-                    writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} HttpCoreInterface ${codeElement.Name.ToFirstCharacterLowerCase()};");
+                case CodePropertyKind.RequestAdapter:
+                    writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} RequestAdapter ${codeElement.Name.ToFirstCharacterLowerCase()};");
                     break;
                 case CodePropertyKind.AdditionalData:
                     writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} array ${codeElement.Name.ToFirstCharacterLowerCase()};");

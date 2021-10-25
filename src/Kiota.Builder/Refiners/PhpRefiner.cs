@@ -27,8 +27,8 @@ namespace Kiota.Builder.Refiners
         }
         
         private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
-            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.HttpCore),
-                "Microsoft\\Kiota\\Abstractions", "HttpCore"),
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
+                "Microsoft\\Kiota\\Abstractions", "RequestAdapter"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
                 "Microsoft\\Kiota\\Abstractions", "HttpMethod", "RequestInformation", "MiddlewareOption"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),

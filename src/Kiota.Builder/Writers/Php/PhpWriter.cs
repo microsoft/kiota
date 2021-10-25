@@ -1,6 +1,4 @@
-﻿using Kiota.Builder.Writers.Php;
-
-namespace Kiota.Builder.Writers.Php
+﻿namespace Kiota.Builder.Writers.Php
 {
     public class PhpWriter: LanguageWriter
     {

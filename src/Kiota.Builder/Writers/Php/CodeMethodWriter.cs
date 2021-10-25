@@ -54,7 +54,7 @@ namespace Kiota.Builder.Writers.Php
                 writer.WriteLine($"$this->{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {conventions.ReplaceDoubleQuoteWithSingleQuote(propWithDefault.DefaultValue)};");
             }
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
-                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.HttpCore, CodePropertyKind.HttpCore, writer);
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.CurrentPath, CodePropertyKind.CurrentPath, writer);
             }
         }
