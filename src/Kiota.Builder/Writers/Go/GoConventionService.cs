@@ -135,13 +135,10 @@ namespace Kiota.Builder.Writers.Go {
         internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
             if(pathParametersType == null) return;
             var mapTypeName = pathParametersType.Name;
-            writer.WriteLines($"{TempDictionaryVarName} := make({mapTypeName})",
-                            $"if {pathParametersReference} != nil {{");
-            writer.IncreaseIndent();
+            writer.WriteLine($"{TempDictionaryVarName} := make({mapTypeName})");
             writer.WriteLine($"for idx, item := range {pathParametersReference} {{");
             writer.IncreaseIndent();
             writer.WriteLine($"{TempDictionaryVarName}[idx] = item");
-            writer.CloseBlock();
             writer.CloseBlock();
             if(parameters.Any())
                 foreach(var p in parameters) {
@@ -159,9 +156,10 @@ namespace Kiota.Builder.Writers.Go {
         private static string GetValueStringConversion(string typeName, string reference) {
             return typeName switch {
                 "boolean" => $"{StrConvHash}.FormatBool({reference})",
-                "integer" => $"{StrConvHash}.FormatInt(int64({reference}), 10)",
+                "int64" => $"{StrConvHash}.FormatInt({reference}, 10)",
+                "integer" or "int32" => $"{StrConvHash}.FormatInt(int64({reference}), 10)",
                 "long" => $"{StrConvHash}.FormatInt({reference}, 10)",
-                "float" or "double" or "decimal" => $"{StrConvHash}.FormatFloat({reference}, 'E', -1, 64)",
+                "float" or "double" or "decimal" or "float64" or "float32" => $"{StrConvHash}.FormatFloat({reference}, 'E', -1, 64)",
                 "DateTimeOffset" or "Time" => $"({reference}).String()",
                 _ => reference,
             };
