@@ -48,6 +48,11 @@ namespace Kiota.Builder
         public void RemoveParametersByKind(params CodeParameterKind[] kinds) {
             parameters.RemoveAll(p => p.IsOfKind(kinds));
         }
+
+        public void ClearParameters()
+        {
+            parameters.Clear();
+        }
         public IEnumerable<CodeParameter> Parameters { get => parameters; }
         public bool IsStatic {get;set;} = false;
         public bool IsAsync {get;set;} = true;

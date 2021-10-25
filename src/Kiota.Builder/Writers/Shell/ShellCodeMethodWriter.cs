@@ -42,8 +42,13 @@ namespace Kiota.Builder.Writers.Shell
                                                     .Methods
                                                     .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
                                                     ?.Name;
-                var parametersList = new CodeParameter[] { requestParams.requestBody, requestParams.queryString, requestParams.headers, requestParams.options }
-                                    .Select(x => x?.Name).Where(x => x != null).Aggregate((x, y) => $"{x}, {y}");
+                var origParams = codeElement.OriginalMethod.Parameters;
+                var parametersList = new CodeParameter[] {
+                    origParams.OfKind(CodeParameterKind.RequestBody),
+                    origParams.OfKind(CodeParameterKind.QueryParameter),
+                    origParams.OfKind(CodeParameterKind.Headers),
+                    origParams.OfKind(CodeParameterKind.Options)
+                }.Select(x => x?.Name).Where(x => x != null).Aggregate((x, y) => $"{x}, {y}");
                 writer.WriteLine($"var command = new Command(\"{codeElement.HttpMethod.ToString().ToLower()}\") {{");
                 writer.IncreaseIndent();
                 writer.WriteLine($"Handler = CommandHandler.Create<>(async () => {{");
@@ -56,7 +61,7 @@ namespace Kiota.Builder.Writers.Shell
                 writer.WriteLine("};");
                 writer.WriteLine("// Create options for all the parameters"); // investigate exploding query params
 
-                foreach (var option in codeElement.Parameters)
+                foreach (var option in origParams)
                 {
                     if (option.ParameterKind == CodeParameterKind.ResponseHandler)
                     {

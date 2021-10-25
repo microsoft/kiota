@@ -111,8 +111,10 @@ namespace Kiota.Builder.Refiners
                     CodeMethod clone = requestMethod.Clone() as CodeMethod;
                     clone.IsAsync = false;
                     clone.Name = $"Build{clone.Name}Command";
-                    clone.ReturnType = CreateCommandType(requestMethod);
+                    clone.ReturnType = CreateCommandType(clone);
                     clone.MethodKind = CodeMethodKind.CommandBuilder;
+                    clone.OriginalMethod = requestMethod;
+                    clone.ClearParameters();
                     currentClass.AddMethod(clone);
                 }
 
