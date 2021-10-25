@@ -115,8 +115,12 @@ namespace Kiota.Builder.Extensions {
             if(string.IsNullOrEmpty(original) || !original.Contains('{')) return original;
             var parameters = pathParamMatcher.Matches(original);
             foreach(var value in parameters.Select(x => x.Value))
-                original = original.Replace(value, value.Replace('-', '_'));
+                original = original.SanitizePathParameterName();
             return original;
+        }
+        public static string SanitizePathParameterName(this string original) {
+            if(string.IsNullOrEmpty(original)) return original;
+            return original.Replace('-', '_');
         }
     }
 }

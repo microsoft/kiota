@@ -56,6 +56,21 @@ namespace Kiota.Builder
         /// The property this method accesses to when it's a getter or setter.
         /// </summary>
         public CodeProperty AccessedProperty { get; set; }
+        /// <summary>
+        /// The combination of the path and query parameters for the current URL.
+        /// Only use this property if the language you are generating for doesn't support fluent API style (e.g. Shell/CLI)
+        /// </summary>
+        public IEnumerable<CodeParameter> PathAndQueryParameters { get; private set; }
+        public void AddPathOrQueryParameter(params CodeParameter[] parameters) {
+            if(parameters == null || !parameters.Any()) return;
+            foreach (var parameter in parameters) {
+                EnsureElementsAreChildren(parameter);
+            }
+            if(PathAndQueryParameters == null)
+                PathAndQueryParameters = new List<CodeParameter>(parameters);
+            else if (PathAndQueryParameters is List<CodeParameter> cast)
+                cast.AddRange(parameters);
+        }
         public bool IsOfKind(params CodeMethodKind[] kinds) {
             return kinds?.Contains(MethodKind) ?? false;
         }
