@@ -12,10 +12,17 @@ import (
 	absser "github.com/microsoft/kiota/abstractions/go/serialization"
 )
 
+// ParseNode implementation for JSON.
 type JsonParseNode struct {
 	value interface{}
 }
 
+// Creates a new JsonParseNode.
+// Parameters:
+// - content: the content of the node.
+// Returns:
+// - the new JsonParseNode.
+// - An error if any.
 func NewJsonParseNode(content []byte) (*JsonParseNode, error) {
 	if len(content) == 0 {
 		return nil, errors.New("content is empty")

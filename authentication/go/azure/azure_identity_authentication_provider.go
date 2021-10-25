@@ -10,16 +10,30 @@ import (
 	auth "github.com/microsoft/kiota/abstractions/go/authentication"
 )
 
+// The BaseBearerTokenAuthenticationProvider implementation that supports implementations of TokenCredential from Azure.Identity.
 type AzureIdentityAuthenticationProvider struct {
 	auth.BaseBearerTokenAuthenticationProvider
 	scopes     []string
 	credential azcore.TokenCredential
 }
 
+// Creates a new instance of the AzureIdentityAuthenticationProvider.
+// Parameters:
+//   credential: The TokenCredential implementation that will be used to acquire tokens.
+// Returns:
+//   - The new instance of the AzureIdentityAuthenticationProvider.
+//   - An error if any.
 func NewAzureIdentityAuthenticationProvider(credential azcore.TokenCredential) (*AzureIdentityAuthenticationProvider, error) {
 	return NewAzureIdentityAuthenticationProviderWithScopes(credential, nil)
 }
 
+// Creates a new instance of the AzureIdentityAuthenticationProvider.
+// Parameters:
+//   credential: The TokenCredential implementation that will be used to acquire tokens.
+//   scopes: The list of scopes that will be used to acquire the token.
+// Returns:
+//   - The new instance of the AzureIdentityAuthenticationProvider.
+//   - An error if any.
 func NewAzureIdentityAuthenticationProviderWithScopes(credential azcore.TokenCredential, scopes []string) (*AzureIdentityAuthenticationProvider, error) {
 	if credential == nil {
 		return nil, errors.New("credential cannot be nil")

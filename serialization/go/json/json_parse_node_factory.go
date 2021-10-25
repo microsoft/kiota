@@ -6,9 +6,11 @@ import (
 	absser "github.com/microsoft/kiota/abstractions/go/serialization"
 )
 
+// ParseNodeFactory implementation for JSON
 type JsonParseNodeFactory struct {
 }
 
+// Creates a new JsonParseNodeFactory
 func NewJsonParseNodeFactory() *JsonParseNodeFactory {
 	return &JsonParseNodeFactory{}
 }

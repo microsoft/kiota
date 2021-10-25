@@ -11,10 +11,12 @@ import (
 	absser "github.com/microsoft/kiota/abstractions/go/serialization"
 )
 
+// The SerializationWriter implementation for JSON.
 type JsonSerializationWriter struct {
 	writer []string
 }
 
+// Creates a new instance of the JsonSerializationWriter.
 func NewJsonSerializationWriter() *JsonSerializationWriter {
 	return &JsonSerializationWriter{
 		writer: make([]string, 0),

@@ -6,9 +6,11 @@ import (
 	absser "github.com/microsoft/kiota/abstractions/go/serialization"
 )
 
+// The SerializationWriterFactory implementation for JSON serialization.
 type JsonSerializationWriterFactory struct {
 }
 
+// Creates a new instance of the JsonSerializationWriterFactory.
 func NewJsonSerializationWriterFactory() *JsonSerializationWriterFactory {
 	return &JsonSerializationWriterFactory{}
 }
