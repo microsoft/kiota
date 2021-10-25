@@ -22,7 +22,7 @@ public class RequestInformation {
     /** The url template for the current request */
     public String urlTemplate;
     /** The path parameters for the current request */
-    public HashMap<String, String> pathParameters = new HashMap<>();
+    public HashMap<String, Object> pathParameters = new HashMap<>();
     private URI uri;
     /** Gets the URI of the request. 
      * @throws URISyntaxException
@@ -31,8 +31,9 @@ public class RequestInformation {
     public URI getUri() throws URISyntaxException {
         if(uri != null) {
             return uri;
-        } else if(pathParameters.containsKey(RAW_URL_KEY)) {
-            setUri(new URI(pathParameters.get(RAW_URL_KEY)));
+        } else if(pathParameters.containsKey(RAW_URL_KEY) &&
+            pathParameters.get(RAW_URL_KEY) instanceof String) {
+            setUri(new URI((String)pathParameters.get(RAW_URL_KEY)));
             return uri;
         } else {
             Objects.requireNonNull(urlTemplate);

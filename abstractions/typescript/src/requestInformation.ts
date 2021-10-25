@@ -11,7 +11,7 @@ export class RequestInformation {
     /** The URI of the request. */
     private uri?: URL;
     /** The path parameters for the request. */
-    public pathParameters: Map<string, string> = new Map<string, string>();
+    public pathParameters: Map<string, unknown> = new Map<string, unknown>();
     /** The URL template for the request */
     public urlTemplate?: string;
     /** Gets the URL of the request  */
@@ -20,7 +20,7 @@ export class RequestInformation {
         if(this.uri) {
             return this.uri;
         } else if (rawUrl) {
-            const value = new URL(rawUrl);
+            const value = new URL(rawUrl as string);
             this.URL = value;
             return value;
         } else if(!this.queryParameters) {

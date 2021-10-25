@@ -93,10 +93,9 @@ namespace Kiota.Builder.Writers.Java {
             var mapTypeName = pathParametersType.Name;
             writer.WriteLine($"var {TempDictionaryVarName} = new {mapTypeName}({pathParametersReference});");
             if(parameters.Any())
-                writer.WriteLines(parameters.Select(p => {
-                    var stringSuffix = p.Item1.Name.Equals("string", StringComparison.OrdinalIgnoreCase) ? string.Empty : ".toString()";
-                    return $"{TempDictionaryVarName}.put(\"{p.Item2}\", {p.Item3}{stringSuffix});";
-                }).ToArray());
+                writer.WriteLines(parameters.Select(p =>
+                    $"{TempDictionaryVarName}.put(\"{p.Item2}\", {p.Item3});"
+                ).ToArray());
         }
         #pragma warning restore CA1822 // Method should be static
     }

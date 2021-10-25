@@ -38,10 +38,9 @@ namespace Kiota.Builder.Writers.CSharp {
             if(pathParametersType == null) return;
             writer.WriteLine($"var {TempDictionaryVarName} = new {pathParametersType.Name}({pathParametersReference});");
             if(parameters.Any())
-                writer.WriteLines(parameters.Select(p => {
-                    var stringSuffix = p.Item1.Name.Equals("string", StringComparison.OrdinalIgnoreCase) ? string.Empty : ".ToString()";
-                    return $"{TempDictionaryVarName}.Add(\"{p.Item2}\", {p.Item3}{stringSuffix});";
-                }).ToArray());
+                writer.WriteLines(parameters.Select(p =>
+                    $"{TempDictionaryVarName}.Add(\"{p.Item2}\", {p.Item3});"
+                ).ToArray());
         }
         #pragma warning restore CA1822 // Method should be static
         internal bool ShouldTypeHaveNullableMarker(CodeTypeBase propType, string propTypeName) {

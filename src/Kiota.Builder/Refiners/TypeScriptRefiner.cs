@@ -104,9 +104,9 @@ namespace Kiota.Builder.Refiners {
                 currentProperty.DefaultValue = "new Map<string, unknown>()";
             } else if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
                 currentProperty.Type.IsNullable = false;
-                currentProperty.Type.Name = "Map<string, string>";
+                currentProperty.Type.Name = "Map<string, unknown>";
                 if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
-                    currentProperty.DefaultValue = "new Map<string, string>()";
+                    currentProperty.DefaultValue = "new Map<string, unknown>()";
             }
         }
         private static void CorrectMethodType(CodeMethod currentMethod) {
@@ -127,7 +127,7 @@ namespace Kiota.Builder.Refiners {
                 var urlTplParams = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
                 if(urlTplParams != null &&
                     urlTplParams.Type is CodeType originalType) {
-                    originalType.Name = "Map<string, string>";
+                    originalType.Name = "Map<string, unknown>";
                     urlTplParams.Description = "The raw url or the Url template parameters for the request.";
                     var unionType = new CodeUnionType {
                         Name = "rawUrlOrTemplateParameters",

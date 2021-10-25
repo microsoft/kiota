@@ -133,7 +133,7 @@ namespace Kiota.Builder.Refiners {
                 currentProperty.Type.IsNullable = true;
             } else if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
                 currentProperty.Type.IsNullable = true;
-                currentProperty.Type.Name = "HashMap<String, String>";
+                currentProperty.Type.Name = "HashMap<String, Object>";
                 if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                     currentProperty.DefaultValue = "new HashMap<>()";
             }
@@ -165,7 +165,7 @@ namespace Kiota.Builder.Refiners {
                     .ForEach(x => x.Type.IsNullable = true);
                 var urlTplParams = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
                 if(urlTplParams != null) 
-                    urlTplParams.Type.Name = "HashMap<String, String>";
+                    urlTplParams.Type.Name = "HashMap<String, Object>";
             }
             if (currentMethod.IsOfKind(CodeMethodKind.RequestBuilderWithParameters, CodeMethodKind.Constructor) &&
                     currentMethod.Parameters.Any(x => OriginalDateTimeOffsetType.Equals(x.Type.Name, StringComparison.OrdinalIgnoreCase)) &&

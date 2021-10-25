@@ -31,8 +31,9 @@ namespace Microsoft.Kiota.Abstractions
             get {
                 if(_rawUri != null)
                     return _rawUri;
-                else if(PathParameters.TryGetValue("request-raw-url", out var rawUrl)) {
-                    URI = new Uri(rawUrl);
+                else if(PathParameters.TryGetValue("request-raw-url", out var rawUrl) &&
+                    rawUrl is string rawUrlString) {
+                    URI = new Uri(rawUrlString);
                     return _rawUri;
                 }
                 else
@@ -55,7 +56,7 @@ namespace Microsoft.Kiota.Abstractions
         /// <summary>
         /// The path parameters to use for the URL template when generating the URI.
         /// </summary>
-        public IDictionary<string, string> PathParameters { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        public IDictionary<string, object> PathParameters { get; set; } = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
         /// <summary>
         ///  The <see cref="HttpMethod">HTTP method</see> of the request.
         /// </summary>

@@ -362,7 +362,7 @@ namespace Kiota.Builder
                 Access = AccessModifier.Private,
                 ReadOnly = true,
                 Type = new CodeType {
-                    Name = "Dictionary<string, string>",
+                    Name = "Dictionary<string, object>",
                     IsExternal = true,
                     IsNullable = false,
                 },
