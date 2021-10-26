@@ -97,7 +97,7 @@ namespace Kiota.Builder.Refiners
             if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.RequestBuilder))
             {
                 // Replace Nav Properties with BuildXXXCommand methods
-                var navProperties = currentClass.GetChildElements().Where(e => e is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestBuilder)).Cast<CodeProperty>();
+                var navProperties = currentClass.GetChildElements().OfType<CodeProperty>().Where(e => e.IsOfKind(CodePropertyKind.RequestBuilder));
                 foreach (var navProp in navProperties)
                 {
                     var method = CreateBuildCommandMethod(navProp, currentClass);
@@ -105,7 +105,7 @@ namespace Kiota.Builder.Refiners
                     currentClass.RemoveChildElement(navProp);
                 }
                 // Clone executors & convert to build command
-                var requestMethods = currentClass.GetChildElements().Where(e => e is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor)).Cast<CodeMethod>();
+                var requestMethods = currentClass.GetChildElements().OfType<CodeMethod>().Where(e => e.IsOfKind(CodeMethodKind.RequestExecutor));
                 foreach (var requestMethod in requestMethods)
                 {
                     CodeMethod clone = requestMethod.Clone() as CodeMethod;
