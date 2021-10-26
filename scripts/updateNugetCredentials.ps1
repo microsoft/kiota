@@ -1,11 +1,8 @@
 param([Parameter(Mandatory=$true)][string]$username, [Parameter(Mandatory=$true)][string]$apiToken, [Parameter(Mandatory=$true)][string]$nugetFileAbsolutePath)
-if(Test-Path -Path $nugetFileAbsolutePath) {
-    [xml]$nugetConfigFileContent = Get-Content -Path $nugetFileAbsolutePath;
-    $userEntry = $nugetConfigFileContent.configuration.packageSourceCredentials.GitHub.add | ? {$_.key -eq "Username"} | select -First 1
-    $userEntry.value = $username
-    $tokenEntry = $nugetConfigFileContent.configuration.packageSourceCredentials.GitHub.add | ? {$_.key -eq "ClearTextPassword"} | select -First 1
-    $tokenEntry.value = $apiToken
-    $nugetConfigFileContent.Save($nugetFileAbsolutePath)
-} else {
-    Write-Error -Message "Nuget config file not found, please check the path"
-}
+$template = "<?xml version=`"1.0`" encoding=`"utf-8`"?><configuration><packageSources><add key=`"GitHub`" value=`"https://nuget.pkg.github.com/microsoft/index.json`" /></packageSources><packageSourceCredentials><GitHub><add key=`"Username`" value=`"`" /><add key=`"ClearTextPassword`" value=`"`" /></GitHub></packageSourceCredentials></configuration>"
+[xml]$nugetConfigFileContent = [xml]$template
+$userEntry = $nugetConfigFileContent.configuration.packageSourceCredentials.GitHub.add | Where-Object {$_.key -eq "Username"} | Select-Object -First 1
+$userEntry.value = $username
+$tokenEntry = $nugetConfigFileContent.configuration.packageSourceCredentials.GitHub.add | Where-Object {$_.key -eq "ClearTextPassword"} | Select-Object -First 1
+$tokenEntry.value = $apiToken
+$nugetConfigFileContent.Save($nugetFileAbsolutePath)
