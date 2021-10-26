@@ -14,8 +14,6 @@ namespace Kiota.Builder.Refiners
         {
             // Remove PathSegment field
             // Convert Properties to AddCommand
-
-
             AddDefaultImports(generatedCode);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
@@ -104,13 +102,40 @@ namespace Kiota.Builder.Refiners
                     currentClass.AddMethod(method);
                     currentClass.RemoveChildElement(navProp);
                 }
+
+                // Build command for indexers
+                var indexers = currentClass.GetChildElements().OfType<CodeIndexer>();
+                var classHasIndexers = indexers.Any();
+                foreach (var indexer in indexers)
+                {
+                    var method = new CodeMethod
+                    {
+                        Name = "BuildCommand",
+                        IsAsync = false,
+                        MethodKind = CodeMethodKind.CommandBuilder,
+                        OriginalIndexer = indexer
+                    };
+
+                    method.ReturnType = CreateCommandType(method);
+                    method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
+                    currentClass.AddMethod(method);
+                    currentClass.RemoveChildElement(indexer);
+                }
+
                 // Clone executors & convert to build command
                 var requestMethods = currentClass.GetChildElements().OfType<CodeMethod>().Where(e => e.IsOfKind(CodeMethodKind.RequestExecutor));
                 foreach (var requestMethod in requestMethods)
                 {
                     CodeMethod clone = requestMethod.Clone() as CodeMethod;
+                    var cmdName = clone.Name;
+                    if (classHasIndexers)
+                    {
+                        if (clone.HttpMethod == HttpMethod.Get) cmdName = "List";
+                        if (clone.HttpMethod == HttpMethod.Post) cmdName = "Create";
+                    }
+
                     clone.IsAsync = false;
-                    clone.Name = $"Build{clone.Name}Command";
+                    clone.Name = $"Build{cmdName}Command";
                     clone.ReturnType = CreateCommandType(clone);
                     clone.MethodKind = CodeMethodKind.CommandBuilder;
                     clone.OriginalMethod = requestMethod;
@@ -118,21 +143,20 @@ namespace Kiota.Builder.Refiners
                     currentClass.AddMethod(clone);
                 }
 
-                var buildMethod = new CodeMethod
+                // Build root command
+                var clientConstructor = currentClass.GetChildElements().OfType<CodeMethod>().FirstOrDefault(m => m.MethodKind == CodeMethodKind.ClientConstructor);
+                if (clientConstructor != null)
                 {
-                    Name = "Build",
-                    IsAsync = false,
-                    MethodKind = CodeMethodKind.CommandBuilder
-                };
-                buildMethod.AddParameter(new CodeParameter { Name = "httpCore", Type = new CodeType { Name = "IHttpCore", IsExternal = true } });
-                // Add calls to BuildMethods here..
-                buildMethod.ReturnType = new CodeType
-                {
-                    Name = "Command",
-                    IsExternal = true
-                };
-                currentClass.AddMethod(buildMethod);
-
+                    var rootMethod = new CodeMethod
+                    {
+                        Name = "BuildCommand",
+                        IsAsync = false,
+                        MethodKind = CodeMethodKind.CommandBuilder,
+                        ReturnType = new CodeType { Name = "Command", IsExternal = true },
+                        OriginalMethod = clientConstructor
+                    };
+                    currentClass.AddMethod(rootMethod);
+                }
             }
             CrawlTree(currentElement, CreateCommandBuilders);
         }
@@ -150,10 +174,10 @@ namespace Kiota.Builder.Refiners
         {
             var codeMethod = new CodeMethod();
             codeMethod.IsAsync = false;
-            codeMethod.IsStatic = true;
             codeMethod.Name = $"Build{navProperty.Name.ToFirstCharacterUpperCase()}Command";
             codeMethod.MethodKind = CodeMethodKind.CommandBuilder;
             codeMethod.ReturnType = CreateCommandType(codeMethod);
+            codeMethod.AccessedProperty = navProperty;
             return codeMethod;
         }
 
