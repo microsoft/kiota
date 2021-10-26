@@ -5,8 +5,8 @@
  * -------------------------------------------------------------------------------------------
  */
 
-import { FetchRequestInfo, FetchRequestInit, FetchResponse } from "../utils/fetchDefinitions";
-import { MiddlewareControl } from "./middlewareControl";
+import { RequestOption } from "@microsoft/kiota-abstractions";
+import { FetchRequestInfo, FetchRequestInit } from "../utils/fetchDefinitions";
 
 /**
  * @interface
@@ -18,7 +18,6 @@ import { MiddlewareControl } from "./middlewareControl";
 
 export interface MiddlewareContext {
 	request: FetchRequestInfo;
-	response?: FetchResponse;
 	options?: FetchRequestInit;
-	middlewareControl?: MiddlewareControl; // this can get updated depending on the use of request options
+	middlewareOptions?: Record<string,RequestOption>; // this can get updated depending on the use of request options
 }

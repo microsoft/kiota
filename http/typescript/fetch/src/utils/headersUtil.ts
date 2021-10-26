@@ -20,11 +20,10 @@ import { FetchRequestInit } from "./fetchDefinitions";
  * @returns A header value for the given key from the request
  */
 export const getRequestHeader = (options: FetchRequestInit | undefined, key: string): string | null => {
-	let value: string = null;
 	if (typeof options !== "undefined" && options.headers !== undefined) {
-		value = options.headers[key];
+		return options.headers[key];
 	}
-	return value;
+	return undefined;
 };
 
 /**

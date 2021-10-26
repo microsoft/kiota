@@ -17,6 +17,7 @@ import { RequestOption } from "@microsoft/kiota-abstractions";
  */
 export type ShouldRedirect = (response: Response) => boolean;
 
+export const RedirectHandlerOptionKey = "RedirectHandlerOption";
 /**
  * @class
  * @implements MiddlewareOptions
@@ -38,18 +39,6 @@ export class RedirectHandlerOptions implements RequestOption {
 	private static MAX_MAX_REDIRECTS = 20;
 
 	/**
-	 * @public
-	 * A member holding max redirects value
-	 */
-	public maxRedirects: number;
-
-	/**
-	 * @public
-	 * A member holding shouldRedirect callback
-	 */
-	public shouldRedirect: ShouldRedirect;
-
-	/**
 	 * @private
 	 * A member holding default shouldRedirect callback
 	 */
@@ -63,7 +52,7 @@ export class RedirectHandlerOptions implements RequestOption {
 	 * @param {ShouldRedirect} [shouldRedirect = RedirectHandlerOptions.DEFAULT_SHOULD_RETRY] - The should redirect callback
 	 * @returns An instance of RedirectHandlerOptions
 	 */
-	public constructor(maxRedirects: number = RedirectHandlerOptions.DEFAULT_MAX_REDIRECTS, shouldRedirect: ShouldRedirect = RedirectHandlerOptions.defaultShouldRetry) {
+	public constructor(public maxRedirects: number = RedirectHandlerOptions.DEFAULT_MAX_REDIRECTS, public shouldRedirect: ShouldRedirect = RedirectHandlerOptions.defaultShouldRetry) {
 		if (maxRedirects > RedirectHandlerOptions.MAX_MAX_REDIRECTS) {
 			const error = new Error(`MaxRedirects should not be more than ${RedirectHandlerOptions.MAX_MAX_REDIRECTS}`);
 			error.name = "MaxLimitExceeded";
@@ -78,8 +67,7 @@ export class RedirectHandlerOptions implements RequestOption {
 		this.shouldRedirect = shouldRedirect;
 	}
 
-	public getKey(): string {
-		// TODO
-		return "";
+    public getKey(): string {
+		return RedirectHandlerOptionKey;
 	}
 }

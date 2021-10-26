@@ -1,3 +1,4 @@
+
 /**
  * -------------------------------------------------------------------------------------------
  * Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.
@@ -13,7 +14,7 @@ const config = [{
     output: {
         file: "dist/es/test/index.js",
         format: "esm",
-        name: "MicrosoftGraph",
+        name: "MicrosoftKiotaAbstractionsTest",
     },
     plugins: [
         commonjs({ include: ["node_modules/**"] }),

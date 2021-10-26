@@ -32,8 +32,7 @@ export class DefaultFetchHandler implements Middleware {
 	 * @param {Context} context - The request context object
 	 * @returns A promise that resolves to nothing
 	 */
-	public async execute(context: MiddlewareContext): Promise<void> {
-		context.response = (await fetch(context.request, context.options as RequestInit)) as FetchResponse;
-		return;
+	public async execute(context: MiddlewareContext): Promise<FetchResponse> {
+		return (await fetch(context.request, context.options as RequestInit)) as FetchResponse;
 	}
 }

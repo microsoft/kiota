@@ -13,7 +13,7 @@ const config = [{
     output: {
         file: "dist/es/test/index.js",
         format: "esm",
-        name: "MicrosoftGraph",
+        name: "MicrosoftKiotaHttpFetchTest",
     },
     plugins: [
         commonjs({ include: ["node_modules/**"] }),

@@ -23,8 +23,7 @@
         "./dist/es/src/index.js": "./dist/es/src/browser/index.js",
         "./dist/es/src/utils/utils.js": "./dist/es/src/utils/browser/utils.js",
         "./dist/es/src/middlewares/defaultFetchHandler.js": "./dist/es/src/middlewares/browser/defaultFetchHandler.js",
-        "./dist/es/src/middlewares/middlewareFactory.js": "./dist/es/src/middlewares/browser/middlewareFactory.js",
-        "./dist/cjs/src/middlewares/middlewareFactory.js": "./dist/es/src/middlewares/browser/middlewareFactory.js"
+        "./dist/es/src/middlewares/middlewareFactory.js": "./dist/es/src/middlewares/browser/middlewareFactory.js"
     },
     "types": "dist/cjs/src/index.d.ts",
     "files": [

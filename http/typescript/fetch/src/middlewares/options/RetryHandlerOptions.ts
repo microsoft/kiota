@@ -19,6 +19,8 @@ import { FetchRequestInit, FetchResponse } from "../../utils/fetchDefinitions";
  */
 export type ShouldRetry = (delay: number, attempt: number, request: string, options: FetchRequestInit | undefined, response: FetchResponse) => boolean;
 
+export const RetryHandlerOptionKey = "RetryHandlerOptionKey";
+
 /**
  * @class
  * @implements Middleware
@@ -129,7 +131,6 @@ export class RetryHandlerOptions implements RequestOption {
 	}
 
 	public getKey(): string {
-		// TODO
-		return "";
+		return RetryHandlerOptionKey;
 	}
 }

@@ -52,22 +52,22 @@ export class RequestInformation {
 	 * Fetch Request Options : https://developer.mozilla.org/en-US/docs/Web/API/Request#properties
 	 * https://github.com/microsoftgraph/msgraph-sdk-javascript/pull/105
 	 */
-	private _requestOptions = new Map<string, RequestOption>();
+	private _requestOptions: Record<string, RequestOption> = {};
 	/** Gets the request options for the request. */
-	public getRequestOptions() {
-		return this._requestOptions.values();
+	public getRequestOptions(): Record<string, RequestOption> {
+		return this._requestOptions;
 	}
 	public addRequestOptions(...options: RequestOption[]) {
 		if (!options || options.length === 0) return;
 		options.forEach((option) => {
-			this._requestOptions.set(option.getKey(), option);
+			this._requestOptions[option.constructor()] = option;
 		});
 	}
 	/** Removes the request options for the request. */
 	public removeRequestOptions(...options: RequestOption[]) {
 		if (!options || options.length === 0) return;
 		options.forEach((option) => {
-			this._requestOptions.delete(option.getKey());
+			delete this._requestOptions[option.getKey()];
 		});
 	}
 	private static binaryContentType = "application/octet-stream";
