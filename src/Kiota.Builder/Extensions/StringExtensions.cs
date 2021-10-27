@@ -66,5 +66,7 @@ namespace Kiota.Builder.Extensions {
             var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
             return hash.Select(b => b.ToString("x2")).Aggregate((x, y) => x + y);
         }
+        public static string SanitizeUrlTemplateParameterName(this string original) =>
+            original?.Replace('-', '_');
     }
 }

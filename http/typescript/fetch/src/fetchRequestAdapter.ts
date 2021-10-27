@@ -1,7 +1,6 @@
 import { AuthenticationProvider, BackingStoreFactory, BackingStoreFactorySingleton, RequestAdapter, Parsable, ParseNodeFactory, RequestInformation, ResponseHandler, ParseNodeFactoryRegistry, enableBackingStoreForParseNodeFactory, SerializationWriterFactoryRegistry, enableBackingStoreForSerializationWriterFactory, SerializationWriterFactory } from '@microsoft/kiota-abstractions';
 import { Headers as FetchHeadersCtor } from 'cross-fetch';
 import { ReadableStream } from 'web-streams-polyfill';
-import { URLSearchParams } from 'url';
 import { HttpClient } from './httpClient';
 export class FetchRequestAdapter implements RequestAdapter {
     public getSerializationWriterFactory(): SerializationWriterFactory {
@@ -174,7 +173,7 @@ export class FetchRequestAdapter implements RequestAdapter {
         await this.authenticationProvider.authenticateRequest(requestInfo);
         
         const request = this.getRequestFromRequestInformation(requestInfo);
-        return await this.httpClient.fetch(this.getRequestUrl(requestInfo), request);
+        return await this.httpClient.fetch(requestInfo.URL.toString(), request);
     }
     private getRequestFromRequestInformation = (requestInfo: RequestInformation): RequestInit => {
         const request = {
@@ -185,16 +184,4 @@ export class FetchRequestAdapter implements RequestAdapter {
         requestInfo.headers?.forEach((v, k) => (request.headers as Headers).set(k, v));
         return request;
     }
-    private getRequestUrl = (requestInfo: RequestInformation) : string => {
-        let url = requestInfo.URI ?? '';
-        if(requestInfo.queryParameters?.size ?? -1 > 0) {
-            const queryParametersBuilder = new URLSearchParams();
-            requestInfo.queryParameters?.forEach((v, k) => {
-                queryParametersBuilder.append(k, `${v}`);
-            });
-            url = url + '?' + queryParametersBuilder.toString();
-        }
-        return url;
-    }
-
 }

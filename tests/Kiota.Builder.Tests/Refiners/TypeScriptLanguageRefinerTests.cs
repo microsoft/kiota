@@ -18,6 +18,8 @@ namespace Kiota.Builder.Refiners.Tests {
         private const string HttpCoreDefaultName = "IRequestAdapter";
         private const string FactoryDefaultName = "ISerializationWriterFactory";
         private const string DeserializeDefaultName = "IDictionary<string, Action<Model, IParseNode>>";
+        private const string PathParametersDefaultName = "Dictionary<string, object>";
+        private const string PathParametersDefaultValue = "new Dictionary<string, object>";
         private const string DateTimeOffsetDefaultName = "DateTimeOffset";
         private const string AddiationalDataDefaultName = "new Dictionary<string, object>()";
         private const string HandlerDefaultName = "IResponseHandler";
@@ -56,6 +58,13 @@ namespace Kiota.Builder.Refiners.Tests {
                 Type = new CodeType {
                     Name = AddiationalDataDefaultName
                 }
+            }, new () {
+                Name = "pathParameters",
+                PropertyKind = CodePropertyKind.PathParameters,
+                Type = new CodeType {
+                    Name = PathParametersDefaultName
+                },
+                DefaultValue = PathParametersDefaultValue
             });
             var executorMethod = model.AddMethod(new CodeMethod {
                 Name = "executor",
@@ -86,14 +95,31 @@ namespace Kiota.Builder.Refiners.Tests {
                     Name = serializerDefaultName,
                 }
             });
+            var constructorMethod = model.AddMethod(new CodeMethod {
+                Name = "constructor",
+                MethodKind = CodeMethodKind.Constructor,
+                ReturnType = new CodeType {
+                    Name = "void"
+                }
+            }).First();
+            constructorMethod.AddParameter(new CodeParameter {
+                Name = "pathParameters",
+                ParameterKind = CodeParameterKind.PathParameters,
+                Type = new CodeType {
+                    Name = PathParametersDefaultName
+                },
+            });
             ILanguageRefiner.Refine(new GenerationConfiguration{ Language = GenerationLanguage.TypeScript }, root);
             Assert.Empty(model.Properties.Where(x => HttpCoreDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.Properties.Where(x => FactoryDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.Properties.Where(x => DateTimeOffsetDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.Properties.Where(x => AddiationalDataDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.Properties.Where(x => PathParametersDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.Properties.Where(x => PathParametersDefaultValue.Equals(x.DefaultValue)));
             Assert.Empty(model.Methods.Where(x => DeserializeDefaultName.Equals(x.ReturnType.Name)));
             Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => HandlerDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
+            Assert.Single(constructorMethod.Parameters.Where(x => x.Type is CodeUnionType));
         }
         [Fact]
         public void AliasesDuplicateUsingSymbols() {

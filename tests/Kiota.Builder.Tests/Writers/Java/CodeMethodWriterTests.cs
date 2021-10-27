@@ -47,16 +47,15 @@ namespace Kiota.Builder.Writers.Java.Tests {
                 PropertyKind = CodePropertyKind.RequestAdapter,
             });
             parentClass.AddProperty(new CodeProperty {
-                Name = "isRawUrl",
-                PropertyKind = CodePropertyKind.RawUrl,
+                Name = "pathParameters",
+                PropertyKind = CodePropertyKind.PathParameters,
+                Type = new CodeType {
+                    Name = "string",
+                }
             });
             parentClass.AddProperty(new CodeProperty {
-                Name = "currentPath",
-                PropertyKind = CodePropertyKind.CurrentPath,
-            });
-            parentClass.AddProperty(new CodeProperty {
-                Name = "pathSegment",
-                PropertyKind = CodePropertyKind.PathSegment,
+                Name = "urlTemplate",
+                PropertyKind = CodePropertyKind.UrlTemplate,
             });
         }
         private void AddSerializationProperties() {
@@ -191,7 +190,8 @@ namespace Kiota.Builder.Writers.Java.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("final RequestInformation requestInfo = new RequestInformation()", result);
-            Assert.Contains("this.setUri", result);
+            Assert.Contains("urlTemplate =", result);
+            Assert.Contains("pathParameters =", result);
             Assert.Contains("httpMethod = HttpMethod.GET", result);
             Assert.Contains("h.accept(requestInfo.headers)", result);
             Assert.Contains("AddQueryParameters", result);
@@ -385,20 +385,27 @@ namespace Kiota.Builder.Writers.Java.Tests {
         }
         [Fact]
         public void WritesIndexer() {
+            AddRequestProperties();
             method.MethodKind = CodeMethodKind.IndexerBackwardCompatibility;
-            method.PathSegment = "somePath";
+            method.OriginalIndexer = new CodeIndexer {
+                Name = "idx",
+                IndexType = new CodeType {
+                    Name = "int"
+                },
+                ParameterName = "collectionId"
+            };
             writer.Write(method);
             var result = tw.ToString();
+            Assert.Contains("collectionId", result);
             Assert.Contains("requestAdapter", result);
-            Assert.Contains("pathSegment", result);
-            Assert.Contains("+ id", result);
+            Assert.Contains("pathParameters", result);
+            Assert.Contains("id", result);
             Assert.Contains("return new", result);
-            Assert.Contains(method.PathSegment, result);
         }
         [Fact]
         public void WritesPathParameterRequestBuilder() {
+            AddRequestProperties();
             method.MethodKind = CodeMethodKind.RequestBuilderWithParameters;
-            method.PathSegment = "somePath";
             method.AddParameter(new CodeParameter {
                 Name = "pathParam",
                 ParameterKind = CodeParameterKind.Path,
@@ -409,7 +416,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("requestAdapter", result);
-            Assert.Contains("pathSegment", result);
+            Assert.Contains("pathParameters", result);
             Assert.Contains("pathParam", result);
             Assert.Contains("return new", result);
         }
@@ -468,15 +475,50 @@ namespace Kiota.Builder.Writers.Java.Tests {
             method.MethodKind = CodeMethodKind.Constructor;
             var defaultValue = "someVal";
             var propName = "propWithDefaultValue";
+            parentClass.ClassKind = CodeClassKind.RequestBuilder;
             parentClass.AddProperty(new CodeProperty {
                 Name = propName,
                 DefaultValue = defaultValue,
-                PropertyKind = CodePropertyKind.PathSegment,
+                PropertyKind = CodePropertyKind.UrlTemplate,
+            });
+            AddRequestProperties();
+            method.AddParameter(new CodeParameter {
+                Name = "pathParameters",
+                ParameterKind = CodeParameterKind.PathParameters,
+                Type = new CodeType {
+                    Name = "Map<String, String>"
+                }
             });
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
             Assert.Contains($"this.{propName} = {defaultValue}", result);
+            Assert.Contains("new Map<String, String>(pathParameters)", result);
+        }
+        [Fact]
+        public void WritesRawUrlConstructor() {
+            method.MethodKind = CodeMethodKind.RawUrlConstructor;
+            var defaultValue = "someVal";
+            var propName = "propWithDefaultValue";
+            parentClass.ClassKind = CodeClassKind.RequestBuilder;
+            parentClass.AddProperty(new CodeProperty {
+                Name = propName,
+                DefaultValue = defaultValue,
+                PropertyKind = CodePropertyKind.UrlTemplate,
+            });
+            AddRequestProperties();
+            method.AddParameter(new CodeParameter {
+                Name = "rawUrl",
+                ParameterKind = CodeParameterKind.RawUrl,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            });
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+            Assert.Contains($"this.{propName} = {defaultValue}", result);
+            Assert.Contains($"urlTplParams.put(\"request-raw-url\", rawUrl);", result);
         }
         [Fact]
         public void WritesApiConstructor() {

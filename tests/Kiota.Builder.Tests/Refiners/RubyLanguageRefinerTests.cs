@@ -37,6 +37,24 @@ namespace Kiota.Builder.Refiners.Tests {
         #endregion
         #region RubyLanguageRefinerTests
         [Fact]
+        public void CorrectsCoreTypes() {
+            var model = root.AddClass(new CodeClass {
+                Name = "rb",
+                ClassKind = CodeClassKind.RequestBuilder
+            }).First();
+            var property = model.AddProperty(new CodeProperty {
+                Name = "name",
+                Type = new CodeType {
+                    Name = "string",
+                    IsExternal = true
+                },
+                PropertyKind = CodePropertyKind.PathParameters,
+                DefaultValue = "wrongDefaultValue"
+            }).First();
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
+            Assert.Equal("Hash.new", property.DefaultValue);
+        }
+        [Fact]
         public void EscapesReservedKeywords() {
             var model = root.AddClass(new CodeClass {
                 Name = "break",

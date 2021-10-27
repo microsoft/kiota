@@ -1,2 +1,4 @@
 github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
 github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+github.com/yosida95/uritemplate/v3 v3.0.1 h1:+Fs//CsT+x231WmUQhMHWMxZizMvpnkOVWop02mVCfs=
+github.com/yosida95/uritemplate/v3 v3.0.1/go.mod h1:ILOh0sOhIJR3+L/8afwt/kE++YT040gmv5BQTMR2HP4=
