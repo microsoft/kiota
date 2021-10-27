@@ -29,10 +29,10 @@ func NewNetHttpMiddlewareClient() (*NetHttpMiddlewareClient, error) {
 func NewNetHttpMiddlewareClientWithMiddlewares(middlewares []Middleware) (*NetHttpMiddlewareClient, error) {
 	if len(middlewares) == 0 {
 		middlewares = GetDefaultMiddlewares()
-		err := ChainMiddlewares(middlewares)
-		if err != nil {
-			return nil, err
-		}
+	}
+	err := ChainMiddlewares(middlewares)
+	if err != nil {
+		return nil, err
 	}
 	return &NetHttpMiddlewareClient{
 		middlewares: middlewares,
