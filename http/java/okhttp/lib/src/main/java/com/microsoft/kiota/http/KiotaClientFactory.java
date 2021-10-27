@@ -13,6 +13,16 @@ public class KiotaClientFactory {
      * Creates an OkHttpClient Builder with the default configuration and middlewares.
      * @return an OkHttpClient Builder instance.
      */
+    @Nonnull
+    public static OkHttpClient.Builder Create() {
+        return Create(null);
+    }
+    /**
+     * Creates an OkHttpClient Builder with the default configuration and middlewares.
+     * @param interceptors The interceptors to add to the client. Will default to CreateDefaultInterceptors() if null.
+     * @return an OkHttpClient Builder instance.
+     */
+    @Nonnull
     public static OkHttpClient.Builder Create(@Nullable final Interceptor[] interceptors) {
         final OkHttpClient.Builder builder = new OkHttpClient.Builder(); //TODO configure the default client options.
         final Interceptor[] interceptorsOrDefault = interceptors != null ? interceptors : CreateDefaultInterceptors();
@@ -21,6 +31,10 @@ public class KiotaClientFactory {
         }
         return builder; 
     }
+    /**
+     * Creates the default interceptors for the client.
+     * @return an array of interceptors.
+     */
     @Nonnull
     public static Interceptor[] CreateDefaultInterceptors() {
         return new Interceptor[] {}; //TODO add the list of default interceptors when they are ready
