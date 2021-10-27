@@ -31,19 +31,28 @@ namespace Microsoft.Kiota.Abstractions
             get {
                 if(_rawUri != null)
                     return _rawUri;
-                else if(PathParameters.TryGetValue("request-raw-url", out var rawUrl)) {
-                    URI = new Uri(rawUrl);
+                else if(PathParameters.TryGetValue("request-raw-url", out var rawUrl) &&
+                    rawUrl is string rawUrlString) {
+                    URI = new Uri(rawUrlString);
                     return _rawUri;
                 }
                 else
                 {
                     var parsedUrlTemplate = new UriTemplate(UrlTemplate);
                     foreach(var urlTemplateParameter in PathParameters)
-                        parsedUrlTemplate.SetParameter(urlTemplateParameter.Key, urlTemplateParameter.Value);
+                    {
+                        // if the value is boolean, lets pass in a lowercase string as the final url will be uppercase due to the way ToString() works for booleans
+                        var sanitizedValue = (urlTemplateParameter.Value is bool boolValue) ? boolValue.ToString().ToLower() : urlTemplateParameter.Value;
+                        parsedUrlTemplate.SetParameter(urlTemplateParameter.Key, sanitizedValue);
+                    }
 
                     foreach(var queryStringParameter in QueryParameters)
                         if(queryStringParameter.Value != null)
-                            parsedUrlTemplate.SetParameter(queryStringParameter.Key, queryStringParameter.Value);
+                        {
+                            // if the value is boolean, lets pass in a lowercase string as the final url will be uppercase due to the way ToString() works for booleans
+                            var sanitizedValue = (queryStringParameter.Value is bool boolValue) ? boolValue.ToString().ToLower() : queryStringParameter.Value;
+                            parsedUrlTemplate.SetParameter(queryStringParameter.Key, sanitizedValue);
+                        }
                     return new Uri(parsedUrlTemplate.Resolve());
                 }
             }
@@ -55,7 +64,7 @@ namespace Microsoft.Kiota.Abstractions
         /// <summary>
         /// The path parameters to use for the URL template when generating the URI.
         /// </summary>
-        public IDictionary<string, string> PathParameters { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        public IDictionary<string, object> PathParameters { get; set; } = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
         /// <summary>
         ///  The <see cref="HttpMethod">HTTP method</see> of the request.
         /// </summary>

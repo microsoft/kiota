@@ -28,15 +28,14 @@ namespace Kiota.Builder.Writers.TypeScript {
             var urlTemplateParams = urlTemplateVarName ?? $"this.{pathParametersProperty.Name}";
             writer.WriteLines($"return new {returnType}({urlTemplateParams}, this.{requestAdapterProp.Name}{codePathParametersSuffix});");
         }
-        internal string TempDictionaryVarName = "urlTplParams";
+        public override string TempDictionaryVarName => "urlTplParams";
         internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
             if(pathParametersType == null) return;
             writer.WriteLine($"const {TempDictionaryVarName} = getPathParameters({pathParametersReference});");
             if(parameters.Any())
-                writer.WriteLines(parameters.Select(p => {
-                    var stringSuffix = p.Item1.Name.Equals("string", StringComparison.OrdinalIgnoreCase) ? string.Empty : ".toString()";
-                    return $"{p.Item3} && {TempDictionaryVarName}.set(\"{p.Item2}\", {p.Item3}{stringSuffix});";
-                }).ToArray());
+                writer.WriteLines(parameters.Select(p => 
+                    $"{p.Item3} && {TempDictionaryVarName}.set(\"{p.Item2}\", {p.Item3});"
+                ).ToArray());
         }
         #pragma warning restore CA1822 // Method should be static
         public override string GetAccessModifier(AccessModifier access)

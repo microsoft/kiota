@@ -14,12 +14,13 @@ namespace Microsoft.Kiota.Abstractions.Tests
             var testRequest = new RequestInformation()
             {
                 HttpMethod = HttpMethod.GET,
-                UrlTemplate = "http://localhost/me?foo={foo}"
+                UrlTemplate = "http://localhost/{path}/me?foo={foo}"
             };
             // Act
             testRequest.QueryParameters.Add("foo", "bar");
+            testRequest.PathParameters.Add("path", "baz");
             // Assert
-            Assert.Equal("http://localhost/me?foo=bar", testRequest.URI.ToString());
+            Assert.Equal("http://localhost/baz/me?foo=bar", testRequest.URI.ToString());
             Assert.NotEmpty(testRequest.QueryParameters);
             Assert.Equal("foo",testRequest.QueryParameters.First().Key);
             Assert.Equal("bar", testRequest.QueryParameters.First().Value.ToString());

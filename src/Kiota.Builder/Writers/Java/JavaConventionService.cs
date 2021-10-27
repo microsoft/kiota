@@ -87,16 +87,15 @@ namespace Kiota.Builder.Writers.Java {
             var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
             writer.WriteLines($"return new {returnType}({urlTemplateParams}, {requestAdapterProp.Name}{pathParametersSuffix});");
         }
-        internal string TempDictionaryVarName = "urlTplParams";
+        public override string TempDictionaryVarName => "urlTplParams";
         internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
             if(pathParametersType == null) return;
             var mapTypeName = pathParametersType.Name;
             writer.WriteLine($"var {TempDictionaryVarName} = new {mapTypeName}({pathParametersReference});");
             if(parameters.Any())
-                writer.WriteLines(parameters.Select(p => {
-                    var stringSuffix = p.Item1.Name.Equals("string", StringComparison.OrdinalIgnoreCase) ? string.Empty : ".toString()";
-                    return $"{TempDictionaryVarName}.put(\"{p.Item2}\", {p.Item3}{stringSuffix});";
-                }).ToArray());
+                writer.WriteLines(parameters.Select(p =>
+                    $"{TempDictionaryVarName}.put(\"{p.Item2}\", {p.Item3});"
+                ).ToArray());
         }
         #pragma warning restore CA1822 // Method should be static
     }

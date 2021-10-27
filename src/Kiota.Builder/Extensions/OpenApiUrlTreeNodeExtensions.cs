@@ -110,7 +110,7 @@ namespace Kiota.Builder.Extensions {
                     SanitizePathParameterNames(currentNode.Path.Replace('\\', '/')) +
                     queryStringParameters;
         }
-        private static readonly Regex pathParamMatcher = new(@"{[\w-]+}");
+        private static readonly Regex pathParamMatcher = new(@"{[\w-]+}",RegexOptions.Compiled);
         private static string SanitizePathParameterNames(string original) {
             if(string.IsNullOrEmpty(original) || !original.Contains('{')) return original;
             var parameters = pathParamMatcher.Matches(original);

@@ -18,8 +18,8 @@ namespace Kiota.Builder.Refiners.Tests {
         private const string HttpCoreDefaultName = "IRequestAdapter";
         private const string FactoryDefaultName = "ISerializationWriterFactory";
         private const string DeserializeDefaultName = "IDictionary<string, Action<Model, IParseNode>>";
-        private const string PathParametersDefaultName = "Dictionary<string, string>";
-        private const string PathParametersDefaultValue = "new Dictionary<string, string>";
+        private const string PathParametersDefaultName = "Dictionary<string, object>";
+        private const string PathParametersDefaultValue = "new Dictionary<string, object>";
         private const string DateTimeOffsetDefaultName = "DateTimeOffset";
         private const string AddiationalDataDefaultName = "new Dictionary<string, object>()";
         private const string HandlerDefaultName = "IResponseHandler";

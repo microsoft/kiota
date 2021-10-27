@@ -69,7 +69,7 @@ namespace Kiota.Builder.Writers.Go {
                     writer.WriteLine("return nil");
                 break;
             }
-            writer.CloseCurly();
+            writer.CloseBlock();
         }
         private const string TempParamsVarName = "urlParams";
         private static void WriteRawUrlConstructorBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
@@ -103,7 +103,7 @@ namespace Kiota.Builder.Writers.Go {
                 writer.IncreaseIndent();
                 writer.WriteLine($"err {errorVarDeclaration(shouldDeclareErrorVar)}= writer.WriteAdditionalData(m.Get{additionalDataProperty.Name.ToFirstCharacterUpperCase()}())");
                 WriteReturnError(writer);
-                writer.CloseCurly();
+                writer.CloseBlock();
             }
             writer.WriteLine("return nil");
         }
@@ -155,7 +155,7 @@ namespace Kiota.Builder.Writers.Go {
                     writer.IncreaseIndent();
                     writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue};",
                         $"m.Set{codeElement.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}(value);");
-                    writer.CloseCurly();
+                    writer.CloseBlock();
                     writer.WriteLine("return value;");
                 } else
                     writer.WriteLine($"return m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\");");
@@ -191,7 +191,7 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLine($"{parentClassName}: *{moduleName}New{parentClassName}(),");
                 writer.DecreaseIndent();
             }
-            writer.CloseCurly(decreaseIndent: false);
+            writer.CloseBlock(decreaseIndent: false);
             foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
                                                                             CodePropertyKind.RequestBuilder,
                                                                             CodePropertyKind.UrlTemplate,
@@ -237,13 +237,12 @@ namespace Kiota.Builder.Writers.Go {
             else
                 writer.WriteLine($"m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Set(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\", value)");
         }
-        private const string TempMapVarName = "urlTplParams";
         private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType) {
             var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var idParameter = codeElement.Parameters.First();
             conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"m.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}",
                 (idParameter.Type, codeElement.OriginalIndexer.ParameterName, "id"));
-            conventions.AddRequestBuilderBody(parentClass, returnType, writer, urlTemplateVarName: TempMapVarName);
+            conventions.AddRequestBuilderBody(parentClass, returnType, writer, urlTemplateVarName: conventions.TempDictionaryVarName);
         }
         private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
             var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
@@ -282,7 +281,7 @@ namespace Kiota.Builder.Writers.Go {
             }
             writer.WriteLines($"o.(*{parentClass.Name.ToFirstCharacterUpperCase()}).Set{property.Name.ToFirstCharacterUpperCase()}({valueArgument})", 
                             "return nil");
-            writer.CloseCurly();
+            writer.CloseBlock();
         }
         private static void WriteCollectionCast(string propertyTypeImportName, bool isTargetTypeObject, string sourceVarName, string targetVarName, LanguageWriter writer) {
             writer.WriteLines($"{targetVarName} := make([]{propertyTypeImportName}, len({sourceVarName}))",
@@ -292,7 +291,7 @@ namespace Kiota.Builder.Writers.Go {
                         $"*(v.(*{propertyTypeImportName}))" :
                         $"v.({propertyTypeImportName})";
             writer.WriteLine($"{targetVarName}[i] = {castingExpression}");
-            writer.CloseCurly();
+            writer.CloseBlock();
         }
         private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, string returnType, CodeClass parentClass, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
@@ -344,7 +343,7 @@ namespace Kiota.Builder.Writers.Go {
                 _ => $"res.({returnType}), "
             };
             writer.WriteLine($"return {resultReturnCast}nil");
-            writer.CloseCurly();
+            writer.CloseBlock();
         }
         private static void WriteGeneratorMethodCall(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, string prefix) {
             var generatorMethodName = (codeElement.Parent as CodeClass)
@@ -389,21 +388,21 @@ namespace Kiota.Builder.Writers.Go {
                 WriteReturnError(writer, returnType);
                 writer.WriteLine("err = qParams.AddQueryParameters(requestInfo.QueryParameters)");
                 WriteReturnError(writer, returnType);
-                writer.CloseCurly();
+                writer.CloseBlock();
             }
             if(requestParams.headers != null) {
                 writer.WriteLine($"if {requestParams.headers.Name} != nil {{");
                 writer.IncreaseIndent();
                 writer.WriteLine($"err := {requestParams.headers.Name}({RequestInfoVarName}.Headers)");
                 WriteReturnError(writer, returnType);
-                writer.CloseCurly();
+                writer.CloseBlock();
             }
             if(requestParams.options != null) {
                 writer.WriteLine($"if {requestParams.options.Name} != nil {{");
                 writer.IncreaseIndent();
                 writer.WriteLine($"err := {RequestInfoVarName}.AddRequestOptions({requestParams.options.Name})");
                 WriteReturnError(writer, returnType);
-                writer.CloseCurly();
+                writer.CloseBlock();
             }
             writer.WriteLine($"return {RequestInfoVarName}, nil");
         }
@@ -414,7 +413,7 @@ namespace Kiota.Builder.Writers.Go {
             writer.IncreaseIndent();
             var nilsPrefix = GetNilsErrorPrefix(returnTypes);
             writer.WriteLine($"return {nilsPrefix}err");
-            writer.CloseCurly();
+            writer.CloseBlock();
         }
         private static string GetNilsErrorPrefix(params string[] returnTypes) {
             var sanitizedTypes = returnTypes.Where(x => !string.IsNullOrEmpty(x));
@@ -431,7 +430,7 @@ namespace Kiota.Builder.Writers.Go {
                             sanitizedTypes.Aggregate((x,y) => $"{x}, {y}") + ", ";
             var nilsPrefix = GetNilsErrorPrefix(returnTypes);
             writer.WriteLine($"return func() ({typeDeclarationPrefix}error) {{ return {nilsPrefix}err }}");
-            writer.CloseCurly();
+            writer.CloseBlock();
         }
         private string GetDeserializationMethodName(CodeTypeBase propType, CodeClass parentClass) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
@@ -486,15 +485,15 @@ namespace Kiota.Builder.Writers.Go {
                         writer.WriteLine($"{errorPrefix}WriteCollectionOfObjectValues({serializationKey}, {conversionMethodImport}({valueGet}))");
                         WriteReturnError(writer);
                     }
-                    writer.CloseCurly(); //closing the scope for the err var
+                    writer.CloseBlock(); //closing the scope for the err var
                     return;
                 } else if (currentType.TypeDefinition is CodeEnum) {
                     writer.WriteLine($"if {valueGet} != nil {{");
                     writer.IncreaseIndent();
                     writer.WriteLine($"{errorPrefix}WritePrimitiveValue({serializationKey}, {valueGet}.String())");
                     WriteReturnError(writer);
-                    writer.CloseCurly();
-                    writer.CloseCurly(); //closing the scope for the err var
+                    writer.CloseBlock();
+                    writer.CloseBlock(); //closing the scope for the err var
                     return;
                 }
             }
@@ -504,7 +503,7 @@ namespace Kiota.Builder.Writers.Go {
             else
                 writer.WriteLine($"{errorPrefix}WriteObjectValue({serializationKey}, {valueGet})");
             WriteReturnError(writer);
-            writer.CloseCurly();
+            writer.CloseBlock();
         }
         private string GetConversionHelperMethodImport(CodeClass parentClass, string name) {
             var conversionMethodType = new CodeType { Name = name, IsExternal = true };
