@@ -14,16 +14,14 @@ namespace Kiota.Builder.Refiners
         {
             // Remove PathSegment field
             // Convert Properties to AddCommand
-            AddDefaultImports(generatedCode);
+            AddDefaultImports(generatedCode, defaultUsingEvaluators);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
-            //RemoveModelClasses(generatedCode);
-            //RemoveEnums(generatedCode);
-            //RemoveConstructors(generatedCode);
             CreateCommandBuilders(generatedCode);
             AddAsyncSuffix(generatedCode);
             AddInnerClasses(generatedCode, false);
+            AddParsableInheritanceForModelClasses(generatedCode);
             CapitalizeNamespacesFirstLetters(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");
             MakeEnumPropertiesNullable(generatedCode);
@@ -139,6 +137,7 @@ namespace Kiota.Builder.Refiners
                     clone.ReturnType = CreateCommandType(clone);
                     clone.MethodKind = CodeMethodKind.CommandBuilder;
                     clone.OriginalMethod = requestMethod;
+                    clone.SimpleName = cmdName;
                     clone.ClearParameters();
                     currentClass.AddMethod(clone);
                 }
@@ -153,7 +152,7 @@ namespace Kiota.Builder.Refiners
                         IsAsync = false,
                         MethodKind = CodeMethodKind.CommandBuilder,
                         ReturnType = new CodeType { Name = "Command", IsExternal = true },
-                        OriginalMethod = clientConstructor
+                        OriginalMethod = clientConstructor,
                     };
                     currentClass.AddMethod(rootMethod);
                 }
@@ -178,22 +177,69 @@ namespace Kiota.Builder.Refiners
             codeMethod.MethodKind = CodeMethodKind.CommandBuilder;
             codeMethod.ReturnType = CreateCommandType(codeMethod);
             codeMethod.AccessedProperty = navProperty;
+            codeMethod.SimpleName = navProperty.Name;
             return codeMethod;
         }
 
-        private static readonly string[] defaultNamespacesForClasses = new string[] { "System", "System.Collections.Generic", "System.Linq" };
-        private static readonly string[] defaultNamespacesForRequestBuilders = new string[] { "System.Threading.Tasks", "System.IO", "Microsoft.Kiota.Abstractions", "Microsoft.Kiota.Abstractions.Serialization", "System.CommandLine", "System.CommandLine.Invocation" };
-
-        private static void AddDefaultImports(CodeElement current)
+        private static void AddParsableInheritanceForModelClasses(CodeElement currentElement)
         {
-            if (current is CodeClass currentClass)
+            if (currentElement is CodeClass currentClass &&
+                currentClass.IsOfKind(CodeClassKind.Model) &&
+                currentClass.StartBlock is CodeClass.Declaration declaration)
             {
-                currentClass.AddUsing(defaultNamespacesForClasses.Select(x => new CodeUsing { Name = x }).ToArray());
-                if (currentClass.IsOfKind(CodeClassKind.RequestBuilder))
-                    currentClass.AddUsing(defaultNamespacesForRequestBuilders.Select(x => new CodeUsing { Name = x }).ToArray());
+                declaration.AddImplements(new CodeType
+                {
+                    IsExternal = true,
+                    Name = $"IParsable",
+                });
+                (currentClass.Parent is CodeClass parentClass &&
+                parentClass.StartBlock is CodeClass.Declaration parentDeclaration ?
+                    parentDeclaration :
+                    declaration)
+                    .AddUsings(new CodeUsing
+                    {
+                        Name = "Microsoft.Kiota.Abstractions.Serialization"
+                    });
             }
-            CrawlTree(current, AddDefaultImports);
+            CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
         }
+
+        private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] {
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
+                "Microsoft.Kiota.Abstractions", "IRequestAdapter"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+                "Microsoft.Kiota.Abstractions", "HttpMethod", "RequestInformation", "IRequestOption"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+                "Microsoft.Kiota.Abstractions", "IResponseHandler"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
+                "Microsoft.Kiota.Abstractions.Serialization", "ISerializationWriter"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+                "Microsoft.Kiota.Abstractions.Serialization", "IParseNode"),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
+                "Microsoft.Kiota.Abstractions.Serialization", "IParsable"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+                "Microsoft.Kiota.Abstractions.Serialization", "IParsable"),
+            new (x => x is CodeClass || x is CodeEnum,
+                "System", "String"),
+            new (x => x is CodeClass,
+                "System.Collections.Generic", "List", "Dictionary"),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder),
+                "System.IO", "Stream"),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
+                "System.Threading.Tasks", "Task"),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder),
+                "System.Linq", "Enumerable"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
+                        method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
+                "Microsoft.Kiota.Abstractions.Store",  "IBackingStoreFactory", "IBackingStoreFactorySingleton"),
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
+                "Microsoft.Kiota.Abstractions.Store",  "IBackingStore", "IBackedModel", "BackingStoreFactorySingleton" ),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
+                "System.CommandLine",  "Command", "RootCommand"),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
+                "System.CommandLine.Invocation",  "CommandHandler"),
+        };
+
         private static void CapitalizeNamespacesFirstLetters(CodeElement current)
         {
             if (current is CodeNamespace currentNamespace)

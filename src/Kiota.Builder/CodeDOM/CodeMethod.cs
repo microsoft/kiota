@@ -100,6 +100,12 @@ namespace Kiota.Builder
         /// </summary>
         public CodeIndexer OriginalIndexer { get; set; }
 
+        /// <summary>
+        /// This is currently used for CommandBuilder methods to get the originall name without the Build prefix & Command suffix.
+        /// Avoids regex operations
+        /// </summary>
+        public string SimpleName { get; set; } = String.Empty;
+
         public object Clone()
         {
             var method = new CodeMethod {
