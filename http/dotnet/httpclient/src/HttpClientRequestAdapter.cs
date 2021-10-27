@@ -1,4 +1,4 @@
-﻿// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 //  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
 // ------------------------------------------------------------------------------
 
@@ -218,21 +218,6 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
                     message.Content.Headers.ContentType = new MediaTypeHeaderValue(requestInfo.Headers[ContentTypeHeaderName]);
             }
             return message;
-        }
-
-        private static string GetStringForQueryParameter(object value)
-        {
-            return value switch
-            {
-                null => string.Empty,
-                bool booleanValue =>
-                    // ToString returns True/False with the first character in uppercase
-                    booleanValue.ToString().ToFirstCharacterLowerCase(),
-                IEnumerable<object> collection =>
-                    // the collection could be of booleans for all we know, make sure its cleaned up as well by this same function
-                    string.Join(',', collection.Select(GetStringForQueryParameter)),
-                _ => value.ToString()
-            };
         }
 
         /// <summary>

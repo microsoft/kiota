@@ -40,11 +40,19 @@ namespace Microsoft.Kiota.Abstractions
                 {
                     var parsedUrlTemplate = new UriTemplate(UrlTemplate);
                     foreach(var urlTemplateParameter in PathParameters)
-                        parsedUrlTemplate.SetParameter(urlTemplateParameter.Key, urlTemplateParameter.Value);
+                    {
+                        // if the value is boolean, lets pass in a lowercase string as the final url will be uppercase due to the way ToString() works for booleans
+                        var sanitizedValue = (urlTemplateParameter.Value is bool boolValue) ? boolValue.ToString().ToLower() : urlTemplateParameter.Value;
+                        parsedUrlTemplate.SetParameter(urlTemplateParameter.Key, sanitizedValue);
+                    }
 
                     foreach(var queryStringParameter in QueryParameters)
                         if(queryStringParameter.Value != null)
-                            parsedUrlTemplate.SetParameter(queryStringParameter.Key, queryStringParameter.Value);
+                        {
+                            // if the value is boolean, lets pass in a lowercase string as the final url will be uppercase due to the way ToString() works for booleans
+                            var sanitizedValue = (queryStringParameter.Value is bool boolValue) ? boolValue.ToString().ToLower() : queryStringParameter.Value;
+                            parsedUrlTemplate.SetParameter(queryStringParameter.Key, sanitizedValue);
+                        }
                     return new Uri(parsedUrlTemplate.Resolve());
                 }
             }
