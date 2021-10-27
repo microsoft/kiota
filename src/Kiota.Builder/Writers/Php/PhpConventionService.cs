@@ -58,10 +58,11 @@ namespace Kiota.Builder.Writers.Php
             var typeString = GetTypeString(parameter.Type, parameter);
             var parameterSuffix = parameter.ParameterKind switch
             {
-                CodeParameterKind.Headers or CodeParameterKind.Options => $"array ${(parameter.ParameterKind == CodeParameterKind.Options ? "options" : "")}",
+                CodeParameterKind.Headers or CodeParameterKind.Options => $"array ${(parameter.ParameterKind == CodeParameterKind.Options ? "options" : "headers")}",
                 CodeParameterKind.RequestBody => $"{typeString} $body",
-                CodeParameterKind.RequestAdapter => $"{typeString} ${RequestAdapterPropertyName}",
-                CodeParameterKind.ResponseHandler => $"{typeString} ${ResponseHandlerPropertyName}",
+                CodeParameterKind.RequestAdapter => $"RequestAdapter {RequestAdapterPropertyName}",
+                CodeParameterKind.ResponseHandler => $"ResponseHandler {ResponseHandlerPropertyName}",
+                CodeParameterKind.QueryParameter => $"GetQueryParameters $queryParameters",
                 CodeParameterKind.Serializer => "SerializationWriter $writer",
                 _ => $"{typeString} ${parameter.Name.ToFirstCharacterLowerCase()}"
 
