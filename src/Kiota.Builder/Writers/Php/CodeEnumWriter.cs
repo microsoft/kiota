@@ -11,7 +11,7 @@ namespace Kiota.Builder.Writers.Php
             conventions.WritePhpDocumentStart(writer);
             if (codeElement?.Parent is CodeNamespace enumNamespace)
             {
-                writer.WriteLine($"namespace {enumNamespace.Name};");
+                writer.WriteLine($"namespace {conventions.ReplaceDotsWithSlashInNamespaces(enumNamespace.Name)};");
             }
             writer.WriteLine();
             writer.WriteLine($"class {codeElement?.Name.ToFirstCharacterUpperCase()} {{");

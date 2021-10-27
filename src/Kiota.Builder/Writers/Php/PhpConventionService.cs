@@ -25,9 +25,11 @@ namespace Kiota.Builder.Writers.Php
 
         private static string CurrentPathPropertyName => "$currentPath";
 
-        private static string HttpCorePropertyName => "$httpCore";
+        private static string RequestAdapterPropertyName => "$requestAdapter";
 
         public override string ParseNodeInterfaceName => "ParseNode";
+
+        public static string ResponseHandlerPropertyName => "$responseHandler";
 
         public string DocCommentStart = "/**";
         public string DocCommentEnd = "*/";
@@ -56,15 +58,15 @@ namespace Kiota.Builder.Writers.Php
             var typeString = GetTypeString(parameter.Type, parameter);
             var parameterSuffix = parameter.ParameterKind switch
             {
-                CodeParameterKind.Headers => "array $headers",
+                CodeParameterKind.Headers or CodeParameterKind.Options => $"array ${(parameter.ParameterKind == CodeParameterKind.Options ? "options" : "")}",
                 CodeParameterKind.RequestBody => $"{typeString} $body",
-                CodeParameterKind.RequestAdapter => "RequestAdapter $requestAdapter",
-                CodeParameterKind.Options => "array $options",
-                CodeParameterKind.ResponseHandler => "ResponseHandler $responseHandler",
-                _ => $"{GetTypeString(parameter.Type, parameter)} ${parameter.Name.ToFirstCharacterLowerCase()}"
+                CodeParameterKind.RequestAdapter => $"{typeString} ${RequestAdapterPropertyName}",
+                CodeParameterKind.ResponseHandler => $"{typeString} ${ResponseHandlerPropertyName}",
+                CodeParameterKind.Serializer => "SerializationWriter $writer",
+                _ => $"{typeString} ${parameter.Name.ToFirstCharacterLowerCase()}"
 
             };
-            return $"{(parameter.Optional ? String.Empty : "?")}{parameterSuffix}";
+            return $"{(!parameter.Optional ? String.Empty : "?")}{parameterSuffix}";
         }
 
         public string GetParameterSignature(CodeParameter parameter, CodeMethod codeMethod)
@@ -82,7 +84,7 @@ namespace Kiota.Builder.Writers.Php
             var parameterSignature = GetParameterSignature(parameter, codeElement).Trim().Split(' ');
             return parameter.Optional switch
             {
-                true => $"{parameterSignature[0]}|null {parameterSignature[1]}",
+                true => $"{parameterSignature[0].Trim('?')}|null {parameterSignature[1]}",
                 _ => string.Join(' ', parameterSignature)
             };
         }
@@ -103,7 +105,7 @@ namespace Kiota.Builder.Writers.Php
         public void AddRequestBuilderBody(bool addCurrentPathProperty, string returnType, LanguageWriter writer, string suffix = default)
         {
             var currentPath = addCurrentPathProperty ? $"$this->{RemoveDollarSignFromPropertyName(CurrentPathPropertyName)} . " : string.Empty;
-            writer.WriteLines($"return new {returnType}({currentPath}$this->{RemoveDollarSignFromPropertyName(PathSegmentPropertyName)}{suffix}, $this->{RemoveDollarSignFromPropertyName(HttpCorePropertyName)});");
+            writer.WriteLines($"return new {returnType}({currentPath}$this->{RemoveDollarSignFromPropertyName(PathSegmentPropertyName)}{suffix}, $this->{RemoveDollarSignFromPropertyName(RequestAdapterPropertyName)});");
         }
 
         private static string RemoveDollarSignFromPropertyName(string propertyName)
@@ -176,7 +178,7 @@ namespace Kiota.Builder.Writers.Php
             }
         }
 
-        private static string ReplaceDotsWithSlashInNamespaces(string namespaced)
+        public string ReplaceDotsWithSlashInNamespaces(string namespaced)
         {
             var parts = namespaced.Split('.');
             return string.Join('\\', parts.Select(x => x.ToFirstCharacterUpperCase()));
