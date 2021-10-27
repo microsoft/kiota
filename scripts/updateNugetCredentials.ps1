@@ -5,4 +5,4 @@ $userEntry = $nugetConfigFileContent.configuration.packageSourceCredentials.GitH
 $userEntry.value = $username
 $tokenEntry = $nugetConfigFileContent.configuration.packageSourceCredentials.GitHub.add | Where-Object {$_.key -eq "ClearTextPassword"} | Select-Object -First 1
 $tokenEntry.value = $apiToken
-$nugetConfigFileContent.Save($nugetFileAbsolutePath)
+Set-Content -Path $nugetFileAbsolutePath -Value $nugetConfigFileContent.InnerXml -Encoding UTF8
