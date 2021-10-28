@@ -19,7 +19,7 @@ namespace Kiota.Builder.Writers.Php
             var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
             var inherits = (parentClass?.StartBlock as CodeClass.Declaration)?.Inherits != null;
             var orNullReturn = codeElement.ReturnType.IsNullable ? new[]{"?", "|null"} : new[] {string.Empty, string.Empty};
-            var currentPathProperty = parentClass?.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
+            var currentPathProperty = parentClass?.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.PathParameters));
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
@@ -73,7 +73,7 @@ namespace Kiota.Builder.Writers.Php
             foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData,
                                                                             CodePropertyKind.BackingStore,
                                                                             CodePropertyKind.RequestBuilder,
-                                                                            CodePropertyKind.PathSegment)
+                                                                            CodePropertyKind.PathParameters)
                                             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
                                             .OrderByDescending(x => x.PropertyKind)
                                             .ThenBy(x => x.Name)) {
@@ -81,7 +81,7 @@ namespace Kiota.Builder.Writers.Php
             }
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
-                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.CurrentPath, CodePropertyKind.CurrentPath, writer);
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer);
             }
         }
         private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
@@ -254,26 +254,27 @@ namespace Kiota.Builder.Writers.Php
         }
         
         private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"$this->{property.Name}";
-        private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer) {
+        private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer) 
+        {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
-            var currentPathProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.CurrentPath).FirstOrDefault();
-            var pathSegmentProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.PathSegment).FirstOrDefault();
-            var rawUrlProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.RawUrl).FirstOrDefault();
-            var requestAdapterProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.RequestAdapter).FirstOrDefault();
+            var urlTemplateParamsProperty = currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
+            var urlTemplateProperty = currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate);
+            var requestAdapterProperty = currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             writer.WriteLines($"{RequestInfoVarName} = new RequestInformation();",
-                                $"{RequestInfoVarName}->setUri({GetPropertyCall(currentPathProperty, "''")}, {GetPropertyCall(pathSegmentProperty, "''")}, {GetPropertyCall(rawUrlProperty, "false")});",
-                                $"{RequestInfoVarName}->httpMethod = HttpMethod::{codeElement?.HttpMethod?.ToString().ToUpperInvariant()};");
+                                $"{RequestInfoVarName}->urlTemplate = {GetPropertyCall(urlTemplateProperty, "''")};",
+                                $"{RequestInfoVarName}->pathParameters = {GetPropertyCall(urlTemplateParamsProperty, "''")};",
+                                $"{RequestInfoVarName}->httpMethod = HttpMethod::{codeElement.HttpMethod.ToString().ToUpperInvariant()};");
             if(requestParams.headers != null)
-                writer.WriteLine($"{RequestInfoVarName}->setHeadersFromRawObject($headers);");
+                writer.WriteLine($"{RequestInfoVarName}.setHeadersFromRawObject($headers);");
             if(requestParams.queryString != null)
-                writer.WriteLines($"{RequestInfoVarName}->setQueryStringParametersFromRawObject($queryStringParams);");
+                writer.WriteLines($"{RequestInfoVarName}->setQueryStringParametersFromRawObject($queryString);");
             if(requestParams.requestBody != null) {
                 if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{RequestInfoVarName}->setStreamContent(${requestParams.requestBody.Name});");
                 else {
                     var spreadOperator = requestParams.requestBody.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
-                    writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable($this->{requestAdapterProperty?.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {spreadOperator}${requestParams.requestBody.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {spreadOperator}${requestParams.requestBody.Name});");
                 }
             }
             if(requestParams.options != null)

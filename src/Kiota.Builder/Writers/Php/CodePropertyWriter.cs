@@ -14,7 +14,7 @@ namespace Kiota.Builder.Writers.Php
             var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
             var currentPathProperty = codeElement.Parent.GetChildElements(true)
                 .OfType<CodeProperty>()
-                .FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
+                .FirstOrDefault(x => x.IsOfKind(CodePropertyKind.PathParameters));
             
             switch (codeElement.PropertyKind)
             {

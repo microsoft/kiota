@@ -6,6 +6,11 @@ namespace Kiota.Builder.Writers.Php
 {
     public class PhpConventionService: CommonLanguageConventionService
     {
+        public override string TempDictionaryVarName
+        {
+            get;
+        }
+
         public override string GetAccessModifier(AccessModifier access)
         {
             return (access) switch
