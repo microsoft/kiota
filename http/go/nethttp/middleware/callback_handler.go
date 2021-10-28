@@ -33,7 +33,7 @@ func NewCallbackHandler(requestCallback func(*nethttp.Request) error, responseCa
 
 func (c *CallbackHandler) Do(req *nethttp.Request, options []abs.RequestOption) (*nethttp.Response, error) {
 	if c.next == nil {
-		return nil, errors.New("telemetry handler: the next middleware is nil")
+		return nil, errors.New("callback handler: the next middleware is nil")
 	}
 	if c.requestCallback != nil {
 		err := c.requestCallback(req)
