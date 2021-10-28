@@ -20,7 +20,7 @@ type NetHttpRequestAdapter struct {
 	// parseNodeFactory is the factory used to create parse nodes
 	parseNodeFactory absser.ParseNodeFactory
 	// httpClient is the client used to send requests
-	httpClient *NetHttpMiddlewareClient
+	httpClient *nethttp.Client
 	// authenticationProvider is the provider used to authenticate requests
 	authenticationProvider absauth.AuthenticationProvider
 }
@@ -63,7 +63,7 @@ func NewNetHttpRequestAdapterWithParseNodeFactoryAndSerializationWriterFactory(a
 // httpClient: the client used to send requests
 // Returns:
 // a new NetHttpRequestAdapter
-func NewNetHttpRequestAdapterWithParseNodeFactoryAndSerializationWriterFactoryAndHttpClient(authenticationProvider absauth.AuthenticationProvider, parseNodeFactory absser.ParseNodeFactory, serializationWriterFactory absser.SerializationWriterFactory, httpClient *NetHttpMiddlewareClient) (*NetHttpRequestAdapter, error) {
+func NewNetHttpRequestAdapterWithParseNodeFactoryAndSerializationWriterFactoryAndHttpClient(authenticationProvider absauth.AuthenticationProvider, parseNodeFactory absser.ParseNodeFactory, serializationWriterFactory absser.SerializationWriterFactory, httpClient *nethttp.Client) (*NetHttpRequestAdapter, error) {
 	if authenticationProvider == nil {
 		return nil, errors.New("authenticationProvider cannot be nil")
 	}
@@ -74,10 +74,7 @@ func NewNetHttpRequestAdapterWithParseNodeFactoryAndSerializationWriterFactoryAn
 		authenticationProvider:     authenticationProvider,
 	}
 	if result.httpClient == nil {
-		defaultClient, err := NewNetHttpMiddlewareClient()
-		if err != nil {
-			return nil, err
-		}
+		defaultClient := GetDefaultClient()
 		result.httpClient = defaultClient
 	}
 	if result.serializationWriterFactory == nil {
@@ -103,7 +100,8 @@ func (a *NetHttpRequestAdapter) getHttpResponseMessage(requestInfo abs.RequestIn
 	if err != nil {
 		return nil, err
 	}
-	return (*a.httpClient).Do(request, requestInfo.GetRequestOptions())
+	// TODO set the request context from requestInfo.GetRequestOptions()
+	return (*a.httpClient).Do(request)
 }
 func (a *NetHttpRequestAdapter) getResponsePrimaryContentType(response *nethttp.Response) string {
 	if response.Header == nil {

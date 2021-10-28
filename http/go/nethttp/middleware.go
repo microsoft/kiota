@@ -1,23 +1,15 @@
 package nethttplibrary
 
-import (
-	netthttp "net/http"
-
-	abs "github.com/microsoft/kiota/abstractions/go"
-)
+import nethttp "net/http"
 
 // Middleware interface for cross cutting concerns with HTTP requests and responses.
 type Middleware interface {
-	// Gets the next middleware in the chain.
-	GetNext() Middleware
-	// Sets the next middleware in the chain.
-	SetNext(value Middleware)
-	// Processes the request.
+	// intercepts the request and returns the resposne. The implementer MUST call pipeline.Next()
 	// Parameters:
-	//  - request: The request to process.
-	//  - options: The options to use for the middlewares.
+	// 		- the pipeline to be executed after the middleware
+	// 		- the request to be processed
 	// Returns:
-	//  - The response from the next middleware in the chain.
-	//  - The error if any.
-	Do(req *netthttp.Request, options []abs.RequestOption) (*netthttp.Response, error)
+	// 		- the response
+	// 		- error if any
+	Intercept(Pipeline, *nethttp.Request) (*nethttp.Response, error)
 }
