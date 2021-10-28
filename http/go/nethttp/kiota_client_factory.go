@@ -20,6 +20,7 @@ func GetDefaultClient(middleware ...Middleware) *nethttp.Client {
 // 		the middlewares
 func GetDefaultMiddlewares() []Middleware {
 	return []Middleware{
+		NewRetryHandler(),
 		//TODO add additional middlewares
 	}
 }

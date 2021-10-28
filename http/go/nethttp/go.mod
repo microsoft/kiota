@@ -6,4 +6,7 @@ replace github.com/microsoft/kiota/abstractions/go => ../../../abstractions/go
 
 go 1.16
 
-require github.com/microsoft/kiota/abstractions/go v0.0.0-20211013091133-b793efa27646 // indirect
+require (
+	github.com/microsoft/kiota/abstractions/go v0.0.0-20211013091133-b793efa27646 // indirect
+	github.com/stretchr/testify v1.7.0 // indirect
+)
