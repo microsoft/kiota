@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"strings"
 
+	ctx "context"
 	nethttp "net/http"
 
 	abs "github.com/microsoft/kiota/abstractions/go"
@@ -100,7 +101,6 @@ func (a *NetHttpRequestAdapter) getHttpResponseMessage(requestInfo abs.RequestIn
 	if err != nil {
 		return nil, err
 	}
-	// TODO set the request context from requestInfo.GetRequestOptions()
 	return (*a.httpClient).Do(request)
 }
 func (a *NetHttpRequestAdapter) getResponsePrimaryContentType(response *nethttp.Response) string {
@@ -131,6 +131,9 @@ func (a *NetHttpRequestAdapter) getRequestFromRequestInformation(requestInfo abs
 		for key, value := range requestInfo.Headers {
 			request.Header.Set(key, value)
 		}
+	}
+	for _, value := range requestInfo.GetRequestOptions() {
+		request = request.WithContext(ctx.WithValue(request.Context(), value.GetKey(), value))
 	}
 	return request, nil
 }

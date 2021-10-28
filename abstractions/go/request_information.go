@@ -2,7 +2,6 @@ package abstractions
 
 import (
 	"errors"
-	"reflect"
 
 	u "net/url"
 
@@ -106,9 +105,7 @@ func (request *RequestInformation) AddRequestOptions(options ...RequestOption) e
 		request.options = make(map[string]RequestOption, len(options))
 	}
 	for _, option := range options {
-		tp := reflect.TypeOf(option)
-		name := tp.Name()
-		request.options[name] = option
+		request.options[option.GetKey().Key] = option
 	}
 	return nil
 }
@@ -121,8 +118,10 @@ func (request *RequestInformation) GetRequestOptions() []RequestOption {
 		return []RequestOption{}
 	}
 	result := make([]RequestOption, len(request.options))
+	idx := 0
 	for _, option := range request.options {
-		result = append(result, option)
+		result[idx] = option
+		idx++
 	}
 	return result
 }
