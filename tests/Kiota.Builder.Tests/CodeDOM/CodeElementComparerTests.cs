@@ -23,10 +23,10 @@ namespace Kiota.Builder.Tests {
                 new(null, null, 0),
                 new(null, new CodeClass(), -1),
                 new(new CodeClass(), null, 1),
-                new(new CodeUsing(), new CodeProperty(), -100),
-                new(new CodeIndexer(), new CodeProperty(), 100),
-                new(method, new CodeProperty(), 111),
-                new(method, codeClass, -89)
+                new(new CodeUsing(), new CodeProperty(), -1000),
+                new(new CodeIndexer(), new CodeProperty(), 1000),
+                new(method, new CodeProperty(), 1101),
+                new(method, codeClass, -899)
                 
             };
             foreach(var dataEntry in dataSet) {
@@ -52,10 +52,10 @@ namespace Kiota.Builder.Tests {
                 new(null, null, 0),
                 new(null, new CodeClass(), -1),
                 new(new CodeClass(), null, 1),
-                new(new CodeUsing(), new CodeProperty(), -100),
-                new(new CodeIndexer(), new CodeProperty(), 100),
-                new(method, new CodeProperty(), 111),
-                new(method, codeClass, 111)
+                new(new CodeUsing(), new CodeProperty(), -1000),
+                new(new CodeIndexer(), new CodeProperty(), 1000),
+                new(method, new CodeProperty(), 1101),
+                new(method, codeClass, 1101)
                 
             };
             foreach(var dataEntry in dataSet) {

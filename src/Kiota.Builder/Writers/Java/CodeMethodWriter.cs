@@ -66,6 +66,7 @@ namespace Kiota.Builder.Writers.Java {
                     WriteRequestBuilderConstructorCall(codeElement, writer);
                 break;
                 case CodeMethodKind.Constructor:
+                case CodeMethodKind.RawUrlConstructor:
                     WriteConstructorBody(parentClass, codeElement, writer, inherits);
                     break;
                 case CodeMethodKind.RequestBuilderWithParameters:
@@ -83,29 +84,25 @@ namespace Kiota.Builder.Writers.Java {
         private void WriteRequestBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
         {
             var importSymbol = conventions.GetTypeString(codeElement.ReturnType, parentClass);
-            var currentPathProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
-            conventions.AddRequestBuilderBody(currentPathProperty != null, importSymbol, writer, pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
+            conventions.AddRequestBuilderBody(parentClass, importSymbol, writer, pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
         }
         private static void AddNullChecks(CodeMethod codeElement, LanguageWriter writer) {
             if(!codeElement.IsOverload)
                 foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name))
-                    writer.WriteLine($"Objects.requireNonNull({parameter.Name});");
+                    writer.WriteLine($"Objects.requireNonNull({parameter.Name.ToFirstCharacterLowerCase()});");
         }
         private static void WriteRequestBuilderConstructorCall(CodeMethod codeElement, LanguageWriter writer)
         {
             var requestAdapterParameter = codeElement.Parameters.OfKind(CodeParameterKind.RequestAdapter);
-            var currentPathParameter = codeElement.Parameters.OfKind(CodeParameterKind.CurrentPath);
-            var originalRawUrlParameter = codeElement.OriginalMethod.Parameters.OfKind(CodeParameterKind.RawUrl);
+            var urlTemplateParamsParameter = codeElement.Parameters.OfKind(CodeParameterKind.PathParameters);
             var pathParameters = codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path));
-            var pathParametersRef = pathParameters.Any() ? pathParameters.Select(x => x.Name).Aggregate((x, y) => $"{x}, {y}") + ", " : string.Empty;
-            writer.WriteLine($"this({currentPathParameter.Name}, {requestAdapterParameter.Name}, {pathParametersRef}{originalRawUrlParameter.DefaultValue});");
+            var pathParametersRef = pathParameters.Any() ? (", " + pathParameters.Select(x => x.Name).Aggregate((x, y) => $"{x}, {y}")) : string.Empty;
+            writer.WriteLine($"this({urlTemplateParamsParameter.Name}, {requestAdapterParameter.Name}{pathParametersRef});");
         }
         private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
-            var requestAdapterProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.RequestAdapter));
-            var requestAdapterParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.RequestAdapter));
+            var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             var backingStoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.BackingStore));
             var requestAdapterPropertyName = requestAdapterProperty.Name.ToFirstCharacterLowerCase();
-            writer.WriteLine($"this.{requestAdapterPropertyName} = {requestAdapterParameter.Name};");
             WriteSerializationRegistration(method.SerializerModules, writer, "registerDefaultSerializer");
             WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializer");
             if(backingStoreParameter != null)
@@ -116,12 +113,13 @@ namespace Kiota.Builder.Writers.Java {
                 foreach(var module in serializationModules)
                     writer.WriteLine($"ApiClientBuilder.{methodName}({module}.class);");
         }
-        private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
+        private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
             if(inherits)
                 writer.WriteLine("super();");
             foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
                                                                             CodePropertyKind.RequestBuilder,
-                                                                            CodePropertyKind.PathSegment)
+                                                                            CodePropertyKind.UrlTemplate,
+                                                                            CodePropertyKind.PathParameters)
                                             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
                                             .OrderBy(x => x.Name)) {
                 writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
@@ -131,17 +129,38 @@ namespace Kiota.Builder.Writers.Java {
                                             .OrderBy(x => x.Name)) {
                 writer.WriteLine($"this.set{propWithDefault.Name.ToFirstCharacterUpperCase()}({propWithDefault.DefaultValue});");
             }
-            if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
+            if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
+                if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
+                    var pathParametersParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
+                    conventions.AddParametersAssignment(writer, 
+                                                        pathParametersParam.Type,
+                                                        pathParametersParam.Name.ToFirstCharacterLowerCase(),
+                                                        currentMethod.Parameters
+                                                                    .Where(x => x.IsOfKind(CodeParameterKind.Path))
+                                                                    .Select(x => (x.Type, x.UrlTemplateParameterName, x.Name.ToFirstCharacterLowerCase()))
+                                                                    .ToArray());
+                    AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
+                }
+                else if(currentMethod.IsOfKind(CodeMethodKind.RawUrlConstructor)) {
+                    var pathParametersProp = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
+                    var rawUrlParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.RawUrl));
+                    conventions.AddParametersAssignment(writer,
+                                                        pathParametersProp.Type,
+                                                        string.Empty,
+                                                        (rawUrlParam.Type, Constants.RawUrlParameterName, rawUrlParam.Name.ToFirstCharacterLowerCase()));
+                    AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
+                }
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
-                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.CurrentPath, CodePropertyKind.CurrentPath, writer);
-                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RawUrl, CodePropertyKind.RawUrl, writer);
             }
         }
-        private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
-            var property = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(propertyKind));
-            var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
-            if(property != null && parameter != null) {
-                writer.WriteLine($"this.{property.Name.ToFirstCharacterLowerCase()} = {parameter.Name};");
+        private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer, string variableName = default) {
+            var property = parentClass.GetPropertyOfKind(propertyKind);
+            if(property != null) {
+                var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
+                if(!string.IsNullOrEmpty(variableName))
+                    writer.WriteLine($"this.{property.Name.ToFirstCharacterLowerCase()} = {variableName};");
+                else if (parameter != null)
+                    writer.WriteLine($"this.{property.Name.ToFirstCharacterLowerCase()} = {parameter.Name};");
             }
         }
         private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass) {
@@ -171,9 +190,10 @@ namespace Kiota.Builder.Writers.Java {
 
         }
         private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType) {
-            var currentPathProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
-            var pathSegment = codeElement.PathSegment;
-            conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id");
+            var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
+            conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"this.{pathParametersProperty.Name}",
+                (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.ParameterName, "id"));
+            conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName);
         }
         private void WriteDeserializerBody(CodeMethod codeElement, CodeMethod method, CodeClass parentClass, LanguageWriter writer) {
             var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
@@ -241,16 +261,16 @@ namespace Kiota.Builder.Writers.Java {
         private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
-            var currentPathProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.CurrentPath).FirstOrDefault();
-            var pathSegmentProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.PathSegment).FirstOrDefault();
-            var rawUrlProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.RawUrl).FirstOrDefault();
-            var requestAdapterProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.RequestAdapter).FirstOrDefault();
+            var urlTemplateParamsProperty = currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
+            var urlTemplateProperty = currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate);
+            var requestAdapterProperty = currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             writer.WriteLine($"final RequestInformation {RequestInfoVarName} = new RequestInformation() {{{{");
             writer.IncreaseIndent();
-            writer.WriteLines($"this.setUri({GetPropertyCall(currentPathProperty, "\"\"")}, {GetPropertyCall(pathSegmentProperty, "\"\"")}, {GetPropertyCall(rawUrlProperty, "false")});",
-                        $"httpMethod = HttpMethod.{codeElement.HttpMethod?.ToString().ToUpperInvariant()};");
+            writer.WriteLine($"httpMethod = HttpMethod.{codeElement.HttpMethod?.ToString().ToUpperInvariant()};");
             writer.DecreaseIndent();
             writer.WriteLine("}};");
+            writer.WriteLines($"{RequestInfoVarName}.urlTemplate = {GetPropertyCall(urlTemplateProperty, "\"\"")};",
+                            $"{RequestInfoVarName}.pathParameters = {GetPropertyCall(urlTemplateParamsProperty, "null")};");
             if(requestParams.requestBody != null)
                 if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name});");
@@ -284,7 +304,7 @@ namespace Kiota.Builder.Writers.Java {
         }
         private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"{property.Name.ToFirstCharacterLowerCase()}";
         private void WriteSerializerBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
-            var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();
+            var additionalDataProperty = parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData);
             if((parentClass.StartBlock as CodeClass.Declaration).Inherits != null)
                 writer.WriteLine("super.serialize(writer);");
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
@@ -299,11 +319,11 @@ namespace Kiota.Builder.Writers.Java {
             var genericTypeParameterDeclaration = code.IsOfKind(CodeMethodKind.Deserializer) ? " <T>": string.Empty;
             var returnTypeAsyncPrefix = code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty;
             var returnTypeAsyncSuffix = code.IsAsync ? ">" : string.Empty;
-            var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor);
+            var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
             var methodName = code.MethodKind switch {
-                CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor => code.Parent.Name.ToFirstCharacterUpperCase(),
                 CodeMethodKind.Getter => $"get{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
                 CodeMethodKind.Setter => $"set{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
+                _ when isConstructor => code.Parent.Name.ToFirstCharacterUpperCase(),
                 _ => code.Name.ToFirstCharacterLowerCase()
             };
             var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> conventions.GetParameterSignature(p, code)).ToList());

@@ -3,62 +3,83 @@ package abstractions
 import (
 	"errors"
 	"reflect"
-	"strings"
 
-	"net/url"
 	u "net/url"
 
 	s "github.com/microsoft/kiota/abstractions/go/serialization"
+	t "github.com/yosida95/uritemplate/v3"
 )
 
 /* This type represents an abstract HTTP request. */
 type RequestInformation struct {
 	Method          HttpMethod
-	URI             u.URL
+	uri             *u.URL
 	Headers         map[string]string
 	QueryParameters map[string]string
 	Content         []byte
+	PathParameters  map[string]string
+	UrlTemplate     string
 	options         map[string]RequestOption
 }
 
+const raw_url_key = "request-raw-url"
+
 func NewRequestInformation() *RequestInformation {
 	return &RequestInformation{
-		URI:             u.URL{},
 		Headers:         make(map[string]string),
 		QueryParameters: make(map[string]string),
 		options:         make(map[string]RequestOption),
+		PathParameters:  make(map[string]string),
 	}
 }
 
-func (request *RequestInformation) SetUri(currentPath string, pathSegment string, isRawUrl bool) error {
-	if isRawUrl {
-		if currentPath == "" {
-			return errors.New("current path cannot be empty")
-		}
-		questionMarkSplat := strings.Split(currentPath, "?")
-		schemeHostAndPath := questionMarkSplat[0]
-		uri, err := url.Parse(schemeHostAndPath)
+func (request *RequestInformation) GetUri() (*u.URL, error) {
+	if request.uri != nil {
+		return request.uri, nil
+	} else if request.UrlTemplate == "" {
+		return nil, errors.New("uri cannot be empty")
+	} else if request.PathParameters == nil {
+		return nil, errors.New("uri template parameters cannot be nil")
+	} else if request.QueryParameters == nil {
+		return nil, errors.New("uri query parameters cannot be nil")
+	} else if request.PathParameters[raw_url_key] != "" {
+		uri, err := u.Parse(request.PathParameters[raw_url_key])
 		if err != nil {
-			return err
+			return nil, err
 		}
-		request.URI = *uri
-		if len(questionMarkSplat) > 1 {
-			queryParameters := questionMarkSplat[1]
-			for _, queryParameter := range strings.Split(queryParameters, "&") {
-				keyValue := strings.Split(queryParameter, "=")
-				if len(keyValue) == 2 {
-					request.QueryParameters[keyValue[0]] = keyValue[1]
-				} else if len(keyValue) == 1 {
-					request.QueryParameters[keyValue[0]] = ""
-				}
-			}
+		err = request.SetUri(*uri)
+		if err != nil {
+			return nil, err
 		}
+		return request.uri, nil
 	} else {
-		uri, err := url.Parse(currentPath + pathSegment)
+		uriTemplate, err := t.New(request.UrlTemplate)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		request.URI = *uri
+		values := t.Values{}
+		for key, value := range request.PathParameters {
+			values.Set(key, t.String(value))
+		}
+		for key, value := range request.QueryParameters {
+			values.Set(key, t.String(value))
+		}
+		url, err := uriTemplate.Expand(values)
+		if err != nil {
+			return nil, err
+		}
+		uri, err := u.Parse(url)
+		return uri, err
+	}
+}
+
+func (request *RequestInformation) SetUri(url u.URL) error {
+	request.uri = &url
+	for k := range request.PathParameters {
+		delete(request.PathParameters, k)
+	}
+	for k := range request.QueryParameters {
+		delete(request.QueryParameters, k)
 	}
 	return nil
 }

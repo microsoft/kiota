@@ -75,11 +75,12 @@ namespace Kiota.Builder.Refiners.Tests {
             }).First();
             var requestBuilder = root.AddClass(new CodeClass {
                 Name = "requestBuilder",
-                ClassKind = CodeClassKind.Model
+                ClassKind = CodeClassKind.RequestBuilder
             }).First();
             requestBuilder.AddProperty(new CodeProperty {
-                Name = "pathSegment",
+                Name = "urlTemplate",
                 DefaultValue = "path",
+                PropertyKind = CodePropertyKind.UrlTemplate,
                 Type = new CodeType {
                     Name = "string",
                 }

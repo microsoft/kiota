@@ -108,6 +108,32 @@ namespace Kiota.Builder.Refiners.Tests {
                     Name = serializerDefaultName,
                 }
             });
+            var constructorMethod = model.AddMethod(new CodeMethod {
+                Name = "constructor",
+                MethodKind = CodeMethodKind.Constructor,
+                ReturnType = new CodeType {
+                    Name = "void"
+                }
+            }).First();
+            var rawUrlParam = new CodeParameter {
+                Name = "rawUrl",
+                ParameterKind = CodeParameterKind.RawUrl,
+                Type = new CodeType {
+                    Name = "string",
+                    IsNullable = true,
+                    IsExternal = true
+                }
+            };
+            constructorMethod.AddParameter(rawUrlParam);
+            var pathParamsProp = model.AddProperty(new CodeProperty {
+                Name = "name",
+                Type = new CodeType {
+                    Name = "string",
+                    IsExternal = true
+                },
+                PropertyKind = CodePropertyKind.PathParameters,
+                DefaultValue = "wrongDefaultValue"
+            }).First();
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
             Assert.Empty(model.Properties.Where(x => requestAdapterDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.Properties.Where(x => factoryDefaultName.Equals(x.Type.Name)));
@@ -117,6 +143,9 @@ namespace Kiota.Builder.Refiners.Tests {
             Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => handlerDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => headersDefaultName.Equals(x.Type.Name)));
             Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
+            Assert.Equal("make(map[string]string)", pathParamsProp.DefaultValue);
+            Assert.Equal("map[string]string", pathParamsProp.Type.Name);
+            Assert.False(rawUrlParam.Type.IsNullable);
         }
         #endregion
     }

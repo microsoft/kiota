@@ -12,6 +12,7 @@ namespace Kiota.Builder.Refiners {
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
+            AddRawUrlConstructorOverload(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddAsyncSuffix(generatedCode);
             AddInnerClasses(generatedCode, false);

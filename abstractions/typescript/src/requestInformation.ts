@@ -1,3 +1,7 @@
+import * as urlTpl from "uri-template-lite";
+import { URL } from "url";
+import { ReadableStream } from "web-streams-polyfill/es2018";
+
 import { HttpMethod } from "./httpMethod";
 import { ReadableStreamContent } from "./readableStreamContent";
 import { RequestAdapter } from "./requestAdapter";
@@ -7,34 +11,47 @@ import { Parsable } from "./serialization";
 /** This class represents an abstract HTTP request. */
 export class RequestInformation {
 	/** The URI of the request. */
-	public URI?: string;
-	/**
-	 * Sets the URI of the request.
-	 * @param currentPath the current path (scheme, host, port, path, query parameters) of the request.
-	 * @param pathSegment the segment to append to the current path.
-	 * @param isRawUrl whether the path segment is a raw url. When true, the segment is not happened and the current path is parsed for query parameters.
-	 */
-	public setUri(currentPath: string, pathSegment: string, isRawUrl: boolean): void {
-		if (isRawUrl) {
-			const questionMarkSplat = currentPath.split("?");
-			const schemeHostAndPath = questionMarkSplat[0];
-			this.URI = schemeHostAndPath;
-			if (questionMarkSplat.length > 1) {
-				const queryString = questionMarkSplat[1];
-				queryString?.split("&").forEach((queryPair) => {
-					const keyValue = queryPair.split("=");
-					if (keyValue.length > 0) {
-						const key = keyValue[0];
-						if (key) {
-							this.queryParameters.set(key, keyValue.length > 1 ? keyValue[1] : undefined);
-						}
-					}
-				});
-			}
+	private uri?: URL;
+	/** The path parameters for the request. */
+	public pathParameters: Map<string, unknown> = new Map<string, unknown>();
+	/** The URL template for the request */
+	public urlTemplate?: string;
+	/** Gets the URL of the request  */
+	public get URL(): URL {
+		const rawUrl = this.pathParameters.get(RequestInformation.raw_url_key);
+		if (this.uri) {
+			return this.uri;
+		} else if (rawUrl) {
+			const value = new URL(rawUrl as string);
+			this.URL = value;
+			return value;
+		} else if (!this.queryParameters) {
+			throw new Error("queryParameters cannot be undefined");
+		} else if (!this.pathParameters) {
+			throw new Error("pathParameters cannot be undefined");
+		} else if (!this.urlTemplate) {
+			throw new Error("urlTemplate cannot be undefined");
 		} else {
-			this.URI = currentPath + pathSegment;
+			const template = new urlTpl.URI.Template(this.urlTemplate);
+			const data = {} as { [key: string]: unknown };
+			this.queryParameters.forEach((v, k) => {
+				if (v) data[k] = v;
+			});
+			this.pathParameters.forEach((v, k) => {
+				if (v) data[k] = v;
+			});
+			const result = template.expand(data);
+			return new URL(result);
 		}
 	}
+	/** Sets the URL of the request */
+	public set URL(url: URL) {
+		if (!url) throw new Error("URL cannot be undefined");
+		this.uri = url;
+		this.queryParameters.clear();
+		this.pathParameters.clear();
+	}
+	public static raw_url_key = "request-raw-url";
 	/** The HTTP method for the request */
 	public httpMethod?: HttpMethod;
 	/** The Request Body. */
@@ -42,28 +59,23 @@ export class RequestInformation {
 	/** The Query Parameters of the request. */
 	public queryParameters: Map<string, string | number | boolean | undefined> = new Map<string, string | number | boolean | undefined>(); //TODO: case insensitive
 	/** The Request Headers. */
-	public headers: Record<string, string>; //TODO: case insensitive
-
-	/**
-	 * @private
-	 * Additional request options
-	 */
-	private _requestOptions: Record<string, RequestOption> = {};
+	public headers: Map<string, string> = new Map<string, string>(); //TODO: case insensitive
+	private _requestOptions = new Map<string, RequestOption>(); //TODO: case insensitive
 	/** Gets the request options for the request. */
-	public getRequestOptions(): RequestOption[] {
-		return Object.values(this._requestOptions);
+	public getRequestOptions() {
+		return this._requestOptions.values();
 	}
 	public addRequestOptions(...options: RequestOption[]) {
 		if (!options || options.length === 0) return;
 		options.forEach((option) => {
-			this._requestOptions[option.constructor()] = option;
+			this._requestOptions.set(option.getKey(), option);
 		});
 	}
 	/** Removes the request options for the request. */
 	public removeRequestOptions(...options: RequestOption[]) {
 		if (!options || options.length === 0) return;
 		options.forEach((option) => {
-			delete this._requestOptions[option.getKey()];
+			this._requestOptions.delete(option.getKey());
 		});
 	}
 	private static binaryContentType = "application/octet-stream";
@@ -81,26 +93,17 @@ export class RequestInformation {
 		if (!values || values.length === 0) throw new Error("values cannot be undefined or empty");
 
 		const writer = requestAdapter.getSerializationWriterFactory().getSerializationWriter(contentType);
-		if (!this.headers) {
-			this.headers = {};
-		}
-		this.headers[RequestInformation.contentTypeHeader] = contentType;
-		if (values.length === 1) {
-			writer.writeObjectValue(undefined, values[0]);
-		} else {
-			writer.writeCollectionOfObjectValues(undefined, values);
-		}
+		this.headers.set(RequestInformation.contentTypeHeader, contentType);
+		if (values.length === 1) writer.writeObjectValue(undefined, values[0]);
+		else writer.writeCollectionOfObjectValues(undefined, values);
 		this.content = writer.getSerializedContent();
 	};
 	/**
 	 * Sets the request body to be a binary stream.
 	 * @param value the binary stream
 	 */
-	public setStreamContent = (value: ReadableStreamContent): void => {
-		if (!this.headers) {
-			this.headers = {};
-		}
-		this.headers[RequestInformation.contentTypeHeader] = RequestInformation.binaryContentType;
+	public setStreamContent = (value: ReadableStream): void => {
+		this.headers.set(RequestInformation.contentTypeHeader, RequestInformation.binaryContentType);
 		this.content = value;
 	};
 	/**
@@ -108,11 +111,8 @@ export class RequestInformation {
 	 * @param headers the headers.
 	 */
 	public setHeadersFromRawObject = (h: object): void => {
-		if (!this.headers) {
-			this.headers = {};
-		}
 		Object.entries(h).forEach(([k, v]) => {
-			this.headers[k] = v as string;
+			this.headers.set(k, v as string);
 		});
 	};
 	/**
@@ -121,7 +121,7 @@ export class RequestInformation {
 	 */
 	public setQueryStringParametersFromRawObject = (q: object): void => {
 		Object.entries(q).forEach(([k, v]) => {
-			this.queryParameters.set(k, v as string);
+			this.headers.set(k, v as string);
 		});
 	};
 }

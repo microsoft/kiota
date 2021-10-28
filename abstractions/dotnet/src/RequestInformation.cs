@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Kiota.Abstractions.Serialization;
+using Tavis.UriTemplates;
 
 namespace Microsoft.Kiota.Abstractions
 {
@@ -15,35 +16,55 @@ namespace Microsoft.Kiota.Abstractions
     /// </summary>
     public class RequestInformation
     {
+        private Uri _rawUri;
         /// <summary>
         ///  The URI of the request.
         /// </summary>
-        public Uri URI { get; set; }
-        /// <summary>
-        /// Sets the URI of the request.
-        /// </summary>
-        /// <param name="currentPath">the current path (scheme, host, port, path, query parameters) of the request.</param>
-        /// <param name="pathSegment">the segment to append to the current path.</param>
-        /// <param name="isRawUrl">whether the path segment is a raw url. When true, the segment is not happened and the current path is parsed for query parameters.</param>
-        /// <exception cref="UriFormatException">Thrown when the built URI is an invalid format.</exception>
-        public void SetURI(string currentPath, string pathSegment, bool isRawUrl)
-        {
-            if (isRawUrl)
-            {
-                if(string.IsNullOrEmpty(currentPath))
-                    throw new ArgumentNullException(nameof(currentPath));
-                var parseUri = new Uri(currentPath);
-                var parseQueryString = parseUri.Query.TrimStart('?'); //remove leading ? if needed
-                foreach(var qsp in parseQueryString.Split('&').Select(x => x.Split('=')).Where(x => !string.IsNullOrEmpty(x[0]))) {
-                    QueryParameters.Add(qsp[0], qsp.Length > 1 ? qsp[1] : null);
-                }
-                URI = new Uri(parseUri.GetComponents(UriComponents.SchemeAndServer | UriComponents.Path, UriFormat.Unescaped));
+        public Uri URI {
+            set {
+                if(value == null)
+                    throw new ArgumentNullException(nameof(value));
+                QueryParameters.Clear();
+                PathParameters.Clear();
+                _rawUri = value;
             }
-            else
-            {
-                URI = new Uri(currentPath + pathSegment);
+            get {
+                if(_rawUri != null)
+                    return _rawUri;
+                else if(PathParameters.TryGetValue("request-raw-url", out var rawUrl) &&
+                    rawUrl is string rawUrlString) {
+                    URI = new Uri(rawUrlString);
+                    return _rawUri;
+                }
+                else
+                {
+                    var parsedUrlTemplate = new UriTemplate(UrlTemplate);
+                    foreach(var urlTemplateParameter in PathParameters)
+                    {
+                        // if the value is boolean, lets pass in a lowercase string as the final url will be uppercase due to the way ToString() works for booleans
+                        var sanitizedValue = (urlTemplateParameter.Value is bool boolValue) ? boolValue.ToString().ToLower() : urlTemplateParameter.Value;
+                        parsedUrlTemplate.SetParameter(urlTemplateParameter.Key, sanitizedValue);
+                    }
+
+                    foreach(var queryStringParameter in QueryParameters)
+                        if(queryStringParameter.Value != null)
+                        {
+                            // if the value is boolean, lets pass in a lowercase string as the final url will be uppercase due to the way ToString() works for booleans
+                            var sanitizedValue = (queryStringParameter.Value is bool boolValue) ? boolValue.ToString().ToLower() : queryStringParameter.Value;
+                            parsedUrlTemplate.SetParameter(queryStringParameter.Key, sanitizedValue);
+                        }
+                    return new Uri(parsedUrlTemplate.Resolve());
+                }
             }
         }
+        /// <summary>
+        /// The Url template for the current request.
+        /// </summary>
+        public string UrlTemplate { get; set; }
+        /// <summary>
+        /// The path parameters to use for the URL template when generating the URI.
+        /// </summary>
+        public IDictionary<string, object> PathParameters { get; set; } = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
         /// <summary>
         ///  The <see cref="HttpMethod">HTTP method</see> of the request.
         /// </summary>

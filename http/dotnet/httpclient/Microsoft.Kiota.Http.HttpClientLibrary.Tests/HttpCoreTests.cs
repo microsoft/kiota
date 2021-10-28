@@ -44,15 +44,15 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests
         [InlineData("select", new[] { "id", "displayName" }, "select=id,displayName")]
         [InlineData("count", true, "count=true")]
         [InlineData("skip", 10, "skip=10")]
-        [InlineData("skip", null, "skip")]
+        [InlineData("skip", null, "")]// query parameter no placed
         public void GetRequestMessageFromRequestInformationSetsQueryParametersCorrectlyWithSelect(string queryParam, object queryParamObject, string expectedString)
         {
             // Arrange
             var requestInfo = new RequestInformation
             {
                 HttpMethod = HttpMethod.GET,
+                UrlTemplate = "http://localhost/me{?top,skip,search,filter,count,orderby,select}"
             };
-            requestInfo.SetURI("http://localhost/me", "", true);
             requestInfo.QueryParameters.Add(queryParam, queryParamObject);
 
             // Act

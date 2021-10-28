@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
 using static Kiota.Builder.CodeTypeBase;
@@ -16,16 +17,25 @@ namespace Kiota.Builder.Writers.TypeScript {
         public override string VoidTypeName => throw new System.NotImplementedException();
 
         public override string DocCommentPrefix => " * ";
-        private const string PathSegmentPropertyName = "pathSegment";
-        private const string CurrentPathPropertyName = "currentPath";
-        private const string HttpCorePropertyName = "requestAdapter";
         public override string ParseNodeInterfaceName => "ParseNode";
         internal string DocCommentStart = "/**";
         internal string DocCommentEnd = " */";
         #pragma warning disable CA1822 // Method should be static
-        internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default, string additionalPathParameters = default) {
-            var currentPath = addCurrentPath ? $"this.{CurrentPathPropertyName} + " : string.Empty;
-            writer.WriteLines($"return new {returnType}({currentPath}this.{PathSegmentPropertyName}{suffix}, this.{HttpCorePropertyName}{additionalPathParameters}, false);");
+        internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default) {
+            var codePathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
+            var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
+            var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
+            var urlTemplateParams = urlTemplateVarName ?? $"this.{pathParametersProperty.Name}";
+            writer.WriteLines($"return new {returnType}({urlTemplateParams}, this.{requestAdapterProp.Name}{codePathParametersSuffix});");
+        }
+        public override string TempDictionaryVarName => "urlTplParams";
+        internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
+            if(pathParametersType == null) return;
+            writer.WriteLine($"const {TempDictionaryVarName} = getPathParameters({pathParametersReference});");
+            if(parameters.Any())
+                writer.WriteLines(parameters.Select(p => 
+                    $"{p.Item3} && {TempDictionaryVarName}.set(\"{p.Item2}\", {p.Item3});"
+                ).ToArray());
         }
         #pragma warning restore CA1822 // Method should be static
         public override string GetAccessModifier(AccessModifier access)
@@ -40,7 +50,7 @@ namespace Kiota.Builder.Writers.TypeScript {
         public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
         {
             var defaultValueSuffiix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue}";
-            return $"{parameter.Name}{(parameter.Optional && parameter.Type.IsNullable ? "?" : string.Empty)}: {GetTypeString(parameter.Type, targetElement)}{(parameter.Type.IsNullable ? " | undefined": string.Empty)}{defaultValueSuffiix}";
+            return $"{parameter.Name.ToFirstCharacterLowerCase()}{(parameter.Optional && parameter.Type.IsNullable ? "?" : string.Empty)}: {GetTypeString(parameter.Type, targetElement)}{(parameter.Type.IsNullable ? " | undefined": string.Empty)}{defaultValueSuffiix}";
         }
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true) {
             if(code is null)
@@ -96,7 +106,7 @@ namespace Kiota.Builder.Writers.TypeScript {
                 "integer" or "int64" or "float" or "double" => "number",
                 "binary" => "string",
                 "DateTimeOffset" => "Date",
-                "string" or "object" or "boolean" or "void" => type.Name, // little casing hack
+                "String" or "Object" or "Boolean" or "Void" or "string" or "object" or "boolean" or "void" => type.Name.ToFirstCharacterLowerCase(), // little casing hack
                 _ => type.Name.ToFirstCharacterUpperCase() ?? "object",
             };
         }
