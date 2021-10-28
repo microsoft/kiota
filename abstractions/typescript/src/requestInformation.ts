@@ -1,12 +1,11 @@
 import * as urlTpl from "uri-template-lite";
-import { URL } from "url";
-import { ReadableStream } from "web-streams-polyfill/es2018";
 
 import { HttpMethod } from "./httpMethod";
 import { ReadableStreamContent } from "./readableStreamContent";
 import { RequestAdapter } from "./requestAdapter";
 import { RequestOption } from "./requestOption";
 import { Parsable } from "./serialization";
+import { URL } from "./utils";
 
 /** This class represents an abstract HTTP request. */
 export class RequestInformation {
@@ -59,23 +58,28 @@ export class RequestInformation {
 	/** The Query Parameters of the request. */
 	public queryParameters: Map<string, string | number | boolean | undefined> = new Map<string, string | number | boolean | undefined>(); //TODO: case insensitive
 	/** The Request Headers. */
-	public headers: Map<string, string> = new Map<string, string>(); //TODO: case insensitive
-	private _requestOptions = new Map<string, RequestOption>(); //TODO: case insensitive
+	public headers: Record<string, string>; //TODO: case insensitive
+
+	/**
+	 * @private
+	 * Additional request options
+	 */
+	private _requestOptions: Record<string, RequestOption> = {};
 	/** Gets the request options for the request. */
-	public getRequestOptions() {
-		return this._requestOptions.values();
+	public getRequestOptions(): RequestOption[] {
+		return Object.values(this._requestOptions);
 	}
 	public addRequestOptions(...options: RequestOption[]) {
 		if (!options || options.length === 0) return;
 		options.forEach((option) => {
-			this._requestOptions.set(option.getKey(), option);
+			this._requestOptions[option.constructor()] = option;
 		});
 	}
 	/** Removes the request options for the request. */
 	public removeRequestOptions(...options: RequestOption[]) {
 		if (!options || options.length === 0) return;
 		options.forEach((option) => {
-			this._requestOptions.delete(option.getKey());
+			delete this._requestOptions[option.getKey()];
 		});
 	}
 	private static binaryContentType = "application/octet-stream";
@@ -93,17 +97,26 @@ export class RequestInformation {
 		if (!values || values.length === 0) throw new Error("values cannot be undefined or empty");
 
 		const writer = requestAdapter.getSerializationWriterFactory().getSerializationWriter(contentType);
-		this.headers.set(RequestInformation.contentTypeHeader, contentType);
-		if (values.length === 1) writer.writeObjectValue(undefined, values[0]);
-		else writer.writeCollectionOfObjectValues(undefined, values);
+		if (!this.headers) {
+			this.headers = {};
+		}
+		this.headers[RequestInformation.contentTypeHeader] = contentType;
+		if (values.length === 1) {
+			writer.writeObjectValue(undefined, values[0]);
+		} else {
+			writer.writeCollectionOfObjectValues(undefined, values);
+		}
 		this.content = writer.getSerializedContent();
 	};
 	/**
 	 * Sets the request body to be a binary stream.
 	 * @param value the binary stream
 	 */
-	public setStreamContent = (value: ReadableStream): void => {
-		this.headers.set(RequestInformation.contentTypeHeader, RequestInformation.binaryContentType);
+	public setStreamContent = (value: ReadableStreamContent): void => {
+		if (!this.headers) {
+			this.headers = {};
+		}
+		this.headers[RequestInformation.contentTypeHeader] = RequestInformation.binaryContentType;
 		this.content = value;
 	};
 	/**
@@ -111,8 +124,11 @@ export class RequestInformation {
 	 * @param headers the headers.
 	 */
 	public setHeadersFromRawObject = (h: object): void => {
+		if (!this.headers) {
+			this.headers = {};
+		}
 		Object.entries(h).forEach(([k, v]) => {
-			this.headers.set(k, v as string);
+			this.headers[k] = v as string;
 		});
 	};
 	/**
@@ -121,7 +137,7 @@ export class RequestInformation {
 	 */
 	public setQueryStringParametersFromRawObject = (q: object): void => {
 		Object.entries(q).forEach(([k, v]) => {
-			this.headers.set(k, v as string);
+			this.queryParameters.set(k, v as string);
 		});
 	};
 }

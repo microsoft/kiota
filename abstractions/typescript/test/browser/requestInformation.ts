@@ -17,4 +17,14 @@ describe("RequestInformation", () => {
 
 		assert.equal(requestInformation["content"], browserReadableStream);
 	});
+
+//     it("Should set request information uri", () => {
+// 		const requestInformation = new RequestInformation();
+// 		const currentPath = "CURRENT_PATH";
+// 		const pathSegment = "PATH_SEGMENT";
+// 		requestInformation.URL = new URL(currentPath, pathSegment) as unknown;
+// 		assert.isNotNull(URL);
+// 		console.log(requestInformation.URL);
+// 		assert.equal(requestInformation.URL, new URL(currentPath, pathSegment));
+// 	});
 });

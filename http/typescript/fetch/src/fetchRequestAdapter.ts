@@ -183,21 +183,9 @@ export class FetchRequestAdapter implements RequestAdapter {
 		return request;
 	};
 
-	private getRequestUrl = (requestInformation: RequestInformation): string => {
-		let url = requestInformation.URI ?? "";
-		if (requestInformation.queryParameters?.size ?? -1 > 0) {
-			const queryParametersBuilder = new URLSearchParams();
-			requestInformation.queryParameters?.forEach((v, k) => {
-				queryParametersBuilder.append(k, `${v}`);
-			});
-			url = url + "?" + queryParametersBuilder.toString();
-		}
-		return url;
-	};
-
 	private createContext(requestInformation: RequestInformation): MiddlewareContext {
 		const context: MiddlewareContext = {
-			requestUrl: this.getRequestUrl(requestInformation),
+			requestUrl: requestInformation.URL.toString(),
 			fetchRequestInit: this.getRequestFromRequestInformation(requestInformation),
 		};
 		const requestOptions = requestInformation.getRequestOptions();

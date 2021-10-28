@@ -18,6 +18,9 @@
     "main": "dist/cjs/src/index.js",
     "module": "dist/es/src/index.js",
     "types": "dist/cjs/src/index.d.ts",
+    "browser": {
+        "dist/es/src/utils/index.js":"dist/es/src/utils/browser/index.js"
+    },
     "scripts": {
         "build": "npm run build:cjs && npm run build:es",
         "build:cjs": "tsc -p tsconfig.cjs.json",
@@ -28,10 +31,11 @@
         "lint:fix": "eslint . --ext .ts --fix",
         "rollup": "rollup -c",
         "test": "npm run test:cjs && npm run test:es",
-        "test:cjs": "npm run build:cjs   && mocha  'dist/cjs/test/common/**/*.js' && mocha  'dist/cjs/test/node/**/*.js'",
-        "test:es": " npm run build:es && mocha 'dist/es/test/common/**/*.js'  --require  esm && mocha 'dist/es/test/node/**/*.js'  --require  esm"
+        "test:cjs": "npm run build:cjs && mocha  'dist/cjs/test/node/**/*.js'",
+        "test:es": " npm run build:es && mocha 'dist/es/test/node/**/*.js'  --require  esm"
     },
     "dependencies": {
+        "uri-template-lite": "^20.5.0",
         "uuid": "^8.3.2"
     },
     "devDependencies": {
