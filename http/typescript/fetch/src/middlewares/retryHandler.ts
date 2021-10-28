@@ -15,7 +15,7 @@ import { FetchRequestInfo, FetchRequestInit, FetchResponse } from "../utils/fetc
 import { getRequestHeader, setRequestHeader } from "../utils/headersUtil";
 import { Middleware } from "./middleware";
 import { MiddlewareContext } from "./middlewareContext";
-import { RetryHandlerOptions, RetryHandlerOptionKey } from "./options/retryHandlerOptions";
+import { RetryHandlerOptionKey, RetryHandlerOptions } from "./options/retryHandlerOptions";
 
 /**
  * @class
@@ -149,7 +149,7 @@ export class RetryHandler implements Middleware {
 		const delayMilliseconds = delaySeconds * 1000;
 		return new Promise((resolve) => setTimeout(resolve, delayMilliseconds)); // browser or node
 	}
-    
+
 	/**
 	 * @private
 	 * @async
@@ -161,14 +161,14 @@ export class RetryHandler implements Middleware {
 	 */
 	private async executeWithRetry(context: MiddlewareContext, retryAttempts: number, options: RetryHandlerOptions): Promise<FetchResponse> {
 		const response = await this.next.execute(context);
-		if (retryAttempts < options.maxRetries && this.isRetry(response) && this.isBuffered(context.request, context.options) && options.shouldRetry(options.delay, retryAttempts, context.request, context.options, response)) {
+		if (retryAttempts < options.maxRetries && this.isRetry(response) && this.isBuffered(context.requestUrl, context.fetchRequestInit) && options.shouldRetry(options.delay, retryAttempts, context.requestUrl, context.fetchRequestInit, response)) {
 			++retryAttempts;
-			setRequestHeader(context.options, RetryHandler.RETRY_ATTEMPT_HEADER, retryAttempts.toString());
+			setRequestHeader(context.fetchRequestInit, RetryHandler.RETRY_ATTEMPT_HEADER, retryAttempts.toString());
 			const delay = this.getDelay(response, retryAttempts, options.delay);
 			await this.sleep(delay);
 			return await this.executeWithRetry(context, retryAttempts, options);
 		} else {
-			return;
+			return response;
 		}
 	}
 
@@ -181,7 +181,7 @@ export class RetryHandler implements Middleware {
 	 */
 	public async execute(context: MiddlewareContext): Promise<FetchResponse> {
 		const retryAttempts = 0;
-		const options:RetryHandlerOptions = (context?.middlewareOptions && context.middlewareOptions[RetryHandlerOptionKey]) || this.options;
+		const options: RetryHandlerOptions = ((context?.requestInformationOptions && context.requestInformationOptions[RetryHandlerOptionKey]) as RetryHandlerOptions) || this.options;
 		return await this.executeWithRetry(context, retryAttempts, options);
 	}
 }

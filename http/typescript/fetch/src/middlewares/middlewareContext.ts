@@ -6,6 +6,7 @@
  */
 
 import { RequestOption } from "@microsoft/kiota-abstractions";
+
 import { FetchRequestInfo, FetchRequestInit } from "../utils/fetchDefinitions";
 
 /**
@@ -17,7 +18,7 @@ import { FetchRequestInfo, FetchRequestInit } from "../utils/fetchDefinitions";
  */
 
 export interface MiddlewareContext {
-	request: FetchRequestInfo;
-	options?: FetchRequestInit;
-	middlewareOptions?: Record<string,RequestOption>; // this can get updated depending on the use of request options
+	requestUrl: FetchRequestInfo;
+	fetchRequestInit?: FetchRequestInit;
+	requestInformationOptions?: Record<string, RequestOption>; // this can get updated depending on the use of request options
 }

@@ -17,5 +17,4 @@ export * from "../middlewares/retryHandler";
 export * from "../middlewares/options/retryHandlerOptions";
 export * from "../middlewares/middlewareContext";
 export * from "../middlewares/browser/middlewareFactory";
-export * from "../middlewares/middlewareControl";
 export * from "../utils/headersUtil";

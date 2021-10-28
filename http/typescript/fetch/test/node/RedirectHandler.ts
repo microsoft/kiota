@@ -9,8 +9,7 @@ import { assert } from "chai";
 import { Response } from "node-fetch";
 
 import { MiddlewareContext } from "../../src/middlewares/middlewareContext";
-import { MiddlewareControl } from "../../src/middlewares/middlewareControl";
-import { RedirectHandlerOptions } from "../../src/middlewares/options/redirectHandlerOption";
+import { RedirectHandlerOptionKey, RedirectHandlerOptions } from "../../src/middlewares/options/redirectHandlerOptions";
 import { RedirectHandler } from "../../src/middlewares/redirectHandler";
 import { DummyFetchHandler } from "../common/middleware/dummyFetchHandler";
 
@@ -162,34 +161,86 @@ describe("RedirectHandler.ts", () => {
 		});
 	});
 
-	describe("getOptions", () => {
-		it("Should return the options in the context object", () => {
-			const maxRedirects = 10;
-			const shouldRedirect = () => false;
+	describe("set RedirectOptions in RequestInformation", () => {
+		it("Should set the RedirectOptions from the context object", async () => {
+			const defaultOptions = new RedirectHandlerOptions();
+			const handler = new RedirectHandler(defaultOptions);
+			const dummyFetchHandler = new DummyFetchHandler();
+			handler.next = dummyFetchHandler;
+			const maxRedirects = 2;
+			const shouldRedirect = () => true;
 			const options = new RedirectHandlerOptions(maxRedirects, shouldRedirect);
 			const cxt: MiddlewareContext = {
-				request: "url",
-				middlewareControl: new MiddlewareControl([options]),
+				requestUrl: "url",
+				fetchRequestInit: {
+					method: "PUT",
+					headers: {
+						"Content-Type": "application/octet-stream",
+					},
+				},
+				requestInformationOptions: {
+					[RedirectHandlerOptionKey]: options,
+				},
 			};
-			const o = redirectHandler["getOptions"](cxt);
-			assert.equal(o.maxRedirects, maxRedirects);
-			assert.equal(o.shouldRedirect, shouldRedirect);
+
+			dummyFetchHandler.setResponses([
+				new Response(null, {
+					status: 301,
+					headers: {
+						[RedirectHandler["LOCATION_HEADER"]]: "/location",
+					},
+				}),
+				new Response(null, {
+					status: 301,
+					headers: {
+						[RedirectHandler["LOCATION_HEADER"]]: "/location",
+					},
+				}),
+				new Response("RETURNED", { status: 301 }),
+				new Response("ok", { status: 200 }),
+			]);
+			const response = await handler["execute"](cxt);
+			assert.equal(response.status, 301);
+			assert.isDefined(response.body);
 		});
 
-		it("Should return the default set of options in the middleware", () => {
+		it("Should use default options", async () => {
+			const handler = new RedirectHandler();
+			const dummyFetchHandler = new DummyFetchHandler();
+			handler.next = dummyFetchHandler;
 			const cxt: MiddlewareContext = {
-				request: "url",
+				requestUrl: "url",
+				fetchRequestInit: {
+					method: "PUT",
+					headers: {
+						"Content-Type": "application/octet-stream",
+					},
+				},
 			};
-			const o = redirectHandler["getOptions"](cxt);
-			assert.equal(o.maxRedirects, redirectHandler["options"].maxRedirects);
-			assert.equal(o.shouldRedirect, redirectHandler["options"].shouldRedirect);
+			const responseBody = {
+				test: "TEST",
+			};
+			const arr = [];
+			for (let i = 0; i < 5; i++) {
+				arr[i] = new Response(null, {
+					status: 301,
+					headers: {
+						[RedirectHandler["LOCATION_HEADER"]]: "/location",
+					},
+				});
+			}
+			dummyFetchHandler.setResponses([...arr, new Response(responseBody, { status: 301 })]);
+
+			const response = await handler["execute"](cxt);
+			assert.equal(response.status, 301);
+			assert.isNotNull(response.body);
 		});
 	});
 
 	describe("executeWithRedirect", async () => {
 		const context: MiddlewareContext = {
-			request: "/me",
-			options: {
+			requestUrl: "/me",
+			fetchRequestInit: {
 				method: "GET",
 			},
 		};
@@ -200,29 +251,29 @@ describe("RedirectHandler.ts", () => {
 			const maxRedirect = 1;
 			const options = new RedirectHandlerOptions(maxRedirect);
 			dummyFetchHandler.setResponses([new Response("", { status: 301 }), new Response("ok", { status: 200 })]);
-			await handler["executeWithRedirect"](context, maxRedirect, options);
-			assert.equal(context.response.status, 301);
+			const response = await handler["executeWithRedirect"](context, maxRedirect, options);
+			assert.equal(response.status, 301);
 		});
 
 		it("Should not redirect for the non redirect response", async () => {
 			const options = new RedirectHandlerOptions();
 			dummyFetchHandler.setResponses([new Response("", { status: 200 })]);
-			await handler["executeWithRedirect"](context, 0, options);
-			assert.equal(context.response.status, 200);
+			const response = await handler["executeWithRedirect"](context, 0, options);
+			assert.equal(response.status, 200);
 		});
 
 		it("Should not redirect for the redirect response without location header", async () => {
 			const options = new RedirectHandlerOptions();
 			dummyFetchHandler.setResponses([new Response("", { status: 301 }), new Response("ok", { status: 200 })]);
-			await handler["executeWithRedirect"](context, 0, options);
-			assert.equal(context.response.status, 301);
+			const response = await handler["executeWithRedirect"](context, 0, options);
+			assert.equal(response.status, 301);
 		});
 
 		it("Should not redirect for shouldRedirect callback returning false", async () => {
 			const options = new RedirectHandlerOptions(undefined, () => false);
 			dummyFetchHandler.setResponses([new Response("", { status: 301 }), new Response("ok", { status: 200 })]);
-			await handler["executeWithRedirect"](context, 0, options);
-			assert.equal(context.response.status, 301);
+			const response = await handler["executeWithRedirect"](context, 0, options);
+			assert.equal(response.status, 301);
 		});
 
 		it("Should drop body and change method to get for SEE_OTHER status code", async () => {
@@ -236,17 +287,17 @@ describe("RedirectHandler.ts", () => {
 				}),
 				new Response("ok", { status: 200 }),
 			]);
-			await handler["executeWithRedirect"](context, 0, options);
-			assert.isUndefined(context.options.body);
-			assert.equal(context.options.method, "GET");
-			assert.equal(context.response.status, 200);
+			const response = await handler["executeWithRedirect"](context, 0, options);
+			assert.isUndefined(context.fetchRequestInit.body);
+			assert.equal(context.fetchRequestInit.method, "GET");
+			assert.equal(response.status, 200);
 		});
 
 		it("Should not drop Authorization header for relative url redirect", async () => {
 			const options = new RedirectHandlerOptions();
 			const cxt: MiddlewareContext = {
-				request: "/me",
-				options: {
+				requestUrl: "/me",
+				fetchRequestInit: {
 					method: "POST",
 					body: "dummy body",
 					headers: {
@@ -263,16 +314,18 @@ describe("RedirectHandler.ts", () => {
 				}),
 				new Response("ok", { status: 200 }),
 			]);
-			await handler["executeWithRedirect"](cxt, 0, options);
-			assert.isDefined(cxt.options.headers[RedirectHandler["AUTHORIZATION_HEADER"]]);
-			assert.equal(cxt.response.status, 200);
+			const response = await handler["executeWithRedirect"](cxt, 0, options);
+			assert.isDefined(cxt.fetchRequestInit.headers[RedirectHandler["AUTHORIZATION_HEADER"]]);
+			assert.equal(cxt.fetchRequestInit.headers[RedirectHandler["AUTHORIZATION_HEADER"]], "Bearer TEST");
+
+			assert.equal(response.status, 200);
 		});
 
 		it("Should not drop Authorization header for same authority redirect url", async () => {
 			const options = new RedirectHandlerOptions();
 			const cxt: MiddlewareContext = {
-				request: "https://graph.microsoft.com/v1.0/me",
-				options: {
+				requestUrl: "https://graph.microsoft.com/v1.0/me",
+				fetchRequestInit: {
 					method: "POST",
 					body: "dummy body",
 					headers: {
@@ -289,16 +342,16 @@ describe("RedirectHandler.ts", () => {
 				}),
 				new Response("ok", { status: 200 }),
 			]);
-			await handler["executeWithRedirect"](cxt, 0, options);
-			assert.isDefined(cxt.options.headers[RedirectHandler["AUTHORIZATION_HEADER"]]);
-			assert.equal(cxt.response.status, 200);
+			const response = await handler["executeWithRedirect"](cxt, 0, options);
+			assert.isDefined(cxt.fetchRequestInit.headers[RedirectHandler["AUTHORIZATION_HEADER"]]);
+			assert.equal(response.status, 200);
 		});
 
 		it("Should return success response after successful redirect", async () => {
 			const options = new RedirectHandlerOptions();
 			const cxt: MiddlewareContext = {
-				request: "https://graph.microsoft.com/v1.0/me",
-				options: {
+				requestUrl: "https://graph.microsoft.com/v1.0/me",
+				fetchRequestInit: {
 					method: "POST",
 					body: "dummy body",
 				},
@@ -312,16 +365,16 @@ describe("RedirectHandler.ts", () => {
 				}),
 				new Response("ok", { status: 200 }),
 			]);
-			await handler["executeWithRedirect"](cxt, 0, options);
-			assert.equal(cxt.response.status, 200);
+			const response = await handler["executeWithRedirect"](cxt, 0, options);
+			assert.equal(response.status, 200);
 		});
 	});
 
 	describe("execute", async () => {
 		it("Should set the redirect value in options to manual", async () => {
 			const context: MiddlewareContext = {
-				request: "/me",
-				options: {
+				requestUrl: "/me",
+				fetchRequestInit: {
 					method: "GET",
 				},
 			};
@@ -330,7 +383,7 @@ describe("RedirectHandler.ts", () => {
 			handler.next = dummyFetchHandler;
 			dummyFetchHandler.setResponses([new Response("", { status: 200 })]);
 			await handler.execute(context);
-			assert.equal(context.options.redirect, RedirectHandler["MANUAL_REDIRECT"]);
+			assert.equal(context.fetchRequestInit.redirect, RedirectHandler["MANUAL_REDIRECT"]);
 		});
 	});
 });

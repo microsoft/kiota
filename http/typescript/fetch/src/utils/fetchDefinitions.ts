@@ -1,4 +1,3 @@
-
 /**
  * -------------------------------------------------------------------------------------------
  * Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.
@@ -7,13 +6,12 @@
  */
 
 // fetch() will only be called using string requests along with options
-export type FetchRequestInfo = string; 
-
+export type FetchRequestInfo = string;
 
 /**
  *  Use Record type to store request headers.
- *  Node and browser have different implementations of `Headers`. 
- *  Record type is used to store headers in most http request and fetch libraries. 
+ *  Node and browser have different implementations of `Headers`.
+ *  Record type is used to store headers in most http request and fetch libraries.
  */
 export type FetchHeadersInit = Record<string, string>;
 

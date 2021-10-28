@@ -67,7 +67,7 @@ export class RedirectHandlerOptions implements RequestOption {
 		this.shouldRedirect = shouldRedirect;
 	}
 
-    public getKey(): string {
+	public getKey(): string {
 		return RedirectHandlerOptionKey;
 	}
 }

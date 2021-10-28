@@ -45,17 +45,13 @@ export class RequestInformation {
 	public headers: Record<string, string>; //TODO: case insensitive
 
 	/**
-	 * /TODO: case insensitive
-	 * TODO: Determine the scope of  request options
-	 * Request Options should also consider specific request configurations such as :
-	 * Axios : https://axios-http.com/docs/req_config
-	 * Fetch Request Options : https://developer.mozilla.org/en-US/docs/Web/API/Request#properties
-	 * https://github.com/microsoftgraph/msgraph-sdk-javascript/pull/105
+	 * @private
+	 * Additional request options
 	 */
 	private _requestOptions: Record<string, RequestOption> = {};
 	/** Gets the request options for the request. */
-	public getRequestOptions(): Record<string, RequestOption> {
-		return this._requestOptions;
+	public getRequestOptions(): RequestOption[] {
+		return Object.values(this._requestOptions);
 	}
 	public addRequestOptions(...options: RequestOption[]) {
 		if (!options || options.length === 0) return;

@@ -7,7 +7,7 @@
 
 import { assert } from "chai";
 
-import { RedirectHandlerOptions } from "../../src/middlewares/options/redirectHandlerOption";
+import { RedirectHandlerOptions } from "../../src/middlewares/options/redirectHandlerOptions";
 
 describe("RedirectHandlerOptions.ts", () => {
 	describe("constructor", () => {

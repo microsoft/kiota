@@ -35,8 +35,7 @@ export class CustomFetchHandler implements Middleware {
 	 * @param {Context} context - The request context object
 	 * @returns A promise that resolves to nothing
 	 */
-	public async execute(context: MiddlewareContext): Promise<void> {
-		context.response = (await this.customFetch(context.request, context.options)) as FetchResponse;
-		return;
+	public async execute(context: MiddlewareContext): Promise<FetchResponse> {
+		return await this.customFetch(context.requestUrl, context.fetchRequestInit);
 	}
 }

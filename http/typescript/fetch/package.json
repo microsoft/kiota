@@ -68,8 +68,6 @@
         "karma-firefox-launcher": "^2.1.1",
         "karma-mocha": "^2.0.1",
         "karma-typescript": "^5.5.2",
-        "lint": "eslint . --ext .ts",
-        "lint:fix": "eslint . --ext .ts --fix",
         "mocha": "^8.4.0",
         "prettier": "^1.19.1",
         "rollup": "^2.58.0",

@@ -54,8 +54,8 @@ export class DummyFetchHandler implements Middleware {
 	 * @param {Context} context - The request context object
 	 * @returns A promise that resolves to nothing
 	 */
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	public async execute(context: MiddlewareContext) {
-		context.response = this.responses.shift();
-		return;
+		return this.responses.shift();
 	}
 }
