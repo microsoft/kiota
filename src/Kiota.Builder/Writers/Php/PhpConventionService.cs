@@ -64,6 +64,7 @@ namespace Kiota.Builder.Writers.Php
                 CodeParameterKind.ResponseHandler => $"ResponseHandler {ResponseHandlerPropertyName}",
                 CodeParameterKind.QueryParameter => $"GetQueryParameters $queryParameters",
                 CodeParameterKind.Serializer => "SerializationWriter $writer",
+                CodeParameterKind.BackingStore => "BackingStore $backingStore",
                 _ => $"{typeString} ${parameter.Name.ToFirstCharacterLowerCase()}"
 
             };
@@ -103,7 +104,7 @@ namespace Kiota.Builder.Writers.Php
             }
         }
 
-        public void AddRequestBuilderBody(bool addCurrentPathProperty, string returnType, LanguageWriter writer, string suffix = default)
+        public void AddRequestBuilderBody(bool addCurrentPathProperty, string returnType, LanguageWriter writer, string suffix = default, string additionalPathParameters = default)
         {
             var currentPath = addCurrentPathProperty ? $"$this->{RemoveDollarSignFromPropertyName(CurrentPathPropertyName)} . " : string.Empty;
             writer.WriteLines($"return new {returnType}({currentPath}$this->{RemoveDollarSignFromPropertyName(PathSegmentPropertyName)}{suffix}, $this->{RemoveDollarSignFromPropertyName(RequestAdapterPropertyName)});");
@@ -143,11 +144,7 @@ namespace Kiota.Builder.Writers.Php
             {
                 return current;
             }
-            if (current.StartsWith("\"", StringComparison.OrdinalIgnoreCase))
-            {
-                return current.Replace('\"', '\'');
-            }
-            return current;
+            return current.StartsWith("\"", StringComparison.OrdinalIgnoreCase) ? current.Replace('\"', '\'') : current;
         }
 
         public void WriteNamespaceAndImports(CodeClass.Declaration codeElement, LanguageWriter writer)

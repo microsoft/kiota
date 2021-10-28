@@ -10,15 +10,35 @@ namespace Kiota.Builder.Writers.Php
     public class CodeMethodWriter: BaseElementWriter<CodeMethod, PhpConventionService>
     {
         public CodeMethodWriter(PhpConventionService conventionService) : base(conventionService) { }
-
+        
+        private const string RequestInfoVarName = "$requestInfo";
         public override void  WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
 
             var parentClass = codeElement.Parent as CodeClass;
+            var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
             var inherits = (parentClass?.StartBlock as CodeClass.Declaration)?.Inherits != null;
             var orNullReturn = codeElement.ReturnType.IsNullable ? new[]{"?", "|null"} : new[] {string.Empty, string.Empty};
+            var currentPathProperty = parentClass?.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
+            var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
+            var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
+            var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
+            var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
+            var requestParams = new RequestParams(requestBodyParam, queryStringParam, headersParam, optionsParam);
+            
             WriteMethodPhpDocs(codeElement, writer, orNullReturn);
             WriteMethodsAndParameters(codeElement, writer, orNullReturn, codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor));
+            
+            if(!codeElement.IsOfKind(CodeMethodKind.Setter))
+                foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name))
+                {
+                    writer.WriteLine($"if (is_null(${parameter.Name})) {{");
+                    writer.IncreaseIndent();
+                    writer.WriteLine($"throw new \\Exception('${parameter.Name} cannot be null');");
+                    writer.DecreaseIndent();
+                    writer.WriteLine("}");
+                }
+            
             switch (codeElement.MethodKind)
             {
                     case CodeMethodKind.Constructor: 
@@ -35,6 +55,12 @@ namespace Kiota.Builder.Writers.Php
                         break;
                     case CodeMethodKind.Deserializer:
                         WriteDeserializerBody(writer, codeElement);
+                        break;
+                    case CodeMethodKind.RequestBuilderWithParameters:
+                        WriteRequestBuilderWithParametersBody(codeElement, currentPathProperty, returnType, writer);
+                        break;
+                    case CodeMethodKind.RequestGenerator:
+                        WriteRequestGeneratorBody(codeElement, requestParams, parentClass, writer);
                         break;
             }
             conventions.WriteCodeBlockEnd(writer);
@@ -98,7 +124,7 @@ namespace Kiota.Builder.Writers.Php
                     return codeMethod.MethodKind switch
                     {
                         CodeMethodKind.Setter => $"{conventions.DocCommentPrefix} @param {(isSetterForAdditionalData ? "array<string,object> $value": conventions.GetParameterDocNullable(x, x))} {x?.Description}",
-                        _ => $"{conventions.DocCommentPrefix}@param {conventions.GetParameterDocNullable(x, x)} ${x.Name} {x.Description}"
+                        _ => $"{conventions.DocCommentPrefix}@param {conventions.GetParameterDocNullable(x, x)} {x.Description}"
                     };
                 })
                 .ToList()
@@ -107,7 +133,7 @@ namespace Kiota.Builder.Writers.Php
                 {
                     CodeMethodKind.Deserializer => "array<string, callable>",
                     CodeMethodKind.Getter => isGetterForAdditionalData
-                        ? "array<string, object>"
+                        ? "array<string, mixed>"
                         : conventions.GetTypeString(codeMethod.ReturnType, codeMethod),
                     _ => conventions.GetTypeString(codeMethod.ReturnType, codeMethod)
                 };
@@ -214,6 +240,45 @@ namespace Kiota.Builder.Writers.Php
         private static void WriteDeserializerBody(LanguageWriter writer, CodeMethod codeMethod)
         {
             writer.WriteLine("echo('This is the body of the deserializer.');");
+        }
+        
+        private void WriteRequestBuilderWithParametersBody(CodeMethod codeElement, CodeProperty currentPathProperty, string returnType, LanguageWriter writer)
+        {
+            var codePathParameters = codeElement.Parameters
+                .Where(x => x.IsOfKind(CodeParameterKind.Path))
+                .Select(x => x.Name);
+            var codePathParametersSuffix = codePathParameters.Any() ? 
+                ", " + codePathParameters.Aggregate((x, y) => $"{x}, {y}") :
+                string.Empty;
+            conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer, additionalPathParameters: codePathParametersSuffix);
+        }
+        
+        private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"$this->{property.Name}";
+        private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer) {
+            if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
+            
+            var currentPathProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.CurrentPath).FirstOrDefault();
+            var pathSegmentProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.PathSegment).FirstOrDefault();
+            var rawUrlProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.RawUrl).FirstOrDefault();
+            var requestAdapterProperty = currentClass.GetPropertiesOfKind(CodePropertyKind.RequestAdapter).FirstOrDefault();
+            writer.WriteLines($"{RequestInfoVarName} = new RequestInformation();",
+                                $"{RequestInfoVarName}->setUri({GetPropertyCall(currentPathProperty, "''")}, {GetPropertyCall(pathSegmentProperty, "''")}, {GetPropertyCall(rawUrlProperty, "false")});",
+                                $"{RequestInfoVarName}->httpMethod = HttpMethod::{codeElement?.HttpMethod?.ToString().ToUpperInvariant()};");
+            if(requestParams.headers != null)
+                writer.WriteLine($"{RequestInfoVarName}->setHeadersFromRawObject($headers);");
+            if(requestParams.queryString != null)
+                writer.WriteLines($"{RequestInfoVarName}->setQueryStringParametersFromRawObject($queryStringParams);");
+            if(requestParams.requestBody != null) {
+                if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
+                    writer.WriteLine($"{RequestInfoVarName}->setStreamContent(${requestParams.requestBody.Name});");
+                else {
+                    var spreadOperator = requestParams.requestBody.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
+                    writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable($this->{requestAdapterProperty?.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {spreadOperator}${requestParams.requestBody.Name});");
+                }
+            }
+            if(requestParams.options != null)
+                writer.WriteLine($"{RequestInfoVarName}->addRequestOptions(...$options);");
+            writer.WriteLine($"return {RequestInfoVarName};");
         }
     }
 }
