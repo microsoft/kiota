@@ -12,9 +12,6 @@ namespace Kiota.Builder.Writers.Java {
         private const string InternalVoidTypeName = "Void";
         public override string VoidTypeName => InternalVoidTypeName;
         public override string DocCommentPrefix => " * ";
-        private const string PathSegmentPropertyName = "pathSegment";
-        private const string CurrentPathPropertyName = "currentPath";
-        private const string HttpCorePropertyName = "requestAdapter";
         internal HashSet<string> PrimitiveTypes = new() {"String", "Boolean", "Integer", "Float", "Long", "Guid", "OffsetDateTime", InternalVoidTypeName, InternalStreamTypeName };
         public override string ParseNodeInterfaceName => "ParseNode";
         internal string DocCommentStart = "/**";
@@ -32,7 +29,7 @@ namespace Kiota.Builder.Writers.Java {
         {
             var nullKeyword = parameter.Optional ? "Nullable" : "Nonnull";
             var nullAnnotation = parameter.Type.IsNullable ? $"@javax.annotation.{nullKeyword} " : string.Empty;
-            return $"{nullAnnotation}final {GetTypeString(parameter.Type, targetElement)} {parameter.Name}";
+            return $"{nullAnnotation}final {GetTypeString(parameter.Type, targetElement)} {parameter.Name.ToFirstCharacterLowerCase()}";
         }
 
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
@@ -83,11 +80,22 @@ namespace Kiota.Builder.Writers.Java {
         }
         internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
         #pragma warning disable CA1822 // Method should be static
-        internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default, IEnumerable<CodeParameter> pathParameters = default) {
-            // because if currentPath is null it'll add "null" to the string...
-            var currentPath = addCurrentPath ? $"{CurrentPathPropertyName} + " : string.Empty;
-            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $"{string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}, ";
-            writer.WriteLines($"return new {returnType}({currentPath}{PathSegmentPropertyName}{suffix}, {HttpCorePropertyName}, {pathParametersSuffix}false);");
+        internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default) {
+            var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
+            var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
+            var urlTemplateParams = urlTemplateVarName ?? pathParametersProperty.Name;
+            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
+            writer.WriteLines($"return new {returnType}({urlTemplateParams}, {requestAdapterProp.Name}{pathParametersSuffix});");
+        }
+        public override string TempDictionaryVarName => "urlTplParams";
+        internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
+            if(pathParametersType == null) return;
+            var mapTypeName = pathParametersType.Name;
+            writer.WriteLine($"var {TempDictionaryVarName} = new {mapTypeName}({pathParametersReference});");
+            if(parameters.Any())
+                writer.WriteLines(parameters.Select(p =>
+                    $"{TempDictionaryVarName}.put(\"{p.Item2}\", {p.Item3});"
+                ).ToArray());
         }
         #pragma warning restore CA1822 // Method should be static
     }

@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [0.0.11] - 2021-10-27
+
+### Changed
+
+- Switched to URL templates instead of string contract for URL building #683
+- Fixed a bug where CSharp method names would not follow naming conventions #730
+
 ## [0.0.10] - 2021-10-06
 
 ### Changed

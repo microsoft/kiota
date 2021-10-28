@@ -47,16 +47,15 @@ namespace Kiota.Builder.Writers.Go.Tests {
                 PropertyKind = CodePropertyKind.RequestAdapter,
             });
             parentClass.AddProperty(new CodeProperty {
-                Name = "isRawUrl",
-                PropertyKind = CodePropertyKind.RawUrl,
+                Name = "pathParameters",
+                PropertyKind = CodePropertyKind.PathParameters,
+                Type = new CodeType {
+                    Name = "string"
+                },
             });
             parentClass.AddProperty(new CodeProperty {
-                Name = "currentPath",
-                PropertyKind = CodePropertyKind.CurrentPath,
-            });
-            parentClass.AddProperty(new CodeProperty {
-                Name = "pathSegment",
-                PropertyKind = CodePropertyKind.PathSegment,
+                Name = "UrlTemplate",
+                PropertyKind = CodePropertyKind.UrlTemplate,
             });
         }
         private void AddSerializationProperties() {
@@ -149,10 +148,11 @@ namespace Kiota.Builder.Writers.Go.Tests {
         }
         [Fact]
         public void WritesRequestBuilder() {
+            AddRequestProperties();
             method.MethodKind = CodeMethodKind.RequestBuilderBackwardCompatibility;
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("m.pathSegment", result);
+            Assert.Contains("m.pathParameters", result);
             Assert.Contains("m.requestAdapter", result);
             Assert.Contains("return", result);
             Assert.Contains("func (m", result);
@@ -189,7 +189,8 @@ namespace Kiota.Builder.Writers.Go.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains($"requestInfo := {AbstractionsPackageHash}.NewRequestInformation()", result);
-            Assert.Contains("err := requestInfo.SetUri", result);
+            Assert.Contains("requestInfo.UrlTemplate = ", result);
+            Assert.Contains("requestInfo.PathParameters", result);
             Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
             Assert.Contains("err != nil", result);
             Assert.Contains("h != nil", result);
@@ -199,7 +200,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             Assert.Contains("o != nil", result);
             Assert.Contains("requestInfo.AddRequestOptions(o)", result);
             Assert.Contains("requestInfo.SetContentFromParsable(m.requestAdapter", result);
-            Assert.Contains("return requestInfo, err", result);
+            Assert.Contains("return requestInfo, nil", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
@@ -345,21 +346,37 @@ namespace Kiota.Builder.Writers.Go.Tests {
         }
         [Fact]
         public void WritesIndexer() {
+            AddRequestProperties();
             method.MethodKind = CodeMethodKind.IndexerBackwardCompatibility;
-            method.PathSegment = "somePath";
+            method.OriginalIndexer = new () {
+                Name = "indx",
+                ParameterName = "id",
+                IndexType = new CodeType {
+                    Name = "string",
+                    IsNullable = true,
+                }
+            };
+            method.AddParameter(new CodeParameter {
+                Name = "id",
+                ParameterKind = CodeParameterKind.Custom,
+                Type = new CodeType {
+                    Name = "string",
+                    IsNullable = true,
+                },
+                Optional = true
+            });
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("m.requestAdapter", result);
-            Assert.Contains("m.pathSegment", result);
-            Assert.Contains("+ id", result);
+            Assert.Contains("m.pathParameters", result);
+            Assert.Contains("= *id", result);
             Assert.Contains("return", result);
             Assert.Contains("New", result);
-            Assert.Contains(method.PathSegment, result);
         }
         [Fact]
         public void WritesPathParameterRequestBuilder() {
+            AddRequestProperties();
             method.MethodKind = CodeMethodKind.RequestBuilderWithParameters;
-            method.PathSegment = "somePath";
             method.AddParameter(new CodeParameter {
                 Name = "pathParam",
                 ParameterKind = CodeParameterKind.Path,
@@ -370,7 +387,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("m.requestAdapter", result);
-            Assert.Contains("m.pathSegment", result);
+            Assert.Contains("m.pathParameters", result);
             Assert.Contains("pathParam", result);
             Assert.Contains("return *New", result);
         }
@@ -429,15 +446,58 @@ namespace Kiota.Builder.Writers.Go.Tests {
             method.MethodKind = CodeMethodKind.Constructor;
             var defaultValue = "someVal";
             var propName = "propWithDefaultValue";
+            parentClass.ClassKind = CodeClassKind.RequestBuilder;
             parentClass.AddProperty(new CodeProperty {
                 Name = propName,
                 DefaultValue = defaultValue,
-                PropertyKind = CodePropertyKind.PathSegment,
+                PropertyKind = CodePropertyKind.UrlTemplate,
+            });
+            AddRequestProperties();
+            method.AddParameter(new CodeParameter {
+                Name = "pathParameters",
+                ParameterKind = CodeParameterKind.PathParameters,
+                Type = new CodeType {
+                    Name = "map[string]string"
+                }
             });
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
             Assert.Contains($"m.{propName} = {defaultValue}", result);
+            Assert.Contains("make(map[string]string)", result);
+        }
+        [Fact]
+        public void WritesRawUrlConstructor() {
+            method.MethodKind = CodeMethodKind.RawUrlConstructor;
+            var defaultValue = "someVal";
+            var propName = "propWithDefaultValue";
+            parentClass.ClassKind = CodeClassKind.RequestBuilder;
+            parentClass.AddProperty(new CodeProperty {
+                Name = propName,
+                DefaultValue = defaultValue,
+                PropertyKind = CodePropertyKind.UrlTemplate,
+            });
+            AddRequestProperties();
+            method.AddParameter(new CodeParameter {
+                Name = "rawUrl",
+                ParameterKind = CodeParameterKind.RawUrl,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            });
+            method.AddParameter(new CodeParameter {
+                Name = "requestAdapter",
+                ParameterKind = CodeParameterKind.RequestAdapter,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            });
+            method.OriginalMethod = new ();
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+            Assert.Contains($"urlParams := make(map[string]string)", result);
+            Assert.Contains($"urlParams[\"request-raw-url\"] = rawUrl", result);
         }
         [Fact]
         public void WritesInheritedConstructor() {

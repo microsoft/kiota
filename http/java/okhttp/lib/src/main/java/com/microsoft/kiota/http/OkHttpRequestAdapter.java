@@ -2,6 +2,8 @@ package com.microsoft.kiota.http;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Objects;
@@ -199,24 +201,19 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
     private CompletableFuture<Response> getHttpResponseMessage(@Nonnull final RequestInformation requestInfo) {
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
         return this.authProvider.authenticateRequest(requestInfo).thenCompose(x -> {
-            final OkHttpCallbackFutureWrapper wrapper = new OkHttpCallbackFutureWrapper();
-            this.client.newCall(getRequestFromRequestInformation(requestInfo)).enqueue(wrapper);
-            return wrapper.future;
-        });
-    }
-    private Request getRequestFromRequestInformation(@Nonnull final RequestInformation requestInfo) {
-        final StringBuilder urlBuilder = new StringBuilder(requestInfo.uri.toString());
-
-        if(!requestInfo.queryParameters.isEmpty()) {
-            urlBuilder.append('?');
-            final StringJoiner qParamsJoiner = new StringJoiner("&");
-            for (final Map.Entry<String, Object> qPram : requestInfo.queryParameters.entrySet()) {
-                final Object value = qPram.getValue();
-                final String valueStr = value == null ? "" : value.toString();
-                qParamsJoiner.add(qPram.getKey() + (valueStr.isEmpty() ? "" : "=") + valueStr);
+            try {
+                final OkHttpCallbackFutureWrapper wrapper = new OkHttpCallbackFutureWrapper();
+                this.client.newCall(getRequestFromRequestInformation(requestInfo)).enqueue(wrapper);
+                return wrapper.future;
+            } catch (URISyntaxException | MalformedURLException ex) {
+                var result = new CompletableFuture<Response>();
+                result.completeExceptionally(ex);
+                return result;
             }
-            urlBuilder.append(qParamsJoiner.toString());
-        }
+        });
+        
+    }
+    private Request getRequestFromRequestInformation(@Nonnull final RequestInformation requestInfo) throws URISyntaxException, MalformedURLException {
         final RequestBody body = requestInfo.content == null ? null :
                                 new RequestBody() {
                                     @Override
@@ -237,7 +234,7 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
 
                                 };
         final Request.Builder requestBuilder = new Request.Builder()
-                                            .url(urlBuilder.toString())
+                                            .url(requestInfo.getUri().toURL())
                                             .method(requestInfo.httpMethod.toString(), body);
         for (final Map.Entry<String,String> header : requestInfo.headers.entrySet()) {
             requestBuilder.addHeader(header.getKey(), header.getValue());

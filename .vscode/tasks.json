@@ -57,7 +57,7 @@
                 "command": "powershell",
                 "args": [
                     "-command",
-                    "Remove-Item -Recurse -Include TestResults -Path tests"
+                    "Remove-Item -Recurse -Include TestResults -Path ${workspaceFolder}/tests"
                 ]
             }
         },

@@ -27,7 +27,13 @@ namespace Kiota.Builder.Writers.Java.Tests {
             property.Type = new CodeType {
                 Name = TypeName
             };
-            parentClass.AddProperty(property);
+            parentClass.AddProperty(property, new() {
+                Name = "pathParameters",
+                PropertyKind = CodePropertyKind.PathParameters,
+            }, new() {
+                Name = "requestAdapter",
+                PropertyKind = CodePropertyKind.RequestAdapter,
+            });
         }
         public void Dispose() {
             tw?.Dispose();
@@ -40,7 +46,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             var result = tw.ToString();
             Assert.Contains($"return new {TypeName}", result);
             Assert.Contains("requestAdapter", result);
-            Assert.Contains("pathSegment", result);
+            Assert.Contains("pathParameters", result);
         }
         [Fact]
         public void WritesCustomProperty() {

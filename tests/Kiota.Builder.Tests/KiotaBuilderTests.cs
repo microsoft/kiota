@@ -37,7 +37,7 @@ namespace Kiota.Builder.Tests
         {
             var node = OpenApiUrlTreeNode.Create();
             var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph" });
+            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
             var codeModel = builder.CreateSourceModel(node);
 
             Assert.Single(codeModel.GetChildElements(true));
@@ -73,7 +73,7 @@ namespace Kiota.Builder.Tests
                 } 
             }, "default");
             var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph" });
+            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
             var codeModel = builder.CreateSourceModel(node);
 
             var rootNamespace = codeModel.GetChildElements(true).Single();
@@ -129,7 +129,7 @@ namespace Kiota.Builder.Tests
                 } 
             }, "default");
             var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph" });
+            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
             var codeModel = builder.CreateSourceModel(node);
             var progressProp = codeModel.FindChildByName<CodeProperty>("progress", true);
             Assert.Equal("double", progressProp.Type.Name);
@@ -193,7 +193,7 @@ namespace Kiota.Builder.Tests
             };
             var node = OpenApiUrlTreeNode.Create(document, "default");
             var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph" });
+            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
             builder.CreateUriSpace(document);//needed so the component index exists
             var codeModel = builder.CreateSourceModel(node);
             var userClass = codeModel.FindNamespaceByName("ApiSdk.models").FindChildByName<CodeClass>("user");
@@ -288,7 +288,7 @@ namespace Kiota.Builder.Tests
             };
             var node = OpenApiUrlTreeNode.Create(document, "default");
             var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph" });
+            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
             builder.CreateUriSpace(document);//needed so the component index exists
             var codeModel = builder.CreateSourceModel(node);
             var deviceManagementNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement");
