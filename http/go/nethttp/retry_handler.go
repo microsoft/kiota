@@ -1,6 +1,7 @@
 package nethttplibrary
 
 import (
+	"math"
 	nethttp "net/http"
 	"strconv"
 	"time"
@@ -97,7 +98,7 @@ func (middleware RetryHandler) retryRequest(pipeline Pipeline, options retryHand
 		cummulativeDelay < time.Duration(ABSOLUTE_MAX_DELAY_SECONDS)*time.Second &&
 		options.GetShouldRetry()(cummulativeDelay, executionCount, req, resp) {
 		executionCount++
-		delay := middleware.getRetryDelay(req, resp, options)
+		delay := middleware.getRetryDelay(req, resp, options, executionCount)
 		cummulativeDelay += delay
 		req.Header.Set(RETRY_ATTEMPT_HEADER, strconv.Itoa(executionCount))
 		time.Sleep(delay)
@@ -121,7 +122,7 @@ func (middleware RetryHandler) isRetriableRequest(req *nethttp.Request) bool {
 	return true
 }
 
-func (middleware RetryHandler) getRetryDelay(req *nethttp.Request, resp *nethttp.Response, options retryHandlerOptionsInt) time.Duration {
+func (middleware RetryHandler) getRetryDelay(req *nethttp.Request, resp *nethttp.Response, options retryHandlerOptionsInt, executionCount int) time.Duration {
 	retryAfter := resp.Header.Get(RETRY_AFTER_HEADER)
 	if retryAfter != "" {
 		retryAfterDelay, err := strconv.ParseFloat(retryAfter, 64)
@@ -129,5 +130,5 @@ func (middleware RetryHandler) getRetryDelay(req *nethttp.Request, resp *nethttp
 			return time.Duration(retryAfterDelay) * time.Second
 		}
 	} //TODO parse the header if it's a date
-	return time.Duration(options.GetDelaySeconds()) * time.Second
+	return time.Duration(math.Pow(float64(options.GetDelaySeconds()), float64(executionCount))) * time.Second
 }
