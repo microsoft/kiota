@@ -423,7 +423,7 @@ namespace Kiota.Builder.Writers.Go {
             if(requestParams.options != null) {
                 writer.WriteLine($"if {requestParams.options.Name} != nil {{");
                 writer.IncreaseIndent();
-                writer.WriteLine($"err := {RequestInfoVarName}.AddRequestOptions({requestParams.options.Name})");
+                writer.WriteLine($"err := {RequestInfoVarName}.AddRequestOptions({requestParams.options.Name}...)");
                 WriteReturnError(writer, returnType);
                 writer.CloseBlock();
             }
