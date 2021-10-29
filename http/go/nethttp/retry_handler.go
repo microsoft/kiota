@@ -43,12 +43,12 @@ type retryHandlerOptionsInt interface {
 	GetMaxRetries() int
 }
 
-var keyValue = abs.RequestOptionKey{
+var retryKeyValue = abs.RequestOptionKey{
 	Key: "RetryHandler",
 }
 
 func (o *RetryHandlerOptions) GetKey() abs.RequestOptionKey {
-	return keyValue
+	return retryKeyValue
 }
 func (o *RetryHandlerOptions) GetShouldRetry() func(delay time.Duration, executionCount int, request *nethttp.Request, response *nethttp.Response) bool {
 	return o.ShouldRetry
@@ -84,7 +84,7 @@ func (middleware RetryHandler) Intercept(pipeline Pipeline, req *nethttp.Request
 	if err != nil {
 		return response, err
 	}
-	reqOption, ok := req.Context().Value(keyValue).(retryHandlerOptionsInt)
+	reqOption, ok := req.Context().Value(retryKeyValue).(retryHandlerOptionsInt)
 	if !ok {
 		reqOption = &middleware.options
 	}

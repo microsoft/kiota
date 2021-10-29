@@ -8,8 +8,17 @@ import (
 // Returns:
 // 		the client
 func GetDefaultClient(middleware ...Middleware) *nethttp.Client {
-	client := nethttp.DefaultClient //TODO add default configuration and new up the client instead of using the default
+	client := getDefaultClientWithoutMiddleware()
 	client.Transport = NewCustomTransport(middleware...)
+	return client
+}
+
+// used for internal unit testing
+func getDefaultClientWithoutMiddleware() *nethttp.Client {
+	client := nethttp.DefaultClient //TODO add default configuration and new up the client instead of using the default
+	client.CheckRedirect = func(req *nethttp.Request, via []*nethttp.Request) error {
+		return nethttp.ErrUseLastResponse
+	}
 	return client
 }
 
@@ -21,6 +30,7 @@ func GetDefaultClient(middleware ...Middleware) *nethttp.Client {
 func GetDefaultMiddlewares() []Middleware {
 	return []Middleware{
 		NewRetryHandler(),
+		NewRedirectHandler(),
 		//TODO add additional middlewares
 	}
 }

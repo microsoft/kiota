@@ -4,70 +4,52 @@ import (
 	nethttp "net/http"
 	httptest "net/http/httptest"
 	testing "testing"
-	"time"
 
 	"strconv"
 
 	assert "github.com/stretchr/testify/assert"
 )
 
-type NoopPipeline struct {
-	client *nethttp.Client
-}
-
-func (pipeline *NoopPipeline) Next(req *nethttp.Request) (*nethttp.Response, error) {
-	return pipeline.client.Do(req)
-}
-func newNoopPipeline() *NoopPipeline {
-	return &NoopPipeline{
-		client: getDefaultClientWithoutMiddleware(),
-	}
-}
-func TestItCreatesANewRetryHandler(t *testing.T) {
-	handler := NewRetryHandler()
+func TestItCreatesANewRedirectHandler(t *testing.T) {
+	handler := NewRedirectHandler()
 	if handler == nil {
 		t.Error("handler is nil")
 	}
 }
-func TestItAddsRetryAttemptHeaders(t *testing.T) {
-	retryAttemptInt := 0
+
+func TestItDoesntRedirectWithoutMiddleware(t *testing.T) {
+	requestCount := int64(0)
 	testServer := httptest.NewServer(nethttp.HandlerFunc(func(res nethttp.ResponseWriter, req *nethttp.Request) {
-		retryAttempt := req.Header.Get("Retry-Attempt")
-		if retryAttempt == "" {
-			res.WriteHeader(429)
-		} else {
-			res.WriteHeader(200)
-			retryAttemptInt, _ = strconv.Atoi(retryAttempt)
-		}
+		requestCount++
+		res.Header().Set("Location", "/"+strconv.FormatInt(requestCount, 10))
+		res.WriteHeader(301)
 		res.Write([]byte("body"))
 	}))
 	defer func() { testServer.Close() }()
-	handler := NewRetryHandler()
 	req, err := nethttp.NewRequest(nethttp.MethodGet, testServer.URL, nil)
 	if err != nil {
 		t.Error(err)
 	}
-	resp, err := handler.Intercept(newNoopPipeline(), req)
+	client := getDefaultClientWithoutMiddleware()
+	resp, err := client.Do(req)
 	if err != nil {
 		t.Error(err)
 	}
 	assert.NotNil(t, resp)
-	assert.Equal(t, 1, retryAttemptInt)
+	assert.Equal(t, int64(1), requestCount)
 }
 
-func TestItHonoursShouldRetry(t *testing.T) {
+func TestItHonoursShouldRedirect(t *testing.T) {
+	requestCount := int64(0)
 	testServer := httptest.NewServer(nethttp.HandlerFunc(func(res nethttp.ResponseWriter, req *nethttp.Request) {
-		retryAttempt := req.Header.Get("Retry-Attempt")
-		if retryAttempt == "" {
-			res.WriteHeader(429)
-		} else {
-			res.WriteHeader(200)
-		}
+		requestCount++
+		res.Header().Set("Location", "/"+strconv.FormatInt(requestCount, 10))
+		res.WriteHeader(301)
 		res.Write([]byte("body"))
 	}))
 	defer func() { testServer.Close() }()
-	handler := NewRetryHandlerWithOptions(RetryHandlerOptions{
-		ShouldRetry: func(delay time.Duration, executionCount int, request *nethttp.Request, response *nethttp.Response) bool {
+	handler := NewRedirectHandlerWithOptions(RedirectHandlerOptions{
+		ShouldRedirect: func(req *nethttp.Request, res *nethttp.Response) bool {
 			return false
 		},
 	})
@@ -80,18 +62,19 @@ func TestItHonoursShouldRetry(t *testing.T) {
 		t.Error(err)
 	}
 	assert.NotNil(t, resp)
-	assert.Equal(t, 429, resp.StatusCode)
+	assert.Equal(t, int64(1), requestCount)
 }
 
-func TestItHonoursMaxRetries(t *testing.T) {
-	retryAttemptInt := -1
+func TestItHonoursMaxRedirect(t *testing.T) {
+	requestCount := int64(0)
 	testServer := httptest.NewServer(nethttp.HandlerFunc(func(res nethttp.ResponseWriter, req *nethttp.Request) {
-		res.WriteHeader(429)
-		retryAttemptInt++
+		requestCount++
+		res.Header().Set("Location", "/"+strconv.FormatInt(requestCount, 10))
+		res.WriteHeader(301)
 		res.Write([]byte("body"))
 	}))
 	defer func() { testServer.Close() }()
-	handler := NewRetryHandler()
+	handler := NewRedirectHandler()
 	req, err := nethttp.NewRequest(nethttp.MethodGet, testServer.URL, nil)
 	if err != nil {
 		t.Error(err)
@@ -101,27 +84,31 @@ func TestItHonoursMaxRetries(t *testing.T) {
 		t.Error(err)
 	}
 	assert.NotNil(t, resp)
-	assert.Equal(t, 429, resp.StatusCode)
-	assert.Equal(t, DEFAULT_MAX_RETRIES, retryAttemptInt)
+	assert.Equal(t, int64(DEFAULT_MAX_REDIRECTS+1), requestCount)
 }
 
-func TestItDoesntRetryOnSuccess(t *testing.T) {
-	retryAttemptInt := -1
+func TestItStripsAuthorizationHeaderOnDifferentHost(t *testing.T) {
 	testServer := httptest.NewServer(nethttp.HandlerFunc(func(res nethttp.ResponseWriter, req *nethttp.Request) {
-		res.WriteHeader(200)
-		retryAttemptInt++
+		res.Header().Set("Location", "https://www.bing.com/")
+		res.WriteHeader(301)
 		res.Write([]byte("body"))
 	}))
 	defer func() { testServer.Close() }()
-	handler := NewRetryHandler()
+	handler := NewRedirectHandler()
 	req, err := nethttp.NewRequest(nethttp.MethodGet, testServer.URL, nil)
 	if err != nil {
 		t.Error(err)
 	}
-	resp, err := handler.Intercept(newNoopPipeline(), req)
+	req.Header.Set("Authorization", "Bearer 12345")
+	client := getDefaultClientWithoutMiddleware()
+	resp, err := client.Do(req)
 	if err != nil {
 		t.Error(err)
 	}
-	assert.NotNil(t, resp)
-	assert.Equal(t, 0, retryAttemptInt)
+	result, err := handler.getRedirectRequest(req, resp)
+	if err != nil {
+		t.Error(err)
+	}
+	assert.NotNil(t, result)
+	assert.Equal(t, "", result.Header.Get("Authorization"))
 }
