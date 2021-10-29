@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers.Extensions;
 using Kiota.Builder.Writers.Go;
 
 namespace Kiota.Builder.Refiners {
@@ -76,6 +78,65 @@ namespace Kiota.Builder.Refiners {
                 generatedCode,
                 new string[] {"github.com/microsoft/kiota/abstractions/go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota/abstractions/go.RegisterDefaultSerializer"},
                 new string[] {"github.com/microsoft/kiota/abstractions/go/serialization.ParseNodeFactory", "github.com/microsoft/kiota/abstractions/go.RegisterDefaultDeserializer"});
+            ReplaceExecutorAndGeneratorParametersByParameterSets(
+                generatedCode);
+        }
+        private static void ReplaceExecutorAndGeneratorParametersByParameterSets(CodeElement currentElement) {
+            if (currentElement is CodeMethod currentMethod &&
+                currentMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
+                currentMethod.Parameters.Any() &&
+                currentElement.Parent is CodeClass parentClass) {
+                    var parameterSetClass = parentClass.AddInnerClass(new CodeClass{
+                        Name = $"{parentClass.Name.ToFirstCharacterUpperCase()}{currentMethod.HttpMethod}Options",
+                        ClassKind = CodeClassKind.ParameterSet,
+                        Description = $"Options for {currentMethod.Name}",
+                    }).First();
+                    parameterSetClass.AddProperty(
+                        currentMethod.Parameters.Select(x => new CodeProperty{
+                            Name = x.Name,
+                            Type = x.Type,
+                            Description = x.Description,
+                            Access = AccessModifier.Public,
+                            PropertyKind = x.ParameterKind switch {
+                                CodeParameterKind.RequestBody => CodePropertyKind.RequestBody,
+                                CodeParameterKind.QueryParameter => CodePropertyKind.QueryParameter,
+                                CodeParameterKind.Headers => CodePropertyKind.Headers,
+                                CodeParameterKind.Options => CodePropertyKind.Options,
+                                CodeParameterKind.ResponseHandler => CodePropertyKind.ResponseHandler,
+                                _ => CodePropertyKind.Custom
+                            },
+                        }).ToArray());
+                    parameterSetClass.Properties.ToList().ForEach(x => {x.Type.ActionOf = false;});
+                    currentMethod.RemoveParametersByKind(CodeParameterKind.RequestBody,
+                                                        CodeParameterKind.QueryParameter,
+                                                        CodeParameterKind.Headers,
+                                                        CodeParameterKind.Options,
+                                                        CodeParameterKind.ResponseHandler);
+                    var parameterSetParameter = new CodeParameter{
+                        Name = "options",
+                        Type = new CodeType {
+                            Name = parameterSetClass.Name,
+                            ActionOf = false,
+                            IsNullable = true,
+                            TypeDefinition = parameterSetClass,
+                            IsExternal = false,
+                        },
+                        Optional = false,
+                        Description = "Options for the request",
+                        ParameterKind = CodeParameterKind.ParameterSet,
+                    };
+                    currentMethod.AddParameter(parameterSetParameter);
+                    var generatorMethod = parentClass.GetMethodsOffKind(CodeMethodKind.RequestGenerator)
+                                                    .FirstOrDefault(x => x.HttpMethod == currentMethod.HttpMethod);
+                    if(!(generatorMethod?.Parameters.Any(x => x.IsOfKind(CodeParameterKind.ParameterSet)) ?? true)) {
+                        generatorMethod.RemoveParametersByKind(CodeParameterKind.RequestBody,
+                                                        CodeParameterKind.QueryParameter,
+                                                        CodeParameterKind.Headers,
+                                                        CodeParameterKind.Options);
+                        generatorMethod.AddParameter(parameterSetParameter);
+                    }
+                }
+            CrawlTree(currentElement, ReplaceExecutorAndGeneratorParametersByParameterSets);
         }
         private static void AddNullCheckMethods(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
