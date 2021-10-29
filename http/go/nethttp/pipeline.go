@@ -41,8 +41,7 @@ func (pipeline *middlewarePipeline) Next(req *nethttp.Request) (*nethttp.Respons
 }
 
 func (transport *customTransport) RoundTrip(req *nethttp.Request) (*nethttp.Response, error) {
-	reqClone := req.Clone(req.Context())
-	return transport.middlewarePipeline.Next(reqClone)
+	return transport.middlewarePipeline.Next(req)
 }
 
 func NewCustomTransport(middlewares ...Middleware) *customTransport {
