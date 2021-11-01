@@ -15,26 +15,29 @@ namespace Kiota.Builder.Writers.Php
             var currentPathProperty = codeElement.Parent.GetChildElements(true)
                 .OfType<CodeProperty>()
                 .FirstOrDefault(x => x.IsOfKind(CodePropertyKind.PathParameters));
-            
+            var propertyName = codeElement.Name.ToFirstCharacterLowerCase();
+            var propertyAccess = conventions.GetAccessModifier(codeElement.Access);
             switch (codeElement.PropertyKind)
             {
                 case CodePropertyKind.RequestBuilder:
                     conventions.WriteShortDescription(codeElement.Description, writer);
-                    writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} function {codeElement.Name.ToFirstCharacterLowerCase()}(): {returnType} {{");
+                    writer.WriteLine($"{propertyAccess} function {propertyName}(): {returnType} {{");
                     writer.IncreaseIndent();
                     conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer);
                     writer.DecreaseIndent();
                     writer.WriteLine("}");
                     break;
                 case CodePropertyKind.RequestAdapter:
-                    writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} RequestAdapter ${codeElement.Name.ToFirstCharacterLowerCase()};");
+                    WritePropertyDocComment(codeElement, writer);
+                    writer.WriteLine($"{propertyAccess} RequestAdapter ${propertyName};");
                     break;
-                case CodePropertyKind.AdditionalData:
-                    writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} array ${codeElement.Name.ToFirstCharacterLowerCase()};");
+                case CodePropertyKind.AdditionalData or CodePropertyKind.PathParameters:
+                    WritePropertyDocComment(codeElement, writer);
+                    writer.WriteLine($"{propertyAccess} array ${propertyName};");
                     break;
                 default:
                     WritePropertyDocComment(codeElement, writer);
-                    writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {returnType} ${codeElement.Name.ToFirstCharacterLowerCase()};");
+                    writer.WriteLine($"{propertyAccess} {returnType} ${propertyName};");
                     break;
             }
             writer.WriteLine("");

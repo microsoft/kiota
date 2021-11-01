@@ -6,10 +6,7 @@ namespace Kiota.Builder.Writers.Php
 {
     public class PhpConventionService: CommonLanguageConventionService
     {
-        public override string TempDictionaryVarName
-        {
-            get;
-        }
+        public override string TempDictionaryVarName => "urlTplParams";
 
         public override string GetAccessModifier(AccessModifier access)
         {
@@ -41,6 +38,15 @@ namespace Kiota.Builder.Writers.Php
 
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
         {
+            if (code.IsCollection || code.IsArray || code.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.Complex)
+            {
+                return "array";
+            }
+
+            if (targetElement is CodeProperty propertyVar && propertyVar.IsOfKind(CodePropertyKind.PathParameters))
+            {
+                return "array";
+            }
             return TranslateType(code);
         }
 
@@ -70,6 +76,7 @@ namespace Kiota.Builder.Writers.Php
                 CodeParameterKind.QueryParameter => $"GetQueryParameters $queryParameters",
                 CodeParameterKind.Serializer => "SerializationWriter $writer",
                 CodeParameterKind.BackingStore => "BackingStore $backingStore",
+                CodeParameterKind.PathParameters => "array $pathParameters",
                 _ => $"{typeString} ${parameter.Name.ToFirstCharacterLowerCase()}"
 
             };
