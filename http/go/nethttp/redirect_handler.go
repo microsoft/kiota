@@ -9,25 +9,35 @@ import (
 	abs "github.com/microsoft/kiota/abstractions/go"
 )
 
+// The redirect handler handles redirect responses and follows them according to the options specified.
 type RedirectHandler struct {
+	// options to use when evaluating whether to redirect or not
 	options RedirectHandlerOptions
 }
 
+// Creates a new redirect handler with the default options.
 func NewRedirectHandler() *RedirectHandler {
 	return NewRedirectHandlerWithOptions(RedirectHandlerOptions{
-		MaxRedirects: DEFAULT_MAX_REDIRECTS,
+		MaxRedirects: defaultMaxRedirects,
 		ShouldRedirect: func(req *nethttp.Request, res *nethttp.Response) bool {
 			return true
 		},
 	})
 }
+
+// Creates a new redirect handler with the specified options.
+// Parameters:
+// options - the options to use when evaluating whether to redirect or not
 func NewRedirectHandlerWithOptions(options RedirectHandlerOptions) *RedirectHandler {
 	return &RedirectHandler{options: options}
 }
 
+// Options to use when evaluating whether to redirect or not.
 type RedirectHandlerOptions struct {
+	// A callback that determines whether to redirect or not.
 	ShouldRedirect func(req *nethttp.Request, res *nethttp.Response) bool
-	MaxRedirects   int
+	// The maximum number of redirects to follow.
+	MaxRedirects int
 }
 
 var redirectKeyValue = abs.RequestOptionKey{
@@ -40,30 +50,35 @@ type redirectHandlerOptionsInt interface {
 	GetMaxRedirect() int
 }
 
+// Returns the key value to be used when the option is added to the request context
 func (o *RedirectHandlerOptions) GetKey() abs.RequestOptionKey {
 	return redirectKeyValue
 }
+
+// Returns the redirection evaluation function.
 func (o *RedirectHandlerOptions) GetShouldRedirect() func(req *nethttp.Request, res *nethttp.Response) bool {
 	return o.ShouldRedirect
 }
+
+// Returns the maximum number of redirects to follow.
 func (o *RedirectHandlerOptions) GetMaxRedirect() int {
 	if o == nil || o.MaxRedirects < 1 {
-		return DEFAULT_MAX_REDIRECTS
-	} else if o.MaxRedirects > ABSOLUTE_MAX_REDIRECTS {
-		return ABSOLUTE_MAX_REDIRECTS
+		return defaultMaxRedirects
+	} else if o.MaxRedirects > absoluteMaxRedirects {
+		return absoluteMaxRedirects
 	} else {
 		return o.MaxRedirects
 	}
 }
 
-var DEFAULT_MAX_REDIRECTS = 5
-var ABSOLUTE_MAX_REDIRECTS = 20
-var MOVED_PERMANENTLY = 301
-var FOUND = 302
-var SEE_OTHER = 303
-var TEMPORARY_REDIRECT = 307
-var PERMANENT_REDIRECT = 308
-var LOCATION_HEADER = "Location"
+const defaultMaxRedirects = 5
+const absoluteMaxRedirects = 20
+const movedPermanently = 301
+const found = 302
+const seeOther = 303
+const temporaryRedirect = 307
+const permanentRedirect = 308
+const locationHeader = "Location"
 
 func (middleware RedirectHandler) Intercept(pipeline Pipeline, req *nethttp.Request) (*nethttp.Response, error) {
 	response, err := pipeline.Next(req)
@@ -100,22 +115,19 @@ func (middleware RedirectHandler) isRedirectResponse(response *nethttp.Response)
 	if response == nil {
 		return false
 	}
-	locationHeader := response.Header.Get(LOCATION_HEADER)
+	locationHeader := response.Header.Get(locationHeader)
 	if locationHeader == "" {
 		return false
 	}
 	statusCode := response.StatusCode
-	return statusCode == MOVED_PERMANENTLY || statusCode == FOUND || statusCode == SEE_OTHER || statusCode == TEMPORARY_REDIRECT || statusCode == PERMANENT_REDIRECT
+	return statusCode == movedPermanently || statusCode == found || statusCode == seeOther || statusCode == temporaryRedirect || statusCode == permanentRedirect
 }
 
 func (middleware RedirectHandler) getRedirectRequest(request *nethttp.Request, response *nethttp.Response) (*nethttp.Request, error) {
 	if request == nil || response == nil {
 		return nil, errors.New("request or response is nil")
 	}
-	locationHeaderValue := response.Header.Get(LOCATION_HEADER)
-	if locationHeaderValue == "" {
-		return nil, errors.New("location header is empty")
-	}
+	locationHeaderValue := response.Header.Get(locationHeader)
 	if locationHeaderValue[0] == '/' {
 		locationHeaderValue = request.URL.Scheme + "://" + request.URL.Host + locationHeaderValue
 	}
@@ -130,7 +142,7 @@ func (middleware RedirectHandler) getRedirectRequest(request *nethttp.Request, r
 	if !sameHost || !sameScheme {
 		result.Header.Del("Authorization")
 	}
-	if response.StatusCode == SEE_OTHER {
+	if response.StatusCode == seeOther {
 		result.Method = nethttp.MethodGet
 		result.Header.Del("Content-Type")
 		result.Header.Del("Content-Length")

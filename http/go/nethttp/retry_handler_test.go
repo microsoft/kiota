@@ -102,7 +102,7 @@ func TestItHonoursMaxRetries(t *testing.T) {
 	}
 	assert.NotNil(t, resp)
 	assert.Equal(t, 429, resp.StatusCode)
-	assert.Equal(t, DEFAULT_MAX_RETRIES, retryAttemptInt)
+	assert.Equal(t, defaultMaxRetries, retryAttemptInt)
 }
 
 func TestItDoesntRetryOnSuccess(t *testing.T) {

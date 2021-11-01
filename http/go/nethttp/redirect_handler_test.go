@@ -84,7 +84,7 @@ func TestItHonoursMaxRedirect(t *testing.T) {
 		t.Error(err)
 	}
 	assert.NotNil(t, resp)
-	assert.Equal(t, int64(DEFAULT_MAX_REDIRECTS+1), requestCount)
+	assert.Equal(t, int64(defaultMaxRedirects+1), requestCount)
 }
 
 func TestItStripsAuthorizationHeaderOnDifferentHost(t *testing.T) {
