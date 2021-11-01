@@ -1,4 +1,4 @@
-module github.com/microsoft/kiota/authentication/azure/go
+module github.com/microsoft/kiota/authentication/go/azure
 
 go 1.16
 
