@@ -23,7 +23,12 @@ namespace Kiota.Builder
         /// A single parameter to be provided by the SDK user which will be added to the path parameters.
         /// </summary>
         Path,
-        RawUrl
+        RawUrl,
+        /// <summary>
+        /// A single parameter to be provided by the SDK user which will contain query parameters, request body, options, etc.
+        /// Only used for languages that do not support overloads or optional parameters like go.
+        /// </summary>
+        ParameterSet,
     }
 
     public class CodeParameter : CodeTerminal, ICloneable, IDocumentedElement

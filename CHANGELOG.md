@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Adds Go authentication, http and serialization libraries and finalizes the generation #716
+
 ### Changed
 
 ## [0.0.11] - 2021-10-27

@@ -526,7 +526,8 @@ namespace Kiota.Builder
                     typeName = "binary";
             } else if ("double".Equals(format, StringComparison.OrdinalIgnoreCase) || 
                     "float".Equals(format, StringComparison.OrdinalIgnoreCase) ||
-                    "int64".Equals(format, StringComparison.OrdinalIgnoreCase)) {
+                    "int64".Equals(format, StringComparison.OrdinalIgnoreCase) ||
+                    "decimal".Equals(format, StringComparison.OrdinalIgnoreCase)) {
                 isExternal = true;
                 typeName = format.ToLowerInvariant();
             } else if ("boolean".Equals(typeName, StringComparison.OrdinalIgnoreCase) ||
