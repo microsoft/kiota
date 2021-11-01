@@ -1,12 +1,10 @@
 module github.com/microsoft/kiota/http/go/nethttp
 
-replace github.com/microsoft/kiota/abstractions/go => ../../../abstractions/go
-
-//TODO remove this replace once we "publish" the package
-
 go 1.16
 
 require (
-	github.com/microsoft/kiota/abstractions/go v0.0.0-20211013091133-b793efa27646 // indirect
-	github.com/stretchr/testify v1.7.0 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/microsoft/kiota/abstractions/go v0.0.0-20211101171910-f479920da5ba
+	github.com/stretchr/testify v1.7.0
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
