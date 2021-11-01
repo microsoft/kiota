@@ -1,4 +1,5 @@
 github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
 github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
-github.com/yosida95/uritemplate/v3 v3.0.1 h1:+Fs//CsT+x231WmUQhMHWMxZizMvpnkOVWop02mVCfs=
+github.com/microsoft/kiota/abstractions/go v0.0.0-20211101171910-f479920da5ba h1:eWHPlTjLj4UjO3jwGwOli2dAPNSDP4wL4JbLEpKw3to=
+github.com/microsoft/kiota/abstractions/go v0.0.0-20211101171910-f479920da5ba/go.mod h1:qqL2fbKbGlH90hsnmLIXNwDm/LEJWNbEe49SiTEna+0=
 github.com/yosida95/uritemplate/v3 v3.0.1/go.mod h1:ILOh0sOhIJR3+L/8afwt/kE++YT040gmv5BQTMR2HP4=
