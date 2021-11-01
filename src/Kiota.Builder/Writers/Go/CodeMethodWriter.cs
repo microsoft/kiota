@@ -416,7 +416,7 @@ namespace Kiota.Builder.Writers.Go {
                 writer.CloseBlock();
             }
             if(requestParams.headers != null) {
-                var headersName = requestParams.headers.Name.ToFirstCharacterUpperCase();;
+                var headersName = requestParams.headers.Name.ToFirstCharacterUpperCase();
                 writer.WriteLine($"if {requestParams.paramSet.Name} != nil && {requestParams.paramSet.Name}.{headersName} != nil {{");
                 writer.IncreaseIndent();
                 writer.WriteLine($"{RequestInfoVarName}.Headers = {requestParams.paramSet.Name}.{headersName}");
