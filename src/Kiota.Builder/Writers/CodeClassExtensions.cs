@@ -18,6 +18,16 @@ namespace Kiota.Builder.Writers.Extensions {
                         .Distinct()
                         .OrderBy(x => x.Name);
         }
+        public static IEnumerable<CodeMethod> GetMethodsOffKind(this CodeClass parentClass, params CodeMethodKind[] kinds) {
+            if(parentClass == null)
+                return Enumerable.Empty<CodeMethod>();
+            if(kinds == null || !kinds.Any())
+                throw new ArgumentOutOfRangeException(nameof(kinds));
+            return parentClass.Methods
+                        .Where(x => x.IsOfKind(kinds))
+                        .Distinct()
+                        .OrderBy(x => x.Name);
+        }
         public static CodeProperty GetBackingStoreProperty(this CodeClass parentClass) {
             if(parentClass == null) return null;
             return (parentClass.GetGreatestGrandparent(parentClass) ?? parentClass) // the backing store is always on the uppermost class

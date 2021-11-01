@@ -8,7 +8,7 @@ namespace Kiota.Builder.Writers.Go {
         public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer) {
             if(!codeElement.Options.Any()) return;
             if(codeElement?.Parent is CodeNamespace ns)
-                writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment()}");
+                writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().Replace("-", string.Empty)}");
 
             writer.WriteLine("import (");
             writer.IncreaseIndent();
@@ -17,6 +17,7 @@ namespace Kiota.Builder.Writers.Go {
             writer.DecreaseIndent();
             writer.WriteLine(")");
             var typeName = codeElement.Name.ToFirstCharacterUpperCase();
+            conventions.WriteShortDescription(codeElement.Description, writer);
             writer.WriteLines($"type {typeName} int",
                             string.Empty,
                             "const (");
@@ -40,7 +41,7 @@ namespace Kiota.Builder.Writers.Go {
             writer.WriteLines("}",
                             $"func Parse{typeName}(v string) (interface{{}}, error) {{");
             writer.IncreaseIndent();
-            writer.WriteLine($"switch v {{");
+            writer.WriteLine($"switch strings.ToUpper(v) {{");
             writer.IncreaseIndent();
             foreach (var item in codeElement.Options) {
                 writer.WriteLine($"case \"{item.ToUpperInvariant()}\":");
@@ -51,8 +52,16 @@ namespace Kiota.Builder.Writers.Go {
             writer.DecreaseIndent();
             writer.WriteLines("}",
                             $"return 0, errors.New(\"Unknown {typeName} value: \" + v)");
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
+            writer.CloseBlock();
+            writer.WriteLine($"func Serialize{typeName}(values []{typeName}) []string {{");
+            writer.IncreaseIndent();
+            writer.WriteLines("result := make([]string, len(values))",
+                                "for i, v := range values {");
+            writer.IncreaseIndent();
+            writer.WriteLine("result[i] = v.String()");
+            writer.CloseBlock();
+            writer.WriteLine("return result");
+            writer.CloseBlock();
         }
     }
 }

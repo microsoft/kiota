@@ -49,7 +49,7 @@ jobs:
           name: drop
           path: |
             ${{ env.relativePath }}/src/bin/Release/*.nupkg
-      - run: git checkout ${{ env.relativePath }}/nuget.config
+      - run: rm ${{ env.relativePath }}/nuget.config
         if: always()
   deploy:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
