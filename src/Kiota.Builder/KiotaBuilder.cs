@@ -518,7 +518,9 @@ namespace Kiota.Builder
                 return null;
             var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
             var isExternal = false;
-            if("string".Equals(typeName, StringComparison.OrdinalIgnoreCase)) {
+            if (typeSchema?.Items?.Enum?.Any() ?? false)
+                typeName = childType;
+            else if("string".Equals(typeName, StringComparison.OrdinalIgnoreCase)) {
                     isExternal = true;
                 if("date-time".Equals(format, StringComparison.OrdinalIgnoreCase))
                     typeName = "DateTimeOffset";
