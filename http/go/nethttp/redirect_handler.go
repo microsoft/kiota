@@ -51,23 +51,23 @@ type redirectHandlerOptionsInt interface {
 }
 
 // Returns the key value to be used when the option is added to the request context
-func (o *RedirectHandlerOptions) GetKey() abs.RequestOptionKey {
+func (options *RedirectHandlerOptions) GetKey() abs.RequestOptionKey {
 	return redirectKeyValue
 }
 
 // Returns the redirection evaluation function.
-func (o *RedirectHandlerOptions) GetShouldRedirect() func(req *nethttp.Request, res *nethttp.Response) bool {
-	return o.ShouldRedirect
+func (options *RedirectHandlerOptions) GetShouldRedirect() func(req *nethttp.Request, res *nethttp.Response) bool {
+	return options.ShouldRedirect
 }
 
 // Returns the maximum number of redirects to follow.
-func (o *RedirectHandlerOptions) GetMaxRedirect() int {
-	if o == nil || o.MaxRedirects < 1 {
+func (options *RedirectHandlerOptions) GetMaxRedirect() int {
+	if options == nil || options.MaxRedirects < 1 {
 		return defaultMaxRedirects
-	} else if o.MaxRedirects > absoluteMaxRedirects {
+	} else if options.MaxRedirects > absoluteMaxRedirects {
 		return absoluteMaxRedirects
 	} else {
-		return o.MaxRedirects
+		return options.MaxRedirects
 	}
 }
 

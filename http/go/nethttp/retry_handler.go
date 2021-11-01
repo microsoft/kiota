@@ -58,34 +58,34 @@ var retryKeyValue = abs.RequestOptionKey{
 }
 
 // Returns the key value to be used when the option is added to the request context
-func (o *RetryHandlerOptions) GetKey() abs.RequestOptionKey {
+func (options *RetryHandlerOptions) GetKey() abs.RequestOptionKey {
 	return retryKeyValue
 }
 
 // Returns the should retry callback function
-func (o *RetryHandlerOptions) GetShouldRetry() func(delay time.Duration, executionCount int, request *nethttp.Request, response *nethttp.Response) bool {
-	return o.ShouldRetry
+func (options *RetryHandlerOptions) GetShouldRetry() func(delay time.Duration, executionCount int, request *nethttp.Request, response *nethttp.Response) bool {
+	return options.ShouldRetry
 }
 
 // Returns the delays in seconds between retries
-func (o *RetryHandlerOptions) GetDelaySeconds() int {
-	if o.DelaySeconds < 1 {
+func (options *RetryHandlerOptions) GetDelaySeconds() int {
+	if options.DelaySeconds < 1 {
 		return defaultDelaySeconds
-	} else if o.DelaySeconds > absoluteMaxDelaySeconds {
+	} else if options.DelaySeconds > absoluteMaxDelaySeconds {
 		return absoluteMaxDelaySeconds
 	} else {
-		return o.DelaySeconds
+		return options.DelaySeconds
 	}
 }
 
 // Returns the maximum number of times a request can be retried
-func (o *RetryHandlerOptions) GetMaxRetries() int {
-	if o.MaxRetries < 1 {
+func (options *RetryHandlerOptions) GetMaxRetries() int {
+	if options.MaxRetries < 1 {
 		return defaultMaxRetries
-	} else if o.MaxRetries > absoluteMaxRetries {
+	} else if options.MaxRetries > absoluteMaxRetries {
 		return absoluteMaxRetries
 	} else {
-		return o.MaxRetries
+		return options.MaxRetries
 	}
 }
 
