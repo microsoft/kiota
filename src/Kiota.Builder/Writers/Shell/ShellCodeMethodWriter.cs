@@ -130,7 +130,10 @@ namespace Kiota.Builder.Writers.Shell
 
                 foreach (var option in parametersList)
                 {
+                    var type = option.Type as CodeType;
                     var optionType = conventions.GetTypeString(option.Type, option);
+                    if (option.ParameterKind == CodeParameterKind.RequestBody && type.TypeDefinition is CodeClass) optionType = "string";
+
                     var optionBuilder = new StringBuilder("new Option");
                     if (!String.IsNullOrEmpty(optionType))
                     {
@@ -153,7 +156,16 @@ namespace Kiota.Builder.Writers.Shell
                     writer.WriteLine($"command.AddOption({optionBuilder});");
                 }
 
-                var paramTypes = parametersList.Select(x => conventions.GetTypeString(x.Type, x)).Aggregate((x, y) => $"{x}, {y}");
+                var paramTypes = parametersList.Select(x =>
+                {
+                    var codeType = x.Type as CodeType;
+                    if (x.ParameterKind == CodeParameterKind.RequestBody && codeType.TypeDefinition is CodeClass)
+                    {
+                        return "string";
+                    }
+
+                    return conventions.GetTypeString(x.Type, x);
+                }).Aggregate((x, y) => $"{x}, {y}");
                 var paramNames = parametersList.Select(x => NormalizeToIdentifier(x.Name)).Aggregate((x, y) => $"{x}, {y}");
                 var isHandlerVoid = conventions.VoidTypeName.Equals(originalMethod.ReturnType.Name, StringComparison.OrdinalIgnoreCase);
                 writer.WriteLine($"command.Handler = CommandHandler.Create<{paramTypes}>(async ({paramNames}) => {{");
@@ -167,11 +179,12 @@ namespace Kiota.Builder.Writers.Shell
                     writer.WriteLine("Console.WriteLine(\"Success\");");
                 } else
                 {
-                    var contentType = originalMethod.ContentType ?? "application/json";
-                    writer.WriteLine($"using var serializer = RequestAdapter.SerializationWriterFactory.GetSerializationWriter(\"{contentType}\");");
-
                     var type = originalMethod.ReturnType as CodeType;
                     var typeString = conventions.GetTypeString(type, originalMethod);
+                    var contentType = originalMethod.ContentType ?? "application/json";
+                    if (typeString != "Stream")
+                        writer.WriteLine($"using var serializer = RequestAdapter.SerializationWriterFactory.GetSerializationWriter(\"{contentType}\");");
+
                     if (type.TypeDefinition is CodeEnum)
                     {
                         if (type.IsCollection)
@@ -190,13 +203,17 @@ namespace Kiota.Builder.Writers.Shell
                     {
                         if (type.IsCollection)
                             writer.WriteLine($"serializer.WriteCollectionOfObjectValues(null, result);");
-                        else if (typeString == "Stream")
-                            writer.WriteLine($"//serializer.WriteObjectValue(null, result);");
+                        else if (typeString == "Stream") { }
                         else
                             writer.WriteLine($"serializer.WriteObjectValue(null, result);");
                     }
-                    writer.WriteLine("using var content = serializer.GetSerializedContent();");
-                    writer.WriteLine("using var reader = new StreamReader(content);");
+
+                    if (typeString != "Stream")
+                        writer.WriteLine("using var content = serializer.GetSerializedContent();");
+
+                    // Assume string content as stream here
+                    var argName = typeString != "Stream" ? "content" : "result";
+                    writer.WriteLine($"using var reader = new StreamReader({argName});");
                     writer.WriteLine("var strContent = await reader.ReadToEndAsync();");
                     writer.WriteLine("Console.Write(strContent + \"\\n\");");
                 }
@@ -214,6 +231,25 @@ namespace Kiota.Builder.Writers.Shell
             var generatorMethod = (codeElement.Parent as CodeClass)
                                                 .Methods
                                                 .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod);
+            var requestBodyParam = requestParams.requestBody;
+            var requestBodyParamType = requestBodyParam?.Type as CodeType;
+            if (requestBodyParamType?.TypeDefinition is CodeClass)
+            {
+                writer.WriteLine($"using var stream = new MemoryStream(Encoding.UTF8.GetBytes({requestBodyParam.Name}));");
+                writer.WriteLine("var parseNode = ParseNodeFactoryRegistry.DefaultInstance.GetRootParseNode(\"application/json\", stream);");
+
+                var typeString = conventions.GetTypeString(requestBodyParamType, requestBodyParam, false);
+
+                if (requestBodyParamType.IsCollection)
+                {
+                    writer.WriteLine($"var model = parseNode.GetCollectionOfObjectValues<{typeString}>();");
+                } else
+                {
+                    writer.WriteLine($"var model = parseNode.GetObjectValue<{typeString}>();");
+                }
+
+                requestBodyParam.Name = "model";
+            }
             var parametersList = new CodeParameter[] { requestParams.requestBody, requestParams.queryString, requestParams.headers, requestParams.options }
                                 .Select(x => x?.Name).Where(x => x != null).DefaultIfEmpty().Aggregate((x, y) => $"{x}, {y}");
             writer.WriteLine($"var requestInfo = {generatorMethod?.Name}({parametersList});");

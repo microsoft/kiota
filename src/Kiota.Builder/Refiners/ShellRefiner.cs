@@ -238,6 +238,8 @@ namespace Kiota.Builder.Refiners
                 "System.CommandLine",  "Command", "RootCommand"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
                 "System.CommandLine.Invocation",  "CommandHandler"),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
+                "System.Text",  "Encoding"),
         };
 
         private static void CapitalizeNamespacesFirstLetters(CodeElement current)
