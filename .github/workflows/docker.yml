@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v2.3.5
+        uses: actions/checkout@v2.4.0
       - name: Login to GitHub package feed
         uses: docker/login-action@v1.10.0 
         with:
