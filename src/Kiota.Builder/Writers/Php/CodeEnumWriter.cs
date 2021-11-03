@@ -1,4 +1,5 @@
-﻿using Kiota.Builder.Extensions;
+﻿using System.Text.RegularExpressions;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Php
 {
@@ -9,14 +10,41 @@ namespace Kiota.Builder.Writers.Php
         public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer)
         {
             conventions.WritePhpDocumentStart(writer);
+            var enumProperties = codeElement.Options;
+            codeElement.AddUsings(new CodeUsing()
+            {
+                Alias = string.Empty,
+                Declaration = new CodeType()
+                {
+                    IsExternal = true
+                },
+                Name = "Microsoft\\Kiota\\Abstractions\\Enum",
+                Parent = codeElement
+            });
             if (codeElement?.Parent is CodeNamespace enumNamespace)
             {
                 writer.WriteLine($"namespace {conventions.ReplaceDotsWithSlashInNamespaces(enumNamespace.Name)};");
             }
             writer.WriteLine();
-            writer.WriteLine($"class {codeElement?.Name.ToFirstCharacterUpperCase()} {{");
+
+            foreach (var use in codeElement.Usings)
+            {
+                    writer.WriteLine($"use {use.Name};");
+            }
+            writer.WriteLine();
+            writer.WriteLine($"class {codeElement?.Name.ToFirstCharacterUpperCase()} extends Enum {{");
             writer.IncreaseIndent();
+            foreach (var enumProperty     in enumProperties)
+            {
+                writer.WriteLine($"public const {GetEnumValueName(enumProperty)} = '{enumProperty}';");
+            }
             conventions.WriteCodeBlockEnd(writer);
         }
+        
+        private static string GetEnumValueName(string original)
+        {
+            return Regex.Replace(original, "([A-Z]{1})", "_$1").Trim('_').ToUpperInvariant();
+        }
+        
     }
 }

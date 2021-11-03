@@ -70,18 +70,20 @@ namespace Kiota.Builder.Writers.Php
         private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
             if(inherits)
                 writer.WriteLine("parent::__construct();");
-            foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData,
+            foreach(var propWithDefault in parentClass.GetPropertiesOfKind(
                                                                             CodePropertyKind.BackingStore,
                                                                             CodePropertyKind.RequestBuilder,
+                                                                            CodePropertyKind.UrlTemplate,
                                                                             CodePropertyKind.PathParameters)
                                             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
                                             .OrderByDescending(x => x.PropertyKind)
                                             .ThenBy(x => x.Name)) {
                 writer.WriteLine($"$this->{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {conventions.ReplaceDoubleQuoteWithSingleQuote(propWithDefault.DefaultValue)};");
             }
-            if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
+            if(currentMethod.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor)) {
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer);
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RawUrl, CodePropertyKind.UrlTemplate, writer);
             }
         }
         private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
