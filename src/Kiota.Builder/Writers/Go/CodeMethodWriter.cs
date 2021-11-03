@@ -303,24 +303,17 @@ namespace Kiota.Builder.Writers.Go {
                 _ when property.Type.IsCollection => "res",
                 _ => "val",
             };
-            if(property.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None) {
-                var isTargetTypeObject = property.Type is CodeType currentType && 
-                    (currentType.TypeDefinition is CodeEnum ||
-                    currentType.TypeDefinition is CodeClass);
-                WriteCollectionCast(propertyTypeImportName, isTargetTypeObject, "val", "res", writer);
-            }
+            if(property.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None)
+                WriteCollectionCast(propertyTypeImportName, "val", "res", writer);
             writer.WriteLines($"m.Set{property.Name.ToFirstCharacterUpperCase()}({valueArgument})", 
                             "return nil");
             writer.CloseBlock();
         }
-        private static void WriteCollectionCast(string propertyTypeImportName, bool isTargetTypeObject, string sourceVarName, string targetVarName, LanguageWriter writer) {
+        private static void WriteCollectionCast(string propertyTypeImportName, string sourceVarName, string targetVarName, LanguageWriter writer) {
             writer.WriteLines($"{targetVarName} := make([]{propertyTypeImportName}, len({sourceVarName}))",
                                 $"for i, v := range {sourceVarName} {{");
             writer.IncreaseIndent();
-            var castingExpression = isTargetTypeObject ?
-                        $"*(v.(*{propertyTypeImportName}))" :
-                        $"v.({propertyTypeImportName})";
-            writer.WriteLine($"{targetVarName}[i] = {castingExpression}");
+            writer.WriteLine($"{targetVarName}[i] = *(v.(*{propertyTypeImportName}))");
             writer.CloseBlock();
         }
         private void WriteRequestExecutorBody(CodeMethod codeElement, RequestProperties requestParams, string returnType, CodeClass parentClass, LanguageWriter writer) {
@@ -359,9 +352,8 @@ namespace Kiota.Builder.Writers.Go {
             WriteReturnError(writer, returnType);
             var valueVarName = string.Empty;
             if(codeElement.ReturnType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None) {
-                var isTargetTypeObject = codeElement.ReturnType is CodeType returnCodeType && returnCodeType.TypeDefinition is CodeClass;
                 var propertyTypeImportName = conventions.GetTypeString(codeElement.ReturnType, parentClass, false, false);
-                WriteCollectionCast(propertyTypeImportName, isTargetTypeObject, "res", "val", writer);
+                WriteCollectionCast(propertyTypeImportName, "res", "val", writer);
                 valueVarName = "val, ";
             }
             var resultReturnCast = isVoid switch {
