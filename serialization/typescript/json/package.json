@@ -1,39 +1,65 @@
 {
-  "name": "@microsoft/kiota-serialization-json",
-  "version": "1.0.5",
-  "description": "Implementation of Kiota Serialization interfaces for JSON",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "clean": "rm -r ./dist"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/microsoft/kiota.git"
-  },
-  "keywords": [
-    "kiota",
-    "openAPI",
-    "Microsoft",
-    "Graph",
-    "JSON"
-  ],
-  "author": "Microsoft",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/microsoft/kiota/issues"
-  },
-  "homepage": "https://github.com/microsoft/kiota#readme",
-  "devDependencies": {
-    "@types/node": "^16.11.3",
-    "typescript": "^4.4.4"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
-  "dependencies": {
-    "@microsoft/kiota-abstractions": "^1.0.20"
-  }
+    "name": "@microsoft/kiota-serialization-json",
+    "version": "1.0.5",
+    "description": "Implementation of Kiota Serialization interfaces for JSON",
+    "main": "dist/src/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc -p tsconfig.json",
+        "test": "mocha dist/test/node/**.js",
+        "clean": "rm -r ./dist"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/microsoft/kiota.git"
+    },
+    "keywords": [
+        "kiota",
+        "openAPI",
+        "Microsoft",
+        "Graph",
+        "JSON"
+    ],
+    "author": "Microsoft",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/microsoft/kiota/issues"
+    },
+    "homepage": "https://github.com/microsoft/kiota#readme",
+    "devDependencies": {
+        "@types/node": "^16.11.3",
+        "typescript": "^4.4.4",
+        "@rollup/plugin-commonjs": "^21.0.0",
+        "@rollup/plugin-node-resolve": "^13.0.5",
+        "@types/chai": "^4.2.22",
+        "@types/mocha": "^9.0.0",
+        "@types/sinon": "^10.0.4",
+        "@typescript-eslint/eslint-plugin": "^5.0.0",
+        "@typescript-eslint/parser": "^5.0.0",
+        "chai": "^4.3.4",
+        "eslint": "^7.32.0",
+        "eslint-config-prettier": "^7.2.0",
+        "eslint-plugin-prettier": "^3.4.1",
+        "eslint-plugin-simple-import-sort": "^7.0.0",
+        "esm": "^3.2.25",
+        "karma": "^6.3.4",
+        "karma-chai": "^0.1.0",
+        "karma-chrome-launcher": "^3.1.0",
+        "karma-firefox-launcher": "^2.1.1",
+        "karma-mocha": "^2.0.1",
+        "karma-typescript": "^5.5.2",
+        "mocha": "^8.4.0",
+        "prettier": "^1.19.1",
+        "rollup": "^2.58.0",
+        "rollup-plugin-terser": "^7.0.2",
+        "sinon": "^11.1.2"
+    },
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com"
+    },
+    "dependencies": {
+        "@microsoft/kiota-abstractions": "file:microsoft-kiota-abstractions-1.0.21.tgz",
+        "node-fetch": "^2.6.0",
+        "web-streams-polyfill": "^3.1.1"
+    }
 }

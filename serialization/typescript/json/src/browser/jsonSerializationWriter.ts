@@ -1,8 +1,5 @@
-import { Readable } from 'stream';
-
 import { Parsable, SerializationWriter } from "@microsoft/kiota-abstractions";
 import { TextEncoder } from "util";
-
 
 export interface ReadableStreamContent{
 
@@ -99,9 +96,12 @@ export class JsonSerializationWriter implements SerializationWriter {
     }
     public getSerializedContent = (): ReadableStreamContent => {
         const encoded = new TextEncoder().encode(this.writer.join(""));
-        const readable = new Readable();
-        encoded.forEach((item)=>readable.push(item));
-        return readable as ReadableStreamContent; 
+        return new ReadableStream<Uint8Array>({
+            start: (controller) => {
+                controller.enqueue(encoded);
+                controller.close();
+            }
+        }) as ReadableStreamContent; 
     }
     public writeAdditionalData = (value: Map<string, unknown>) : void => {
         if(!value) return;
