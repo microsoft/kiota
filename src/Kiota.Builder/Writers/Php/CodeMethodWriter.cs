@@ -28,17 +28,7 @@ namespace Kiota.Builder.Writers.Php
             
             WriteMethodPhpDocs(codeElement, writer, orNullReturn);
             WriteMethodsAndParameters(codeElement, writer, orNullReturn, codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor));
-            
-            if(!codeElement.IsOfKind(CodeMethodKind.Setter))
-                foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name))
-                {
-                    writer.WriteLine($"if (is_null(${parameter.Name})) {{");
-                    writer.IncreaseIndent();
-                    writer.WriteLine($"throw new \\Exception('${parameter.Name} cannot be null');");
-                    writer.DecreaseIndent();
-                    writer.WriteLine("}");
-                }
-            
+
             switch (codeElement.MethodKind)
             {
                     case CodeMethodKind.Constructor: 
@@ -260,23 +250,23 @@ namespace Kiota.Builder.Writers.Php
         {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
-            var urlTemplateParamsProperty = currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
+            var pathParametersProperty = currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var urlTemplateProperty = currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate);
             var requestAdapterProperty = currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             writer.WriteLines($"{RequestInfoVarName} = new RequestInformation();",
                                 $"{RequestInfoVarName}->urlTemplate = {GetPropertyCall(urlTemplateProperty, "''")};",
-                                $"{RequestInfoVarName}->pathParameters = {GetPropertyCall(urlTemplateParamsProperty, "''")};",
+                                $"{RequestInfoVarName}->pathParameters = {GetPropertyCall(pathParametersProperty, "''")};",
                                 $"{RequestInfoVarName}->httpMethod = HttpMethod::{codeElement.HttpMethod.ToString().ToUpperInvariant()};");
             if(requestParams.headers != null)
-                writer.WriteLine($"{RequestInfoVarName}.setHeadersFromRawObject($headers);");
+                writer.WriteLine($"{RequestInfoVarName}->setHeadersFromRawObject($headers);");
             if(requestParams.queryString != null)
-                writer.WriteLines($"{RequestInfoVarName}->setQueryStringParametersFromRawObject($queryString);");
+                writer.WriteLines($"{RequestInfoVarName}->setQueryStringParametersFromRawObject($queryParameters);");
             if(requestParams.requestBody != null) {
                 if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{RequestInfoVarName}->setStreamContent(${requestParams.requestBody.Name});");
                 else {
                     var spreadOperator = requestParams.requestBody.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
-                    writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {spreadOperator}${requestParams.requestBody.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {spreadOperator}${requestParams.requestBody.Name});");
                 }
             }
             if(requestParams.options != null)

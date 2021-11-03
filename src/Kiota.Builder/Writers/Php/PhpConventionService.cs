@@ -25,6 +25,8 @@ namespace Kiota.Builder.Writers.Php
 
         private static string PathSegmentPropertyName => "$pathSegment";
 
+        private static string PathParametersPropertyName => "$pathParameters";
+
         private static string CurrentPathPropertyName => "$currentPath";
 
         private static string RequestAdapterPropertyName => "$requestAdapter";
@@ -118,8 +120,7 @@ namespace Kiota.Builder.Writers.Php
 
         public void AddRequestBuilderBody(bool addCurrentPathProperty, string returnType, LanguageWriter writer, string suffix = default, string additionalPathParameters = default)
         {
-            var currentPath = addCurrentPathProperty ? $"$this->{RemoveDollarSignFromPropertyName(CurrentPathPropertyName)} . " : string.Empty;
-            writer.WriteLines($"return new {returnType}({currentPath}$this->{RemoveDollarSignFromPropertyName(PathSegmentPropertyName)}{suffix}, $this->{RemoveDollarSignFromPropertyName(RequestAdapterPropertyName)});");
+            writer.WriteLines($"return new {returnType}($this->{RemoveDollarSignFromPropertyName(PathParametersPropertyName)}{suffix}, $this->{RemoveDollarSignFromPropertyName(RequestAdapterPropertyName)});");
         }
 
         private static string RemoveDollarSignFromPropertyName(string propertyName)
