@@ -134,6 +134,11 @@ namespace Kiota.Builder.Writers.Shell
                     var optionType = conventions.GetTypeString(option.Type, option);
                     if (option.ParameterKind == CodeParameterKind.RequestBody && type.TypeDefinition is CodeClass) optionType = "string";
 
+                    // Binary body handling
+                    if (option.ParameterKind == CodeParameterKind.RequestBody && conventions.StreamTypeName.Equals(option.Type?.Name, StringComparison.OrdinalIgnoreCase)) {
+                        option.Name = "file";
+                    }
+
                     var optionBuilder = new StringBuilder("new Option");
                     if (!String.IsNullOrEmpty(optionType))
                     {
@@ -162,15 +167,24 @@ namespace Kiota.Builder.Writers.Shell
                     if (x.ParameterKind == CodeParameterKind.RequestBody && codeType.TypeDefinition is CodeClass)
                     {
                         return "string";
+                    } else if (conventions.StreamTypeName.Equals(x.Type?.Name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return "FileInfo";
                     }
 
                     return conventions.GetTypeString(x.Type, x);
                 }).Aggregate((x, y) => $"{x}, {y}");
                 var paramNames = parametersList.Select(x => NormalizeToIdentifier(x.Name)).Aggregate((x, y) => $"{x}, {y}");
                 var isHandlerVoid = conventions.VoidTypeName.Equals(originalMethod.ReturnType.Name, StringComparison.OrdinalIgnoreCase);
+                returnType = conventions.GetTypeString(originalMethod.ReturnType, originalMethod);
+                if (conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
+                {
+                    writer.WriteLine("command.AddOption(new Option<FileInfo>(\"--output\"));");
+                    paramTypes = $"{paramTypes}, FileInfo";
+                    paramNames = $"{paramNames}, output";
+                }
                 writer.WriteLine($"command.Handler = CommandHandler.Create<{paramTypes}>(async ({paramNames}) => {{");
                 writer.IncreaseIndent();
-                returnType = conventions.GetTypeString(originalMethod.ReturnType, originalMethod);
                 WriteCommandHandlerBody(originalMethod, requestParams, isHandlerVoid, returnType, writer);
                 // Get request generator method. To call it + get path & query parameters see WriteRequestExecutorBody in CSharp
                 writer.WriteLine("// Print request output. What if the request has no return?");
@@ -209,18 +223,37 @@ namespace Kiota.Builder.Writers.Shell
                     }
 
                     if (typeString != "Stream")
+                    {
                         writer.WriteLine("using var content = serializer.GetSerializedContent();");
+                        WriteResponseToConsole(writer, "content");
+                    } else
+                    {
+                        writer.WriteLine("if (output == null) {");
+                        writer.IncreaseIndent();
+                        WriteResponseToConsole(writer, "result");
+                        writer.CloseBlock();
+                        writer.WriteLine("else {");
+                        writer.IncreaseIndent();
+                        writer.WriteLine("using var stream = output.OpenWrite();");
+                        writer.WriteLine("await result.CopyToAsync(stream);");
+                        writer.WriteLine("Console.WriteLine($\"Content written to {output.FullName}.\");");
+                        writer.CloseBlock();
+                    }
 
                     // Assume string content as stream here
-                    var argName = typeString != "Stream" ? "content" : "result";
-                    writer.WriteLine($"using var reader = new StreamReader({argName});");
-                    writer.WriteLine("var strContent = await reader.ReadToEndAsync();");
-                    writer.WriteLine("Console.Write(strContent + \"\\n\");");
+                    
                 }
                 writer.DecreaseIndent();
                 writer.WriteLine("});");
                 writer.WriteLine("return command;");
             }
+        }
+
+        private void WriteResponseToConsole(LanguageWriter writer, string argName)
+        {
+            writer.WriteLine($"using var reader = new StreamReader({argName});");
+            writer.WriteLine("var strContent = await reader.ReadToEndAsync();");
+            writer.WriteLine("Console.Write(strContent + \"\\n\");");
         }
 
         protected virtual void WriteCommandHandlerBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer)
@@ -249,6 +282,11 @@ namespace Kiota.Builder.Writers.Shell
                 }
 
                 requestBodyParam.Name = "model";
+            } else if (conventions.StreamTypeName.Equals(requestBodyParamType?.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                var name = requestBodyParam.Name;
+                requestBodyParam.Name = "stream";
+                writer.WriteLine($"using var {requestBodyParam.Name} = {name}.OpenRead();");
             }
             var parametersList = new CodeParameter[] { requestParams.requestBody, requestParams.queryString, requestParams.headers, requestParams.options }
                                 .Select(x => x?.Name).Where(x => x != null).DefaultIfEmpty().Aggregate((x, y) => $"{x}, {y}");
