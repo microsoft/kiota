@@ -46,9 +46,21 @@ namespace Kiota.Builder.Writers.Php
         private void WritePropertyDocComment(CodeProperty codeProperty, LanguageWriter writer)
         {
             var propertyDescription = codeProperty.Description;
-            var hasDescription = !string.IsNullOrEmpty(codeProperty.Description);
-            writer.WriteLine($"{conventions.DocCommentStart} @var {conventions.GetTypeString(codeProperty.Type, codeProperty)} ${codeProperty.Name} " +
+            var hasDescription = !string.IsNullOrEmpty(propertyDescription);
+
+            var collectionKind = codeProperty.Type.IsArray || codeProperty.Type.IsCollection;
+            writer.WriteLine($"{conventions.DocCommentStart} @var {(collectionKind ? GetCollectionDocString(codeProperty) : conventions.GetTypeString(codeProperty.Type, codeProperty))} ${codeProperty.Name} " +
                              $"{(hasDescription ? propertyDescription : string.Empty)} {conventions.DocCommentEnd}");
+        }
+
+        private string GetCollectionDocString(CodeProperty codeProperty)
+        {
+            if (codeProperty.IsOfKind(CodePropertyKind.AdditionalData))
+            {
+                return "array<string, mixed>";
+            }
+
+            return $"array<{conventions.TranslateType(codeProperty.Type)}>";
         }
     }
 }

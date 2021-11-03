@@ -124,6 +124,7 @@ namespace Kiota.Builder.Writers.Php
             var returnDocString = codeMethod.MethodKind switch
                 {
                     CodeMethodKind.Deserializer => "array<string, callable>",
+                    CodeMethodKind.Getter when accessedProperty.Type.IsArray || accessedProperty.Type.IsCollection => $"array<{conventions.TranslateType(accessedProperty.Type)}>",
                     CodeMethodKind.Getter => isGetterForAdditionalData
                         ? "array<string, mixed>"
                         : conventions.GetTypeString(codeMethod.ReturnType, codeMethod),
