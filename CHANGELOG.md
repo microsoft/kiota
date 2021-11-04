@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixes a bug where arrays of enums could be wrongly mapped.
+- Fixes a bug where go deserialization would fail on collections of scalars.
 
 ## [0.0.13] - 2021-10-27
 
