@@ -37,7 +37,7 @@ namespace Kiota.Builder.Writers.Php
                     break;
                 default:
                     WritePropertyDocComment(codeElement, writer);
-                    writer.WriteLine($"{propertyAccess} {returnType} ${propertyName};");
+                    writer.WriteLine($"{propertyAccess} {(codeElement.Type.IsNullable ? "?" : string.Empty)}{returnType} ${propertyName};");
                     break;
             }
             writer.WriteLine("");
@@ -49,18 +49,13 @@ namespace Kiota.Builder.Writers.Php
             var hasDescription = !string.IsNullOrEmpty(propertyDescription);
 
             var collectionKind = codeProperty.Type.IsArray || codeProperty.Type.IsCollection;
-            writer.WriteLine($"{conventions.DocCommentStart} @var {(collectionKind ? GetCollectionDocString(codeProperty) : conventions.GetTypeString(codeProperty.Type, codeProperty))} ${codeProperty.Name} " +
+            writer.WriteLine($"{conventions.DocCommentStart} @var {(collectionKind ? GetCollectionDocString(codeProperty) : conventions.GetTypeString(codeProperty.Type, codeProperty))}{(codeProperty.Type.IsNullable ? "|null" : string.Empty)} ${codeProperty.Name} " +
                              $"{(hasDescription ? propertyDescription : string.Empty)} {conventions.DocCommentEnd}");
         }
 
         private string GetCollectionDocString(CodeProperty codeProperty)
         {
-            if (codeProperty.IsOfKind(CodePropertyKind.AdditionalData))
-            {
-                return "array<string, mixed>";
-            }
-
-            return $"array<{conventions.TranslateType(codeProperty.Type)}>";
+            return codeProperty.IsOfKind(CodePropertyKind.AdditionalData) ? "array<string, mixed>" : $"array<{conventions.TranslateType(codeProperty.Type)}>";
         }
     }
 }

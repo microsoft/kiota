@@ -13,6 +13,7 @@ namespace Kiota.Builder.Refiners
         {
             //AddInnerClasses(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            MakeModelPropertiesNullable(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             AddGetterAndSetterMethods(generatedCode,new HashSet<CodePropertyKind>()
@@ -25,6 +26,8 @@ namespace Kiota.Builder.Refiners
             AddParsableInheritanceForModelClasses(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
+            CorrectCoreType(generatedCode, null, CorrectPropertyType);
+            
         }
         
         private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
@@ -60,9 +63,46 @@ namespace Kiota.Builder.Refiners
             CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
         }
 
-        private static void CorrectMethodReturnTypes()
-        {
-            
+        private static void CorrectPropertyType(CodeProperty currentProperty) {
+            if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter)) {
+                currentProperty.Type.Name = "RequestAdapter";
+                currentProperty.Type.IsNullable = true;
+            }
+            else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
+                currentProperty.Type.Name = currentProperty.Type.Name[1..];
+            else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
+                currentProperty.Type.Name = "array";
+                currentProperty.DefaultValue = "[]";
+            } else if(currentProperty.IsOfKind(CodePropertyKind.UrlTemplate)) {
+                currentProperty.Type.IsNullable = true;
+            } else if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
+                currentProperty.Type.IsNullable = true;
+                currentProperty.Type.Name = "array";
+                if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
+                    currentProperty.DefaultValue = "[]";
+            }
         }
+
+        private static void CorrectParameterType(CodeParameter parameter)
+        {
+            if (parameter.IsOfKind(CodeParameterKind.Headers))
+            {
+                parameter.Type.Name = "array";
+            } else if (parameter.IsOfKind(CodeParameterKind.Serializer))
+            {
+                parameter.Type.Name = "SerializationWriter";
+            }
+            else if (parameter.IsOfKind(CodeParameterKind.PathParameters))
+            {
+                parameter.Type.Name = "array";
+                parameter.Type.IsNullable = true;
+
+                if (!string.IsNullOrEmpty(parameter.DefaultValue))
+                {
+                    parameter.DefaultValue = "[]";
+                }
+            }
+        }
+        
     }
 }

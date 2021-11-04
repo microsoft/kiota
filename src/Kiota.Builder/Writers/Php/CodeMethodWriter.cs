@@ -44,13 +44,16 @@ namespace Kiota.Builder.Writers.Php
                         WriteGetterBody(writer, codeElement);
                         break;
                     case CodeMethodKind.Deserializer:
-                        WriteDeserializerBody(writer, codeElement);
+                        WriteDeserializerBody(codeElement, codeElement, parentClass, writer);
                         break;
                     case CodeMethodKind.RequestBuilderWithParameters:
                         WriteRequestBuilderWithParametersBody(codeElement, currentPathProperty, returnType, writer);
                         break;
                     case CodeMethodKind.RequestGenerator:
                         WriteRequestGeneratorBody(codeElement, requestParams, parentClass, writer);
+                        break;
+                    case CodeMethodKind.ClientConstructor:
+                        WriteConstructorBody(parentClass, codeElement, writer, inherits);
                         break;
             }
             conventions.WriteCodeBlockEnd(writer);
@@ -67,8 +70,10 @@ namespace Kiota.Builder.Writers.Php
                                                                             CodePropertyKind.PathParameters)
                                             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
                                             .OrderByDescending(x => x.PropertyKind)
-                                            .ThenBy(x => x.Name)) {
-                writer.WriteLine($"$this->{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {conventions.ReplaceDoubleQuoteWithSingleQuote(propWithDefault.DefaultValue)};");
+                                            .ThenBy(x => x.Name))
+            {
+                var isPathSegment = propWithDefault.IsOfKind(CodePropertyKind.PathParameters);
+                writer.WriteLine($"$this->{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {(isPathSegment ? "[]" :conventions.ReplaceDoubleQuoteWithSingleQuote(propWithDefault.DefaultValue))};");
             }
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor)) {
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
@@ -230,11 +235,6 @@ namespace Kiota.Builder.Writers.Php
             writer.WriteLine($"return $this->{propertyName};");
         }
 
-        private static void WriteDeserializerBody(LanguageWriter writer, CodeMethod codeMethod)
-        {
-            writer.WriteLine("echo('This is the body of the deserializer.');");
-        }
-        
         private void WriteRequestBuilderWithParametersBody(CodeMethod codeElement, CodeProperty currentPathProperty, string returnType, LanguageWriter writer)
         {
             var codePathParameters = codeElement.Parameters
@@ -273,6 +273,22 @@ namespace Kiota.Builder.Writers.Php
             if(requestParams.options != null)
                 writer.WriteLine($"{RequestInfoVarName}->addRequestOptions(...$options);");
             writer.WriteLine($"return {RequestInfoVarName};");
+        }
+        private void WriteDeserializerBody(CodeMethod codeElement, CodeMethod method, CodeClass parentClass, LanguageWriter writer) {
+            var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
+            var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
+            writer.WriteLine($"return {(inherits ? "array_merge(parent::getFieldDeserializers()," : string.Empty)} [");
+            if(fieldToSerialize.Any()) {
+                writer.IncreaseIndent();
+                fieldToSerialize
+                    .OrderBy(x => x.Name)
+                    .Select(x => 
+                        $"'{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}' => function ({parentClass.Name.ToFirstCharacterUpperCase()} $o, {conventions.GetTypeString(x.Type, x)} $n) {{ $o->set{x.Name.ToFirstCharacterUpperCase()}($n); }},")
+                    .ToList()
+                    .ForEach(x => writer.WriteLine(x));
+                writer.DecreaseIndent();
+            }
+            writer.WriteLine($"]{(inherits ? ')': string.Empty )};");
         }
     }
 }
