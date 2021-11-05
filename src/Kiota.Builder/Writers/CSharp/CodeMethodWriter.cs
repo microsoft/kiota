@@ -81,6 +81,7 @@ namespace Kiota.Builder.Writers.CSharp {
             var requestAdapterPropertyName = requestAdapterProperty.Name.ToFirstCharacterUpperCase();
             WriteSerializationRegistration(method.SerializerModules, writer, "RegisterDefaultSerializer");
             WriteSerializationRegistration(method.DeserializerModules, writer, "RegisterDefaultDeserializer");
+            writer.WriteLine($"{requestAdapterPropertyName}.BaseUrl = \"{method.BaseUrl}\";");
             if(backingStoreParameter != null)
                 writer.WriteLine($"{requestAdapterPropertyName}.EnableBackingStore({backingStoreParameter.Name});");
         }

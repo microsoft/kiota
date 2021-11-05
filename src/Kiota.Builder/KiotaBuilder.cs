@@ -321,7 +321,7 @@ namespace Kiota.Builder
             var pathProperty = new CodeProperty {
                 Access = AccessModifier.Private,
                 Name = "urlTemplate",
-                DefaultValue = $"\"{currentNode.GetUrlTemplate(config.ApiRootUrl)}\"",
+                DefaultValue = $"\"{currentNode.GetUrlTemplate()}\"",
                 ReadOnly = true,
                 Description = "Url template to use to build the URL for the current request builder",
                 PropertyKind = CodePropertyKind.UrlTemplate,
@@ -371,6 +371,7 @@ namespace Kiota.Builder
             if(isApiClientClass) {
                 constructor.SerializerModules = config.Serializers;
                 constructor.DeserializerModules = config.Deserializers;
+                constructor.BaseUrl = config.ApiRootUrl;
                 pathParametersProperty.DefaultValue = $"new {pathParametersProperty.Type.Name}()";
             } else {
                 constructor.AddParameter(new CodeParameter {
