@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Kiota.Abstractions;
+using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Http.HttpClientLibrary.Extensions;
 using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
 using Xunit;
@@ -14,6 +15,10 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Extensions
 {
     public class HttpRequestMessageExtensionsTests
     {
+        private readonly HttpClientRequestAdapter requestAdapter;
+        public HttpRequestMessageExtensionsTests () {
+            HttpClientRequestAdapter = new HttpClientRequestAdapter(new AnonymousAuthenticationProvider());
+        }
         [Fact]
         public void GetRequestOptionCanExtractRequestOptionFromHttpRequestMessage()
         {
@@ -29,7 +34,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Extensions
             };
             requestInfo.AddRequestOptions(redirectHandlerOption);
             // Act and get a request message
-            var requestMessage = HttpClientRequestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
+            var requestMessage = requestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
             var extractedOption = requestMessage.GetRequestOption<RedirectHandlerOption>();
             // Assert
             Assert.NotNull(extractedOption);
@@ -45,7 +50,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Extensions
                 HttpMethod = HttpMethod.GET,
                 URI = new Uri("http://localhost")
             };
-            var originalRequest = HttpClientRequestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
+            var originalRequest = requestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
             HttpRequestMessage clonedRequest = await originalRequest.CloneAsync();
 
             Assert.NotNull(clonedRequest);
@@ -63,7 +68,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Extensions
                 URI = new Uri("http://localhost")
             };
             requestInfo.SetStreamContent(new MemoryStream(Encoding.UTF8.GetBytes("contents")));
-            var originalRequest = HttpClientRequestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
+            var originalRequest = requestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
             originalRequest.Content = new StringContent("contents");
 
             var clonedRequest = await originalRequest.CloneAsync();
@@ -89,7 +94,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Extensions
                 MaxRedirect = 7
             };
             requestInfo.AddRequestOptions(redirectHandlerOption);
-            var originalRequest = HttpClientRequestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
+            var originalRequest = requestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
             originalRequest.Content = new StringContent("contents");
 
             var clonedRequest = await originalRequest.CloneAsync();
@@ -111,7 +116,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Extensions
                 HttpMethod = HttpMethod.GET,
                 URI = new Uri("http://localhost")
             };
-            var originalRequest = HttpClientRequestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
+            var originalRequest = requestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
             // Act
             var response = originalRequest.IsBuffered();
             // Assert
@@ -126,7 +131,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Extensions
                 HttpMethod = HttpMethod.POST,
                 URI = new Uri("http://localhost")
             };
-            var originalRequest = HttpClientRequestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
+            var originalRequest = requestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
             // Act
             var response = originalRequest.IsBuffered();
             // Assert
@@ -143,7 +148,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Extensions
                 URI = new Uri("http://localhost"),
                 Content = new MemoryStream(data)
             };
-            var originalRequest = HttpClientRequestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
+            var originalRequest = requestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
             // Act
             var response = originalRequest.IsBuffered();
             // Assert
