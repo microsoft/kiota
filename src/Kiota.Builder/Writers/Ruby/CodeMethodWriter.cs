@@ -80,6 +80,7 @@ namespace Kiota.Builder.Writers.Ruby {
             var requestAdapterParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.RequestAdapter));
             var requestAdapterPropertyName = requestAdapterProperty.Name.ToSnakeCase();
             writer.WriteLine($"@{requestAdapterPropertyName} = {requestAdapterParameter.Name.ToSnakeCase()}");
+            writer.WriteLine($"{requestAdapterPropertyName}.set_base_url('{method.BaseUrl}')");
         }
         private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
             if(inherits)
