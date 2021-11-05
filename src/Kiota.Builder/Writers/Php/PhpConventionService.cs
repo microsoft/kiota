@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
 
@@ -193,6 +194,21 @@ namespace Kiota.Builder.Writers.Php
         {
             var parts = namespaced.Split('.');
             return string.Join('\\', parts.Select(x => x.ToFirstCharacterUpperCase()));
+        }
+        internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default) {
+            var codePathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
+            var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
+            var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
+            var urlTemplateParams = urlTemplateVarName ?? $"$this->{pathParametersProperty.Name}";
+            writer.WriteLines($"return new {returnType}(${urlTemplateParams}, $this->{requestAdapterProp.Name}{codePathParametersSuffix});");
+        }
+        internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
+            if(pathParametersType == null) return;
+            writer.WriteLine($"${TempDictionaryVarName} = {pathParametersReference};");
+            if(parameters.Any())
+                writer.WriteLines(parameters.Select(p => 
+                    $"${TempDictionaryVarName}['{p.Item2}\'] = {p.Item3};"
+                ).ToArray());
         }
     }
 }

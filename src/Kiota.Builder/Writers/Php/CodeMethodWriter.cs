@@ -55,6 +55,9 @@ namespace Kiota.Builder.Writers.Php
                     case CodeMethodKind.ClientConstructor:
                         WriteConstructorBody(parentClass, codeElement, writer, inherits);
                         break;
+                    case CodeMethodKind.IndexerBackwardCompatibility:
+                        WriteIndexerBody(codeElement, parentClass, returnType, writer);
+                        break;
             }
             conventions.WriteCodeBlockEnd(writer);
             writer.WriteLine();
@@ -289,6 +292,13 @@ namespace Kiota.Builder.Writers.Php
                 writer.DecreaseIndent();
             }
             writer.WriteLine($"]{(inherits ? ')': string.Empty )};");
+        }
+        
+        private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer) {
+            var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
+            conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"$this->{pathParametersProperty.Name}",
+                (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.ParameterName, "$id"));
+            conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName);
         }
     }
 }
