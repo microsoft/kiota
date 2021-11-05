@@ -24,6 +24,8 @@ type NetHttpRequestAdapter struct {
 	httpClient *nethttp.Client
 	// authenticationProvider is the provider used to authenticate requests
 	authenticationProvider absauth.AuthenticationProvider
+	// The base url for every request.
+	baseUrl string
 }
 
 // NewNetHttpRequestAdapter creates a new NetHttpRequestAdapter with the given parameters
@@ -73,6 +75,7 @@ func NewNetHttpRequestAdapterWithParseNodeFactoryAndSerializationWriterFactoryAn
 		parseNodeFactory:           parseNodeFactory,
 		httpClient:                 httpClient,
 		authenticationProvider:     authenticationProvider,
+		baseUrl:                    "",
 	}
 	if result.httpClient == nil {
 		defaultClient := GetDefaultClient()
@@ -91,6 +94,12 @@ func (a *NetHttpRequestAdapter) GetSerializationWriterFactory() absser.Serializa
 }
 func (a *NetHttpRequestAdapter) EnableBackingStore() {
 	//TODO implement when backing store is available for go
+}
+func (a *NetHttpRequestAdapter) SetBaseUrl(baseUrl string) {
+	a.baseUrl = baseUrl
+}
+func (a *NetHttpRequestAdapter) GetBaseUrl() string {
+	return a.baseUrl
 }
 func (a *NetHttpRequestAdapter) getHttpResponseMessage(requestInfo abs.RequestInformation) (*nethttp.Response, error) {
 	err := a.authenticationProvider.AuthenticateRequest(requestInfo)
@@ -112,6 +121,7 @@ func (a *NetHttpRequestAdapter) getResponsePrimaryContentType(response *nethttp.
 	return strings.ToLower(splat[0])
 }
 func (a *NetHttpRequestAdapter) getRequestFromRequestInformation(requestInfo abs.RequestInformation) (*nethttp.Request, error) {
+	requestInfo.PathParameters["baseurl"] = a.GetBaseUrl()
 	uri, err := requestInfo.GetUri()
 	if err != nil {
 		return nil, err
