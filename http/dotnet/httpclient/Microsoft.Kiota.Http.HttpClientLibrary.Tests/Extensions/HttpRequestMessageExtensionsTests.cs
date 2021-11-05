@@ -17,7 +17,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Extensions
     {
         private readonly HttpClientRequestAdapter requestAdapter;
         public HttpRequestMessageExtensionsTests () {
-            HttpClientRequestAdapter = new HttpClientRequestAdapter(new AnonymousAuthenticationProvider());
+            requestAdapter = new HttpClientRequestAdapter(new AnonymousAuthenticationProvider());
         }
         [Fact]
         public void GetRequestOptionCanExtractRequestOptionFromHttpRequestMessage()
