@@ -28,8 +28,6 @@ namespace Kiota.Builder.Writers.Php
 
         private static string PathParametersPropertyName => "$pathParameters";
 
-        private static string CurrentPathPropertyName => "$currentPath";
-
         private static string RequestAdapterPropertyName => "$requestAdapter";
 
         public override string ParseNodeInterfaceName => "ParseNode";
@@ -77,6 +75,11 @@ namespace Kiota.Builder.Writers.Php
                 CodeParameterKind.PathParameters => "$pathParameters",
                 CodeParameterKind.RequestAdapter => RequestAdapterPropertyName,
                 CodeParameterKind.RequestBody => "$body",
+                CodeParameterKind.RawUrl => "$rawUrl",
+                CodeParameterKind.Serializer => "$writer",
+                CodeParameterKind.ResponseHandler => "$responseHandler",
+                CodeParameterKind.SetterValue => "$value",
+                CodeParameterKind.Path => "$urlTemplate",
                 _ => $"${parameter.Name.ToFirstCharacterLowerCase()}"
             };
         }
@@ -99,7 +102,6 @@ namespace Kiota.Builder.Writers.Php
             };
             return $"{(!parameter.Optional ? String.Empty : "?")}{parameterSuffix}";
         }
-
         public string GetParameterSignature(CodeParameter parameter, CodeMethod codeMethod)
         {
             if (codeMethod?.AccessedProperty != null && codeMethod.AccessedProperty.IsOfKind(CodePropertyKind.AdditionalData))

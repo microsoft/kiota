@@ -36,7 +36,7 @@ namespace Kiota.Builder.Writers.Php
                         WriteConstructorBody(parentClass, codeElement, writer, inherits);
                         break;
                     case CodeMethodKind.Serializer:
-                        WriteSerializerBody(parentClass, writer, inherits);
+                        WriteSerializerBody(codeElement, parentClass, writer, inherits);
                         break;
                     case CodeMethodKind.Setter:
                         WriteSetterBody(writer, codeElement);
@@ -196,17 +196,19 @@ namespace Kiota.Builder.Writers.Php
             
         }
 
-        private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer, bool inherits)
+        private void WriteSerializerBody(CodeMethod codeMethod, CodeClass parentClass, LanguageWriter writer, bool inherits)
         {
             var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();
+            var writerParameter = codeMethod.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.Serializer);
+            var writerParameterName = conventions.GetParameterName(writerParameter);
             if(inherits)
-                writer.WriteLine("parent::serialize($writer);");
+                writer.WriteLine($"parent::serialize({writerParameterName});");
             var customProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
             foreach(var otherProp in customProperties) {
-                writer.WriteLine($"$writer->{GetSerializationMethodName(otherProp.Type)}('{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}', $this->{otherProp.Name.ToFirstCharacterLowerCase()});");
+                writer.WriteLine($"{writerParameterName}->{GetSerializationMethodName(otherProp.Type)}('{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}', $this->{otherProp.Name.ToFirstCharacterLowerCase()});");
             }
             if(additionalDataProperty != null)
-                writer.WriteLine($"$writer->writeAdditionalData($this->{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
+                writer.WriteLine($"{writerParameterName}->writeAdditionalData($this->{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
         }
         
         private string GetSerializationMethodName(CodeTypeBase propType) {
@@ -257,24 +259,24 @@ namespace Kiota.Builder.Writers.Php
         private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer) 
         {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
-            
+            var requestInformationClass = "RequestInformation";
             var pathParametersProperty = currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var urlTemplateProperty = currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate);
             var requestAdapterProperty = currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
-            writer.WriteLines($"{RequestInfoVarName} = new RequestInformation();",
+            writer.WriteLines($"{RequestInfoVarName} = new {requestInformationClass}();",
                                 $"{RequestInfoVarName}->urlTemplate = {GetPropertyCall(urlTemplateProperty, "''")};",
                                 $"{RequestInfoVarName}->pathParameters = {GetPropertyCall(pathParametersProperty, "''")};",
-                                $"{RequestInfoVarName}->httpMethod = HttpMethod::{codeElement.HttpMethod.ToString().ToUpperInvariant()};");
+                                $"{RequestInfoVarName}->httpMethod = HttpMethod::{codeElement?.HttpMethod?.ToString().ToUpperInvariant()};");
             if(requestParams.headers != null)
-                writer.WriteLine($"{RequestInfoVarName}->setHeadersFromRawObject($headers);");
+                writer.WriteLine($"{RequestInfoVarName}->setHeadersFromRawObject({conventions.GetParameterName(requestParams.headers)});");
             if(requestParams.queryString != null)
-                writer.WriteLines($"{RequestInfoVarName}->setQueryStringParametersFromRawObject($queryParameters);");
+                writer.WriteLines($"{RequestInfoVarName}->setQueryStringParametersFromRawObject({conventions.GetParameterName(requestParams.queryString)});");
             if(requestParams.requestBody != null) {
                 if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                    writer.WriteLine($"{RequestInfoVarName}->setStreamContent(${requestParams.requestBody.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}->setStreamContent({conventions.GetParameterName(requestParams.requestBody)});");
                 else {
                     var spreadOperator = requestParams.requestBody.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
-                    writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {spreadOperator}${requestParams.requestBody.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {spreadOperator}{conventions.GetParameterName(requestParams.requestBody)});");
                 }
             }
             if(requestParams.options != null)
@@ -312,7 +314,6 @@ namespace Kiota.Builder.Writers.Php
                 .FirstOrDefault(x =>
                     x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod);
             var generatorMethodName = generatorMethod?.Name.ToFirstCharacterLowerCase();
-            var requireBody = generatorMethod?.HttpMethod == HttpMethod.Patch || generatorMethod.HttpMethod == HttpMethod.Post;
             var requestInfoParameters = new CodeParameter[] { requestParams.requestBody, requestParams.queryString, requestParams.headers, requestParams.options }
                 .Select(x => x).Where(x => x?.Name != null);
             var infoParameters = requestInfoParameters as CodeParameter[] ?? requestInfoParameters.ToArray();
@@ -323,18 +324,6 @@ namespace Kiota.Builder.Writers.Php
                 joinedParams = string.Join(", ", callParams);
             }
             writer.WriteLine($"$requestInfo = $this->{generatorMethodName}({joinedParams});");
-        }
-
-        private string GetRequestExecutorParameterName(string parameter)
-        {
-            return parameter switch
-            {
-                "o" => "$options",
-                "h" => "$headers",
-                "body" => "$body",
-                _ => $"${parameter}"
-            };
-            ;
         }
     }
 }
