@@ -59,4 +59,6 @@ export interface RequestAdapter {
      * @param backingStoreFactory the backing store factory to use.
      */
     enableBackingStore(backingStoreFactory?: BackingStoreFactory | undefined): void;
+    /** The base url for every request. */
+    baseUrl: string;
 }

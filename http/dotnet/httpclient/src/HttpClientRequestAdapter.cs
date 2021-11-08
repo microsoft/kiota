@@ -51,6 +51,10 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
             }
         }
         /// <summary>
+        /// The base url for every request.
+        /// </summary>
+        public string BaseUrl { get; set; }
+        /// <summary>
         /// Send a <see cref="RequestInformation"/> instance with a collection instance of <typeparam name="ModelType"></typeparam>
         /// </summary>
         /// <param name="requestInfo">The <see cref="RequestInformation"/> instance to send</param>
@@ -199,8 +203,9 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
             return response;
         }
         private const string ContentTypeHeaderName = "content-type";
-        internal static HttpRequestMessage GetRequestMessageFromRequestInformation(RequestInformation requestInfo)
+        internal HttpRequestMessage GetRequestMessageFromRequestInformation(RequestInformation requestInfo)
         {
+            requestInfo.PathParameters.Add("baseurl", BaseUrl);
             var message = new HttpRequestMessage
             {
                 Method = new System.Net.Http.HttpMethod(requestInfo.HttpMethod.ToString().ToUpperInvariant()),

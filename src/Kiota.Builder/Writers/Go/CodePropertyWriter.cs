@@ -13,6 +13,7 @@ namespace Kiota.Builder.Writers.Go {
                 case CodePropertyKind.RequestBuilder:
                     throw new InvalidOperationException("RequestBuilders are as properties are not supported in Go and should be replaced by methods by the refiner.");
                 default:
+                    conventions.WriteShortDescription(codeElement.Description, writer);
                     writer.WriteLine($"{propertyName} {returnType};");
                 break;
             }

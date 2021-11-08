@@ -321,7 +321,7 @@ namespace Kiota.Builder
             var pathProperty = new CodeProperty {
                 Access = AccessModifier.Private,
                 Name = "urlTemplate",
-                DefaultValue = $"\"{currentNode.GetUrlTemplate(config.ApiRootUrl)}\"",
+                DefaultValue = $"\"{currentNode.GetUrlTemplate()}\"",
                 ReadOnly = true,
                 Description = "Url template to use to build the URL for the current request builder",
                 PropertyKind = CodePropertyKind.UrlTemplate,
@@ -371,6 +371,7 @@ namespace Kiota.Builder
             if(isApiClientClass) {
                 constructor.SerializerModules = config.Serializers;
                 constructor.DeserializerModules = config.Deserializers;
+                constructor.BaseUrl = config.ApiRootUrl;
                 pathParametersProperty.DefaultValue = $"new {pathParametersProperty.Type.Name}()";
             } else {
                 constructor.AddParameter(new CodeParameter {
@@ -518,7 +519,9 @@ namespace Kiota.Builder
                 return null;
             var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
             var isExternal = false;
-            if("string".Equals(typeName, StringComparison.OrdinalIgnoreCase)) {
+            if (typeSchema?.Items?.Enum?.Any() ?? false)
+                typeName = childType;
+            else if("string".Equals(typeName, StringComparison.OrdinalIgnoreCase)) {
                     isExternal = true;
                 if("date-time".Equals(format, StringComparison.OrdinalIgnoreCase))
                     typeName = "DateTimeOffset";
@@ -526,7 +529,8 @@ namespace Kiota.Builder
                     typeName = "binary";
             } else if ("double".Equals(format, StringComparison.OrdinalIgnoreCase) || 
                     "float".Equals(format, StringComparison.OrdinalIgnoreCase) ||
-                    "int64".Equals(format, StringComparison.OrdinalIgnoreCase)) {
+                    "int64".Equals(format, StringComparison.OrdinalIgnoreCase) ||
+                    "decimal".Equals(format, StringComparison.OrdinalIgnoreCase)) {
                 isExternal = true;
                 typeName = format.ToLowerInvariant();
             } else if ("boolean".Equals(typeName, StringComparison.OrdinalIgnoreCase) ||

@@ -3,6 +3,8 @@ import { Headers as FetchHeadersCtor } from 'cross-fetch';
 import { ReadableStream } from 'web-streams-polyfill';
 import { HttpClient } from './httpClient';
 export class FetchRequestAdapter implements RequestAdapter {
+    /** The base url for every request. */
+    public baseUrl: string = '';
     public getSerializationWriterFactory(): SerializationWriterFactory {
         return this.serializationWriterFactory;
     }
@@ -176,6 +178,7 @@ export class FetchRequestAdapter implements RequestAdapter {
         return await this.httpClient.fetch(requestInfo.URL.toString(), request);
     }
     private getRequestFromRequestInformation = (requestInfo: RequestInformation): RequestInit => {
+        requestInfo.pathParameters.set("baseurl", this.baseUrl);
         const request = {
             method: requestInfo.httpMethod?.toString(),
             headers: new FetchHeadersCtor(),

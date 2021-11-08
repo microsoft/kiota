@@ -95,6 +95,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             var requestAdapterPropertyName = requestAdapterProperty.Name.ToFirstCharacterLowerCase();
             WriteSerializationRegistration(method.SerializerModules, writer, "registerDefaultSerializer");
             WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializer");
+            writer.WriteLine($"{requestAdapterPropertyName}.baseUrl = \"{method.BaseUrl}\";");
             if(backingStoreParameter != null)
                 writer.WriteLine($"this.{requestAdapterPropertyName}.enableBackingStore({backingStoreParameter.Name});");
         }

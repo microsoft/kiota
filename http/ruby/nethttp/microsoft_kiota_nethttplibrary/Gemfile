@@ -7,7 +7,7 @@ gemspec
 git_source(:github) { |repo_name| 'https://rubygems.pkg.github.com/microsoft' }
 
 source 'https://rubygems.pkg.github.com/microsoft' do
-  gem 'microsoft_kiota_abstractions', '0.1.10'
+  gem 'microsoft_kiota_abstractions', '0.1.11'
 end
 
 gem 'rake', '~> 13.0'

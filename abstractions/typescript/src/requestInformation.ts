@@ -119,7 +119,7 @@ export class RequestInformation {
      */
     public setQueryStringParametersFromRawObject = (q: object): void => {
         Object.entries(q).forEach(([k, v]) => {
-            this.headers.set(k, v as string);
+            this.queryParameters.set(k, v as string);
         });
     }
 }

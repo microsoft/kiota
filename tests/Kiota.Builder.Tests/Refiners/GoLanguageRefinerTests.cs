@@ -33,7 +33,7 @@ namespace Kiota.Builder.Refiners.Tests {
 
             }).First();
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-            Assert.Single(testEnum.Usings);
+            Assert.Single(testEnum.Usings.Where(x => x.Name == "errors"));
         }
         [Fact]
         public void CorrectsCoreType() {
