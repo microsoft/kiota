@@ -6,7 +6,7 @@
     <LangVersion>10</LangVersion>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryUrl>https://github.com/microsoft/kiota</RepositoryUrl>
-    <Version>1.0.5</Version>
+    <Version>1.0.6</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- Enable this line once we go live to prevent breaking changes -->
@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Kiota.Abstractions" Version="1.0.20" />
+    <PackageReference Include="Microsoft.Kiota.Abstractions" Version="1.0.24" />
     <PackageReference Include="System.Text.Json" Version="6.0.0" />
   </ItemGroup>
 </Project>
