@@ -10,10 +10,12 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests
     public class HttpClientRequestAdapterTests
     {
         private readonly IAuthenticationProvider _authenticationProvider;
+        private readonly HttpClientRequestAdapter requestAdapter;
 
         public HttpClientRequestAdapterTests()
         {
             _authenticationProvider = new Mock<IAuthenticationProvider>().Object;
+            requestAdapter = new HttpClientRequestAdapter(new AnonymousAuthenticationProvider());
         }
 
         [Fact]
@@ -56,7 +58,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests
             requestInfo.QueryParameters.Add(queryParam, queryParamObject);
 
             // Act
-            var requestMessage = HttpClientRequestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
+            var requestMessage = requestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
 
             // Assert
             Assert.NotNull(requestMessage.RequestUri);

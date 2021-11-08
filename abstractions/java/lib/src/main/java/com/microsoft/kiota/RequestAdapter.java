@@ -58,4 +58,15 @@ public interface RequestAdapter {
      * @return a {@link CompletableFuture} with the deserialized primitive collection response model.
      */
     <ModelType> CompletableFuture<Iterable<ModelType>> sendPrimitiveCollectionAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler);
+    /**
+     * Sets The base url for every request.
+     * @param baseUrl The base url for every request.
+     */
+    void setBaseUrl(@Nonnull final String baseUrl);
+    /**
+     * Gets The base url for every request.
+     * @return The base url for every request.
+     */
+    @Nonnull
+    String getBaseUrl();
 }

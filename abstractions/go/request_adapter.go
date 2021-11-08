@@ -55,4 +55,8 @@ type RequestAdapter interface {
 	GetSerializationWriterFactory() s.SerializationWriterFactory
 	// Enables the backing store proxies for the SerializationWriters and ParseNodes in use.
 	EnableBackingStore()
+	// Sets the base url for every request.
+	SetBaseUrl(baseUrl string)
+	// Gets the base url for every request.
+	GetBaseUrl() string
 }

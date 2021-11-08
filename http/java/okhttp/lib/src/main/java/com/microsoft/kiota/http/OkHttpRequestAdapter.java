@@ -42,6 +42,14 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
     private final AuthenticationProvider authProvider;
     private ParseNodeFactory pNodeFactory;
     private SerializationWriterFactory sWriterFactory;
+    private String baseUrl = "";
+    public void setBaseUrl(@Nonnull final String baseUrl) {
+        this.baseUrl = Objects.requireNonNull(baseUrl);
+    }
+    @Nonnull
+    public String getBaseUrl() {
+        return baseUrl;
+    }
     public OkHttpRequestAdapter(@Nonnull final AuthenticationProvider authenticationProvider){
         this(authenticationProvider, null, null, null);
     }
@@ -214,6 +222,7 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
         
     }
     private Request getRequestFromRequestInformation(@Nonnull final RequestInformation requestInfo) throws URISyntaxException, MalformedURLException {
+        requestInfo.pathParameters.put("baseurl", getBaseUrl());
         final RequestBody body = requestInfo.content == null ? null :
                                 new RequestBody() {
                                     @Override

@@ -21,6 +21,15 @@ module MicrosoftKiotaNethttplibrary
       @parse_node_factory = parse_node_factory 
       @serialization_writer_factory = serialization_writer_factory 
       @client = client
+      @base_url = ''
+    end
+
+    def set_base_url(base_url)
+      @base_url = base_url
+    end
+
+    def get_base_url()
+      @base_url
     end
 
     def get_serialization_writer_factory()
@@ -54,6 +63,7 @@ module MicrosoftKiotaNethttplibrary
     end
 
     def get_request_from_request_info(request_info)
+      request_info.path_parameters['baseurl'] = @base_url
       case request_info.http_method
         when :GET
           request = @client::Get.new(request_info.uri.request_uri)
