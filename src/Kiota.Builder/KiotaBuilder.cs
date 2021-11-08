@@ -130,7 +130,7 @@ namespace Kiota.Builder
             stopwatch.Stop();
             if (diag.Errors.Count > 0)
             {
-                logger.LogError("{timestamp}ms: OpenApi Parsing errors", stopwatch.ElapsedMilliseconds, String.Join(Environment.NewLine, diag.Errors.Select(e => e.Message)));
+                logger.LogError($"{stopwatch.ElapsedMilliseconds}ms: OpenApi Parsing errors {string.Join(Environment.NewLine, diag.Errors.Select(e => e.Message))}");
             }
             else
             {
