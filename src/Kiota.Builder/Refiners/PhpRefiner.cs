@@ -27,7 +27,6 @@ namespace Kiota.Builder.Refiners
             ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             CorrectCoreType(generatedCode, null, CorrectPropertyType);
-            
         }
         
         private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
@@ -82,27 +81,5 @@ namespace Kiota.Builder.Refiners
                     currentProperty.DefaultValue = "[]";
             }
         }
-
-        private static void CorrectParameterType(CodeParameter parameter)
-        {
-            if (parameter.IsOfKind(CodeParameterKind.Headers))
-            {
-                parameter.Type.Name = "array";
-            } else if (parameter.IsOfKind(CodeParameterKind.Serializer))
-            {
-                parameter.Type.Name = "SerializationWriter";
-            }
-            else if (parameter.IsOfKind(CodeParameterKind.PathParameters))
-            {
-                parameter.Type.Name = "array";
-                parameter.Type.IsNullable = true;
-
-                if (!string.IsNullOrEmpty(parameter.DefaultValue))
-                {
-                    parameter.DefaultValue = "[]";
-                }
-            }
-        }
-        
     }
 }

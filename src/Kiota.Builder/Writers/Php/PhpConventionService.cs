@@ -54,12 +54,13 @@ namespace Kiota.Builder.Writers.Php
         public override string TranslateType(CodeType type)
         {
             string typeName = type.Name;
-            return (typeName) switch
+            return (typeName.ToLowerInvariant()) switch
             {
                 "boolean" => "bool",
                 "double" or "decimal" => "float",
                 "integer" or "int32" or "int64" => "int",
                 "object" or "string" or "array" or "float" or "void" => typeName,
+                "binary" => "StreamInterface",
                 _ => typeName.ToFirstCharacterUpperCase()
             };
         }
