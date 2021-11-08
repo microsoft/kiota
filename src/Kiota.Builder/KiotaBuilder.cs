@@ -562,7 +562,7 @@ namespace Kiota.Builder
                 executorMethod.ReturnType = returnType ?? throw new InvalidOperationException("Could not resolve return type for operation");
             } else {
                 var returnType = voidType;
-                if(operation.Responses.Any(x => x.Value.Content.Keys.Contains(RequestBodyBinaryContentType)))
+                if(operation.Responses.Any(x => x.Value.Content.ContainsKey(RequestBodyBinaryContentType)))
                     returnType = "binary";
                 else if(!operation.Responses.Any(x => noContentStatusCodes.Contains(x.Key)))
                     logger.LogWarning($"could not find operation return type {operationType} {currentNode.Path}");
