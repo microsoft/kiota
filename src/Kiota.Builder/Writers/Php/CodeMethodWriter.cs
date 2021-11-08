@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Kiota.Builder.Extensions;
@@ -57,6 +58,9 @@ namespace Kiota.Builder.Writers.Php
                         break;
                     case CodeMethodKind.IndexerBackwardCompatibility:
                         WriteIndexerBody(codeElement, parentClass, returnType, writer);
+                        break;
+                    case CodeMethodKind.RequestExecutor:
+                        WriteRequestExecutorBody(codeElement,requestParams, writer);
                         break;
             }
             conventions.WriteCodeBlockEnd(writer);
@@ -299,6 +303,38 @@ namespace Kiota.Builder.Writers.Php
             conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"$this->{pathParametersProperty.Name}",
                 (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.ParameterName, "$id"));
             conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName);
+        }
+
+        private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer)
+        {
+            var generatorMethod = (codeElement.Parent as CodeClass)?
+                .Methods
+                .FirstOrDefault(x =>
+                    x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod);
+            var generatorMethodName = generatorMethod?.Name.ToFirstCharacterLowerCase();
+            var requireBody = generatorMethod?.HttpMethod == HttpMethod.Patch || generatorMethod.HttpMethod == HttpMethod.Post;
+            var requestInfoParameters = new CodeParameter[] { requestParams.requestBody, requestParams.queryString, requestParams.headers, requestParams.options }
+                .Select(x => x).Where(x => x?.Name != null);
+            var infoParameters = requestInfoParameters as CodeParameter[] ?? requestInfoParameters.ToArray();
+            var callParams = infoParameters.Select(x => conventions.GetParameterName(x));
+            var joinedParams = string.Empty; 
+            if(infoParameters.Any())
+            {
+                joinedParams = string.Join(", ", callParams);
+            }
+            writer.WriteLine($"$requestInfo = $this->{generatorMethodName}({joinedParams});");
+        }
+
+        private string GetRequestExecutorParameterName(string parameter)
+        {
+            return parameter switch
+            {
+                "o" => "$options",
+                "h" => "$headers",
+                "body" => "$body",
+                _ => $"${parameter}"
+            };
+            ;
         }
     }
 }

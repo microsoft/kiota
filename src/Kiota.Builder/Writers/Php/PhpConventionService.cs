@@ -66,6 +66,20 @@ namespace Kiota.Builder.Writers.Php
             };
         }
 
+        public string GetParameterName(CodeParameter parameter)
+        {
+            return (parameter.ParameterKind) switch
+            {
+                CodeParameterKind.Headers => "$headers",
+                CodeParameterKind.Options => "$options",
+                CodeParameterKind.BackingStore => "$backingStore",
+                CodeParameterKind.QueryParameter => "$queryParameters",
+                CodeParameterKind.PathParameters => "$pathParameters",
+                CodeParameterKind.RequestAdapter => RequestAdapterPropertyName,
+                CodeParameterKind.RequestBody => "$body",
+                _ => $"${parameter.Name.ToFirstCharacterLowerCase()}"
+            };
+        }
         public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
         {
             
@@ -74,13 +88,13 @@ namespace Kiota.Builder.Writers.Php
             {
                 CodeParameterKind.Headers or CodeParameterKind.Options => $"array ${(parameter.ParameterKind == CodeParameterKind.Options ? "options" : "headers")}",
                 CodeParameterKind.RequestBody => $"{typeString} $body",
-                CodeParameterKind.RequestAdapter => $"RequestAdapter {RequestAdapterPropertyName}",
-                CodeParameterKind.ResponseHandler => $"ResponseHandler {ResponseHandlerPropertyName}",
-                CodeParameterKind.QueryParameter => $"GetQueryParameters $queryParameters",
-                CodeParameterKind.Serializer => "SerializationWriter $writer",
-                CodeParameterKind.BackingStore => "BackingStore $backingStore",
-                CodeParameterKind.PathParameters => "array $pathParameters",
-                _ => $"{typeString} ${parameter.Name.ToFirstCharacterLowerCase()}"
+                CodeParameterKind.RequestAdapter => $"RequestAdapter {GetParameterName(parameter)}",
+                CodeParameterKind.ResponseHandler => $"ResponseHandler {GetParameterName(parameter)}",
+                CodeParameterKind.QueryParameter => $"GetQueryParameters {GetParameterName(parameter)}",
+                CodeParameterKind.Serializer => $"SerializationWriter {GetParameterName(parameter)}",
+                CodeParameterKind.BackingStore => $"BackingStore {GetParameterName(parameter)}",
+                CodeParameterKind.PathParameters => $"array {GetParameterName(parameter)}",
+                _ => $"{typeString} {GetParameterName(parameter)}"
 
             };
             return $"{(!parameter.Optional ? String.Empty : "?")}{parameterSuffix}";
@@ -196,7 +210,8 @@ namespace Kiota.Builder.Writers.Php
             return string.Join('\\', parts.Select(x => x.ToFirstCharacterUpperCase()));
         }
         internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default) {
-            var codePathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
+            var codeParameters = pathParameters as CodeParameter[] ?? pathParameters?.ToArray();
+            var codePathParametersSuffix = !(codeParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", codeParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
             var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             var urlTemplateParams = urlTemplateVarName ?? $"$this->{pathParametersProperty.Name}";
@@ -207,7 +222,7 @@ namespace Kiota.Builder.Writers.Php
             writer.WriteLine($"${TempDictionaryVarName} = {pathParametersReference};");
             if(parameters.Any())
                 writer.WriteLines(parameters.Select(p => 
-                    $"${TempDictionaryVarName}['{p.Item2}\'] = {p.Item3};"
+                    $"${TempDictionaryVarName}['{p.Item2}'] = {p.Item3};"
                 ).ToArray());
         }
     }
