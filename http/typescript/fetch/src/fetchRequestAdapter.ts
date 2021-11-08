@@ -6,6 +6,7 @@ import { FetchRequestInit, FetchResponse } from "./utils/fetchDefinitions";
 import { URLSearchParams } from "./utils/utils";
 
 export class FetchRequestAdapter implements RequestAdapter {
+	public baseUrl = "";
 	public getSerializationWriterFactory(): SerializationWriterFactory {
 		return this.serializationWriterFactory;
 	}
@@ -175,6 +176,7 @@ export class FetchRequestAdapter implements RequestAdapter {
 		return await this.httpClient.executeFetch(this.createContext(requestInfo));
 	};
 	private getRequestFromRequestInformation = (requestInfo: RequestInformation): FetchRequestInit => {
+        requestInfo.pathParameters.set("baseurl", this.baseUrl);
 		const request: FetchRequestInit = {
 			method: requestInfo.httpMethod?.toString(),
 			headers: requestInfo.headers,

@@ -2,7 +2,9 @@ using System;
 using System.IO;
 using System.Linq;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Refiners;
 using Kiota.Builder.Tests;
+using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Writers.Go.Tests {
@@ -104,31 +106,32 @@ namespace Kiota.Builder.Writers.Go.Tests {
                 Name = "someParentClass"
             };
         }
-        private void AddRequestBodyParameters() {
+        private void AddRequestBodyParameters(CodeMethod target = default) {
             var stringType = new CodeType {
                 Name = "string",
             };
-            method.AddParameter(new CodeParameter {
+            target ??= method;
+            target.AddParameter(new CodeParameter {
                 Name = "h",
                 ParameterKind = CodeParameterKind.Headers,
                 Type = stringType,
             });
-            method.AddParameter(new CodeParameter{
+            target.AddParameter(new CodeParameter{
                 Name = "q",
                 ParameterKind = CodeParameterKind.QueryParameter,
                 Type = stringType,
             });
-            method.AddParameter(new CodeParameter{
+            target.AddParameter(new CodeParameter{
                 Name = "b",
                 ParameterKind = CodeParameterKind.RequestBody,
                 Type = stringType,
             });
-            method.AddParameter(new CodeParameter{
+            target.AddParameter(new CodeParameter{
                 Name = "r",
                 ParameterKind = CodeParameterKind.ResponseHandler,
                 Type = stringType,
             });
-            method.AddParameter(new CodeParameter {
+            target.AddParameter(new CodeParameter {
                 Name = "o",
                 ParameterKind = CodeParameterKind.Options,
                 Type = stringType,
@@ -143,7 +146,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             };
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("(func() (error))", result);
+            Assert.Contains("(error)", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
@@ -176,16 +179,28 @@ namespace Kiota.Builder.Writers.Go.Tests {
             Assert.Contains("m.requestAdapter.SendAsync", result);
             Assert.Contains("return res.(", result);
             Assert.Contains("err != nil", result);
-            Assert.Contains("return func() (", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         private const string AbstractionsPackageHash = "ida96af0f171bb75f894a4013a6b3146a4397c58f11adb81a2b7cbea9314783a9";
         [Fact]
         public void WritesRequestGeneratorBody() {
+            var configurationMock = new Mock<GenerationConfiguration>();
+            var refiner = new GoRefiner(configurationMock.Object);
             method.MethodKind = CodeMethodKind.RequestGenerator;
             method.HttpMethod = HttpMethod.Get;
+            var executor = parentClass.AddMethod(new CodeMethod {
+                Name = "executor",
+                HttpMethod = HttpMethod.Get,
+                MethodKind = CodeMethodKind.RequestExecutor,
+                ReturnType = new CodeType {
+                    Name = "string",
+                    IsExternal = true,
+                }
+            }).First();
+            AddRequestBodyParameters(executor);
             AddRequestBodyParameters();
             AddRequestProperties();
+            refiner.Refine(parentClass.Parent as CodeNamespace);
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains($"requestInfo := {AbstractionsPackageHash}.NewRequestInformation()", result);
@@ -193,12 +208,12 @@ namespace Kiota.Builder.Writers.Go.Tests {
             Assert.Contains("requestInfo.PathParameters", result);
             Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
             Assert.Contains("err != nil", result);
-            Assert.Contains("h != nil", result);
-            Assert.Contains("h(requestInfo.Headers)", result);
-            Assert.Contains("q != nil", result);
-            Assert.Contains("qParams.AddQueryParameters(requestInfo.QueryParameters)", result);
-            Assert.Contains("o != nil", result);
-            Assert.Contains("requestInfo.AddRequestOptions(o)", result);
+            Assert.Contains("H != nil", result);
+            Assert.Contains("requestInfo.Headers =", result);
+            Assert.Contains("Q != nil", result);
+            Assert.Contains("Q.AddQueryParameters(requestInfo.QueryParameters)", result);
+            Assert.Contains("O) != 0", result);
+            Assert.Contains("requestInfo.AddRequestOptions(", result);
             Assert.Contains("requestInfo.SetContentFromParsable(m.requestAdapter", result);
             Assert.Contains("return requestInfo, nil", result);
             AssertExtensions.CurlyBracesAreClosed(result);
@@ -259,10 +274,9 @@ namespace Kiota.Builder.Writers.Go.Tests {
             AddSerializationProperties();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("WritePrimitiveValue", result);
-            Assert.Contains("WriteCollectionOfPrimitiveValues", result);
+            Assert.Contains("WriteStringValue", result);
+            Assert.Contains("WriteCollectionOfStringValues", result);
             Assert.Contains("WriteCollectionOfObjectValues", result);
-            // Assert.Contains("WriteEnumValue", result); update when implementing enum serialization
             Assert.Contains("WriteAdditionalData(m.GetAdditionalData())", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
@@ -310,7 +324,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
         public void WritesReturnType() {
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains($"{MethodName.ToFirstCharacterUpperCase()}()({TaskPrefix}*{ReturnTypeName}, error)", result);// async default
+            Assert.Contains($"{MethodName.ToFirstCharacterUpperCase()}()(*{ReturnTypeName}, error)", result);// async default
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
@@ -389,7 +403,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             Assert.Contains("m.requestAdapter", result);
             Assert.Contains("m.pathParameters", result);
             Assert.Contains("pathParam", result);
-            Assert.Contains("return *New", result);
+            Assert.Contains("return New", result);
         }
         [Fact]
         public void WritesGetterToBackingStore() {

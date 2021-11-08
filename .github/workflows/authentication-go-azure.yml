@@ -1,0 +1,26 @@
+name: Go Authentication Azure
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths: ['authentication/go/azure/**', '.github/workflows/**']
+  pull_request:
+    paths: ['authentication/go/azure/**', '.github/workflows/**']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      relativePath: ./authentication/go/azure
+    steps:
+      - uses: actions/checkout@v2.4.0
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.17.2'
+      - name: Install dependencies
+        run: go install
+        working-directory: ${{ env.relativePath }}
+      - name: Build SDK project
+        run: go build
+        working-directory: ${{ env.relativePath }}

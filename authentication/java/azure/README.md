@@ -8,7 +8,7 @@
 - [ ] javadoc
 - [ ] cobertura
 
-## Using the core implementations
+## Using the Azure Authentication library
 
 1. In `build.gradle` in the `repositories` section:
 

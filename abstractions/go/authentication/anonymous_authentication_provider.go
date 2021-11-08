@@ -2,9 +2,15 @@ package authentication
 
 import abs "github.com/microsoft/kiota/abstractions/go"
 
+// This authentication provider does not perform any authentication.
 type AnonymousAuthenticationProvider struct {
 }
 
-func (provider *AnonymousAuthenticationProvider) Authenticate(request abs.RequestInformation) error {
+// Authenticates the Request information instance
+// Parameters:
+//		request: Request information instance
+// Returns:
+//		error: nil if authentication is successful, otherwise an error
+func (provider *AnonymousAuthenticationProvider) AuthenticateRequest(request abs.RequestInformation) error {
 	return nil
 }
