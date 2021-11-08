@@ -35,6 +35,10 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: 11
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1.8.2
+        with:
+          dotnet-version: 6.0.x
       - uses: actions/checkout@v2.4.0
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
