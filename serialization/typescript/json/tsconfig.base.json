@@ -1,0 +1,11 @@
+{
+	"compilerOptions": {
+		"importHelpers": true,
+		"noEmitOnError": true,
+		"noImplicitAny": true,
+		"moduleResolution": "node",
+		"removeComments": false,
+		"sourceMap": true,
+		"declaration": true
+	}
+}

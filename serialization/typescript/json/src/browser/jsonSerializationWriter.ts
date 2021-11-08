@@ -1,5 +1,4 @@
 import { Parsable, SerializationWriter } from "@microsoft/kiota-abstractions";
-import { TextEncoder } from "util";
 
 export interface ReadableStreamContent{
 

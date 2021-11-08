@@ -1,4 +1,4 @@
-export * from './jsonParseNode';
-export * from './jsonSerializationWriter';
-export * from './jsonParseNodeFactory';
-export * from './jsonSerializationWriterFactory';
+export { JsonParseNode } from './jsonParseNode';
+export { JsonSerializationWriter } from './jsonSerializationWriter';
+export { JsonParseNodeFactory } from './jsonParseNodeFactory';
+export { JsonSerializationWriterFactory } from './jsonSerializationWriterFactory';

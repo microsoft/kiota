@@ -12,9 +12,15 @@ export class JsonParseNodeFactory implements ParseNodeFactory {
         if(!content) {
             throw new Error("content cannot be undefined of empty");
         }
+        const contentAsJson = this.convertToJson(content)
+        return new JsonParseNode(contentAsJson);
+    }
+
+    private convertToJson(content:ArrayBuffer){
+        // Maintaining private function to unit test convertToJson
         const decoder = new TextDecoder();
         const contentAsStr = decoder.decode(content);
         const contentAsJson = JSON.parse(contentAsStr);
-        return new JsonParseNode(contentAsJson);
+        return contentAsJson;
     }
 }

@@ -2,12 +2,26 @@
     "name": "@microsoft/kiota-serialization-json",
     "version": "1.0.5",
     "description": "Implementation of Kiota Serialization interfaces for JSON",
-    "main": "dist/src/index.js",
-    "types": "dist/index.d.ts",
+    "main": "dist/cjs/src/index.js",
+    "module": "dist/es/src/index.js",
+    "browser": {
+        "./dist/es/src/index.js": "./dist/es/src/browser/index.js",
+        "./dist/es/src/JsonParseNodeFactory.js": "./dist/es/src/browser/JsonParseNodeFactory.js",
+        "./dist/es/src/JsonSerializationWriter.js": "./dist/es/browser/JsonSerializationWriter.js"
+    },
+    "types": "dist/cjs/src/index.d.ts",
     "scripts": {
-        "build": "tsc -p tsconfig.json",
-        "test": "mocha dist/test/node/**.js",
-        "clean": "rm -r ./dist"
+        "build": "npm run build:cjs && npm run build:es",
+        "build:cjs": "tsc -p tsconfig.cjs.json",
+        "build:es": "tsc -p tsconfig.es.json",
+        "clean": "rm -r ./dist",
+        "karma": "npm run rollup && karma  start --single-run --browsers ChromeHeadless karma.conf.js",
+        "lint": "eslint . --ext .ts",
+        "lint:fix": "eslint . --ext .ts --fix",
+        "rollup": "rollup -c",
+        "test": "npm run test:cjs && npm run test:es && npm run karma",
+        "test:cjs": "npm run build:cjs && mocha  'dist/cjs/test/node/**/*.js'",
+        "test:es": " npm run build:es && mocha 'dist/es/test/node/**/*.js'  --require  esm"
     },
     "repository": {
         "type": "git",
@@ -27,12 +41,12 @@
     },
     "homepage": "https://github.com/microsoft/kiota#readme",
     "devDependencies": {
-        "@types/node": "^16.11.3",
-        "typescript": "^4.4.4",
         "@rollup/plugin-commonjs": "^21.0.0",
         "@rollup/plugin-node-resolve": "^13.0.5",
         "@types/chai": "^4.2.22",
         "@types/mocha": "^9.0.0",
+        "@types/node": "^16.10.3",
+        "@types/node-fetch": "^2.5.12",
         "@types/sinon": "^10.0.4",
         "@typescript-eslint/eslint-plugin": "^5.0.0",
         "@typescript-eslint/parser": "^5.0.0",
@@ -49,17 +63,18 @@
         "karma-mocha": "^2.0.1",
         "karma-typescript": "^5.5.2",
         "mocha": "^8.4.0",
+        "node-fetch": "^2.6.6",
         "prettier": "^1.19.1",
         "rollup": "^2.58.0",
         "rollup-plugin-terser": "^7.0.2",
-        "sinon": "^11.1.2"
+        "sinon": "^11.1.2",
+        "tslib": "^2.3.1",
+        "typescript": "^4.4.3"
     },
     "publishConfig": {
         "registry": "https://npm.pkg.github.com"
     },
     "dependencies": {
-        "@microsoft/kiota-abstractions": "file:microsoft-kiota-abstractions-1.0.21.tgz",
-        "node-fetch": "^2.6.0",
-        "web-streams-polyfill": "^3.1.1"
+        "@microsoft/kiota-abstractions": "file:microsoft-kiota-abstractions-1.0.21.tgz"
     }
 }
