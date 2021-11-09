@@ -19,7 +19,7 @@
     "module": "dist/es/src/index.js",
     "types": "dist/cjs/src/index.d.ts",
     "browser": {
-        "dist/es/src/utils/index.js":"dist/es/src/utils/browser/index.js"
+        "dist/es/src/utils/index.js": "dist/es/src/utils/browser/index.js"
     },
     "scripts": {
         "build": "npm run build:cjs && npm run build:es",

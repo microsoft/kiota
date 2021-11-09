@@ -44,7 +44,7 @@
         "test:es": " npm run build:es && mocha 'dist/es/test/common/**/*.js'  --require  esm && mocha 'dist/es/test/node/**/*.js'  --require  esm"
     },
     "dependencies": {
-        "@microsoft/kiota-abstractions": "file:../../../abstractions/typescript",
+        "@microsoft/kiota-abstractions": "file:microsoft-kiota-abstractions-1.0.21.tgz",
         "node-fetch": "^2.6.5"
     },
     "devDependencies": {

@@ -19,13 +19,13 @@ describe("RequestInformation", () => {
 
 		assert.equal(requestInformation["content"], nodeReadableStream);
 	});
-    it("Should set request information uri", () => {
+
+	it("Should set request information uri", () => {
 		const requestInformation = new RequestInformation();
 		const currentPath = "CURRENT_PATH";
-		const pathSegment = "PATH_SEGMENT";
+		const pathSegment = "https://base";
 		requestInformation.URL = new URL(currentPath, pathSegment);
 		assert.isNotNull(URL);
-		console.log(requestInformation.URL);
-		assert.equal(requestInformation.URL, new URL(currentPath, pathSegment));
+		assert.deepEqual(requestInformation.URL, new URL(currentPath, pathSegment));
 	});
 });

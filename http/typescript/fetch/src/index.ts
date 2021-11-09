@@ -20,4 +20,3 @@ export * from "./middlewares/middlewareContext";
 export * from "./middlewares/middlewareFactory";
 export * from "./utils/headersUtil";
 export * from "./utils/fetchDefinitions";
-export * from "./utils/utils";

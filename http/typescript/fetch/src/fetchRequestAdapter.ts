@@ -3,7 +3,6 @@ import { AuthenticationProvider, BackingStoreFactory, BackingStoreFactorySinglet
 import { HttpClient } from "./httpClient";
 import { MiddlewareContext } from "./middlewares/middlewareContext";
 import { FetchRequestInit, FetchResponse } from "./utils/fetchDefinitions";
-import { URLSearchParams } from "./utils/utils";
 
 export class FetchRequestAdapter implements RequestAdapter {
 	public baseUrl = "";
