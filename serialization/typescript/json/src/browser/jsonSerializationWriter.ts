@@ -1,8 +1,5 @@
-import { Parsable, SerializationWriter } from "@microsoft/kiota-abstractions";
+import { Parsable, SerializationWriter, ReadableStreamContent } from "@microsoft/kiota-abstractions";
 
-export interface ReadableStreamContent{
-
-}
 export class JsonSerializationWriter implements SerializationWriter {
     private readonly writer: string[] = [];
     private static propertySeparator = `,`;
