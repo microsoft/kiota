@@ -75,9 +75,7 @@ export class RedirectHandler implements Middleware {
 	 * @returns An instance of RedirectHandler
 	 */
 
-	public constructor(private options: RedirectHandlerOptions = new RedirectHandlerOptions()) {
-		this.options = options;
-	}
+	public constructor(private options: RedirectHandlerOptions = new RedirectHandlerOptions()) {}
 
 	/**
 	 * @private
@@ -189,11 +187,10 @@ export class RedirectHandler implements Middleware {
 	 * @param {Context} context - The context object of the request
 	 * @returns A Promise that resolves to nothing
 	 */
-	public async execute(context: MiddlewareContext): Promise<FetchResponse> {
+	public execute(context: MiddlewareContext): Promise<FetchResponse> {
 		const redirectCount = 0;
 		const options: RedirectHandlerOptions = ((context?.requestInformationOptions && context.requestInformationOptions[RedirectHandlerOptionKey]) as RedirectHandlerOptions) || this.options;
 		context.fetchRequestInit.redirect = RedirectHandler.MANUAL_REDIRECT;
-		const response = await this.executeWithRedirect(context, redirectCount, options);
-		return response;
+		return this.executeWithRedirect(context, redirectCount, options);
 	}
 }

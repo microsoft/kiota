@@ -55,21 +55,13 @@ export class RetryHandler implements Middleware {
 	next: Middleware;
 
 	/**
-	 * @private
-	 * A member holding the retry handler options
-	 */
-	private options: RetryHandlerOptions;
-
-	/**
 	 * @public
 	 * @constructor
 	 * To create an instance of RetryHandler
 	 * @param {RetryHandlerOptions} [options = new RetryHandlerOptions()] - The retry handler options value
 	 * @returns An instance of RetryHandler
 	 */
-	public constructor(options: RetryHandlerOptions = new RetryHandlerOptions()) {
-		this.options = options;
-	}
+	public constructor(private options: RetryHandlerOptions = new RetryHandlerOptions()) {}
 
 	/**
 	 *
@@ -93,7 +85,7 @@ export class RetryHandler implements Middleware {
 		const method = options.method;
 		const isPutPatchOrPost: boolean = method === HttpMethod.PUT || method === HttpMethod.PATCH || method === HttpMethod.POST;
 		if (isPutPatchOrPost) {
-			const isStream = getRequestHeader(options, "Content-Type") === "application/octet-stream";
+			const isStream = getRequestHeader(options, "content-type") === "application/octet-stream";
 			if (isStream) {
 				return false;
 			}
@@ -179,9 +171,9 @@ export class RetryHandler implements Middleware {
 	 * @param {Context} context - The context object of the request
 	 * @returns A Promise that resolves to nothing
 	 */
-	public async execute(context: MiddlewareContext): Promise<FetchResponse> {
+	public execute(context: MiddlewareContext): Promise<FetchResponse> {
 		const retryAttempts = 0;
 		const options: RetryHandlerOptions = ((context?.requestInformationOptions && context.requestInformationOptions[RetryHandlerOptionKey]) as RetryHandlerOptions) || this.options;
-		return await this.executeWithRetry(context, retryAttempts, options);
+		return this.executeWithRetry(context, retryAttempts, options);
 	}
 }
