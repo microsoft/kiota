@@ -30,6 +30,8 @@ dependencies {
     implementation 'com.google.guava:guava:31.0.1-jre'
 
     implementation 'org.javatuples:javatuples:1.2'
+
+    implementation 'com.github.hal4j:uritemplate:1.2.3'
 }
 
 publishing {
@@ -46,7 +48,7 @@ publishing {
     publications {
         gpr(MavenPublication) {
             artifactId 'kiota-abstractions'
-            version '1.0.21'
+            version '1.0.23'
             from(components.java)
         }
     }

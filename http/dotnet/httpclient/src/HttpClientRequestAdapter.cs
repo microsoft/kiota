@@ -1,4 +1,4 @@
-﻿// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 //  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
 // ------------------------------------------------------------------------------
 
@@ -50,6 +50,10 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
                 return sWriterFactory;
             }
         }
+        /// <summary>
+        /// The base url for every request.
+        /// </summary>
+        public string BaseUrl { get; set; }
         /// <summary>
         /// Send a <see cref="RequestInformation"/> instance with a collection instance of <typeparam name="ModelType"></typeparam>
         /// </summary>
@@ -199,17 +203,13 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
             return response;
         }
         private const string ContentTypeHeaderName = "content-type";
-        internal static HttpRequestMessage GetRequestMessageFromRequestInformation(RequestInformation requestInfo)
+        internal HttpRequestMessage GetRequestMessageFromRequestInformation(RequestInformation requestInfo)
         {
+            requestInfo.PathParameters.Add("baseurl", BaseUrl);
             var message = new HttpRequestMessage
             {
                 Method = new System.Net.Http.HttpMethod(requestInfo.HttpMethod.ToString().ToUpperInvariant()),
-                RequestUri = new Uri(requestInfo.URI +
-                                        ((requestInfo.QueryParameters?.Any() ?? false) ?
-                                            "?" + requestInfo.QueryParameters
-                                                        .Select(x => $"{x.Key}{(x.Value == null ? string.Empty : "=")}{GetStringForQueryParameter(x.Value)}")
-                                                        .Aggregate((x, y) => $"{x}&{y}") :
-                                            string.Empty)),
+                RequestUri = requestInfo.URI,
             };
 
             if(requestInfo.RequestOptions.Any())
@@ -223,21 +223,6 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
                     message.Content.Headers.ContentType = new MediaTypeHeaderValue(requestInfo.Headers[ContentTypeHeaderName]);
             }
             return message;
-        }
-
-        private static string GetStringForQueryParameter(object value)
-        {
-            return value switch
-            {
-                null => string.Empty,
-                bool booleanValue =>
-                    // ToString returns True/False with the first character in uppercase
-                    booleanValue.ToString().ToFirstCharacterLowerCase(),
-                IEnumerable<object> collection =>
-                    // the collection could be of booleans for all we know, make sure its cleaned up as well by this same function
-                    string.Join(',', collection.Select(GetStringForQueryParameter)),
-                _ => value.ToString()
-            };
         }
 
         /// <summary>

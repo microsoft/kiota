@@ -80,6 +80,8 @@ namespace Kiota.Builder.Refiners {
                 "@microsoft/kiota-abstractions", "SerializationWriter"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
                 "@microsoft/kiota-abstractions", "ParseNode"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.IndexerBackwardCompatibility),
+                "@microsoft/kiota-abstractions", "getPathParameters"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
                 "@microsoft/kiota-abstractions", "Parsable"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
@@ -100,6 +102,11 @@ namespace Kiota.Builder.Refiners {
             else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
                 currentProperty.Type.Name = "Map<string, unknown>";
                 currentProperty.DefaultValue = "new Map<string, unknown>()";
+            } else if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
+                currentProperty.Type.IsNullable = false;
+                currentProperty.Type.Name = "Map<string, unknown>";
+                if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
+                    currentProperty.DefaultValue = "new Map<string, unknown>()";
             }
         }
         private static void CorrectMethodType(CodeMethod currentMethod) {
@@ -112,11 +119,28 @@ namespace Kiota.Builder.Refiners {
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
             else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer))
                 currentMethod.ReturnType.Name = $"Map<string, (item: T, node: ParseNode) => void>";
-            else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor))
+            else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor)) {
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.BackingStore))
                     .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                     .ToList()
                     .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
+                var urlTplParams = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
+                if(urlTplParams != null &&
+                    urlTplParams.Type is CodeType originalType) {
+                    originalType.Name = "Map<string, unknown>";
+                    urlTplParams.Description = "The raw url or the Url template parameters for the request.";
+                    var unionType = new CodeUnionType {
+                        Name = "rawUrlOrTemplateParameters",
+                        IsNullable = true,
+                    };
+                    unionType.AddType(originalType, new() {
+                        Name = "string",
+                        IsNullable = true,
+                        IsExternal = true,
+                    });
+                    urlTplParams.Type = unionType;
+                }
+            }
         }
     }
 }

@@ -9,10 +9,32 @@ namespace Kiota.Builder
         RequestBuilder,
         AdditionalData,
         BackingStore,
-        PathSegment,
-        CurrentPath,
+        UrlTemplate,
+        /// <summary>
+        /// The set of parameters to be carried over to the next request builder.
+        /// </summary>
+        PathParameters,
         RequestAdapter,
-        RawUrl
+        /// <summary>
+        /// The request body. Used when request parameters are wrapped in a classs.
+        /// </summary>
+        RequestBody,
+        /// <summary>
+        /// The request query parameters. Used when request parameters are wrapped in a classs.
+        /// </summary>
+        QueryParameter,
+        /// <summary>
+        /// The request headers. Used when request parameters are wrapped in a classs.
+        /// </summary>
+        Headers,
+        /// <summary>
+        /// The request middleware options. Used when request parameters are wrapped in a classs.
+        /// </summary>
+        Options,
+        /// <summary>
+        /// The request response handler. Used when request parameters are wrapped in a classs.
+        /// </summary>
+        ResponseHandler,
     }
 
     public class CodeProperty : CodeTerminal, IDocumentedElement

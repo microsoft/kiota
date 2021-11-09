@@ -75,7 +75,7 @@ namespace Kiota.Builder.Refiners {
                 var backedModelImplements = currentDeclaration.Implements.FirstOrDefault(x => "IBackedModel".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
                 if(backedModelImplements != null)
                     backedModelImplements.Name = backedModelImplements.Name[1..]; //removing the "I"
-                var backingStoreProperty = currentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.BackingStore));
+                var backingStoreProperty = currentClass.GetPropertyOfKind(CodePropertyKind.BackingStore);
                 if(backingStoreProperty != null)
                     backingStoreProperty.DefaultValue = defaultPropertyValue;
                 
@@ -264,7 +264,6 @@ namespace Kiota.Builder.Refiners {
             }
             CrawlTree(currentElement, c => ReplaceBinaryByNativeType(c, symbol, ns, addDeclaration));
         }
-        private const string PathSegmentPropertyName = "pathSegment";
         protected static void ConvertUnionTypesToWrapper(CodeElement currentElement, bool usesBackingStore) {
             var parentClass = currentElement.Parent as CodeClass;
             if(currentElement is CodeMethod currentMethod) {
@@ -328,22 +327,17 @@ namespace Kiota.Builder.Refiners {
             if(currentElement is CodeIndexer currentIndexer &&
                 currentElement.Parent is CodeClass currentParentClass) {
                 currentParentClass.RemoveChildElement(currentElement);
-                var pathSegment = currentParentClass
-                                    .FindChildByName<CodeProperty>(PathSegmentPropertyName)
-                                    ?.DefaultValue;
-                if(!string.IsNullOrEmpty(pathSegment))
-                    foreach(var returnType in currentIndexer.ReturnType.AllTypes)
-                        AddIndexerMethod(rootNamespace,
-                                        currentParentClass,
-                                        returnType.TypeDefinition as CodeClass,
-                                        pathSegment.Trim('\"').TrimStart('/'),
-                                        methodNameSuffix,
-                                        currentIndexer.Description,
-                                        parameterNullable);
+                foreach(var returnType in currentIndexer.ReturnType.AllTypes)
+                    AddIndexerMethod(rootNamespace,
+                                    currentParentClass,
+                                    returnType.TypeDefinition as CodeClass,
+                                    methodNameSuffix,
+                                    parameterNullable,
+                                    currentIndexer);
             }
             CrawlTree(currentElement, c => ReplaceIndexersByMethodsWithParameter(c, rootNamespace, parameterNullable, methodNameSuffix));
         }
-        private static void AddIndexerMethod(CodeElement currentElement, CodeClass targetClass, CodeClass indexerClass, string pathSegment, string methodNameSuffix, string description, bool parameterNullable) {
+        private static void AddIndexerMethod(CodeElement currentElement, CodeClass targetClass, CodeClass indexerClass, string methodNameSuffix, bool parameterNullable, CodeIndexer currentIndexer) {
             if(currentElement is CodeProperty currentProperty && currentProperty.Type.AllTypes.Any(x => x.TypeDefinition == targetClass)) {
                 var parentClass = currentElement.Parent as CodeClass;
                 var method = new CodeMethod {
@@ -351,15 +345,15 @@ namespace Kiota.Builder.Refiners {
                     IsStatic = false,
                     Access = AccessModifier.Public,
                     MethodKind = CodeMethodKind.IndexerBackwardCompatibility,
-                    Name = pathSegment + methodNameSuffix,
-                    Description = description,
+                    Name = currentIndexer.PathSegment + methodNameSuffix,
+                    Description = currentIndexer.Description,
                     ReturnType = new CodeType {
                         IsNullable = false,
                         TypeDefinition = indexerClass,
                         Name = indexerClass.Name,
                     },
+                    OriginalIndexer = currentIndexer,
                 };
-                method.PathSegment = pathSegment;
                 var parameter = new CodeParameter {
                     Name = "id",
                     Optional = false,
@@ -374,7 +368,7 @@ namespace Kiota.Builder.Refiners {
                 method.AddParameter(parameter);
                 parentClass.AddMethod(method);
             }
-            CrawlTree(currentElement, c => AddIndexerMethod(c, targetClass, indexerClass, pathSegment, methodNameSuffix, description, parameterNullable));
+            CrawlTree(currentElement, c => AddIndexerMethod(c, targetClass, indexerClass, methodNameSuffix, parameterNullable, currentIndexer));
         }
         internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName) {
             if(current is CodeClass currentClass) {
@@ -457,10 +451,10 @@ namespace Kiota.Builder.Refiners {
         protected static void CorrectCoreType(CodeElement currentElement, Action<CodeMethod> correctMethodType, Action<CodeProperty> correctPropertyType) {
             switch(currentElement) {
                 case CodeProperty property:
-                    correctPropertyType.Invoke(property);
+                    correctPropertyType?.Invoke(property);
                     break;
                 case CodeMethod method:
-                    correctMethodType.Invoke(method);
+                    correctMethodType?.Invoke(method);
                     break;
             }
             CrawlTree(currentElement, x => CorrectCoreType(x, correctMethodType, correctPropertyType));
@@ -473,6 +467,26 @@ namespace Kiota.Builder.Refiners {
                             .ToList()
                             .ForEach(x => x.Type.IsNullable = true);
             CrawlTree(currentElement, MakeModelPropertiesNullable);
+        }
+        protected static void AddRawUrlConstructorOverload(CodeElement currentElement) {
+            if(currentElement is CodeMethod currentMethod &&
+                currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
+                currentElement.Parent is CodeClass parentClass &&
+                parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
+                    var overloadCtor = currentMethod.Clone() as CodeMethod;
+                    overloadCtor.MethodKind = CodeMethodKind.RawUrlConstructor;
+                    overloadCtor.OriginalMethod = currentMethod;
+                    overloadCtor.RemoveParametersByKind(CodeParameterKind.PathParameters, CodeParameterKind.Path);
+                    overloadCtor.AddParameter(new CodeParameter {
+                        Name = "rawUrl",
+                        Type = new CodeType { Name = "string", IsExternal = true },
+                        Optional = false,
+                        Description = "The raw URL to use for the request builder.",
+                        ParameterKind = CodeParameterKind.RawUrl,
+                    });
+                    parentClass.AddMethod(overloadCtor);
+                }
+            CrawlTree(currentElement, AddRawUrlConstructorOverload);
         }
     }
 }

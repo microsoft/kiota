@@ -47,16 +47,12 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
                 PropertyKind = CodePropertyKind.RequestAdapter,
             });
             parentClass.AddProperty(new CodeProperty {
-                Name = "isRawUrl",
-                PropertyKind = CodePropertyKind.RawUrl,
+                Name = "pathParameters",
+                PropertyKind = CodePropertyKind.PathParameters,
             });
             parentClass.AddProperty(new CodeProperty {
-                Name = "currentPath",
-                PropertyKind = CodePropertyKind.CurrentPath,
-            });
-            parentClass.AddProperty(new CodeProperty {
-                Name = "pathSegment",
-                PropertyKind = CodePropertyKind.PathSegment,
+                Name = "urlTemplate",
+                PropertyKind = CodePropertyKind.UrlTemplate,
             });
         }
         private void AddSerializationProperties() {
@@ -181,7 +177,8 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             var result = tw.ToString();
             Assert.Contains("var requestInfo = new RequestInformation", result);
             Assert.Contains("HttpMethod = HttpMethod.GET", result);
-            Assert.Contains("requestInfo.SetURI", result);
+            Assert.Contains("UrlTemplate = ", result);
+            Assert.Contains("PathParameters = ", result);
             Assert.Contains("h?.Invoke", result);
             Assert.Contains("AddQueryParameters", result);
             Assert.Contains("SetContentFromParsable", result);
@@ -354,8 +351,8 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         }
         [Fact]
         public void WritesPathParameterRequestBuilder() {
+            AddRequestProperties();
             method.MethodKind = CodeMethodKind.RequestBuilderWithParameters;
-            method.PathSegment = "somePath";
             method.AddParameter(new CodeParameter {
                 Name = "pathParam",
                 ParameterKind = CodeParameterKind.Path,
@@ -366,7 +363,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("RequestAdapter", result);
-            Assert.Contains("PathSegment", result);
+            Assert.Contains("PathParameters", result);
             Assert.Contains("pathParam", result);
             Assert.Contains("return new", result);
         }
@@ -378,7 +375,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             parentClass.AddProperty(new CodeProperty {
                 Name = propName,
                 DefaultValue = defaultValue,
-                PropertyKind = CodePropertyKind.PathSegment,
+                PropertyKind = CodePropertyKind.UrlTemplate,
             });
             writer.Write(method);
             var result = tw.ToString();

@@ -10,10 +10,12 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests
     public class HttpClientRequestAdapterTests
     {
         private readonly IAuthenticationProvider _authenticationProvider;
+        private readonly HttpClientRequestAdapter requestAdapter;
 
         public HttpClientRequestAdapterTests()
         {
             _authenticationProvider = new Mock<IAuthenticationProvider>().Object;
+            requestAdapter = new HttpClientRequestAdapter(new AnonymousAuthenticationProvider());
         }
 
         [Fact]
@@ -44,19 +46,19 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests
         [InlineData("select", new[] { "id", "displayName" }, "select=id,displayName")]
         [InlineData("count", true, "count=true")]
         [InlineData("skip", 10, "skip=10")]
-        [InlineData("skip", null, "skip")]
+        [InlineData("skip", null, "")]// query parameter no placed
         public void GetRequestMessageFromRequestInformationSetsQueryParametersCorrectlyWithSelect(string queryParam, object queryParamObject, string expectedString)
         {
             // Arrange
             var requestInfo = new RequestInformation
             {
                 HttpMethod = HttpMethod.GET,
+                UrlTemplate = "http://localhost/me{?top,skip,search,filter,count,orderby,select}"
             };
-            requestInfo.SetURI("http://localhost/me", "", true);
             requestInfo.QueryParameters.Add(queryParam, queryParamObject);
 
             // Act
-            var requestMessage = HttpClientRequestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
+            var requestMessage = requestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
 
             // Assert
             Assert.NotNull(requestMessage.RequestUri);

@@ -58,5 +58,9 @@ namespace Microsoft.Kiota.Abstractions
         /// <param name="responseHandler">The response handler to use for the HTTP request instead of the default handler.</param>
         /// <returns>A Task to await completion.</returns>
         Task SendNoContentAsync(RequestInformation requestInfo, IResponseHandler responseHandler = default);
+        /// <summary>
+        /// The base url for every request.
+        /// </summary>
+        string BaseUrl { get; set; }
     }
 }

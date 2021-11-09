@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers.Extensions;
 
 namespace Kiota.Builder.Writers.Go {
     public class GoConventionService : CommonLanguageConventionService
@@ -10,14 +11,11 @@ namespace Kiota.Builder.Writers.Go {
 
         public override string VoidTypeName => string.Empty;
 
-        public override string DocCommentPrefix => string.Empty;
-
-        private const string PathSegmentPropertyName = "pathSegment";
-        private const string CurrentPathPropertyName = "currentPath";
-        private const string HttpCorePropertyName = "requestAdapter";
+        public override string DocCommentPrefix => "// ";
         public override string ParseNodeInterfaceName => "ParseNode";
         #pragma warning disable CA1822 // Method should be static
         public string AbstractionsHash => "ida96af0f171bb75f894a4013a6b3146a4397c58f11adb81a2b7cbea9314783a9";
+        public string SerializationHash => "i04eb5309aeaafadd28374d79c8471df9b267510b4dc2e3144c378c50f6fd7b55";
         #pragma warning restore CA1822 // Method should be static
         public override string GetAccessModifier(AccessModifier access)
         {
@@ -25,7 +23,7 @@ namespace Kiota.Builder.Writers.Go {
         }
         public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
         {
-            return $"{parameter.Name} {GetTypeString(parameter.Type, targetElement)}";
+            return $"{parameter.Name.ToFirstCharacterLowerCase()} {GetTypeString(parameter.Type, targetElement)}";
         }
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true) =>
             GetTypeString(code, targetElement, includeCollectionInformation, true);
@@ -66,7 +64,7 @@ namespace Kiota.Builder.Writers.Go {
                 "float" => "float32",
                 "integer" => "int32",
                 "long" => "int64",
-                "double" => "float64",
+                "double" or "decimal" => "float64",
                 "boolean" => "bool",
                 "guid" when includeImportSymbol => "uuid.UUID",
                 "guid" when !includeImportSymbol => "UUID",
@@ -81,7 +79,7 @@ namespace Kiota.Builder.Writers.Go {
         public bool IsPrimitiveType(string typeName) {
             return typeName.TrimCollectionAndPointerSymbols() switch {
                 "void" or "string" or "float" or "integer" or "long" or "double" or "boolean" or "guid" or "DateTimeOffset"
-                or "bool" or "int32" or "int64" or "float32" or "float64" or "UUID" or "Time" => true,
+                or "bool" or "int32" or "int64" or "float32" or "float64" or "UUID" or "Time" or "decimal" => true,
                 _ => false,
             };
         }
@@ -119,18 +117,52 @@ namespace Kiota.Builder.Writers.Go {
 
         public override void WriteShortDescription(string description, LanguageWriter writer)
         {
-            throw new NotImplementedException();
+            writer.WriteLine($"{DocCommentPrefix}{description}");
         }
         #pragma warning disable CA1822 // Method should be static
-        internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default, IEnumerable<CodeParameter> pathParameters = default)
+        internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default)
         {
-            var currentPath = addCurrentPath ? $"m.{CurrentPathPropertyName} + " : string.Empty;
+            var urlTemplateParamsProp = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
+            var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
+            var urlTemplateParams = urlTemplateVarName ?? $"m.{urlTemplateParamsProp.Name}";
             var splatImport = returnType.Split('.');
             var constructorName = splatImport.Last().TrimCollectionAndPointerSymbols().ToFirstCharacterUpperCase();
-            var moduleName = splatImport.Length > 1 ? $"{splatImport.First()}." : string.Empty;
-            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $"{string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}, ";
-            writer.WriteLines($"return *{moduleName}New{constructorName}({currentPath}m.{PathSegmentPropertyName}{suffix}, m.{HttpCorePropertyName}, {pathParametersSuffix}false);");
+            var moduleName = splatImport.Length > 1 ? $"{splatImport.First().TrimStart('*')}." : string.Empty;
+            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
+            writer.WriteLines($"return {moduleName}New{constructorName}Internal({urlTemplateParams}, m.{requestAdapterProp.Name}{pathParametersSuffix});");
+        }
+        public override string TempDictionaryVarName => "urlTplParams";
+        internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
+            if(pathParametersType == null) return;
+            var mapTypeName = pathParametersType.Name;
+            writer.WriteLine($"{TempDictionaryVarName} := make({mapTypeName})");
+            writer.WriteLine($"for idx, item := range {pathParametersReference} {{");
+            writer.IncreaseIndent();
+            writer.WriteLine($"{TempDictionaryVarName}[idx] = item");
+            writer.CloseBlock();
+            if(parameters.Any())
+                foreach(var p in parameters) {
+                    var isStringStruct = !p.Item1.IsNullable && p.Item1.Name.Equals("string", StringComparison.OrdinalIgnoreCase);
+                    var defaultValue = isStringStruct ? "\"\"" : "nil";
+                    var pointerDereference = isStringStruct ? string.Empty : "*";
+                    writer.WriteLines($"if {p.Item3} != {defaultValue} {{");
+                    writer.IncreaseIndent();
+                    writer.WriteLine($"{TempDictionaryVarName}[\"{p.Item2}\"] = {GetValueStringConversion(p.Item1.Name, pointerDereference+p.Item3)}");
+                    writer.CloseBlock();
+                }
         }
         #pragma warning restore CA1822 // Method should be static
+        private const string StrConvHash = "i53ac87e8cb3cc9276228f74d38694a208cacb99bb8ceb705eeae99fb88d4d274";
+        private static string GetValueStringConversion(string typeName, string reference) {
+            return typeName switch {
+                "boolean" => $"{StrConvHash}.FormatBool({reference})",
+                "int64" => $"{StrConvHash}.FormatInt({reference}, 10)",
+                "integer" or "int32" => $"{StrConvHash}.FormatInt(int64({reference}), 10)",
+                "long" => $"{StrConvHash}.FormatInt({reference}, 10)",
+                "float" or "double" or "decimal" or "float64" or "float32" => $"{StrConvHash}.FormatFloat({reference}, 'E', -1, 64)",
+                "DateTimeOffset" or "Time" => $"({reference}).String()",
+                _ => reference,
+            };
+        }
     }
 }

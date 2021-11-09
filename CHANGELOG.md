@@ -9,7 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+## [0.0.14] - 2021-11-08
+
+### Added
+
+- Added support for changing the base url #795
+
 ### Changed
+
+- Fixes a bug where arrays of enums could be wrongly mapped.
+- Fixes a bug where go deserialization would fail on collections of scalars.
+- Fixes a bug where TypeScript query parameters would be added to headers instead #812
+
+## [0.0.13] - 2021-10-27
+
+### Changed
+
+- Technical release to bump version number of go packages after replace removal
+
+## [0.0.12] - 2021-10-27
+
+### Added
+
+- Adds Go authentication, http and serialization libraries and finalizes the generation #716
+
+## [0.0.11] - 2021-10-27
+
+### Changed
+
+- Switched to URL templates instead of string contract for URL building #683
+- Fixed a bug where CSharp method names would not follow naming conventions #730
 
 ## [0.0.10] - 2021-10-06
 

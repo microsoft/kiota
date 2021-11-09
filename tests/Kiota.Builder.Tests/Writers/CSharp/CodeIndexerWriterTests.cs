@@ -23,6 +23,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             root.AddClass(parentClass);
             indexer = new CodeIndexer {
                 Name = "idx",
+                ParameterName = "id"
             };
             indexer.IndexType = new CodeType {
                 Name = "string",
@@ -31,6 +32,19 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
                 Name = "SomeRequestBuilder"
             };
             parentClass.SetIndexer(indexer);
+            parentClass.AddProperty(new() {
+                Name = "pathParameters",
+                PropertyKind = CodePropertyKind.PathParameters,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            }, new() {
+                Name = "requestAdapter",
+                PropertyKind = CodePropertyKind.RequestAdapter,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            });
         }
         public void Dispose() {
             tw?.Dispose();
@@ -41,8 +55,8 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             writer.Write(indexer);
             var result = tw.ToString();
             Assert.Contains("RequestAdapter", result);
-            Assert.Contains("PathSegment", result);
-            Assert.Contains("+ position", result);
+            Assert.Contains("PathParameters", result);
+            Assert.Contains("id\", position", result);
             Assert.Contains("public SomeRequestBuilder this[string position]", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }

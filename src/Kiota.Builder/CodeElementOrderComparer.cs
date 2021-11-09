@@ -13,11 +13,12 @@ namespace Kiota.Builder {
                 (_, null) => 1,
                 _ => GetTypeFactor(x).CompareTo(GetTypeFactor(y)) * typeWeight +
                     (x.Name?.CompareTo(y.Name) ?? 0) * nameWeight +
+                    GetMethodKindFactor(x).CompareTo(GetMethodKindFactor(y)) * methodKindWeight +
                     GetParametersFactor(x).CompareTo(GetParametersFactor(y)) * parametersWeight,
             };
         }
-        private static readonly int nameWeight = 10;
-        private static readonly int typeWeight = 100;
+        private static readonly int nameWeight = 100;
+        private static readonly int typeWeight = 1000;
         protected virtual int GetTypeFactor(CodeElement element) {
             return element switch {
                 CodeUsing => 1,
@@ -29,6 +30,17 @@ namespace Kiota.Builder {
                 CodeClass.End => 7,
                 _ => 0,
             };
+        }
+        private static readonly int methodKindWeight = 10;
+        protected static int GetMethodKindFactor(CodeElement element) {
+            if (element is CodeMethod method)
+                return method.MethodKind switch {
+                    CodeMethodKind.ClientConstructor => 1,
+                    CodeMethodKind.Constructor => 2,
+                    CodeMethodKind.RawUrlConstructor => 3,
+                    _ => 0,
+                };
+            else return 0;
         }
         private static readonly int parametersWeight = 1;
         private static int GetParametersFactor(CodeElement element) {
