@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/vscode/devcontainers/dotnetcore:5.0
+FROM mcr.microsoft.com/vscode/devcontainers/dotnetcore:6.0
 
 # installs tools required for installation of other tools
 RUN apt-get update \
@@ -13,7 +13,7 @@ RUN wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | s
     && apt-get install unzip adoptopenjdk-16-hotspot -y
 
 # installs golang
-RUN wget -c https://dl.google.com/go/go1.16.7.linux-amd64.tar.gz -O - | tar -xz -C /usr/local \
+RUN wget -c https://dl.google.com/go/go1.17.2.linux-amd64.tar.gz -O - | tar -xz -C /usr/local \
     && export PATH=$PATH:/usr/local/go/bin \
     && go get -v golang.org/x/tools/gopls
 
