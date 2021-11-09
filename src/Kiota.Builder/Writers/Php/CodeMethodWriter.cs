@@ -55,6 +55,7 @@ namespace Kiota.Builder.Writers.Php
                         break;
                     case CodeMethodKind.ClientConstructor:
                         WriteConstructorBody(parentClass, codeElement, writer, inherits);
+                        WriteApiConstructorBody(parentClass, codeElement, writer);
                         break;
                     case CodeMethodKind.IndexerBackwardCompatibility:
                         WriteIndexerBody(codeElement, parentClass, returnType, writer);
@@ -324,6 +325,12 @@ namespace Kiota.Builder.Writers.Php
                 joinedParams = string.Join(", ", callParams);
             }
             writer.WriteLine($"$requestInfo = $this->{generatorMethodName}({joinedParams});");
+        }
+
+        private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod codeMethod, LanguageWriter writer)
+        {
+            var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
+            writer.WriteLine($"{GetPropertyCall(requestAdapterProperty, string.Empty)}->setBaseUrl('{codeMethod.BaseUrl}');");
         }
     }
 }
