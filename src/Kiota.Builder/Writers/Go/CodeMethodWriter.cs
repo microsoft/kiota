@@ -296,6 +296,8 @@ namespace Kiota.Builder.Writers.Go {
             var deserializationMethodName = GetDeserializationMethodName(property.Type, parentClass);
             writer.WriteLine($"val, err := {deserializationMethodName}");
             WriteReturnError(writer);
+            writer.WriteLine("if val != nil {");
+            writer.IncreaseIndent();
             if (!property.Type.IsCollection && property.Type.AllTypes.First().TypeDefinition is CodeEnum)
                 writer.WriteLine($"cast := val.({propertyTypeImportName})");
             var valueArgument = property.Type.AllTypes.First().TypeDefinition switch {
@@ -306,8 +308,9 @@ namespace Kiota.Builder.Writers.Go {
             };
             if(property.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None)
                 WriteCollectionCast(propertyTypeImportName, "val", "res", writer);
-            writer.WriteLines($"m.Set{property.Name.ToFirstCharacterUpperCase()}({valueArgument})", 
-                            "return nil");
+            writer.WriteLine($"m.Set{property.Name.ToFirstCharacterUpperCase()}({valueArgument})");
+            writer.CloseBlock();
+            writer.WriteLine("return nil");
             writer.CloseBlock();
         }
         private static void WriteCollectionCast(string propertyTypeImportName, string sourceVarName, string targetVarName, LanguageWriter writer) {
