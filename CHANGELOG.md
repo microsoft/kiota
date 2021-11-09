@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Migrated generator to dotnet 6 #815
+- Fixes a bug where json deserialization would fail in go
 
 ## [0.0.14] - 2021-11-08
 
