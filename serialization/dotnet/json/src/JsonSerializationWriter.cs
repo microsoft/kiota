@@ -170,9 +170,10 @@ namespace Microsoft.Kiota.Serialization.Json
             if(value.HasValue)
             {
                 if(typeof(T).GetCustomAttributes<FlagsAttribute>().Any())
-                    writer.WriteStringValue(Enum.GetValues<T>()
+                    writer.WriteStringValue(Enum.GetValues(typeof(T))
+                                            .Cast<T>()
                                             .Where(x => value.Value.HasFlag(x))
-                                            .Select(x => Enum.GetName<T>(x))
+                                            .Select(x => Enum.GetName(typeof(T),x))
                                             .Select(x => x.ToFirstCharacterLowerCase())
                                             .Aggregate((x, y) => $"{x},{y}"));
                 else writer.WriteStringValue(value.Value.ToString().ToFirstCharacterLowerCase());

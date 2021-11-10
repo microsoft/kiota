@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug where arrays of enums could be wrongly mapped.
 - Fixes a bug where go deserialization would fail on collections of scalars.
 - Fixes a bug where TypeScript query parameters would be added to headers instead #812
+- Update dotnet abstractions and core libraries to target netstandard2.1 from net5.0
 
 ## [0.0.13] - 2021-10-27
 
