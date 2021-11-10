@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Reflection.Metadata;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers.Extensions;
 
 namespace Kiota.Builder.Writers.Php
 {
@@ -13,11 +14,27 @@ namespace Kiota.Builder.Writers.Php
         public override void WriteCodeElement(CodeClass.Declaration codeElement, LanguageWriter writer)
         {
             conventions.WritePhpDocumentStart(writer);
-            
+            var parent = codeElement.Parent as CodeClass;
+            // Only import promise if we are having a request executor method from the current class
+            var requestExecutor = parent.GetMethodsOffKind(CodeMethodKind.RequestExecutor).FirstOrDefault();
+            if ( requestExecutor != null)
+            {
+                codeElement.AddUsings(new CodeUsing()
+                {
+                    Alias = "Promise",
+                    Declaration = new CodeType()
+                    {
+                        IsExternal = true,
+                        IsNullable = false,
+                        Name = "Http\\Promise"
+                    },
+                    Name = "Promise"
+                });
+            }
             conventions.WriteNamespaceAndImports(codeElement, writer);
             //TODO: There is bug on creating filenames that makes file class names have multiple dots.
             // for example class user.LoginRequestBuilder 
-            // instead of classn LoginRequestBuilder {;
+            // instead of class LoginRequestBuilder {;
 
             if (codeElement != null)
             {

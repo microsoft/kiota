@@ -27,6 +27,7 @@ namespace Kiota.Builder.Refiners
             ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             CorrectCoreType(generatedCode, null, CorrectPropertyType);
+           
         }
         
         private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 

@@ -61,7 +61,7 @@ namespace Kiota.Builder.Writers.Php
                         WriteIndexerBody(codeElement, parentClass, returnType, writer);
                         break;
                     case CodeMethodKind.RequestExecutor:
-                        WriteRequestExecutorBody(codeElement,requestParams, writer);
+                        WriteRequestExecutorBody(codeElement, parentClass, requestParams, writer);
                         break;
             }
             conventions.WriteCodeBlockEnd(writer);
@@ -308,7 +308,7 @@ namespace Kiota.Builder.Writers.Php
             conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName);
         }
 
-        private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer)
+        private void WriteRequestExecutorBody(CodeMethod codeElement, CodeClass parentClass, RequestParams requestParams, LanguageWriter writer)
         {
             var generatorMethod = (codeElement.Parent as CodeClass)?
                 .Methods
@@ -320,11 +320,13 @@ namespace Kiota.Builder.Writers.Php
             var infoParameters = requestInfoParameters as CodeParameter[] ?? requestInfoParameters.ToArray();
             var callParams = infoParameters.Select(x => conventions.GetParameterName(x));
             var joinedParams = string.Empty; 
+            var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             if(infoParameters.Any())
             {
                 joinedParams = string.Join(", ", callParams);
             }
             writer.WriteLine($"$requestInfo = $this->{generatorMethodName}({joinedParams});");
+            writer.WriteLine($"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->sendAsync({RequestInfoVarName}, get_class($body), $responseHandler);");
         }
 
         private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod codeMethod, LanguageWriter writer)
