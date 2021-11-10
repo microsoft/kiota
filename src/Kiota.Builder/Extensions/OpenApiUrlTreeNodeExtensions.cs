@@ -89,8 +89,7 @@ namespace Kiota.Builder.Extensions {
         {
             return (currentNode?.Segment?.Contains(requestParametersSectionChar) ?? false) && currentNode.Segment.EndsWith(requestParametersSectionEndChar);
         }
-        public static string GetUrlTemplate(this OpenApiUrlTreeNode currentNode, string rootUrl) {
-            if(string.IsNullOrEmpty(rootUrl)) throw new ArgumentNullException(nameof(rootUrl));
+        public static string GetUrlTemplate(this OpenApiUrlTreeNode currentNode) {
             var queryStringParameters = string.Empty;
             if(currentNode.HasOperations(Constants.DefaultOpenApiLabel))
             {
@@ -106,7 +105,7 @@ namespace Kiota.Builder.Extensions {
                                                     .Aggregate((x, y) => $"{x},{y}") +
                                             '}';
             }
-            return rootUrl + 
+            return "{+baseurl}" + 
                     SanitizePathParameterNames(currentNode.Path.Replace('\\', '/')) +
                     queryStringParameters;
         }

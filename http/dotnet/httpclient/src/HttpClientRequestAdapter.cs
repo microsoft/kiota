@@ -1,4 +1,4 @@
-// ------------------------------------------------------------------------------
+﻿// ------------------------------------------------------------------------------
 //  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
 // ------------------------------------------------------------------------------
 
@@ -50,6 +50,10 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
                 return sWriterFactory;
             }
         }
+        /// <summary>
+        /// The base url for every request.
+        /// </summary>
+        public string BaseUrl { get; set; }
         /// <summary>
         /// Send a <see cref="RequestInformation"/> instance with a collection instance of <typeparam name="ModelType"></typeparam>
         /// </summary>
@@ -199,8 +203,9 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
             return response;
         }
         private const string ContentTypeHeaderName = "content-type";
-        internal static HttpRequestMessage GetRequestMessageFromRequestInformation(RequestInformation requestInfo)
+        internal HttpRequestMessage GetRequestMessageFromRequestInformation(RequestInformation requestInfo)
         {
+            requestInfo.PathParameters.Add("baseurl", BaseUrl);
             var message = new HttpRequestMessage
             {
                 Method = new System.Net.Http.HttpMethod(requestInfo.HttpMethod.ToString().ToUpperInvariant()),
@@ -208,7 +213,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
             };
 
             if(requestInfo.RequestOptions.Any())
-                requestInfo.RequestOptions.ToList().ForEach(x => message.Options.Set(new HttpRequestOptionsKey<IRequestOption>(x.GetType().FullName), x));
+                requestInfo.RequestOptions.ToList().ForEach(x => message.Properties.Add(x.GetType().FullName, x));
             if(requestInfo.Headers?.Any() ?? false)
                 requestInfo.Headers.Where(x => !ContentTypeHeaderName.Equals(x.Key, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => message.Headers.Add(x.Key, x.Value));
             if(requestInfo.Content != null)

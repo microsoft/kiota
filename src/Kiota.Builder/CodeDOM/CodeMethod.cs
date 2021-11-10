@@ -19,6 +19,7 @@ namespace Kiota.Builder
         RequestBuilderBackwardCompatibility,
         RequestBuilderWithParameters,
         RawUrlConstructor,
+        NullCheck,
         CommandBuilder
     }
     public enum HttpMethod {
@@ -99,6 +100,11 @@ namespace Kiota.Builder
         /// The original indexer codedom element this method replaces when it is of kind IndexerBackwardCompatibility.
         /// </summary>
         public CodeIndexer OriginalIndexer { get; set; }
+        /// <summary>
+        /// The base url for every request read from the servers property on the description.
+        /// Only provided for constructor on Api client
+        /// </summary>
+        public string BaseUrl { get; set; }
 
         /// <summary>
         /// This is currently used for CommandBuilder methods to get the originall name without the Build prefix & Command suffix.
@@ -118,6 +124,7 @@ namespace Kiota.Builder
                 IsStatic = IsStatic,
                 Description = Description?.Clone() as string,
                 ContentType = ContentType?.Clone() as string,
+                BaseUrl = BaseUrl?.Clone() as string,
                 AccessedProperty = AccessedProperty,
                 SerializerModules = SerializerModules == null ? null : new (SerializerModules),
                 DeserializerModules = DeserializerModules == null ? null : new (DeserializerModules),

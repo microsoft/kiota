@@ -105,6 +105,7 @@ namespace Kiota.Builder.Writers.Java {
             var requestAdapterPropertyName = requestAdapterProperty.Name.ToFirstCharacterLowerCase();
             WriteSerializationRegistration(method.SerializerModules, writer, "registerDefaultSerializer");
             WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializer");
+            writer.WriteLine($"{requestAdapterPropertyName}.setBaseUrl(\"{method.BaseUrl}\");");
             if(backingStoreParameter != null)
                 writer.WriteLine($"this.{requestAdapterPropertyName}.enableBackingStore({backingStoreParameter.Name});");
         }
