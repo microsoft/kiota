@@ -147,8 +147,11 @@ func (n *JsonParseNode) GetObjectValue(ctor func() absser.Parsable) (absser.Pars
 	if ctor == nil {
 		return nil, errors.New("constuctor is nil")
 	}
+	if n == nil || n.value == nil {
+		return nil, nil
+	}
 	result := ctor()
-	//TODO onbefore when implementing backing store
+	//TODO on before when implementing backing store
 	properties, ok := n.value.(map[string]*JsonParseNode)
 	if !ok {
 		return nil, errors.New("value is not an object")
@@ -158,7 +161,9 @@ func (n *JsonParseNode) GetObjectValue(ctor func() absser.Parsable) (absser.Pars
 		for key, value := range properties {
 			field := fields[key]
 			if field == nil {
-				result.GetAdditionalData()[key] = value.value
+				if value != nil {
+					result.GetAdditionalData()[key] = value.value
+				}
 			} else {
 				err := field(result, value)
 				if err != nil {
@@ -167,7 +172,7 @@ func (n *JsonParseNode) GetObjectValue(ctor func() absser.Parsable) (absser.Pars
 			}
 		}
 	}
-	//TODO on after when implmenting backing store
+	//TODO on after when implementing backing store
 	return result, nil
 }
 func (n *JsonParseNode) GetCollectionOfObjectValues(ctor func() absser.Parsable) ([]absser.Parsable, error) {
@@ -274,6 +279,9 @@ func (n *JsonParseNode) GetFloat32Value() (*float32, error) {
 	if err != nil {
 		return nil, err
 	}
+	if v == nil {
+		return nil, nil
+	}
 	cast := float32(*v)
 	return &cast, nil
 }
@@ -288,6 +296,9 @@ func (n *JsonParseNode) GetInt32Value() (*int32, error) {
 	if err != nil {
 		return nil, err
 	}
+	if v == nil {
+		return nil, nil
+	}
 	cast := int32(*v)
 	return &cast, nil
 }
@@ -295,6 +306,9 @@ func (n *JsonParseNode) GetInt64Value() (*int64, error) {
 	v, err := n.GetFloat64Value()
 	if err != nil {
 		return nil, err
+	}
+	if v == nil {
+		return nil, nil
 	}
 	cast := int64(*v)
 	return &cast, nil
@@ -304,6 +318,9 @@ func (n *JsonParseNode) GetTimeValue() (*time.Time, error) {
 	if err != nil {
 		return nil, err
 	}
+	if v == nil {
+		return nil, nil
+	}
 	parsed, err := time.Parse(time.RFC3339, *v)
 	return &parsed, err
 }
@@ -311,6 +328,9 @@ func (n *JsonParseNode) GetUUIDValue() (*uuid.UUID, error) {
 	v, err := n.GetStringValue()
 	if err != nil {
 		return nil, err
+	}
+	if v == nil {
+		return nil, nil
 	}
 	parsed, err := uuid.Parse(*v)
 	return &parsed, err
@@ -323,12 +343,18 @@ func (n *JsonParseNode) GetEnumValue(parser func(string) (interface{}, error)) (
 	if err != nil {
 		return nil, err
 	}
+	if s == nil {
+		return nil, nil
+	}
 	return parser(*s)
 }
 func (n *JsonParseNode) GetByteArrayValue() ([]byte, error) {
 	s, err := n.GetStringValue()
 	if err != nil {
 		return nil, err
+	}
+	if s == nil {
+		return nil, nil
 	}
 	return base64.StdEncoding.DecodeString(*s)
 }
