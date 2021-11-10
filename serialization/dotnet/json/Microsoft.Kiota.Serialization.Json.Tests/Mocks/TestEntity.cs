@@ -10,6 +10,8 @@ namespace Microsoft.Kiota.Serialization.Json.Tests.Mocks
         public IDictionary<string, object> AdditionalData { get; set; }
         /// <summary>Read-only.</summary>
         public string Id { get; set; }
+        /// <summary>Read-only.</summary>
+        public TestEnum? Numbers { get; set; }
         /// <summary>
         /// Instantiates a new entity and sets the default values.
         /// </summary>
@@ -24,6 +26,7 @@ namespace Microsoft.Kiota.Serialization.Json.Tests.Mocks
         {
             return new Dictionary<string, Action<T, IParseNode>> {
                 {"id", (o,n) => { (o as TestEntity).Id = n.GetStringValue(); } },
+                {"numbers", (o,n) => { (o as TestEntity).Numbers = n.GetEnumValue<TestEnum>(); } },
             };
         }
         /// <summary>
@@ -34,6 +37,7 @@ namespace Microsoft.Kiota.Serialization.Json.Tests.Mocks
         {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
             writer.WriteStringValue("id", Id);
+            writer.WriteEnumValue<TestEnum>("numbers",Numbers);
             writer.WriteAdditionalData(AdditionalData);
         }
     }
