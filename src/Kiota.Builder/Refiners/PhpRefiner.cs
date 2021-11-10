@@ -14,8 +14,8 @@ namespace Kiota.Builder.Refiners
             //AddInnerClasses(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             MakeModelPropertiesNullable(generatedCode);
-            AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
+            AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             AddGetterAndSetterMethods(generatedCode,new HashSet<CodePropertyKind>()
             {
                 CodePropertyKind.Custom,

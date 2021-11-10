@@ -49,7 +49,10 @@ namespace Kiota.Builder.Writers.Php
             var hasDescription = !string.IsNullOrEmpty(propertyDescription);
 
             var collectionKind = codeProperty.Type.IsArray || codeProperty.Type.IsCollection;
-            writer.WriteLine($"{conventions.DocCommentStart} @var {(collectionKind ? GetCollectionDocString(codeProperty) : conventions.GetTypeString(codeProperty.Type, codeProperty))}{(codeProperty.Type.IsNullable ? "|null" : string.Empty)} ${codeProperty.Name} " +
+            var typeString = (collectionKind
+                ? GetCollectionDocString(codeProperty)
+                : conventions.GetTypeString(codeProperty.Type, codeProperty));
+            writer.WriteLine($"{conventions.DocCommentStart} @var {typeString}{(codeProperty.Type.IsNullable ? "|null" : string.Empty)} ${codeProperty.Name} " +
                              $"{(hasDescription ? propertyDescription : string.Empty)} {conventions.DocCommentEnd}");
         }
 
