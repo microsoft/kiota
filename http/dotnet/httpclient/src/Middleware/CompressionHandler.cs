@@ -42,7 +42,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Middleware
             // Decompress response content when Content-Encoding: gzip header is present.
             if(ShouldDecompressContent(response))
             {
-                StreamContent streamContent = new StreamContent(new GZipStream(await response.Content.ReadAsStreamAsync(cancellationToken), CompressionMode.Decompress));
+                StreamContent streamContent = new StreamContent(new GZipStream(await response.Content.ReadAsStreamAsync(), CompressionMode.Decompress));
                 // Copy Content Headers to the destination stream content
                 foreach(var httpContentHeader in response.Content.Headers)
                 {
