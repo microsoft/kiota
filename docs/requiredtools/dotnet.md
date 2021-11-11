@@ -1,6 +1,6 @@
 # Required tools for Dotnet
 
-- [.NET SDK 5.0](https://dotnet.microsoft.com/download)
+- [.NET SDK 6.0](https://dotnet.microsoft.com/download)
 
 ## Target project requirements
 
@@ -23,7 +23,7 @@ dotnet new gitignore
 
 If you have not already, you will need to create a nuget.config to enable access to the packages in the GitHub package feed.  The article on installing the [Kiota command line](../generator/tool.md) tool shows how to do this.
 
-Once the pacakge feed is accessible the following packages can be added to the project.
+Once the package feed is accessible the following packages can be added to the project.
 
 ```Shell
 dotnet add package Microsoft.Kiota.Abstractions

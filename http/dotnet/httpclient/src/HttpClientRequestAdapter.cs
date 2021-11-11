@@ -1,4 +1,4 @@
-// ------------------------------------------------------------------------------
+﻿// ------------------------------------------------------------------------------
 //  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
 // ------------------------------------------------------------------------------
 
@@ -213,7 +213,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
             };
 
             if(requestInfo.RequestOptions.Any())
-                requestInfo.RequestOptions.ToList().ForEach(x => message.Options.Set(new HttpRequestOptionsKey<IRequestOption>(x.GetType().FullName), x));
+                requestInfo.RequestOptions.ToList().ForEach(x => message.Properties.Add(x.GetType().FullName, x));
             if(requestInfo.Headers?.Any() ?? false)
                 requestInfo.Headers.Where(x => !ContentTypeHeaderName.Equals(x.Key, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => message.Headers.Add(x.Key, x.Value));
             if(requestInfo.Content != null)
