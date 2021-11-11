@@ -210,7 +210,7 @@ namespace Kiota.Builder.Writers.Php
         public string ReplaceDotsWithSlashInNamespaces(string namespaced)
         {
             var parts = namespaced.Split('.');
-            return string.Join('\\', parts.Select(x => x.ToFirstCharacterUpperCase()));
+            return string.Join('\\', parts.Select(x => x.ToFirstCharacterUpperCase())).Trim('\\');
         }
         internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default) {
             var codeParameters = pathParameters as CodeParameter[] ?? pathParameters?.ToArray();

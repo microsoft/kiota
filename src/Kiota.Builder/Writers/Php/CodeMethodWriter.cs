@@ -328,7 +328,15 @@ namespace Kiota.Builder.Writers.Php
                 joinedParams = string.Join(", ", callParams);
             }
             writer.WriteLine($"$requestInfo = $this->{generatorMethodName}({joinedParams});");
+            writer.WriteLine("try {");
+            writer.IncreaseIndent();
             writer.WriteLine($"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->sendAsync({RequestInfoVarName}, get_class($body), $responseHandler);");
+            writer.DecreaseIndent();
+            writer.WriteLine("} catch(Exception $ex) {");
+            writer.IncreaseIndent();
+            writer.WriteLine("return new RejectedPromise($ex);");
+            writer.DecreaseIndent();
+            writer.WriteLine("}");
         }
 
         private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod codeMethod, LanguageWriter writer)

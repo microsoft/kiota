@@ -29,6 +29,26 @@ namespace Kiota.Builder.Writers.Php
                         Name = "Http\\Promise"
                     },
                     Name = "Promise"
+                }, new CodeUsing()
+                {
+                    Alias = "RejectedPromise",
+                    Declaration = new CodeType()
+                    {
+                        IsExternal = true,
+                        IsNullable = false,
+                        Name = "Http\\Promise"
+                    },
+                    Name = "RejectedPromise"
+                }, new CodeUsing()
+                {
+                    Alias = "Exception",
+                    Declaration = new CodeType()
+                    {
+                        IsExternal = true,
+                        IsNullable = false,
+                        Name = ""
+                    },
+                    Name = "Exception"
                 });
             }
             conventions.WriteNamespaceAndImports(codeElement, writer);
