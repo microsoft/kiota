@@ -34,14 +34,10 @@ namespace Kiota.Builder.Writers.Php
             conventions.WriteNamespaceAndImports(codeElement, writer);
             //TODO: There is bug on creating filenames that makes file class names have multiple dots.
             // for example class user.LoginRequestBuilder 
-            // instead of class LoginRequestBuilder {;
-
-            if (codeElement != null)
-            {
-                var derivation = (codeElement?.Inherits == null ? string.Empty : $" extends {codeElement.Inherits.Name.ToFirstCharacterUpperCase()}") +
-                                 (!codeElement.Implements.Any() ? string.Empty : $" implements {codeElement.Implements.Select(x => x.Name).Aggregate((x,y) => x + ", " + y)}");
-                writer.WriteLine($"class {codeElement.Name.Split('.').Last().ToFirstCharacterUpperCase()}{derivation} ");
-            }
+            // instead of class LoginRequestBuilder
+            var derivation = (codeElement?.Inherits == null ? string.Empty : $" extends {codeElement.Inherits.Name.ToFirstCharacterUpperCase()}") +
+                             (!codeElement.Implements.Any() ? string.Empty : $" implements {codeElement.Implements.Select(x => x.Name).Aggregate((x,y) => x + ", " + y)}");
+            writer.WriteLine($"class {codeElement.Name.Split('.').Last().ToFirstCharacterUpperCase()}{derivation} ");
 
             writer.WriteLine("{");
             writer.IncreaseIndent();
