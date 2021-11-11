@@ -211,7 +211,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             Assert.Contains("H != nil", result);
             Assert.Contains("requestInfo.Headers =", result);
             Assert.Contains("Q != nil", result);
-            Assert.Contains("Q.AddQueryParameters(requestInfo.QueryParameters)", result);
+            Assert.Contains("requestInfo.AddQueryParameters(options.Q)", result);
             Assert.Contains("O) != 0", result);
             Assert.Contains("requestInfo.AddRequestOptions(", result);
             Assert.Contains("requestInfo.SetContentFromParsable(m.requestAdapter", result);

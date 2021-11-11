@@ -3,6 +3,10 @@ package abstractions
 import (
 	"errors"
 
+	"reflect"
+	"strconv"
+	"strings"
+
 	u "net/url"
 
 	s "github.com/microsoft/kiota/abstractions/go/serialization"
@@ -181,4 +185,39 @@ func (request *RequestInformation) SetContentFromParsable(requestAdapter Request
 	request.Content = content
 	request.Headers[contentTypeHeader] = contentType
 	return nil
+}
+
+// Vanity method to add the query parameters to the request query parameters dictionary.
+// Parameters:
+//  - source: the source query parameters object
+// Returns:
+//  - The resulting list of query parameters
+func (request *RequestInformation) AddQueryParameters(source interface{}) {
+	if source == nil || request == nil {
+		return
+	}
+	valOfP := reflect.ValueOf(source)
+	fields := reflect.TypeOf(source)
+	numOfFields := fields.NumField()
+	for i := 0; i < numOfFields; i++ {
+		field := fields.Field(i)
+		fieldName := field.Name
+		fieldValue := valOfP.Field(i)
+		str, ok := fieldValue.Interface().(*string)
+		if ok && str != nil {
+			request.QueryParameters[fieldName] = *str
+		}
+		bl, ok := fieldValue.Interface().(*bool)
+		if ok && bl != nil {
+			request.QueryParameters[fieldName] = strconv.FormatBool(*bl)
+		}
+		it, ok := fieldValue.Interface().(*int32)
+		if ok && it != nil {
+			request.QueryParameters[fieldName] = strconv.FormatInt(int64(*it), 10)
+		}
+		arr, ok := fieldValue.Interface().([]string)
+		if ok && len(arr) > 0 {
+			request.QueryParameters[fieldName] = strings.Join(arr, ",")
+		}
+	}
 }
