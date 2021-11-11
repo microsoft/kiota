@@ -143,10 +143,11 @@ namespace Kiota.Builder.Writers.Php
                         : conventions.GetTypeString(codeMethod.ReturnType, codeMethod),
                     _ => conventions.GetTypeString(codeMethod.ReturnType, codeMethod)
                 };
-            if (!isVoidable)
+            var isRequestExecutor = codeMethod.MethodKind == CodeMethodKind.RequestExecutor;
+            if (!isVoidable || isRequestExecutor)
             {
                 writer.WriteLines(
-                    $"{conventions.DocCommentPrefix}@return {returnDocString}{orNullReturn[1]}"
+                    $"{conventions.DocCommentPrefix}@return {(isRequestExecutor ? "Promise" : $"{returnDocString}{orNullReturn[1]}")}"
                     );
             }
             writer.WriteLine(conventions.DocCommentEnd);
@@ -192,7 +193,8 @@ namespace Kiota.Builder.Writers.Php
             var returnValue = isConstructor
                 ? string.Empty
                 : $": {optionalCharacterReturn}{conventions.GetTypeString(codeMethod.ReturnType, codeMethod)}";
-            writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodPrefix}{methodName}({methodParameters}){returnValue} {{");
+            var isRequestExecutor = codeMethod.MethodKind == CodeMethodKind.RequestExecutor;
+            writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodPrefix}{methodName}({methodParameters}){(isRequestExecutor ? ": Promise": returnValue)} {{");
             writer.IncreaseIndent();
             
         }
