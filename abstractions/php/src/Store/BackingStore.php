@@ -31,7 +31,7 @@ interface BackingStore {
 
     /**
      * Enumerates the keys for all values that changed to null
-     * @return iterable
+     * @return iterable<string>
      */
     public function enumerateKeysForValuesChangedToNull(): iterable;
 

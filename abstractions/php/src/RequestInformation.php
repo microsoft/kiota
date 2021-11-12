@@ -19,10 +19,10 @@ class RequestInformation {
     /** @var StreamInterface $content The Request Body. */
     public StreamInterface $content;
 
-    /** @var array $headers  The Request Headers. */
+    /** @var array<string,string[]|string> $headers  The Request Headers. */
     public array $headers = [];
 
-    /** @var array $queryParams The Query Parameters of the request. */
+    /** @var array<string,mixed> $queryParams The Query Parameters of the request. */
     public array $queryParams = [];
 
     /** @var string $binaryContentType */
@@ -49,10 +49,17 @@ class RequestInformation {
      * @param Parsable|object ...$values
      */
     public function setContentFromParsable(RequestAdapter $httpCore, string $contentType, ...$values): void {
-        if(count($values) === 0) {
+        /** @var array<Parsable|object> $newValues */
+        $newValues = [];
+
+        foreach ($values as $key => $value) {
+            $newValues []= $value;
+        }
+        if(count($newValues) === 0) {
             throw new \RuntimeException('$values cannot be empty');
         }
 
+        $values = array_values($newValues);
         try {
             $writer = $httpCore->getSerializationWriterFactory()
                                ->getSerializationWriter($contentType);
@@ -140,7 +147,7 @@ class RequestInformation {
     /**
      * Gets the middleware options for this request. Options are unique by type
      * If an option of the same type is added twice, the last one wins.
-     * @return array The middleware options in this request.
+     * @return array<RequestOption> The middleware options in this request.
      */
     public function getMiddlewareOptions(): array {
         return $this->_middlewareOptions;

@@ -30,6 +30,7 @@ use ReflectionException;
  */
 abstract class Enum
 {
+    /** @var array<string, array<string>> */
     private static array $constants = [];
     /**
      * The value of the enum
@@ -62,7 +63,7 @@ abstract class Enum
      */
     public function has($value): bool
     {
-        return in_array($value, self::toArray(), true);
+        return in_array($value, $this->toArray(), true);
     }
 
     /**
@@ -85,7 +86,7 @@ abstract class Enum
      */
     public function toArray()
     {
-        $class = get_called_class();
+        $class = static::class;
 
         if (!(array_key_exists($class, self::$constants)))
         {

@@ -97,7 +97,7 @@ class InMemoryBackingStore implements BackingStore
     }
 
     /**
-     * @return iterable
+     * @return iterable<string>
      */
     public function enumerateKeysForValuesChangedToNull(): iterable {
         $result = [];

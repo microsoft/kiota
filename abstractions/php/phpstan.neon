@@ -1,5 +1,5 @@
 parameters:
-  level: 5
+  level: 6
   polluteScopeWithAlwaysIterableForeach: false
   polluteScopeWithLoopInitialAssignments: false
   paths:

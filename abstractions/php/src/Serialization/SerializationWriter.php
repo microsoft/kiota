@@ -59,16 +59,16 @@ interface SerializationWriter {
     /**
      * Writes the specified collection of object values to the stream with an optional given key.
      * @param string|null $key the key to write the value with.
-     * @param Parsable[] $values
+     * @param array<Parsable> $values
      */
     public function writeCollectionOfObjectValues(?string $key, array $values): void;
 
     /**
      * Writes the specified model object value to the stream with an optional given key.
      * @param string|null $key the key to write the value with.
-     * @param Parsable $value the value to write to the stream.
+     * @param Parsable|object $value the value to write to the stream.
      */
-    public function writeObjectValue(?string $key,Parsable $value): void;
+    public function writeObjectValue(?string $key, $value): void;
 
     /**
      * Gets the value of the serialized content.
