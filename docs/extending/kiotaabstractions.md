@@ -11,24 +11,29 @@ On most platforms there are a range of different HTTP client library implementat
 The HTTP core interface is the primary point where Kiota service libraries will trigger the creation of a HTTP request.  Below is the [C# implementation](https://github.com/microsoft/kiota/blob/main/abstractions/dotnet/src/IRequestAdapter.cs).
 
 ```csharp
-public interface IRequestAdapter {
+public interface IRequestAdapter
+{
     void EnableBackingStore(IBackingStoreFactory backingStoreFactory);
 
     ISerializationWriterFactory SerializationWriterFactory { get; }
 
-    Task<ModelType> SendAsync<ModelType>(RequestInformation requestInfo,
-                                            IResponseHandler responseHandler = default)
-                    where ModelType : IParsable;
+    Task<ModelType> SendAsync<ModelType>(
+        RequestInformation requestInfo,
+        IResponseHandler responseHandler = default) where ModelType : IParsable;
 
-    Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(RequestInformation requestInfo,
-                    IResponseHandler responseHandler = default)
-                where ModelType : IParsable;
 
-    Task<ModelType> SendPrimitiveAsync<ModelType>(RequestInformation requestInfo,
-                                                    IResponseHandler responseHandler = default);
+    Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(
+        RequestInformation requestInfo,
+        IResponseHandler responseHandler = default) where ModelType : IParsable;
 
-    Task SendNoContentAsync(RequestInformation requestInfo,
-                            IResponseHandler responseHandler = default);
+
+    Task<ModelType> SendPrimitiveAsync<ModelType>(
+        RequestInformation requestInfo,
+        IResponseHandler responseHandler = default);
+
+    Task SendNoContentAsync(
+        RequestInformation requestInfo,
+        IResponseHandler responseHandler = default);
 }
 ```
 
@@ -43,13 +48,15 @@ public class RequestInformation
 {
     public Uri URI { get; set; }
     public HttpMethod HttpMethod { get; set; }
-    public IDictionary<string, object> QueryParameters { get; set; } = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
-    public IDictionary<string, string> Headers { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    public IDictionary<string, object> QueryParameters { get; set; } =
+        new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+    public IDictionary<string, string> Headers { get; set; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
     public Stream Content { get; set; }
 }
 ```
 
-```TypeScript
+```typescript
 export interface RequestInformation {
     URI?: URL;
     httpMethod?: HttpMethod;
@@ -66,9 +73,11 @@ public class RequestInformation {
     @Nullable
     public HttpMethod httpMethod;
     @Nonnull
-    public HashMap<String, Object> queryParameters = new HashMap<>(); //TODO case insensitive
+    //TODO case insensitive
+    public HashMap<String, Object> queryParameters = new HashMap<>();
     @Nonnull
-    public HashMap<String, String> headers = new HashMap<>(); // TODO case insensitive
+    // TODO case insensitive
+    public HashMap<String, String> headers = new HashMap<>();
     @Nullable
     public InputStream Content;
 }
@@ -80,7 +89,7 @@ TBD
 
 - This allows core to do all the default hard work, but enables a custom response handler to change the behavior of the method.
 
-```CSharp
+```csharp
 public interface IResponseHandler
 {
     Task<ModelType> HandleResponseAsync<NativeResponseType, ModelType>(NativeResponseType response);

@@ -12,11 +12,17 @@ parent: Welcome to Kiota
 var authProvider = ;
 var coreService = new HttpClientRequestAdapter(authProvider);
 var client = new ApiClient(coreService);
-var message = await client.Users["bob@contoso.com"]
-                          .Events
-                          .GetAsync(q => {
-                q.Select2 = new List<UserSelectFields> { UserSelectFields.FirstName, UserSelectFields.DisplayName };
-                q.Expand2 = UserExpandFields.Calendar;
-            } );
+var message = await client
+    .Users["bob@contoso.com"]
+    .Events
+    .GetAsync(q =>
+    {
+        q.Select2 = new List<UserSelectFields>
+        {
+            UserSelectFields.FirstName,
+            UserSelectFields.DisplayName
+        };
+        q.Expand2 = UserExpandFields.Calendar;
+    });
 
 ```

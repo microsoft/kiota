@@ -12,7 +12,7 @@ Before you can compile and run the generated files, you will need to make sure t
 
 ## Creating target projects
 
-> Note: you can use an existing project if you have one, in that case, you can skip the following section.
+> **Note:** you can use an existing project if you have one, in that case, you can skip the following section.
 
 Execute the following command in the directory you want to create a new project.
 
@@ -21,7 +21,7 @@ dotnet new console
 dotnet new gitignore
 ```
 
-> Note: in this example the console template is used, but you can use any CSharp template.
+> **Note:** in this example the console template is used, but you can use any CSharp template.
 
 ## Adding dependencies
 
@@ -79,16 +79,14 @@ kiota -d openapi.yml -o graphclient -n GraphClient
 
 ## Creating an application registration
 
-> Note: this step is required if your client will be calling APIs that are protected by the Microsoft Identity Platform like Microsoft Graph.
+> **Note:** this step is required if your client will be calling APIs that are protected by the Microsoft Identity Platform like Microsoft Graph.
 
 To be able to authenticate against the demo application against Microsoft Graph, you will need to create an application registration.  You can do this via the Azure portal, or if you have [Microsoft Graph PowerShell](https://www.powershellgallery.com/packages/Microsoft.Graph) installed, you can use the following command to create the application.
 
 ```powershell
-$app = New-MgApplication   -displayName "NativeGraphApp" `
-                            -IsFallbackPublicClient `
-                            -PublicClient @{ `
-                                RedirectUris = "http://localhost" `
-                            }
+$app = New-MgApplication -displayName "NativeGraphApp" `
+  -IsFallbackPublicClient `
+  -PublicClient @{ RedirectUris = "http://localhost" }
 ```
 
 Record the value of the ClientId property of the $app object as it will be needed in a later step.
@@ -112,8 +110,10 @@ namespace GraphApp
     {
         static async Task Main(string[] args)
         {
-            var credential = new InteractiveBrowserCredential("<insert clientId from $app.ClientId>");
-            var authProvider = new AzureIdentityAuthenticationProvider(credential, new string[] {"User.Read"});
+            var credential = new InteractiveBrowserCredential(
+                "<insert clientId from $app.ClientId>");
+            var authProvider = new AzureIdentityAuthenticationProvider(
+                credential, new string[] {"User.Read"});
             var core = new HttpClientRequestAdapter(authProvider);
             var apiClient = new ApiClient(core);
             var me = await apiClient.Me.GetAsync();
