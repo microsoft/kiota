@@ -1,12 +1,17 @@
 <?php
 namespace Microsoft\Kiota\Abstractions;
 
+use Microsoft\Kiota\Abstractions\Serialization\Parsable;
 use Psr\Http\Message\StreamInterface;
 
 class RequestInformation {
 
-    /** @var string|null The URI of the request. */
-    public ?string $uri;
+    /** @var string The url template for the current request.  */
+    public string $urlTemplate;
+    /** @var string The URI of the request. */
+    public string $uri;
+
+    private const RAW_URL_KEY = 'request-raw-url';
 
     /** @var string|null The HTTP method for the request */
     public ?string $httpMethod;
@@ -39,11 +44,11 @@ class RequestInformation {
     }
 
     /**
-     * @param HttpCore $httpCore
+     * @param RequestAdapter $httpCore
      * @param string $contentType
-     * @param object ...$values
+     * @param Parsable|object ...$values
      */
-    public function setContentFromParsable(HttpCore $httpCore, string $contentType, object ...$values): void {
+    public function setContentFromParsable(RequestAdapter $httpCore, string $contentType, ...$values): void {
         if(count($values) === 0) {
             throw new \RuntimeException('$values cannot be empty');
         }
@@ -114,9 +119,9 @@ class RequestInformation {
 
     /**
      * Removes middleware options from this request
-     * @param MiddlewareOption ...$options The middleware options to remove.
+     * @param RequestOption ...$options The middleware options to remove.
      */
-    public function removeMiddlewareOptions(MiddlewareOption ...$options): void {
+    public function removeMiddlewareOptions(RequestOption ...$options): void {
         foreach ($options as $middlewareOption) {
             unset($this->_middlewareOptions[get_class($middlewareOption)]);
         }
@@ -124,9 +129,9 @@ class RequestInformation {
 
     /**
      * Adds a middleware option to this request.
-     * @param MiddlewareOption ...$options The middleware options to add.
+     * @param RequestOption ...$options The middleware options to add.
      */
-    public function addMiddlewareOptions(MiddlewareOption ...$options): void {
+    public function addMiddlewareOptions(RequestOption ...$options): void {
         foreach ($options as $middlewareOption) {
             $this->_middlewareOptions[get_class($middlewareOption)] = $middlewareOption;
         }
