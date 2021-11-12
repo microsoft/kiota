@@ -31,8 +31,8 @@ class RequestInformation {
     /** @var string $contentTypeHeader */
     private static string $contentTypeHeader = "Content-Type";
 
-    /** @var array<string, mixed> Middleware options to apply to this request. */
-    private array $_middlewareOptions = [];
+    /** @var array<string, RequestOption> Request options to apply to this request. */
+    private array $_requestOptions = [];
 
     /**
      * Sets the request body to be binary stream.
@@ -128,9 +128,9 @@ class RequestInformation {
      * Removes middleware options from this request
      * @param RequestOption ...$options The middleware options to remove.
      */
-    public function removeMiddlewareOptions(RequestOption ...$options): void {
+    public function removeRequestOptions(RequestOption ...$options): void {
         foreach ($options as $middlewareOption) {
-            unset($this->_middlewareOptions[get_class($middlewareOption)]);
+            unset($this->_requestOptions[get_class($middlewareOption)]);
         }
     }
 
@@ -138,9 +138,9 @@ class RequestInformation {
      * Adds a middleware option to this request.
      * @param RequestOption ...$options The middleware options to add.
      */
-    public function addMiddlewareOptions(RequestOption ...$options): void {
-        foreach ($options as $middlewareOption) {
-            $this->_middlewareOptions[get_class($middlewareOption)] = $middlewareOption;
+    public function addRequestOptions(RequestOption ...$options): void {
+        foreach ($options as $requestOption) {
+            $this->_requestOptions[get_class($requestOption)] = $requestOption;
         }
     }
 
@@ -149,7 +149,7 @@ class RequestInformation {
      * If an option of the same type is added twice, the last one wins.
      * @return array<RequestOption> The middleware options in this request.
      */
-    public function getMiddlewareOptions(): array {
-        return $this->_middlewareOptions;
+    public function getRequestOptions(): array {
+        return $this->_requestOptions;
     }
 }
