@@ -13,7 +13,7 @@ import (
 	t "github.com/yosida95/uritemplate/v3"
 )
 
-// This type represents an abstract HTTP request.
+// RequestInformation represents an abstract HTTP request.
 type RequestInformation struct {
 	// The HTTP method of the request.
 	Method HttpMethod
@@ -33,6 +33,7 @@ type RequestInformation struct {
 
 const raw_url_key = "request-raw-url"
 
+// NewRequestInformation creates a new RequestInformation object with default values.
 func NewRequestInformation() *RequestInformation {
 	return &RequestInformation{
 		Headers:         make(map[string]string),
@@ -42,10 +43,7 @@ func NewRequestInformation() *RequestInformation {
 	}
 }
 
-// Get the URI of the request.
-// Returns:
-// 		- The URI of the request.
-// 		- An error if the URI cannot be retrieved.
+// GetUri returns the URI of the request.
 func (request *RequestInformation) GetUri() (*u.URL, error) {
 	if request.uri != nil {
 		return request.uri, nil
@@ -83,9 +81,7 @@ func (request *RequestInformation) GetUri() (*u.URL, error) {
 	}
 }
 
-// Sets the URI for the request from a raw URL.
-// Parameters:
-// 		- url: The raw URL to set the URI to.
+// SetUri updates the URI for the request from a raw URL.
 func (request *RequestInformation) SetUri(url u.URL) {
 	request.uri = &url
 	for k := range request.PathParameters {
@@ -96,11 +92,7 @@ func (request *RequestInformation) SetUri(url u.URL) {
 	}
 }
 
-// Adds an option to the request.
-// Parameters:
-// 		- option: The option to add to the request.
-// Returns:
-// 		- An error if the option cannot be added.
+// AddRequestOptions adds an option to the request to be read by the middleware infrastructure.
 func (request *RequestInformation) AddRequestOptions(options ...RequestOption) error {
 	if options == nil {
 		return errors.New("RequestOptions cannot be nil")
@@ -114,9 +106,7 @@ func (request *RequestInformation) AddRequestOptions(options ...RequestOption) e
 	return nil
 }
 
-// Gets the options for this request. Options are unique by type. If an option of the same type is added twice, the last one wins.
-// Returns:
-// 		- The options for this request.
+// GetRequestOptions returns the options for this request. Options are unique by type. If an option of the same type is added twice, the last one wins.
 func (request *RequestInformation) GetRequestOptions() []RequestOption {
 	if request.options == nil {
 		return []RequestOption{}
@@ -133,21 +123,13 @@ func (request *RequestInformation) GetRequestOptions() []RequestOption {
 const contentTypeHeader = "Content-Type"
 const binaryContentType = "application/octet-steam"
 
-// Sets the request body to a binary stream.
-// Parameters:
-// 		- content: The binary stream to set the request body to.
+// SetStreamContent sets the request body to a binary stream.
 func (request *RequestInformation) SetStreamContent(content []byte) {
 	request.Content = content
 	request.Headers[contentTypeHeader] = binaryContentType
 }
 
-// Sets the request body from a model with the specified content type.
-// Parameters:
-// 		- requestAdapter: The request adapter to use to get the request body from the model.
-//      - contentType: The content type to set the request body to.
-//      - item: The model to set the request body from.
-// Returns:
-// 		- An error if the request body cannot be set.
+// SetContentFromParsable sets the request body from a model with the specified content type.
 func (request *RequestInformation) SetContentFromParsable(requestAdapter RequestAdapter, contentType string, items ...s.Parsable) error {
 	if contentType == "" {
 		return errors.New("content type cannot be empty")
@@ -187,11 +169,7 @@ func (request *RequestInformation) SetContentFromParsable(requestAdapter Request
 	return nil
 }
 
-// Vanity method to add the query parameters to the request query parameters dictionary.
-// Parameters:
-//  - source: the source query parameters object
-// Returns:
-//  - The resulting list of query parameters
+// AddQueryParameters adds the query parameters to the request by reading the properties from the provided object.
 func (request *RequestInformation) AddQueryParameters(source interface{}) {
 	if source == nil || request == nil {
 		return
