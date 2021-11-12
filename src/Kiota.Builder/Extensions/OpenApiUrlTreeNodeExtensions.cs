@@ -28,6 +28,8 @@ namespace Kiota.Builder.Extensions {
             currentNode?.Path?.GetNamespaceFromPath(prefix);
         //{id}, name(idParam={id}), name(idParam='{id}'), name(idParam='{id}',idParam2='{id2}')
         private static readonly Regex PathParametersRegex = new(@"(?:\w+)?=?'?\{(?<paramName>\w+)\}'?,?", RegexOptions.Compiled);
+        // microsoft.graph.getRoleScopeTagsByIds(ids=@ids)
+        private static readonly Regex AtSignPathParameterRegex = new(@"=@(\w+)", RegexOptions.Compiled);
         private static readonly char requestParametersChar = '{';
         private static readonly char requestParametersEndChar = '}';
         private static readonly char requestParametersSectionChar = '(';
@@ -38,7 +40,9 @@ namespace Kiota.Builder.Extensions {
         private static string CleanupParametersFromPath(string pathSegment) {
             if((pathSegment?.Contains(requestParametersChar) ?? false) ||
                 (pathSegment?.Contains(requestParametersSectionChar) ?? false))
-                return PathParametersRegex.Replace(pathSegment, requestParametersMatchEvaluator)
+                return PathParametersRegex.Replace(
+                                            AtSignPathParameterRegex.Replace(pathSegment, "={$1}"),
+                                        requestParametersMatchEvaluator)
                                         .TrimEnd(requestParametersSectionEndChar)
                                         .Replace(requestParametersSectionChar.ToString(), string.Empty);
             return pathSegment;
