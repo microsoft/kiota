@@ -21,11 +21,9 @@ public interface IRequestAdapter
         RequestInformation requestInfo,
         IResponseHandler responseHandler = default) where ModelType : IParsable;
 
-
     Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(
         RequestInformation requestInfo,
         IResponseHandler responseHandler = default) where ModelType : IParsable;
-
 
     Task<ModelType> SendPrimitiveAsync<ModelType>(
         RequestInformation requestInfo,
