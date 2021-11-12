@@ -18,17 +18,23 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
-            parentClass = new CodeClass(root) {
+            parentClass = new CodeClass {
                 Name = "parentClass"
             };
             root.AddClass(parentClass);
-            property = new CodeProperty(parentClass) {
+            property = new CodeProperty {
                 Name = PropertyName,
             };
-            property.Type = new CodeType(property) {
+            property.Type = new CodeType {
                 Name = TypeName
             };
-            parentClass.AddProperty(property);
+            parentClass.AddProperty(property, new() {
+                Name = "pathParameters",
+                PropertyKind = CodePropertyKind.PathParameters,
+            }, new() {
+                Name = "requestAdapter",
+                PropertyKind = CodePropertyKind.RequestAdapter,
+            });
         }
         public void Dispose() {
             tw?.Dispose();
@@ -40,8 +46,8 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains($"return new {TypeName}", result);
-            Assert.Contains("this.httpCore", result);
-            Assert.Contains("this.pathSegment", result);
+            Assert.Contains("this.requestAdapter", result);
+            Assert.Contains("this.pathParameters", result);
         }
         [Fact]
         public void WritesCustomProperty() {
@@ -61,10 +67,10 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         [Fact]
         public void WritesFlagEnums() {
             property.PropertyKind = CodePropertyKind.Custom;
-            property.Type = new CodeType(property) {
+            property.Type = new CodeType {
                 Name = "customEnum",
             };
-            (property.Type as CodeType).TypeDefinition = new CodeEnum(property.Type) {
+            (property.Type as CodeType).TypeDefinition = new CodeEnum {
                 Name = "customEnumType",
                 Flags = true,
             };

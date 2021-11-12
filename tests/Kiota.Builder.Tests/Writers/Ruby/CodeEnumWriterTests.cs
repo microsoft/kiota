@@ -19,8 +19,8 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
             parentNamespace = root.AddNamespace("parentNamespace");
-            currentEnum = parentNamespace.AddEnum(new CodeEnum(root) {
-            Name = EnumName,
+            currentEnum = parentNamespace.AddEnum(new CodeEnum {
+                Name = EnumName,
             }).First();
         }
         public void Dispose(){

@@ -37,7 +37,7 @@ namespace Kiota.Builder.Tests
         {
             var node = OpenApiUrlTreeNode.Create();
             var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph" });
+            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
             var codeModel = builder.CreateSourceModel(node);
 
             Assert.Single(codeModel.GetChildElements(true));
@@ -73,15 +73,15 @@ namespace Kiota.Builder.Tests
                 } 
             }, "default");
             var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph" });
+            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
             var codeModel = builder.CreateSourceModel(node);
 
             var rootNamespace = codeModel.GetChildElements(true).Single();
-            var rootBuilder = rootNamespace.GetChildElements(true).Single(e => e.Name == "Graph");
-            var tasksProperty = rootBuilder.GetChildElements(true).OfType<CodeProperty>().Single(e => e.Name == "Tasks");
+            var rootBuilder = rootNamespace.GetChildElements(true).OfType<CodeClass>().Single(e => e.Name == "Graph");
+            var tasksProperty = rootBuilder.Properties.Single(e => e.Name.Equals("Tasks", StringComparison.OrdinalIgnoreCase));
             var tasksRequestBuilder = tasksProperty.Type as CodeType;
             Assert.NotNull(tasksRequestBuilder);
-            var getMethod = tasksRequestBuilder.TypeDefinition.GetChildElements(true).OfType<CodeMethod>().Single(e => e.Name == "Get");
+            var getMethod = (tasksRequestBuilder.TypeDefinition as CodeClass).Methods.Single(e => e.Name == "Get");
             var returnType = getMethod.ReturnType;
             Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Array, returnType.CollectionKind);
         }
@@ -129,7 +129,7 @@ namespace Kiota.Builder.Tests
                 } 
             }, "default");
             var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph" });
+            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
             var codeModel = builder.CreateSourceModel(node);
             var progressProp = codeModel.FindChildByName<CodeProperty>("progress", true);
             Assert.Equal("double", progressProp.Type.Name);
@@ -138,7 +138,6 @@ namespace Kiota.Builder.Tests
         public void Object_Arrays_are_supported() {
             var userSchema = new OpenApiSchema {
                 Type = "object",
-                // Title = "user", // unit test fails if the title is not set
                 Properties = new Dictionary<string, OpenApiSchema> {
                     {
                         "id", new OpenApiSchema {
@@ -194,11 +193,118 @@ namespace Kiota.Builder.Tests
             };
             var node = OpenApiUrlTreeNode.Create(document, "default");
             var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph" });
+            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
             builder.CreateUriSpace(document);//needed so the component index exists
             var codeModel = builder.CreateSourceModel(node);
-            var userClass = codeModel.FindNamespaceByName("ApiSdk.users").FindChildByName<CodeClass>("user");
+            var userClass = codeModel.FindNamespaceByName("ApiSdk.models").FindChildByName<CodeClass>("user");
             Assert.NotNull(userClass);
+        }
+        [Fact]
+        public void Supports_Path_Parameters() {
+            var resourceActionSchema = new OpenApiSchema {
+                Type = "object",
+                Title = "resourceAction",
+                Properties = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "allowedResourceActions", new OpenApiSchema {
+                            Type = "array",
+                            Items = new OpenApiSchema {
+                                Type = "string"
+                            }
+                        }
+                    },
+                    {
+                        "notAllowedResourceActions", new OpenApiSchema {
+                            Type = "array",
+                            Items = new OpenApiSchema {
+                                Type = "string"
+                            }
+                        }
+                    }
+                },
+                Reference = new OpenApiReference() {
+                    Id = "#/components/schemas/microsoft.graph.resourceAction"
+                },
+                UnresolvedReference = false
+            };
+            var permissionSchema = new OpenApiSchema {
+                Type = "object",
+                Properties = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "resourceActions", new OpenApiSchema {
+                            Type = "array",
+                            Items = new OpenApiSchema {
+                                AnyOf = new List<OpenApiSchema> {
+                                    resourceActionSchema,
+                                }
+                            }
+                        }
+                    }
+                },
+                Reference = new OpenApiReference() {
+                    Id = "#/components/schemas/microsoft.graph.rolePermission"
+                },
+                UnresolvedReference = false
+            };
+            var document = new OpenApiDocument() {
+                Paths = new OpenApiPaths() {
+                    ["/deviceManagement/microsoft.graph.getEffectivePermissions(scope='{scope}')"] = new OpenApiPathItem() {
+                        Parameters = {
+                            new OpenApiParameter() {
+                                Name = "scope",
+                                In = ParameterLocation.Path,
+                                Required = true,
+                                Schema = new OpenApiSchema {
+                                    Type = "string"
+                                }
+                            }
+                        },
+                        Operations = {
+                            [OperationType.Get] = new OpenApiOperation() {
+                                Responses = new OpenApiResponses {
+                                    ["200"] = new OpenApiResponse() {
+                                        Content = {
+                                            ["application/json"] = new OpenApiMediaType() {
+                                                Schema = new OpenApiSchema {
+                                                    Type = "array",
+                                                    AnyOf = new List<OpenApiSchema> {
+                                                        permissionSchema,
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                },
+                Components = new OpenApiComponents() {
+                    Schemas = new Dictionary<string, OpenApiSchema> {
+                        { "microsoft.graph.rolePermission", permissionSchema },
+                        { "microsoft.graph.resourceAction", resourceActionSchema },
+                    }
+                }
+            };
+            var node = OpenApiUrlTreeNode.Create(document, "default");
+            var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+            builder.CreateUriSpace(document);//needed so the component index exists
+            var codeModel = builder.CreateSourceModel(node);
+            var deviceManagementNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement");
+            Assert.NotNull(deviceManagementNS);
+            var deviceManagementRequestBuilder = deviceManagementNS.FindChildByName<CodeClass>("DeviceManagementRequestBuilder");
+            Assert.NotNull(deviceManagementRequestBuilder);
+            var getEffectivePermissionsMethod = deviceManagementRequestBuilder.FindChildByName<CodeMethod>("getEffectivePermissionsWithScope");
+            Assert.NotNull(getEffectivePermissionsMethod);
+            Assert.Single(getEffectivePermissionsMethod.Parameters);
+            var getEffectivePermissionsNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement.getEffectivePermissionsWithScope");
+            Assert.NotNull(getEffectivePermissionsNS);
+            var getEffectivePermissionsRequestBuilder = getEffectivePermissionsNS.FindChildByName<CodeClass>("GetEffectivePermissionsWithScopeRequestBuilder");
+            Assert.NotNull(getEffectivePermissionsRequestBuilder);
+            var constructorMethod = getEffectivePermissionsRequestBuilder.FindChildByName<CodeMethod>("constructor");
+            Assert.NotNull(constructorMethod);
+            Assert.Single(constructorMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
         }
     }
 }

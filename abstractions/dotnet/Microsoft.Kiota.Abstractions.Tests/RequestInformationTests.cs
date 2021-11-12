@@ -8,33 +8,19 @@ namespace Microsoft.Kiota.Abstractions.Tests
     public class RequestInformationTests
     {
         [Fact]
-        public void SetUriAppendsUrlSegments()
-        {
-            // Arrange
-            var testRequest = new RequestInformation()
-            {
-                HttpMethod = HttpMethod.GET,
-                URI = new Uri("http://localhost")
-            };
-            // Act
-            testRequest.SetURI(testRequest.URI.OriginalString,"/me",false);
-            // Assert
-            Assert.Equal("http://localhost/me", testRequest.URI.OriginalString);
-        }
-
-        [Fact]
         public void SetUriExtractsQueryParameters()
         {
             // Arrange
             var testRequest = new RequestInformation()
             {
                 HttpMethod = HttpMethod.GET,
-                URI = new Uri("http://localhost")
+                UrlTemplate = "http://localhost/{path}/me?foo={foo}"
             };
             // Act
-            testRequest.SetURI("http://localhost/me?foo=bar", "", true);
+            testRequest.QueryParameters.Add("foo", "bar");
+            testRequest.PathParameters.Add("path", "baz");
             // Assert
-            Assert.Equal("http://localhost/me", testRequest.URI.OriginalString);
+            Assert.Equal("http://localhost/baz/me?foo=bar", testRequest.URI.ToString());
             Assert.NotEmpty(testRequest.QueryParameters);
             Assert.Equal("foo",testRequest.QueryParameters.First().Key);
             Assert.Equal("bar", testRequest.QueryParameters.First().Value.ToString());
@@ -42,7 +28,7 @@ namespace Microsoft.Kiota.Abstractions.Tests
 
 
         [Fact]
-        public void AddsAndRemovesMiddlewareOptions()
+        public void AddsAndRemovesRequestOptions()
         {
             // Arrange
             var testRequest = new RequestInformation()
@@ -50,17 +36,17 @@ namespace Microsoft.Kiota.Abstractions.Tests
                 HttpMethod = HttpMethod.GET,
                 URI = new Uri("http://localhost")
             };
-            var testMiddleWareOption = new Mock<IMiddlewareOption>().Object;
-            Assert.Empty(testRequest.MiddlewareOptions);
+            var testRequestOption = new Mock<IRequestOption>().Object;
+            Assert.Empty(testRequest.RequestOptions);
             // Act
-            testRequest.AddMiddlewareOptions(testMiddleWareOption);
+            testRequest.AddRequestOptions(testRequestOption);
             // Assert
-            Assert.NotEmpty(testRequest.MiddlewareOptions);
-            Assert.Equal(testMiddleWareOption, testRequest.MiddlewareOptions.First());
+            Assert.NotEmpty(testRequest.RequestOptions);
+            Assert.Equal(testRequestOption, testRequest.RequestOptions.First());
 
             // Act by removing the option
-            testRequest.RemoveMiddlewareOptions(testMiddleWareOption);
-            Assert.Empty(testRequest.MiddlewareOptions);
+            testRequest.RemoveRequestOptions(testRequestOption);
+            Assert.Empty(testRequest.RequestOptions);
         }
     }
 }

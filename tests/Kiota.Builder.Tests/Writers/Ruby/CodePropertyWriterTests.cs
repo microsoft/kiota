@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using Kiota.Builder.Extensions;
 using Xunit;
 
@@ -22,31 +21,43 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var emptyRoot = CodeNamespace.InitRootNamespace();
-            EmptyClass = new CodeClass(emptyRoot) {
+            EmptyClass = new CodeClass {
                 Name = "emptyClass"
             };
-            emptyProperty = new CodeProperty(EmptyClass) {
+            emptyProperty = new CodeProperty {
                 Name = PropertyName,
             };
-            emptyProperty.Type = new CodeType(emptyProperty) {
+            emptyProperty.Type = new CodeType {
                 Name = TypeName
             };
-            EmptyClass.AddProperty(emptyProperty);
+            EmptyClass.AddProperty(emptyProperty, new() {
+                Name = "pathParameters",
+                PropertyKind = CodePropertyKind.PathParameters,
+            }, new() {
+                Name = "requestAdapter",
+                PropertyKind = CodePropertyKind.RequestAdapter,
+            });
             
             var root = CodeNamespace.InitRootNamespace();
             root.Name = RootNamespaceName;
-            parentClass = new CodeClass(root) {
+            parentClass = new CodeClass {
                 Name = "parentClass"
             };
             root.AddClass(parentClass);
-            property = new CodeProperty(parentClass) {
+            property = new CodeProperty {
                 Name = PropertyName,
             };
-            property.Type = new CodeType(property) {
+            property.Type = new CodeType {
                 Name = TypeName,
                 TypeDefinition = parentClass
             };
-            parentClass.AddProperty(property);
+            parentClass.AddProperty(property, new() {
+                Name = "pathParameters",
+                PropertyKind = CodePropertyKind.PathParameters,
+            }, new() {
+                Name = "requestAdapter",
+                PropertyKind = CodePropertyKind.RequestAdapter,
+            });
         }
         public void Dispose() {
             tw?.Dispose();
@@ -59,8 +70,8 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             var result = tw.ToString();
             Assert.Contains($"def {PropertyName.ToSnakeCase()}", result);
             Assert.Contains($"{RootNamespaceName}::{TypeName}.new", result);
-            Assert.Contains("http_core", result);
-            Assert.Contains("path_segment", result);
+            Assert.Contains("request_adapter", result);
+            Assert.Contains("path_parameters", result);
         }
         [Fact]
         public void WritesRequestBuilderWithoutNamespace() {
@@ -69,8 +80,8 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             var result = tw.ToString();
             Assert.Contains($"def {PropertyName.ToSnakeCase()}", result);
             Assert.Contains($"{TypeName}.new", result);
-            Assert.Contains("http_core", result);
-            Assert.Contains("path_segment", result);
+            Assert.Contains("request_adapter", result);
+            Assert.Contains("path_parameters", result);
             Assert.DoesNotContain($"::{TypeName}.new", result);
         }
         [Fact]

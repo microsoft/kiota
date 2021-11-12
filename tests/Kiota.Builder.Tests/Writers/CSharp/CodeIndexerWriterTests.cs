@@ -17,20 +17,34 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
-            parentClass = new CodeClass(root) {
+            parentClass = new CodeClass {
                 Name = "parentClass"
             };
             root.AddClass(parentClass);
-            indexer = new CodeIndexer(parentClass) {
+            indexer = new CodeIndexer {
                 Name = "idx",
+                ParameterName = "id"
             };
-            indexer.IndexType = new CodeType(indexer) {
+            indexer.IndexType = new CodeType {
                 Name = "string",
             };
-            indexer.ReturnType = new CodeType(indexer) {
+            indexer.ReturnType = new CodeType {
                 Name = "SomeRequestBuilder"
             };
             parentClass.SetIndexer(indexer);
+            parentClass.AddProperty(new() {
+                Name = "pathParameters",
+                PropertyKind = CodePropertyKind.PathParameters,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            }, new() {
+                Name = "requestAdapter",
+                PropertyKind = CodePropertyKind.RequestAdapter,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            });
         }
         public void Dispose() {
             tw?.Dispose();
@@ -40,9 +54,9 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         public void WritesIndexer() {
             writer.Write(indexer);
             var result = tw.ToString();
-            Assert.Contains("HttpCore", result);
-            Assert.Contains("PathSegment", result);
-            Assert.Contains("+ position", result);
+            Assert.Contains("RequestAdapter", result);
+            Assert.Contains("PathParameters", result);
+            Assert.Contains("id\", position", result);
             Assert.Contains("public SomeRequestBuilder this[string position]", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }

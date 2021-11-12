@@ -10,23 +10,28 @@ namespace Kiota.Builder.Writers.Extensions {
                 return Enumerable.Empty<CodeProperty>();
             if(kinds == null || !kinds.Any())
                 throw new ArgumentOutOfRangeException(nameof(kinds));
-            var parentClassElements = parentClass
-                        .GetChildElements(true);
-            return parentClassElements
-                        .OfType<CodeProperty>()
+            return parentClass.Properties
                         .Where(x => x.IsOfKind(kinds))
-                        .Union(parentClassElements
-                                .OfType<CodeMethod>()
+                        .Union(parentClass.Methods
                                 .Where(x => x.IsAccessor && (x.AccessedProperty?.IsOfKind(kinds) ?? false))
                                 .Select(x => x.AccessedProperty))
+                        .Distinct()
+                        .OrderBy(x => x.Name);
+        }
+        public static IEnumerable<CodeMethod> GetMethodsOffKind(this CodeClass parentClass, params CodeMethodKind[] kinds) {
+            if(parentClass == null)
+                return Enumerable.Empty<CodeMethod>();
+            if(kinds == null || !kinds.Any())
+                throw new ArgumentOutOfRangeException(nameof(kinds));
+            return parentClass.Methods
+                        .Where(x => x.IsOfKind(kinds))
                         .Distinct()
                         .OrderBy(x => x.Name);
         }
         public static CodeProperty GetBackingStoreProperty(this CodeClass parentClass) {
             if(parentClass == null) return null;
             return (parentClass.GetGreatestGrandparent(parentClass) ?? parentClass) // the backing store is always on the uppermost class
-                                    .GetChildElements(true)
-                                    .OfType<CodeProperty>()
+                                    .Properties
                                     .FirstOrDefault(x => x.IsOfKind(CodePropertyKind.BackingStore));
         }
     }

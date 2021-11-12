@@ -16,4 +16,4 @@ using System.Runtime.InteropServices;
 // The following GUID is for the ID of the typelib if this project is exposed to COM.
 
 [assembly: Guid("b0c91cbc-af85-4c64-b989-d320e6989b2a")]
-[assembly: InternalsVisibleTo("Microsoft.Kiota.Http.HttpClient.Tests")]
+[assembly: InternalsVisibleTo("Microsoft.Kiota.Http.HttpClientLibrary.Tests")]

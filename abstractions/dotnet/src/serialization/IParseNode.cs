@@ -37,7 +37,12 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         ///  Gets the float value of the node.
         /// </summary>
         /// <returns>The float value of the node.</returns>
-        decimal? GetFloatValue();
+        float? GetFloatValue();
+        /// <summary>
+        ///  Gets the long value of the node.
+        /// </summary>
+        /// <returns>The long value of the node.</returns>
+        long? GetLongValue();
         /// <summary>
         /// Gets the double value of the node.
         /// </summary>
@@ -58,6 +63,11 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// </summary>
         /// <returns>The collection of primitive values.</returns>
         IEnumerable<T> GetCollectionOfPrimitiveValues<T>();
+        /// <summary>
+        /// Gets the collection of enum values of the node.
+        /// </summary>
+        /// <returns>The collection of enum values.</returns>
+        IEnumerable<T?> GetCollectionOfEnumValues<T>() where T : struct, Enum;
         /// <summary>
         /// Gets the collection of model objects values of the node.
         /// </summary>
@@ -81,5 +91,10 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// Callback called after the node is deserialized.
         /// </summary>
         Action<IParsable> OnAfterAssignFieldValues { get; set; }
+        /// <summary>
+        /// Gets the byte array value of the node.
+        /// </summary>
+        /// <returns>The byte array value of the node.</returns>
+        byte[] GetByteArrayValue();
     }
 }

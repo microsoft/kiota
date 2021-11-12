@@ -15,6 +15,7 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +70,17 @@ public class JsonSerializationWriter implements SerializationWriter {
             }
     }
     public void writeFloatValue(final String key, final Float value) {
+        if(value != null)
+            try {
+                if(key != null && !key.isEmpty()) {
+                    writer.name(key);
+                }
+                writer.value(value);
+            } catch (IOException ex) {
+                throw new RuntimeException("could not serialize value", ex);
+            }
+    }
+    public void writeDoubleValue(final String key, final Double value) {
         if(value != null)
             try {
                 if(key != null && !key.isEmpty()) {
@@ -137,6 +149,22 @@ public class JsonSerializationWriter implements SerializationWriter {
                 writer.beginArray();
                 for (final T t : values) {
                     this.writeObjectValue(null, t);
+                }
+                writer.endArray();
+            }
+        } catch (IOException ex) {
+            throw new RuntimeException("could not serialize value", ex);
+        }
+    }
+    public <T extends Enum<T>> void writeCollectionOfEnumValues(@Nullable final String key, @Nullable final Iterable<T> values) {
+        try {
+            if(values != null) { //empty array is meaningful
+                if(key != null && !key.isEmpty()) {
+                    writer.name(key);
+                }
+                writer.beginArray();
+                for (final T t : values) {
+                    this.writeEnumValue(null, t);
                 }
                 writer.endArray();
             }
@@ -277,5 +305,9 @@ public class JsonSerializationWriter implements SerializationWriter {
     private BiConsumer<Parsable, SerializationWriter> onStartObjectSerialization;
     public void setOnStartObjectSerialization(final BiConsumer<Parsable, SerializationWriter> value) {
         this.onStartObjectSerialization = value;
+    }
+    public void writeByteArrayValue(@Nullable final String key, @Nonnull final byte[] value) {
+        if(value != null)
+            this.writeStringValue(key, Base64.getEncoder().encodeToString(value));
     }
 }

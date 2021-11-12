@@ -2,7 +2,9 @@ using System;
 using System.IO;
 using System.Linq;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Refiners;
 using Kiota.Builder.Tests;
+using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Writers.Go.Tests {
@@ -24,14 +26,14 @@ namespace Kiota.Builder.Writers.Go.Tests {
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
-            parentClass = new CodeClass(root) {
+            parentClass = new CodeClass {
                 Name = "parentClass"
             };
             root.AddClass(parentClass);
-            method = new CodeMethod(parentClass) {
+            method = new CodeMethod {
                 Name = MethodName,
             };
-            method.ReturnType = new CodeType(method) {
+            method.ReturnType = new CodeType {
                 Name = ReturnTypeName
             };
             parentClass.AddMethod(method);
@@ -41,77 +43,95 @@ namespace Kiota.Builder.Writers.Go.Tests {
             tw?.Dispose();
             GC.SuppressFinalize(this);
         }
+        private void AddRequestProperties() {
+            parentClass.AddProperty(new CodeProperty {
+                Name = "requestAdapter",
+                PropertyKind = CodePropertyKind.RequestAdapter,
+            });
+            parentClass.AddProperty(new CodeProperty {
+                Name = "pathParameters",
+                PropertyKind = CodePropertyKind.PathParameters,
+                Type = new CodeType {
+                    Name = "string"
+                },
+            });
+            parentClass.AddProperty(new CodeProperty {
+                Name = "UrlTemplate",
+                PropertyKind = CodePropertyKind.UrlTemplate,
+            });
+        }
         private void AddSerializationProperties() {
-            var addData = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var addData = parentClass.AddProperty(new CodeProperty {
                 Name = "additionalData",
                 PropertyKind = CodePropertyKind.AdditionalData,
             }).First();
-            addData.Type = new CodeType(addData) {
+            addData.Type = new CodeType {
                 Name = "string"
             };
-            var dummyProp = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var dummyProp = parentClass.AddProperty(new CodeProperty {
                 Name = "dummyProp",
             }).First();
-            dummyProp.Type = new CodeType(dummyProp) {
+            dummyProp.Type = new CodeType {
                 Name = "string"
             };
-            var dummyCollectionProp = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var dummyCollectionProp = parentClass.AddProperty(new CodeProperty {
                 Name = "dummyColl",
             }).First();
-            dummyCollectionProp.Type = new CodeType(dummyCollectionProp) {
+            dummyCollectionProp.Type = new CodeType {
                 Name = "string",
                 CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
             };
-            var dummyComplexCollection = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var dummyComplexCollection = parentClass.AddProperty(new CodeProperty {
                 Name = "dummyComplexColl"
             }).First();
-            dummyComplexCollection.Type = new CodeType(dummyComplexCollection) {
+            dummyComplexCollection.Type = new CodeType {
                 Name = "Complex",
                 CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-                TypeDefinition = new CodeClass(parentClass.Parent) {
+                TypeDefinition = new CodeClass {
                     Name = "SomeComplexType"
                 }
             };
-            var dummyEnumProp = parentClass.AddProperty(new CodeProperty(parentClass){
+            var dummyEnumProp = parentClass.AddProperty(new CodeProperty{
                 Name = "dummyEnumCollection",
             }).First();
-            dummyEnumProp.Type = new CodeType(dummyEnumProp) {
+            dummyEnumProp.Type = new CodeType {
                 Name = "SomeEnum",
-                TypeDefinition = new CodeEnum(parentClass.Parent) {
+                TypeDefinition = new CodeEnum {
                     Name = "EnumType"
                 }
             };
         }
         private void AddInheritanceClass() {
-            (parentClass.StartBlock as CodeClass.Declaration).Inherits = new CodeType(parentClass) {
+            (parentClass.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
                 Name = "someParentClass"
             };
         }
-        private void AddRequestBodyParameters() {
-            var stringType = new CodeType(method) {
+        private void AddRequestBodyParameters(CodeMethod target = default) {
+            var stringType = new CodeType {
                 Name = "string",
             };
-            method.AddParameter(new CodeParameter(method) {
+            target ??= method;
+            target.AddParameter(new CodeParameter {
                 Name = "h",
                 ParameterKind = CodeParameterKind.Headers,
                 Type = stringType,
             });
-            method.AddParameter(new CodeParameter(method){
+            target.AddParameter(new CodeParameter{
                 Name = "q",
                 ParameterKind = CodeParameterKind.QueryParameter,
                 Type = stringType,
             });
-            method.AddParameter(new CodeParameter(method){
+            target.AddParameter(new CodeParameter{
                 Name = "b",
                 ParameterKind = CodeParameterKind.RequestBody,
                 Type = stringType,
             });
-            method.AddParameter(new CodeParameter(method){
+            target.AddParameter(new CodeParameter{
                 Name = "r",
                 ParameterKind = CodeParameterKind.ResponseHandler,
                 Type = stringType,
             });
-            method.AddParameter(new CodeParameter(method) {
+            target.AddParameter(new CodeParameter {
                 Name = "o",
                 ParameterKind = CodeParameterKind.Options,
                 Type = stringType,
@@ -121,21 +141,22 @@ namespace Kiota.Builder.Writers.Go.Tests {
         public void WritesNullableVoidTypeForExecutor(){
             method.MethodKind = CodeMethodKind.RequestExecutor;
             method.HttpMethod = HttpMethod.Get;
-            method.ReturnType = new CodeType(method) {
+            method.ReturnType = new CodeType {
                 Name = "void",
             };
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("(func() (error))", result);
+            Assert.Contains("(error)", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
         public void WritesRequestBuilder() {
+            AddRequestProperties();
             method.MethodKind = CodeMethodKind.RequestBuilderBackwardCompatibility;
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("m.pathSegment", result);
-            Assert.Contains("m.httpCore", result);
+            Assert.Contains("m.pathParameters", result);
+            Assert.Contains("m.requestAdapter", result);
             Assert.Contains("return", result);
             Assert.Contains("func (m", result);
             Assert.Contains("New", result);
@@ -155,32 +176,46 @@ namespace Kiota.Builder.Writers.Go.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("requestInfo, err :=", result);
-            Assert.Contains("m.httpCore.SendAsync", result);
+            Assert.Contains("m.requestAdapter.SendAsync", result);
             Assert.Contains("return res.(", result);
             Assert.Contains("err != nil", result);
-            Assert.Contains("return func() (", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         private const string AbstractionsPackageHash = "ida96af0f171bb75f894a4013a6b3146a4397c58f11adb81a2b7cbea9314783a9";
         [Fact]
         public void WritesRequestGeneratorBody() {
+            var configurationMock = new Mock<GenerationConfiguration>();
+            var refiner = new GoRefiner(configurationMock.Object);
             method.MethodKind = CodeMethodKind.RequestGenerator;
             method.HttpMethod = HttpMethod.Get;
+            var executor = parentClass.AddMethod(new CodeMethod {
+                Name = "executor",
+                HttpMethod = HttpMethod.Get,
+                MethodKind = CodeMethodKind.RequestExecutor,
+                ReturnType = new CodeType {
+                    Name = "string",
+                    IsExternal = true,
+                }
+            }).First();
+            AddRequestBodyParameters(executor);
             AddRequestBodyParameters();
+            AddRequestProperties();
+            refiner.Refine(parentClass.Parent as CodeNamespace);
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains($"requestInfo := {AbstractionsPackageHash}.NewRequestInformation()", result);
-            Assert.Contains("err := requestInfo.SetUri", result);
+            Assert.Contains("requestInfo.UrlTemplate = ", result);
+            Assert.Contains("requestInfo.PathParameters", result);
             Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
             Assert.Contains("err != nil", result);
-            Assert.Contains("h != nil", result);
-            Assert.Contains("h(requestInfo.Headers)", result);
-            Assert.Contains("q != nil", result);
-            Assert.Contains("qParams.AddQueryParameters(requestInfo.QueryParameters)", result);
-            Assert.Contains("o != nil", result);
-            Assert.Contains("requestInfo.AddMiddlewareOptions(o)", result);
-            Assert.Contains("requestInfo.SetContentFromParsable(m.httpCore", result);
-            Assert.Contains("return requestInfo, err", result);
+            Assert.Contains("H != nil", result);
+            Assert.Contains("requestInfo.Headers =", result);
+            Assert.Contains("Q != nil", result);
+            Assert.Contains("requestInfo.AddQueryParameters(options.Q)", result);
+            Assert.Contains("O) != 0", result);
+            Assert.Contains("requestInfo.AddRequestOptions(", result);
+            Assert.Contains("requestInfo.SetContentFromParsable(m.requestAdapter", result);
+            Assert.Contains("return requestInfo, nil", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
@@ -196,11 +231,11 @@ namespace Kiota.Builder.Writers.Go.Tests {
         }
         [Fact]
         public void WritesDeSerializerBody() {
-            var parameter = new CodeParameter(method){
+            var parameter = new CodeParameter{
                 Description = ParamDescription,
                 Name = ParamName
             };
-            parameter.Type = new CodeType(parameter) {
+            parameter.Type = new CodeType {
                 Name = "string"
             };
             method.MethodKind = CodeMethodKind.Deserializer;
@@ -227,11 +262,11 @@ namespace Kiota.Builder.Writers.Go.Tests {
         }
         [Fact]
         public void WritesSerializerBody() {
-            var parameter = new CodeParameter(method){
+            var parameter = new CodeParameter{
                 Description = ParamDescription,
                 Name = ParamName
             };
-            parameter.Type = new CodeType(parameter) {
+            parameter.Type = new CodeType {
                 Name = "string"
             };
             method.MethodKind = CodeMethodKind.Serializer;
@@ -239,10 +274,9 @@ namespace Kiota.Builder.Writers.Go.Tests {
             AddSerializationProperties();
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("WritePrimitiveValue", result);
-            Assert.Contains("WriteCollectionOfPrimitiveValues", result);
+            Assert.Contains("WriteStringValue", result);
+            Assert.Contains("WriteCollectionOfStringValues", result);
             Assert.Contains("WriteCollectionOfObjectValues", result);
-            // Assert.Contains("WriteEnumValue", result); update when implementing enum serialization
             Assert.Contains("WriteAdditionalData(m.GetAdditionalData())", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
@@ -250,11 +284,11 @@ namespace Kiota.Builder.Writers.Go.Tests {
         public void WritesMethodSyncDescription() {
             method.Description = MethodDescription;
             method.IsAsync = false;
-            var parameter = new CodeParameter(method){
+            var parameter = new CodeParameter{
                 Description = ParamDescription,
                 Name = ParamName
             };
-            parameter.Type = new CodeType(parameter) {
+            parameter.Type = new CodeType {
                 Name = "string"
             };
             method.AddParameter(parameter);
@@ -290,7 +324,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
         public void WritesReturnType() {
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains($"{MethodName.ToFirstCharacterUpperCase()}()({TaskPrefix}*{ReturnTypeName}, error)", result);// async default
+            Assert.Contains($"{MethodName.ToFirstCharacterUpperCase()}()(*{ReturnTypeName}, error)", result);// async default
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
@@ -326,16 +360,50 @@ namespace Kiota.Builder.Writers.Go.Tests {
         }
         [Fact]
         public void WritesIndexer() {
+            AddRequestProperties();
             method.MethodKind = CodeMethodKind.IndexerBackwardCompatibility;
-            method.PathSegment = "somePath";
+            method.OriginalIndexer = new () {
+                Name = "indx",
+                ParameterName = "id",
+                IndexType = new CodeType {
+                    Name = "string",
+                    IsNullable = true,
+                }
+            };
+            method.AddParameter(new CodeParameter {
+                Name = "id",
+                ParameterKind = CodeParameterKind.Custom,
+                Type = new CodeType {
+                    Name = "string",
+                    IsNullable = true,
+                },
+                Optional = true
+            });
             writer.Write(method);
             var result = tw.ToString();
-            Assert.Contains("m.httpCore", result);
-            Assert.Contains("m.pathSegment", result);
-            Assert.Contains("+ id", result);
+            Assert.Contains("m.requestAdapter", result);
+            Assert.Contains("m.pathParameters", result);
+            Assert.Contains("= *id", result);
             Assert.Contains("return", result);
             Assert.Contains("New", result);
-            Assert.Contains(method.PathSegment, result);
+        }
+        [Fact]
+        public void WritesPathParameterRequestBuilder() {
+            AddRequestProperties();
+            method.MethodKind = CodeMethodKind.RequestBuilderWithParameters;
+            method.AddParameter(new CodeParameter {
+                Name = "pathParam",
+                ParameterKind = CodeParameterKind.Path,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            });
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains("m.requestAdapter", result);
+            Assert.Contains("m.pathParameters", result);
+            Assert.Contains("pathParam", result);
+            Assert.Contains("return New", result);
         }
         [Fact]
         public void WritesGetterToBackingStore() {
@@ -350,7 +418,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
         public void WritesGetterToBackingStoreWithNonnullProperty() {
             method.AddAccessedProperty();
             parentClass.AddBackingStoreProperty();
-            method.AccessedProperty.Type = new CodeType(method.AccessedProperty) {
+            method.AccessedProperty.Type = new CodeType {
                 Name = "string",
                 IsNullable = false,
             };
@@ -392,30 +460,82 @@ namespace Kiota.Builder.Writers.Go.Tests {
             method.MethodKind = CodeMethodKind.Constructor;
             var defaultValue = "someVal";
             var propName = "propWithDefaultValue";
-            parentClass.AddProperty(new CodeProperty(parentClass) {
+            parentClass.ClassKind = CodeClassKind.RequestBuilder;
+            parentClass.AddProperty(new CodeProperty {
                 Name = propName,
                 DefaultValue = defaultValue,
-                PropertyKind = CodePropertyKind.PathSegment,
+                PropertyKind = CodePropertyKind.UrlTemplate,
+            });
+            AddRequestProperties();
+            method.AddParameter(new CodeParameter {
+                Name = "pathParameters",
+                ParameterKind = CodeParameterKind.PathParameters,
+                Type = new CodeType {
+                    Name = "map[string]string"
+                }
             });
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
             Assert.Contains($"m.{propName} = {defaultValue}", result);
+            Assert.Contains("make(map[string]string)", result);
+        }
+        [Fact]
+        public void WritesRawUrlConstructor() {
+            method.MethodKind = CodeMethodKind.RawUrlConstructor;
+            var defaultValue = "someVal";
+            var propName = "propWithDefaultValue";
+            parentClass.ClassKind = CodeClassKind.RequestBuilder;
+            parentClass.AddProperty(new CodeProperty {
+                Name = propName,
+                DefaultValue = defaultValue,
+                PropertyKind = CodePropertyKind.UrlTemplate,
+            });
+            AddRequestProperties();
+            method.AddParameter(new CodeParameter {
+                Name = "rawUrl",
+                ParameterKind = CodeParameterKind.RawUrl,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            });
+            method.AddParameter(new CodeParameter {
+                Name = "requestAdapter",
+                ParameterKind = CodeParameterKind.RequestAdapter,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            });
+            method.OriginalMethod = new ();
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+            Assert.Contains($"urlParams := make(map[string]string)", result);
+            Assert.Contains($"urlParams[\"request-raw-url\"] = rawUrl", result);
+        }
+        [Fact]
+        public void WritesInheritedConstructor() {
+            method.MethodKind = CodeMethodKind.Constructor;
+            AddInheritanceClass();
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+            Assert.Contains("SomeParentClass: *NewSomeParentClass", result);
         }
         [Fact]
         public void WritesApiConstructor() {
             method.MethodKind = CodeMethodKind.ClientConstructor;
-            var coreProp = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var coreProp = parentClass.AddProperty(new CodeProperty {
                 Name = "core",
-                PropertyKind = CodePropertyKind.HttpCore,
+                PropertyKind = CodePropertyKind.RequestAdapter,
             }).First();
-            coreProp.Type = new CodeType(coreProp) {
+            coreProp.Type = new CodeType {
                 Name = "HttpCore",
                 IsExternal = true,
             };
-            method.AddParameter(new CodeParameter(method) {
+            method.AddParameter(new CodeParameter {
                 Name = "core",
-                ParameterKind = CodeParameterKind.HttpCore,
+                ParameterKind = CodeParameterKind.RequestAdapter,
                 Type = coreProp.Type,
             });
             method.DeserializerModules = new() {"github.com/microsoft/kiota/serialization/go/json.Deserializer"};
@@ -429,24 +549,24 @@ namespace Kiota.Builder.Writers.Go.Tests {
         [Fact]
         public void WritesApiConstructorWithBackingStore() {
             method.MethodKind = CodeMethodKind.ClientConstructor;
-            var coreProp = parentClass.AddProperty(new CodeProperty(parentClass) {
+            var coreProp = parentClass.AddProperty(new CodeProperty {
                 Name = "core",
-                PropertyKind = CodePropertyKind.HttpCore,
+                PropertyKind = CodePropertyKind.RequestAdapter,
             }).First();
-            coreProp.Type = new CodeType(coreProp) {
+            coreProp.Type = new CodeType {
                 Name = "HttpCore",
                 IsExternal = true,
             };
-            method.AddParameter(new CodeParameter(method) {
+            method.AddParameter(new CodeParameter {
                 Name = "core",
-                ParameterKind = CodeParameterKind.HttpCore,
+                ParameterKind = CodeParameterKind.RequestAdapter,
                 Type = coreProp.Type,
             });
-            var backingStoreParam = new CodeParameter(method) {
+            var backingStoreParam = new CodeParameter {
                 Name = "backingStore",
                 ParameterKind = CodeParameterKind.BackingStore,
             };
-            backingStoreParam.Type = new CodeType(backingStoreParam) {
+            backingStoreParam.Type = new CodeType {
                 Name = "IBackingStore",
                 IsExternal = true,
             };

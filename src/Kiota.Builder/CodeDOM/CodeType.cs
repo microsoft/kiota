@@ -4,9 +4,6 @@ namespace Kiota.Builder
 {
     public class CodeType : CodeTypeBase, ICloneable
     {
-        public CodeType(CodeElement parent): base(parent){
-            
-        }
         public CodeElement TypeDefinition
         {
             get;
@@ -16,7 +13,7 @@ namespace Kiota.Builder
 
         public override object Clone()
         {
-            return new CodeType(this.Parent){
+            return new CodeType{
                 TypeDefinition = TypeDefinition,
                 IsExternal = IsExternal
             }.BaseClone<CodeType>(this);

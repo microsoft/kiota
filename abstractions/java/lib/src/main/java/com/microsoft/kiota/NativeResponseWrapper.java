@@ -14,10 +14,10 @@ public class NativeResponseWrapper {
     @SuppressWarnings("unchecked")
     @Nonnull
     public static <ModelType, NativeResponseType, QueryParametersType> CompletableFuture<NativeResponseType> CallAndGetNativeType(
-                @Nonnull final QuadFunction<Consumer<QueryParametersType>, Consumer<Map<String,String>>, Collection<MiddlewareOption>, ResponseHandler, CompletableFuture<ModelType>> originalCall,
+                @Nonnull final QuadFunction<Consumer<QueryParametersType>, Consumer<Map<String,String>>, Collection<RequestOption>, ResponseHandler, CompletableFuture<ModelType>> originalCall,
                 @Nullable final Consumer<QueryParametersType> q, 
                 @Nullable final Consumer<Map<String,String>> h,
-                @Nullable final Collection<MiddlewareOption> o) {
+                @Nullable final Collection<RequestOption> o) {
         Objects.requireNonNull(originalCall, "parameter originalCall cannot be null");
         final NativeResponseHandler responseHandler = new NativeResponseHandler();
         return originalCall.apply(q, h, o, responseHandler).thenApply((val) -> {
@@ -26,30 +26,30 @@ public class NativeResponseWrapper {
     }
     @Nonnull
     public static <ModelType, NativeResponseType, QueryParametersType> CompletableFuture<NativeResponseType> CallAndGetNativeType(
-                @Nonnull final QuadFunction<Consumer<QueryParametersType>, Consumer<Map<String,String>>, Collection<MiddlewareOption>, ResponseHandler, CompletableFuture<ModelType>> originalCall,
+                @Nonnull final QuadFunction<Consumer<QueryParametersType>, Consumer<Map<String,String>>, Collection<RequestOption>, ResponseHandler, CompletableFuture<ModelType>> originalCall,
                 @Nullable final Consumer<QueryParametersType> q,
                 @Nullable final Consumer<Map<String,String>> h) {
         return CallAndGetNativeType(originalCall, q, h, null);
     }
     @Nonnull
     public static <ModelType, NativeResponseType, QueryParametersType> CompletableFuture<NativeResponseType> CallAndGetNativeType(
-                @Nonnull final QuadFunction<Consumer<QueryParametersType>, Consumer<Map<String,String>>, Collection<MiddlewareOption>, ResponseHandler, CompletableFuture<ModelType>> originalCall,
+                @Nonnull final QuadFunction<Consumer<QueryParametersType>, Consumer<Map<String,String>>, Collection<RequestOption>, ResponseHandler, CompletableFuture<ModelType>> originalCall,
                 @Nullable final Consumer<QueryParametersType> q) {
         return CallAndGetNativeType(originalCall, q, null, null);
     }
     @Nonnull
     public static <ModelType, NativeResponseType, QueryParametersType> CompletableFuture<NativeResponseType> CallAndGetNativeType(
-                @Nonnull final QuadFunction<Consumer<QueryParametersType>, Consumer<Map<String,String>>, Collection<MiddlewareOption>, ResponseHandler, CompletableFuture<ModelType>> originalCall) {
+                @Nonnull final QuadFunction<Consumer<QueryParametersType>, Consumer<Map<String,String>>, Collection<RequestOption>, ResponseHandler, CompletableFuture<ModelType>> originalCall) {
         return CallAndGetNativeType(originalCall, null, null, null);
     }
     @SuppressWarnings("unchecked")
     @Nonnull
     public static <ModelType, NativeResponseType, QueryParametersType, RequestBodyType> CompletableFuture<NativeResponseType> CallWithBodyAndGetNativeType(
-            @Nonnull final PentaFunction<RequestBodyType, Consumer<QueryParametersType>, Consumer<Map<String, String>>, Collection<MiddlewareOption>, ResponseHandler, CompletableFuture<ModelType>> originalCall,
+            @Nonnull final PentaFunction<RequestBodyType, Consumer<QueryParametersType>, Consumer<Map<String, String>>, Collection<RequestOption>, ResponseHandler, CompletableFuture<ModelType>> originalCall,
             @Nonnull final RequestBodyType requestBody,
             @Nullable final Consumer<QueryParametersType> q, 
             @Nullable final Consumer<Map<String,String>> h,
-            @Nullable final Collection<MiddlewareOption> o) {
+            @Nullable final Collection<RequestOption> o) {
         Objects.requireNonNull(originalCall, "parameter originalCall cannot be null");
         Objects.requireNonNull(requestBody, "parameter requestBody cannot be null");
         final NativeResponseHandler responseHandler = new NativeResponseHandler();
@@ -59,7 +59,7 @@ public class NativeResponseWrapper {
     }
     @Nonnull
     public static <ModelType, NativeResponseType, QueryParametersType, RequestBodyType> CompletableFuture<NativeResponseType> CallWithBodyAndGetNativeType(
-            @Nonnull final PentaFunction<RequestBodyType, Consumer<QueryParametersType>, Consumer<Map<String, String>>, Collection<MiddlewareOption>, ResponseHandler, CompletableFuture<ModelType>> originalCall,
+            @Nonnull final PentaFunction<RequestBodyType, Consumer<QueryParametersType>, Consumer<Map<String, String>>, Collection<RequestOption>, ResponseHandler, CompletableFuture<ModelType>> originalCall,
             @Nonnull final RequestBodyType requestBody,
             @Nullable final Consumer<QueryParametersType> q,
             @Nullable final Consumer<Map<String,String>> h) {
@@ -67,14 +67,14 @@ public class NativeResponseWrapper {
     }
     @Nonnull
     public static <ModelType, NativeResponseType, QueryParametersType, RequestBodyType> CompletableFuture<NativeResponseType> CallWithBodyAndGetNativeType(
-            @Nonnull final PentaFunction<RequestBodyType, Consumer<QueryParametersType>, Consumer<Map<String, String>>, Collection<MiddlewareOption>, ResponseHandler, CompletableFuture<ModelType>> originalCall,
+            @Nonnull final PentaFunction<RequestBodyType, Consumer<QueryParametersType>, Consumer<Map<String, String>>, Collection<RequestOption>, ResponseHandler, CompletableFuture<ModelType>> originalCall,
             @Nonnull final RequestBodyType requestBody,
             @Nullable final Consumer<QueryParametersType> q) {
         return CallWithBodyAndGetNativeType(originalCall, requestBody, q, null, null);
     }
     @Nonnull
     public static <ModelType, NativeResponseType, QueryParametersType, RequestBodyType> CompletableFuture<NativeResponseType> CallWithBodyAndGetNativeType(
-            @Nonnull final PentaFunction<RequestBodyType, Consumer<QueryParametersType>, Consumer<Map<String, String>>, Collection<MiddlewareOption>, ResponseHandler, CompletableFuture<ModelType>> originalCall,
+            @Nonnull final PentaFunction<RequestBodyType, Consumer<QueryParametersType>, Consumer<Map<String, String>>, Collection<RequestOption>, ResponseHandler, CompletableFuture<ModelType>> originalCall,
             @Nonnull final RequestBodyType requestBody) {
         return CallWithBodyAndGetNativeType(originalCall, requestBody, null, null, null);
     }

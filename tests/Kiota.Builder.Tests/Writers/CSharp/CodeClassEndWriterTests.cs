@@ -17,7 +17,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
-            parentClass = new CodeClass(root) {
+            parentClass = new CodeClass {
                 Name = "parentClass"
             };
             root.AddClass(parentClass);
@@ -28,7 +28,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         }
         [Fact]
         public void ClosesNestedClasses() {
-            var child = parentClass.AddInnerClass(new CodeClass(parentClass) {
+            var child = parentClass.AddInnerClass(new CodeClass {
                 Name = "child"
             }).First();
             codeElementWriter.WriteCodeElement(child.EndBlock as CodeClass.End, writer);

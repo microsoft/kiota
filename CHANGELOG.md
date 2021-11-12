@@ -11,11 +11,88 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Migrated generator to dotnet 6 #815
+- Fixes a bug where json deserialization would fail in go
+- Fixes a bug where query parameters would not be added to the request in go
+
+## [0.0.14] - 2021-11-08
+
+### Added
+
+- Added support for changing the base url #795
+
+### Changed
+
+- Fixes a bug where arrays of enums could be wrongly mapped.
+- Fixes a bug where go deserialization would fail on collections of scalars.
+- Fixes a bug where TypeScript query parameters would be added to headers instead #812
+- Update dotnet abstractions and core libraries to target netstandard2.1 from net5.0
+
+## [0.0.13] - 2021-10-27
+
+### Changed
+
+- Technical release to bump version number of go packages after replace removal
+
+## [0.0.12] - 2021-10-27
+
+### Added
+
+- Adds Go authentication, http and serialization libraries and finalizes the generation #716
+
+## [0.0.11] - 2021-10-27
+
+### Changed
+
+- Switched to URL templates instead of string contract for URL building #683
+- Fixed a bug where CSharp method names would not follow naming conventions #730
+
+## [0.0.10] - 2021-10-06
+
+### Changed
+
+- Renames middlewareoption into requestoption to stay agnostic from implementation #635
+- Aligned http packages on naming convention #444
+
+## [0.0.9] - 2021-10-01
+
+### Added
+
+- Adds support for path parameters #573
+- Adds missing type mappings in TypeScript #573
+- Adds a missing http core method for collections of primitives #573
+- Aliases imports with the same name in typescript #573
+
+### Changed
+
 - Fixes a bug where empty title would make generation fail #558
 - Fixes a bug where float, long and binary types would not be parsed by the generator #558
 - Fixes a bug where generation would fail on compact namespace names #558
 - Renames request info into request information to avoid conflicts with platform #559
 - Fixes a bug where the server url would not be taken in consideration #626
+- Fixes a bug where missing namespaces would make the generation fail #573
+- Fixes a bug where class names could contain special characters #573
+- Fixes a bug where namespace names could contain path parameters #573
+- Fixes a bug where namespace names could contain special characters #573
+- Multiple performance improvements #573
+- Fixes a bug where path generation would deduplicate segments leading to the wrong path #573
+- Fixes a bug where the CodeDOM would be corrupted (bad tree) leading to incoherent generation results #573
+- Fixes a bug where the generator would duplicate some models #573
+- Moves the models to a dedicated namespace (models) #573
+- Fixes a bug where enum serialization would be calling the wrong method in TypeScript #573
+- Fixes a bug where request body would use the response schema #573
+- Fixes an issue where type could conflict with namespace names and prevent CSharp compilation #573
+- Fixes an issue where primitive types would map to the wrong serialization method in dotnet #573
+- Fixes an issue where union models would not be able to deserialize because of missing members #573
+- Fixes an issue where request builder methods would refer to unexisting properties in dotnet #573
+- Fixes an issue where duplicated symbols for different imports would make java compilation fail #573
+- Adds missing type mappings in java #573
+- Fixes an issue where Go generation could use reserved keywords #573
+- Fixes a bug where Go generation could end up with circular dependencies in models #573
+- Fixes a bug where Go generation would map the wrong http core method for primitive types #573
+- Fixes a bug where Go generation would have unused imports making build fail #573
+- Fixes a bug where missing type definitions would make Ruby generation fail #573
+- Fixes a bug where Go generation would miss the module symbol for inherited constructors #573
 
 ## [0.0.8] - 2021-08-25
 

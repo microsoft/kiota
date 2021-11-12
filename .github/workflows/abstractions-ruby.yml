@@ -20,7 +20,7 @@ jobs:
         ruby-version: [2.5, 2.6, 2.7, '3.0', head, jruby, jruby-head, truffleruby, truffleruby-head]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.4.0
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby-version }}
@@ -48,7 +48,7 @@ jobs:
       relativePath: ./abstractions/ruby/microsoft_kiota_abstractions
     needs: [build]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.4.0
       - uses: ruby/setup-ruby@v1
         with:
            # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
@@ -80,7 +80,7 @@ jobs:
   #     relativePath: ./abstractions/ruby
   #   needs: [build]
   #   steps:
-  #     - uses: actions/checkout@v2
+  #     - uses: actions/checkout@v2.4.0
   #     - uses: ruby/setup-ruby@v1
   #       with:
   #          # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'

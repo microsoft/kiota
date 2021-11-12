@@ -3,6 +3,10 @@ using Xunit;
 namespace Kiota.Builder.Extensions.Tests {
     public class StringExtensionsTests {
         [Fact]
+        public void Defensive() {
+            Assert.Equal(StringExtensions.GetNamespaceImportSymbol((string)null), string.Empty);
+        }
+        [Fact]
         public void ToLowerCase() {
             string nString = null;
             Assert.Null(nString.ToFirstCharacterLowerCase());

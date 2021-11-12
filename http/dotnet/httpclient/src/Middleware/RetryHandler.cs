@@ -10,10 +10,10 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Kiota.Http.HttpClient.Extensions;
-using Microsoft.Kiota.Http.HttpClient.Middleware.Options;
+using Microsoft.Kiota.Http.HttpClientLibrary.Extensions;
+using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
 
-namespace Microsoft.Kiota.Http.HttpClient.Middleware
+namespace Microsoft.Kiota.Http.HttpClientLibrary.Middleware
 {
     /// <summary>
     /// A <see cref="DelegatingHandler"/> implementation using standard .NET libraries.
@@ -41,7 +41,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
         }
 
         /// <summary>
-        /// Send a HTTP request 
+        /// Send a HTTP request
         /// </summary>
         /// <param name="httpRequest">The HTTP request<see cref="HttpRequestMessage"/>needs to be sent.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> for the request.</param>
@@ -51,7 +51,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
             if(httpRequest == null)
                 throw new ArgumentNullException(nameof(httpRequest));
 
-            RetryOption = httpRequest.GetMiddlewareOption<RetryHandlerOption>() ?? RetryOption;
+            RetryOption = httpRequest.GetRequestOption<RetryHandlerOption>() ?? RetryOption;
 
             var response = await base.SendAsync(httpRequest, cancellationToken);
 
@@ -65,7 +65,7 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
         }
 
         /// <summary>
-        /// Retry sending the HTTP request 
+        /// Retry sending the HTTP request
         /// </summary>
         /// <param name="response">The <see cref="HttpResponseMessage"/> which is returned and includes the HTTP request needs to be retried.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> for the retry.</param>
@@ -79,9 +79,12 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
             {
                 // Drain response content to free connections. Need to perform this
                 // before retry attempt and before the TooManyRetries ServiceException.
-                await response.Content.ReadAsByteArrayAsync(cancellationToken);
+                if(response.Content != null)
+                {
+                    await response.Content.ReadAsByteArrayAsync();
+                }
 
-                // Call Delay method to get delay time from response's Retry-After header or by exponential backoff 
+                // Call Delay method to get delay time from response's Retry-After header or by exponential backoff
                 Task delay = Delay(response, retryCount, RetryOption.Delay, out double delayInSeconds, cancellationToken);
 
                 // If client specified a retries time limit, let's honor it
@@ -90,14 +93,14 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
                     // Get the cumulative delay time
                     cumulativeDelay += TimeSpan.FromSeconds(delayInSeconds);
 
-                    // Check whether delay will exceed the client-specified retries time limit value 
+                    // Check whether delay will exceed the client-specified retries time limit value
                     if(cumulativeDelay > RetryOption.RetriesTimeLimit)
                     {
                         return response;
                     }
                 }
 
-                // general clone request with internal CloneAsync (see CloneAsync for details) extension method 
+                // general clone request with internal CloneAsync (see CloneAsync for details) extension method
                 var request = await response.RequestMessage.CloneAsync();
 
                 // Increase retryCount and then update Retry-Attempt in request header
@@ -118,7 +121,10 @@ namespace Microsoft.Kiota.Http.HttpClient.Middleware
 
             // Drain response content to free connections. Need to perform this
             // before retry attempt and before the TooManyRetries ServiceException.
-            await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            if(response.Content != null)
+            {
+                await response.Content.ReadAsByteArrayAsync();
+            }
 
             throw new InvalidOperationException(
                 "Too many retries performed",

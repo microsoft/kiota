@@ -10,6 +10,7 @@ import com.google.gson.JsonPrimitive;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.time.OffsetDateTime;
+import java.util.Base64;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
@@ -57,6 +58,9 @@ public class JsonParseNode implements ParseNode {
     }
     public Float getFloatValue() {
         return currentNode.getAsFloat();
+    }
+    public Double getDoubleValue() {
+        return currentNode.getAsDouble();
     }
     public Long getLongValue() {
         return currentNode.getAsLong();
@@ -138,6 +142,37 @@ public class JsonParseNode implements ParseNode {
                                 this.setOnAfterAssignFieldValues(onAfter);
                             }};
                             return itemNode.getObjectValue(targetClass);
+                        }
+                    };
+                }
+
+            });
+        } else throw new RuntimeException("invalid state expected to have an array node");
+    }
+    public <T extends Enum<T>> List<T> getCollectionOfEnumValues(@Nonnull final Class<T> targetEnum) {
+        Objects.requireNonNull(targetEnum, "parameter targetEnum cannot be null");
+        if(currentNode.isJsonArray()) {
+            final JsonArray array = currentNode.getAsJsonArray();
+            final Iterator<JsonElement> sourceIterator = array.iterator();
+            final var _this = this;
+            return Lists.newArrayList(new Iterable<T>() {
+                @Override
+                public Iterator<T> iterator() {
+                    return new Iterator<T>(){
+                        @Override
+                        public boolean hasNext() {
+                            return sourceIterator.hasNext();
+                        }
+                        @Override
+                        public T next() {
+                            final JsonElement item = sourceIterator.next();
+                            final var onBefore = _this.getOnBeforeAssignFieldValues();
+                            final var onAfter = _this.getOnAfterAssignFieldValues();
+                            final JsonParseNode itemNode = new JsonParseNode(item) {{
+                                this.setOnBeforeAssignFieldValues(onBefore);
+                                this.setOnAfterAssignFieldValues(onAfter);
+                            }};
+                            return itemNode.getEnumValue(targetEnum);
                         }
                     };
                 }
@@ -246,5 +281,12 @@ public class JsonParseNode implements ParseNode {
     private Consumer<Parsable> onAfterAssignFieldValues;
     public void setOnAfterAssignFieldValues(final Consumer<Parsable> value) {
         this.onAfterAssignFieldValues = value;
+    }
+    public byte[] getByteArrayValue() {
+        final var base64 = this.getStringValue();
+        if(base64 == null || base64.isEmpty()) {
+            return null;
+        }
+        return Base64.getDecoder().decode(base64);
     }
 }

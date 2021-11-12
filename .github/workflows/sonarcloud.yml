@@ -35,7 +35,15 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: 11
-      - uses: actions/checkout@v2.3.4
+      - name: Setup .NET 5 # At the moment the scanner requires dotnet 5 https://www.nuget.org/packages/dotnet-sonarscanner
+        uses: actions/setup-dotnet@v1.8.2
+        with:
+          dotnet-version: 5.0.x
+      - name: Setup .NET 6
+        uses: actions/setup-dotnet@v1.8.2
+        with:
+          dotnet-version: 6.0.x
+      - uses: actions/checkout@v2.4.0
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: Cache SonarCloud packages

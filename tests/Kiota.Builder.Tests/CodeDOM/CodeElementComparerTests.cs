@@ -8,21 +8,25 @@ namespace Kiota.Builder.Tests {
         public void OrdersWithMethodWithinClass() {
             var root = CodeNamespace.InitRootNamespace();
             var comparer = new CodeElementOrderComparer();
-            var codeClass = new CodeClass(root) {
+            var codeClass = new CodeClass {
                 Name = "Class"
             };
-            var method = new CodeMethod(codeClass);
-            method.Parameters.Add(new CodeParameter(method) {
+            root.AddClass(codeClass);
+            var method = new CodeMethod {
+                Name = "Method"
+            };
+            codeClass.AddMethod(method);
+            method.AddParameter(new CodeParameter {
                 Name = "param"
             });
             var dataSet = new List<Tuple<CodeElement, CodeElement, int>> {
                 new(null, null, 0),
-                new(null, new CodeClass(root), -1),
-                new(new CodeClass(root), null, 1),
-                new(new CodeUsing(root), new CodeProperty(root), -100),
-                new(new CodeIndexer(root), new CodeProperty(root), 100),
-                new(method, new CodeProperty(root), 101),
-                new(method, codeClass, -99)
+                new(null, new CodeClass(), -1),
+                new(new CodeClass(), null, 1),
+                new(new CodeUsing(), new CodeProperty(), -1000),
+                new(new CodeIndexer(), new CodeProperty(), 1000),
+                new(method, new CodeProperty(), 1101),
+                new(method, codeClass, -899)
                 
             };
             foreach(var dataEntry in dataSet) {
@@ -33,21 +37,25 @@ namespace Kiota.Builder.Tests {
         public void OrdersWithMethodsOutsideOfClass() {
             var root = CodeNamespace.InitRootNamespace();
             var comparer = new CodeElementOrderComparerWithExternalMethods();
-            var codeClass = new CodeClass(root) {
+            var codeClass = new CodeClass {
                 Name = "Class"
             };
-            var method = new CodeMethod(codeClass);
-            method.Parameters.Add(new CodeParameter(method) {
+            root.AddClass(codeClass);
+            var method = new CodeMethod {
+                Name = "Method"
+            };
+            method.AddParameter(new CodeParameter {
                 Name = "param"
             });
+            codeClass.AddMethod(method);
             var dataSet = new List<Tuple<CodeElement, CodeElement, int>> {
                 new(null, null, 0),
-                new(null, new CodeClass(root), -1),
-                new(new CodeClass(root), null, 1),
-                new(new CodeUsing(root), new CodeProperty(root), -100),
-                new(new CodeIndexer(root), new CodeProperty(root), 100),
-                new(method, new CodeProperty(root), 101),
-                new(method, codeClass, 101)
+                new(null, new CodeClass(), -1),
+                new(new CodeClass(), null, 1),
+                new(new CodeUsing(), new CodeProperty(), -1000),
+                new(new CodeIndexer(), new CodeProperty(), 1000),
+                new(method, new CodeProperty(), 1101),
+                new(method, codeClass, 1101)
                 
             };
             foreach(var dataEntry in dataSet) {

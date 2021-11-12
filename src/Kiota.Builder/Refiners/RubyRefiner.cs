@@ -13,16 +13,15 @@ namespace Kiota.Builder.Refiners {
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddParsableInheritanceForModelClasses(generatedCode);
             AddInheritedAndMethodTypesImports(generatedCode);
-            AddDefaultImports(generatedCode, defaultNamespaces, defaultNamespacesForModels, defaultNamespacesForRequestBuilders);
+            AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            CorrectCoreType(generatedCode, null, CorrectPropertyType);
             AddGetterAndSetterMethods(generatedCode, new() {
                                                     CodePropertyKind.Custom,
                                                     CodePropertyKind.AdditionalData,
                                                     CodePropertyKind.BackingStore,
                                                 }, _configuration.UsesBackingStore, true);
             ReplaceReservedNames(generatedCode, new RubyReservedNamesProvider(), x => $"{x}_escaped");
-            ReplaceRelativeImportsByImportPath(generatedCode, '.');
             AddNamespaceModuleImports(generatedCode , _configuration.ClientNamespaceName);
-            FixReferencesToEntityType(generatedCode);
             FixInheritedEntityType(generatedCode);
             ReplaceDefaultSerializationModules(generatedCode, "microsoft_kiota_serialization.JsonSerializationWriterFactory");
             ReplaceDefaultDeserializationModules(generatedCode, "microsoft_kiota_serialization.JsonParseNodeFactory");
@@ -31,25 +30,38 @@ namespace Kiota.Builder.Refiners {
                                                 "microsoft_kiota_abstractions.SerializationWriterFactoryRegistry" },
                                         new [] { "microsoft_kiota_abstractions.ParseNodeFactoryRegistry" });
         }
-        private static readonly Tuple<string, string>[] defaultNamespacesForRequestBuilders = new Tuple<string, string>[] { 
-            new ("HttpCore", "microsoft_kiota_abstractions"),
-            new ("HttpMethod", "microsoft_kiota_abstractions"),
-            new ("RequestInformation", "microsoft_kiota_abstractions"),
-            new ("ResponseHandler", "microsoft_kiota_abstractions"),
-            new ("QueryParametersBase", "microsoft_kiota_abstractions"),
-            new ("SerializationWriterFactory", "microsoft_kiota_abstractions"),
-        };
-        private static readonly Tuple<string, string>[] defaultNamespaces = new Tuple<string, string>[] { 
-            new ("SerializationWriter", "microsoft_kiota_abstractions"),
-        };
-        private static readonly Tuple<string, string>[] defaultNamespacesForModels = new Tuple<string, string>[] { 
-            new ("ParseNode", "microsoft_kiota_abstractions"),
-            new ("Parsable", "microsoft_kiota_abstractions"),
+        private static void CorrectPropertyType(CodeProperty currentProperty) {
+            if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
+                currentProperty.Type.IsNullable = true;
+                if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
+                    currentProperty.DefaultValue = "Hash.new";
+            }
+        }
+        private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
+                "microsoft_kiota_abstractions", "RequestAdapter"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
+                "microsoft_kiota_abstractions", "HttpMethod", "RequestInformation"), //TODO add request options once ruby supports it
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+                "microsoft_kiota_abstractions", "ResponseHandler"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
+                "microsoft_kiota_abstractions", "SerializationWriter"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+                "microsoft_kiota_abstractions", "ParseNode"),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
+                "microsoft_kiota_abstractions", "Parsable"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+                "microsoft_kiota_abstractions", "Parsable"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
+                        method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
+                "microsoft_kiota_abstractions", "BackingStoreFactory", "BackingStoreFactorySingleton"),
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
+                "microsoft_kiota_abstractions", "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
         };
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
                 && currentClass.StartBlock is CodeClass.Declaration declaration) {
-                declaration.Implements.Add(new CodeType(currentClass) {
+                declaration.AddImplements(new CodeType {
                     IsExternal = true,
                     Name = $"MicrosoftKiotaAbstractions::Parsable",
                 });
@@ -59,7 +71,7 @@ namespace Kiota.Builder.Refiners {
         protected static void AddInheritedAndMethodTypesImports(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
                 && currentClass.StartBlock is CodeClass.Declaration declaration && declaration.Inherits != null) {
-                currentClass.AddUsing(new CodeUsing(currentElement) { Name = declaration.Inherits.Name, Declaration = declaration.Inherits});
+                currentClass.AddUsing(new CodeUsing { Name = declaration.Inherits.Name, Declaration = declaration.Inherits});
             }
             CrawlTree(currentElement, (x) => AddInheritedAndMethodTypesImports(x));
         }
@@ -88,24 +100,24 @@ namespace Kiota.Builder.Refiners {
             }
             return null;
         }
-        protected void AddNamespaceModuleImports(CodeElement current, String clientNamespaceName) {
+        protected void AddNamespaceModuleImports(CodeElement current, string clientNamespaceName) {
             const string dot = ".";
             if(current is CodeClass currentClass) {
                 var Module = currentClass.GetImmediateParentOfType<CodeNamespace>();
-                if(!String.IsNullOrEmpty(Module.Name)){
+                if(!string.IsNullOrEmpty(Module.Name)){
                     var modulesProperties = Module.Name.Replace(clientNamespaceName+dot, string.Empty).Split(dot);
                     for (int i = modulesProperties.Length - 1; i >= 0; i--){
-                        var prefix = String.Concat(Enumerable.Repeat("../", modulesProperties.Length -i-1));
-                        var nUsing = new CodeUsing(Module) { 
-                            Name = modulesProperties[i].ToSnakeCase(), 
-                            Declaration = new CodeType(Module) {
-                                IsExternal = false,
+                        var prefix = string.Concat(Enumerable.Repeat("../", modulesProperties.Length -i-1));
+                        var usingName = modulesProperties[i].ToSnakeCase();
+                        currentClass.AddUsing(new CodeUsing { 
+                            Name = usingName,
+                            Declaration = new CodeType {
+                                IsExternal = true,
+                                Name = $"{(string.IsNullOrEmpty(prefix) ? "./" : prefix)}{usingName}",
                             }
-                        };
-                        nUsing.Declaration.Name = $"{(string.IsNullOrEmpty(prefix) ? "./" : prefix)}{nUsing.Name}";
-                        currentClass.AddUsing(nUsing);
+                        });
                     }
-                } 
+                }
             }
             CrawlTree(current, c => AddNamespaceModuleImports(c, clientNamespaceName));
         }

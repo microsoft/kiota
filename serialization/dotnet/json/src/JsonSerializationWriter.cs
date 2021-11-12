@@ -106,6 +106,17 @@ namespace Microsoft.Kiota.Serialization.Json
         }
 
         /// <summary>
+        /// Write the long value
+        /// </summary>
+        /// <param name="key">The key of the json node</param>
+        /// <param name="value">The long value</param>
+        public void WriteLongValue(string key, long? value)
+        {
+            if(!string.IsNullOrEmpty(key) && value.HasValue) writer.WritePropertyName(key);
+            if(value.HasValue) writer.WriteNumberValue(value.Value);
+        }
+
+        /// <summary>
         /// Write the double value
         /// </summary>
         /// <param name="key">The key of the json node</param>
@@ -159,9 +170,10 @@ namespace Microsoft.Kiota.Serialization.Json
             if(value.HasValue)
             {
                 if(typeof(T).GetCustomAttributes<FlagsAttribute>().Any())
-                    writer.WriteStringValue(Enum.GetValues<T>()
+                    writer.WriteStringValue(Enum.GetValues(typeof(T))
+                                            .Cast<T>()
                                             .Where(x => value.Value.HasFlag(x))
-                                            .Select(x => Enum.GetName<T>(x))
+                                            .Select(x => Enum.GetName(typeof(T),x))
                                             .Select(x => x.ToFirstCharacterLowerCase())
                                             .Aggregate((x, y) => $"{x},{y}"));
                 else writer.WriteStringValue(value.Value.ToString().ToFirstCharacterLowerCase());
@@ -200,6 +212,32 @@ namespace Microsoft.Kiota.Serialization.Json
                     WriteObjectValue<T>(null, item);
                 writer.WriteEndArray();
             }
+        }
+        /// <summary>
+        /// Writes the specified collection of enum values to the stream with an optional given key.
+        /// </summary>
+        /// <param name="key">The key to be used for the written value. May be null.</param>
+        /// <param name="values">The enum values to be written.</param>
+        public void WriteCollectionOfEnumValues<T>(string key, IEnumerable<T?> values) where T : struct, Enum
+        {
+            if(values != null)
+            { //empty array is meaningful
+                if(!string.IsNullOrEmpty(key)) writer.WritePropertyName(key);
+                writer.WriteStartArray();
+                foreach(var item in values)
+                    WriteEnumValue<T>(null, item);
+                writer.WriteEndArray();
+            }
+        }
+        /// <summary>
+        /// Writes the specified byte array as a base64 string to the stream with an optional given key.
+        /// </summary>
+        /// <param name="key">The key to be used for the written value. May be null.</param>
+        /// <param name="value">The byte array to be written.</param>
+        public void WriteByteArrayValue(string key, byte[] value)
+        {
+            if(value != null)//empty array is meaningful
+                WriteStringValue(key, value.Any() ? Convert.ToBase64String(value) : string.Empty);
         }
 
         /// <summary>
@@ -259,6 +297,9 @@ namespace Microsoft.Kiota.Serialization.Json
                     break;
                 case float f:
                     WriteFloatValue(key, f);
+                    break;
+                case long l:
+                    WriteLongValue(key, l);
                     break;
                 case double d:
                     WriteDoubleValue(key, d);

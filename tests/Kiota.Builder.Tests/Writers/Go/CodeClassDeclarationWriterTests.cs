@@ -19,7 +19,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             root = CodeNamespace.InitRootNamespace();
-            parentClass = new (root) {
+            parentClass = new () {
                 Name = "parentClass"
             };
             root.AddClass(parentClass);
@@ -39,7 +39,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
         [Fact]
         public void WritesInheritance() {
             var declaration = parentClass.StartBlock as CodeClass.Declaration;
-            declaration.Inherits = new (parentClass){
+            declaration.Inherits = new (){
                 Name = "someParent"
             };
             codeElementWriter.WriteCodeElement(declaration, writer);
@@ -49,16 +49,16 @@ namespace Kiota.Builder.Writers.Go.Tests {
         [Fact]
         public void WritesImports() {
             var declaration = parentClass.StartBlock as CodeClass.Declaration;
-            declaration.Usings.Add(new (parentClass) {
+            declaration.AddUsings(new () {
                 Name = "Objects",
-                Declaration = new(parentClass) {
+                Declaration = new() {
                     Name = "Go.util",
                     IsExternal = true,
                 }
-            });
-            declaration.Usings.Add(new (parentClass) {
+            },
+            new () {
                 Name = "project.graph",
-                Declaration = new(parentClass) {
+                Declaration = new() {
                     Name = "Message",
                 }
             });

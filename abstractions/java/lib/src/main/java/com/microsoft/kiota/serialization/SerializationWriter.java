@@ -40,6 +40,12 @@ public interface SerializationWriter extends Closeable {
      */
     void writeFloatValue(@Nullable final String key, @Nonnull final Float value);
     /**
+     * Writes the specified Double value to the stream with an optional given key.
+     * @param key the key to write the value with.
+     * @param value the value to write to the stream.
+     */
+    void writeDoubleValue(@Nullable final String key, @Nonnull final Double value);
+    /**
      * Writes the specified Long value to the stream with an optional given key.
      * @param key the key to write the value with.
      * @param value the value to write to the stream.
@@ -69,6 +75,12 @@ public interface SerializationWriter extends Closeable {
      * @param value the value to write to the stream.
      */
     <T extends Parsable> void writeCollectionOfObjectValues(@Nullable final String key, @Nonnull final Iterable<T> values);
+    /**
+     * Writes the specified collection of enum values to the stream with an optional given key.
+     * @param key the key to write the value with.
+     * @param values the values to write to the stream.
+     */
+    <T extends Enum<T>> void writeCollectionOfEnumValues(@Nullable final String key, @Nullable final Iterable<T> values);
     /**
      * Writes the specified model object value to the stream with an optional given key.
      * @param key the key to write the value with.
@@ -136,4 +148,10 @@ public interface SerializationWriter extends Closeable {
      * @param value the callback called right after the serialization process starts.
      */
     void setOnStartObjectSerialization(@Nullable final BiConsumer<Parsable, SerializationWriter> value);
+    /**
+     * Writes the byte array value to the current stream with an optional given key.
+     * @param key the key to write the value with.
+     * @param value the value to write to the stream.
+     */
+    void writeByteArrayValue(@Nullable final String key, @Nonnull final byte[] value);
 }

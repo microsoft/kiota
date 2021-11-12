@@ -15,30 +15,18 @@ namespace Kiota.Builder.Writers {
         {
             get;
         }
-        public abstract string PathSegmentPropertyName
-        {
-            get;
-        }
-        public abstract string CurrentPathPropertyName
-        {
-            get;
-        }
-        public abstract string HttpCorePropertyName
-        {
-            get;
-        }
-        public abstract string RawUrlPropertyName
-        {
-            get;
-        }
         public abstract string ParseNodeInterfaceName
+        {
+            get;
+        }
+        public abstract string TempDictionaryVarName
         {
             get;
         }
 
         public abstract string GetAccessModifier(AccessModifier access);
-        public abstract string GetParameterSignature(CodeParameter parameter);
-        public abstract string GetTypeString(CodeTypeBase code);
+        public abstract string GetParameterSignature(CodeParameter parameter, CodeElement targetElement);
+        public abstract string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true);
 
         public string TranslateType(CodeTypeBase type) {
             if(type is CodeType currentType)

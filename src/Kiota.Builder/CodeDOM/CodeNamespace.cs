@@ -9,9 +9,9 @@ namespace Kiota.Builder
     /// </summary>
     public class CodeNamespace : CodeBlock
     {
-        private CodeNamespace(CodeElement parent):base(parent) {}
+        private CodeNamespace():base() {}
         public static CodeNamespace InitRootNamespace() {
-            return new CodeNamespace(null);
+            return new CodeNamespace();
         }
         private string name;
         public override string Name
@@ -33,10 +33,12 @@ namespace Kiota.Builder
             return AddRange(codeClasses);
         }
         private static readonly char namespaceNameSeparator = '.';
-        private CodeNamespace GetRootNamespace() {
-            if(Parent == null) return this;
-            else return (this.Parent as CodeNamespace).GetRootNamespace();
+        public CodeNamespace GetRootNamespace() {
+            if (Parent is CodeNamespace parentNS) return parentNS.GetRootNamespace();
+            else return this;
         }
+        public IEnumerable<CodeNamespace> Namespaces => InnerChildElements.Values.OfType<CodeNamespace>();
+        public IEnumerable<CodeClass> Classes => InnerChildElements.Values.OfType<CodeClass>();
         public CodeNamespace FindNamespaceByName(string nsName) {
             if(string.IsNullOrEmpty(nsName)) throw new ArgumentNullException(nameof(nsName));
             if(nsName.Equals(Name)) return this;
@@ -67,20 +69,23 @@ namespace Kiota.Builder
             foreach(var childSegment in namespaceNameSegements.Skip(lastPresentSegmentIndex))
                 lastPresentSegmentNamespace = lastPresentSegmentNamespace
                                             .AddRange(
-                                                new CodeNamespace(lastPresentSegmentNamespace) {
+                                                new CodeNamespace {
                                                     Name = $"{lastPresentSegmentNamespace?.Name}{(string.IsNullOrEmpty(lastPresentSegmentNamespace?.Name) ? string.Empty : ".")}{childSegment}",
+                                                    Parent = lastPresentSegmentNamespace,
+                                                    IsItemNamespace = childSegment.Equals(ItemNamespaceName, StringComparison.OrdinalIgnoreCase)
                                             }).First();
             return lastPresentSegmentNamespace;
         }
+        private const string ItemNamespaceName = "item";
         public bool IsItemNamespace { get; private set; }
         public CodeNamespace EnsureItemNamespace() { 
             if (IsItemNamespace) return this;
-            else if(string.IsNullOrEmpty(this.Name))
+            else if(string.IsNullOrEmpty(Name))
                 throw new InvalidOperationException("adding an item namespace at the root is not supported");
             else {
-                var childNamespace = this.InnerChildElements.Values.OfType<CodeNamespace>().FirstOrDefault(x => x.IsItemNamespace);
+                var childNamespace = InnerChildElements.Values.OfType<CodeNamespace>().FirstOrDefault(x => x.IsItemNamespace);
                 if(childNamespace == null) {
-                    childNamespace = AddNamespace($"{this.Name}.item");
+                    childNamespace = AddNamespace($"{Name}.{ItemNamespaceName}");
                     childNamespace.IsItemNamespace = true;
                 }
                 return childNamespace;

@@ -5,14 +5,11 @@ namespace Kiota.Builder.Writers {
         string StreamTypeName {get; }
         string VoidTypeName {get; }
         string DocCommentPrefix {get; }
-        string PathSegmentPropertyName {get; }
-        string CurrentPathPropertyName {get; }
-        string HttpCorePropertyName {get; }
-        string RawUrlPropertyName {get; }
         string ParseNodeInterfaceName {get; }
-        string GetTypeString(CodeTypeBase code);
+        string TempDictionaryVarName {get;}
+        string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true);
         string TranslateType(CodeType type);
-        string GetParameterSignature(CodeParameter parameter);
+        string GetParameterSignature(CodeParameter parameter, CodeElement targetElement);
         void WriteShortDescription(string description, LanguageWriter writer);
     }
 }

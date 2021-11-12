@@ -6,7 +6,6 @@ namespace Kiota.Builder.Tests.Writers.Go {
         [Fact]
         public void Defensive() {
             Assert.Equal(GoNamespaceExtensions.GetNamespaceImportSymbol((CodeNamespace)null), string.Empty);
-            Assert.Equal(GoNamespaceExtensions.GetNamespaceImportSymbol((string)null), string.Empty);
             Assert.Equal(GoNamespaceExtensions.GetLastNamespaceSegment((string)null), string.Empty);
             Assert.Equal(GoNamespaceExtensions.GetInternalNamespaceImport((CodeNamespace)null), string.Empty);
         }

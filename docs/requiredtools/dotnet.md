@@ -1,6 +1,6 @@
 # Required tools for Dotnet
 
-- [.NET SDK 5.0](https://dotnet.microsoft.com/download)
+- [.NET SDK 6.0](https://dotnet.microsoft.com/download)
 
 ## Target project requirements
 
@@ -23,11 +23,11 @@ dotnet new gitignore
 
 If you have not already, you will need to create a nuget.config to enable access to the packages in the GitHub package feed.  The article on installing the [Kiota command line](../generator/tool.md) tool shows how to do this.
 
-Once the pacakge feed is accessible the following packages can be added to the project.
+Once the package feed is accessible the following packages can be added to the project.
 
 ```Shell
 dotnet add package Microsoft.Kiota.Abstractions
-dotnet add package Microsoft.Kiota.Http.HttpClient
+dotnet add package Microsoft.Kiota.Http.HttpClientLibrary
 dotnet add package Microsoft.Kiota.Serialization.Json
 dotnet add package Microsoft.Kiota.Authentication.Azure
 dotnet add package Azure.Identity
@@ -99,7 +99,7 @@ using System.Threading.Tasks;
 using GraphClient;
 using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Authentication.Azure;
-using Microsoft.Kiota.Http.HttpClient;
+using Microsoft.Kiota.Http.HttpClientLibrary;
 using Azure.Identity;
 
 namespace GraphApp
@@ -110,7 +110,7 @@ namespace GraphApp
         {
             var credential = new InteractiveBrowserCredential("<insert clientId from $app.ClientId>");
             var authProvider = new AzureIdentityAuthenticationProvider(credential, new string[] {"User.Read"});
-            var core = new HttpCore(authProvider);
+            var core = new HttpClientRequestAdapter(authProvider);
             var apiClient = new ApiClient(core);
             var me = await apiClient.Me.GetAsync();
             Console.WriteLine(me.DisplayName);

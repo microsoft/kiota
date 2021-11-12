@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Kiota.Abstractions;
 using HttpMethod = System.Net.Http.HttpMethod;
 
-namespace Microsoft.Kiota.Http.HttpClient.Extensions
+namespace Microsoft.Kiota.Http.HttpClientLibrary.Extensions
 {
     /// <summary>
     /// Contains extension methods for <see cref="HttpRequestMessage"/>
@@ -17,18 +17,18 @@ namespace Microsoft.Kiota.Http.HttpClient.Extensions
     public static class HttpRequestMessageExtensions
     {
         /// <summary>
-        /// Gets a <see cref="IMiddlewareOption"/> from <see cref="HttpRequestMessage"/>
+        /// Gets a <see cref="IRequestOption"/> from <see cref="HttpRequestMessage"/>
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="httpRequestMessage">The <see cref="HttpRequestMessage"/> representation of the request.</param>
-        /// <returns>A middleware option</returns>
-        public static T GetMiddlewareOption<T>(this HttpRequestMessage httpRequestMessage) where T : IMiddlewareOption
+        /// <returns>A request option</returns>
+        public static T GetRequestOption<T>(this HttpRequestMessage httpRequestMessage) where T : IRequestOption
         {
-            if(httpRequestMessage.Options.TryGetValue(
-                new HttpRequestOptionsKey<IMiddlewareOption>(typeof(T).FullName),
-                out IMiddlewareOption middlewareOption))
+            if(httpRequestMessage.Properties.TryGetValue(
+                typeof(T).FullName,
+                out var requestOption))
             {
-                return (T)middlewareOption;
+                return (T)requestOption;
             }
             return default;
         }
@@ -50,15 +50,15 @@ namespace Microsoft.Kiota.Http.HttpClient.Extensions
                 newRequest.Headers.TryAddWithoutValidation(key, value);
 
             // Copy request properties.
-            foreach(var (key, value) in originalRequest.Options)
-                newRequest.Options.TryAdd(key, value);
+            foreach(var (key, value) in originalRequest.Properties)
+                newRequest.Properties.TryAdd(key, value);
 
             // Set Content if previous request had one.
             if(originalRequest.Content != null)
             {
                 // HttpClient doesn't rewind streams and we have to explicitly do so.
                 var contentStream = await originalRequest.Content.ReadAsStreamAsync();
-                
+
                 if(contentStream.CanSeek)
                     contentStream.Seek(0, SeekOrigin.Begin);
 

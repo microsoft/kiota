@@ -18,7 +18,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             tw = new StringWriter();
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
-            currentEnum = root.AddEnum(new CodeEnum(root) {
+            currentEnum = root.AddEnum(new CodeEnum {
                 Name = EnumName,
             }).First();
         }
@@ -41,7 +41,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             Assert.Contains($"[i]", result);
             Assert.Contains($"func Parse", result);
             Assert.Contains($"(v string) (interface{{}}, error)", result);
-            Assert.Contains($"switch v", result);
+            Assert.Contains($"switch strings.ToUpper(v)", result);
             Assert.Contains($"return 0, errors.New(\"Unknown ", result);
             AssertExtensions.CurlyBracesAreClosed(result);
             Assert.Contains(optionName.ToUpperInvariant(), result);
@@ -54,7 +54,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
         }
         [Fact]
         public void WritesUsing() {
-            currentEnum.Usings.Add(new CodeUsing(currentEnum) {
+            currentEnum.AddUsings(new CodeUsing {
                 Name = "using1",
             });
             currentEnum.Options.Add("o");

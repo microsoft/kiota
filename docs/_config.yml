@@ -1,1 +1,6 @@
-theme: jekyll-theme-cayman
+remote_theme: pmarsceill/just-the-docs
+aux_links:
+  "Kiota on GitHub":
+    - "//github.com/microsoft/kiota"
+  '<button id="theme-switch" class="btn btn-outline">Dark mode</button>':
+    - '#"onclick="switchTheme()"'

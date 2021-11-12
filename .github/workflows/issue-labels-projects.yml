@@ -15,42 +15,42 @@ jobs:
     name: Assign to One Project
     steps:
     - name: Assign Java issues to Java project
-      uses: srggrs/assign-one-project-github-action@1.2.1
+      uses: srggrs/assign-one-project-github-action@1.3.1
       if: contains(github.event.issue.labels.*.name, 'Java')
       with:
         project: 'https://github.com/microsoft/kiota/projects/7'
     - name: Assign Go issues to Go project
-      uses: srggrs/assign-one-project-github-action@1.2.1
+      uses: srggrs/assign-one-project-github-action@1.3.1
       if: contains(github.event.issue.labels.*.name, 'Go')
       with:
         project: 'https://github.com/microsoft/kiota/projects/8'
     - name: Assign Ruby issues to Ruby project
-      uses: srggrs/assign-one-project-github-action@1.2.1
+      uses: srggrs/assign-one-project-github-action@1.3.1
       if: contains(github.event.issue.labels.*.name, 'Ruby')
       with:
         project: 'https://github.com/microsoft/kiota/projects/6'
     - name: Assign PHP issues to PHP project
-      uses: srggrs/assign-one-project-github-action@1.2.1
+      uses: srggrs/assign-one-project-github-action@1.3.1
       if: contains(github.event.issue.labels.*.name, 'PHP')
       with:
         project: 'https://github.com/microsoft/kiota/projects/4'
     - name: Assign Python issues to Python project
-      uses: srggrs/assign-one-project-github-action@1.2.1
+      uses: srggrs/assign-one-project-github-action@1.3.1
       if: contains(github.event.issue.labels.*.name, 'Python')
       with:
         project: 'https://github.com/microsoft/kiota/projects/3'
     - name: Assign TypeScript issues to TypeScript project
-      uses: srggrs/assign-one-project-github-action@1.2.1
+      uses: srggrs/assign-one-project-github-action@1.3.1
       if: contains(github.event.issue.labels.*.name, 'TypeScript')
       with:
         project: 'https://github.com/microsoft/kiota/projects/2'
     - name: Assign CSharp issues to CSharp project
-      uses: srggrs/assign-one-project-github-action@1.2.1
+      uses: srggrs/assign-one-project-github-action@1.3.1
       if: contains(github.event.issue.labels.*.name, 'CSharp')
       with:
         project: 'https://github.com/microsoft/kiota/projects/5'
     - name: Assign Generator issues to Generator project
-      uses: srggrs/assign-one-project-github-action@1.2.1
+      uses: srggrs/assign-one-project-github-action@1.3.1
       if: contains(github.event.issue.labels.*.name, 'generator')
       with:
         project: 'https://github.com/microsoft/kiota/projects/9'

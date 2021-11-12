@@ -20,13 +20,13 @@ namespace Microsoft.Kiota.Abstractions
         /// <param name="originalCall">The original request to make</param>
         /// <param name="q">The query parameters of the request</param>
         /// <param name="h">The request headers of the request</param>
-        /// <param name="o">Request options for HTTP middlewares</param>
+        /// <param name="o">Request options</param>
         /// <returns></returns>
         public static async Task<NativeResponseType> CallAndGetNativeType<ModelType, NativeResponseType, QueryParametersType>(
-                Func<Action<QueryParametersType>, Action<IDictionary<string, string>>, IEnumerable<IMiddlewareOption>, IResponseHandler, Task<ModelType>> originalCall,
+                Func<Action<QueryParametersType>, Action<IDictionary<string, string>>, IEnumerable<IRequestOption>, IResponseHandler, Task<ModelType>> originalCall,
                 Action<QueryParametersType> q = default,
                 Action<IDictionary<string, string>> h = default,
-                IEnumerable<IMiddlewareOption> o = default) where NativeResponseType : class
+                IEnumerable<IRequestOption> o = default) where NativeResponseType : class
         {
             var responseHandler = new NativeResponseHandler();
             await originalCall.Invoke(q, h, o, responseHandler);
@@ -41,13 +41,13 @@ namespace Microsoft.Kiota.Abstractions
         /// <param name="requestBody">The request body of the request</param>
         /// <param name="q">The query parameters of the request</param>
         /// <param name="h">The request headers of the request</param>
-        /// <param name="o">Request options for HTTP middlewares</param>
+        /// <param name="o">Request options</param>
         public static async Task<NativeResponseType> CallAndGetNativeType<ModelType, NativeResponseType, QueryParametersType, RequestBodyType>(
-                Func<RequestBodyType, Action<QueryParametersType>, Action<IDictionary<string, string>>, IEnumerable<IMiddlewareOption>, IResponseHandler, Task<ModelType>> originalCall,
+                Func<RequestBodyType, Action<QueryParametersType>, Action<IDictionary<string, string>>, IEnumerable<IRequestOption>, IResponseHandler, Task<ModelType>> originalCall,
                 RequestBodyType requestBody,
                 Action<QueryParametersType> q = default,
                 Action<IDictionary<string, string>> h = default,
-                IEnumerable<IMiddlewareOption> o = default) where NativeResponseType : class
+                IEnumerable<IRequestOption> o = default) where NativeResponseType : class
         {
             var responseHandler = new NativeResponseHandler();
             await originalCall.Invoke(requestBody, q, h, o, responseHandler);

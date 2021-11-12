@@ -2,89 +2,130 @@ package abstractions
 
 import (
 	"errors"
+
 	"reflect"
+	"strconv"
 	"strings"
 
-	"net/url"
 	u "net/url"
 
 	s "github.com/microsoft/kiota/abstractions/go/serialization"
+	t "github.com/yosida95/uritemplate/v3"
 )
 
-/* This type represents an abstract HTTP request. */
+// This type represents an abstract HTTP request.
 type RequestInformation struct {
-	Method          HttpMethod
-	URI             u.URL
-	Headers         map[string]string
+	// The HTTP method of the request.
+	Method HttpMethod
+	uri    *u.URL
+	// The Request Headers.
+	Headers map[string]string
+	// The Query Parameters of the request.
 	QueryParameters map[string]string
-	Content         []byte
-	options         map[string]MiddlewareOption
+	// The Request Body.
+	Content []byte
+	// The path parameters to use for the URL template when generating the URI.
+	PathParameters map[string]string
+	// The Url template for the current request.
+	UrlTemplate string
+	options     map[string]RequestOption
 }
+
+const raw_url_key = "request-raw-url"
 
 func NewRequestInformation() *RequestInformation {
 	return &RequestInformation{
-		URI:             u.URL{},
 		Headers:         make(map[string]string),
 		QueryParameters: make(map[string]string),
-		options:         make(map[string]MiddlewareOption),
+		options:         make(map[string]RequestOption),
+		PathParameters:  make(map[string]string),
 	}
 }
 
-func (request *RequestInformation) SetUri(currentPath string, pathSegment string, isRawUrl bool) error {
-	if isRawUrl {
-		if currentPath == "" {
-			return errors.New("current path cannot be empty")
-		}
-		questionMarkSplat := strings.Split(currentPath, "?")
-		schemeHostAndPath := questionMarkSplat[0]
-		uri, err := url.Parse(schemeHostAndPath)
+// Get the URI of the request.
+// Returns:
+// 		- The URI of the request.
+// 		- An error if the URI cannot be retrieved.
+func (request *RequestInformation) GetUri() (*u.URL, error) {
+	if request.uri != nil {
+		return request.uri, nil
+	} else if request.UrlTemplate == "" {
+		return nil, errors.New("uri cannot be empty")
+	} else if request.PathParameters == nil {
+		return nil, errors.New("uri template parameters cannot be nil")
+	} else if request.QueryParameters == nil {
+		return nil, errors.New("uri query parameters cannot be nil")
+	} else if request.PathParameters[raw_url_key] != "" {
+		uri, err := u.Parse(request.PathParameters[raw_url_key])
 		if err != nil {
-			return err
+			return nil, err
 		}
-		request.URI = *uri
-		if len(questionMarkSplat) > 1 {
-			queryParameters := questionMarkSplat[1]
-			for _, queryParameter := range strings.Split(queryParameters, "&") {
-				keyValue := strings.Split(queryParameter, "=")
-				if len(keyValue) == 2 {
-					request.QueryParameters[keyValue[0]] = keyValue[1]
-				} else if len(keyValue) == 1 {
-					request.QueryParameters[keyValue[0]] = ""
-				}
-			}
-		}
+		request.SetUri(*uri)
+		return request.uri, nil
 	} else {
-		uri, err := url.Parse(currentPath + pathSegment)
+		uriTemplate, err := t.New(request.UrlTemplate)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		request.URI = *uri
+		values := t.Values{}
+		for key, value := range request.PathParameters {
+			values.Set(key, t.String(value))
+		}
+		for key, value := range request.QueryParameters {
+			values.Set(key, t.String(value))
+		}
+		url, err := uriTemplate.Expand(values)
+		if err != nil {
+			return nil, err
+		}
+		uri, err := u.Parse(url)
+		return uri, err
 	}
-	return nil
 }
 
-func (request *RequestInformation) AddMiddlewareOptions(options ...MiddlewareOption) error {
+// Sets the URI for the request from a raw URL.
+// Parameters:
+// 		- url: The raw URL to set the URI to.
+func (request *RequestInformation) SetUri(url u.URL) {
+	request.uri = &url
+	for k := range request.PathParameters {
+		delete(request.PathParameters, k)
+	}
+	for k := range request.QueryParameters {
+		delete(request.QueryParameters, k)
+	}
+}
+
+// Adds an option to the request.
+// Parameters:
+// 		- option: The option to add to the request.
+// Returns:
+// 		- An error if the option cannot be added.
+func (request *RequestInformation) AddRequestOptions(options ...RequestOption) error {
 	if options == nil {
-		return errors.New("MiddlewareOptions cannot be nil")
+		return errors.New("RequestOptions cannot be nil")
 	}
 	if request.options == nil {
-		request.options = make(map[string]MiddlewareOption, len(options))
+		request.options = make(map[string]RequestOption, len(options))
 	}
 	for _, option := range options {
-		tp := reflect.TypeOf(option)
-		name := tp.Name()
-		request.options[name] = option
+		request.options[option.GetKey().Key] = option
 	}
 	return nil
 }
 
-func (request *RequestInformation) GetMiddlewareOptions() []MiddlewareOption {
+// Gets the options for this request. Options are unique by type. If an option of the same type is added twice, the last one wins.
+// Returns:
+// 		- The options for this request.
+func (request *RequestInformation) GetRequestOptions() []RequestOption {
 	if request.options == nil {
-		return []MiddlewareOption{}
+		return []RequestOption{}
 	}
-	result := make([]MiddlewareOption, len(request.options))
+	result := make([]RequestOption, len(request.options))
+	idx := 0
 	for _, option := range request.options {
-		result = append(result, option)
+		result[idx] = option
+		idx++
 	}
 	return result
 }
@@ -92,22 +133,31 @@ func (request *RequestInformation) GetMiddlewareOptions() []MiddlewareOption {
 const contentTypeHeader = "Content-Type"
 const binaryContentType = "application/octet-steam"
 
+// Sets the request body to a binary stream.
+// Parameters:
+// 		- content: The binary stream to set the request body to.
 func (request *RequestInformation) SetStreamContent(content []byte) {
 	request.Content = content
 	request.Headers[contentTypeHeader] = binaryContentType
 }
-func (request *RequestInformation) SetContentFromParsable(coreService HttpCore, contentType string, items ...s.Parsable) error {
+
+// Sets the request body from a model with the specified content type.
+// Parameters:
+// 		- requestAdapter: The request adapter to use to get the request body from the model.
+//      - contentType: The content type to set the request body to.
+//      - item: The model to set the request body from.
+// Returns:
+// 		- An error if the request body cannot be set.
+func (request *RequestInformation) SetContentFromParsable(requestAdapter RequestAdapter, contentType string, items ...s.Parsable) error {
 	if contentType == "" {
 		return errors.New("content type cannot be empty")
-	} else if coreService == nil {
-		return errors.New("coreService cannot be nil")
-	} else if items == nil || len(items) == 0 {
+	} else if requestAdapter == nil {
+		return errors.New("requestAdapter cannot be nil")
+	} else if len(items) == 0 {
 		return errors.New("items cannot be nil or empty")
 	}
-	factory, err := coreService.GetSerializationWriterFactory()
-	if err != nil {
-		return err
-	} else if factory == nil {
+	factory := requestAdapter.GetSerializationWriterFactory()
+	if factory == nil {
 		return errors.New("factory cannot be nil")
 	}
 	writer, err := factory.GetSerializationWriter(contentType)
@@ -135,4 +185,39 @@ func (request *RequestInformation) SetContentFromParsable(coreService HttpCore, 
 	request.Content = content
 	request.Headers[contentTypeHeader] = contentType
 	return nil
+}
+
+// Vanity method to add the query parameters to the request query parameters dictionary.
+// Parameters:
+//  - source: the source query parameters object
+// Returns:
+//  - The resulting list of query parameters
+func (request *RequestInformation) AddQueryParameters(source interface{}) {
+	if source == nil || request == nil {
+		return
+	}
+	valOfP := reflect.ValueOf(source)
+	fields := reflect.TypeOf(source)
+	numOfFields := fields.NumField()
+	for i := 0; i < numOfFields; i++ {
+		field := fields.Field(i)
+		fieldName := field.Name
+		fieldValue := valOfP.Field(i)
+		str, ok := fieldValue.Interface().(*string)
+		if ok && str != nil {
+			request.QueryParameters[fieldName] = *str
+		}
+		bl, ok := fieldValue.Interface().(*bool)
+		if ok && bl != nil {
+			request.QueryParameters[fieldName] = strconv.FormatBool(*bl)
+		}
+		it, ok := fieldValue.Interface().(*int32)
+		if ok && it != nil {
+			request.QueryParameters[fieldName] = strconv.FormatInt(int64(*it), 10)
+		}
+		arr, ok := fieldValue.Interface().([]string)
+		if ok && len(arr) > 0 {
+			request.QueryParameters[fieldName] = strings.Join(arr, ",")
+		}
+	}
 }

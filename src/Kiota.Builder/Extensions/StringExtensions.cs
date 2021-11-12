@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 
 
@@ -12,10 +13,9 @@ namespace Kiota.Builder.Extensions {
         public static string ToCamelCase(this string name)
         {
             if(string.IsNullOrEmpty(name)) return name;
-            var chunks = name.Split("-", StringSplitOptions.RemoveEmptyEntries);
-            var identifier = String.Join(null, chunks.Take(1)
-                                                  .Union(chunks.Skip(1)
-                                                                .Select(s => ToFirstCharacterUpperCase(s))));
+            var chunks = name.Split('-', StringSplitOptions.RemoveEmptyEntries);
+            var identifier = chunks[0] + string.Join(string.Empty, chunks.Skip(1)
+                                                                .Select(s => ToFirstCharacterUpperCase(s)));
             return identifier;
         }
         public static string ToPascalCase(this string name)
@@ -29,10 +29,9 @@ namespace Kiota.Builder.Extensions {
         public static string ToSnakeCase(this string name)
         {
             if(string.IsNullOrEmpty(name)) return name;
-            var chunks = name.Split("-", StringSplitOptions.RemoveEmptyEntries);
-            var identifier = String.Join(string.Empty, chunks.Take(1)
-                                                  .Union(chunks.Skip(1)
-                                                                .Select(s => ToFirstCharacterUpperCase(s))));
+            var chunks = name.Split('-', StringSplitOptions.RemoveEmptyEntries);
+            var identifier = chunks[0] + string.Join(string.Empty, chunks.Skip(1)
+                                                                .Select(s => ToFirstCharacterUpperCase(s)));
             if(identifier.Length < 2) {
                 return identifier;
             }
@@ -55,6 +54,19 @@ namespace Kiota.Builder.Extensions {
             return output;
         }
         public static string NormalizeNameSpaceName(this string original, string delimiter) => 
-            original?.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z,y) => z + delimiter + y);
+            string.IsNullOrEmpty(original) ? 
+                original :
+                original?.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z,y) => z + delimiter + y);
+        private static readonly HashAlgorithm sha = SHA256.Create();
+        public static string GetNamespaceImportSymbol(this string importName) {
+            if(string.IsNullOrEmpty(importName)) return string.Empty;
+            return "i" + HashString(importName).ToLowerInvariant();
+        }
+        private static string HashString(string input) {
+            var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
+            return hash.Select(b => b.ToString("x2")).Aggregate((x, y) => x + y);
+        }
+        public static string SanitizeUrlTemplateParameterName(this string original) =>
+            original?.Replace('-', '_');
     }
 }

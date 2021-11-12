@@ -10,10 +10,6 @@ namespace Kiota.Builder.Tests.Writers.Go {
         public void ThrowsOnInvalidOverloads() {
             var root = CodeNamespace.InitRootNamespace();
             Assert.Throws<InvalidOperationException>(() => instance.GetAccessModifier(AccessModifier.Private));
-            Assert.Throws<InvalidOperationException>(() => instance.GetParameterSignature(new Mock<CodeParameter>(root).Object));
-            Assert.Throws<InvalidOperationException>(() => instance.GetTypeString(new Mock<CodeType>(root).Object));
-            Assert.Throws<InvalidOperationException>(() => instance.GetTypeString(new Mock<CodeUnionType>(root).Object, new Mock<CodeClass>(root).Object));
-            Assert.Throws<InvalidOperationException>(() => instance.GetTypeString(new Mock<CodeTypeBase>(root).Object, new Mock<CodeClass>(root).Object));
         }
     }
 }

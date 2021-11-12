@@ -9,77 +9,23 @@ namespace Kiota.Builder.Refiners.Tests {
         public TypeScriptLanguageRefinerTests() {
             root = CodeNamespace.InitRootNamespace();
             graphNS = root.AddNamespace("graph");
-            parentClass = new (graphNS) {
+            parentClass = new () {
                 Name = "parentClass"
             };
             graphNS.AddClass(parentClass);
         }
-#region common
-        [Fact]
-        public void ReplacesImportsSubNamespace() {
-            var rootNS = parentClass.Parent as CodeNamespace;
-            rootNS.RemoveChildElement(parentClass);
-            graphNS.AddClass(parentClass);
-            var declaration = parentClass.StartBlock as CodeClass.Declaration;
-            var subNS = graphNS.AddNamespace($"{graphNS.Name}.messages");
-            var messageClassDef = new CodeClass(subNS) {
-                Name = "Message",
-            };
-            declaration.Usings.Add(new (parentClass) {
-                Name = "graph",
-                Declaration = new(parentClass) {
-                    Name = "Message",
-                    TypeDefinition = messageClassDef,
-                }
-            });
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
-            Assert.Equal("./messages/message", declaration.Usings.First().Declaration.Name);
-        }
-        [Fact]
-        public void ReplacesImportsParentNamespace() {
-            var declaration = parentClass.StartBlock as CodeClass.Declaration;
-            var subNS = root.AddNamespace("messages");
-            var messageClassDef = new CodeClass(subNS) {
-                Name = "Message",
-            };
-            subNS.AddClass(messageClassDef);
-            declaration.Usings.Add(new (parentClass) {
-                Name = "messages",
-                Declaration = new(parentClass) {
-                    Name = "Message",
-                    TypeDefinition = messageClassDef,
-                }
-            });
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
-            Assert.Equal("../messages/message", declaration.Usings.First().Declaration.Name);
-        }
-        [Fact]
-        public void ReplacesImportsSameNamespace() {
-            var declaration = parentClass.StartBlock as CodeClass.Declaration;
-            var messageClassDef = new CodeClass(graphNS) {
-                Name = "Message",
-            };
-            declaration.Usings.Add(new (parentClass) {
-                Name = "graph",
-                Declaration = new(parentClass) {
-                    Name = "Message",
-                    TypeDefinition = messageClassDef,
-                }
-            });
-            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
-            Assert.Equal("./message", declaration.Usings.First().Declaration.Name);
-        }
-#endregion
 #region typescript
-        private const string HttpCoreDefaultName = "IHttpCore";
+        private const string HttpCoreDefaultName = "IRequestAdapter";
         private const string FactoryDefaultName = "ISerializationWriterFactory";
         private const string DeserializeDefaultName = "IDictionary<string, Action<Model, IParseNode>>";
+        private const string PathParametersDefaultName = "Dictionary<string, object>";
+        private const string PathParametersDefaultValue = "new Dictionary<string, object>";
         private const string DateTimeOffsetDefaultName = "DateTimeOffset";
         private const string AddiationalDataDefaultName = "new Dictionary<string, object>()";
         private const string HandlerDefaultName = "IResponseHandler";
         [Fact]
         public void EscapesReservedKeywords() {
-            var model = root.AddClass(new CodeClass (root) {
+            var model = root.AddClass(new CodeClass {
                 Name = "break",
                 ClassKind = CodeClassKind.Model
             }).First();
@@ -90,87 +36,131 @@ namespace Kiota.Builder.Refiners.Tests {
         [Fact]
         public void CorrectsCoreType() {
 
-            var model = root.AddClass(new CodeClass (root) {
+            var model = root.AddClass(new CodeClass () {
                 Name = "model",
                 ClassKind = CodeClassKind.Model
             }).First();
-            model.AddProperty(new (model) {
+            model.AddProperty(new CodeProperty() {
                 Name = "core",
-                PropertyKind = CodePropertyKind.HttpCore,
-                Type = new CodeType(model) {
+                PropertyKind = CodePropertyKind.RequestAdapter,
+                Type = new CodeType {
                     Name = HttpCoreDefaultName
                 }
-            }, new (model) {
+            }, new () {
                 Name = "someDate",
                 PropertyKind = CodePropertyKind.Custom,
-                Type = new CodeType(model) {
+                Type = new CodeType {
                     Name = DateTimeOffsetDefaultName,
                 }
-            }, new (model) {
+            }, new () {
                 Name = "additionalData",
                 PropertyKind = CodePropertyKind.AdditionalData,
-                Type = new CodeType(model) {
+                Type = new CodeType {
                     Name = AddiationalDataDefaultName
                 }
+            }, new () {
+                Name = "pathParameters",
+                PropertyKind = CodePropertyKind.PathParameters,
+                Type = new CodeType {
+                    Name = PathParametersDefaultName
+                },
+                DefaultValue = PathParametersDefaultValue
             });
-            var executorMethod = model.AddMethod(new CodeMethod(model) {
+            var executorMethod = model.AddMethod(new CodeMethod {
                 Name = "executor",
                 MethodKind = CodeMethodKind.RequestExecutor,
-                ReturnType = new CodeType(model) {
+                ReturnType = new CodeType {
                     Name = "string"
                 }
             }).First();
-            executorMethod.AddParameter(new CodeParameter(executorMethod) {
+            executorMethod.AddParameter(new CodeParameter {
                 Name = "handler",
                 ParameterKind = CodeParameterKind.ResponseHandler,
-                Type = new CodeType(executorMethod) {
+                Type = new CodeType {
                     Name = HandlerDefaultName,
                 }
             });
             const string serializerDefaultName = "ISerializationWriter";
-            var serializationMethod = model.AddMethod(new CodeMethod(model) {
+            var serializationMethod = model.AddMethod(new CodeMethod {
                 Name = "seriailization",
                 MethodKind = CodeMethodKind.Serializer,
-                ReturnType = new CodeType(model) {
+                ReturnType = new CodeType {
                     Name = "string"
                 }
             }).First();
-            serializationMethod.AddParameter(new CodeParameter(serializationMethod) {
+            serializationMethod.AddParameter(new CodeParameter {
                 Name = "handler",
                 ParameterKind = CodeParameterKind.Serializer,
-                Type = new CodeType(executorMethod) {
+                Type = new CodeType {
                     Name = serializerDefaultName,
                 }
             });
-            var responseHandlerMethod = model.AddMethod(new CodeMethod(model) {
-                Name = "defaultResponseHandler",
-                ReturnType = new CodeType(model) {
-                    Name = "string"
+            var constructorMethod = model.AddMethod(new CodeMethod {
+                Name = "constructor",
+                MethodKind = CodeMethodKind.Constructor,
+                ReturnType = new CodeType {
+                    Name = "void"
                 }
-            }, new (model) {
-                Name = "deserializeFields",
-                ReturnType = new CodeType(model) {
-                    Name = DeserializeDefaultName,
-                },
-                MethodKind = CodeMethodKind.Deserializer
             }).First();
-            const string streamDefaultName = "Stream";
-            responseHandlerMethod.AddParameter(new CodeParameter(responseHandlerMethod) {
-                Name = "param1",
-                Type = new CodeType(responseHandlerMethod) {
-                    Name = streamDefaultName
-                }
+            constructorMethod.AddParameter(new CodeParameter {
+                Name = "pathParameters",
+                ParameterKind = CodeParameterKind.PathParameters,
+                Type = new CodeType {
+                    Name = PathParametersDefaultName
+                },
             });
             ILanguageRefiner.Refine(new GenerationConfiguration{ Language = GenerationLanguage.TypeScript }, root);
-            Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => HttpCoreDefaultName.Equals(x.Type.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => FactoryDefaultName.Equals(x.Type.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => DateTimeOffsetDefaultName.Equals(x.Type.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeProperty>().Where(x => AddiationalDataDefaultName.Equals(x.Type.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().Where(x => DeserializeDefaultName.Equals(x.ReturnType.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => HandlerDefaultName.Equals(x.Type.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
-            Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().SelectMany(x => x.Parameters).Where(x => streamDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.Properties.Where(x => HttpCoreDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.Properties.Where(x => FactoryDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.Properties.Where(x => DateTimeOffsetDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.Properties.Where(x => AddiationalDataDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.Properties.Where(x => PathParametersDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.Properties.Where(x => PathParametersDefaultValue.Equals(x.DefaultValue)));
+            Assert.Empty(model.Methods.Where(x => DeserializeDefaultName.Equals(x.ReturnType.Name)));
+            Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => HandlerDefaultName.Equals(x.Type.Name)));
+            Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
+            Assert.Single(constructorMethod.Parameters.Where(x => x.Type is CodeUnionType));
         }
-    }
+        [Fact]
+        public void AliasesDuplicateUsingSymbols() {
+            var model = graphNS.AddClass(new CodeClass {
+                Name = "model",
+                ClassKind = CodeClassKind.Model
+            }).First();
+            var modelsNS = graphNS.AddNamespace($"{graphNS.Name}.models");
+            var source1 = modelsNS.AddClass(new CodeClass {
+                Name = "source",
+                ClassKind = CodeClassKind.Model
+            }).First();
+            var submodelsNS = modelsNS.AddNamespace($"{modelsNS.Name}.submodels");
+            var source2 = submodelsNS.AddClass(new CodeClass {
+                Name = "source",
+                ClassKind = CodeClassKind.Model
+            }).First();
+
+            var using1 = new CodeUsing {
+               Name = modelsNS.Name,
+               Declaration = new CodeType {
+                   Name = source1.Name,
+                   TypeDefinition = source1,
+                   IsExternal = false,
+               }
+            };
+            var using2 = new CodeUsing {
+               Name = submodelsNS.Name,
+               Declaration = new CodeType {
+                   Name = source2.Name,
+                   TypeDefinition = source2,
+                   IsExternal = false,
+               }
+            };
+            model.AddUsing(using1);
+            model.AddUsing(using2);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+            Assert.NotEmpty(using1.Alias);
+            Assert.NotEmpty(using2.Alias);
+            Assert.NotEqual(using1.Alias, using2.Alias);
+        }
 #endregion
+    }
 }
