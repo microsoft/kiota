@@ -12,7 +12,8 @@ namespace Kiota.Builder.Refiners {
         {
             AddInnerClasses(
                 generatedCode,
-                true);
+                true,
+                null);
             ReplaceIndexersByMethodsWithParameter(
                 generatedCode,
                 generatedCode,
@@ -231,8 +232,6 @@ namespace Kiota.Builder.Refiners {
                 "github.com/microsoft/kiota/abstractions/go", "RequestInformation", "HttpMethod", "RequestOption"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
                 "github.com/microsoft/kiota/abstractions/go", "ResponseHandler"),
-            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.QueryParameters),
-                "github.com/microsoft/kiota/abstractions/go", "QueryParametersBase"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor) &&
                         !conventions.IsScalarType(method.ReturnType.Name) &&
                         !conventions.IsPrimitiveType(method.ReturnType.Name),
