@@ -1,3 +1,7 @@
+---
+parent: Required tools
+---
+
 # Required tools for Go
 
 - [Go 1.16](https://golang.org/dl/)

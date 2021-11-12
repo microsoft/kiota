@@ -1,3 +1,7 @@
+---
+parent: Understand and Extend the Kiota generator
+---
+
 # Authentication with Kiota clients
 
 Most REST APIs are protected through some kind of authentication and authorization scheme. The default HTTP core services provided by kiota require an Authentication Provider to be passed to handle authentication concerns.
@@ -22,7 +26,7 @@ A common practice in the industry for APIs is to implement authentication and au
 Should you want to add support for additional authentication providers for that schme, Kiota abstractions already offer a base class to extend so you only need to implement the access token obtention sequence and not the header composition/addition.
 
 ```CSharp
-public abstract class BaseBearerTokenAuthenticationProvider 
+public abstract class BaseBearerTokenAuthenticationProvider
 {
     public abstract Task<string> GetAuthorizationToken(RequestInformation request);
 }

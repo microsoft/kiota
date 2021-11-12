@@ -1,3 +1,7 @@
+---
+parent: Understand and Extend the Kiota generator
+---
+
 # Request Builder
 
 The primary goal of a request builder class is to enable a developer to easily construct an HTTP request. By using a set of related request builder classes we can enable a developer to construct an HTTP request for any resource exposed by an HTTP API.
