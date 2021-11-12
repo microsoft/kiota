@@ -11,28 +11,28 @@ On most platforms there are a range of different HTTP client library implementat
 The HTTP core interface is the primary point where Kiota service libraries will trigger the creation of a HTTP request.  Below is the [C# implementation](https://github.com/microsoft/kiota/blob/main/abstractions/dotnet/src/IRequestAdapter.cs).
 
 ```csharp
-    public interface IRequestAdapter {
-        void EnableBackingStore(IBackingStoreFactory backingStoreFactory);
+public interface IRequestAdapter {
+    void EnableBackingStore(IBackingStoreFactory backingStoreFactory);
 
-        ISerializationWriterFactory SerializationWriterFactory { get; }
+    ISerializationWriterFactory SerializationWriterFactory { get; }
 
-        Task<ModelType> SendAsync<ModelType>(RequestInformation requestInfo,
-                                             IResponseHandler responseHandler = default)
-                     where ModelType : IParsable;
-
-        Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(RequestInformation requestInfo,
-                        IResponseHandler responseHandler = default)
+    Task<ModelType> SendAsync<ModelType>(RequestInformation requestInfo,
+                                            IResponseHandler responseHandler = default)
                     where ModelType : IParsable;
 
-        Task<ModelType> SendPrimitiveAsync<ModelType>(RequestInformation requestInfo,
-                                                      IResponseHandler responseHandler = default);
+    Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(RequestInformation requestInfo,
+                    IResponseHandler responseHandler = default)
+                where ModelType : IParsable;
 
-        Task SendNoContentAsync(RequestInformation requestInfo,
-                                IResponseHandler responseHandler = default);
-    }
+    Task<ModelType> SendPrimitiveAsync<ModelType>(RequestInformation requestInfo,
+                                                    IResponseHandler responseHandler = default);
+
+    Task SendNoContentAsync(RequestInformation requestInfo,
+                            IResponseHandler responseHandler = default);
+}
 ```
 
-Kiota service libraries return the model type that is associated with HTTP resource. This behavior can be overriden by changing the `responseHandler` to do something different than default behavior.  One use of this is to change the response type to be either a native HTTP response class, or return a generic API response class that provides access to more underlying metadata.
+Kiota service libraries return the model type that is associated with HTTP resource. This behavior can be overridden by changing the `responseHandler` to do something different than default behavior.  One use of this is to change the response type to be either a native HTTP response class, or return a generic API response class that provides access to more underlying metadata.
 
 ## RequestInformation
 
@@ -40,13 +40,13 @@ In order to enable Kiota service libraries to make requests, they need to be abl
 
 ```csharp
 public class RequestInformation
-    {
-        public Uri URI { get; set; }
-        public HttpMethod HttpMethod { get; set; }
-        public IDictionary<string, object> QueryParameters { get; set; } = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
-        public IDictionary<string, string> Headers { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        public Stream Content { get; set; }
-    }
+{
+    public Uri URI { get; set; }
+    public HttpMethod HttpMethod { get; set; }
+    public IDictionary<string, object> QueryParameters { get; set; } = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+    public IDictionary<string, string> Headers { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    public Stream Content { get; set; }
+}
 ```
 
 ```TypeScript
@@ -77,11 +77,12 @@ public class RequestInformation {
 ## ResponseHandler
 
 TBD
+
 - This allows core to do all the default hard work, but enables a custom response handler to change the behavior of the method.
 
 ```CSharp
-    public interface IResponseHandler
-    {
-        Task<ModelType> HandleResponseAsync<NativeResponseType, ModelType>(NativeResponseType response);
-    }
+public interface IResponseHandler
+{
+    Task<ModelType> HandleResponseAsync<NativeResponseType, ModelType>(NativeResponseType response);
+}
 ```

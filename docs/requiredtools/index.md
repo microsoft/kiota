@@ -7,8 +7,10 @@ has_children: true
 
 This section lists the different tools that are required when building the generation result of Kiota for each language:
 
-- [CSHarp](./dotnet)
-- [Java](./java)
-- [TypeScript](./typescript)
+- [CSharp](./dotnet.md)
+- [Go](./go.md)
+- [Java](./java.md)
+- [Ruby](./ruby.md)
+- [TypeScript](./typescript.md)
 
-> Note: See the [required tools](./kiota) when contributing to Kiota.
+> **Note:** See the [required tools](./kiota.md) when contributing to Kiota.

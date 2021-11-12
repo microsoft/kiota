@@ -8,6 +8,6 @@ TBD
 
 - Scoped to PathItems
 - Inheritance (AllOf)
-- Hetrogenenous collections
+- Heterogenenous collections
 - Faceted implementation of OneOf
 - Faceted implementation of AnyOf

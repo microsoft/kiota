@@ -16,7 +16,7 @@ Before you can compile and run the generated files, you will need to make sure t
 
 Execute the following command in the directory you want to create a new project.
 
-```Shell
+```shell
 dotnet new console
 dotnet new gitignore
 ```
@@ -29,7 +29,7 @@ If you have not already, you will need to create a nuget.config to enable access
 
 Once the package feed is accessible the following packages can be added to the project.
 
-```Shell
+```shell
 dotnet add package Microsoft.Kiota.Abstractions
 dotnet add package Microsoft.Kiota.Http.HttpClientLibrary
 dotnet add package Microsoft.Kiota.Serialization.Json
@@ -83,7 +83,7 @@ kiota -d openapi.yml -o graphclient -n GraphClient
 
 To be able to authenticate against the demo application against Microsoft Graph, you will need to create an application registration.  You can do this via the Azure portal, or if you have [Microsoft Graph PowerShell](https://www.powershellgallery.com/packages/Microsoft.Graph) installed, you can use the following command to create the application.
 
-```PowerShell
+```powershell
 $app = New-MgApplication   -displayName "NativeGraphApp" `
                             -IsFallbackPublicClient `
                             -PublicClient @{ `
@@ -97,7 +97,7 @@ Record the value of the ClientId property of the $app object as it will be neede
 
 The final step is to update the program.cs file that was generated as part of the console application to include the code below.
 
-```CSharp
+```csharp
 using System;
 using System.Threading.Tasks;
 using GraphClient;
@@ -123,6 +123,8 @@ namespace GraphApp
 }
 ```
 
-> Note: if the target API doesn't require any authentication, you can use the **AnonymousAuthenticationProvider** instead.
-> Note: if the target API requires a Authorization bearer \<token> header but doesn't rely on the Microsoft Identity Platform, you can implement your own authentication provider by inheriting from **BaseBearerTokenAuthenticationProvider**.
-> Note: if the target API requires any other form of authentication schemes, you can implement the **IAuthenticationProvider** interface.
+> **Note:**
+>
+> - If the target API doesn't require any authentication, you can use the **AnonymousAuthenticationProvider** instead.
+> - If the target API requires a Authorization bearer \<token> header but doesn't rely on the Microsoft Identity Platform, you can implement your own authentication provider by inheriting from **BaseBearerTokenAuthenticationProvider**.
+> - If the target API requires any other form of authentication schemes, you can implement the **IAuthenticationProvider** interface.

@@ -5,5 +5,14 @@
         "MD025": {
             "front_matter_title": ""
         }
-    }
+    },
+    "cSpell.ignoreWords": [
+        "Todos",
+        "gson",
+        "kiotaabstractions",
+        "msgraph",
+        "okhttp",
+        "okhttp3",
+        "squareup"
+    ]
 }

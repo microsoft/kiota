@@ -10,13 +10,11 @@ There are three phases of constructing the HTTP request. Building the path, spec
 
 ## Building the Path
 
-
 By creating properties on request builder classes, the developer can effectively construct a URL path by navigating the hierarchy of request builders, aided by the IDE's autocomplete.
 
 ```csharp
-
-    var todo = await todoClient.Todos["<todoId>"].GetAsync();
-    var responsiblePerson =  await todoClient.Todos["<todoId>"].AssignedTo.GetAsync();
+var todo = await todoClient.Todos["<todoId>"].GetAsync();
+var responsiblePerson =  await todoClient.Todos["<todoId>"].AssignedTo.GetAsync();
 ```
 
 Each request builder class exposes the set of HTTP methods that are supported on that resource. Each operation method allows setting and configuring query parameters, setting HTTP headers and providing a custom response handler.

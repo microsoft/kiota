@@ -13,14 +13,14 @@ Before you can compile and run the target project, you will need to initialize i
 
 Execute the following command in the directory you want to initialize the project in.
 
-```Shell
+```shell
 gradle init
 # Select a console application
 ```
 
 Edit `utilities/build.gradle` to add the following dependencies.
 
-```Groovy
+```groovy
 api 'com.google.code.findbugs:jsr305:3.0.2'
 api 'com.azure:azure-identity:1.2.5'
 api 'com.squareup.okhttp3:okhttp:4.9.1'
