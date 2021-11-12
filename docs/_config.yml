@@ -4,3 +4,5 @@ aux_links:
     - "//github.com/microsoft/kiota"
   '<button id="theme-switch" class="btn btn-outline">Dark mode</button>':
     - '#"onclick="switchTheme()"'
+
+theme: jekyll-theme-cayman
