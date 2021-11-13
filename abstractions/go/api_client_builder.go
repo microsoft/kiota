@@ -4,9 +4,7 @@ import (
 	s "github.com/microsoft/kiota/abstractions/go/serialization"
 )
 
-// Registers the default serializer to the registry.
-// Parameters:
-// 		metaFactory: the factory function that creates the serialization writer factory.
+// RegisterDefaultSerializer registers the default serializer to the registry singleton to be used by the request adapter.
 func RegisterDefaultSerializer(metaFactory func() s.SerializationWriterFactory) {
 	factory := metaFactory()
 	contentType, err := factory.GetValidContentType()
@@ -15,9 +13,7 @@ func RegisterDefaultSerializer(metaFactory func() s.SerializationWriterFactory) 
 	}
 }
 
-// Registers the default deserializer to the registry.
-// Parameters:
-// 		metaFactory: the factory function that creates the serialization reader factory.
+// RegisterDefaultDeserializer registers the default deserializer to the registry singleton to be used by the request adapter.
 func RegisterDefaultDeserializer(metaFactory func() s.ParseNodeFactory) {
 	factory := metaFactory()
 	contentType, err := factory.GetValidContentType()

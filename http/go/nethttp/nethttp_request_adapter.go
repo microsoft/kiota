@@ -153,7 +153,7 @@ func (a *NetHttpRequestAdapter) SendAsync(requestInfo abs.RequestInformation, co
 		return nil, err
 	}
 	if responseHandler != nil {
-		result, err := responseHandler.HandleResponse(response)
+		result, err := responseHandler(response)
 		if err != nil {
 			return nil, err
 		}
@@ -179,7 +179,7 @@ func (a *NetHttpRequestAdapter) SendCollectionAsync(requestInfo abs.RequestInfor
 		return nil, err
 	}
 	if responseHandler != nil {
-		result, err := responseHandler.HandleResponse(response)
+		result, err := responseHandler(response)
 		if err != nil {
 			return nil, err
 		}
@@ -205,7 +205,7 @@ func (a *NetHttpRequestAdapter) SendPrimitiveAsync(requestInfo abs.RequestInform
 		return nil, err
 	}
 	if responseHandler != nil {
-		result, err := responseHandler.HandleResponse(response)
+		result, err := responseHandler(response)
 		if err != nil {
 			return nil, err
 		}
@@ -249,7 +249,7 @@ func (a *NetHttpRequestAdapter) SendPrimitiveCollectionAsync(requestInfo abs.Req
 		return nil, err
 	}
 	if responseHandler != nil {
-		result, err := responseHandler.HandleResponse(response)
+		result, err := responseHandler(response)
 		if err != nil {
 			return nil, err
 		}
@@ -274,7 +274,7 @@ func (a *NetHttpRequestAdapter) SendNoContentAsync(requestInfo abs.RequestInform
 		return err
 	}
 	if responseHandler != nil {
-		_, err := responseHandler.HandleResponse(response)
+		_, err := responseHandler(response)
 		return err
 	} else if response != nil {
 		return nil
