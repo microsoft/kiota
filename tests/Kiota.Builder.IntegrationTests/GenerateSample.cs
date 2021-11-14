@@ -24,7 +24,7 @@ public class GenerateSample
         {
             Language = language,
             OpenAPIFilePath = "ToDoApi.yaml",
-            OutputPath = $".\\Generated\\{language}{backingStoreSuffix}",
+            OutputPath = $".\\Generated\\Todo\\{language}{backingStoreSuffix}",
             UsesBackingStore = backingStore,
         };
         await new KiotaBuilder(logger, configuration).GenerateSDK(new());
