@@ -1,0 +1,32 @@
+﻿openapi: 3.0.0
+info:
+  title: "Dictionary API"
+  version: "1.0.0"
+servers:
+  - url: https://example.org/
+paths:
+  /resource: 
+    get:
+      responses:
+        200:
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/resource"
+components:
+  schemas:
+    resource:
+      type: object
+      properties:
+        info:
+          type: string
+        # customSettings: Dictionary<string,string>
+        customSettings:
+          type: object
+          patternProperties:
+            ".*":
+              type: string
+            
+      
+           
