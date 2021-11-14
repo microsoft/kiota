@@ -1,0 +1,38 @@
+﻿openapi: 3.0.0
+info:
+  title: "API that returns multiple response formats"
+  version: "1.0.0"
+servers:
+  - url: https://example.org/
+paths:
+  /report: 
+    get:
+      responses:
+        200:
+          description: ok
+          content:
+            application/json: {}  # Response is JSON but no schema is defined
+            text/csv: {}
+  /reportWithSchema: 
+    get:
+      responses:
+        200:
+          description: ok
+          content:
+            application/json:   # Response is JSON but no schema is defined
+              schema: 
+                $ref: "#/components/schemas/weatherReport"
+            text/csv: {}
+components:
+  schemas:
+    weatherReport:
+      type: array
+      items:
+        type: object
+        properties:
+          date: 
+            type: string
+          temperature:
+            type: string
+          conditions:
+            type: string

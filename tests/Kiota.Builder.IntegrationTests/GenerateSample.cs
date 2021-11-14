@@ -23,7 +23,7 @@ namespace Kiota.Builder.integrationtests
             var backingStoreSuffix = backingStore ? string.Empty : "BackingStore";
             var configuration = new GenerationConfiguration
             {
-                Language = GenerationLanguage.CSharp,
+                Language = language,
                 OpenAPIFilePath = "ToDoApi.yaml",
                 OutputPath = $".\\Generated\\{language}{backingStoreSuffix}",
                 UsesBackingStore = backingStore,

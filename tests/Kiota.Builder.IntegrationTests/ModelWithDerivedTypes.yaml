@@ -1,0 +1,81 @@
+﻿openapi: 3.0.0
+info:
+  title: "Derived Types API"
+  version: "1.0.0"
+servers:
+  - url: https://example.org/
+paths:
+  /fruits: # this method will not downcast to OpenAPI v2 because oneOf is not supported
+    get:
+      responses:
+        200:
+          description: ok
+          content:
+            application/json:
+                # The code generator will need to be clever and instead of generating a fruitResponse class 
+                # with a property for each of the properties, it needs to detect that apple and orange derive from fruit.
+                # It can then declare the requestExecutors as returning the base type.
+              schema:  
+                oneOf:
+                - $ref: "#/components/schemas/fruit"  # Allowing the base class allows enables evolvabilty
+                - $ref: "#/components/schemas/apple"
+                - $ref: "#/components/schemas/orange"
+  /fruitsWithDiscriminator: 
+    get:
+      responses:
+        200:
+          description: ok
+          content:
+            application/json:
+              schema:  
+                discriminator:
+                  propertyName: fruitType  # This only works if fruitType has the exact schema name
+                allOf:
+                  - $ref: "#/components/schemas/fruit"  # Allowing the base class allows enables evolvabilty
+  /fruitsWithDiscriminatorWithMapping: 
+    get:
+      responses:
+        200:
+          description: ok
+          content:
+            application/json:
+              schema:  
+                discriminator:
+                  propertyName: fruitType  
+                  mapping:          # If mapping doesn't exist, then fallback to base type'
+                    apple: '#/components/schemas/apple'
+                    orange: '#/components/schemas/orange'
+                allOf:
+                  - $ref: "#/components/schemas/fruit"  # Allowing the base class allows enables evolvabilty
+
+components:
+  schemas:
+    fruit:
+      type: object
+      title: fruit  # required temporarily due to a bug in Kiota codemodel
+      properties:
+        name:
+          type: string
+        fruitType:
+          type: string
+    apple:
+      allOf: 
+        - $ref: '#/components/schemas/fruit'
+      type: object
+      title: apple
+      properties:
+         edible:
+           type: boolean
+         fruitType:
+           x-const: apple  # the const keyword is only supported int OpenAPI 3.1
+    orange:
+      allOf: 
+        - $ref: '#/components/schemas/fruit'
+      type: object
+      title: orange
+      properties:
+         seedless:
+           type: boolean
+         fruitType:
+           x-const: orange   
+           
