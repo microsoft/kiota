@@ -306,5 +306,91 @@ namespace Kiota.Builder.Tests
             Assert.NotNull(constructorMethod);
             Assert.Single(constructorMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
         }
+        [Fact]
+        public void Inline_Property_Inheritance_Is_Supported() {
+            var resourceSchema = new OpenApiSchema {
+                Type = "object",
+                Properties = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "info", new OpenApiSchema {
+                            Type = "string",
+                        }
+                    }
+                },
+                Reference = new OpenApiReference() {
+                    Id = "resource"
+                },
+                UnresolvedReference = false
+            };
+            var document = new OpenApiDocument() {
+                Paths = new OpenApiPaths() {
+                    ["resource/{id}"] = new OpenApiPathItem() {
+                        Operations = {
+                            [OperationType.Get] = new OpenApiOperation() {
+                                Responses = new OpenApiResponses {
+                                    ["200"] = new OpenApiResponse() {
+                                        Content = {
+                                            ["application/json"] = new OpenApiMediaType() {
+                                                Schema = new OpenApiSchema {
+                                                    Type = "object",
+                                                    Properties = new Dictionary<string, OpenApiSchema> {
+                                                        {
+                                                            "derivedResource", new OpenApiSchema {
+                                                                Type = "object",
+                                                                Properties = new Dictionary<string, OpenApiSchema> {
+                                                                    {
+                                                                        "info", new OpenApiSchema {
+                                                                            Type = "object",
+                                                                            Properties = new Dictionary<string, OpenApiSchema> {
+                                                                                {
+                                                                                    "title", new OpenApiSchema {
+                                                                                        Type = "string",
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                AllOf = new List<OpenApiSchema> {
+                                                                    resourceSchema,
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                },
+                Components = new OpenApiComponents() {
+                    Schemas = new Dictionary<string, OpenApiSchema> {
+                        {
+                            "#/components/resource", resourceSchema
+                        }
+                    }
+                }
+            };
+            var node = OpenApiUrlTreeNode.Create(document, "default");
+            var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+            var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+            builder.CreateUriSpace(document);//needed so the component index exists
+            var codeModel = builder.CreateSourceModel(node);
+            var resourceClass = codeModel.FindNamespaceByName("ApiSdk.models").FindChildByName<CodeClass>("resource");
+            var responseClass = codeModel.FindNamespaceByName("ApiSdk.resource.item").FindChildByName<CodeClass>("WithResponse");
+            var derivedResourceClass = codeModel.FindNamespaceByName("ApiSdk.resource.item").FindChildByName<CodeClass>("WithResponse_derivedResource");
+            var derivedResourceInfoClass = codeModel.FindNamespaceByName("ApiSdk.resource.item").FindChildByName<CodeClass>("WithResponse_derivedResource_info");
+
+            
+            Assert.NotNull(resourceClass);
+            Assert.NotNull(derivedResourceClass);
+            Assert.NotNull(derivedResourceClass.StartBlock);
+            Assert.Equal((derivedResourceClass.StartBlock as CodeClass.Declaration).Inherits.TypeDefinition, resourceClass);
+            Assert.NotNull(derivedResourceInfoClass);
+            Assert.NotNull(responseClass);
+        }
     }
 }
