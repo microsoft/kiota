@@ -43,6 +43,19 @@ func NewRequestInformation() *RequestInformation {
 	}
 }
 
+var normalized_query_parameters = map[string]bool{ // property name is using a capital letter due to go conventions, but the templates are using lowercase
+	"count":      true,
+	"expand":     true,
+	"deltatoken": true,
+	"filter":     true,
+	"format":     true,
+	"orderby":    true,
+	"search":     true,
+	"skip":       true,
+	"skiptoken":  true,
+	"top":        true,
+}
+
 // GetUri returns the URI of the request.
 func (request *RequestInformation) GetUri() (*u.URL, error) {
 	if request.uri != nil {
@@ -70,7 +83,12 @@ func (request *RequestInformation) GetUri() (*u.URL, error) {
 			values.Set(key, t.String(value))
 		}
 		for key, value := range request.QueryParameters {
-			values.Set(key, t.String(value))
+			lowercaseKey := strings.ToLower(key)
+			if normalized_query_parameters[lowercaseKey] {
+				values.Set(lowercaseKey, t.String(value))
+			} else {
+				values.Set(key, t.String(value))
+			}
 		}
 		url, err := uriTemplate.Expand(values)
 		if err != nil {
