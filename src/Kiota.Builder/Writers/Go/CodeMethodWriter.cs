@@ -78,9 +78,8 @@ namespace Kiota.Builder.Writers.Go {
             writer.CloseBlock();
         }
         private void WriteMethodDocumentation(CodeMethod code, string methodName, LanguageWriter writer) {
-            var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Description));
             if(!string.IsNullOrEmpty(code.Description))
-                conventions.WriteShortDescription($"{(methodName ?? code.Name).ToFirstCharacterUpperCase()} {code.Description.ToFirstCharacterLowerCase()}", writer);
+                conventions.WriteShortDescription($"{methodName.ToFirstCharacterUpperCase()} {code.Description.ToFirstCharacterLowerCase()}", writer);
         }
         private static void WriteNullCheckBody(LanguageWriter writer)
         {
