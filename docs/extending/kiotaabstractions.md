@@ -32,7 +32,7 @@ The HTTP core interface is the primary point where Kiota service libraries will 
     }
 ```
 
-Kiota service libraries return the model type that is associated with HTTP resource. This behavior can be overriden by changing the `responseHandler` to do something different than default behavior.  One use of this is to change the response type to be either a native HTTP response class, or return a generic API response class that provides access to more underlying metadata.
+Kiota service libraries return the model type that is associated with HTTP resource. This behavior can be overridden by changing the `responseHandler` to do something different than default behavior.  One use of this is to change the response type to be either a native HTTP response class, or return a generic API response class that provides access to more underlying metadata.
 
 ## RequestInformation
 
