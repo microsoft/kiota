@@ -1,3 +1,5 @@
+// Package nethttplibrary implements the Kiota abstractions with net/http to execute the requests.
+// It also provides a middleware infrastructure with some default middleware handlers like the retry handler and the redirect handler.
 package nethttplibrary
 
 import (
@@ -5,8 +7,6 @@ import (
 )
 
 // Create a new default net/http client with the options configured for the Kiota request adapter
-// Returns:
-// 		the client
 func GetDefaultClient(middleware ...Middleware) *nethttp.Client {
 	client := getDefaultClientWithoutMiddleware()
 	client.Transport = NewCustomTransport(middleware...)
@@ -23,10 +23,6 @@ func getDefaultClientWithoutMiddleware() *nethttp.Client {
 }
 
 // Creates a new default set of middlewares for the Kiota request adapter
-// Parameters:
-// 		options - the options to use for the middlewares
-// Returns:
-// 		the middlewares
 func GetDefaultMiddlewares() []Middleware {
 	return []Middleware{
 		NewRetryHandler(),

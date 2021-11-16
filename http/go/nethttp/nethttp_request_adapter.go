@@ -29,43 +29,21 @@ type NetHttpRequestAdapter struct {
 }
 
 // NewNetHttpRequestAdapter creates a new NetHttpRequestAdapter with the given parameters
-// Parameters:
-// authenticationProvider: the provider used to authenticate requests
-// Returns:
-// a new NetHttpRequestAdapter
 func NewNetHttpRequestAdapter(authenticationProvider absauth.AuthenticationProvider) (*NetHttpRequestAdapter, error) {
 	return NewNetHttpRequestAdapterWithParseNodeFactory(authenticationProvider, nil)
 }
 
 // NewNetHttpRequestAdapterWithParseNodeFactory creates a new NetHttpRequestAdapter with the given parameters
-// Parameters:
-// authenticationProvider: the provider used to authenticate requests
-// parseNodeFactory: the factory used to create parse nodes
-// Returns:
-// a new NetHttpRequestAdapter
 func NewNetHttpRequestAdapterWithParseNodeFactory(authenticationProvider absauth.AuthenticationProvider, parseNodeFactory absser.ParseNodeFactory) (*NetHttpRequestAdapter, error) {
 	return NewNetHttpRequestAdapterWithParseNodeFactoryAndSerializationWriterFactory(authenticationProvider, parseNodeFactory, nil)
 }
 
 // NewNetHttpRequestAdapterWithParseNodeFactoryAndSerializationWriterFactory creates a new NetHttpRequestAdapter with the given parameters
-// Parameters:
-// authenticationProvider: the provider used to authenticate requests
-// parseNodeFactory: the factory used to create parse nodes
-// serializationWriterFactory: the factory used to create serialization writers
-// Returns:
-// a new NetHttpRequestAdapter
 func NewNetHttpRequestAdapterWithParseNodeFactoryAndSerializationWriterFactory(authenticationProvider absauth.AuthenticationProvider, parseNodeFactory absser.ParseNodeFactory, serializationWriterFactory absser.SerializationWriterFactory) (*NetHttpRequestAdapter, error) {
 	return NewNetHttpRequestAdapterWithParseNodeFactoryAndSerializationWriterFactoryAndHttpClient(authenticationProvider, parseNodeFactory, serializationWriterFactory, nil)
 }
 
 // NewNetHttpRequestAdapterWithParseNodeFactoryAndSerializationWriterFactoryAndHttpClient creates a new NetHttpRequestAdapter with the given parameters
-// Parameters:
-// authenticationProvider: the provider used to authenticate requests
-// parseNodeFactory: the factory used to create parse nodes
-// serializationWriterFactory: the factory used to create serialization writers
-// httpClient: the client used to send requests
-// Returns:
-// a new NetHttpRequestAdapter
 func NewNetHttpRequestAdapterWithParseNodeFactoryAndSerializationWriterFactoryAndHttpClient(authenticationProvider absauth.AuthenticationProvider, parseNodeFactory absser.ParseNodeFactory, serializationWriterFactory absser.SerializationWriterFactory, httpClient *nethttp.Client) (*NetHttpRequestAdapter, error) {
 	if authenticationProvider == nil {
 		return nil, errors.New("authenticationProvider cannot be nil")
@@ -89,15 +67,23 @@ func NewNetHttpRequestAdapterWithParseNodeFactoryAndSerializationWriterFactoryAn
 	}
 	return result, nil
 }
+
+// GetSerializationWriterFactory returns the serialization writer factory currently in use for the request adapter service.
 func (a *NetHttpRequestAdapter) GetSerializationWriterFactory() absser.SerializationWriterFactory {
 	return a.serializationWriterFactory
 }
+
+// EnableBackingStore enables the backing store proxies for the SerializationWriters and ParseNodes in use.
 func (a *NetHttpRequestAdapter) EnableBackingStore() {
 	//TODO implement when backing store is available for go
 }
+
+// SetBaseUrl sets the base url for every request.
 func (a *NetHttpRequestAdapter) SetBaseUrl(baseUrl string) {
 	a.baseUrl = baseUrl
 }
+
+// GetBaseUrl gets the base url for every request.
 func (a *NetHttpRequestAdapter) GetBaseUrl() string {
 	return a.baseUrl
 }
@@ -147,6 +133,8 @@ func (a *NetHttpRequestAdapter) getRequestFromRequestInformation(requestInfo abs
 	}
 	return request, nil
 }
+
+// SendAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized response model.
 func (a *NetHttpRequestAdapter) SendAsync(requestInfo abs.RequestInformation, constructor func() absser.Parsable, responseHandler abs.ResponseHandler) (absser.Parsable, error) {
 	response, err := a.getHttpResponseMessage(requestInfo)
 	if err != nil {
@@ -173,6 +161,8 @@ func (a *NetHttpRequestAdapter) SendAsync(requestInfo abs.RequestInformation, co
 		return nil, errors.New("response is nil")
 	}
 }
+
+// SendCollectionAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized response model collection.
 func (a *NetHttpRequestAdapter) SendCollectionAsync(requestInfo abs.RequestInformation, constructor func() absser.Parsable, responseHandler abs.ResponseHandler) ([]absser.Parsable, error) {
 	response, err := a.getHttpResponseMessage(requestInfo)
 	if err != nil {
@@ -199,6 +189,8 @@ func (a *NetHttpRequestAdapter) SendCollectionAsync(requestInfo abs.RequestInfor
 		return nil, errors.New("response is nil")
 	}
 }
+
+// SendPrimitiveAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model.
 func (a *NetHttpRequestAdapter) SendPrimitiveAsync(requestInfo abs.RequestInformation, typeName string, responseHandler abs.ResponseHandler) (interface{}, error) {
 	response, err := a.getHttpResponseMessage(requestInfo)
 	if err != nil {
@@ -243,6 +235,8 @@ func (a *NetHttpRequestAdapter) SendPrimitiveAsync(requestInfo abs.RequestInform
 		return nil, errors.New("response is nil")
 	}
 }
+
+// SendPrimitiveCollectionAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model collection.
 func (a *NetHttpRequestAdapter) SendPrimitiveCollectionAsync(requestInfo abs.RequestInformation, typeName string, responseHandler abs.ResponseHandler) ([]interface{}, error) {
 	response, err := a.getHttpResponseMessage(requestInfo)
 	if err != nil {
@@ -268,6 +262,8 @@ func (a *NetHttpRequestAdapter) SendPrimitiveCollectionAsync(requestInfo abs.Req
 		return nil, errors.New("response is nil")
 	}
 }
+
+// SendNoContentAsync executes the HTTP request specified by the given RequestInformation with no return content.
 func (a *NetHttpRequestAdapter) SendNoContentAsync(requestInfo abs.RequestInformation, responseHandler abs.ResponseHandler) error {
 	response, err := a.getHttpResponseMessage(requestInfo)
 	if err != nil {
