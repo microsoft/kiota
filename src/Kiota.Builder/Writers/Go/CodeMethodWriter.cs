@@ -407,7 +407,7 @@ namespace Kiota.Builder.Writers.Go {
                 var queryStringName = requestParams.queryString.Name.ToFirstCharacterUpperCase();
                 writer.WriteLine($"if {requestParams.paramSet.Name} != nil && {requestParams.paramSet.Name}.{queryStringName} != nil {{");
                 writer.IncreaseIndent();
-                writer.WriteLine($"requestInfo.AddQueryParameters({requestParams.paramSet.Name}.{queryStringName})");
+                writer.WriteLine($"requestInfo.AddQueryParameters(*({requestParams.paramSet.Name}.{queryStringName}))");
                 writer.CloseBlock();
             }
             if(requestParams.headers != null) {
