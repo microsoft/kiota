@@ -114,8 +114,8 @@ namespace GraphApp
         {
             var credential = new InteractiveBrowserCredential("<insert clientId from $app.ClientId>");
             var authProvider = new AzureIdentityAuthenticationProvider(credential, new string[] {"User.Read"});
-            var core = new HttpClientRequestAdapter(authProvider);
-            var apiClient = new ApiClient(core);
+            var requestAdapter = new HttpClientRequestAdapter(authProvider);
+            var apiClient = new ApiClient(requestAdapter);
             var me = await apiClient.Me.GetAsync();
             Console.WriteLine(me.DisplayName);
         }
