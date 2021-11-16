@@ -22,6 +22,8 @@ The URL for the request is built using an [RFC6570 URL Template](https://datatra
 
 Each request builder class exposes the set of HTTP methods that are supported on that resource. Each operation method allows setting and configuring query parameters, setting HTTP headers and providing a custom response handler.
 
+Request builders will be generated into a sub-namespace following the API path the refer to.
+
 ## Default members
 
 Each request builder contains a default set of members to help build the URL and ultimately the requests.
