@@ -4,7 +4,7 @@ parent: Understand and Extend the Kiota generator
 
 # Authentication with Kiota clients
 
-Most REST APIs are protected through some kind of authentication and authorization scheme. The default HTTP core services provided by kiota require an Authentication Provider to be passed to handle authentication concerns.
+Most REST APIs are protected through some kind of authentication and authorization scheme. The default HTTP core services provided by Kiota require an Authentication Provider to be passed to handle authentication concerns.
 
 ## Authentication Provider interface
 

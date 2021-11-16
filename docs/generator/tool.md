@@ -35,7 +35,7 @@ Before you can install Kiota as a dotnet tool you will first have to create a Nu
     dotnet tool install --global --configfile nuget.config kiota
     ```
 
-1. Execute the following command to run kiota.
+1. Execute the following command to run Kiota.
 
     ```shell
     kiota -d /some/input/description.yml -o /some/output/path --language csharp -n samespaceprefix
