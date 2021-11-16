@@ -5,12 +5,6 @@ has_children: true
 
 # Required tools
 
-This section lists the different tools that are required when building the generation result of Kiota for each language:
+The following topics describe the required tools for building the Kiota generation output for each supported language.
 
-- [CSharp](./dotnet.md)
-- [Go](./go.md)
-- [Java](./java.md)
-- [Ruby](./ruby.md)
-- [TypeScript](./typescript.md)
-
-> **Note:** See the [required tools](./kiota.md) when contributing to Kiota.
+> **Note:** See the [Required tools for Kiota generation](kiota.md) when contributing to Kiota.

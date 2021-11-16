@@ -8,7 +8,7 @@ parent: Required tools
 
 ## Target project requirements
 
-Before you can compile and run the generated files, you will need to make sure they are part of a project with the required dependencies. After creating a new project, or reusing an existing one, you will need to add references to the [abstraction](../../abstractions/dotnet) and the [authentication](../../authentication/dotnet/azure), [http](../../http/dotnet/httpclient), [serialization](../../serialization/dotnet/json) packages from the GitHub feed.
+Before you can compile and run the generated files, you will need to make sure they are part of a project with the required dependencies. After creating a new project, or reusing an existing one, you will need to add references to the [abstraction](https://github.com/microsoft/kiota/tree/main/abstractions/dotnet), [authentication](https://github.com/microsoft/kiota/tree/main/authentication/dotnet/azure), [http](https://github.com/microsoft/kiota/tree/main/http/dotnet/httpclient), and [serialization](https://github.com/microsoft/kiota/tree/main/serialization/dotnet/json) packages from the GitHub feed.
 
 ## Creating target projects
 
@@ -25,7 +25,7 @@ dotnet new gitignore
 
 ## Adding dependencies
 
-If you have not already, you will need to create a nuget.config to enable access to the packages in the GitHub package feed.  The article on installing the [Kiota command line](../generator/tool.md) tool shows how to do this.
+If you have not already, you will need to create a nuget.config to enable access to the packages in the GitHub package feed. The article on installing the [Kiota command line](../generator/tool.md) tool shows how to do this.
 
 Once the package feed is accessible the following packages can be added to the project.
 
@@ -37,13 +37,13 @@ dotnet add package Microsoft.Kiota.Authentication.Azure
 dotnet add package Azure.Identity
 ```
 
-Only the first package, Microsoft.Kiota.Abstractions is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
+Only the first package, `Microsoft.Kiota.Abstractions` is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
 
 ## Generating the SDK
 
 Kiota generates SDKs from OpenAPI documents. The example below is a minimal OpenAPI description that describes how to call the `/me` endpoint on Microsoft Graph.
 
-Create a file called openapi.yaml with the following contents:
+Create a file called **openapi.yaml** with the following contents:
 
 ```yaml
 openapi: 3.0.3

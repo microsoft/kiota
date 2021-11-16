@@ -37,4 +37,4 @@ To discover more about the developer experience that Kiota SDKs could bring to y
 
 For details about how to use Kiota to generate SDKs, read the [using](using.md) section.
 
-To gain a better understanding of how Kiota works and how to extend it for other languages read the [extending](extending.md).
+To gain a better understanding of how Kiota works and how to extend it for other languages read the [extending](extending/index.md).
