@@ -18,7 +18,6 @@ namespace Kiota.Builder.Writers.Go {
             var parentClass = codeElement.Parent as CodeClass;
             var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
             var returnType = conventions.GetTypeString(codeElement.ReturnType, parentClass);
-            WriteMethodDocumentation(codeElement, writer);
             WriteMethodPrototype(codeElement, writer, returnType, parentClass);
             writer.IncreaseIndent();
             var requestOptionsParam = codeElement.Parameters.OfKind(CodeParameterKind.ParameterSet);
@@ -78,15 +77,9 @@ namespace Kiota.Builder.Writers.Go {
             }
             writer.CloseBlock();
         }
-        private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer) {
-            var parametersWithDescription = code.Parameters.Where(x => !string.IsNullOrEmpty(code.Description));
+        private void WriteMethodDocumentation(CodeMethod code, string methodName, LanguageWriter writer) {
             if(!string.IsNullOrEmpty(code.Description))
-                conventions.WriteShortDescription(code.Description, writer);
-            if (parametersWithDescription.Any()) {
-                writer.WriteLine($"{conventions.DocCommentPrefix}Parameters:");
-                foreach(var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
-                    writer.WriteLine($"{conventions.DocCommentPrefix} - {paramWithDescription.Name} : {paramWithDescription.Description}");
-            }
+                conventions.WriteShortDescription($"{methodName.ToFirstCharacterUpperCase()} {code.Description.ToFirstCharacterLowerCase()}", writer);
         }
         private static void WriteNullCheckBody(LanguageWriter writer)
         {
@@ -143,6 +136,7 @@ namespace Kiota.Builder.Writers.Go {
                 _ when code.Access == AccessModifier.Public => code.Name.ToFirstCharacterUpperCase(),
                 _ => code.Name.ToFirstCharacterLowerCase()
             };
+            WriteMethodDocumentation(code, methodName, writer);
             var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p => conventions.GetParameterSignature(p, parentClass)).ToList());
             var classType = conventions.GetTypeString(new CodeType { Name = parentClass.Name, TypeDefinition = parentClass }, parentClass);
             var associatedTypePrefix = isConstructor ? string.Empty : $" (m {classType})";

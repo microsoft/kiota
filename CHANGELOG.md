@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug where json deserialization would fail in go
 - Fixes a bug where query parameters would not be added to the request in go
 - Fixes a bug where at signs in path would derail generation
+- Fixes Go doc comments in packages and generation
 
 ## [0.0.14] - 2021-11-08
 

@@ -406,6 +406,22 @@ namespace Kiota.Builder.Writers.Go.Tests {
             Assert.Contains("return New", result);
         }
         [Fact]
+        public void WritesDescription() {
+            AddRequestProperties();
+            method.MethodKind = CodeMethodKind.RequestBuilderWithParameters;
+            method.AddParameter(new CodeParameter {
+                Name = "pathParam",
+                ParameterKind = CodeParameterKind.Path,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            });
+            method.Description = "Some description";
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains($"// {method.Name.ToFirstCharacterUpperCase()} some description", result);
+        }
+        [Fact]
         public void WritesGetterToBackingStore() {
             parentClass.AddBackingStoreProperty();
             method.AddAccessedProperty();
