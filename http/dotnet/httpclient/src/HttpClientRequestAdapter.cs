@@ -217,19 +217,13 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
             if(requestInfo.RequestOptions.Any())
                 requestInfo.RequestOptions.ToList().ForEach(x => message.Properties.Add(x.GetType().FullName, x));
 
-if(requestInfo.Content != null)
+            if(requestInfo.Content != null)
                 message.Content = new StreamContent(requestInfo.Content);
             if(requestInfo.Headers?.Any() ?? false)
                 foreach(var (key,value) in requestInfo.Headers)
                     if(!message.Headers.TryAddWithoutValidation(key, value) && message.Content != null)
                         message.Content.Headers.TryAddWithoutValidation(key, value);// Try to add the headers we couldn't add to the HttpRequestMessage before to the HttpContent
 
-            if(requestInfo.Content != null)
-            {
-                message.Content = new StreamContent(requestInfo.Content);
-                foreach(var (key, value) in contentHeaders)
-                    message.Content.Headers.TryAddWithoutValidation(key, value);// Try to add the headers we couldn't add to the HttpRequestMessage before to the HttpContent
-            }
             return message;
         }
 
