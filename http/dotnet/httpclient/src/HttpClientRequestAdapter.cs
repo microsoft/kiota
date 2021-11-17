@@ -7,13 +7,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Abstractions.Serialization;
 using Microsoft.Kiota.Abstractions.Store;
 using Microsoft.Kiota.Abstractions.Authentication;
-using Microsoft.Kiota.Abstractions.Extensions;
 
 namespace Microsoft.Kiota.Http.HttpClientLibrary
 {
@@ -202,8 +200,12 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
                 throw new InvalidOperationException("Could not get a response after calling the service");
             return response;
         }
-        private const string ContentTypeHeaderName = "content-type";
-        internal HttpRequestMessage GetRequestMessageFromRequestInformation(RequestInformation requestInfo)
+        /// <summary>
+        /// Creates a <see cref="HttpRequestMessage"/> instance from a <see cref="RequestInformation"/> instance.
+        /// </summary>
+        /// <param name="requestInfo">The <see cref="RequestInformation"/> instance to convert.</param>
+        /// <returns>A <see cref="HttpRequestMessage"/> instance</returns>
+        public HttpRequestMessage GetRequestMessageFromRequestInformation(RequestInformation requestInfo)
         {
             requestInfo.PathParameters.Add("baseurl", BaseUrl);
             var message = new HttpRequestMessage
@@ -214,13 +216,18 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
 
             if(requestInfo.RequestOptions.Any())
                 requestInfo.RequestOptions.ToList().ForEach(x => message.Properties.Add(x.GetType().FullName, x));
+
+            var contentHeaders = new Dictionary<string, string>();
             if(requestInfo.Headers?.Any() ?? false)
-                requestInfo.Headers.Where(x => !ContentTypeHeaderName.Equals(x.Key, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => message.Headers.Add(x.Key, x.Value));
+                foreach(var (key,value) in requestInfo.Headers)
+                    if(!message.Headers.TryAddWithoutValidation(key, value))
+                        contentHeaders.Add(key, value);// if we can't add it to the HttpRequestMessage, its  most likely a HttpContent header. So pass it keep it to be added to the content headers later on.
+
             if(requestInfo.Content != null)
             {
                 message.Content = new StreamContent(requestInfo.Content);
-                if(requestInfo?.Headers?.ContainsKey(ContentTypeHeaderName) ?? false)
-                    message.Content.Headers.ContentType = new MediaTypeHeaderValue(requestInfo.Headers[ContentTypeHeaderName]);
+                foreach(var (key, value) in contentHeaders)
+                    message.Content.Headers.TryAddWithoutValidation(key, value);// Try to add the headers we couldn't add to the HttpRequestMessage before to the HttpContent
             }
             return message;
         }
