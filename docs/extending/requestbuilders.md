@@ -2,7 +2,7 @@
 parent: Understand and Extend the Kiota generator
 ---
 
-# Request Builder
+# Request builder
 
 The primary goal of a request builder class is to enable a developer to easily construct an HTTP request. By using a set of related request builder classes we can enable a developer to construct an HTTP request for any resource exposed by an HTTP API.
 
@@ -34,7 +34,7 @@ The Path Parameters dictionary/map contains a list of the parameters for the URL
 
 Considering the following sample:
 
-```CSharp
+```csharp
 var requestBuilder = todoClient.TaskLists["taskListId"].Todos["todoId"].AssignedTo;
 ```
 
@@ -51,7 +51,7 @@ The request builder has a Url Template property. This template is resolved using
 
 Consider the following sample:
 
-```CSharp
+```csharp
 var requestBuilder = todoClient.TaskLists["taskListId"].Todos["todoId"].AssignedTo;
 ```
 
@@ -71,7 +71,7 @@ This request adapter is passed from request builder to request builder when usin
 
 Request builders offer two different constructors (one if the target language supports types unions).
 
-```CSharp
+```csharp
 public UsersRequestBuilder(Dictionary<string, object> pathParameters, IRequestAdapter requestAdapter);
 public UsersRequestBuilder(string rawUrl, IRequestAdapter requestAdapter)
 ```
@@ -92,7 +92,7 @@ Properties are used for navigation path segments which declare no parameters.
 
 In the following example:
 
-```CSharp
+```csharp
 var requestBuilder = todoClient.TaskLists["taskListId"].Todos["todoId"].AssignedTo;
 ```
 
@@ -110,7 +110,7 @@ Indexers are used for navigation path segments which declare a single unnamed pa
 
 In the following example:
 
-```CSharp
+```csharp
 var requestBuilder = todoClient.TaskLists["taskListId"].Todos["todoId"].AssignedTo;
 ```
 
@@ -134,7 +134,7 @@ Methods with parameters are used when path segments contain named parameters or 
 
 In the following example:
 
-```CSharp
+```csharp
 var requestBuilder = todoClient.TaskLists["taskListId"].GetReminders("startDate", "endDate");
 ```
 

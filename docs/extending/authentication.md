@@ -10,7 +10,7 @@ Most REST APIs are protected through some kind of authentication and authorizati
 
 The authentication providers are required to implement the following contract/interface defined in the abstraction library.
 
-```CSharp
+```csharp
 public interface IAuthenticationProvider
 {
     Task AuthenticateRequest(RequestInformation request);
@@ -25,7 +25,7 @@ A common practice in the industry for APIs is to implement authentication and au
 
 Should you want to add support for additional authentication providers for that scheme, Kiota abstractions already offer a base class to extend so you only need to implement the access token obtention sequence and not the header composition/addition.
 
-```CSharp
+```csharp
 public abstract class BaseBearerTokenAuthenticationProvider
 {
     public abstract Task<string> GetAuthorizationToken(RequestInformation request);

@@ -97,7 +97,7 @@ Record the value of the ClientId property of the $app object as it will be neede
 
 The final step is to update the program.cs file that was generated as part of the console application to include the code below.
 
-```CSharp
+```csharp
 using System;
 using System.Threading.Tasks;
 using GraphClient;
