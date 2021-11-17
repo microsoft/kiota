@@ -1,3 +1,8 @@
+---
+nav_order: 3
+has_children: true
+---
+
 # Required tools
 
 This section lists the different tools that are required when building the generation result of Kiota for each language:

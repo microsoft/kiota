@@ -1,3 +1,7 @@
+---
+parent: Required tools
+---
+
 # Required tools for Java
 
 - [JDK 16](https://adoptopenjdk.net/)

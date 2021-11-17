@@ -1,3 +1,7 @@
+---
+parent: Understand and Extend the Kiota generator
+---
+
 # Kiota Abstractions
 
 On most platforms there are a range of different HTTP client library implementations. Developers often have preferences on which is the best implementation to meet their needs. Kiota's objective is to make it easier to create a HTTP request object but attempts to be agnostic of the library that will make the HTTP call. In order to decouple Kiota from specific HTTP libraries, we have defined a set of abstractions.
@@ -12,18 +16,18 @@ The HTTP core interface is the primary point where Kiota service libraries will 
 
         ISerializationWriterFactory SerializationWriterFactory { get; }
 
-        Task<ModelType> SendAsync<ModelType>(RequestInformation requestInfo, 
+        Task<ModelType> SendAsync<ModelType>(RequestInformation requestInfo,
                                              IResponseHandler responseHandler = default)
                      where ModelType : IParsable;
 
         Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(RequestInformation requestInfo,
-                        IResponseHandler responseHandler = default) 
+                        IResponseHandler responseHandler = default)
                     where ModelType : IParsable;
 
         Task<ModelType> SendPrimitiveAsync<ModelType>(RequestInformation requestInfo,
                                                       IResponseHandler responseHandler = default);
-                                                      
-        Task SendNoContentAsync(RequestInformation requestInfo, 
+
+        Task SendNoContentAsync(RequestInformation requestInfo,
                                 IResponseHandler responseHandler = default);
     }
 ```
@@ -76,7 +80,7 @@ TBD
 - This allows core to do all the default hard work, but enables a custom response handler to change the behavior of the method.
 
 ```CSharp
-    public interface IResponseHandler 
+    public interface IResponseHandler
     {
         Task<ModelType> HandleResponseAsync<NativeResponseType, ModelType>(NativeResponseType response);
     }

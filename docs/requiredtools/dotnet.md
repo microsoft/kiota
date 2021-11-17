@@ -1,3 +1,7 @@
+---
+parent: Required tools
+---
+
 # Required tools for Dotnet
 
 - [.NET SDK 6.0](https://dotnet.microsoft.com/download)
@@ -50,7 +54,7 @@ paths:
   /me:
     get:
       responses:
-        200: 
+        200:
           description: Success!
           content:
             application/json:
@@ -119,6 +123,6 @@ namespace GraphApp
 }
 ```
 
-> Note: if the target API doesn't require any authentication, you can use the **AnonymousAuthenticationProvider** instead.  
-> Note: if the target API requires a Authorization bearer \<token> header but doesn't rely on the Microsoft Identity Platform, you can implement your own authentication provider by inheriting from **BaseBearerTokenAuthenticationProvider**.  
+> Note: if the target API doesn't require any authentication, you can use the **AnonymousAuthenticationProvider** instead.
+> Note: if the target API requires a Authorization bearer \<token> header but doesn't rely on the Microsoft Identity Platform, you can implement your own authentication provider by inheriting from **BaseBearerTokenAuthenticationProvider**.
 > Note: if the target API requires any other form of authentication schemes, you can implement the **IAuthenticationProvider** interface.

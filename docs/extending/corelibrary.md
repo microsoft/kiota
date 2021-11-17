@@ -1,3 +1,7 @@
+---
+parent: Understand and Extend the Kiota generator
+---
+
 # Core Libraries
 
 Kiota attempts to minimizing the amount of generated code to decrease processing time and reduce the binary footprint of the SDKs. In order to achieve this, we attempt to put as much code as a possible into the core library.
