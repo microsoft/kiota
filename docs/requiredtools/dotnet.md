@@ -97,7 +97,7 @@ Record the value of the ClientId property of the $app object as it will be neede
 
 The final step is to update the program.cs file that was generated as part of the console application to include the code below.
 
-```CSharp
+```csharp
 using System;
 using System.Threading.Tasks;
 using GraphClient;
@@ -114,8 +114,8 @@ namespace GraphApp
         {
             var credential = new InteractiveBrowserCredential("<insert clientId from $app.ClientId>");
             var authProvider = new AzureIdentityAuthenticationProvider(credential, new string[] {"User.Read"});
-            var core = new HttpClientRequestAdapter(authProvider);
-            var apiClient = new ApiClient(core);
+            var requestAdapter = new HttpClientRequestAdapter(authProvider);
+            var apiClient = new ApiClient(requestAdapter);
             var me = await apiClient.Me.GetAsync();
             Console.WriteLine(me.DisplayName);
         }
