@@ -10,8 +10,8 @@ parent: Welcome to Kiota
 // An authentication provider from the supported language table
 // https://github.com/microsoft/kiota#supported-languages, or your own implementation
 var authProvider = ;
-var coreService = new HttpClientRequestAdapter(authProvider);
-var client = new ApiClient(coreService);
+var requestAdapter = new HttpClientRequestAdapter(authProvider);
+var client = new ApiClient(requestAdapter);
 var message = await client
     .Users["bob@contoso.com"]
     .Events
@@ -24,5 +24,4 @@ var message = await client
         };
         q.Expand2 = UserExpandFields.Calendar;
     });
-
 ```

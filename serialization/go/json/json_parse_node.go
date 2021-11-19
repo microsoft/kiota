@@ -1,3 +1,5 @@
+// Package jsonserialization is the default Kiota serialization implementation for JSON.
+// It relies on the standard Go JSON library.
 package jsonserialization
 
 import (
@@ -12,17 +14,12 @@ import (
 	absser "github.com/microsoft/kiota/abstractions/go/serialization"
 )
 
-// ParseNode implementation for JSON.
+// JsonParseNode is a ParseNode implementation for JSON.
 type JsonParseNode struct {
 	value interface{}
 }
 
-// Creates a new JsonParseNode.
-// Parameters:
-// - content: the content of the node.
-// Returns:
-// - the new JsonParseNode.
-// - An error if any.
+// NewJsonParseNode creates a new JsonParseNode.
 func NewJsonParseNode(content []byte) (*JsonParseNode, error) {
 	if len(content) == 0 {
 		return nil, errors.New("content is empty")
@@ -130,9 +127,13 @@ func loadJsonTree(decoder *json.Decoder) (*JsonParseNode, error) {
 	}
 	return nil, nil
 }
+
+// SetValue sets the value represented by the node
 func (n *JsonParseNode) SetValue(value interface{}) {
 	n.value = value
 }
+
+// GetChildNode returns a new parse node for the given identifier.
 func (n *JsonParseNode) GetChildNode(index string) (absser.ParseNode, error) {
 	if index == "" {
 		return nil, errors.New("index is empty")
@@ -143,6 +144,8 @@ func (n *JsonParseNode) GetChildNode(index string) (absser.ParseNode, error) {
 	}
 	return childNodes[index], nil
 }
+
+// GetObjectValue returns the Parsable value from the node.
 func (n *JsonParseNode) GetObjectValue(ctor func() absser.Parsable) (absser.Parsable, error) {
 	if ctor == nil {
 		return nil, errors.New("constuctor is nil")
@@ -175,6 +178,8 @@ func (n *JsonParseNode) GetObjectValue(ctor func() absser.Parsable) (absser.Pars
 	//TODO on after when implementing backing store
 	return result, nil
 }
+
+// GetCollectionOfObjectValues returns the collection of Parsable values from the node.
 func (n *JsonParseNode) GetCollectionOfObjectValues(ctor func() absser.Parsable) ([]absser.Parsable, error) {
 	if n == nil || n.value == nil {
 		return nil, nil
@@ -196,6 +201,8 @@ func (n *JsonParseNode) GetCollectionOfObjectValues(ctor func() absser.Parsable)
 	}
 	return result, nil
 }
+
+// GetCollectionOfPrimitiveValues returns the collection of primitive values from the node.
 func (n *JsonParseNode) GetCollectionOfPrimitiveValues(targetType string) ([]interface{}, error) {
 	if n == nil || n.value == nil {
 		return nil, nil
@@ -241,6 +248,8 @@ func (n *JsonParseNode) getPrimitiveValue(targetType string) (interface{}, error
 		return nil, errors.New("targetType is not supported")
 	}
 }
+
+// GetCollectionOfEnumValues returns the collection of Enum values from the node.
 func (n *JsonParseNode) GetCollectionOfEnumValues(parser func(string) (interface{}, error)) ([]interface{}, error) {
 	if n == nil || n.value == nil {
 		return nil, nil
@@ -262,18 +271,24 @@ func (n *JsonParseNode) GetCollectionOfEnumValues(parser func(string) (interface
 	}
 	return result, nil
 }
+
+// GetStringValue returns a String value from the nodes.
 func (n *JsonParseNode) GetStringValue() (*string, error) {
 	if n == nil || n.value == nil {
 		return nil, nil
 	}
 	return n.value.(*string), nil
 }
+
+// GetBoolValue returns a Bool value from the nodes.
 func (n *JsonParseNode) GetBoolValue() (*bool, error) {
 	if n == nil || n.value == nil {
 		return nil, nil
 	}
 	return n.value.(*bool), nil
 }
+
+// GetFloat32Value returns a Float32 value from the nodes.
 func (n *JsonParseNode) GetFloat32Value() (*float32, error) {
 	v, err := n.GetFloat64Value()
 	if err != nil {
@@ -285,12 +300,16 @@ func (n *JsonParseNode) GetFloat32Value() (*float32, error) {
 	cast := float32(*v)
 	return &cast, nil
 }
+
+// GetFloat64Value returns a Float64 value from the nodes.
 func (n *JsonParseNode) GetFloat64Value() (*float64, error) {
 	if n == nil || n.value == nil {
 		return nil, nil
 	}
 	return n.value.(*float64), nil
 }
+
+// GetInt32Value returns a Int32 value from the nodes.
 func (n *JsonParseNode) GetInt32Value() (*int32, error) {
 	v, err := n.GetFloat64Value()
 	if err != nil {
@@ -302,6 +321,8 @@ func (n *JsonParseNode) GetInt32Value() (*int32, error) {
 	cast := int32(*v)
 	return &cast, nil
 }
+
+// GetInt64Value returns a Int64 value from the nodes.
 func (n *JsonParseNode) GetInt64Value() (*int64, error) {
 	v, err := n.GetFloat64Value()
 	if err != nil {
@@ -313,6 +334,8 @@ func (n *JsonParseNode) GetInt64Value() (*int64, error) {
 	cast := int64(*v)
 	return &cast, nil
 }
+
+// GetTimeValue returns a Time value from the nodes.
 func (n *JsonParseNode) GetTimeValue() (*time.Time, error) {
 	v, err := n.GetStringValue()
 	if err != nil {
@@ -324,6 +347,8 @@ func (n *JsonParseNode) GetTimeValue() (*time.Time, error) {
 	parsed, err := time.Parse(time.RFC3339, *v)
 	return &parsed, err
 }
+
+// GetUUIDValue returns a UUID value from the nodes.
 func (n *JsonParseNode) GetUUIDValue() (*uuid.UUID, error) {
 	v, err := n.GetStringValue()
 	if err != nil {
@@ -335,6 +360,8 @@ func (n *JsonParseNode) GetUUIDValue() (*uuid.UUID, error) {
 	parsed, err := uuid.Parse(*v)
 	return &parsed, err
 }
+
+// GetEnumValue returns a Enum value from the nodes.
 func (n *JsonParseNode) GetEnumValue(parser func(string) (interface{}, error)) (interface{}, error) {
 	if parser == nil {
 		return nil, errors.New("parser is nil")
@@ -348,6 +375,8 @@ func (n *JsonParseNode) GetEnumValue(parser func(string) (interface{}, error)) (
 	}
 	return parser(*s)
 }
+
+// GetByteArrayValue returns a ByteArray value from the nodes.
 func (n *JsonParseNode) GetByteArrayValue() ([]byte, error) {
 	s, err := n.GetStringValue()
 	if err != nil {

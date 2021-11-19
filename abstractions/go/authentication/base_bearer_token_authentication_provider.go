@@ -8,31 +8,18 @@ import (
 
 const authorizationHeader = "Authorization"
 
-// Provides a base class for implementing AuthenticationProvider for Bearer token scheme.
+// BaseBearerTokenAuthenticationProvider provides a base class implementing AuthenticationProvider for Bearer token scheme.
 type BaseBearerTokenAuthenticationProvider struct {
-	// This method is called by the BaseBearerTokenAuthenticationProvider class to authenticate the request via the returned access token.
-	// Parameters:
-	//		request: Request information instance
-	// Returns:
-	//		string: Access token
-	//		error: nil if authentication is successful, otherwise an error
+	// getAuthorizationToken is called by the BaseBearerTokenAuthenticationProvider class to authenticate the request via the returned access token.
 	getAuthorizationToken func(request abs.RequestInformation) (string, error)
 }
 
-// Creates a new instance of the BaseBearerTokenAuthenticationProvider class.
-// Parameters:
-//		getAuthorizationToken: This method is called by the BaseBearerTokenAuthenticationProvider class to authenticate the request via the returned access token.
-// Returns:
-//		*BaseBearerTokenAuthenticationProvider: A new instance of the BaseBearerTokenAuthenticationProvider class.
+// NewBaseBearerTokenAuthenticationProvider creates a new instance of the BaseBearerTokenAuthenticationProvider class.
 func NewBaseBearerTokenAuthenticationProvider(getAuthorizationToken func(request abs.RequestInformation) (string, error)) *BaseBearerTokenAuthenticationProvider {
 	return &BaseBearerTokenAuthenticationProvider{getAuthorizationToken}
 }
 
-// Authenticates the Request information instance
-// Parameters:
-//		request: Request information instance
-// Returns:
-//		error: nil if authentication is successful, otherwise an error
+// AuthenticateRequest authenticates the provided RequestInformation instance using the provided authorization token callback.
 func (provider *BaseBearerTokenAuthenticationProvider) AuthenticateRequest(request abs.RequestInformation) error {
 	if request.Headers == nil {
 		request.Headers = make(map[string]string)

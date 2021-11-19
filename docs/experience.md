@@ -12,8 +12,8 @@ Basic read and write syntax for a resource.
 // An authentication provider from the supported language table
 // https://github.com/microsoft/kiota#supported-languages, or your own implementation
 var authProvider = ;
-var coreService = new HttpClientRequestAdapter(authProvider);
-var client = new ApiClient(coreService);
+var requestAdapter = new HttpClientRequestAdapter(authProvider);
+var client = new ApiClient(requestAdapter);
 var user = await client.Users["bob@contoso.com"].GetAsync();
 
 var newUser = new User
@@ -31,13 +31,12 @@ Resources are accessed via relation properties starting from the client object. 
 // An authentication provider from the supported language table
 // https://github.com/microsoft/kiota#supported-languages, or your own implementation
 var authProvider = ;
-var coreService = new HttpClientRequestAdapter(authProvider);
-var client = new ApiClient(coreService);
-var message = await client
-    .Users["bob@contoso.com"]
-    .MailFolders["Inbox"]
-    .Messages[23242]
-    .GetAsync();
+var requestAdapter = new HttpClientRequestAdapter(authProvider);
+var client = new ApiClient(requestAdapter);
+var message = await client.Users["bob@contoso.com"]
+                          .MailFolders["Inbox"]
+                          .Messages[23242]
+                          .GetAsync();
 ```
 
 The client object is a [request builder](extending/requestbuilders.md) object, and forms the root of a hierarchy of request builder objects that can access any number of APIs that are merged into a common URI space.
@@ -48,16 +47,13 @@ Requests can be further refined by providing query parameters. Each HTTP operati
 // An authentication provider from the supported language table
 // https://github.com/microsoft/kiota#supported-languages, or your own implementation
 var authProvider = ;
-var coreService = new HttpClientRequestAdapter(authProvider);
-var client = new ApiClient(coreService);
-var message = await client
-    .Users["bob@contoso.com"]
-    .CalendarView
-    .GetAsync(q =>
-    {
-        q.StartDateTime = DateTime.Now;
-        q.EndDateTime = DateTime.Now.AddDays(7);
-    });
+var requestAdapter = new HttpClientRequestAdapter(authProvider);
+var client = new ApiClient(requestAdapter);
+var message = await client.Users["bob@contoso.com"]
+                          .Events
+                          .GetAsync(q => {  q.StartDateTime = DateTime.Now;
+                                            q.EndDateTime = DateTime.Now.AddDays(7);
+                                        });
 ```
 
 Using a configured query parameter object prevents tight coupling on the order of query parameters and make optional parameters easy to implement across languages.

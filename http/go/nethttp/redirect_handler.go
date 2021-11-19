@@ -9,13 +9,13 @@ import (
 	abs "github.com/microsoft/kiota/abstractions/go"
 )
 
-// The redirect handler handles redirect responses and follows them according to the options specified.
+// RedirectHandler handles redirect responses and follows them according to the options specified.
 type RedirectHandler struct {
 	// options to use when evaluating whether to redirect or not
 	options RedirectHandlerOptions
 }
 
-// Creates a new redirect handler with the default options.
+// NewRedirectHandler creates a new redirect handler with the default options.
 func NewRedirectHandler() *RedirectHandler {
 	return NewRedirectHandlerWithOptions(RedirectHandlerOptions{
 		MaxRedirects: defaultMaxRedirects,
@@ -25,14 +25,12 @@ func NewRedirectHandler() *RedirectHandler {
 	})
 }
 
-// Creates a new redirect handler with the specified options.
-// Parameters:
-// options - the options to use when evaluating whether to redirect or not
+// NewRedirectHandlerWithOptions creates a new redirect handler with the specified options.
 func NewRedirectHandlerWithOptions(options RedirectHandlerOptions) *RedirectHandler {
 	return &RedirectHandler{options: options}
 }
 
-// Options to use when evaluating whether to redirect or not.
+// RedirectHandlerOptions to use when evaluating whether to redirect or not.
 type RedirectHandlerOptions struct {
 	// A callback that determines whether to redirect or not.
 	ShouldRedirect func(req *nethttp.Request, res *nethttp.Response) bool
@@ -50,17 +48,17 @@ type redirectHandlerOptionsInt interface {
 	GetMaxRedirect() int
 }
 
-// Returns the key value to be used when the option is added to the request context
+// GetKey returns the key value to be used when the option is added to the request context
 func (options *RedirectHandlerOptions) GetKey() abs.RequestOptionKey {
 	return redirectKeyValue
 }
 
-// Returns the redirection evaluation function.
+// GetShouldRedirect returns the redirection evaluation function.
 func (options *RedirectHandlerOptions) GetShouldRedirect() func(req *nethttp.Request, res *nethttp.Response) bool {
 	return options.ShouldRedirect
 }
 
-// Returns the maximum number of redirects to follow.
+// GetMaxRedirect returns the maximum number of redirects to follow.
 func (options *RedirectHandlerOptions) GetMaxRedirect() int {
 	if options == nil || options.MaxRedirects < 1 {
 		return defaultMaxRedirects
@@ -80,6 +78,7 @@ const temporaryRedirect = 307
 const permanentRedirect = 308
 const locationHeader = "Location"
 
+// Intercept implements the interface and evaluates whether to follow a redirect response.
 func (middleware RedirectHandler) Intercept(pipeline Pipeline, req *nethttp.Request) (*nethttp.Response, error) {
 	response, err := pipeline.Next(req)
 	if err != nil {

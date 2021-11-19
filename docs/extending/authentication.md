@@ -34,7 +34,7 @@ public abstract class BaseBearerTokenAuthenticationProvider
 
 Where the request parameter is the abstract request to be executed. And the return value is a Task that holds the access token, or null if the request could/should not be authenticated.
 
-> **Note:** Please leverage the same approach if you want to add support for new authentication schemes where the authentication scheme composition logic is implemented in a base class so it can be reused accross multiple providers.
+> **Note:** Please leverage the same approach if you want to add support for new authentication schemes where the authentication scheme composition logic is implemented in a base class so it can be reused across multiple providers.
 
 ## Azure Identity Authentication Provider
 
@@ -52,4 +52,4 @@ Some APIs do not require any authentication and can be queries anonymously. For 
 1. Is the authentication implemented that Authorization bearer token header? No - Implement a custom authentication provider, Yes - keep reading
 1. Is the API protected by Microsoft Identity Platform? No - Implement a custom authentication provider, Yes - Use the Azure Identity Authentication Provider
 
-> **Note:** if you end up implementing a custom authentication provider and you think this provider could be usefull to others, do not hesitate to send us a pull request!
+> **Note:** if you end up implementing a custom authentication provider and you think this provider could be useful to others, do not hesitate to send us a pull request!
