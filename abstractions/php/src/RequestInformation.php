@@ -11,6 +11,9 @@ class RequestInformation {
     /** @var string The URI of the request. */
     public string $uri;
 
+    /** @var array<string, mixed> $pathParameters */
+    public array $pathParameters = [];
+
     private const RAW_URL_KEY = 'request-raw-url';
 
     /** @var string|null The HTTP method for the request */
