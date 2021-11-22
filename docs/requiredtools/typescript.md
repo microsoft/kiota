@@ -1,3 +1,7 @@
+---
+parent: Required tools
+---
+
 # Required tools for TypeScript
 
 - [NodeJS 14](https://nodejs.org/en/)

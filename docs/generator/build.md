@@ -1,3 +1,7 @@
+---
+parent: Generators
+---
+
 # Building Kiota
 
 1. Clone the current repository.

@@ -1,3 +1,7 @@
+---
+parent: Required tools
+---
+
 # Required tools for Ruby
 
 - [Ruby 3](https://www.ruby-lang.org/en/downloads/)

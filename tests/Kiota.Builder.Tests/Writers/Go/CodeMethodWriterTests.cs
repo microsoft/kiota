@@ -211,7 +211,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             Assert.Contains("H != nil", result);
             Assert.Contains("requestInfo.Headers =", result);
             Assert.Contains("Q != nil", result);
-            Assert.Contains("Q.AddQueryParameters(requestInfo.QueryParameters)", result);
+            Assert.Contains("requestInfo.AddQueryParameters(*(options.Q))", result);
             Assert.Contains("O) != 0", result);
             Assert.Contains("requestInfo.AddRequestOptions(", result);
             Assert.Contains("requestInfo.SetContentFromParsable(m.requestAdapter", result);
@@ -404,6 +404,22 @@ namespace Kiota.Builder.Writers.Go.Tests {
             Assert.Contains("m.pathParameters", result);
             Assert.Contains("pathParam", result);
             Assert.Contains("return New", result);
+        }
+        [Fact]
+        public void WritesDescription() {
+            AddRequestProperties();
+            method.MethodKind = CodeMethodKind.RequestBuilderWithParameters;
+            method.AddParameter(new CodeParameter {
+                Name = "pathParam",
+                ParameterKind = CodeParameterKind.Path,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            });
+            method.Description = "Some description";
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains($"// {method.Name.ToFirstCharacterUpperCase()} some description", result);
         }
         [Fact]
         public void WritesGetterToBackingStore() {

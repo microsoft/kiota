@@ -1,3 +1,7 @@
+---
+parent: Welcome to Kiota
+---
+
 # Using the Kiota tool
 
 ## How to install the tool

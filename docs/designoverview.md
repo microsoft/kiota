@@ -1,3 +1,7 @@
+---
+parent: Welcome to Kiota
+---
+
 # Design Overview
 
 ## Introduction
@@ -50,7 +54,7 @@ Implementing a language support for a new language requires, at minimum, impleme
 
 The generated source code, does not contain the logic to make HTTP requests directly. It requires being connected to a core library that will make the HTTP requests.  A Kiota.Core library will provide basic HTTP functionality, but API owners can choose to provide their own core libraries that are optimized for their API.
 
-Core libraries take a dependency on the Kiota abstractions library for a language and provide the services of making the HTTP call to the API.  
+Core libraries take a dependency on the Kiota abstractions library for a language and provide the services of making the HTTP call to the API.
 
 ![](./images/KiotaAbstractions.png)
 
