@@ -209,6 +209,10 @@ namespace Kiota.Builder.Writers.Php
 
         public string ReplaceDotsWithSlashInNamespaces(string namespaced)
         {
+            if (string.IsNullOrEmpty(namespaced))
+            {
+                return string.Empty;
+            }
             var parts = namespaced.Split('.');
             return string.Join('\\', parts.Select(x => x.ToFirstCharacterUpperCase())).Trim('\\');
         }
