@@ -91,5 +91,45 @@ namespace Kiota.Builder.Tests.Writers.Php
             var result = tw.ToString();
             Assert.DoesNotContain("Microsoft\\Graph\\Models\\ParentClass", result);
         }
+
+        [Fact]
+        public void ImportRequiredClassesWhenContainsRequestExecutor()
+        {
+            var declaration = parentClass;
+            declaration?.AddMethod(new CodeMethod()
+            {
+                Name = "get",
+                Access = AccessModifier.Public,
+                MethodKind = CodeMethodKind.RequestExecutor,
+                HttpMethod = HttpMethod.Get,
+                ReturnType = new CodeType
+                {
+                    Name = "Promise",
+                    Parent = declaration
+                }
+            });
+            var dec = declaration?.StartBlock as CodeClass.Declaration;
+            codeElementWriter.WriteCodeElement(dec, writer);
+            var result = tw.ToString();
+            Assert.Contains("use Http\\Promise\\Promise;", result);
+            Assert.Contains("use Http\\Promise\\RejectedPromise;", result);
+            Assert.Contains("use \\Exception;", result);
+        }
+
+        [Fact]
+        public void ExtendABaseClass()
+        {
+            var currentClass = parentClass.StartBlock as CodeClass.Declaration;
+            currentClass.Inherits = new CodeType() {TypeDefinition = new CodeClass()
+            {
+                Name = "Model",
+                ClassKind = CodeClassKind.Custom
+            }};
+            
+            codeElementWriter.WriteCodeElement(currentClass, writer);
+            var result = tw.ToString();
+            Assert.Contains("extends", result);
+
+        }
     }
 }
