@@ -120,12 +120,14 @@ namespace Kiota.Builder.Tests.Writers.Php
         public void ExtendABaseClass()
         {
             var currentClass = parentClass.StartBlock as CodeClass.Declaration;
-            currentClass.Inherits = new CodeType() {TypeDefinition = new CodeClass()
+            if (currentClass != null)
             {
-                Name = "Model",
-                ClassKind = CodeClassKind.Custom
-            }};
-            
+                currentClass.Inherits = new CodeType()
+                {
+                    TypeDefinition = new CodeClass() {Name = "Model", ClassKind = CodeClassKind.Custom}
+                };
+            }
+
             codeElementWriter.WriteCodeElement(currentClass, writer);
             var result = tw.ToString();
             Assert.Contains("extends", result);
