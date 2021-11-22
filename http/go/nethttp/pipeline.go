@@ -5,11 +5,6 @@ import nethttp "net/http"
 // Pipeline contract for middleware infrastructure
 type Pipeline interface {
 	// Next moves the request object through middlewares in the pipeline
-	// Parameters:
-	//     req: the request object
-	// Returns:
-	//     the response object
-	//     error: any error that occurred
 	Next(req *nethttp.Request) (*nethttp.Response, error)
 }
 
@@ -54,15 +49,12 @@ func (pipeline *middlewarePipeline) Next(req *nethttp.Request) (*nethttp.Respons
 	return pipeline.transport.RoundTrip(req)
 }
 
+// RoundTrip executes the the next middleware and returns a response
 func (transport *customTransport) RoundTrip(req *nethttp.Request) (*nethttp.Response, error) {
 	return transport.middlewarePipeline.Next(req)
 }
 
-// Creates a new custom transport for http client with the provided set of middleware
-// Parameters:
-//     middlewares: the middlewares to use
-// Returns:
-//     the custom transport
+// NewCustomTransport creates a new custom transport for http client with the provided set of middleware
 func NewCustomTransport(middlewares ...Middleware) *customTransport {
 	if len(middlewares) == 0 {
 		middlewares = GetDefaultMiddlewares()

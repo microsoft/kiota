@@ -1,3 +1,7 @@
+---
+parent: Generators
+---
+
 # Running Kiota with Docker
 
 1. Execute the following command to start generating SDKs

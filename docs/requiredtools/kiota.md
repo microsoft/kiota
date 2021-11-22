@@ -1,3 +1,7 @@
+---
+parent: Required tools
+---
+
 # Required tools for Kiota contribution
 
 - [.NET SDK 6.0](https://dotnet.microsoft.com/download)

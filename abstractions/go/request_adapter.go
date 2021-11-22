@@ -1,62 +1,35 @@
+// Package abstractions provides the base infrastructure for the Kiota-generated SDKs to function.
+// It defines multiple concepts related to abstract HTTP requests, serialization, and authentication.
+// These concepts can then be implemented independently without tying the SDKs to any specific implementation.
+// Kiota also provides default implementations for these concepts.
+// Checkout:
+// - github.com/microsoft/kiota/authentication/go/azure
+// - github.com/microsoft/kiota/http/go/nethttp
+// - github.com/microsoft/kiota/serialization/go/json
 package abstractions
 
 import (
 	s "github.com/microsoft/kiota/abstractions/go/serialization"
 )
 
-// Service responsible for translating abstract Request Info into concrete native HTTP requests.
+// RequestAdapter is the service responsible for translating abstract RequestInformation into native HTTP requests.
 type RequestAdapter interface {
-	// Executes the HTTP request specified by the given RequestInformation and returns the deserialized response model.
-	// Parameters:
-	//  - requestInfo: The RequestInformation object to use for the HTTP request.
-	//  - constuctor: The factory for the result Parsable object
-	//  - responseHandler: The response handler to use for the HTTP request instead of the default handler.
-	// Returns:
-	//  - The deserialized response model.
-	//  - An error if any.
+	// SendAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized response model.
 	SendAsync(requestInfo RequestInformation, constructor func() s.Parsable, responseHandler ResponseHandler) (s.Parsable, error)
-	// Executes the HTTP request specified by the given RequestInformation and returns the deserialized response model collection.
-	// Parameters:
-	//  - requestInfo: The RequestInformation object to use for the HTTP request.
-	//  - constuctor: The factory for the result Parsable object
-	//  - responseHandler: The response handler to use for the HTTP request instead of the default handler.
-	// Returns:
-	//  - The deserialized response model collection.
-	//  - An error if any.
+	// SendCollectionAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized response model collection.
 	SendCollectionAsync(requestInfo RequestInformation, constructor func() s.Parsable, responseHandler ResponseHandler) ([]s.Parsable, error)
-	// Executes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model.
-	// Parameters:
-	//  - requestInfo: The RequestInformation object to use for the HTTP request.
-	//  - typeName: The type name of the response model.
-	//  - responseHandler: The response handler to use for the HTTP request instead of the default handler.
-	// Returns:
-	//  - The deserialized response model.
-	//  - An error if any.
+	// SendPrimitiveAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model.
 	SendPrimitiveAsync(requestInfo RequestInformation, typeName string, responseHandler ResponseHandler) (interface{}, error)
-	// Executes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model collection.
-	// Parameters:
-	//  - requestInfo: The RequestInformation object to use for the HTTP request.
-	//  - typeName: The type name of the response model.
-	//  - responseHandler: The response handler to use for the HTTP request instead of the default handler.
-	// Returns:
-	//  - The deserialized response model collection.
-	//  - An error if any.
+	// SendPrimitiveCollectionAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model collection.
 	SendPrimitiveCollectionAsync(requestInfo RequestInformation, typeName string, responseHandler ResponseHandler) ([]interface{}, error)
-	// Executes the HTTP request specified by the given RequestInformation with no return content.
-	// Parameters:
-	//  - requestInfo: The RequestInformation object to use for the HTTP request.
-	//  - responseHandler: The response handler to use for the HTTP request instead of the default handler.
-	// Returns:
-	//  - An error if any.
+	// SendNoContentAsync executes the HTTP request specified by the given RequestInformation with no return content.
 	SendNoContentAsync(requestInfo RequestInformation, responseHandler ResponseHandler) error
-	// Gets the serialization writer factory currently in use for the request adapter service.
-	// Returns:
-	//  - The serialization writer factory currently in use for the request adapter service.
+	// GetSerializationWriterFactory returns the serialization writer factory currently in use for the request adapter service.
 	GetSerializationWriterFactory() s.SerializationWriterFactory
-	// Enables the backing store proxies for the SerializationWriters and ParseNodes in use.
+	// EnableBackingStore enables the backing store proxies for the SerializationWriters and ParseNodes in use.
 	EnableBackingStore()
-	// Sets the base url for every request.
+	// SetBaseUrl sets the base url for every request.
 	SetBaseUrl(baseUrl string)
-	// Gets the base url for every request.
+	// GetBaseUrl gets the base url for every request.
 	GetBaseUrl() string
 }
