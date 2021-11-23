@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Extensions;
@@ -19,6 +19,7 @@ namespace Kiota.Builder.Refiners {
                 generatedCode,
                 false,
                 "ById");
+            RemoveCancellationParameter(generatedCode);
             ReplaceRequestBuilderPropertiesByMethods(
                 generatedCode
             );

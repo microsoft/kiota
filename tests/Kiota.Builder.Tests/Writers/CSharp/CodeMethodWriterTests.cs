@@ -130,6 +130,12 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
                 ParameterKind = CodeParameterKind.Options,
                 Type = stringType,
             });
+            method.AddParameter(new CodeParameter
+            {
+                Name = "c",
+                ParameterKind = CodeParameterKind.Cancellation,
+                Type = stringType,
+            });
         }
         [Fact]
         public void WritesRequestBuilder() {
@@ -154,6 +160,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             Assert.Contains("SendAsync", result);
             Assert.Contains(AsyncKeyword, result);
             Assert.Contains("await", result);
+            Assert.Contains("cancellationToken", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
@@ -165,6 +172,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("SendCollectionAsync", result);
+            Assert.Contains("cancellationToken", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
