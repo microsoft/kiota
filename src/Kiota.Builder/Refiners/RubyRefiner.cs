@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -11,6 +11,7 @@ namespace Kiota.Builder.Refiners {
         {
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "_by_id");
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
+            RemoveCancellationParameter(generatedCode);
             AddParsableInheritanceForModelClasses(generatedCode);
             AddInheritedAndMethodTypesImports(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
