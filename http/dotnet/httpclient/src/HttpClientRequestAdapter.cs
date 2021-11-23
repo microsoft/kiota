@@ -12,6 +12,7 @@ using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Abstractions.Serialization;
 using Microsoft.Kiota.Abstractions.Store;
 using Microsoft.Kiota.Abstractions.Authentication;
+using System.Threading;
 
 namespace Microsoft.Kiota.Http.HttpClientLibrary
 {
@@ -57,9 +58,10 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
         /// </summary>
         /// <param name="requestInfo">The <see cref="RequestInformation"/> instance to send</param>
         /// <param name="responseHandler">The <see cref="IResponseHandler"/> to use with the response</param>
-        public async Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default) where ModelType : IParsable
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/> to use for cancelling the request.</param>
+        public async Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default, CancellationToken cancellationToken = default) where ModelType : IParsable
         {
-            var response = await GetHttpResponseMessage(requestInfo);
+            var response = await GetHttpResponseMessage(requestInfo, cancellationToken);
             requestInfo.Content?.Dispose();
             if(responseHandler == null)
             {
@@ -75,9 +77,10 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
         /// </summary>
         /// <param name="requestInfo">The RequestInformation object to use for the HTTP request.</param>
         /// <param name="responseHandler">The response handler to use for the HTTP request instead of the default handler.</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/> to use for cancelling the request.</param>
         /// <returns>The deserialized primitive response model collection.</returns>
-        public async Task<IEnumerable<ModelType>> SendPrimitiveCollectionAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default) {
-            var response = await GetHttpResponseMessage(requestInfo);
+        public async Task<IEnumerable<ModelType>> SendPrimitiveCollectionAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default, CancellationToken cancellationToken = default) {
+            var response = await GetHttpResponseMessage(requestInfo, cancellationToken);
             requestInfo.Content?.Dispose();
             if(responseHandler == null)
             {
@@ -93,9 +96,11 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
         /// </summary>
         /// <param name="requestInfo">The <see cref="RequestInformation"/> instance to send</param>
         /// <param name="responseHandler">The <see cref="IResponseHandler"/> to use with the response</param>
-        public async Task<ModelType> SendAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = null) where ModelType : IParsable
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/> to use for cancelling the request.</param>
+        /// <returns>The deserialized response model.</returns>
+        public async Task<ModelType> SendAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = null, CancellationToken cancellationToken = default) where ModelType : IParsable
         {
-            var response = await GetHttpResponseMessage(requestInfo);
+            var response = await GetHttpResponseMessage(requestInfo, cancellationToken);
             requestInfo.Content?.Dispose();
             if(responseHandler == null)
             {
@@ -111,10 +116,11 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
         /// </summary>
         /// <param name="requestInfo">The <see cref="RequestInformation"/> instance to send</param>
         /// <param name="responseHandler">The <see cref="IResponseHandler"/> to use with the response</param>
-        /// <returns></returns>
-        public async Task<ModelType> SendPrimitiveAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default)
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/> to use for cancelling the request.</param>
+        /// <returns>The deserialized primitive response model.</returns>
+        public async Task<ModelType> SendPrimitiveAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default, CancellationToken cancellationToken = default)
         {
-            var response = await GetHttpResponseMessage(requestInfo);
+            var response = await GetHttpResponseMessage(requestInfo, cancellationToken);
             requestInfo.Content?.Dispose();
             if(responseHandler == null)
             {
@@ -167,10 +173,11 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
         /// </summary>
         /// <param name="requestInfo">The <see cref="RequestInformation"/> instance to send</param>
         /// <param name="responseHandler">The <see cref="IResponseHandler"/> to use with the response</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/> to use for cancelling the request.</param>
         /// <returns></returns>
-        public async Task SendNoContentAsync(RequestInformation requestInfo, IResponseHandler responseHandler = null)
+        public async Task SendNoContentAsync(RequestInformation requestInfo, IResponseHandler responseHandler = null, CancellationToken cancellationToken = default)
         {
-            var response = await GetHttpResponseMessage(requestInfo);
+            var response = await GetHttpResponseMessage(requestInfo, cancellationToken);
             requestInfo.Content?.Dispose();
             if(responseHandler == null)
                 response.Dispose();
@@ -187,7 +194,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
             response.Dispose();
             return rootNode;
         }
-        private async Task<HttpResponseMessage> GetHttpResponseMessage(RequestInformation requestInfo)
+        private async Task<HttpResponseMessage> GetHttpResponseMessage(RequestInformation requestInfo, CancellationToken cancellationToken)
         {
             if(requestInfo == null)
                 throw new ArgumentNullException(nameof(requestInfo));
@@ -195,7 +202,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
             await authProvider.AuthenticateRequestAsync(requestInfo);
 
             using var message = GetRequestMessageFromRequestInformation(requestInfo);
-            var response = await this.client.SendAsync(message);
+            var response = await this.client.SendAsync(message,cancellationToken);
             if(response == null)
                 throw new InvalidOperationException("Could not get a response after calling the service");
             return response;
