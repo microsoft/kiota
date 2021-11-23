@@ -92,7 +92,52 @@ namespace Kiota.Builder.Tests.Writers.Php
             var result = tw.ToString();
             Assert.Contains("private array $additionalData;", result);
             Assert.Contains("@var array<string, mixed>|null", result);
+        }
+        
+        [Fact]
+        public void WriteCollectionNonAdditionalData()
+        {
+            var property = new CodeProperty()
+            {
+                Name = "recipients",
+                PropertyKind = CodePropertyKind.Custom,
+                Access = AccessModifier.Private,
+                Type = new CodeType()
+                {
+                    Name = "recipient", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array
+                }
+            };
+            var currentClass = parentClass;
+            currentClass.AddProperty(property);
+            
+            propertyWriter.WriteCodeElement(property, writer);
+            var result = tw.ToString();
+            Assert.Contains("@var array<Recipient>|null", result);
+        }
 
+        [Fact]
+        public void WriteRequestAdapter()
+        {
+            var currentClass = parentClass;
+            var adapter = new CodeProperty()
+            {
+                Name = "adapter",
+                Type = new CodeType() {Name = "requestAdapter", IsNullable = false},
+                Access = AccessModifier.Private,
+                PropertyKind = CodePropertyKind.RequestAdapter
+            };
+            
+            
+            currentClass.AddProperty(adapter);
+            currentClass.AddProperty(new CodeProperty()
+            {
+                Name = "pathSegment", 
+                PropertyKind = CodePropertyKind.PathParameters
+            });
+            propertyWriter.WriteCodeElement(adapter, writer);
+            var result = tw.ToString();
+
+            Assert.Contains("private RequestAdapter $adapter;", result);
         }
     }
 }
