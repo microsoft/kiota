@@ -35,7 +35,7 @@ dependencies {
 
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation 'com.google.guava:guava:31.0.1-jre'
-    api 'com.azure:azure-core:1.22.0'
+    api 'com.azure:azure-core:1.23.0'
     api 'com.microsoft.kiota:kiota-abstractions:1.0.19'
 }
 

@@ -93,6 +93,8 @@ namespace Kiota.Builder.Refiners {
                 "System.Collections.Generic", "List", "Dictionary"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder),
                 "System.IO", "Stream"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+                "System.Threading", "CancellationToken"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
                 "System.Threading.Tasks", "Task"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder),
