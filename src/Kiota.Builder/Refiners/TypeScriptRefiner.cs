@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using System;
 using Kiota.Builder.Extensions;
 
@@ -10,6 +10,7 @@ namespace Kiota.Builder.Refiners {
         {
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
+            RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);

@@ -11,6 +11,7 @@ namespace Kiota.Builder.Refiners {
             AddInnerClasses(generatedCode, false);
             InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);
+            RemoveCancellationParameter(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
             AddRawUrlConstructorOverload(generatedCode);
             ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -488,6 +488,13 @@ namespace Kiota.Builder.Refiners {
                     parentClass.AddMethod(overloadCtor);
                 }
             CrawlTree(currentElement, AddRawUrlConstructorOverload);
+        }
+        protected static void RemoveCancellationParameter(CodeElement currentElement){
+            if (currentElement is CodeMethod currentMethod &&
+                currentMethod.IsOfKind(CodeMethodKind.RequestExecutor)){
+                    currentMethod.RemoveParametersByKind(CodeParameterKind.Cancellation);
+            }
+            CrawlTree(currentElement, RemoveCancellationParameter);
         }
     }
 }

@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using Xunit;
 
 namespace Kiota.Builder.Refiners.Tests {
@@ -135,6 +135,36 @@ namespace Kiota.Builder.Refiners.Tests {
             method.AddParameter(parameter);
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
             Assert.Equal(2, model.GetChildElements(true).Count());
+        }
+        [Fact]
+        public void DoesNotKeepCancellationParametersInRequestExecutors()
+        {
+            var model = root.AddClass(new CodeClass
+            {
+                Name = "model",
+                ClassKind = CodeClassKind.RequestBuilder
+            }).First();
+            var method = model.AddMethod(new CodeMethod
+            {
+                Name = "getMethod",
+                MethodKind = CodeMethodKind.RequestExecutor,
+                ReturnType = new CodeType
+                {
+                    Name = "string"
+                }
+            }).First();
+            var cancellationParam = new CodeParameter
+            {
+                Name = "cancelletionToken",
+                Optional = true,
+                ParameterKind = CodeParameterKind.Cancellation,
+                Description = "Cancellation token to use when cancelling requests",
+                Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
+            };
+            method.AddParameter(cancellationParam);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root); //using CSharp so the cancelletionToken doesn't get removed
+            Assert.False(method.Parameters.Any());
+            Assert.DoesNotContain(cancellationParam, method.Parameters);
         }
         #endregion
         #region JavaLanguageRefinerTests

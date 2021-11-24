@@ -579,7 +579,16 @@ namespace Kiota.Builder
                 Description = "Response handler to use in place of the default response handling provided by the core service",
                 Type = new CodeType { Name = "IResponseHandler", IsExternal = true },
             };
-            executorMethod.AddParameter(handlerParam);
+            executorMethod.AddParameter(handlerParam);// Add response handler parameter
+
+            var cancellationParam = new CodeParameter{
+                Name = "cancellationToken",
+                Optional = true,
+                ParameterKind = CodeParameterKind.Cancellation,
+                Description = "Cancellation token to use when cancelling requests",
+                Type = new CodeType { Name = "CancellationToken", IsExternal = true },
+            };
+            executorMethod.AddParameter(cancellationParam);// Add cancellation token parameter
             logger.LogTrace("Creating method {name} of {type}", executorMethod.Name, executorMethod.ReturnType);
 
             var generatorMethod = new CodeMethod {
