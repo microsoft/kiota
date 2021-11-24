@@ -11,6 +11,7 @@
     },
   "autoload-dev": {
     "psr-4": {
+      "Microsoft\\Kiota\\Abstractions\\": "./src",
       "Microsoft\\Kiota\\Tests\\": "./tests"
     }
   },
@@ -20,7 +21,7 @@
       "php-http/message-factory": "^1.0.2"
     },
     "require-dev": {
-      "phpstan/phpstan": "^0.12.92", 
+      "phpstan/phpstan": "^1.2.0",
       "phpunit/phpunit": "^8.5.5 || ^9.3.5"
     }
 }
