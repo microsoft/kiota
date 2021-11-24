@@ -6,11 +6,15 @@
     "minimum-stability": "stable",
     "autoload": {
         "psr-4": {
-          "Microsoft\\Kiota\\Abstractions\\": "./src",
-          "Microsoft\\Kiota\\Tests\\": "./tests"
+          "Microsoft\\Kiota\\Abstractions\\": "./src"
         }
     },
-    "require": {
+  "autoload-dev": {
+    "psr-4": {
+      "Microsoft\\Kiota\\Tests\\": "./tests"
+    }
+  },
+  "require": {
       "php": "^7.4 || ^8.0",
       "php-http/promise": "^1.1.0",
       "php-http/message-factory": "^1.0.2"
