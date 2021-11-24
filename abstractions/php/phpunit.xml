@@ -5,9 +5,13 @@
             <directory>tests</directory>
         </testsuite>
     </testsuites>
-    <filter>
-        <whitelist addUncoveredFilesFromWhitelist="true">
+    <coverage includeUncoveredFiles="true"
+              pathCoverage="true">
+        <include>
             <directory suffix=".php">src</directory>
-        </whitelist>
-    </filter>
+        </include>
+        <report>
+            <html outputDirectory="coverage"/>
+        </report>
+    </coverage>
 </phpunit>
