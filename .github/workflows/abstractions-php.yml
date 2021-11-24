@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       relativePath: ./abstractions/php
+      XDEBUG_MODE: 'coverage'
     steps:
       - uses: actions/checkout@v2.4.0
         with:
