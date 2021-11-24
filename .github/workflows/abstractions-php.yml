@@ -13,7 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       relativePath: ./abstractions/php
-      XDEBUG_MODE: 'coverage'
     steps:
       - name: Checkout
         uses: actions/checkout@v2.4.0
@@ -25,7 +24,7 @@ jobs:
         run: composer install
         working-directory: ${{ env.relativePath }}
       - name: Run static analysis
-        run: ./vendor/bin/phpstan
+        run: ./vendor/bin/phpstan --debug
         working-directory: ${{ env.relativePath }}
       - name: Run tests
         run: ./vendor/bin/phpunit --coverage-text
