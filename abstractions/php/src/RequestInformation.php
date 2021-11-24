@@ -14,6 +14,7 @@ class RequestInformation {
     /** @var array<string, mixed> $pathParameters */
     public array $pathParameters = [];
 
+    /* @phpstan-ignore-next-line */
     private const RAW_URL_KEY = 'request-raw-url';
 
     /** @var string|null The HTTP method for the request */

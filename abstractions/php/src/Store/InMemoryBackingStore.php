@@ -11,7 +11,7 @@ class InMemoryBackingStore implements BackingStore
     private bool $returnOnlyChangedValues;
 
     /**
-     * @var array<string, array> $store;
+     * @var array<string,array|mixed|array<string,mixed>> $store;
      */
     private array $store = [];
 
