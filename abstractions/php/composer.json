@@ -6,7 +6,8 @@
     "minimum-stability": "stable",
     "autoload": {
         "psr-4": {
-            "Microsoft\\Kiota\\Abstractions\\": "./src"
+          "Microsoft\\Kiota\\Abstractions\\": "./src",
+          "Microsoft\\Kiota\\Tests\\": "./tests"
         }
     },
     "require": {
