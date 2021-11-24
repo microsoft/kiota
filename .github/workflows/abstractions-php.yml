@@ -23,8 +23,11 @@ jobs:
       - name: Install dependencies
         run: composer install
         working-directory: ${{ env.relativePath }}
+      - name: Clear PHPStan cache
+        run: ./vendor/bin/phpstan -clear-result-cache
+        working-directory: ${{ env.relativePath }}
       - name: Run static analysis
-        run: ./vendor/bin/phpstan --debug
+        run: ./vendor/bin/phpstan
         working-directory: ${{ env.relativePath }}
       - name: Run tests
         run: ./vendor/bin/phpunit --coverage-text
