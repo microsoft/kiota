@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Kiota.Builder.Refiners;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Php;
 using Xunit;
@@ -14,11 +15,12 @@ namespace Kiota.Builder.Tests.Writers.Php
         private readonly LanguageWriter writer;
         private readonly CodeClassDeclarationWriter codeElementWriter;
         private readonly CodeClass parentClass;
-
+        private readonly ILanguageRefiner _refiner;
         public CodeClassDeclarationWriterTests() {
             codeElementWriter = new CodeClassDeclarationWriter(new PhpConventionService());
             writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.PHP, DefaultPath, DefaultName);
             tw = new StringWriter();
+            _refiner = new PhpRefiner(new GenerationConfiguration() {Language = GenerationLanguage.PHP});
             writer.SetTextWriter(tw);
             var root = CodeNamespace.InitRootNamespace();
             root.Name = "Microsoft\\Graph";
@@ -109,8 +111,11 @@ namespace Kiota.Builder.Tests.Writers.Php
                 }
             });
             var dec = declaration?.StartBlock as CodeClass.Declaration;
+            var namespaces = declaration?.Parent as CodeNamespace;
+            _refiner.Refine(namespaces);
             codeElementWriter.WriteCodeElement(dec, writer);
             var result = tw.ToString();
+            
             Assert.Contains("use Http\\Promise\\Promise;", result);
             Assert.Contains("use Http\\Promise\\RejectedPromise;", result);
             Assert.Contains("use \\Exception;", result);
