@@ -24,18 +24,15 @@ namespace Kiota.Builder.Writers.Php
 
         public override string DocCommentPrefix => " * ";
 
-        private static string PathSegmentPropertyName => "$pathSegment";
-
         private static string PathParametersPropertyName => "$pathParameters";
 
         private static string RequestAdapterPropertyName => "$requestAdapter";
 
         public override string ParseNodeInterfaceName => "ParseNode";
 
-        public static string ResponseHandlerPropertyName => "$responseHandler";
+        public static string DocCommentStart => "/**";
 
-        public string DocCommentStart = "/**";
-        public string DocCommentEnd = "*/";
+        public static string DocCommentEnd => "*/";
 
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
         {
@@ -65,7 +62,7 @@ namespace Kiota.Builder.Writers.Php
             };
         }
 
-        public string GetParameterName(CodeParameter parameter)
+        public static string GetParameterName(CodeParameter parameter)
         {
             return (parameter.ParameterKind) switch
             {
@@ -136,7 +133,7 @@ namespace Kiota.Builder.Writers.Php
             }
         }
 
-        public void AddRequestBuilderBody(bool addCurrentPathProperty, string returnType, LanguageWriter writer, string suffix = default, string additionalPathParameters = default)
+        public static void AddRequestBuilderBody(bool addCurrentPathProperty, string returnType, LanguageWriter writer, string suffix = default, string additionalPathParameters = default)
         {
             writer.WriteLines($"return new {returnType}($this->{RemoveDollarSignFromPropertyName(PathParametersPropertyName)}{suffix}, $this->{RemoveDollarSignFromPropertyName(RequestAdapterPropertyName)});");
         }
@@ -151,12 +148,12 @@ namespace Kiota.Builder.Writers.Php
             return propertyName[1..];
         }
 
-        public void WritePhpDocumentStart(LanguageWriter writer)
+        public static void WritePhpDocumentStart(LanguageWriter writer)
         {
             writer.WriteLines("<?php", string.Empty);
         }
 
-        public void WriteCodeBlockEnd(LanguageWriter writer)
+        public static void WriteCodeBlockEnd(LanguageWriter writer)
         {
             writer.DecreaseIndent();
             writer.WriteLine("}");
@@ -169,7 +166,7 @@ namespace Kiota.Builder.Writers.Php
          * $variable to the variable named $value rather than the string '$value'
          * around quotes as expected.
          */
-        public string ReplaceDoubleQuoteWithSingleQuote(string current)
+        public static string ReplaceDoubleQuoteWithSingleQuote(string current)
         {
             if (string.IsNullOrEmpty(current))
             {
@@ -178,7 +175,7 @@ namespace Kiota.Builder.Writers.Php
             return current.StartsWith("\"", StringComparison.OrdinalIgnoreCase) ? current.Replace('\"', '\'') : current;
         }
 
-        public void WriteNamespaceAndImports(CodeClass.Declaration codeElement, LanguageWriter writer)
+        public static void WriteNamespaceAndImports(CodeClass.Declaration codeElement, LanguageWriter writer)
         {
             bool hasUse = false;
             if (codeElement?.Parent?.Parent is CodeNamespace codeNamespace)
@@ -207,7 +204,7 @@ namespace Kiota.Builder.Writers.Php
             }
         }
 
-        public string ReplaceDotsWithSlashInNamespaces(string namespaced)
+        public static string ReplaceDotsWithSlashInNamespaces(string namespaced)
         {
             if (string.IsNullOrEmpty(namespaced))
             {
@@ -216,7 +213,7 @@ namespace Kiota.Builder.Writers.Php
             var parts = namespaced.Split('.');
             return string.Join('\\', parts.Select(x => x.ToFirstCharacterUpperCase())).Trim('\\');
         }
-        internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default) {
+        internal static void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default) {
             var codeParameters = pathParameters as CodeParameter[] ?? pathParameters?.ToArray();
             var codePathParametersSuffix = !(codeParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", codeParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
             var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);

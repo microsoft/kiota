@@ -23,7 +23,7 @@ namespace Kiota.Builder.Writers.Php
                     conventions.WriteShortDescription(codeElement.Description, writer);
                     writer.WriteLine($"{propertyAccess} function {propertyName}(): {returnType} {{");
                     writer.IncreaseIndent();
-                    conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer);
+                    PhpConventionService.AddRequestBuilderBody(currentPathProperty != null, returnType, writer);
                     writer.DecreaseIndent();
                     writer.WriteLine("}");
                     break;
@@ -52,8 +52,8 @@ namespace Kiota.Builder.Writers.Php
             var typeString = (collectionKind
                 ? GetCollectionDocString(codeProperty)
                 : conventions.GetTypeString(codeProperty.Type, codeProperty));
-            writer.WriteLine($"{conventions.DocCommentStart} @var {typeString}{(codeProperty.Type.IsNullable ? "|null" : string.Empty)} ${codeProperty.Name} " +
-                             $"{(hasDescription ? propertyDescription : string.Empty)} {conventions.DocCommentEnd}");
+            writer.WriteLine($"{PhpConventionService.DocCommentStart} @var {typeString}{(codeProperty.Type.IsNullable ? "|null" : string.Empty)} ${codeProperty.Name} " +
+                             $"{(hasDescription ? propertyDescription : string.Empty)} {PhpConventionService.DocCommentEnd}");
         }
 
         private string GetCollectionDocString(CodeProperty codeProperty)
