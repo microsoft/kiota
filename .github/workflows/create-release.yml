@@ -43,7 +43,7 @@ jobs:
         with:
           path: output
       - name: Release
-        uses: anton-yurchenko/git-release@v4.1
+        uses: anton-yurchenko/git-release@v4.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DRAFT_RELEASE: "false"
