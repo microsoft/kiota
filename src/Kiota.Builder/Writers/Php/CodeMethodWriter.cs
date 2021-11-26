@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Extensions;
 
@@ -64,7 +62,7 @@ namespace Kiota.Builder.Writers.Php
                         WriteRequestExecutorBody(codeElement, parentClass, requestParams, writer);
                         break;
             }
-            PhpConventionService.WriteCodeBlockEnd(writer);
+            writer.CloseBlock();
             writer.WriteLine();
         }
         
@@ -124,26 +122,11 @@ namespace Kiota.Builder.Writers.Php
                                              accessedProperty.IsOfKind(CodePropertyKind.AdditionalData));
             
             
-            withDescription.Select(x =>
-                {
-                    return codeMethod.MethodKind switch
-                    {
-                        CodeMethodKind.Setter => $"{conventions.DocCommentPrefix} @param {(isSetterForAdditionalData ? "array<string,object> $value": conventions.GetParameterDocNullable(x, x))} {x?.Description}",
-                        _ => $"{conventions.DocCommentPrefix}@param {conventions.GetParameterDocNullable(x, x)} {x.Description}"
-                    };
-                })
+            withDescription.Select(x => GetParameterDocString(codeMethod, x, isSetterForAdditionalData))
                 .ToList()
                 .ForEach(x => writer.WriteLine(x));
-            var returnDocString = codeMethod.MethodKind switch
-                {
-                    CodeMethodKind.Deserializer => "array<string, callable>",
-                    CodeMethodKind.Getter when accessedProperty.Type.IsArray || accessedProperty.Type.IsCollection => $"array<{conventions.TranslateType(accessedProperty.Type)}>",
-                    CodeMethodKind.Getter => isGetterForAdditionalData
-                        ? "array<string, mixed>"
-                        : conventions.GetTypeString(codeMethod.ReturnType, codeMethod),
-                    _ => conventions.GetTypeString(codeMethod.ReturnType, codeMethod)
-                };
             var isRequestExecutor = codeMethod.MethodKind == CodeMethodKind.RequestExecutor;
+            var returnDocString = GetDocCommentReturnType(codeMethod, accessedProperty, isGetterForAdditionalData);
             if (!isVoidable || isRequestExecutor)
             {
                 writer.WriteLines(
@@ -151,6 +134,28 @@ namespace Kiota.Builder.Writers.Php
                     );
             }
             writer.WriteLine(PhpConventionService.DocCommentEnd);
+        }
+
+        private string GetDocCommentReturnType(CodeMethod codeMethod, CodeProperty accessedProperty, bool isGetterForAdditionalData = false)
+        {
+            return codeMethod.MethodKind switch
+            {
+                CodeMethodKind.Deserializer => "array<string, callable>",
+                CodeMethodKind.Getter when accessedProperty.Type.IsArray || accessedProperty.Type.IsCollection => $"array<{conventions.TranslateType(accessedProperty.Type)}>",
+                CodeMethodKind.Getter => isGetterForAdditionalData
+                    ? "array<string, mixed>"
+                    : conventions.GetTypeString(codeMethod.ReturnType, codeMethod),
+                _ => conventions.GetTypeString(codeMethod.ReturnType, codeMethod)
+            };
+        }
+
+        private string GetParameterDocString(CodeMethod codeMethod, CodeParameter x, bool isSetterForAdditionalData = false)
+        {
+            return codeMethod.MethodKind switch
+            {
+                CodeMethodKind.Setter => $"{conventions.DocCommentPrefix} @param {(isSetterForAdditionalData ? "array<string,mixed> $value": conventions.GetParameterDocNullable(x, x))} {x?.Description}",
+                _ => $"{conventions.DocCommentPrefix}@param {conventions.GetParameterDocNullable(x, x)} {x.Description}"
+            };
         }
         
         /**

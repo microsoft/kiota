@@ -153,19 +153,14 @@ namespace Kiota.Builder.Writers.Php
             writer.WriteLines("<?php", string.Empty);
         }
 
-        public static void WriteCodeBlockEnd(LanguageWriter writer)
-        {
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
-        }
-        
-        /**
-         * For Php strings, having double quotes around strings might cause an issue
-         * if the string contains valid variable name.
-         * For example $variable = "$value" will try too set the value of
-         * $variable to the variable named $value rather than the string '$value'
-         * around quotes as expected.
-         */
+        /// <summary>
+        /// For Php strings, having double quotes around strings might cause an issue
+        /// if the string contains valid variable name.
+        /// For example $variable = "$value" will try too set the value of
+        /// $variable to the variable named $value rather than the string '$value'
+        /// around quotes as expected.
+        /// </summary>
+        /// <param name="current"></param>
         public static string ReplaceDoubleQuoteWithSingleQuote(string current)
         {
             if (string.IsNullOrEmpty(current))

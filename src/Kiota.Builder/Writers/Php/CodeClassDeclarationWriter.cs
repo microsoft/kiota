@@ -1,8 +1,5 @@
-﻿using System;
-using System.Linq;
-using System.Reflection.Metadata;
+﻿using System.Linq;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.Writers.Extensions;
 
 namespace Kiota.Builder.Writers.Php
 {

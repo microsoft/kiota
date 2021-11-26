@@ -11,16 +11,6 @@ namespace Kiota.Builder.Writers.Php
         {
             PhpConventionService.WritePhpDocumentStart(writer);
             var enumProperties = codeElement.Options;
-            codeElement.AddUsings(new CodeUsing()
-            {
-                Alias = string.Empty,
-                Declaration = new CodeType()
-                {
-                    IsExternal = true
-                },
-                Name = "Microsoft\\Kiota\\Abstractions\\Enum",
-                Parent = codeElement
-            });
             if (codeElement?.Parent is CodeNamespace enumNamespace)
             {
                 writer.WriteLine($"namespace {PhpConventionService.ReplaceDotsWithSlashInNamespaces(enumNamespace.Name)};");
@@ -38,7 +28,7 @@ namespace Kiota.Builder.Writers.Php
             {
                 writer.WriteLine($"public const {GetEnumValueName(enumProperty)} = '{enumProperty}';");
             }
-            PhpConventionService.WriteCodeBlockEnd(writer);
+            writer.CloseBlock();
         }
         
         private static string GetEnumValueName(string original)

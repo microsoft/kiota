@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Linq;
+﻿using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Php

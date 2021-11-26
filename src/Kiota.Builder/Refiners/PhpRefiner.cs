@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
 
@@ -14,10 +13,11 @@ namespace Kiota.Builder.Refiners
             AddImportsForClassesWithRequestExecutor(generatedCode);
             RemoveCancellationTokenParameter(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            AddEnumImportsForEnumClasses(generatedCode);
             MakeModelPropertiesNullable(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
-            AddGetterAndSetterMethods(generatedCode,new HashSet<CodePropertyKind>()
+            AddGetterAndSetterMethods(generatedCode,new()
             {
                 CodePropertyKind.Custom,
                 CodePropertyKind.AdditionalData,
@@ -55,7 +55,7 @@ namespace Kiota.Builder.Refiners
         private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
                 var declaration = currentClass.StartBlock as CodeClass.Declaration;
-                declaration.AddImplements(new CodeType {
+                declaration?.AddImplements(new CodeType {
                     IsExternal = true,
                     Name = $"Parsable",
                 });
@@ -139,6 +139,21 @@ namespace Kiota.Builder.Refiners
             var currentMethod = codeElement as CodeMethod;
             currentMethod?.RemoveParametersByKind(CodeParameterKind.Cancellation);
             CrawlTree(codeElement, RemoveCancellationTokenParameter);
+        }
+
+        private static void AddEnumImportsForEnumClasses(CodeElement codeElement)
+        {
+            var currentEnum = codeElement as CodeEnum;
+            currentEnum?.AddUsings(new CodeUsing()
+            {
+                Alias = string.Empty,
+                Declaration = new CodeType()
+                {
+                    IsExternal = true
+                },
+                Name = "Microsoft\\Kiota\\Abstractions\\Enum",
+            });
+            CrawlTree(codeElement, AddEnumImportsForEnumClasses);
         }
     }
 }
