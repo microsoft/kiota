@@ -36,12 +36,7 @@ namespace Kiota.Builder.Writers.Php
 
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
         {
-            if (code.IsCollection || code.IsArray || code.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.Complex)
-            {
-                return "array";
-            }
-
-            if (targetElement is CodeProperty propertyVar && propertyVar.IsOfKind(CodePropertyKind.PathParameters))
+            if (code.IsCollection || targetElement is CodeProperty propertyVar && propertyVar.IsOfKind(CodePropertyKind.PathParameters))
             {
                 return "array";
             }
@@ -133,7 +128,7 @@ namespace Kiota.Builder.Writers.Php
             }
         }
 
-        public static void AddRequestBuilderBody(bool addCurrentPathProperty, string returnType, LanguageWriter writer, string suffix = default, string additionalPathParameters = default)
+        public static void AddRequestBuilderBody(string returnType, LanguageWriter writer, string suffix = default, string additionalPathParameters = default)
         {
             writer.WriteLines($"return new {returnType}($this->{RemoveDollarSignFromPropertyName(PathParametersPropertyName)}{suffix}, $this->{RemoveDollarSignFromPropertyName(RequestAdapterPropertyName)});");
         }
@@ -152,38 +147,20 @@ namespace Kiota.Builder.Writers.Php
         {
             writer.WriteLines("<?php", string.Empty);
         }
-
-        /// <summary>
-        /// For Php strings, having double quotes around strings might cause an issue
-        /// if the string contains valid variable name.
-        /// For example $variable = "$value" will try too set the value of
-        /// $variable to the variable named $value rather than the string '$value'
-        /// around quotes as expected.
-        /// </summary>
-        /// <param name="current"></param>
-        public static string ReplaceDoubleQuoteWithSingleQuote(string current)
-        {
-            if (string.IsNullOrEmpty(current))
-            {
-                return current;
-            }
-            return current.StartsWith("\"", StringComparison.OrdinalIgnoreCase) ? current.Replace('\"', '\'') : current;
-        }
-
         public static void WriteNamespaceAndImports(CodeClass.Declaration codeElement, LanguageWriter writer)
         {
             bool hasUse = false;
             if (codeElement?.Parent?.Parent is CodeNamespace codeNamespace)
             {
-                writer.WriteLine($"namespace {ReplaceDotsWithSlashInNamespaces(codeNamespace.Name)};");
+                writer.WriteLine($"namespace {codeNamespace.Name.ReplaceDotsWithSlashInNamespaces()};");
                 writer.WriteLine();
                 codeElement.Usings?
                     .Where(x => x.Declaration.IsExternal ||
                                 !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase))
                     .Select(x =>
                         x.Declaration.IsExternal
-                            ? $"use {ReplaceDotsWithSlashInNamespaces(x.Declaration.Name)}\\{ReplaceDotsWithSlashInNamespaces(x.Name)};"
-                            : $"use {ReplaceDotsWithSlashInNamespaces(x.Name)}\\{ReplaceDotsWithSlashInNamespaces(x.Declaration.Name)};")
+                            ? $"use {x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()}\\{x.Name.ReplaceDotsWithSlashInNamespaces()};"
+                            : $"use {x.Name.ReplaceDotsWithSlashInNamespaces()}\\{x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()};")
                     .Distinct()
                     .OrderBy(x => x)
                     .ToList()
@@ -197,16 +174,6 @@ namespace Kiota.Builder.Writers.Php
             {
                 writer.WriteLine(string.Empty);
             }
-        }
-
-        public static string ReplaceDotsWithSlashInNamespaces(string namespaced)
-        {
-            if (string.IsNullOrEmpty(namespaced))
-            {
-                return string.Empty;
-            }
-            var parts = namespaced.Split('.');
-            return string.Join('\\', parts.Select(x => x.ToFirstCharacterUpperCase())).Trim('\\');
         }
         internal static void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, IEnumerable<CodeParameter> pathParameters = default) {
             var codeParameters = pathParameters as CodeParameter[] ?? pathParameters?.ToArray();

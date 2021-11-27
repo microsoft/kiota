@@ -11,9 +11,6 @@ namespace Kiota.Builder.Writers.Php
         {
             
             var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
-            var currentPathProperty = codeElement.Parent.GetChildElements(true)
-                .OfType<CodeProperty>()
-                .FirstOrDefault(x => x.IsOfKind(CodePropertyKind.PathParameters));
             var propertyName = codeElement.Name.ToFirstCharacterLowerCase();
             var propertyAccess = conventions.GetAccessModifier(codeElement.Access);
             switch (codeElement.PropertyKind)
@@ -22,7 +19,7 @@ namespace Kiota.Builder.Writers.Php
                     conventions.WriteShortDescription(codeElement.Description, writer);
                     writer.WriteLine($"{propertyAccess} function {propertyName}(): {returnType} {{");
                     writer.IncreaseIndent();
-                    PhpConventionService.AddRequestBuilderBody(currentPathProperty != null, returnType, writer);
+                    PhpConventionService.AddRequestBuilderBody(returnType, writer);
                     writer.DecreaseIndent();
                     writer.WriteLine("}");
                     break;

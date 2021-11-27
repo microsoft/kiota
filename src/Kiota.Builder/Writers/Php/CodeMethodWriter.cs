@@ -46,7 +46,7 @@ namespace Kiota.Builder.Writers.Php
                         WriteDeserializerBody(parentClass, writer);
                         break;
                     case CodeMethodKind.RequestBuilderWithParameters:
-                        WriteRequestBuilderWithParametersBody(codeElement, currentPathProperty, returnType, writer);
+                        WriteRequestBuilderWithParametersBody(codeElement, returnType, writer);
                         break;
                     case CodeMethodKind.RequestGenerator:
                         WriteRequestGeneratorBody(codeElement, requestParams, parentClass, writer);
@@ -79,7 +79,7 @@ namespace Kiota.Builder.Writers.Php
                                             .ThenBy(x => x.Name))
             {
                 var isPathSegment = propWithDefault.IsOfKind(CodePropertyKind.PathParameters);
-                writer.WriteLine($"$this->{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {(isPathSegment ? "[]" :PhpConventionService.ReplaceDoubleQuoteWithSingleQuote(propWithDefault.DefaultValue))};");
+                writer.WriteLine($"$this->{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {(isPathSegment ? "[]" :propWithDefault.DefaultValue.ReplaceDoubleQuoteWithSingleQuote())};");
             }
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor)) {
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
@@ -158,11 +158,6 @@ namespace Kiota.Builder.Writers.Php
             };
         }
         
-        /**
-         * Writes the method signatures and puts the parameters.
-         * for example this writes
-         * function methodName(int $parameter, string $parameter2){
-         */
         private void WriteMethodsAndParameters(CodeMethod codeMethod, LanguageWriter writer, IReadOnlyList<string> orNullReturn, bool isConstructor = false)
         {
             var methodParameters = string.Join(", ", codeMethod.Parameters.Select(x => conventions.GetParameterSignature(x, codeMethod)).ToList());
@@ -252,7 +247,7 @@ namespace Kiota.Builder.Writers.Php
             writer.WriteLine($"return $this->{propertyName};");
         }
 
-        private static void WriteRequestBuilderWithParametersBody(CodeMethod codeElement, CodeProperty currentPathProperty, string returnType, LanguageWriter writer)
+        private static void WriteRequestBuilderWithParametersBody(CodeMethod codeElement, string returnType, LanguageWriter writer)
         {
             var codePathParameters = codeElement.Parameters
                 .Where(x => x.IsOfKind(CodeParameterKind.Path))
@@ -260,7 +255,7 @@ namespace Kiota.Builder.Writers.Php
             var codePathParametersSuffix = codePathParameters.Any() ? 
                 ", " + codePathParameters.Aggregate((x, y) => $"{x}, {y}") :
                 string.Empty;
-            PhpConventionService.AddRequestBuilderBody(currentPathProperty != null, returnType, writer, additionalPathParameters: codePathParametersSuffix);
+            PhpConventionService.AddRequestBuilderBody(returnType, writer, additionalPathParameters: codePathParametersSuffix);
         }
         
         private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"$this->{property.Name}";

@@ -13,7 +13,7 @@ namespace Kiota.Builder.Writers.Php
             var enumProperties = codeElement.Options;
             if (codeElement?.Parent is CodeNamespace enumNamespace)
             {
-                writer.WriteLine($"namespace {PhpConventionService.ReplaceDotsWithSlashInNamespaces(enumNamespace.Name)};");
+                writer.WriteLine($"namespace {enumNamespace.Name.ReplaceDotsWithSlashInNamespaces()};");
             }
             writer.WriteLine();
 
