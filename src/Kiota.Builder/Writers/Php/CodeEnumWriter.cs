@@ -9,7 +9,7 @@ namespace Kiota.Builder.Writers.Php
 
         public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer)
         {
-            PhpConventionService.WritePhpDocumentStart(writer);
+            conventions.WritePhpDocumentStart(writer);
             var enumProperties = codeElement.Options;
             if (codeElement?.Parent is CodeNamespace enumNamespace)
             {

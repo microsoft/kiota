@@ -202,7 +202,7 @@ namespace Kiota.Builder.Writers.Php
         {
             var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();
             var writerParameter = codeMethod.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.Serializer);
-            var writerParameterName = PhpConventionService.GetParameterName(writerParameter);
+            var writerParameterName = conventions.GetParameterName(writerParameter);
             if(inherits)
                 writer.WriteLine($"parent::serialize({writerParameterName});");
             var customProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
@@ -246,7 +246,7 @@ namespace Kiota.Builder.Writers.Php
             writer.WriteLine($"return $this->{propertyName};");
         }
 
-        private static void WriteRequestBuilderWithParametersBody(CodeMethod codeElement, string returnType, LanguageWriter writer)
+        private void WriteRequestBuilderWithParametersBody(CodeMethod codeElement, string returnType, LanguageWriter writer)
         {
             var codePathParameters = codeElement.Parameters
                 .Where(x => x.IsOfKind(CodeParameterKind.Path))
@@ -254,7 +254,7 @@ namespace Kiota.Builder.Writers.Php
             var codePathParametersSuffix = codePathParameters.Any() ? 
                 ", " + codePathParameters.Aggregate((x, y) => $"{x}, {y}") :
                 string.Empty;
-            PhpConventionService.AddRequestBuilderBody(returnType, writer, additionalPathParameters: codePathParametersSuffix);
+            conventions.AddRequestBuilderBody(returnType, writer);
         }
         
         private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"$this->{property.Name}";
@@ -270,15 +270,15 @@ namespace Kiota.Builder.Writers.Php
                                 $"{RequestInfoVarName}->pathParameters = {GetPropertyCall(pathParametersProperty, "''")};",
                                 $"{RequestInfoVarName}->httpMethod = HttpMethod::{codeElement?.HttpMethod?.ToString().ToUpperInvariant()};");
             if(requestParams.headers != null)
-                writer.WriteLine($"{RequestInfoVarName}->setHeadersFromRawObject({PhpConventionService.GetParameterName(requestParams.headers)});");
+                writer.WriteLine($"{RequestInfoVarName}->setHeadersFromRawObject({conventions.GetParameterName(requestParams.headers)});");
             if(requestParams.queryString != null)
-                writer.WriteLines($"{RequestInfoVarName}->setQueryStringParametersFromRawObject({PhpConventionService.GetParameterName(requestParams.queryString)});");
+                writer.WriteLines($"{RequestInfoVarName}->setQueryStringParametersFromRawObject({conventions.GetParameterName(requestParams.queryString)});");
             if(requestParams.requestBody != null) {
                 if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                    writer.WriteLine($"{RequestInfoVarName}->setStreamContent({PhpConventionService.GetParameterName(requestParams.requestBody)});");
+                    writer.WriteLine($"{RequestInfoVarName}->setStreamContent({conventions.GetParameterName(requestParams.requestBody)});");
                 else {
                     var spreadOperator = requestParams.requestBody.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
-                    writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {spreadOperator}{PhpConventionService.GetParameterName(requestParams.requestBody)});");
+                    writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {spreadOperator}{conventions.GetParameterName(requestParams.requestBody)});");
                 }
             }
             if(requestParams.options != null)
@@ -306,10 +306,10 @@ namespace Kiota.Builder.Writers.Php
             var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"$this->{pathParametersProperty.Name}",
                 (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.ParameterName, "$id"));
-            PhpConventionService.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName);
+            conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName);
         }
 
-        private static void WriteRequestExecutorBody(CodeMethod codeElement, CodeClass parentClass, RequestParams requestParams, LanguageWriter writer)
+        private void WriteRequestExecutorBody(CodeMethod codeElement, CodeClass parentClass, RequestParams requestParams, LanguageWriter writer)
         {
             var generatorMethod = (codeElement.Parent as CodeClass)?
                 .Methods
@@ -319,7 +319,7 @@ namespace Kiota.Builder.Writers.Php
             var requestInfoParameters = new CodeParameter[] { requestParams.requestBody, requestParams.queryString, requestParams.headers, requestParams.options }
                 .Select(x => x).Where(x => x?.Name != null);
             var infoParameters = requestInfoParameters as CodeParameter[] ?? requestInfoParameters.ToArray();
-            var callParams = infoParameters.Select(x => PhpConventionService.GetParameterName(x));
+            var callParams = infoParameters.Select(x => conventions.GetParameterName(x));
             var joinedParams = string.Empty; 
             var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             if(infoParameters.Any())

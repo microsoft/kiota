@@ -19,7 +19,7 @@ namespace Kiota.Builder.Writers.Php
                     conventions.WriteShortDescription(codeElement.Description, writer);
                     writer.WriteLine($"{propertyAccess} function {propertyName}(): {returnType} {{");
                     writer.IncreaseIndent();
-                    PhpConventionService.AddRequestBuilderBody(returnType, writer);
+                    conventions.AddRequestBuilderBody(returnType, writer);
                     writer.DecreaseIndent();
                     writer.WriteLine("}");
                     break;
