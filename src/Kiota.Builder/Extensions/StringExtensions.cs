@@ -89,7 +89,7 @@ namespace Kiota.Builder.Extensions {
         {
             if (string.IsNullOrEmpty(namespaced))
             {
-                return string.Empty;
+                return namespaced;
             }
             var parts = namespaced.Split('.');
             return string.Join('\\', parts.Select(x => x.ToFirstCharacterUpperCase())).Trim('\\');
