@@ -24,7 +24,7 @@ namespace Kiota.Builder.Refiners
                 CodePropertyKind.BackingStore
             }, _configuration.UsesBackingStore, true);
             ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Graph{reservedWord.ToFirstCharacterUpperCase()}");
-            AddParsableInheritanceForModelClasses(generatedCode);
+            AddParsableInheritanceForModelClasses(generatedCode, "Parsable");
             ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
@@ -51,18 +51,6 @@ namespace Kiota.Builder.Refiners
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
                 "Microsoft\\Kiota\\Abstractions\\Store", "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
         };
-        
-        private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
-                var declaration = currentClass.StartBlock as CodeClass.Declaration;
-                declaration?.AddImplements(new CodeType {
-                    IsExternal = true,
-                    Name = $"Parsable",
-                });
-            }
-            CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
-        }
-
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter)) {
                 currentProperty.Type.Name = "RequestAdapter";

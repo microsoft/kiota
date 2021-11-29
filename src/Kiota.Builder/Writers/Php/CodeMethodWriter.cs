@@ -18,7 +18,6 @@ namespace Kiota.Builder.Writers.Php
             var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
             var inherits = (parentClass?.StartBlock as CodeClass.Declaration)?.Inherits != null;
             var orNullReturn = codeElement.ReturnType.IsNullable ? new[]{"?", "|null"} : new[] {string.Empty, string.Empty};
-            var currentPathProperty = parentClass?.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.PathParameters));
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);

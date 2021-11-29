@@ -16,7 +16,7 @@ namespace Kiota.Builder.Refiners {
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddAsyncSuffix(generatedCode);
             AddInnerClasses(generatedCode, false);
-            AddParsableInheritanceForModelClasses(generatedCode);
+            AddParsableInheritanceForModelClasses(generatedCode, "IParsable", "Microsoft.Kiota.Abstractions.Serialization");
             CapitalizeNamespacesFirstLetters(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");
             MakeEnumPropertiesNullable(generatedCode);
@@ -54,24 +54,7 @@ namespace Kiota.Builder.Refiners {
                             .ForEach(x => x.Type.IsNullable = true);
             CrawlTree(currentElement, MakeEnumPropertiesNullable);
         }
-        private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass &&
-                currentClass.IsOfKind(CodeClassKind.Model) &&
-                currentClass.StartBlock is CodeClass.Declaration declaration) {
-                declaration.AddImplements(new CodeType {
-                    IsExternal = true,
-                    Name = $"IParsable",
-                });
-                (currentClass.Parent is CodeClass parentClass &&
-                parentClass.StartBlock is CodeClass.Declaration parentDeclaration ? 
-                    parentDeclaration :
-                    declaration)
-                    .AddUsings(new CodeUsing {
-                        Name = "Microsoft.Kiota.Abstractions.Serialization"
-                });
-            }
-            CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
-        }
+        
         private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
                 "Microsoft.Kiota.Abstractions", "IRequestAdapter"),
