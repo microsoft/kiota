@@ -10,6 +10,8 @@ namespace Kiota.Builder.Refiners
         
         public override void Refine(CodeNamespace generatedCode)
         {
+            ConvertUnionTypesToWrapper(generatedCode, false);
+            AddConstructorsForDefaultValues(generatedCode, true);
             AddImportsForClassesWithRequestExecutor(generatedCode);
             RemoveCancellationTokenParameter(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
@@ -54,20 +56,24 @@ namespace Kiota.Builder.Refiners
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter)) {
                 currentProperty.Type.Name = "RequestAdapter";
-                currentProperty.Type.IsNullable = true;
+                currentProperty.Type.IsNullable = false;
             }
             else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
                 currentProperty.Type.Name = currentProperty.Type.Name[1..];
             else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
                 currentProperty.Type.Name = "array";
+                currentProperty.Type.IsNullable = false;
                 currentProperty.DefaultValue = "[]";
             } else if(currentProperty.IsOfKind(CodePropertyKind.UrlTemplate)) {
-                currentProperty.Type.IsNullable = true;
+                currentProperty.Type.IsNullable = false;
             } else if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
-                currentProperty.Type.IsNullable = true;
+                currentProperty.Type.IsNullable = false;
                 currentProperty.Type.Name = "array";
                 if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                     currentProperty.DefaultValue = "[]";
+            } else if (currentProperty.IsOfKind(CodePropertyKind.RequestBuilder))
+            {
+                currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
             }
         }
 
@@ -76,6 +82,9 @@ namespace Kiota.Builder.Refiners
             if (method.IsOfKind(CodeMethodKind.Deserializer))
             {
                 method.ReturnType.Name = "array";
+            } else if (method.IsOfKind(CodeMethodKind.RequestExecutor))
+            {
+                method.ReturnType = new CodeType() {Name = "Promise", IsExternal = true, IsNullable = false};
             }
         }
 

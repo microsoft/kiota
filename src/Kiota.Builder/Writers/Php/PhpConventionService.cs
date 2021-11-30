@@ -30,12 +30,14 @@ namespace Kiota.Builder.Writers.Php
 
         public override string ParseNodeInterfaceName => "ParseNode";
 
-        public static string DocCommentStart => "/**";
+        public string DocCommentStart => "/**";
 
-        public static string DocCommentEnd => "*/";
+        public string DocCommentEnd => "*/";
 
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
         {
+            if(code is CodeUnionType) 
+                throw new InvalidOperationException($"PHP does not support union types, the union type {code.Name} should have been filtered out by the refiner.");
             if (code.IsCollection || targetElement is CodeProperty propertyVar && propertyVar.IsOfKind(CodePropertyKind.PathParameters))
             {
                 return "array";
@@ -155,10 +157,9 @@ namespace Kiota.Builder.Writers.Php
                 writer.WriteLine($"namespace {codeNamespace.Name.ReplaceDotsWithSlashInNamespaces()};");
                 writer.WriteLine();
                 codeElement.Usings?
-                    .Where(x => x.Declaration.IsExternal ||
-                                !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase))
-                    .Select(x =>
-                        x.Declaration.IsExternal
+                    .Where(x => x.Declaration != null && (x.Declaration.IsExternal ||
+                                !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)))
+                    .Select(x => x.Declaration is {IsExternal: true}
                             ? $"use {x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()}\\{x.Name.ReplaceDotsWithSlashInNamespaces()};"
                             : $"use {x.Name.ReplaceDotsWithSlashInNamespaces()}\\{x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()};")
                     .Distinct()

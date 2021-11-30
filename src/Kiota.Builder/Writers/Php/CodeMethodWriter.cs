@@ -106,7 +106,7 @@ namespace Kiota.Builder.Writers.Php
                 return;
             }
 
-            writer.WriteLine(PhpConventionService.DocCommentStart);
+            writer.WriteLine(conventions.DocCommentStart);
             var isVoidable = "void".Equals(conventions.GetTypeString(codeMethod.ReturnType, codeMethod),
                 StringComparison.OrdinalIgnoreCase);
             if(hasMethodDescription){
@@ -132,7 +132,7 @@ namespace Kiota.Builder.Writers.Php
                     $"{conventions.DocCommentPrefix}@return {(isRequestExecutor ? "Promise" : $"{returnDocString}{orNullReturn[1]}")}"
                     );
             }
-            writer.WriteLine(PhpConventionService.DocCommentEnd);
+            writer.WriteLine(conventions.DocCommentEnd);
         }
 
         private string GetDocCommentReturnType(CodeMethod codeMethod, CodeProperty accessedProperty, bool isGetterForAdditionalData = false)
@@ -140,10 +140,8 @@ namespace Kiota.Builder.Writers.Php
             return codeMethod.MethodKind switch
             {
                 CodeMethodKind.Deserializer => "array<string, callable>",
+                CodeMethodKind.Getter when accessedProperty.IsOfKind(CodePropertyKind.AdditionalData) => "array<string, mixed>",
                 CodeMethodKind.Getter when accessedProperty.Type.IsArray || accessedProperty.Type.IsCollection => $"array<{conventions.TranslateType(accessedProperty.Type)}>",
-                CodeMethodKind.Getter => isGetterForAdditionalData
-                    ? "array<string, mixed>"
-                    : conventions.GetTypeString(codeMethod.ReturnType, codeMethod),
                 _ => conventions.GetTypeString(codeMethod.ReturnType, codeMethod)
             };
         }

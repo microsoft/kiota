@@ -16,20 +16,7 @@ namespace Kiota.Builder.Writers.Php
             switch (codeElement.PropertyKind)
             {
                 case CodePropertyKind.RequestBuilder:
-                    conventions.WriteShortDescription(codeElement.Description, writer);
-                    writer.WriteLine($"{propertyAccess} function {propertyName}(): {returnType} {{");
-                    writer.IncreaseIndent();
-                    conventions.AddRequestBuilderBody(returnType, writer);
-                    writer.DecreaseIndent();
-                    writer.WriteLine("}");
-                    break;
-                case CodePropertyKind.RequestAdapter:
-                    WritePropertyDocComment(codeElement, writer);
-                    writer.WriteLine($"{propertyAccess} RequestAdapter ${propertyName};");
-                    break;
-                case CodePropertyKind.AdditionalData or CodePropertyKind.PathParameters:
-                    WritePropertyDocComment(codeElement, writer);
-                    writer.WriteLine($"{propertyAccess} array ${propertyName};");
+                    WriteRequestBuilderBody(codeElement, writer, returnType, propertyAccess, propertyName);
                     break;
                 default:
                     WritePropertyDocComment(codeElement, writer);
@@ -48,13 +35,23 @@ namespace Kiota.Builder.Writers.Php
             var typeString = (collectionKind
                 ? GetCollectionDocString(codeProperty)
                 : conventions.GetTypeString(codeProperty.Type, codeProperty));
-            writer.WriteLine($"{PhpConventionService.DocCommentStart} @var {typeString}{(codeProperty.Type.IsNullable ? "|null" : string.Empty)} ${codeProperty.Name} " +
-                             $"{(hasDescription ? propertyDescription : string.Empty)} {PhpConventionService.DocCommentEnd}");
+            writer.WriteLine($"{conventions.DocCommentStart} @var {typeString}{(codeProperty.Type.IsNullable ? "|null" : string.Empty)} ${codeProperty.Name} " +
+                             $"{(hasDescription ? propertyDescription : string.Empty)} {conventions.DocCommentEnd}");
         }
 
         private string GetCollectionDocString(CodeProperty codeProperty)
         {
             return codeProperty.IsOfKind(CodePropertyKind.AdditionalData) ? "array<string, mixed>" : $"array<{conventions.TranslateType(codeProperty.Type)}>";
+        }
+
+        private void WriteRequestBuilderBody(CodeProperty codeElement, LanguageWriter writer, string returnType, string propertyAccess, string propertyName)
+        {
+            conventions.WriteShortDescription(codeElement.Description, writer);
+            writer.WriteLine($"{propertyAccess} function {propertyName}(): {returnType} {{");
+            writer.IncreaseIndent();
+            conventions.AddRequestBuilderBody(returnType, writer);
+            writer.DecreaseIndent();
+            writer.WriteLine("}");
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Kiota.Builder.Refiners;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Php;
 using Kiota.Builder.Writers.Tests;
@@ -15,15 +16,17 @@ namespace Kiota.Builder.Tests.Writers.Php
         private readonly CodePropertyWriter propertyWriter;
         private readonly LanguageWriter writer;
         private readonly StringWriter tw;
+        private readonly ILanguageRefiner _refiner;
+        private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
 
         public CodePropertyWriterTests()
         {
-            var root = CodeNamespace.InitRootNamespace();
             tw = new StringWriter();
             parentClass = new CodeClass()
             {
                 Name = "ParentClass", Description = "This is an amazing class", ClassKind = CodeClassKind.Model
             };
+            _refiner = new PhpRefiner(new() {Language = GenerationLanguage.PHP});
             propertyWriter = new CodePropertyWriter(new PhpConventionService());
             root.AddClass(parentClass);
             writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.PHP, DefaultPath, DefaultName);
@@ -87,11 +90,11 @@ namespace Kiota.Builder.Tests.Writers.Php
             currentClass.ClassKind = CodeClassKind.Model;
 
             currentClass.AddProperty(property);
-            
+            _refiner.Refine(root);
             propertyWriter.WriteCodeElement(property, writer);
             var result = tw.ToString();
             Assert.Contains("private array $additionalData;", result);
-            Assert.Contains("@var array<string, mixed>|null", result);
+            Assert.Contains("@var array<string, mixed>", result);
         }
         
         [Fact]
