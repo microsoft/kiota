@@ -38,7 +38,7 @@ npm i @microsoft/kiota-serialization-json -S
 npm i @azure/identity node-fetch
 ```
 
-Only the first package, kiota-abstractions. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
+Only the first package is required: kiota-abstractions. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
 
 ## Generating the SDK
 
