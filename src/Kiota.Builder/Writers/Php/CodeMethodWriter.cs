@@ -45,7 +45,7 @@ namespace Kiota.Builder.Writers.Php
                         WriteDeserializerBody(parentClass, writer);
                         break;
                     case CodeMethodKind.RequestBuilderWithParameters:
-                        WriteRequestBuilderWithParametersBody(codeElement, returnType, writer);
+                        WriteRequestBuilderWithParametersBody(returnType, writer);
                         break;
                     case CodeMethodKind.RequestGenerator:
                         WriteRequestGeneratorBody(codeElement, requestParams, parentClass, writer);
@@ -122,15 +122,12 @@ namespace Kiota.Builder.Writers.Php
             var accessedProperty = codeMethod.AccessedProperty;
             var isSetterForAdditionalData = (codeMethod.IsOfKind(CodeMethodKind.Setter) &&
                                              accessedProperty.IsOfKind(CodePropertyKind.AdditionalData));
-            var isGetterForAdditionalData = (codeMethod.IsOfKind(CodeMethodKind.Getter) &&
-                                             accessedProperty.IsOfKind(CodePropertyKind.AdditionalData));
-            
             
             withDescription.Select(x => GetParameterDocString(codeMethod, x, isSetterForAdditionalData))
                 .ToList()
                 .ForEach(x => writer.WriteLine(x));
             var isRequestExecutor = codeMethod.MethodKind == CodeMethodKind.RequestExecutor;
-            var returnDocString = GetDocCommentReturnType(codeMethod, accessedProperty, isGetterForAdditionalData);
+            var returnDocString = GetDocCommentReturnType(codeMethod, accessedProperty);
             if (!isVoidable || isRequestExecutor)
             {
                 writer.WriteLines(
@@ -140,7 +137,7 @@ namespace Kiota.Builder.Writers.Php
             writer.WriteLine(conventions.DocCommentEnd);
         }
 
-        private string GetDocCommentReturnType(CodeMethod codeMethod, CodeProperty accessedProperty, bool isGetterForAdditionalData = false)
+        private string GetDocCommentReturnType(CodeMethod codeMethod, CodeProperty accessedProperty)
         {
             return codeMethod.MethodKind switch
             {
@@ -249,14 +246,8 @@ namespace Kiota.Builder.Writers.Php
             writer.WriteLine($"return $this->{propertyName};");
         }
 
-        private void WriteRequestBuilderWithParametersBody(CodeMethod codeElement, string returnType, LanguageWriter writer)
+        private void WriteRequestBuilderWithParametersBody(string returnType, LanguageWriter writer)
         {
-            var codePathParameters = codeElement.Parameters
-                .Where(x => x.IsOfKind(CodeParameterKind.Path))
-                .Select(x => x.Name);
-            var codePathParametersSuffix = codePathParameters.Any() ? 
-                ", " + codePathParameters.Aggregate((x, y) => $"{x}, {y}") :
-                string.Empty;
             conventions.AddRequestBuilderBody(returnType, writer);
         }
         

@@ -12,10 +12,9 @@ namespace Kiota.Builder.Refiners
         {
             ConvertUnionTypesToWrapper(generatedCode, false);
             AddConstructorsForDefaultValues(generatedCode, true);
-            AddImportsForClassesWithRequestExecutor(generatedCode);
             RemoveCancellationTokenParameter(generatedCode);
+            CorrectParameterType(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
-            AddEnumImportsForEnumClasses(generatedCode);
             MakeModelPropertiesNullable(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
@@ -52,6 +51,9 @@ namespace Kiota.Builder.Refiners
                 "Microsoft\\Kiota\\Abstractions\\Store", "BackingStoreFactory", "BackingStoreFactorySingleton"),
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
                 "Microsoft\\Kiota\\Abstractions\\Store", "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor), "Http\\Promise", "Promise", "RejectedPromise"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor), "", "Exception"),
+            new (x => x is CodeEnum, "Microsoft\\Kiota\\Abstractions\\", "Enum")
         };
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter)) {
@@ -87,50 +89,6 @@ namespace Kiota.Builder.Refiners
                 method.ReturnType = new CodeType() {Name = "Promise", IsExternal = true, IsNullable = false};
             }
         }
-
-        private static void AddImportsForClassesWithRequestExecutor(CodeElement codeElement)
-        {
-            var currentClass = codeElement as CodeClass;
-            var containsExecutor = currentClass?.Methods.Any(method => method.IsOfKind(CodeMethodKind.RequestExecutor));
-
-            if (containsExecutor.HasValue && containsExecutor.Value)
-            {
-                var declaration = currentClass.StartBlock as CodeClass.Declaration;
-                declaration?.AddUsings(new CodeUsing()
-                {
-                    Alias = "Promise",
-                    Declaration = new CodeType()
-                    {
-                        IsExternal = true,
-                        IsNullable = false,
-                        Name = "Http\\Promise"
-                    },
-                    Name = "Promise"
-                }, new CodeUsing()
-                {
-                    Alias = "RejectedPromise",
-                    Declaration = new CodeType()
-                    {
-                        IsExternal = true,
-                        IsNullable = false,
-                        Name = "Http\\Promise"
-                    },
-                    Name = "RejectedPromise"
-                }, new CodeUsing()
-                {
-                    Alias = "Exception",
-                    Declaration = new CodeType()
-                    {
-                        IsExternal = true,
-                        IsNullable = false,
-                        Name = ""
-                    },
-                    Name = "Exception"
-                });
-            }
-            CrawlTree(codeElement, AddImportsForClassesWithRequestExecutor);
-        }
-
         private static void RemoveCancellationTokenParameter(CodeElement codeElement)
         {
             var currentMethod = codeElement as CodeMethod;
@@ -138,19 +96,15 @@ namespace Kiota.Builder.Refiners
             CrawlTree(codeElement, RemoveCancellationTokenParameter);
         }
 
-        private static void AddEnumImportsForEnumClasses(CodeElement codeElement)
+        private static void CorrectParameterType(CodeElement codeElement)
         {
-            var currentEnum = codeElement as CodeEnum;
-            currentEnum?.AddUsings(new CodeUsing()
+            var currentMethod = codeElement as CodeMethod;
+            var parameters = currentMethod?.Parameters;
+            parameters?.Where(x => x.IsOfKind(CodeParameterKind.Options, CodeParameterKind.Headers)).ToList().ForEach(x =>
             {
-                Alias = string.Empty,
-                Declaration = new CodeType()
-                {
-                    IsExternal = true
-                },
-                Name = "Microsoft\\Kiota\\Abstractions\\Enum",
+                x.Type.Name = "array";
             });
-            CrawlTree(codeElement, AddEnumImportsForEnumClasses);
+            CrawlTree(codeElement, CorrectParameterType);
         }
     }
 }

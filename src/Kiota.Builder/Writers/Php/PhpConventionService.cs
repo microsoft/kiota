@@ -85,8 +85,8 @@ namespace Kiota.Builder.Writers.Php
             var methodTarget = targetElement as CodeMethod;
             var parameterSuffix = parameter.ParameterKind switch
             {
-                CodeParameterKind.Headers or CodeParameterKind.Options => $"array ${(parameter.ParameterKind == CodeParameterKind.Options ? "options" : "headers")}",
-                CodeParameterKind.RequestBody => $"{typeString} $body",
+                CodeParameterKind.Headers or CodeParameterKind.Options => $"{typeString} {GetParameterName(parameter)}",
+                CodeParameterKind.RequestBody => $"{typeString} {GetParameterName(parameter)}",
                 CodeParameterKind.RequestAdapter => $"RequestAdapter {GetParameterName(parameter)}",
                 CodeParameterKind.ResponseHandler => $"ResponseHandler {GetParameterName(parameter)}",
                 CodeParameterKind.QueryParameter => $"GetQueryParameters {GetParameterName(parameter)}",

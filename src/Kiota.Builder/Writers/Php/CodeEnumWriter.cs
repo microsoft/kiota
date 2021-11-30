@@ -1,4 +1,6 @@
-﻿using System.Text.RegularExpressions;
+﻿using System;
+using System.Linq;
+using System.Text.RegularExpressions;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Php
@@ -16,12 +18,28 @@ namespace Kiota.Builder.Writers.Php
                 writer.WriteLine($"namespace {enumNamespace.Name.ReplaceDotsWithSlashInNamespaces()};");
             }
             writer.WriteLine();
-
+            var hasUse = false;
             foreach (var use in codeElement.Usings)
             {
-                    writer.WriteLine($"use {use.Name};");
+                codeElement.Usings?
+                    .Where(x => x.Declaration != null && (x.Declaration.IsExternal ||
+                                                          !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)))
+                    .Select(x => x.Declaration is {IsExternal: true}
+                        ? $"use {x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()}\\{x.Name.ReplaceDotsWithSlashInNamespaces()};"
+                        : $"use {x.Name.ReplaceDotsWithSlashInNamespaces()}\\{x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()};")
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList()
+                    .ForEach(x =>
+                    {
+                        hasUse = true;
+                        writer.WriteLine(x);
+                    });
             }
-            writer.WriteLine();
+            if (hasUse)
+            {
+                writer.WriteLine(string.Empty);
+            }
             writer.WriteLine($"class {codeElement?.Name.ToFirstCharacterUpperCase()} extends Enum {{");
             writer.IncreaseIndent();
             foreach (var enumProperty     in enumProperties)
