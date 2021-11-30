@@ -103,27 +103,7 @@ Record the value of the ClientId property of the $app object as it will be neede
 
 ## Creating the client application
 
-Before adding our actual code, create an `auth.ts` file at the root of the `src` folder that will handle our authentication.
-
-```typescript
-import { DeviceCodeCredential } from "@azure/identity";
-import { BaseBearerTokenAuthenticationProvider } from "@microsoft/kiota-abstractions"
-
-export class Auth extends BaseBearerTokenAuthenticationProvider {
-   getAuthorizationToken = async (): Promise<string> => {
-      const tenantId = "REPLACE_BY_TENANT_ID"; 
-      const clientId = "REPLACE_BY_CLIENT_ID"; 
-      const scopes = "https://graph.microsoft.com/.default";
-
-      const credentials = new DeviceCodeCredential({ tenantId: tenantId, clientId: clientId});
-      const token = (await credentials.getToken(scopes)).token;
-
-      return Promise.resolve(token);
-    }
-}
-```
-
-Then, change the `noUnusedLocals` value to `false` in the tsconfig.json at the root of your project folder.
+Change the `noUnusedLocals` value to `false` in the tsconfig.json at the root of your project folder.
 
 ```json
 {
@@ -151,19 +131,22 @@ import { App } from './app/app';
 import { Logger } from './app/common/logger';
 import { GraphServiceClient } from "./kiota/graphServiceClient";
 import { FetchRequestAdapter } from "@microsoft/kiota-http-fetchlibrary";
-import { Auth } from "./auth"
 import { User } from './kiota/models/microsoft/graph/user';
+import { DeviceCodeCredential } from '@azure/identity';
+import { AzureIdentityAuthenticationProvider } from '@microsoft/kiota-authentication-azure';
 
 Logger.logTask('SYSTEM', 'STARTING');
 
 App.run();
 
-const core = new FetchRequestAdapter(new Auth());
+const core = new FetchRequestAdapter(new AzureIdentityAuthenticationProvider(new DeviceCodeCredential({
+    "tenantId": "REPLACE_BY_TENANT_ID", 
+    "clientId": "REPLACE_BY_CLIENT_ID"
+})));
 const client = new GraphServiceClient(core);
 
 async function getMe(): Promise<User | undefined> {
-    const userRequestBuilder = client.me.get();
-    return await userRequestBuilder;
+    return await client.me.get();
 }
 
 getMe().then((user: User | undefined) => { 
