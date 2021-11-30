@@ -39,6 +39,21 @@ namespace Kiota.Builder.Refiners.Tests {
 
         #region GoRefinerTests
         [Fact]
+        public void DoesNotEscapePublicPropertiesReservedKeywords() {
+            var model = root.AddClass(new CodeClass {
+                Name = "SomeClass",
+                ClassKind = CodeClassKind.Model
+            }).First();
+            var property = model.AddProperty(new CodeProperty {
+                Name = "select",
+                Type = new CodeType { Name = "string" },
+                Access = AccessModifier.Public,
+            }).First();
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+            Assert.Equal("select", property.Name);
+            Assert.DoesNotContain("escaped", property.Name);
+        }
+        [Fact]
         public void ReplacesRequestBuilderPropertiesByMethods() {
             var model = root.AddClass(new CodeClass {
                 Name = "someModel",

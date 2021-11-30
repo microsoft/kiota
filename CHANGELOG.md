@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug where RequestInformation did not accept some content headers in dotnet
 - Added support for providing cancellation token in dotnet #874, #875, #876
 - Upgrades go libraries to go17.
+- Fixes a bug in Go where reserved keywords for properties would be wrongly replaced.
 
 ## [0.0.14] - 2021-11-08
 

@@ -155,35 +155,44 @@ namespace Kiota.Builder.Refiners {
                 });
             CrawlTree(current, x => AddConstructorsForDefaultValues(x, addIfInherited));
         }
-        protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement, HashSet<Type> codeElementExceptions = null) {
+        protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement, HashSet<Type> codeElementExceptions = null, Func<CodeElement, bool> shouldReplaceCallback = null) {
+            var shouldReplace = shouldReplaceCallback?.Invoke(current) ?? true;
+            var isNotInExceptions = !codeElementExceptions?.Contains(current.GetType()) ?? true;
             if(current is CodeClass currentClass && 
-                (!codeElementExceptions?.Contains(typeof(CodeUsing)) ?? true) &&
+                isNotInExceptions &&
+                shouldReplace &&
                 currentClass.StartBlock is Declaration currentDeclaration)
                 ReplaceReservedCodeUsings(currentDeclaration, provider, replacement);
             else if(current is CodeNamespace currentNamespace &&
-                (!codeElementExceptions?.Contains(typeof(CodeNamespace)) ?? true) &&
+                isNotInExceptions &&
+                shouldReplace &&
                 !string.IsNullOrEmpty(currentNamespace.Name))
                 ReplaceReservedNamespaceSegments(currentNamespace, provider, replacement);
             else if(current is CodeMethod currentMethod &&
-                (!codeElementExceptions?.Contains(typeof(CodeMethod)) ?? true)) {
+                isNotInExceptions &&
+                shouldReplace) {
                 if(currentMethod.ReturnType is CodeType returnType &&
                     !returnType.IsExternal &&
                     provider.ReservedNames.Contains(returnType.Name))
                     returnType.Name = replacement.Invoke(returnType.Name);
                 ReplaceReservedParameterNamesTypes(currentMethod, provider, replacement);
             } else if (current is CodeProperty currentProperty &&
-                    (!codeElementExceptions?.Contains(typeof(CodeProperty)) ?? true) &&
+                    isNotInExceptions &&
+                    shouldReplace &&
                     currentProperty.Type is CodeType propertyType &&
                     !propertyType.IsExternal &&
                     provider.ReservedNames.Contains(currentProperty.Type.Name))
                     propertyType.Name = replacement.Invoke(propertyType.Name);
             // Check if the current name meets the following conditions to be replaced
             // 1. In the list of reserved names
-            // 2. If it is a reserved name, make sure that the CodeElement type is worth replacing(not on the blacklist)
-            if (provider.ReservedNames.Contains(current.Name) && (!codeElementExceptions?.Contains(current.GetType()) ?? true))
+            // 2. If it is a reserved name, make sure that the CodeElement type is worth replacing(not on the blocklist)
+            // 3. There's not a very specific condition preventing from replacement
+            if (provider.ReservedNames.Contains(current.Name) &&
+                isNotInExceptions &&
+                shouldReplace)
                 current.Name = replacement.Invoke(current.Name);
 
-            CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions));
+            CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions, shouldReplaceCallback));
         }
         private static void ReplaceReservedCodeUsings(Declaration currentDeclaration, IReservedNamesProvider provider, Func<string, string> replacement)
         {

@@ -39,7 +39,8 @@ namespace Kiota.Builder.Refiners {
             ReplaceReservedNames(
                 generatedCode,
                 new GoReservedNamesProvider(),
-                x => $"{x}_escaped");
+                x => $"{x}_escaped",
+                shouldReplaceCallback: x => x is not CodeProperty currentProp || currentProp.Access != AccessModifier.Public); // Go reserved keywords are all lowercase and public properties are uppercased
             AddPropertiesAndMethodTypesImports(
                 generatedCode,
                 true,
