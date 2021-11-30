@@ -103,7 +103,7 @@ Record the value of the ClientId property of the $app object as it will be neede
 
 ## Creating the client application
 
-Before adding our actual code, create an `auth.ts` file that will handle our authentication.
+Before adding our actual code, create an `auth.ts` file at the root of the `src` folder that will handle our authentication.
 
 ```typescript
 import { DeviceCodeCredential } from "@azure/identity";
@@ -120,6 +120,27 @@ export class Auth extends BaseBearerTokenAuthenticationProvider {
 
       return Promise.resolve(token);
     }
+}
+```
+
+Then, change the `noUnusedLocals` value to `false` in the tsconfig.json at the root of your project folder.
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ES2020",
+    "moduleResolution": "node",
+    "lib": ["dom", "es2020"],
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "noUnusedLocals": true,
+    "removeComments": true,
+    "strict": true,
+    "typeRoots": ["node_modules/@types"]
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"],
 }
 ```
 
@@ -145,10 +166,15 @@ async function getMe(): Promise<User | undefined> {
     return await userRequestBuilder;
 }
 
-getMe().then((user: User | undefined) => { console.log(user)}).catch((e) => console.log(e));
+getMe().then((user: User | undefined) => { 
+    Logger.logTask('USER', user)
+}).catch((e) => {
+    Logger.log(e)
+});
 
 Logger.logTask('SYSTEM', 'FINISHED');
 ```
+
 > Note: if the target API doesn't require any authentication, you can use the **AnonymousAuthenticationProvider** instead.
 
 > Note: if the target API requires a Authorization bearer \<token> header but doesn't rely on the Microsoft Identity Platform, you can implement your own authentication provider by inheriting from **BaseBearerTokenAuthenticationProvider**.
