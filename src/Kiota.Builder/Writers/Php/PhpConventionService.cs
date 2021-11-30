@@ -82,6 +82,7 @@ namespace Kiota.Builder.Writers.Php
         {
             
             var typeString = GetTypeString(parameter.Type, parameter);
+            var methodTarget = targetElement as CodeMethod;
             var parameterSuffix = parameter.ParameterKind switch
             {
                 CodeParameterKind.Headers or CodeParameterKind.Options => $"array ${(parameter.ParameterKind == CodeParameterKind.Options ? "options" : "headers")}",
@@ -95,7 +96,9 @@ namespace Kiota.Builder.Writers.Php
                 _ => $"{typeString} {GetParameterName(parameter)}"
 
             };
-            return $"{(!parameter.Optional ? String.Empty : "?")}{parameterSuffix}";
+            var qualified = parameter.Optional &&
+                            (methodTarget != null && !methodTarget.IsOfKind(CodeMethodKind.Setter));
+            return parameter.Optional ? $"{(!parameter.Optional ? String.Empty : "?")}{parameterSuffix} {(qualified ?  "= null" : string.Empty)}" : parameterSuffix;
         }
         public string GetParameterSignature(CodeParameter parameter, CodeMethod codeMethod)
         {
