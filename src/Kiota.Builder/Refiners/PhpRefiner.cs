@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners
@@ -18,6 +17,7 @@ namespace Kiota.Builder.Refiners
             MakeModelPropertiesNullable(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
+            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             AddGetterAndSetterMethods(generatedCode,new()
             {
                 CodePropertyKind.Custom,
@@ -28,7 +28,6 @@ namespace Kiota.Builder.Refiners
             AddParsableInheritanceForModelClasses(generatedCode, "Parsable");
             ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
-            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
         }
         
         private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
@@ -66,11 +65,13 @@ namespace Kiota.Builder.Refiners
                 currentProperty.Type.Name = "array";
                 currentProperty.Type.IsNullable = false;
                 currentProperty.DefaultValue = "[]";
+                currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
             } else if(currentProperty.IsOfKind(CodePropertyKind.UrlTemplate)) {
                 currentProperty.Type.IsNullable = false;
             } else if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
                 currentProperty.Type.IsNullable = false;
                 currentProperty.Type.Name = "array";
+                currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
                 if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                     currentProperty.DefaultValue = "[]";
             } else if (currentProperty.IsOfKind(CodePropertyKind.RequestBuilder))

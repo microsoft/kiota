@@ -38,11 +38,7 @@ namespace Kiota.Builder.Writers.Php
         {
             if(code is CodeUnionType) 
                 throw new InvalidOperationException($"PHP does not support union types, the union type {code.Name} should have been filtered out by the refiner.");
-            if (code.IsCollection || targetElement is CodeProperty propertyVar && propertyVar.IsOfKind(CodePropertyKind.PathParameters))
-            {
-                return "array";
-            }
-            return TranslateType(code);
+            return code.IsCollection ? "array" : TranslateType(code);
         }
 
         public override string TranslateType(CodeType type)
@@ -85,38 +81,39 @@ namespace Kiota.Builder.Writers.Php
             var methodTarget = targetElement as CodeMethod;
             var parameterSuffix = parameter.ParameterKind switch
             {
-                CodeParameterKind.Headers or CodeParameterKind.Options => $"{typeString} {GetParameterName(parameter)}",
-                CodeParameterKind.RequestBody => $"{typeString} {GetParameterName(parameter)}",
                 CodeParameterKind.RequestAdapter => $"RequestAdapter {GetParameterName(parameter)}",
                 CodeParameterKind.ResponseHandler => $"ResponseHandler {GetParameterName(parameter)}",
                 CodeParameterKind.QueryParameter => $"GetQueryParameters {GetParameterName(parameter)}",
                 CodeParameterKind.Serializer => $"SerializationWriter {GetParameterName(parameter)}",
                 CodeParameterKind.BackingStore => $"BackingStore {GetParameterName(parameter)}",
-                CodeParameterKind.PathParameters => $"array {GetParameterName(parameter)}",
                 _ => $"{typeString} {GetParameterName(parameter)}"
 
             };
             var qualified = parameter.Optional &&
                             (methodTarget != null && !methodTarget.IsOfKind(CodeMethodKind.Setter));
-            return parameter.Optional ? $"{(!parameter.Optional ? String.Empty : "?")}{parameterSuffix} {(qualified ?  "= null" : string.Empty)}" : parameterSuffix;
+            return parameter.Optional ? $"?{parameterSuffix} {(qualified ?  "= null" : string.Empty)}" : parameterSuffix;
         }
         public string GetParameterSignature(CodeParameter parameter, CodeMethod codeMethod)
         {
-            if (codeMethod?.AccessedProperty != null && codeMethod.AccessedProperty.IsOfKind(CodePropertyKind.AdditionalData))
-            {
-                return "array $value";
-            }
-            
             return GetParameterSignature(parameter, codeMethod as CodeElement);
         }
 
         public string GetParameterDocNullable(CodeParameter parameter, CodeElement codeElement)
         {
             var parameterSignature = GetParameterSignature(parameter, codeElement).Trim().Split(' ');
+            if (parameter.IsOfKind(CodeParameterKind.PathParameters, CodeParameterKind.Headers))
+            {
+                return $"array<string, mixed>{(parameter.Optional ? "|null": string.Empty)} {parameterSignature[1]}";
+            } else if (parameter.IsOfKind(CodeParameterKind.Options))
+            {
+                return $"array<string, RequestOption>|null {parameterSignature[1]}";
+            }
+            var isCollection = parameter.Type.IsCollection;
+            var collectionDoc = isCollection ? $"array<{TranslateType(parameter.Type)}>{(parameter.Optional ? "|null" : string.Empty)} {parameterSignature[1]}" : string.Empty;
             return parameter.Optional switch
             {
-                true => $"{parameterSignature[0].Trim('?')}|null {parameterSignature[1]}",
-                _ => string.Join(' ', parameterSignature)
+                true => $"{(isCollection ? collectionDoc : $"{parameterSignature[0].Trim('?')}|null {parameterSignature[1]}")}",
+                _ => isCollection ? collectionDoc : string.Join(' ', parameterSignature)
             };
         }
 

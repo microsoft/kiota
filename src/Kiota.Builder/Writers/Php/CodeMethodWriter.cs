@@ -126,12 +126,11 @@ namespace Kiota.Builder.Writers.Php
             withDescription.Select(x => GetParameterDocString(codeMethod, x, isSetterForAdditionalData))
                 .ToList()
                 .ForEach(x => writer.WriteLine(x));
-            var isRequestExecutor = codeMethod.MethodKind == CodeMethodKind.RequestExecutor;
             var returnDocString = GetDocCommentReturnType(codeMethod, accessedProperty);
-            if (!isVoidable || isRequestExecutor)
+            if (!isVoidable)
             {
                 writer.WriteLines(
-                    $"{conventions.DocCommentPrefix}@return {(isRequestExecutor ? "Promise" : $"{returnDocString}{orNullReturn[1]}")}"
+                    $"{conventions.DocCommentPrefix}@return {returnDocString}{orNullReturn[1]}"
                     );
             }
             writer.WriteLine(conventions.DocCommentEnd);
@@ -192,8 +191,7 @@ namespace Kiota.Builder.Writers.Php
             var returnValue = isConstructor
                 ? string.Empty
                 : $": {optionalCharacterReturn}{conventions.GetTypeString(codeMethod.ReturnType, codeMethod)}";
-            var isRequestExecutor = codeMethod.MethodKind == CodeMethodKind.RequestExecutor;
-            writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodPrefix}{methodName}({methodParameters}){(isRequestExecutor ? ": Promise": returnValue)} {{");
+            writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodPrefix}{methodName}({methodParameters}){returnValue} {{");
             writer.IncreaseIndent();
             
         }

@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using Kiota.Builder.Extensions;
+﻿using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Php
 {
@@ -41,7 +40,7 @@ namespace Kiota.Builder.Writers.Php
 
         private string GetCollectionDocString(CodeProperty codeProperty)
         {
-            return codeProperty.IsOfKind(CodePropertyKind.AdditionalData) ? "array<string, mixed>" : $"array<{conventions.TranslateType(codeProperty.Type)}>";
+            return codeProperty.IsOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.PathParameters) ? "array<string, mixed>" : $"array<{conventions.TranslateType(codeProperty.Type)}>";
         }
 
         private void WriteRequestBuilderBody(CodeProperty codeElement, LanguageWriter writer, string returnType, string propertyAccess, string propertyName)
