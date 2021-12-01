@@ -483,27 +483,43 @@ namespace Kiota.Builder.Refiners {
                 currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
                 currentElement.Parent is CodeClass parentClass &&
                 parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
-                    var overloadCtor = currentMethod.Clone() as CodeMethod;
-                    overloadCtor.MethodKind = CodeMethodKind.RawUrlConstructor;
-                    overloadCtor.OriginalMethod = currentMethod;
-                    overloadCtor.RemoveParametersByKind(CodeParameterKind.PathParameters, CodeParameterKind.Path);
-                    overloadCtor.AddParameter(new CodeParameter {
-                        Name = "rawUrl",
-                        Type = new CodeType { Name = "string", IsExternal = true },
-                        Optional = false,
-                        Description = "The raw URL to use for the request builder.",
-                        ParameterKind = CodeParameterKind.RawUrl,
-                    });
-                    parentClass.AddMethod(overloadCtor);
-                }
+                var overloadCtor = currentMethod.Clone() as CodeMethod;
+                overloadCtor.MethodKind = CodeMethodKind.RawUrlConstructor;
+                overloadCtor.OriginalMethod = currentMethod;
+                overloadCtor.RemoveParametersByKind(CodeParameterKind.PathParameters, CodeParameterKind.Path);
+                overloadCtor.AddParameter(new CodeParameter {
+                    Name = "rawUrl",
+                    Type = new CodeType { Name = "string", IsExternal = true },
+                    Optional = false,
+                    Description = "The raw URL to use for the request builder.",
+                    ParameterKind = CodeParameterKind.RawUrl,
+                });
+                parentClass.AddMethod(overloadCtor);
+            }
             CrawlTree(currentElement, AddRawUrlConstructorOverload);
         }
         protected static void RemoveCancellationParameter(CodeElement currentElement){
             if (currentElement is CodeMethod currentMethod &&
-                currentMethod.IsOfKind(CodeMethodKind.RequestExecutor)){
-                    currentMethod.RemoveParametersByKind(CodeParameterKind.Cancellation);
+                currentMethod.IsOfKind(CodeMethodKind.RequestExecutor)){ 
+                currentMethod.RemoveParametersByKind(CodeParameterKind.Cancellation);
             }
             CrawlTree(currentElement, RemoveCancellationParameter);
+        }
+        
+        protected static void AddParsableInheritanceForModelClasses(CodeElement currentElement, string className = default, string classNamespace = default) {
+            if(currentElement is CodeClass currentClass &&
+               currentClass.IsOfKind(CodeClassKind.Model) &&
+               currentClass.StartBlock is CodeClass.Declaration declaration) {
+                declaration.AddImplements(new CodeType {
+                    IsExternal = true,
+                    Name = className
+                });
+                (currentClass.Parent is CodeClass {StartBlock: Declaration parentDeclaration}
+                            ? parentDeclaration
+                            : declaration)
+                        .AddUsings(new CodeUsing {Name = classNamespace});
+            }
+            CrawlTree(currentElement, c => AddParsableInheritanceForModelClasses(c, className, classNamespace));
         }
     }
 }

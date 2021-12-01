@@ -105,7 +105,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 Name = "someInterface"
             };
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
-            Assert.Equal("someInterface", declaration.Usings.First().Declaration.Name);
+            Assert.Equal("someInterface", declaration.Usings.First(usingDef => usingDef.Declaration != null).Declaration?.Name);
         }
         [Fact]
         public void FixInheritedEntityType() {
