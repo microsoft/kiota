@@ -37,8 +37,13 @@ func (pipeline *middlewarePipeline) incrementMiddlewareIndex() {
 	pipeline.middlewareIndex++
 }
 
+func (pipeline *middlewarePipeline) resetMiddlewareIndex() {
+	pipeline.middlewareIndex = 0
+}
+
 // Next moves the request object through middlewares in the pipeline
 func (pipeline *middlewarePipeline) Next(req *nethttp.Request) (*nethttp.Response, error) {
+	defer pipeline.resetMiddlewareIndex()
 	if pipeline.middlewareIndex < len(pipeline.middlewares) {
 		middleware := pipeline.middlewares[pipeline.middlewareIndex]
 
