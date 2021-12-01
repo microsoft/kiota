@@ -54,3 +54,8 @@ jobs:
       if: contains(github.event.issue.labels.*.name, 'generator')
       with:
         project: 'https://github.com/microsoft/kiota/projects/9'
+    - name: Assign Generator issues to Generator project
+      uses: srggrs/assign-one-project-github-action@1.3.1
+      if: contains(github.event.issue.labels.*.name, 'CLI')
+      with:
+        project: 'https://github.com/microsoft/kiota/projects/10'
