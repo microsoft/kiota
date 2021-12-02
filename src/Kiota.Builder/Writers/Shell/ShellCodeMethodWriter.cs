@@ -115,8 +115,7 @@ namespace Kiota.Builder.Writers.Shell
                 var pathAndQueryParams = generatorMethod.PathAndQueryParameters;
                 var originalMethod = codeElement.OriginalMethod;
                 var origParams = originalMethod.Parameters;
-                var parametersList = new List<CodeParameter>();
-                parametersList.AddRange(generatorMethod.PathAndQueryParameters.Where(p => p.Name != null));
+                var parametersList = pathAndQueryParams?.Where(p => p.Name != null)?.ToList() ?? new List<CodeParameter>();
                 if (origParams.Any(p => p.IsOfKind(CodeParameterKind.RequestBody)))
                 {
                     parametersList.Add(origParams.OfKind(CodeParameterKind.RequestBody));
@@ -161,7 +160,7 @@ namespace Kiota.Builder.Writers.Shell
                     writer.WriteLine($"command.AddOption({optionBuilder});");
                 }
 
-                var paramTypes = parametersList.Select(x =>
+                var paramTypes = parametersList.Any() ? parametersList.Select(x =>
                 {
                     var codeType = x.Type as CodeType;
                     if (x.ParameterKind == CodeParameterKind.RequestBody && codeType.TypeDefinition is CodeClass)
@@ -173,17 +172,18 @@ namespace Kiota.Builder.Writers.Shell
                     }
 
                     return conventions.GetTypeString(x.Type, x);
-                }).Aggregate((x, y) => $"{x}, {y}");
-                var paramNames = parametersList.Select(x => NormalizeToIdentifier(x.Name)).Aggregate((x, y) => $"{x}, {y}");
+                }).Aggregate((x, y) => $"{x}, {y}") : "";
+                var paramNames = parametersList.Any() ? parametersList.Select(x => NormalizeToIdentifier(x.Name)).Aggregate((x, y) => $"{x}, {y}") : "";
                 var isHandlerVoid = conventions.VoidTypeName.Equals(originalMethod.ReturnType.Name, StringComparison.OrdinalIgnoreCase);
                 returnType = conventions.GetTypeString(originalMethod.ReturnType, originalMethod);
                 if (conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
                 {
                     writer.WriteLine("command.AddOption(new Option<FileInfo>(\"--output\"));");
-                    paramTypes = $"{paramTypes}, FileInfo";
-                    paramNames = $"{paramNames}, output";
+                    paramTypes = String.Join(paramTypes, "FileInfo");
+                    paramNames = String.Join(paramNames, "output");
                 }
-                writer.WriteLine($"command.Handler = CommandHandler.Create<{paramTypes}>(async ({paramNames}) => {{");
+                var genericParameter = paramTypes.Length > 0 ? String.Join("", "<", paramTypes, ">") : "";
+                writer.WriteLine($"command.Handler = CommandHandler.Create{genericParameter}(async ({paramNames}) => {{");
                 writer.IncreaseIndent();
                 WriteCommandHandlerBody(originalMethod, requestParams, isHandlerVoid, returnType, writer);
                 // Get request generator method. To call it + get path & query parameters see WriteRequestExecutorBody in CSharp
@@ -211,7 +211,7 @@ namespace Kiota.Builder.Writers.Shell
                         if (type.IsCollection)
                             writer.WriteLine($"serializer.WriteCollectionOfPrimitiveValues(null, result);");
                         else
-                            writer.WriteLine($"serializer.Write{typeString.ToFirstCharacterUpperCase()}Value(null, result);");
+                            writer.WriteLine($"serializer.Write{typeString.ToFirstCharacterUpperCase().Replace("?", "")}Value(null, result);");
                     }
                     else
                     {
@@ -291,20 +291,24 @@ namespace Kiota.Builder.Writers.Shell
             var parametersList = new CodeParameter[] { requestParams.requestBody, requestParams.queryString, requestParams.headers, requestParams.options }
                                 .Select(x => x?.Name).Where(x => x != null).DefaultIfEmpty().Aggregate((x, y) => $"{x}, {y}");
             writer.WriteLine($"var requestInfo = {generatorMethod?.Name}({parametersList});");
-            foreach (var param in generatorMethod.PathAndQueryParameters)
+            if (generatorMethod.PathAndQueryParameters != null)
             {
-                var paramName = NormalizeToIdentifier(param.Name);
-                bool isStringParam = param.Type.Name?.ToLower() == "string";
-                if (isStringParam) writer.Write($"if (!String.IsNullOrEmpty({paramName})) ");
-                if (param.IsOfKind(CodeParameterKind.Path))
+                foreach (var param in generatorMethod.PathAndQueryParameters)
                 {
-                    writer.Write($"requestInfo.PathParameters.Add(\"{param.Name}\", {paramName});", !isStringParam);
-                } else if (param.IsOfKind(CodeParameterKind.QueryParameter))
-                {
-                    writer.Write($"requestInfo.QueryParameters.Add(\"{param.Name}\", {paramName});", !isStringParam);
-                }
+                    var paramName = NormalizeToIdentifier(param.Name);
+                    bool isStringParam = param.Type.Name?.ToLower() == "string";
+                    if (isStringParam) writer.Write($"if (!String.IsNullOrEmpty({paramName})) ");
+                    if (param.IsOfKind(CodeParameterKind.Path))
+                    {
+                        writer.Write($"requestInfo.PathParameters.Add(\"{param.Name}\", {paramName});", !isStringParam);
+                    }
+                    else if (param.IsOfKind(CodeParameterKind.QueryParameter))
+                    {
+                        writer.Write($"requestInfo.QueryParameters.Add(\"{param.Name}\", {paramName});", !isStringParam);
+                    }
 
-                writer.WriteLine();
+                    writer.WriteLine();
+                }
             }
 
 
