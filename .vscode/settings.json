@@ -14,5 +14,8 @@
         "okhttp",
         "okhttp3",
         "squareup"
+    ],
+    "cSpell.words": [
+        "serializers"
     ]
 }

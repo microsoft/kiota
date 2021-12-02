@@ -2,6 +2,8 @@
 parent: Welcome to Kiota
 ---
 
+<!-- markdownlint-disable MD024 -->
+
 # Using the Kiota tool
 
 ## How to install the tool
@@ -13,12 +15,160 @@ There are a variety of ways to install this tool:
 - you can build your own [Kiota executable](generator/build.md).
 - you can download a Kiota executable from the [releases page](https://github.com/microsoft/kiota/releases).
 
-There are a range of [command line options](https://github.com/microsoft/kiota#parameters-reference) available to control the behavior of Kiota.
+## Parameter reference
+
+Kiota accepts the following parameters during the generation.
+
+```shell
+kiota [--backing-store | -b]
+      [--class-name | -c]
+      [--deserializer | -ds]
+      [--language | -l]
+      [--loglevel | -ll]
+      [--namespace-name | -n]
+      [--openapi | -d]
+      [--output | -o]
+      [--serializer | -s]
+```
+
+### Optional parameters
+
+#### --backing-store (-b)
+
+Enables backing store for models. Defaults to `false`.
+
+```shell
+kiota --backing-store
+```
+
+#### --class-name (-c)
+
+The class name to use for the core client class. Defaults to `ApiClient`.
+
+##### Accepted values
+
+The provided name MUST be a valid class name for the target language.
+
+```shell
+kiota --class-name MyApiClient
+```
+
+#### --deserializer (-ds)
+
+The fully qualified class names for deserializers. Defaults to the following values.
+
+| Language   | Default deserializer                                            |
+|------------|-----------------------------------------------------------------|
+| C#         | `Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory`       |
+| Go         | `github.com/microsoft/kiota/serialization/go/json.JsonParseNodeFactory` |
+| Java       | `com.microsoft.kiota.serialization.JsonParseNodeFactory`        |
+| Ruby       | `microsoft_kiota_serialization/json_parse_node_factory`         |
+| TypeScript | `@microsoft/kiota-serialization-json.JsonParseNodeFactory`      |
+
+##### Accepted values
+
+One or more module names that implements `IParseNodeFactory`.
+
+```shell
+kiota --deserializer Contoso.Json.CustomDeserializer
+```
+
+#### --language (-l)
+
+The target language for the generated code files. Defaults to `csharp`.
+
+##### Accepted values
+
+- `csharp`
+- `go`
+- `java`
+- `php`
+- `python`
+- `ruby`
+- `typescript`
+
+```shell
+kiota --language java
+```
+
+#### --loglevel (-ll)
+
+The log level to use when logging events to the main output. Defaults to `warning`.
+
+##### Accepted values
+
+- `critical`
+- `debug`
+- `error`
+- `information`
+- `none`
+- `trace`
+- `warning`
+
+```shell
+kiota --loglevel information
+```
+
+#### --namespace-name (-n)
+
+The namespace to use for the core client class specified with the `--class-name` option. Defaults to `ApiSdk`.
+
+##### Accepted values
+
+The provided name MUST be a valid module or namespace name for the target language.
+
+```shell
+kiota --namespace-name MyAppNamespace.Clients
+```
+
+#### --openapi (-d)
+
+The location of the OpenAPI description in JSON or YAML format to use to generate the SDK. Defaults to `./openapi.yml`.
+
+##### Accepted values
+
+A valid URI to an OpenAPI description in the local filesystem or hosted on an HTTPS server.
+
+```shell
+kiota --openapi https://contoso.com/api/openapi.yml
+```
+
+#### --output (-o)
+
+The output directory path for the generated code files. Defaults to `./output`.
+
+##### Accepted values
+
+A valid path to a directory.
+
+```shell
+kiota --output ./src/client
+```
+
+#### --serializer (-s)
+
+The fully qualified class names for deserializers. Defaults to the following values.
+
+| Language   | Default deserializer                                            |
+|------------|-----------------------------------------------------------------|
+| C#         | `Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory` |
+| Go         | `github.com/microsoft/kiota/serialization/go/json.JsonSerializationWriterFactory` |
+| Java       | `com.microsoft.kiota.serialization.JsonSerializationWriterFactory` |
+| Ruby       | `microsoft_kiota_serialization/json_serialization_writer_factory` |
+| TypeScript | `@microsoft/kiota-serialization-json.JsonSerializationWriterFactory` |
+
+##### Accepted values
+
+One or more module names that implements `ISerializationWriterFactory`.
+
+```shell
+kiota --serializer Contoso.Json.CustomSerializer
+```
 
 ## Examples
 
 ```shell
-kiota.exe -d ./mail.yml --language csharp -o ../somepath -n namespaceprefix
+kiota.exe -d ./mail.yml --language csharp -o ../somepath -n Contoso.ApiClient
 ```
 
 ## Adding an SDK to a project
