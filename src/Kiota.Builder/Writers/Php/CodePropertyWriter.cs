@@ -49,8 +49,7 @@ namespace Kiota.Builder.Writers.Php
             writer.WriteLine($"{propertyAccess} function {propertyName}(): {returnType} {{");
             writer.IncreaseIndent();
             conventions.AddRequestBuilderBody(returnType, writer);
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
+            writer.CloseBlock();
         }
     }
 }

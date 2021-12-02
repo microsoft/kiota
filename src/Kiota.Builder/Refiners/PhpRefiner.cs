@@ -9,9 +9,10 @@ namespace Kiota.Builder.Refiners
         
         public override void Refine(CodeNamespace generatedCode)
         {
+            ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"{reservedWord.ToFirstCharacterUpperCase()}Escaped");
             ConvertUnionTypesToWrapper(generatedCode, false);
             AddConstructorsForDefaultValues(generatedCode, true);
-            RemoveCancellationTokenParameter(generatedCode);
+            RemoveCancellationParameter(generatedCode);
             CorrectParameterType(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             MakeModelPropertiesNullable(generatedCode);
@@ -24,7 +25,7 @@ namespace Kiota.Builder.Refiners
                 CodePropertyKind.AdditionalData,
                 CodePropertyKind.BackingStore
             }, _configuration.UsesBackingStore, true);
-            ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Graph{reservedWord.ToFirstCharacterUpperCase()}");
+            
             AddParsableInheritanceForModelClasses(generatedCode, "Parsable");
             ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
@@ -90,13 +91,6 @@ namespace Kiota.Builder.Refiners
                 method.ReturnType = new CodeType() {Name = "Promise", IsExternal = true, IsNullable = false};
             }
         }
-        private static void RemoveCancellationTokenParameter(CodeElement codeElement)
-        {
-            var currentMethod = codeElement as CodeMethod;
-            currentMethod?.RemoveParametersByKind(CodeParameterKind.Cancellation);
-            CrawlTree(codeElement, RemoveCancellationTokenParameter);
-        }
-
         private static void CorrectParameterType(CodeElement codeElement)
         {
             var currentMethod = codeElement as CodeMethod;
