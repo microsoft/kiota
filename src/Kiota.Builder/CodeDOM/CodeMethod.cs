@@ -107,7 +107,7 @@ namespace Kiota.Builder
         public string BaseUrl { get; set; }
 
         /// <summary>
-        /// This is currently used for CommandBuilder methods to get the originall name without the Build prefix & Command suffix.
+        /// This is currently used for CommandBuilder methods to get the original name without the Build prefix & Command suffix.
         /// Avoids regex operations
         /// </summary>
         public string SimpleName { get; set; } = String.Empty;

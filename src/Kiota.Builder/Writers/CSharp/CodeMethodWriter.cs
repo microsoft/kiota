@@ -30,8 +30,7 @@ namespace Kiota.Builder.Writers.CSharp {
                     writer.WriteLine($"_ = {parameterName} ?? throw new ArgumentNullException(nameof({parameterName}));");
             }
             HandleMethodKind(codeElement, writer, inherits, parentClass, isVoid);
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
+            writer.CloseBlock();
         }
 
         protected virtual void HandleMethodKind(CodeMethod codeElement, LanguageWriter writer, bool inherits, CodeClass parentClass, bool isVoid)

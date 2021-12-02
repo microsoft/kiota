@@ -10,9 +10,10 @@ namespace Kiota.Builder.Writers.Shell
 {
     class ShellCodeMethodWriter : CodeMethodWriter
     {
-        private static Regex delimitedRegex = new Regex("(?<=[a-z])[-_\\.]([A-Za-z])");
-        private static Regex camelCaseRegex = new Regex("(?<=[a-z])([A-Z])");
-        private static Regex identifierRegex = new Regex("(?:[-_\\.]([a-zA-Z]))");
+        private static Regex delimitedRegex = new Regex("(?<=[a-z])[-_\\.]([A-Za-z])", RegexOptions.Compiled);
+        private static Regex camelCaseRegex = new Regex("(?<=[a-z])([A-Z])", RegexOptions.Compiled);
+        private static Regex identifierRegex = new Regex("(?:[-_\\.]([a-zA-Z]))", RegexOptions.Compiled);
+        private static Regex uppercaseRegex = new Regex("([A-Z])", RegexOptions.Compiled);
 
         public ShellCodeMethodWriter(CSharpConventionService conventionService) : base(conventionService)
         {
@@ -26,9 +27,6 @@ namespace Kiota.Builder.Writers.Shell
                 var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
                 var origParams = codeElement.OriginalMethod?.Parameters ?? codeElement.Parameters;
                 var requestBodyParam = origParams.OfKind(CodeParameterKind.RequestBody);
-                //var queryStringParam = origParams.OfKind(CodeParameterKind.QueryParameter);
-                //var headersParam = origParams.OfKind(CodeParameterKind.Headers);
-                //var optionsParam = origParams.OfKind(CodeParameterKind.Options);
                 var requestParams = new RequestParams(requestBodyParam, null, null, null);
                 WriteCommandBuilderBody(codeElement, requestParams, isVoid, returnType, writer);
             }
@@ -38,7 +36,6 @@ namespace Kiota.Builder.Writers.Shell
         {
             var parent = codeElement.Parent as CodeClass;
             var classMethods = parent.Methods;
-            var uppercaseRegex = new Regex("([A-Z])");
             var name = codeElement.SimpleName;
             name = uppercaseRegex.Replace(name, "-$1").TrimStart('-').ToLower();
 
@@ -77,7 +74,7 @@ namespace Kiota.Builder.Writers.Shell
                     }
                 } else
                 {
-                    CodeType codeReturnType = (codeElement.AccessedProperty?.Type) as CodeType;
+                    var codeReturnType = (codeElement.AccessedProperty?.Type) as CodeType;
 
                     writer.WriteLine($"var command = new Command(\"{name}\");");
 
