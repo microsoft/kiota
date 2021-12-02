@@ -15,8 +15,6 @@ There are a variety of ways to install this tool:
 - you can build your own [Kiota executable](generator/build.md).
 - you can download a Kiota executable from the [releases page](https://github.com/microsoft/kiota/releases).
 
-## Parameter reference
-
 Kiota accepts the following parameters during the generation.
 
 ```shell
@@ -31,9 +29,9 @@ kiota [--backing-store | -b]
       [--serializer | -s]
 ```
 
-### Optional parameters
+## Optional parameters
 
-#### `--backing-store (-b)`
+### `--backing-store (-b)`
 
 Enables backing store for models. Defaults to `false`.
 
@@ -41,11 +39,11 @@ Enables backing store for models. Defaults to `false`.
 kiota --backing-store
 ```
 
-#### --class-name (-c)
+### --class-name (-c)
 
 The class name to use for the core client class. Defaults to `ApiClient`.
 
-##### Accepted values
+#### Accepted values
 
 The provided name MUST be a valid class name for the target language.
 
