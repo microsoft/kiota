@@ -19,7 +19,7 @@ type AzureIdentityAuthenticationProvider struct {
 	credential azcore.TokenCredential
 }
 
-// NewAzureIdentityAuthenticationProvider creates a new instance of the AzureIdentityAuthenticationProvider.
+// NewAzureIdentityAuthenticationProvider creates a new instance of the AzureIdentityAuthenticationProvider using "https://graph.microsoft.com/.default" as the default scope.
 func NewAzureIdentityAuthenticationProvider(credential azcore.TokenCredential) (*AzureIdentityAuthenticationProvider, error) {
 	return NewAzureIdentityAuthenticationProviderWithScopes(credential, nil)
 }
@@ -29,10 +29,17 @@ func NewAzureIdentityAuthenticationProviderWithScopes(credential azcore.TokenCre
 	if credential == nil {
 		return nil, errors.New("credential cannot be nil")
 	}
+	scopesLen := len(scopes)
+	finalScopes := make([]string, scopesLen)
+	if scopesLen == 0 {
+		finalScopes = append(finalScopes, "https://graph.microsoft.com/.default")
+	} else {
+		copy(finalScopes, scopes)
+	}
 	baseBearer := auth.NewBaseBearerTokenAuthenticationProvider(
 		func(request abs.RequestInformation) (string, error) {
 			options := azpolicy.TokenRequestOptions{
-				Scopes: scopes,
+				Scopes: finalScopes,
 			}
 			token, err := credential.GetToken(context.Background(), options)
 			if err != nil {
@@ -43,11 +50,7 @@ func NewAzureIdentityAuthenticationProviderWithScopes(credential azcore.TokenCre
 	result := &AzureIdentityAuthenticationProvider{
 		BaseBearerTokenAuthenticationProvider: *baseBearer,
 		credential:                            credential,
-		scopes:                                scopes,
-	}
-
-	if result.scopes == nil || len(result.scopes) == 0 {
-		result.scopes = []string{"https://graph.microsoft.com/.default"} //TODO: init from the request URL host instead for national clouds
+		scopes:                                finalScopes,
 	}
 
 	return result, nil

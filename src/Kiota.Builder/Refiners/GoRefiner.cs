@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Extensions;
@@ -19,6 +19,7 @@ namespace Kiota.Builder.Refiners {
                 generatedCode,
                 false,
                 "ById");
+            RemoveCancellationParameter(generatedCode);
             ReplaceRequestBuilderPropertiesByMethods(
                 generatedCode
             );
@@ -38,7 +39,11 @@ namespace Kiota.Builder.Refiners {
             ReplaceReservedNames(
                 generatedCode,
                 new GoReservedNamesProvider(),
-                x => $"{x}_escaped");
+                x => $"{x}_escaped",
+                shouldReplaceCallback: x => x is not CodeProperty currentProp || 
+                                            !(currentProp.Parent is CodeClass parentClass &&
+                                            parentClass.IsOfKind(CodeClassKind.QueryParameters, CodeClassKind.ParameterSet) &&
+                                            currentProp.Access == AccessModifier.Public)); // Go reserved keywords are all lowercase and public properties are uppercased when we don't provide accessors (models)
             AddPropertiesAndMethodTypesImports(
                 generatedCode,
                 true,

@@ -6,7 +6,7 @@ using Microsoft.Kiota.Abstractions.Serialization;
 using Moq;
 using Xunit;
 
-namespace Microsoft.Kiota.Abstractions.Tests.serialization
+namespace Microsoft.Kiota.Abstractions.Tests.Serialization
 {
     public class ParseNodeFactoryRegistryTests
     {

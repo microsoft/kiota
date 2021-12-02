@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2.4.0
       - name: Setup .NET
-        uses: actions/setup-dotnet@v1.8.2
+        uses: actions/setup-dotnet@v1.9.0
         with:
           dotnet-version: 6.0.x
       - name: Publish ${{ matrix.architecture }}
@@ -43,7 +43,7 @@ jobs:
         with:
           path: output
       - name: Release
-        uses: anton-yurchenko/git-release@v4.1
+        uses: anton-yurchenko/git-release@v4.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DRAFT_RELEASE: "false"

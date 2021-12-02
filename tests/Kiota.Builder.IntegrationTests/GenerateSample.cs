@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -14,6 +13,7 @@ namespace Kiota.Builder.integrationtests
         [InlineData(GenerationLanguage.Ruby, false)]
         [InlineData(GenerationLanguage.CSharp, true)]
         [InlineData(GenerationLanguage.Java, true)]
+        [InlineData(GenerationLanguage.PHP, false)]
         [InlineData(GenerationLanguage.TypeScript, true)]
         [Theory]
         public async Task GeneratesTodo(GenerationLanguage language, bool backingStore) {

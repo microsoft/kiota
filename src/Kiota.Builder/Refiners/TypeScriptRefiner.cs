@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using System;
 using Kiota.Builder.Extensions;
 
@@ -10,11 +10,12 @@ namespace Kiota.Builder.Refiners {
         {
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
+            RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
             AliasUsingsWithSameSymbol(generatedCode);
-            AddParsableInheritanceForModelClasses(generatedCode);
+            AddParsableInheritanceForModelClasses(generatedCode, "Parsable");
             ReplaceBinaryByNativeType(generatedCode, "ReadableStream", "web-streams-polyfill/es2018", true);
             ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
             AddGetterAndSetterMethods(generatedCode, new() {
@@ -58,16 +59,6 @@ namespace Kiota.Builder.Refiners {
                                                 .GetNamespaceImportSymbol();
                 }
             CrawlTree(currentElement, AliasUsingsWithSameSymbol);
-        }
-        private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
-                var declaration = currentClass.StartBlock as CodeClass.Declaration;
-                declaration.AddImplements(new CodeType{
-                    IsExternal = true,
-                    Name = "Parsable",
-                });
-            }
-            CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
         }
         private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),

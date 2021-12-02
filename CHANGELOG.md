@@ -10,13 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
-
+- Add support for PHP Generation.
 - Migrated generator to dotnet 6 #815
 - Fixes a bug where json deserialization would fail in go
 - Fixes a bug where query parameters would not be added to the request in go
 - Fixes a bug where at signs in path would derail generation
 - Fixes Go doc comments in packages and generation
-- Fixes a bug where RequestInformation did not accept some content headers in dotnet 
+- Fixes a bug where RequestInformation did not accept some content headers in dotnet
+- Added support for providing cancellation token in dotnet #874, #875, #876
+- Upgrades go libraries to go17.
+- Fixes a bug in Go where reserved keywords for properties would be wrongly replaced.
+- Fixes a bug in Go where setters would be missing nil checks.
 
 ## [0.0.14] - 2021-11-08
 
