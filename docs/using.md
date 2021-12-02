@@ -33,7 +33,7 @@ kiota [--backing-store | -b]
 
 ### Optional parameters
 
-#### --backing-store (-b)
+#### `--backing-store (-b)`
 
 Enables backing store for models. Defaults to `false`.
 
