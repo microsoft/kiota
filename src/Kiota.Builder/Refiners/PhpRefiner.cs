@@ -9,7 +9,10 @@ namespace Kiota.Builder.Refiners
         
         public override void Refine(CodeNamespace generatedCode)
         {
-            ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"{reservedWord.ToFirstCharacterUpperCase()}Escaped");
+            ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"{reservedWord.ToFirstCharacterUpperCase()}Escaped", new ()
+            {
+                typeof(CodeProperty)
+            });
             ConvertUnionTypesToWrapper(generatedCode, false);
             AddConstructorsForDefaultValues(generatedCode, true);
             RemoveCancellationParameter(generatedCode);
