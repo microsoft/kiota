@@ -39,7 +39,7 @@ Enables backing store for models. Defaults to `false`.
 kiota --backing-store
 ```
 
-### --class-name (-c)
+### `--class-name (-c)`
 
 The class name to use for the core client class. Defaults to `ApiClient`.
 
@@ -51,7 +51,7 @@ The provided name MUST be a valid class name for the target language.
 kiota --class-name MyApiClient
 ```
 
-#### --deserializer (-ds)
+### `--deserializer (-ds)`
 
 The fully qualified class names for deserializers. Defaults to the following values.
 
@@ -63,7 +63,7 @@ The fully qualified class names for deserializers. Defaults to the following val
 | Ruby       | `microsoft_kiota_serialization/json_parse_node_factory`         |
 | TypeScript | `@microsoft/kiota-serialization-json.JsonParseNodeFactory`      |
 
-##### Accepted values
+#### Accepted values
 
 One or more module names that implements `IParseNodeFactory`.
 
@@ -71,11 +71,11 @@ One or more module names that implements `IParseNodeFactory`.
 kiota --deserializer Contoso.Json.CustomDeserializer
 ```
 
-#### --language (-l)
+### `--language (-l\)`
 
 The target language for the generated code files. Defaults to `csharp`.
 
-##### Accepted values
+#### Accepted values
 
 - `csharp`
 - `go`
@@ -89,11 +89,11 @@ The target language for the generated code files. Defaults to `csharp`.
 kiota --language java
 ```
 
-#### --loglevel (-ll)
+### `--loglevel (-ll\)`
 
 The log level to use when logging events to the main output. Defaults to `warning`.
 
-##### Accepted values
+#### Accepted values
 
 - `critical`
 - `debug`
@@ -107,11 +107,11 @@ The log level to use when logging events to the main output. Defaults to `warnin
 kiota --loglevel information
 ```
 
-#### --namespace-name (-n)
+### `--namespace-name (-n\)`
 
 The namespace to use for the core client class specified with the `--class-name` option. Defaults to `ApiSdk`.
 
-##### Accepted values
+#### Accepted values
 
 The provided name MUST be a valid module or namespace name for the target language.
 
@@ -119,11 +119,11 @@ The provided name MUST be a valid module or namespace name for the target langua
 kiota --namespace-name MyAppNamespace.Clients
 ```
 
-#### --openapi (-d)
+### `--openapi (-d\)`
 
 The location of the OpenAPI description in JSON or YAML format to use to generate the SDK. Defaults to `./openapi.yml`.
 
-##### Accepted values
+#### Accepted values
 
 A valid URI to an OpenAPI description in the local filesystem or hosted on an HTTPS server.
 
@@ -131,11 +131,11 @@ A valid URI to an OpenAPI description in the local filesystem or hosted on an HT
 kiota --openapi https://contoso.com/api/openapi.yml
 ```
 
-#### --output (-o)
+### `--output (-o\)`
 
 The output directory path for the generated code files. Defaults to `./output`.
 
-##### Accepted values
+#### Accepted values
 
 A valid path to a directory.
 
@@ -143,7 +143,7 @@ A valid path to a directory.
 kiota --output ./src/client
 ```
 
-#### --serializer (-s)
+### `--serializer (-s\)`
 
 The fully qualified class names for deserializers. Defaults to the following values.
 
@@ -155,7 +155,7 @@ The fully qualified class names for deserializers. Defaults to the following val
 | Ruby       | `microsoft_kiota_serialization/json_serialization_writer_factory` |
 | TypeScript | `@microsoft/kiota-serialization-json.JsonSerializationWriterFactory` |
 
-##### Accepted values
+#### Accepted values
 
 One or more module names that implements `ISerializationWriterFactory`.
 
