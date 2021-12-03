@@ -15,9 +15,8 @@ By creating properties on request builder classes, the developer can effectively
 The URL for the request is built using an [RFC6570 URL Template](https://datatracker.ietf.org/doc/html/rfc6570) and providing its parameters.
 
 ```csharp
-
-    var todo = await todoClient.Todos["<todoId>"].GetAsync();
-    var responsiblePerson =  await todoClient.Todos["<todoId>"].AssignedTo.GetAsync();
+var todo = await todoClient.Todos["<todoId>"].GetAsync();
+var responsiblePerson =  await todoClient.Todos["<todoId>"].AssignedTo.GetAsync();
 ```
 
 Each request builder class exposes the set of HTTP methods that are supported on that resource. Each operation method allows setting and configuring query parameters, setting HTTP headers and providing a custom response handler.

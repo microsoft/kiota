@@ -15,24 +15,27 @@ This section provides information about the types offered in the abstractions li
 The Request Adapter interface is the primary point where Kiota service libraries will trigger the creation of a HTTP request.  Below is the [C# implementation](https://github.com/microsoft/kiota/blob/main/abstractions/dotnet/src/IRequestAdapter.cs).
 
 ```csharp
-public interface IRequestAdapter {
+public interface IRequestAdapter
+{
     void EnableBackingStore(IBackingStoreFactory backingStoreFactory);
 
     ISerializationWriterFactory SerializationWriterFactory { get; }
 
-    Task<ModelType> SendAsync<ModelType>(RequestInformation requestInfo,
-                                            IResponseHandler responseHandler = default)
-                    where ModelType : IParsable;
+    Task<ModelType> SendAsync<ModelType>(
+        RequestInformation requestInfo,
+        IResponseHandler responseHandler = default) where ModelType : IParsable;
 
-    Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(RequestInformation requestInfo,
-                    IResponseHandler responseHandler = default)
-                where ModelType : IParsable;
+    Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(
+        RequestInformation requestInfo,
+        IResponseHandler responseHandler = default) where ModelType : IParsable;
 
-    Task<ModelType> SendPrimitiveAsync<ModelType>(RequestInformation requestInfo,
-                                                    IResponseHandler responseHandler = default);
+    Task<ModelType> SendPrimitiveAsync<ModelType>(
+        RequestInformation requestInfo,
+        IResponseHandler responseHandler = default);
 
-    Task SendNoContentAsync(RequestInformation requestInfo,
-                            IResponseHandler responseHandler = default);
+    Task SendNoContentAsync(
+        RequestInformation requestInfo,
+        IResponseHandler responseHandler = default);
 }
 ```
 
@@ -48,9 +51,12 @@ public class RequestInformation
     public string UrlTemplate { get; set; }
     public Uri URI { get; set; }
     public HttpMethod HttpMethod { get; set; }
-    public IDictionary<string, object> QueryParameters { get; set; } = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
-    public IDictionary<string, string> Headers { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-    public IDictionary<string, object> PathParameters { get; set; } = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+    public IDictionary<string, object> QueryParameters { get; set; } =
+        new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+    public IDictionary<string, string> Headers { get; set; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    public IDictionary<string, object> PathParameters { get; set; } =
+        new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
     public Stream Content { get; set; }
     public IEnumerable<IRequestOption> RequestOptions { get }
 }

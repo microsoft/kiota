@@ -5,14 +5,8 @@ has_children: true
 
 # Understand and Extend the Kiota generator
 
-For an overview of how the code generation process works, see the [Design Overview](designoverview).
+For an overview of how the code generation process works, see the [design overview](../designoverview.md).
 
 ## Project Structure
 
-For more information on the various components used by the Kiota SDK, see the following topics:
-
-- [Request Builders](requestbuilders)
-- [Models](models)
-- [Abstractions](kiotaabstractions)
-- [Core Library](corelibrary)
-- [Authentication](authentication)
+For more information on the various components used by a Kiota-generated SDK, see the following topics.
