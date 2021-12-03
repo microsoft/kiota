@@ -26,7 +26,22 @@ npm i
 
 ## Adding dependencies
 
-If you have not already, you will need to create a `.npmrc` to enable access to the packages in the GitHub package feed. The article on installing the [Kiota command line](../generator/tool.md) tool shows how to do this.
+### Getting access to the packages
+
+If you have not already, you will need to create a `.npmrc` to enable access to the packages in the GitHub package feed. 
+
+1. Add a `.npmrc` file with the following content
+
+    ```Config
+    @microsoft:registry=https://npm.pkg.github.com/
+    ```
+
+1. `npm login --scope=@microsoft --registry=https://npm.pkg.github.com` (use a token with package:read, repo and SSO enabled for the Microsoft organization as the password)
+1. `npm i @microsoft/kiota-authentication-azure -S`.
+
+### Installing Kiota
+
+The article on installing the [Kiota command line](../generator/tool.md) tool shows how to do this.
 
 Once the package feed is accessible the following packages can be added to the project.
 
