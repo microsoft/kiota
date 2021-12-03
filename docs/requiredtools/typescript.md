@@ -32,7 +32,7 @@ If you have not already, you will need to create a `.npmrc` to enable access to 
 
 1. Add a `.npmrc` file with the following content
 
-    ```dosini
+    ```conf
     @microsoft:registry=https://npm.pkg.github.com/
     ```
 
