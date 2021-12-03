@@ -71,7 +71,7 @@ One or more module names that implements `IParseNodeFactory`.
 kiota --deserializer Contoso.Json.CustomDeserializer
 ```
 
-### `--language (-l\)`
+### `--language (-l)`
 
 The target language for the generated code files. Defaults to `csharp`.
 
@@ -89,7 +89,7 @@ The target language for the generated code files. Defaults to `csharp`.
 kiota --language java
 ```
 
-### `--loglevel (-ll\)`
+### `--loglevel (-ll)`
 
 The log level to use when logging events to the main output. Defaults to `warning`.
 
@@ -107,7 +107,7 @@ The log level to use when logging events to the main output. Defaults to `warnin
 kiota --loglevel information
 ```
 
-### `--namespace-name (-n\)`
+### `--namespace-name (-n)`
 
 The namespace to use for the core client class specified with the `--class-name` option. Defaults to `ApiSdk`.
 
@@ -119,7 +119,7 @@ The provided name MUST be a valid module or namespace name for the target langua
 kiota --namespace-name MyAppNamespace.Clients
 ```
 
-### `--openapi (-d\)`
+### `--openapi (-d)`
 
 The location of the OpenAPI description in JSON or YAML format to use to generate the SDK. Defaults to `./openapi.yml`.
 
@@ -131,7 +131,7 @@ A valid URI to an OpenAPI description in the local filesystem or hosted on an HT
 kiota --openapi https://contoso.com/api/openapi.yml
 ```
 
-### `--output (-o\)`
+### `--output (-o)`
 
 The output directory path for the generated code files. Defaults to `./output`.
 
@@ -143,7 +143,7 @@ A valid path to a directory.
 kiota --output ./src/client
 ```
 
-### `--serializer (-s\)`
+### `--serializer (-s)`
 
 The fully qualified class names for deserializers. Defaults to the following values.
 
