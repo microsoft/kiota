@@ -95,8 +95,8 @@ const serviceUnavailable = 503
 const gatewayTimeout = 504
 
 // Intercept implements the interface and evaluates whether to retry a failed request.
-func (middleware RetryHandler) Intercept(pipeline Pipeline, req *nethttp.Request) (*nethttp.Response, error) {
-	response, err := pipeline.Next(req)
+func (middleware RetryHandler) Intercept(pipeline Pipeline, middlewareIndex int, req *nethttp.Request) (*nethttp.Response, error) {
+	response, err := pipeline.Next(req, middlewareIndex)
 	if err != nil {
 		return response, err
 	}
@@ -104,10 +104,10 @@ func (middleware RetryHandler) Intercept(pipeline Pipeline, req *nethttp.Request
 	if !ok {
 		reqOption = &middleware.options
 	}
-	return middleware.retryRequest(pipeline, reqOption, req, response, 0, 0)
+	return middleware.retryRequest(pipeline, middlewareIndex, reqOption, req, response, 0, 0)
 }
 
-func (middleware RetryHandler) retryRequest(pipeline Pipeline, options retryHandlerOptionsInt, req *nethttp.Request, resp *nethttp.Response, executionCount int, cummulativeDelay time.Duration) (*nethttp.Response, error) {
+func (middleware RetryHandler) retryRequest(pipeline Pipeline, middlewareIndex int, options retryHandlerOptionsInt, req *nethttp.Request, resp *nethttp.Response, executionCount int, cummulativeDelay time.Duration) (*nethttp.Response, error) {
 	if middleware.isRetriableErrorCode(resp.StatusCode) &&
 		middleware.isRetriableRequest(req) &&
 		executionCount < options.GetMaxRetries() &&
@@ -118,11 +118,11 @@ func (middleware RetryHandler) retryRequest(pipeline Pipeline, options retryHand
 		cummulativeDelay += delay
 		req.Header.Set(retryAttemptHeader, strconv.Itoa(executionCount))
 		time.Sleep(delay)
-		response, err := pipeline.Next(req)
+		response, err := pipeline.Next(req, middlewareIndex)
 		if err != nil {
 			return response, err
 		}
-		return middleware.retryRequest(pipeline, options, req, response, executionCount, cummulativeDelay)
+		return middleware.retryRequest(pipeline, middlewareIndex, options, req, response, executionCount, cummulativeDelay)
 	}
 	return resp, nil
 }
