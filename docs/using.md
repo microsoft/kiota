@@ -2,9 +2,9 @@
 parent: Welcome to Kiota
 ---
 
-<!-- markdownlint-disable MD024 -->
-
 # Using the Kiota tool
+
+<!-- markdownlint-disable MD024 -->
 
 ## How to install the tool
 
