@@ -14,6 +14,8 @@ namespace Kiota.Builder.Writers.Shell
         private static Regex camelCaseRegex = new Regex("(?<=[a-z])([A-Z])", RegexOptions.Compiled);
         private static Regex identifierRegex = new Regex("(?:[-_\\.]([a-zA-Z]))", RegexOptions.Compiled);
         private static Regex uppercaseRegex = new Regex("([A-Z])", RegexOptions.Compiled);
+        private const string fileParamType = "FileInfo";
+        private const string fileParamName = "output";
 
         public ShellCodeMethodWriter(CSharpConventionService conventionService) : base(conventionService)
         {
@@ -61,16 +63,26 @@ namespace Kiota.Builder.Writers.Shell
                     else if (codeElement.OriginalIndexer != null)
                     {
                         var targetClass = conventions.GetTypeString(codeElement.OriginalIndexer.ReturnType, codeElement);
-                        var builderMethods = (codeElement.OriginalIndexer.ReturnType as CodeType).TypeDefinition.GetChildElements(true).OfType<CodeMethod>().Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder)).ToList();
+                        var builderMethods = (codeElement.OriginalIndexer.ReturnType as CodeType).TypeDefinition.GetChildElements(true).OfType<CodeMethod>().Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder));
+                        var listBuilderMethods = builderMethods.Where(m => m.ReturnType.IsCollection).ToList();
+                        var itemBuilderMethods = builderMethods.Where(m => !m.ReturnType.IsCollection).ToList();
                         conventions.AddRequestBuilderBody(parent, targetClass, writer, prefix: "var builder = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
-                        writer.WriteLine("return new Command[] { ");
+                        writer.WriteLine("var commands = new List<Command> { ");
                         writer.IncreaseIndent();
-                        for (int i = 0; i < builderMethods.Count; i++)
+
+                        foreach (var method in itemBuilderMethods)
                         {
-                            writer.WriteLine($"builder.{builderMethods[i].Name}(),");
+                            writer.WriteLine($"builder.{method.Name}(),");
                         }
-                        writer.DecreaseIndent();
-                        writer.WriteLine("};");
+
+                        writer.CloseBlock("};");
+
+                        foreach (var method in listBuilderMethods)
+                        {
+                            writer.WriteLine($"commands.AddRange({method.Name}());");
+                        }
+
+                        writer.WriteLine("return commands.ToArray();");
                     }
                 } else
                 {
@@ -80,7 +92,10 @@ namespace Kiota.Builder.Writers.Shell
 
                     if (codeReturnType != null)
                     {
-                        var targetClass = conventions.GetTypeString(codeReturnType, codeElement);
+                        // Include namespace to avoid type ambiguity on similarly named classes. Currently, if we have namespaces A and A.B where both namespaces have type T,
+                        // Trying to use type A.B.T in namespace A without using the fully qualified name will break the build.
+                        // TODO: Fix this in the refiner.
+                        var targetClass = string.Join(".", codeReturnType.TypeDefinition.Parent.Name, conventions.GetTypeString(codeReturnType, codeElement));
                         var builderMethods = codeReturnType.TypeDefinition.GetChildElements(true).OfType<CodeMethod>().Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder));
                         conventions.AddRequestBuilderBody(parent, targetClass, writer, prefix: "var builder = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
 
@@ -157,7 +172,7 @@ namespace Kiota.Builder.Writers.Shell
                     writer.WriteLine($"command.AddOption({optionBuilder});");
                 }
 
-                var paramTypes = parametersList.Any() ? parametersList.Select(x =>
+                var paramTypes = parametersList.Select(x =>
                 {
                     var codeType = x.Type as CodeType;
                     if (x.ParameterKind == CodeParameterKind.RequestBody && codeType.TypeDefinition is CodeClass)
@@ -169,17 +184,17 @@ namespace Kiota.Builder.Writers.Shell
                     }
 
                     return conventions.GetTypeString(x.Type, x);
-                }).Aggregate((x, y) => $"{x}, {y}") : "";
-                var paramNames = parametersList.Any() ? parametersList.Select(x => NormalizeToIdentifier(x.Name)).Aggregate((x, y) => $"{x}, {y}") : "";
+                }).Aggregate(string.Empty, (x, y) => string.IsNullOrEmpty(x) ? y : $"{x}, {y}");
+                var paramNames = parametersList.Select(x => NormalizeToIdentifier(x.Name)).Aggregate(string.Empty, (x, y) => string.IsNullOrEmpty(x) ? y : $"{x}, {y}");
                 var isHandlerVoid = conventions.VoidTypeName.Equals(originalMethod.ReturnType.Name, StringComparison.OrdinalIgnoreCase);
                 returnType = conventions.GetTypeString(originalMethod.ReturnType, originalMethod);
                 if (conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
                 {
                     writer.WriteLine("command.AddOption(new Option<FileInfo>(\"--output\"));");
-                    paramTypes = String.Join(paramTypes, "FileInfo");
-                    paramNames = String.Join(paramNames, "output");
+                    paramTypes = string.IsNullOrWhiteSpace(paramTypes) ? fileParamType : string.Join(", ", paramTypes, fileParamType);
+                    paramNames = string.IsNullOrWhiteSpace(paramNames) ? fileParamName : string.Join(", ", paramNames, fileParamName);
                 }
-                var genericParameter = paramTypes.Length > 0 ? String.Join("", "<", paramTypes, ">") : "";
+                var genericParameter = paramTypes.Length > 0 ? string.Join("", "<", paramTypes, ">") : "";
                 writer.WriteLine($"command.Handler = CommandHandler.Create{genericParameter}(async ({paramNames}) => {{");
                 writer.IncreaseIndent();
                 WriteCommandHandlerBody(originalMethod, requestParams, isHandlerVoid, returnType, writer);
@@ -231,8 +246,8 @@ namespace Kiota.Builder.Writers.Shell
                         writer.CloseBlock();
                         writer.WriteLine("else {");
                         writer.IncreaseIndent();
-                        writer.WriteLine("using var stream = output.OpenWrite();");
-                        writer.WriteLine("await result.CopyToAsync(stream);");
+                        writer.WriteLine("using var writeStream = output.OpenWrite();");
+                        writer.WriteLine("await result.CopyToAsync(writeStream);");
                         writer.WriteLine("Console.WriteLine($\"Content written to {output.FullName}.\");");
                         writer.CloseBlock();
                     }
