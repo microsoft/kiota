@@ -13,7 +13,7 @@ Before you can compile and run the target project, you will need to initialize i
 
 ## Creating target projects
 
-> Note: you can use an existing project if you have one, in that case, you can skip the following section.
+> **Note:** you can use an existing project if you have one, in that case, you can skip the following section.
 
 Execute the following command in the directory you want to create a new project.
 
@@ -22,7 +22,7 @@ git clone https://github.com/FreekMencke/node-typescript-starter.git
 npm i
 ```
 
-> Note: in this example the `node-typescript-starter` is used, but you can use any node + typescript template.
+> **Note:** in this example the `node-typescript-starter` is used, but you can use any node + typescript template.
 
 ## Adding dependencies
 
@@ -98,7 +98,7 @@ You can then use the Kiota command line tool to generate the SDK classes.
 
 ## Creating an application registration
 
-> Note: this step is required if your client will be calling APIs that are protected by the Microsoft Identity Platform like Microsoft Graph.
+> **Note:** this step is required if your client will be calling APIs that are protected by the Microsoft Identity Platform like Microsoft Graph.
 
 To be able to authenticate against the demo application against Microsoft Graph, you will need to create an application registration.  You can do this via the Azure portal, or if you have [Microsoft Graph PowerShell](https://www.powershellgallery.com/packages/Microsoft.Graph) installed, you can use the following command to create the application.
 
@@ -173,11 +173,11 @@ getMe().then((user: User | undefined) => {
 Logger.logTask('SYSTEM', 'FINISHED');
 ```
 
-> Note: if the target API doesn't require any authentication, you can use the **AnonymousAuthenticationProvider** instead.
-
-> Note: if the target API requires a Authorization bearer \<token> header but doesn't rely on the Microsoft Identity Platform, you can implement your own authentication provider by inheriting from **BaseBearerTokenAuthenticationProvider**.
-
-> Note: if the target API requires any other form of authentication schemes, you can implement the **IAuthenticationProvider** interface.
+> **Note:**
+>
+> - If the target API doesn't require any authentication, you can use the **AnonymousAuthenticationProvider** instead.
+> - If the target API requires a Authorization bearer \<token> header but doesn't rely on the Microsoft Identity Platform, you can implement your own authentication provider by inheriting from **BaseBearerTokenAuthenticationProvider**.
+> - If the target API requires any other form of authentication schemes, you can implement the **IAuthenticationProvider** interface.
 
 ## Executing the application
 
