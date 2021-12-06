@@ -43,20 +43,6 @@ func NewRequestInformation() *RequestInformation {
 	}
 }
 
-var normalized_query_parameters = map[string]bool{ // property name is using a capital letter due to go conventions, but the templates are using lowercase
-	"count":      true,
-	"expand":     true,
-	"deltatoken": true,
-	"filter":     true,
-	"format":     true,
-	"orderby":    true,
-	"search":     true,
-    "select":     true,
-	"skip":       true,
-	"skiptoken":  true,
-	"top":        true,
-}
-
 // GetUri returns the URI of the request.
 func (request *RequestInformation) GetUri() (*u.URL, error) {
 	if request.uri != nil {
@@ -80,16 +66,16 @@ func (request *RequestInformation) GetUri() (*u.URL, error) {
 			return nil, err
 		}
 		values := t.Values{}
+		varNames := uriTemplate.Varnames()
+		normalizedNames := make(map[string]string)
+		for _, varName := range varNames {
+			normalizedNames[strings.ToLower(varName)] = varName
+		}
 		for key, value := range request.PathParameters {
-			values.Set(key, t.String(value))
+			addParameterWithOriginalName(key, value, normalizedNames, values)
 		}
 		for key, value := range request.QueryParameters {
-			lowercaseKey := strings.ToLower(key)
-			if normalized_query_parameters[lowercaseKey] {
-				values.Set(lowercaseKey, t.String(value))
-			} else {
-				values.Set(key, t.String(value))
-			}
+			addParameterWithOriginalName(key, value, normalizedNames, values)
 		}
 		url, err := uriTemplate.Expand(values)
 		if err != nil {
@@ -97,6 +83,16 @@ func (request *RequestInformation) GetUri() (*u.URL, error) {
 		}
 		uri, err := u.Parse(url)
 		return uri, err
+	}
+}
+
+// addParameterWithOriginalName adds the URI template parameter to the template using the right casing, because of go conventions, casing might have changed for the generated property
+func addParameterWithOriginalName(key string, value string, normalizedNames map[string]string, values t.Values) {
+	lowercaseKey := strings.ToLower(key)
+	if paramName, ok := normalizedNames[lowercaseKey]; ok {
+		values.Set(paramName, t.String(value))
+	} else {
+		values.Set(key, t.String(value))
 	}
 }
 
