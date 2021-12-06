@@ -6,14 +6,7 @@ parent: Welcome to Kiota
 
 <!-- markdownlint-disable MD024 -->
 
-## How to install the tool
-
-There are a variety of ways to install this tool:
-
-- you can install Kiota as a [dotnet tool](generator/tool.md) from the GitHub packages feed.
-- you can run Kiota in a [Docker container](generator/docker.md).
-- you can build your own [Kiota executable](generator/build.md).
-- you can download a Kiota executable from the [releases page](https://github.com/microsoft/kiota/releases).
+> **Note:** For information on installing Kiota, see [Get started with Kiota](get-started/index.md).
 
 Kiota accepts the following parameters during the generation.
 
