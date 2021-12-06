@@ -1,4 +1,4 @@
-﻿// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 //  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
 // ------------------------------------------------------------------------------
 
@@ -61,7 +61,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Middleware
         /// <returns></returns>
         private static bool ShouldDecompressContent(HttpResponseMessage httpResponse)
         {
-            return httpResponse.Content.Headers.ContentEncoding.Contains(GZip);
+            return httpResponse.Content?.Headers?.ContentEncoding.Contains(GZip) ?? false;
         }
     }
 }

@@ -5,12 +5,7 @@ import nethttp "net/http"
 // Pipeline contract for middleware infrastructure
 type Pipeline interface {
 	// Next moves the request object through middlewares in the pipeline
-	// Parameters:
-	//     req: the request object
-	// Returns:
-	//     the response object
-	//     error: any error that occurred
-	Next(req *nethttp.Request) (*nethttp.Response, error)
+	Next(req *nethttp.Request, middlewareIndex int) (*nethttp.Response, error)
 }
 
 // custom transport for net/http with a middleware pipeline
@@ -22,8 +17,6 @@ type customTransport struct {
 
 // middleware pipeline implementation using a roundtripper from net/http
 type middlewarePipeline struct {
-	// index of the middleware beeing executed
-	middlewareIndex int
 	// the round tripper to use to execute the request
 	transport nethttp.RoundTripper
 	// the middlewares to execute
@@ -32,37 +25,27 @@ type middlewarePipeline struct {
 
 func newMiddlewarePipeline(middlewares []Middleware) *middlewarePipeline {
 	return &middlewarePipeline{
-		middlewareIndex: 0,
-		transport:       nethttp.DefaultTransport,
-		middlewares:     middlewares,
+		transport:   nethttp.DefaultTransport,
+		middlewares: middlewares,
 	}
 }
 
-func (pipeline *middlewarePipeline) incrementMiddlewareIndex() {
-	pipeline.middlewareIndex++
-}
-
 // Next moves the request object through middlewares in the pipeline
-func (pipeline *middlewarePipeline) Next(req *nethttp.Request) (*nethttp.Response, error) {
-	if pipeline.middlewareIndex < len(pipeline.middlewares) {
-		middleware := pipeline.middlewares[pipeline.middlewareIndex]
-
-		pipeline.incrementMiddlewareIndex()
-		return middleware.Intercept(pipeline, req)
+func (pipeline *middlewarePipeline) Next(req *nethttp.Request, middlewareIndex int) (*nethttp.Response, error) {
+	if middlewareIndex < len(pipeline.middlewares) {
+		middleware := pipeline.middlewares[middlewareIndex]
+		return middleware.Intercept(pipeline, middlewareIndex+1, req)
 	}
 
 	return pipeline.transport.RoundTrip(req)
 }
 
+// RoundTrip executes the the next middleware and returns a response
 func (transport *customTransport) RoundTrip(req *nethttp.Request) (*nethttp.Response, error) {
-	return transport.middlewarePipeline.Next(req)
+	return transport.middlewarePipeline.Next(req, 0)
 }
 
-// Creates a new custom transport for http client with the provided set of middleware
-// Parameters:
-//     middlewares: the middlewares to use
-// Returns:
-//     the custom transport
+// NewCustomTransport creates a new custom transport for http client with the provided set of middleware
 func NewCustomTransport(middlewares ...Middleware) *customTransport {
 	if len(middlewares) == 0 {
 		middlewares = GetDefaultMiddlewares()

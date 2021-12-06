@@ -579,7 +579,16 @@ namespace Kiota.Builder
                 Description = "Response handler to use in place of the default response handling provided by the core service",
                 Type = new CodeType { Name = "IResponseHandler", IsExternal = true },
             };
-            executorMethod.AddParameter(handlerParam);
+            executorMethod.AddParameter(handlerParam);// Add response handler parameter
+
+            var cancellationParam = new CodeParameter{
+                Name = "cancellationToken",
+                Optional = true,
+                ParameterKind = CodeParameterKind.Cancellation,
+                Description = "Cancellation token to use when cancelling requests",
+                Type = new CodeType { Name = "CancellationToken", IsExternal = true },
+            };
+            executorMethod.AddParameter(cancellationParam);// Add cancellation token parameter
             logger.LogTrace("Creating method {name} of {type}", executorMethod.Name, executorMethod.ReturnType);
 
             var generatorMethod = new CodeMethod {
@@ -678,6 +687,7 @@ namespace Kiota.Builder
             method.AddParameter(optionsParam);
         }
         private string GetModelsNamespaceNameFromReferenceId(string referenceId) {
+            if (string.IsNullOrEmpty(referenceId)) return referenceId;
             if(referenceId.StartsWith(config.ClientClassName, StringComparison.OrdinalIgnoreCase))
                 referenceId = referenceId[config.ClientClassName.Length..];
             referenceId = referenceId.Trim(nsNameSeparator);
@@ -805,8 +815,9 @@ namespace Kiota.Builder
             return currentNamespace;
         }
         private CodeClass AddModelClass(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeClass inheritsFrom = null) {
-            if(inheritsFrom == null && schema.AllOf.Count > 1) { //the last is always the current class, we want the one before the last as parent
-                var parentSchema = schema.AllOf.Except(new OpenApiSchema[] {schema.AllOf.Last()}).FirstOrDefault();
+            var referencedAllOfs = schema.AllOf.Where(x => x.Reference != null);
+            if(inheritsFrom == null && referencedAllOfs.Any()) {// any non-reference would be the current class in some description styles
+                var parentSchema = referencedAllOfs.FirstOrDefault();
                 if(parentSchema != null) {
                     var parentClassNamespace = GetShortestNamespace(currentNamespace, parentSchema);
                     inheritsFrom = AddModelDeclarationIfDoesntExit(currentNode, parentSchema, parentSchema.GetSchemaTitle(), parentClassNamespace, null, true) as CodeClass;
@@ -831,11 +842,13 @@ namespace Kiota.Builder
                 model.AddProperty(schema
                                     .Properties
                                     .Select(x => {
-                                        var propertyDefinitionSchema = x.Value.GetSchemasWithValidReferenceId().FirstOrDefault();
+                                        var propertyDefinitionSchema = x.Value.GetNonEmptySchemas().FirstOrDefault();
                                         var className = propertyDefinitionSchema.GetSchemaTitle();
                                         CodeElement definition = default;
-                                        if(!string.IsNullOrEmpty(className)) {
-                                            var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertyDefinitionSchema.Reference.Id);
+                                        if(propertyDefinitionSchema != null) {
+                                            if(string.IsNullOrEmpty(className))
+                                                className = $"{model.Name}_{x.Key}";
+                                            var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertyDefinitionSchema.Reference?.Id);
                                             var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns : 
                                                                     (rootNamespace.FindNamespaceByName(shortestNamespaceName) ?? rootNamespace.AddNamespace(shortestNamespaceName));
                                             definition = AddModelDeclarationIfDoesntExit(currentNode, propertyDefinitionSchema, className, targetNamespace, null, true);

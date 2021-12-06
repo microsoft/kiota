@@ -18,6 +18,9 @@
                 case GenerationLanguage.Ruby:
                     new RubyRefiner(config).Refine(generatedCode);
                     break;
+                case GenerationLanguage.PHP:
+                    new PhpRefiner(config).Refine(generatedCode);
+                    break;
                 case GenerationLanguage.Go:
                     new GoRefiner(config).Refine(generatedCode);
                     break;

@@ -9,13 +9,13 @@ import (
 	abs "github.com/microsoft/kiota/abstractions/go"
 )
 
-// The retry handler handles transient HTTP responses and retries the request given the retry options
+// RetryHandler handles transient HTTP responses and retries the request given the retry options
 type RetryHandler struct {
 	// default options to use when evaluating the response
 	options RetryHandlerOptions
 }
 
-// Creates a new RetryHandler with default options
+// NewRetryHandler creates a new RetryHandler with default options
 func NewRetryHandler() *RetryHandler {
 	return NewRetryHandlerWithOptions(RetryHandlerOptions{
 		ShouldRetry: func(delay time.Duration, executionCount int, request *nethttp.Request, response *nethttp.Response) bool {
@@ -24,9 +24,7 @@ func NewRetryHandler() *RetryHandler {
 	})
 }
 
-// Creates a new RetryHandler with the given options
-// Parameters:
-// 		options: the options to use for the RetryHandler during execution
+// NewRetryHandlerWithOptions creates a new RetryHandler with the given options
 func NewRetryHandlerWithOptions(options RetryHandlerOptions) *RetryHandler {
 	return &RetryHandler{options: options}
 }
@@ -36,7 +34,7 @@ const absoluteMaxRetries = 10
 const defaultDelaySeconds = 3
 const absoluteMaxDelaySeconds = 180
 
-// Options to apply when evaluating the response for retrial
+// RetryHandlerOptions to apply when evaluating the response for retrial
 type RetryHandlerOptions struct {
 	// Callback to determine if the request should be retried
 	ShouldRetry func(delay time.Duration, executionCount int, request *nethttp.Request, response *nethttp.Response) bool
@@ -57,17 +55,17 @@ var retryKeyValue = abs.RequestOptionKey{
 	Key: "RetryHandler",
 }
 
-// Returns the key value to be used when the option is added to the request context
+// GetKey returns the key value to be used when the option is added to the request context
 func (options *RetryHandlerOptions) GetKey() abs.RequestOptionKey {
 	return retryKeyValue
 }
 
-// Returns the should retry callback function
+// GetShouldRetry returns the should retry callback function which evaluates the response for retrial
 func (options *RetryHandlerOptions) GetShouldRetry() func(delay time.Duration, executionCount int, request *nethttp.Request, response *nethttp.Response) bool {
 	return options.ShouldRetry
 }
 
-// Returns the delays in seconds between retries
+// GetDelaySeconds returns the delays in seconds between retries
 func (options *RetryHandlerOptions) GetDelaySeconds() int {
 	if options.DelaySeconds < 1 {
 		return defaultDelaySeconds
@@ -78,7 +76,7 @@ func (options *RetryHandlerOptions) GetDelaySeconds() int {
 	}
 }
 
-// Returns the maximum number of times a request can be retried
+// GetMaxRetries returns the maximum number of times a request can be retried
 func (options *RetryHandlerOptions) GetMaxRetries() int {
 	if options.MaxRetries < 1 {
 		return defaultMaxRetries
@@ -96,8 +94,9 @@ const tooManyRequests = 429
 const serviceUnavailable = 503
 const gatewayTimeout = 504
 
-func (middleware RetryHandler) Intercept(pipeline Pipeline, req *nethttp.Request) (*nethttp.Response, error) {
-	response, err := pipeline.Next(req)
+// Intercept implements the interface and evaluates whether to retry a failed request.
+func (middleware RetryHandler) Intercept(pipeline Pipeline, middlewareIndex int, req *nethttp.Request) (*nethttp.Response, error) {
+	response, err := pipeline.Next(req, middlewareIndex)
 	if err != nil {
 		return response, err
 	}
@@ -105,10 +104,10 @@ func (middleware RetryHandler) Intercept(pipeline Pipeline, req *nethttp.Request
 	if !ok {
 		reqOption = &middleware.options
 	}
-	return middleware.retryRequest(pipeline, reqOption, req, response, 0, 0)
+	return middleware.retryRequest(pipeline, middlewareIndex, reqOption, req, response, 0, 0)
 }
 
-func (middleware RetryHandler) retryRequest(pipeline Pipeline, options retryHandlerOptionsInt, req *nethttp.Request, resp *nethttp.Response, executionCount int, cummulativeDelay time.Duration) (*nethttp.Response, error) {
+func (middleware RetryHandler) retryRequest(pipeline Pipeline, middlewareIndex int, options retryHandlerOptionsInt, req *nethttp.Request, resp *nethttp.Response, executionCount int, cummulativeDelay time.Duration) (*nethttp.Response, error) {
 	if middleware.isRetriableErrorCode(resp.StatusCode) &&
 		middleware.isRetriableRequest(req) &&
 		executionCount < options.GetMaxRetries() &&
@@ -119,11 +118,11 @@ func (middleware RetryHandler) retryRequest(pipeline Pipeline, options retryHand
 		cummulativeDelay += delay
 		req.Header.Set(retryAttemptHeader, strconv.Itoa(executionCount))
 		time.Sleep(delay)
-		response, err := pipeline.Next(req)
+		response, err := pipeline.Next(req, middlewareIndex)
 		if err != nil {
 			return response, err
 		}
-		return middleware.retryRequest(pipeline, options, req, response, executionCount, cummulativeDelay)
+		return middleware.retryRequest(pipeline, middlewareIndex, options, req, response, executionCount, cummulativeDelay)
 	}
 	return resp, nil
 }

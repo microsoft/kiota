@@ -1,10 +1,14 @@
+---
+parent: Welcome to Kiota
+---
+
 # Design Overview
 
 ## Introduction
 
 The Kiota SDK code generation process is designed to take an OpenAPI description, parse it, and  generate a set of classes that make it simple for developers to make HTTP requests to the operations described by the OpenAPI.
 
-![](images/designoverview.png)
+![An image depicting the steps to generate source code from an OpenAPI description](images/designoverview.png)
 
 ## OpenAPI Description
 
@@ -32,7 +36,7 @@ The Code Model built for Kiota is designed to support the features needed to cre
 
 ## Refine Code Model by Language
 
-Despite the narrow scenario, there are still scenarios where in order to create idomatic source code, there will be adjustments or additions required to the code model before emitting the source code.
+Despite the narrow scenario, there are still scenarios where in order to create idiomatic source code, there will be adjustments or additions required to the code model before emitting the source code.
 
 The changes to the model made in this section should be as minimal as possible as they will likely cause more maintenance in the future.
 
@@ -50,8 +54,8 @@ Implementing a language support for a new language requires, at minimum, impleme
 
 The generated source code, does not contain the logic to make HTTP requests directly. It requires being connected to a core library that will make the HTTP requests.  A Kiota.Core library will provide basic HTTP functionality, but API owners can choose to provide their own core libraries that are optimized for their API.
 
-Core libraries take a dependency on the Kiota abstractions library for a language and provide the services of making the HTTP call to the API.  
+Core libraries take a dependency on the Kiota abstractions library for a language and provide the services of making the HTTP call to the API.
 
-![](./images/KiotaAbstractions.png)
+![An image depicting the relationship between the generated code and the abstractions library](./images/KiotaAbstractions.png)
 
-This abstraction prevents Kiota from taking a dependency on a particular HTTP client library for a platform. Kiota remains focused on providing a consistent experience for discovering resources, creating requests and deserialzing responses.
+This abstraction prevents Kiota from taking a dependency on a particular HTTP client library for a platform. Kiota remains focused on providing a consistent experience for discovering resources, creating requests and deserializing responses.

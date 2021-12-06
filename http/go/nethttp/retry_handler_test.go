@@ -15,7 +15,7 @@ type NoopPipeline struct {
 	client *nethttp.Client
 }
 
-func (pipeline *NoopPipeline) Next(req *nethttp.Request) (*nethttp.Response, error) {
+func (pipeline *NoopPipeline) Next(req *nethttp.Request, middlewareIndex int) (*nethttp.Response, error) {
 	return pipeline.client.Do(req)
 }
 func newNoopPipeline() *NoopPipeline {
@@ -47,7 +47,7 @@ func TestItAddsRetryAttemptHeaders(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	resp, err := handler.Intercept(newNoopPipeline(), req)
+	resp, err := handler.Intercept(newNoopPipeline(), 0, req)
 	if err != nil {
 		t.Error(err)
 	}
@@ -75,7 +75,7 @@ func TestItHonoursShouldRetry(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	resp, err := handler.Intercept(newNoopPipeline(), req)
+	resp, err := handler.Intercept(newNoopPipeline(), 0, req)
 	if err != nil {
 		t.Error(err)
 	}
@@ -96,7 +96,7 @@ func TestItHonoursMaxRetries(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	resp, err := handler.Intercept(newNoopPipeline(), req)
+	resp, err := handler.Intercept(newNoopPipeline(), 0, req)
 	if err != nil {
 		t.Error(err)
 	}
@@ -118,7 +118,7 @@ func TestItDoesntRetryOnSuccess(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	resp, err := handler.Intercept(newNoopPipeline(), req)
+	resp, err := handler.Intercept(newNoopPipeline(), 0, req)
 	if err != nil {
 		t.Error(err)
 	}

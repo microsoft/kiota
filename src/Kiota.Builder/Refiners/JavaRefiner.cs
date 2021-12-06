@@ -11,6 +11,7 @@ namespace Kiota.Builder.Refiners {
             AddInnerClasses(generatedCode, false);
             InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);
+            RemoveCancellationParameter(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
             AddRawUrlConstructorOverload(generatedCode);
             ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
@@ -18,7 +19,7 @@ namespace Kiota.Builder.Refiners {
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             PatchHeaderParametersType(generatedCode, "Map<String, String>");
-            AddParsableInheritanceForModelClasses(generatedCode);
+            AddParsableInheritanceForModelClasses(generatedCode, "Parsable");
             ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
             AddEnumSetImport(generatedCode);
             AddGetterAndSetterMethods(generatedCode, new() {
@@ -54,16 +55,6 @@ namespace Kiota.Builder.Refiners {
                 }
 
             CrawlTree(currentElement, AddEnumSetImport);
-        }
-        private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
-                var declaration = currentClass.StartBlock as CodeClass.Declaration;
-                declaration.AddImplements(new CodeType {
-                    IsExternal = true,
-                    Name = $"Parsable",
-                });
-            }
-            CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
         }
         private static readonly JavaConventionService conventionService = new();
         private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 

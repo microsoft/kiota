@@ -2,6 +2,7 @@ using System.ComponentModel;
 using Kiota.Builder.Writers.CSharp;
 using Kiota.Builder.Writers.Go;
 using Kiota.Builder.Writers.Java;
+using Kiota.Builder.Writers.Php;
 using Kiota.Builder.Writers.Ruby;
 using Kiota.Builder.Writers.TypeScript;
 using Xunit;
@@ -22,7 +23,7 @@ namespace Kiota.Builder.Writers.Tests {
                         LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName).GetType());
             Assert.Equal(typeof(GoWriter),
                         LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, DefaultPath, DefaultName).GetType());
-            Assert.Throws<InvalidEnumArgumentException>(() => LanguageWriter.GetLanguageWriter(GenerationLanguage.PHP, DefaultPath, DefaultName));
+            Assert.Equal(typeof(PhpWriter), LanguageWriter.GetLanguageWriter(GenerationLanguage.PHP, DefaultPath, DefaultName).GetType());
             Assert.Throws<InvalidEnumArgumentException>(() => LanguageWriter.GetLanguageWriter(GenerationLanguage.Python, DefaultPath, DefaultName));
         }
     }

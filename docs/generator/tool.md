@@ -1,3 +1,7 @@
+---
+parent: Generators
+---
+
 # Running Kiota from the dotnet tool
 
 Before you can install Kiota as a dotnet tool you will first have to create a Nuget configuration file to access the authenticated GitHub package feed. The following steps show you how to create this file. This is a temporary step until we publish the Kiota tool to the public nuget feed.
@@ -15,8 +19,10 @@ Before you can install Kiota as a dotnet tool you will first have to create a Nu
         </packageSources>
         <packageSourceCredentials>
             <GitHub>
-                <add key="Username" value="" /><!-- your github username -->
-                <!-- your github PAT: read:pacakges with SSO enabled for the Microsoft org (for microsoft employees only) -->
+                <!-- your github username -->
+                <add key="Username" value="" />
+                <!-- your github PAT: read:packages with SSO enabled for the Microsoft org
+                (for microsoft employees only) -->
                 <add key="ClearTextPassword" value="" />
             </GitHub>
         </packageSourceCredentials>
@@ -25,12 +31,12 @@ Before you can install Kiota as a dotnet tool you will first have to create a Nu
 
 1. Execute the following command to install the tool.
 
-    ```Shell
+    ```shell
     dotnet tool install --global --configfile nuget.config kiota
     ```
 
-1. Execute the following command to run kiota.
+1. Execute the following command to run Kiota.
 
-    ```Shell
+    ```shell
     kiota -d /some/input/description.yml -o /some/output/path --language csharp -n samespaceprefix
     ```

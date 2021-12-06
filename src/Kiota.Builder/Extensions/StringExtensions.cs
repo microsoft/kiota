@@ -68,5 +68,31 @@ namespace Kiota.Builder.Extensions {
         }
         public static string SanitizeUrlTemplateParameterName(this string original) =>
             original?.Replace('-', '_');
+        /// <summary>
+        /// For Php strings, having double quotes around strings might cause an issue
+        /// if the string contains valid variable name.
+        /// For example $variable = "$value" will try too set the value of
+        /// $variable to the variable named $value rather than the string '$value'
+        /// around quotes as expected.
+        /// </summary>
+        /// <param name="current"></param>
+        public static string ReplaceDoubleQuoteWithSingleQuote(this string current)
+        {
+            if (string.IsNullOrEmpty(current))
+            {
+                return current;
+            }
+            return current.StartsWith("\"", StringComparison.OrdinalIgnoreCase) ? current.Replace('\"', '\'') : current;
+        }
+        
+        public static string ReplaceDotsWithSlashInNamespaces(this string namespaced)
+        {
+            if (string.IsNullOrEmpty(namespaced))
+            {
+                return namespaced;
+            }
+            var parts = namespaced.Split('.');
+            return string.Join('\\', parts.Select(x => x.ToFirstCharacterUpperCase())).Trim('\\');
+        }
     }
 }

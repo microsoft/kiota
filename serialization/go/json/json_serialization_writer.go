@@ -11,12 +11,12 @@ import (
 	absser "github.com/microsoft/kiota/abstractions/go/serialization"
 )
 
-// The SerializationWriter implementation for JSON.
+// JsonSerializationWriter implements SerializationWriter for JSON.
 type JsonSerializationWriter struct {
 	writer []string
 }
 
-// Creates a new instance of the JsonSerializationWriter.
+// NewJsonSerializationWriter creates a new instance of the JsonSerializationWriter.
 func NewJsonSerializationWriter() *JsonSerializationWriter {
 	return &JsonSerializationWriter{
 		writer: make([]string, 0),
@@ -53,6 +53,7 @@ func (w *JsonSerializationWriter) writeObjectEnd() {
 	w.writeRawValue("}")
 }
 
+// WriteStringValue writes a String value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteStringValue(key string, value *string) error {
 	if key != "" && value != nil {
 		w.writePropertyName(key)
@@ -65,6 +66,8 @@ func (w *JsonSerializationWriter) WriteStringValue(key string, value *string) er
 	}
 	return nil
 }
+
+// WriteBoolValue writes a Bool value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteBoolValue(key string, value *bool) error {
 	if key != "" && value != nil {
 		w.writePropertyName(key)
@@ -77,6 +80,8 @@ func (w *JsonSerializationWriter) WriteBoolValue(key string, value *bool) error 
 	}
 	return nil
 }
+
+// WriteInt32Value writes a Int32 value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteInt32Value(key string, value *int32) error {
 	if value != nil {
 		cast := int64(*value)
@@ -84,6 +89,8 @@ func (w *JsonSerializationWriter) WriteInt32Value(key string, value *int32) erro
 	}
 	return nil
 }
+
+// WriteInt64Value writes a Int64 value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteInt64Value(key string, value *int64) error {
 	if key != "" && value != nil {
 		w.writePropertyName(key)
@@ -96,6 +103,8 @@ func (w *JsonSerializationWriter) WriteInt64Value(key string, value *int64) erro
 	}
 	return nil
 }
+
+// WriteFloat32Value writes a Float32 value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteFloat32Value(key string, value *float32) error {
 	if value != nil {
 		cast := float64(*value)
@@ -103,6 +112,8 @@ func (w *JsonSerializationWriter) WriteFloat32Value(key string, value *float32) 
 	}
 	return nil
 }
+
+// WriteFloat64Value writes a Float64 value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteFloat64Value(key string, value *float64) error {
 	if key != "" && value != nil {
 		w.writePropertyName(key)
@@ -115,6 +126,8 @@ func (w *JsonSerializationWriter) WriteFloat64Value(key string, value *float64) 
 	}
 	return nil
 }
+
+// WriteTimeValue writes a Time value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteTimeValue(key string, value *time.Time) error {
 	if key != "" && value != nil {
 		w.writePropertyName(key)
@@ -127,6 +140,8 @@ func (w *JsonSerializationWriter) WriteTimeValue(key string, value *time.Time) e
 	}
 	return nil
 }
+
+// WriteUUIDValue writes a UUID value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteUUIDValue(key string, value *uuid.UUID) error {
 	if key != "" && value != nil {
 		w.writePropertyName(key)
@@ -139,6 +154,8 @@ func (w *JsonSerializationWriter) WriteUUIDValue(key string, value *uuid.UUID) e
 	}
 	return nil
 }
+
+// WriteByteArrayValue writes a ByteArray value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteByteArrayValue(key string, value []byte) error {
 	if key != "" && value != nil {
 		w.writePropertyName(key)
@@ -151,6 +168,8 @@ func (w *JsonSerializationWriter) WriteByteArrayValue(key string, value []byte) 
 	}
 	return nil
 }
+
+// WriteObjectValue writes a Parsable value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteObjectValue(key string, item absser.Parsable) error {
 	if !item.IsNil() {
 		if key != "" {
@@ -172,6 +191,8 @@ func (w *JsonSerializationWriter) WriteObjectValue(key string, item absser.Parsa
 	}
 	return nil
 }
+
+// WriteCollectionOfObjectValues writes a collection of Parsable values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfObjectValues(key string, collection []absser.Parsable) error {
 	if len(collection) > 0 {
 		if key != "" {
@@ -193,6 +214,8 @@ func (w *JsonSerializationWriter) WriteCollectionOfObjectValues(key string, coll
 	}
 	return nil
 }
+
+// WriteCollectionOfStringValues writes a collection of String values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfStringValues(key string, collection []string) error {
 	if len(collection) > 0 {
 		if key != "" {
@@ -214,6 +237,8 @@ func (w *JsonSerializationWriter) WriteCollectionOfStringValues(key string, coll
 	}
 	return nil
 }
+
+// WriteCollectionOfInt32Values writes a collection of Int32 values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfInt32Values(key string, collection []int32) error {
 	if len(collection) > 0 {
 		if key != "" {
@@ -235,6 +260,8 @@ func (w *JsonSerializationWriter) WriteCollectionOfInt32Values(key string, colle
 	}
 	return nil
 }
+
+// WriteCollectionOfInt64Values writes a collection of Int64 values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfInt64Values(key string, collection []int64) error {
 	if len(collection) > 0 {
 		if key != "" {
@@ -256,6 +283,8 @@ func (w *JsonSerializationWriter) WriteCollectionOfInt64Values(key string, colle
 	}
 	return nil
 }
+
+// WriteCollectionOfFloat32Values writes a collection of Float32 values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfFloat32Values(key string, collection []float32) error {
 	if len(collection) > 0 {
 		if key != "" {
@@ -277,6 +306,8 @@ func (w *JsonSerializationWriter) WriteCollectionOfFloat32Values(key string, col
 	}
 	return nil
 }
+
+// WriteCollectionOfFloat64Values writes a collection of Float64 values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfFloat64Values(key string, collection []float64) error {
 	if len(collection) > 0 {
 		if key != "" {
@@ -298,6 +329,8 @@ func (w *JsonSerializationWriter) WriteCollectionOfFloat64Values(key string, col
 	}
 	return nil
 }
+
+// WriteCollectionOfTimeValues writes a collection of Time values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfTimeValues(key string, collection []time.Time) error {
 	if len(collection) > 0 {
 		if key != "" {
@@ -319,6 +352,8 @@ func (w *JsonSerializationWriter) WriteCollectionOfTimeValues(key string, collec
 	}
 	return nil
 }
+
+// WriteCollectionOfUUIDValues writes a collection of UUID values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfUUIDValues(key string, collection []uuid.UUID) error {
 	if len(collection) > 0 {
 		if key != "" {
@@ -340,6 +375,8 @@ func (w *JsonSerializationWriter) WriteCollectionOfUUIDValues(key string, collec
 	}
 	return nil
 }
+
+// WriteCollectionOfBoolValues writes a collection of Bool values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfBoolValues(key string, collection []bool) error {
 	if len(collection) > 0 {
 		if key != "" {
@@ -361,10 +398,14 @@ func (w *JsonSerializationWriter) WriteCollectionOfBoolValues(key string, collec
 	}
 	return nil
 }
+
+// GetSerializedContent returns the resulting byte array from the serialization writer.
 func (w *JsonSerializationWriter) GetSerializedContent() ([]byte, error) {
 	resultStr := strings.Join(w.writer, "")
 	return []byte(resultStr), nil
 }
+
+// WriteAdditionalData writes additional data to underlying the byte array.
 func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface{}) error {
 	if value != nil {
 		for key, value := range value {
@@ -517,6 +558,8 @@ func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface
 	}
 	return nil
 }
+
+// Close clears the internal buffer.
 func (w *JsonSerializationWriter) Close() error {
 	return nil
 }

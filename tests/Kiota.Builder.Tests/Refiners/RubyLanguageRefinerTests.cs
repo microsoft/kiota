@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using Xunit;
 
 namespace Kiota.Builder.Refiners.Tests {
@@ -16,6 +16,36 @@ namespace Kiota.Builder.Refiners.Tests {
             graphNS.AddClass(parentClass);
         }
         #region CommonLanguageRefinerTests
+        [Fact]
+        public void DoesNotKeepCancellationParametersInRequestExecutors()
+        {
+            var model = root.AddClass(new CodeClass
+            {
+                Name = "model",
+                ClassKind = CodeClassKind.RequestBuilder
+            }).First();
+            var method = model.AddMethod(new CodeMethod
+            {
+                Name = "getMethod",
+                MethodKind = CodeMethodKind.RequestExecutor,
+                ReturnType = new CodeType
+                {
+                    Name = "string"
+                }
+            }).First();
+            var cancellationParam = new CodeParameter
+            {
+                Name = "cancelletionToken",
+                Optional = true,
+                ParameterKind = CodeParameterKind.Cancellation,
+                Description = "Cancellation token to use when cancelling requests",
+                Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
+            };
+            method.AddParameter(cancellationParam);
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root); //using CSharp so the cancelletionToken doesn't get removed
+            Assert.False(method.Parameters.Any());
+            Assert.DoesNotContain(cancellationParam, method.Parameters);
+        }
         [Fact]
         public void AddsDefaultImports() {
             var model = root.AddClass(new CodeClass {
@@ -75,7 +105,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 Name = "someInterface"
             };
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
-            Assert.Equal("someInterface", declaration.Usings.First().Declaration.Name);
+            Assert.Equal("someInterface", declaration.Usings.First(usingDef => usingDef.Declaration != null).Declaration?.Name);
         }
         [Fact]
         public void FixInheritedEntityType() {
