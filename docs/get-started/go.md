@@ -1,5 +1,5 @@
 ---
-parent: Required tools
+parent: Get started with Kiota
 ---
 
 # Required tools for Go
