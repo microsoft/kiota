@@ -115,7 +115,7 @@ namespace Kiota.Builder.Refiners
                     };
 
                     method.ReturnType = CreateCommandType(method);
-                    method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
+                    method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
                     currentClass.AddMethod(method);
                     currentClass.RemoveChildElement(indexer);
                 }

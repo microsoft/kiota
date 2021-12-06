@@ -51,7 +51,7 @@ namespace Kiota.Builder.Writers.Shell
                     // BuildCommand function
                     if (codeElement.OriginalMethod?.MethodKind == CodeMethodKind.ClientConstructor)
                     {
-                        var commandBuilderMethods = classMethods.Where(m => m.MethodKind == CodeMethodKind.CommandBuilder && m != codeElement);
+                        var commandBuilderMethods = classMethods.Where(m => m.MethodKind == CodeMethodKind.CommandBuilder && m != codeElement).OrderBy(m => m.Name);
                         writer.WriteLine($"var command = new RootCommand();");
                         foreach (var method in commandBuilderMethods)
                         {
@@ -63,7 +63,9 @@ namespace Kiota.Builder.Writers.Shell
                     else if (codeElement.OriginalIndexer != null)
                     {
                         var targetClass = conventions.GetTypeString(codeElement.OriginalIndexer.ReturnType, codeElement);
-                        var builderMethods = (codeElement.OriginalIndexer.ReturnType as CodeType).TypeDefinition.GetChildElements(true).OfType<CodeMethod>().Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder));
+                        var builderMethods = (codeElement.OriginalIndexer.ReturnType as CodeType).TypeDefinition.GetChildElements(true).OfType<CodeMethod>()
+                            .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder))
+                            .OrderBy(m => m.Name);
                         var listBuilderMethods = builderMethods.Where(m => m.ReturnType.IsCollection).ToList();
                         var itemBuilderMethods = builderMethods.Where(m => !m.ReturnType.IsCollection).ToList();
                         conventions.AddRequestBuilderBody(parent, targetClass, writer, prefix: "var builder = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
@@ -82,7 +84,7 @@ namespace Kiota.Builder.Writers.Shell
                             writer.WriteLine($"commands.AddRange({method.Name}());");
                         }
 
-                        writer.WriteLine("return commands.ToArray();");
+                        writer.WriteLine("return commands;");
                     }
                 } else
                 {
@@ -96,7 +98,10 @@ namespace Kiota.Builder.Writers.Shell
                         // Trying to use type A.B.T in namespace A without using the fully qualified name will break the build.
                         // TODO: Fix this in the refiner.
                         var targetClass = string.Join(".", codeReturnType.TypeDefinition.Parent.Name, conventions.GetTypeString(codeReturnType, codeElement));
-                        var builderMethods = codeReturnType.TypeDefinition.GetChildElements(true).OfType<CodeMethod>().Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder));
+                        var builderMethods = codeReturnType.TypeDefinition.GetChildElements(true).OfType<CodeMethod>()
+                            .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder))
+                            .OrderBy(m => m.Name)
+                            .ThenBy(m => m.ReturnType.IsCollection);
                         conventions.AddRequestBuilderBody(parent, targetClass, writer, prefix: "var builder = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
 
                         foreach (var method in builderMethods)
