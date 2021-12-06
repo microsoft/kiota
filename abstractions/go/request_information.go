@@ -51,6 +51,7 @@ var normalized_query_parameters = map[string]bool{ // property name is using a c
 	"format":     true,
 	"orderby":    true,
 	"search":     true,
+    "select":     true,
 	"skip":       true,
 	"skiptoken":  true,
 	"top":        true,
