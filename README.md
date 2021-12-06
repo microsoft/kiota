@@ -12,7 +12,7 @@ This library builds on top of the [Microsoft.OpenAPI.NET](https://github.com/mic
 
 1. Install required tools and dependencies. (refer to the [Supported Languages](#supported-languages) table under the **Required tools & dependencies** column)
 1. Get Kiota: [download and run binaries](./docs/generator/binaries.md) **--or--** [run the docker image](./docs/generator/docker.md)  **--or--** [install and run the dotnet tool](./docs/generator/tool.md) **--or--** clone the repository and [build Kiota locally](./docs/generator/build.md).
-1. Generate your API client, checkout the [Parameters reference](#parameters-reference) for the different options.
+1. Generate your API client, checkout the [Parameters reference](https://microsoft.github.io/kiota/using) for the different options.
 1. Start calling your API using your fluent API SDK.
 
 ### Supported languages
@@ -45,7 +45,7 @@ Selecting the language you want to generate an SDK for in the Visual Studio Debu
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit https://cla.opensource.microsoft.com.
+the rights to use your contribution. For details, visit [https://cla.opensource.microsoft.com](https://cla.opensource.microsoft.com).
 
 When you submit a pull request, a CLA bot will automatically determine whether you need to provide
 a CLA and decorate the PR appropriately (e.g., status check, comment). Simply follow the instructions
@@ -59,6 +59,6 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 
 This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft
 trademarks or logos is subject to and must follow
-[Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general).
+[Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/legal/intellectualproperty/trademarks/usage/general).
 Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship.
 Any use of third-party trademarks or logos are subject to those third-party's policies.
