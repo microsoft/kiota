@@ -1,5 +1,5 @@
 ---
-parent: Get started with Kiota
+parent: Get started
 ---
 
 # Build SDKs for Go
