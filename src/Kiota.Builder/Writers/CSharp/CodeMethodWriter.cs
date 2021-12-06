@@ -72,7 +72,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 case CodeMethodKind.RequestBuilderBackwardCompatibility:
                     throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
                 case CodeMethodKind.CommandBuilder:
-                    break;
+                    throw new InvalidOperationException("CommandBuilder methods are not implemented in this SDK. They're currently only supported in the shell language.");
                 default:
                     writer.WriteLine("return null;");
                     break;
