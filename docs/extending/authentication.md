@@ -44,7 +44,7 @@ The additional azure authentication package contains an authentication provider 
 
 ## Anonymous Authentication Provider
 
-Some APIs do not require any authentication and can be queries anonymously. For this reasons the abstraction package also provide a `AnonymousAuthenticationProvider` which serves as a placedholer and performs no operation.
+Some APIs do not require any authentication and can be queried anonymously. For this reasons the abstraction package also provide an `AnonymousAuthenticationProvider` which serves as a placeholder and performs no operation.
 
 ## Choose your authentication provider
 
