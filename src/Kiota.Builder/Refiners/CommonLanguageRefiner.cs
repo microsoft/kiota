@@ -187,21 +187,21 @@ namespace Kiota.Builder.Refiners {
                     currentProperty.Type is CodeType propertyType &&
                     !propertyType.IsExternal &&
                     provider.ReservedNames.Contains(currentProperty.Type.Name))
-            {
-                if(currentProperty.IsOfKind(CodePropertyKind.Custom)) {
-                    currentProperty.SerializationName = currentProperty.Name;
-                    currentProperty.IsNameEscaped = true;
-                }
                 propertyType.Name = replacement.Invoke(propertyType.Name);
-            }
             // Check if the current name meets the following conditions to be replaced
             // 1. In the list of reserved names
             // 2. If it is a reserved name, make sure that the CodeElement type is worth replacing(not on the blocklist)
             // 3. There's not a very specific condition preventing from replacement
             if (provider.ReservedNames.Contains(current.Name) &&
                 isNotInExceptions &&
-                shouldReplace)
+                shouldReplace) {
+                if(current is CodeProperty currentProperty &&
+                    currentProperty.IsOfKind(CodePropertyKind.Custom)) {
+                    currentProperty.SerializationName = currentProperty.Name;
+                    currentProperty.IsNameEscaped = true;
+                }
                 current.Name = replacement.Invoke(current.Name);
+            }
 
             CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions, shouldReplaceCallback));
         }
