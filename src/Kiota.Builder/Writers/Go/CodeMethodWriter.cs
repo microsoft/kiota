@@ -132,6 +132,10 @@ namespace Kiota.Builder.Writers.Go {
             var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
             var methodName = code.MethodKind switch {
                 CodeMethodKind.Constructor when parentClass.IsOfKind(CodeClassKind.RequestBuilder) => $"New{code.Parent.Name.ToFirstCharacterUpperCase()}Internal", // internal instantiation with url template parameters
+                CodeMethodKind.Getter when code.AccessedProperty?.IsNameEscaped ?? false && !string.IsNullOrEmpty(code.AccessedProperty?.SerializationName)
+                    => $"Get{code.AccessedProperty.SerializationName.ToFirstCharacterUpperCase()}",
+                CodeMethodKind.Setter when code.AccessedProperty?.IsNameEscaped ?? false && !string.IsNullOrEmpty(code.AccessedProperty?.SerializationName)
+                    => $"Set{code.AccessedProperty.SerializationName.ToFirstCharacterUpperCase()}",
                 CodeMethodKind.Getter => $"Get{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
                 CodeMethodKind.Setter => $"Set{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
                 _ when isConstructor => $"New{code.Parent.Name.ToFirstCharacterUpperCase()}",

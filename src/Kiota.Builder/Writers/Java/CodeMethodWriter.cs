@@ -325,6 +325,10 @@ namespace Kiota.Builder.Writers.Java {
             var returnTypeAsyncSuffix = code.IsAsync ? ">" : string.Empty;
             var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
             var methodName = code.MethodKind switch {
+                CodeMethodKind.Getter when code.AccessedProperty?.IsNameEscaped ?? false && !string.IsNullOrEmpty(code.AccessedProperty?.SerializationName)
+                    => $"get{code.AccessedProperty.SerializationName.ToFirstCharacterUpperCase()}",
+                CodeMethodKind.Setter when code.AccessedProperty?.IsNameEscaped ?? false && !string.IsNullOrEmpty(code.AccessedProperty?.SerializationName)
+                    => $"set{code.AccessedProperty.SerializationName.ToFirstCharacterUpperCase()}",
                 CodeMethodKind.Getter => $"get{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
                 CodeMethodKind.Setter => $"set{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
                 _ when isConstructor => code.Parent.Name.ToFirstCharacterUpperCase(),
