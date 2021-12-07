@@ -1,6 +1,6 @@
 ---
 parent: Welcome to Kiota
-nav_order: 2
+nav_order: 1
 ---
 
 # Kiota SDK Experience

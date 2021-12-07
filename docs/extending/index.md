@@ -3,7 +3,7 @@ nav_order: 3
 has_children: true
 ---
 
-# Understand and Extend the Kiota generator
+# Kiota deep dive
 
 ## Introduction
 

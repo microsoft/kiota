@@ -1,5 +1,5 @@
 ---
-parent: Understand and Extend the Kiota generator
+parent: Kiota deep dive
 ---
 
 # Authentication with Kiota clients

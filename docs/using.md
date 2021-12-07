@@ -1,6 +1,6 @@
 ---
 parent: Welcome to Kiota
-nav_order: 1
+nav_order: 2
 ---
 
 # Using the Kiota tool

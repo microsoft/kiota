@@ -1,5 +1,5 @@
 ---
-parent: Understand and Extend the Kiota generator
+parent: Kiota deep dive
 ---
 
 # Kiota abstractions
@@ -79,7 +79,7 @@ This section provides information about the types offered in the abstractions li
 
 Please refer to the [serialization](./serialization.md) documentation page for detailed information.
 
-## Backing store
+## Storing models
 
 This section provides information about the types offered in the abstractions library the generated result depends on which are related to storing models data in a third party data source.
 
