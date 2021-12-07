@@ -7,6 +7,9 @@ name = "pypi"
 
 [dev-packages]
 flit = "==3.5.1"
+pylint = "==2.12.2"
+mypy = "==0.910"
+yapf = "==0.31.0"
 
 [requires]
 python_version = "3.9"
