@@ -72,7 +72,11 @@ namespace Kiota.Builder.Writers.CSharp {
                 case CodeMethodKind.RequestBuilderBackwardCompatibility:
                     throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
                 case CodeMethodKind.CommandBuilder:
-                    throw new InvalidOperationException("CommandBuilder methods are not implemented in this SDK. They're currently only supported in the shell language.");
+                    var origParams = codeElement.OriginalMethod?.Parameters ?? codeElement.Parameters;
+                    requestBodyParam = origParams.OfKind(CodeParameterKind.RequestBody);
+                    requestParams = new RequestParams(requestBodyParam, null, null, null);
+                    WriteCommandBuilderBody(codeElement, requestParams, isVoid, returnType, writer);
+                    break;
                 default:
                     writer.WriteLine("return null;");
                     break;
@@ -237,6 +241,11 @@ namespace Kiota.Builder.Writers.CSharp {
             }
             if(additionalDataProperty != null)
                 writer.WriteLine($"writer.WriteAdditionalData({additionalDataProperty.Name});");
+        }
+
+        protected virtual void WriteCommandBuilderBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer)
+        {
+            throw new InvalidOperationException("CommandBuilder methods are not implemented in this SDK. They're currently only supported in the shell language.");
         }
         protected string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType) {
             if(isVoid) return "SendNoContentAsync";

@@ -21,20 +21,7 @@ namespace Kiota.Builder.Writers.Shell
         {
         }
 
-        protected override void HandleMethodKind(CodeMethod codeElement, LanguageWriter writer, bool inherits, CodeClass parentClass, bool isVoid)
-        {
-            base.HandleMethodKind(codeElement, writer, inherits, parentClass, isVoid);
-            if (codeElement.MethodKind == CodeMethodKind.CommandBuilder)
-            {
-                var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
-                var origParams = codeElement.OriginalMethod?.Parameters ?? codeElement.Parameters;
-                var requestBodyParam = origParams.OfKind(CodeParameterKind.RequestBody);
-                var requestParams = new RequestParams(requestBodyParam, null, null, null);
-                WriteCommandBuilderBody(codeElement, requestParams, isVoid, returnType, writer);
-            }
-        }
-
-        protected void WriteCommandBuilderBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer)
+        protected override void WriteCommandBuilderBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer)
         {
             var parent = codeElement.Parent as CodeClass;
             var classMethods = parent.Methods;
@@ -53,6 +40,7 @@ namespace Kiota.Builder.Writers.Shell
                     {
                         var commandBuilderMethods = classMethods.Where(m => m.MethodKind == CodeMethodKind.CommandBuilder && m != codeElement).OrderBy(m => m.Name);
                         writer.WriteLine($"var command = new RootCommand();");
+                        writer.WriteLine($"command.Description = \"{codeElement.OriginalMethod.Description}\";");
                         foreach (var method in commandBuilderMethods)
                         {
                             writer.WriteLine($"command.AddCommand({method.Name}());");
@@ -91,6 +79,8 @@ namespace Kiota.Builder.Writers.Shell
                     var codeReturnType = (codeElement.AccessedProperty?.Type) as CodeType;
 
                     writer.WriteLine($"var command = new Command(\"{name}\");");
+                    if (codeElement.Description != null || codeElement?.OriginalMethod?.Description != null)
+                        writer.WriteLine($"command.Description = \"{codeElement.Description ?? codeElement?.OriginalMethod?.Description}\";");
 
                     if (codeReturnType != null)
                     {
@@ -138,6 +128,8 @@ namespace Kiota.Builder.Writers.Shell
                     parametersList.Add(origParams.OfKind(CodeParameterKind.RequestBody));
                 }
                 writer.WriteLine($"var command = new Command(\"{name}\");");
+                if (codeElement.Description != null || codeElement?.OriginalMethod?.Description != null)
+                    writer.WriteLine($"command.Description = \"{codeElement.Description ?? codeElement?.OriginalMethod?.Description}\";");
                 writer.WriteLine("// Create options for all the parameters"); // investigate exploding query params
                 // Check the possible formatting options for headers in a cli.
                 // -h A=b -h
