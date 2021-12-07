@@ -104,22 +104,27 @@ namespace Kiota.Builder.Refiners {
                     currentProperty.Access = AccessModifier.Private;
                     currentProperty.NamePrefix = "_";
                 }
+                var isSerializationNameNullOrEmpty = string.IsNullOrEmpty(currentProperty.SerializationName);
+                var propertyOriginalName = (isSerializationNameNullOrEmpty ? current.Name : currentProperty.SerializationName)
+                                            .ToFirstCharacterLowerCase();
+                var accessorName = (currentProperty.IsNameEscaped && !isSerializationNameNullOrEmpty ? currentProperty.SerializationName : current.Name)
+                                    .ToFirstCharacterUpperCase();
                 parentClass.AddMethod(new CodeMethod {
-                    Name = $"{GetterPrefix}{current.Name}",
+                    Name = $"{GetterPrefix}{accessorName}",
                     Access = AccessModifier.Public,
                     IsAsync = false,
                     MethodKind = CodeMethodKind.Getter,
                     ReturnType = currentProperty.Type.Clone() as CodeTypeBase,
-                    Description = $"Gets the {current.Name} property value. {currentProperty.Description}",
+                    Description = $"Gets the {propertyOriginalName} property value. {currentProperty.Description}",
                     AccessedProperty = currentProperty,
                 });
                 if(!currentProperty.ReadOnly) {
                     var setter = parentClass.AddMethod(new CodeMethod {
-                        Name = $"{SetterPrefix}{current.Name}",
+                        Name = $"{SetterPrefix}{accessorName}",
                         Access = AccessModifier.Public,
                         IsAsync = false,
                         MethodKind = CodeMethodKind.Setter,
-                        Description = $"Sets the {current.Name} property value. {currentProperty.Description}",
+                        Description = $"Sets the {propertyOriginalName} property value. {currentProperty.Description}",
                         AccessedProperty = currentProperty,
                         ReturnType = new CodeType {
                             Name = "void",
@@ -182,7 +187,13 @@ namespace Kiota.Builder.Refiners {
                     currentProperty.Type is CodeType propertyType &&
                     !propertyType.IsExternal &&
                     provider.ReservedNames.Contains(currentProperty.Type.Name))
-                    propertyType.Name = replacement.Invoke(propertyType.Name);
+            {
+                if(currentProperty.IsOfKind(CodePropertyKind.Custom)) {
+                    currentProperty.SerializationName = currentProperty.Name;
+                    currentProperty.IsNameEscaped = true;
+                }
+                propertyType.Name = replacement.Invoke(propertyType.Name);
+            }
             // Check if the current name meets the following conditions to be replaced
             // 1. In the list of reserved names
             // 2. If it is a reserved name, make sure that the CodeElement type is worth replacing(not on the blocklist)

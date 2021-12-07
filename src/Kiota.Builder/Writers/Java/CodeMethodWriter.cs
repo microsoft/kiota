@@ -204,8 +204,10 @@ namespace Kiota.Builder.Writers.Java {
                 writer.IncreaseIndent();
                 fieldToSerialize
                         .OrderBy(x => x.Name)
-                        .Select(x => 
-                            $"this.put(\"{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}\", (o, n) -> {{ (({parentClass.Name.ToFirstCharacterUpperCase()})o).set{x.Name.ToFirstCharacterUpperCase()}({GetDeserializationMethodName(x.Type, method)}); }});")
+                        .Select(x => {
+                            var setterName = x.IsNameEscaped && !string.IsNullOrEmpty(x.SerializationName) ? x.SerializationName : x.Name;
+                            return $"this.put(\"{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}\", (o, n) -> {{ (({parentClass.Name.ToFirstCharacterUpperCase()})o).set{setterName.ToFirstCharacterUpperCase()}({GetDeserializationMethodName(x.Type, method)}); }});";
+                        })
                         .ToList()
                         .ForEach(x => writer.WriteLine(x));
                 writer.DecreaseIndent();
@@ -309,7 +311,8 @@ namespace Kiota.Builder.Writers.Java {
             if((parentClass.StartBlock as CodeClass.Declaration).Inherits != null)
                 writer.WriteLine("super.serialize(writer);");
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
-                writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", this.get{otherProp.Name.ToFirstCharacterUpperCase()}());");
+                var accessorName = otherProp.IsNameEscaped && !string.IsNullOrEmpty(otherProp.SerializationName) ? otherProp.SerializationName : otherProp.Name.ToFirstCharacterLowerCase();
+                writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", this.get{accessorName.ToFirstCharacterUpperCase()}());");
             }
             if(additionalDataProperty != null)
                 writer.WriteLine($"writer.writeAdditionalData(this.get{additionalDataProperty.Name.ToFirstCharacterUpperCase()}());");
