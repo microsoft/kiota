@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug in Go where setters would be missing nil checks.
 - Fixes a bug where OData select query parameter would not be normalized
 - Fixes a bug in Go where empty collections would not be serialized.
+- Fixes a bug where Java generation would fail because of empty usings.
 
 ## [0.0.14] - 2021-11-08
 
