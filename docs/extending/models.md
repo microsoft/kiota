@@ -52,10 +52,10 @@ Like the field deserializers, the model's serialize method leverages the passed 
 
 Dictionary/Map that stores all the additional properties which are not described in the schema.
 
-> Note: the additional data property is only present when the OpenAPI description for the type allows it and if the current model doesn't inherit a model which already has this property.
+> **Note:** the additional data property is only present when the OpenAPI description for the type allows it and if the current model doesn't inherit a model which already has this property.
 
 ### Backing store
 
 When present, the properties values are store in this backing store instead of using fields for the object. The backing store allows multiple things like dirty tracking of changes, making it possible to get an object from the API, update a property, send that object back with only the changed property and not the full objects. Additionally it will be used for integration with third party data sources.
 
-> Note: the backing store is only added if the target language supports it and when the `-b` parameter is passed to the CLI when generating the models.
+> **Note:** the backing store is only added if the target language supports it and when the `-b` parameter is passed to the CLI when generating the models.
