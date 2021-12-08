@@ -52,8 +52,6 @@ jobs:
           name: drop
           path: |
             ${{ env.relativePath }}/src/bin/Release/*.nupkg
-      - run: rm ${{ env.relativePath }}/nuget.config
-        if: always()
   deploy:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     environment:
