@@ -12,6 +12,7 @@ namespace Kiota.Builder.Writers.Java {
                 writer.WriteLine($"package {ns.Name};");
                 writer.WriteLine();
                 codeElement.Usings
+                    .Where(x => x.Declaration != null)
                     .Where(x => x.Declaration.IsExternal || !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)) // needed for circular requests patterns like message folder
                     .Select(x => x.Declaration.IsExternal ?
                                      $"import {x.Declaration.Name}.{x.Name.ToFirstCharacterUpperCase()};" :
