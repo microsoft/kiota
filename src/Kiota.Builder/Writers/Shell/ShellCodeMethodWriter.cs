@@ -74,7 +74,7 @@ namespace Kiota.Builder.Writers.Shell
                     var codeReturnType = (codeElement.AccessedProperty?.Type) as CodeType;
 
                     writer.WriteLine($"var command = new Command(\"{name}\");");
-                    if (codeElement.Description != null || codeElement?.OriginalMethod?.Description != null)
+                    if (!string.IsNullOrEmpty(codeElement.Description) || !string.IsNullOrEmpty(codeElement?.OriginalMethod?.Description))
                         writer.WriteLine($"command.Description = \"{codeElement.Description ?? codeElement?.OriginalMethod?.Description}\";");
 
                     if (codeReturnType != null)

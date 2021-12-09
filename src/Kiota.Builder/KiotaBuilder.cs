@@ -612,7 +612,7 @@ namespace Kiota.Builder
                 .Where(x => x.In == ParameterLocation.Path || x.In == ParameterLocation.Query)
                 .Select(x => new CodeParameter{
                     Name = x.Name.TrimStart('$').SanitizePathParameterName(),
-                    Type = GetPrimitiveType(x.Schema),
+                    Type = GetQueryParameterType(x.Schema),
                     Description = x.Description,
                     ParameterKind = x.In == ParameterLocation.Path ? CodeParameterKind.Path : CodeParameterKind.QueryParameter,
                     Optional = !x.Required
@@ -622,7 +622,7 @@ namespace Kiota.Builder
                         .Where(x => x.In == ParameterLocation.Path || x.In == ParameterLocation.Query)
                         .Select(x => new CodeParameter{
                                 Name = x.Name.TrimStart('$').SanitizePathParameterName(),
-                                Type = GetPrimitiveType(x.Schema),
+                                Type = GetQueryParameterType(x.Schema),
                                 Description = x.Description,
                                 ParameterKind = x.In == ParameterLocation.Path ? CodeParameterKind.Path : CodeParameterKind.QueryParameter,
                                 Optional = !x.Required
@@ -958,12 +958,7 @@ namespace Kiota.Builder
                     {
                         Name = FixQueryParameterIdentifier(parameter),
                         Description = parameter.Description,
-                        Type = new CodeType
-                        {
-                            IsExternal = true,
-                            Name = parameter.Schema.Items?.Type ?? parameter.Schema.Type,
-                            CollectionKind = parameter.Schema.IsArray() ? CodeType.CodeTypeCollectionKind.Array : default,
-                        },
+                        Type = GetQueryParameterType(parameter.Schema),
                     };
 
                     if (!parameterClass.ContainsMember(parameter.Name))
@@ -979,6 +974,13 @@ namespace Kiota.Builder
                 return parameterClass;
             } else return null;
         }
+        private static CodeType GetQueryParameterType(OpenApiSchema schema) =>
+            new ()
+            {
+                IsExternal = true,
+                Name = schema.Items?.Type ?? schema.Type,
+                CollectionKind = schema.IsArray() ? CodeType.CodeTypeCollectionKind.Array : default,
+            };
 
         private static string FixQueryParameterIdentifier(OpenApiParameter parameter)
         {
