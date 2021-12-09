@@ -1,8 +1,10 @@
 ---
-parent: Required tools
+parent: Get started
 ---
 
-# Required tools for Dotnet
+# Build SDKs for .NET
+
+## Required tools
 
 - [.NET SDK 6.0](https://dotnet.microsoft.com/download)
 

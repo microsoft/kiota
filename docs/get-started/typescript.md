@@ -1,8 +1,10 @@
 ---
-parent: Required tools
+parent: Get started
 ---
 
-# Required tools for TypeScript
+# Build SDKs for TypeScript
+
+## Required tools
 
 - [NodeJS 14](https://nodejs.org/en/)
 - [TypeScript](https://www.typescriptlang.org/)

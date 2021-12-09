@@ -1,8 +1,10 @@
 ---
-parent: Required tools
+parent: Get started
 ---
 
-# Required tools for Java
+# Build SDKs for Java
+
+## Required tools
 
 - [JDK 16](https://adoptopenjdk.net/)
 - [Gradle 7](https://gradle.org/install/)

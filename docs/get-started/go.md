@@ -1,8 +1,10 @@
 ---
-parent: Required tools
+parent: Get started
 ---
 
-# Required tools for Go
+# Build SDKs for Go
+
+## Required tools
 
 - [Go 1.16](https://golang.org/dl/)
 

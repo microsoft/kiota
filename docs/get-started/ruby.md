@@ -1,8 +1,10 @@
 ---
-parent: Required tools
+parent: Get started
 ---
 
-# Required tools for Ruby
+# Build SDKs for Ruby
+
+## Required tools
 
 - [Ruby 3](https://www.ruby-lang.org/en/downloads/)
 
