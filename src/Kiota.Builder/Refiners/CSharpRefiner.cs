@@ -16,7 +16,7 @@ namespace Kiota.Builder.Refiners {
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddAsyncSuffix(generatedCode);
             AddInnerClasses(generatedCode, false);
-            AddParsableInheritanceForModelClasses(generatedCode, "IParsable", "Microsoft.Kiota.Abstractions.Serialization");
+            AddParsableInheritanceForModelClasses(generatedCode, "IParsable");
             CapitalizeNamespacesFirstLetters(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");
             MakeEnumPropertiesNullable(generatedCode);

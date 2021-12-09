@@ -517,7 +517,9 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(currentElement, RemoveCancellationParameter);
         }
         
-        protected static void AddParsableInheritanceForModelClasses(CodeElement currentElement, string className = default, string classNamespace = default) {
+        protected static void AddParsableInheritanceForModelClasses(CodeElement currentElement, string className) {
+            if(string.IsNullOrEmpty(className)) throw new ArgumentNullException(nameof(className));
+
             if(currentElement is CodeClass currentClass &&
                currentClass.IsOfKind(CodeClassKind.Model) &&
                currentClass.StartBlock is CodeClass.Declaration declaration) {
@@ -525,12 +527,8 @@ namespace Kiota.Builder.Refiners {
                     IsExternal = true,
                     Name = className
                 });
-                (currentClass.Parent is CodeClass {StartBlock: Declaration parentDeclaration}
-                            ? parentDeclaration
-                            : declaration)
-                        .AddUsings(new CodeUsing {Name = classNamespace});
             }
-            CrawlTree(currentElement, c => AddParsableInheritanceForModelClasses(c, className, classNamespace));
+            CrawlTree(currentElement, c => AddParsableInheritanceForModelClasses(c, className));
         }
     }
 }
