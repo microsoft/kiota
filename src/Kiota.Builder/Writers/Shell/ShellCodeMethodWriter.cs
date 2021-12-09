@@ -154,8 +154,14 @@ namespace Kiota.Builder.Writers.Shell
 
                     optionBuilder.Append(')');
                     writer.WriteLine($"var {NormalizeToIdentifier(option.Name)}Option = {optionBuilder};");
-                    var isRequired = $"{!option.Optional || option.IsOfKind(CodeParameterKind.Path)}".ToFirstCharacterLowerCase();
-                    writer.WriteLine($"{NormalizeToIdentifier(option.Name)}Option.IsRequired = {isRequired};");
+                    var isRequired = !option.Optional || option.IsOfKind(CodeParameterKind.Path);
+                    writer.WriteLine($"{NormalizeToIdentifier(option.Name)}Option.IsRequired = {isRequired.ToString().ToFirstCharacterLowerCase()};");
+
+                    if (option.Type.IsCollection)
+                    {
+                        var arity = isRequired ? "OneOrMore" : "ZeroOrMore";
+                        writer.WriteLine($"{NormalizeToIdentifier(option.Name)}Option.Arity = ArgumentArity.{arity};");
+                    }
                     writer.WriteLine($"command.AddOption({NormalizeToIdentifier(option.Name)}Option);");
                 }
 
@@ -289,13 +295,15 @@ namespace Kiota.Builder.Writers.Shell
             }
             var parametersList = new CodeParameter[] { requestParams.requestBody, requestParams.queryString, requestParams.headers, requestParams.options }
                                 .Select(x => x?.Name).Where(x => x != null).DefaultIfEmpty().Aggregate((x, y) => $"{x}, {y}");
-            writer.WriteLine($"var requestInfo = {generatorMethod?.Name}({parametersList});");
+            var separator = string.IsNullOrWhiteSpace(parametersList) ? "" : ", ";
+            writer.WriteLine($"var requestInfo = {generatorMethod?.Name}({parametersList}{separator}q => {{");
             if (generatorMethod.PathAndQueryParameters != null)
             {
-                foreach (var param in generatorMethod.PathAndQueryParameters)
+                writer.IncreaseIndent();
+                foreach (var param in generatorMethod.PathAndQueryParameters.Where(p => p.IsOfKind(CodeParameterKind.QueryParameter)))
                 {
                     var paramName = NormalizeToIdentifier(param.Name);
-                    bool isStringParam = param.Type.Name?.ToLower() == "string";
+                    bool isStringParam = param.Type.Name?.ToLower() == "string" && !param.Type.IsCollection;
                     bool indentParam = true;
                     if (isStringParam)
                     {
@@ -303,19 +311,22 @@ namespace Kiota.Builder.Writers.Shell
                         indentParam = false;
                     }
 
-                    if (param.IsOfKind(CodeParameterKind.Path))
-                    {
-                        writer.Write($"requestInfo.PathParameters.Add(\"{param.Name}\", {paramName});", indentParam);
-                    }
-                    else if (param.IsOfKind(CodeParameterKind.QueryParameter))
-                    {
-                        writer.Write($"requestInfo.QueryParameters.Add(\"{param.Name}\", {paramName});", indentParam);
-                    }
+                    writer.Write($"q.{param.Name.ToFirstCharacterUpperCase()} = {paramName};", indentParam);
 
                     writer.WriteLine();
                 }
-            }
+                writer.CloseBlock("});");
 
+                foreach (var param in generatorMethod.PathAndQueryParameters.Where(p => p.IsOfKind(CodeParameterKind.PathParameters)))
+                {
+                    var paramName = NormalizeToIdentifier(param.Name);
+                    writer.WriteLine($"requestInfo.PathParameters.Add(\"{param.Name}\", {paramName});");
+                }
+            }
+            else
+            {
+                writer.WriteLine("});");
+            }
 
             writer.WriteLine($"{(isVoid ? string.Empty : "var result = ")}await RequestAdapter.{GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnType)}(requestInfo);");
         }
