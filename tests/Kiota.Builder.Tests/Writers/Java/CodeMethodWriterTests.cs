@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Refiners;
 using Kiota.Builder.Tests;
 using Xunit;
 
@@ -13,6 +14,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
         private readonly LanguageWriter writer;
         private readonly CodeMethod method;
         private readonly CodeClass parentClass;
+        private readonly CodeNamespace root;
         private const string MethodName = "methodName";
         private const string ReturnTypeName = "Somecustomtype";
         private const string MethodDescription = "some description";
@@ -23,7 +25,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
-            var root = CodeNamespace.InitRootNamespace();
+            root = CodeNamespace.InitRootNamespace();
             parentClass = new CodeClass {
                 Name = "parentClass"
             };
@@ -574,6 +576,35 @@ namespace Kiota.Builder.Writers.Java.Tests {
             tempWriter.Write(method);
             var result = tw.ToString();
             Assert.Contains("enableBackingStore", result);
+        }
+        [Fact]
+        public void AccessorsTargetingEscapedPropertiesAreNotEscapedThemselves() {
+            var model = root.AddClass(new CodeClass {
+                Name = "SomeClass",
+                ClassKind = CodeClassKind.Model
+            }).First();
+            model.AddProperty(new CodeProperty {
+                Name = "short",
+                Type = new CodeType { Name = "string" },
+                Access = AccessModifier.Public,
+                PropertyKind = CodePropertyKind.Custom,
+            });
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+            var getter = model.Methods.First(x => x.IsOfKind(CodeMethodKind.Getter));
+            var setter = model.Methods.First(x => x.IsOfKind(CodeMethodKind.Setter));
+            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, DefaultPath, DefaultName);
+            tempWriter.SetTextWriter(tw);
+            tempWriter.Write(getter);
+            var result = tw.ToString();
+            Assert.Contains("getShort", result);
+            Assert.DoesNotContain("getShort_escaped", result);
+            
+            using var tw2 = new StringWriter();
+            tempWriter.SetTextWriter(tw2);
+            tempWriter.Write(setter);
+            result = tw2.ToString();
+            Assert.Contains("setShort", result);
+            Assert.DoesNotContain("setShort_escaped", result);
         }
     }
 }
