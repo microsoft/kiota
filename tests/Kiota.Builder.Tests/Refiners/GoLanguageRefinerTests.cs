@@ -51,6 +51,7 @@ namespace Kiota.Builder.Refiners.Tests {
             }).First();
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
             Assert.Equal("select", property.Name);
+            Assert.False(property.IsNameEscaped);
         }
         [Fact]
         public void EscapesPublicPropertiesReservedKeywordsForModels() {
@@ -65,6 +66,7 @@ namespace Kiota.Builder.Refiners.Tests {
             }).First();
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
             Assert.Equal("select_escaped", property.Name);
+            Assert.True(property.IsNameEscaped);
         }
         [Fact]
         public void ReplacesRequestBuilderPropertiesByMethods() {
