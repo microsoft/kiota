@@ -153,7 +153,10 @@ namespace Kiota.Builder.Writers.Shell
                     }
 
                     optionBuilder.Append(')');
-                    writer.WriteLine($"command.AddOption({optionBuilder});");
+                    writer.WriteLine($"var {NormalizeToIdentifier(option.Name)}Option = {optionBuilder};");
+                    var isRequired = $"{!option.Optional || option.IsOfKind(CodeParameterKind.Path)}".ToFirstCharacterLowerCase();
+                    writer.WriteLine($"{NormalizeToIdentifier(option.Name)}Option.IsRequired = {isRequired};");
+                    writer.WriteLine($"command.AddOption({NormalizeToIdentifier(option.Name)}Option);");
                 }
 
                 var paramTypes = parametersList.Select(x =>
@@ -293,14 +296,20 @@ namespace Kiota.Builder.Writers.Shell
                 {
                     var paramName = NormalizeToIdentifier(param.Name);
                     bool isStringParam = param.Type.Name?.ToLower() == "string";
-                    if (isStringParam) writer.Write($"if (!String.IsNullOrEmpty({paramName})) ");
+                    bool indentParam = true;
+                    if (isStringParam)
+                    {
+                        writer.Write($"if (!String.IsNullOrEmpty({paramName})) ");
+                        indentParam = false;
+                    }
+
                     if (param.IsOfKind(CodeParameterKind.Path))
                     {
-                        writer.Write($"requestInfo.PathParameters.Add(\"{param.Name}\", {paramName});", !isStringParam);
+                        writer.Write($"requestInfo.PathParameters.Add(\"{param.Name}\", {paramName});", indentParam);
                     }
                     else if (param.IsOfKind(CodeParameterKind.QueryParameter))
                     {
-                        writer.Write($"requestInfo.QueryParameters.Add(\"{param.Name}\", {paramName});", !isStringParam);
+                        writer.Write($"requestInfo.QueryParameters.Add(\"{param.Name}\", {paramName});", indentParam);
                     }
 
                     writer.WriteLine();
