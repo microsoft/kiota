@@ -26,7 +26,7 @@
     "@types/node": "^16.11.12",
     "@types/uri-template-lite": "^19.12.1",
     "@types/uuid": "^8.3.3",
-    "typescript": "^4.5.2"
+    "typescript": "^4.5.3"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
