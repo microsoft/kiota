@@ -13,7 +13,7 @@ namespace Microsoft.Kiota.Abstractions.Tests
             // Arrange
             var testRequest = new RequestInformation()
             {
-                HttpMethod = HttpMethod.GET,
+                HttpMethod = Method.GET,
                 UrlTemplate = "http://localhost/{path}/me?foo={foo}"
             };
             // Act
@@ -33,7 +33,7 @@ namespace Microsoft.Kiota.Abstractions.Tests
             // Arrange
             var testRequest = new RequestInformation()
             {
-                HttpMethod = HttpMethod.GET,
+                HttpMethod = Method.GET,
                 URI = new Uri("http://localhost")
             };
             var testRequestOption = new Mock<IRequestOption>().Object;

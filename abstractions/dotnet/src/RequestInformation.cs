@@ -68,7 +68,7 @@ namespace Microsoft.Kiota.Abstractions
         /// <summary>
         ///  The <see cref="HttpMethod">HTTP method</see> of the request.
         /// </summary>
-        public HttpMethod HttpMethod { get; set; }
+        public Method HttpMethod { get; set; }
         /// <summary>
         /// The Query Parameters of the request.
         /// </summary>
