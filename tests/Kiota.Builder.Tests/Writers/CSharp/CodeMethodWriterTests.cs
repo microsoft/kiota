@@ -184,7 +184,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("var requestInfo = new RequestInformation", result);
-            Assert.Contains("HttpMethod = HttpMethod.GET", result);
+            Assert.Contains("HttpMethod = Method.GET", result);
             Assert.Contains("UrlTemplate = ", result);
             Assert.Contains("PathParameters = ", result);
             Assert.Contains("h?.Invoke", result);
