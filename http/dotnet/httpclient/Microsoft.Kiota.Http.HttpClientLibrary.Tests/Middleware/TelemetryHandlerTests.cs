@@ -32,7 +32,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Middleware
             // Arrange
             var requestInfo = new RequestInformation
             {
-                HttpMethod = Abstractions.HttpMethod.GET,
+                HttpMethod = Method.GET,
                 URI = new Uri("http://localhost")
             };
             // Act and get a request message
@@ -53,7 +53,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Middleware
             // Arrange
             var requestInfo = new RequestInformation
             {
-                HttpMethod = Abstractions.HttpMethod.GET,
+                HttpMethod = Method.GET,
                 URI = new Uri("http://localhost")
             };
             var telemetryHandlerOption = new TelemetryHandlerOption
@@ -101,7 +101,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Middleware
             var invoker = new HttpMessageInvoker(handler);
             var requestInfo = new RequestInformation
             {
-                HttpMethod = Abstractions.HttpMethod.GET,
+                HttpMethod = Method.GET,
                 URI = new Uri("http://localhost")
             };
 

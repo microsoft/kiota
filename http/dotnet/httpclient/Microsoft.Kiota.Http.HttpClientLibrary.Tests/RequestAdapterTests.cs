@@ -54,7 +54,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests
             // Arrange
             var requestInfo = new RequestInformation
             {
-                HttpMethod = HttpMethod.GET,
+                HttpMethod = Method.GET,
                 UrlTemplate = "http://localhost/me{?top,skip,search,filter,count,orderby,select}"
             };
             requestInfo.QueryParameters.Add(queryParam, queryParamObject);
@@ -73,7 +73,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests
             // Arrange
             var requestInfo = new RequestInformation
             {
-                HttpMethod = HttpMethod.PUT,
+                HttpMethod = Method.PUT,
                 UrlTemplate = "https://sn3302.up.1drv.com/up/fe6987415ace7X4e1eF866337"
             };
             requestInfo.Headers.Add("Content-Length", "26");

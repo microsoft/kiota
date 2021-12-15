@@ -217,7 +217,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
             requestInfo.PathParameters.Add("baseurl", BaseUrl);
             var message = new HttpRequestMessage
             {
-                Method = new System.Net.Http.HttpMethod(requestInfo.HttpMethod.ToString().ToUpperInvariant()),
+                Method = new HttpMethod(requestInfo.HttpMethod.ToString().ToUpperInvariant()),
                 RequestUri = requestInfo.URI,
             };
 

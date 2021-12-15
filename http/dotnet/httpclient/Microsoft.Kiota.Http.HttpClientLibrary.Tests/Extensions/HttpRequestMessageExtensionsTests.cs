@@ -9,7 +9,6 @@ using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Http.HttpClientLibrary.Extensions;
 using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
 using Xunit;
-using HttpMethod = Microsoft.Kiota.Abstractions.HttpMethod;
 
 namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Extensions
 {
@@ -25,7 +24,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Extensions
             // Arrange
             var requestInfo = new RequestInformation()
             {
-                HttpMethod = HttpMethod.GET,
+                HttpMethod = Method.GET,
                 URI = new Uri("http://localhost")
             };
             var redirectHandlerOption = new RedirectHandlerOption()
@@ -47,7 +46,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Extensions
         {
             var requestInfo = new RequestInformation
             {
-                HttpMethod = HttpMethod.GET,
+                HttpMethod = Method.GET,
                 URI = new Uri("http://localhost")
             };
             var originalRequest = requestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
@@ -64,7 +63,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Extensions
         {
             var requestInfo = new RequestInformation
             {
-                HttpMethod = HttpMethod.GET,
+                HttpMethod = Method.GET,
                 URI = new Uri("http://localhost")
             };
             requestInfo.SetStreamContent(new MemoryStream(Encoding.UTF8.GetBytes("contents")));
@@ -86,7 +85,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Extensions
         {
             var requestInfo = new RequestInformation
             {
-                HttpMethod = HttpMethod.GET,
+                HttpMethod = Method.GET,
                 URI = new Uri("http://localhost")
             };
             var redirectHandlerOption = new RedirectHandlerOption()
@@ -113,7 +112,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Extensions
             // Arrange
             var requestInfo = new RequestInformation
             {
-                HttpMethod = HttpMethod.GET,
+                HttpMethod = Method.GET,
                 URI = new Uri("http://localhost")
             };
             var originalRequest = requestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
@@ -128,7 +127,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Extensions
             // Arrange
             var requestInfo = new RequestInformation
             {
-                HttpMethod = HttpMethod.POST,
+                HttpMethod = Method.POST,
                 URI = new Uri("http://localhost")
             };
             var originalRequest = requestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
@@ -144,7 +143,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Extensions
             byte[] data = new byte[] { 1, 2, 3, 4, 5 };
             var requestInfo = new RequestInformation
             {
-                HttpMethod = HttpMethod.POST,
+                HttpMethod = Method.POST,
                 URI = new Uri("http://localhost"),
                 Content = new MemoryStream(data)
             };
