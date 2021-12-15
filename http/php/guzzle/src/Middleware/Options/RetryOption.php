@@ -39,29 +39,45 @@ class RetryOption
     /**
      * @var int Minimum amount of time to wait before retrying
      * This changes if the ResponseInterface contains a Retry-After header.
-     * If $delayMilliseconds < Retry-After value, delay is set to Retry-After value
+     * If $delaySeconds < Retry-After value, delay is set to Retry-After value
      */
     private int $delaySeconds = 3;
     /**
-     * @var \DateInterval Cumulative retry time (Retry-After + Retry request time) after which the previous failed response is returned
+     * @var \DateInterval|null Cumulative retry time (Retry-After + Retry request time) after which the previous failed response is returned
      */
-    private \DateInterval $retriesTimeLimit;
+    private ?\DateInterval $retriesTimeLimit = null;
     /**
      * @var callable(int, int, ResponseInterface):bool $sh Custom callback function to determine if request should be retried
      * The callback should accept a delay time in seconds, number of retry attempts and a {@link ResponseInterface} and return a bool
      */
     private $shouldRetry;
 
-    public function __construct()
+    /**
+     * Initialise RetryOption
+     *
+     * @param int $maxRetries
+     * @param int $delaySeconds
+     * @param \DateInterval|null $retriesTimeLimit
+     * @param callable|null $shouldRetry If null, defaults to callable that returns true
+     *
+     */
+    public function __construct(int $maxRetries = 3, int $delaySeconds = 3, ?\DateInterval $retriesTimeLimit = null, ?callable $shouldRetry = null)
     {
-        // Set defaults
-        $this->retriesTimeLimit = new \DateInterval("0");
-        $this->shouldRetry = function ($delaySec, $retries, $response) {
-            return true;
-        };
+        $this->setMaxRetries($maxRetries);
+        $this->setDelay($delaySeconds);
+        $this->setRetriesTimeLimit($retriesTimeLimit);
+        if (!$shouldRetry) {
+            $this->shouldRetry = function ($delaySec, $retries, $response) {
+                return true;
+            };
+        } else {
+            $this->setShouldRetry($shouldRetry);
+        }
     }
 
     /**
+     * Default $maxRetries set to 3
+     *
      * @param int $maxRetries
      * @return RetryOption
      */
@@ -83,6 +99,8 @@ class RetryOption
     }
 
     /**
+     * Default $delaySeconds set to 3
+     *
      * @param int $delaySeconds
      * @return RetryOption
      */
@@ -104,6 +122,8 @@ class RetryOption
     }
 
     /**
+     * Default set to null
+     *
      * @param \DateInterval $retriesTimeLimit {@link $retriesTimeLimit}
      */
     public function setRetriesTimeLimit(\DateInterval $retriesTimeLimit): self
@@ -113,14 +133,16 @@ class RetryOption
     }
 
     /**
-     * @return \DateInterval
+     * @return \DateInterval|null
      */
-    public function getRetriesTimeLimit(): \DateInterval
+    public function getRetriesTimeLimit(): ?\DateInterval
     {
         return $this->retriesTimeLimit;
     }
 
     /**
+     * Default returns true
+     *
      * @param callable(int, int, ResponseInterface):bool $shouldRetry {@link $shouldRetry}
      */
     public function setShouldRetry(callable $shouldRetry): self
