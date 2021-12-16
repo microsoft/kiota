@@ -66,9 +66,9 @@ namespace Microsoft.Kiota.Abstractions
         /// </summary>
         public IDictionary<string, object> PathParameters { get; set; } = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
         /// <summary>
-        ///  The <see cref="HttpMethod">HTTP method</see> of the request.
+        ///  The <see cref="Method">HTTP method</see> of the request.
         /// </summary>
-        public HttpMethod HttpMethod { get; set; }
+        public Method HttpMethod { get; set; }
         /// <summary>
         /// The Query Parameters of the request.
         /// </summary>

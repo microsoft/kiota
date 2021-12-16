@@ -7,7 +7,6 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Kiota.Abstractions;
-using HttpMethod = System.Net.Http.HttpMethod;
 
 namespace Microsoft.Kiota.Http.HttpClientLibrary.Extensions
 {

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixes name collisions in dotnet by renaming "HttpMethod" enum to "Method" in dotnet abstractions
 - Add support for PHP Generation.
 - Migrated generator to dotnet 6 #815
 - Fixes a bug where json deserialization would fail in go
