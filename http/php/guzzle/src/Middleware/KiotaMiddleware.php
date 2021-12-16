@@ -29,7 +29,7 @@ class KiotaMiddleware
      * @param RetryOption|null $retryOption
      * @return callable
      */
-    public static function retry(?RetryOption $retryOption): callable
+    public static function retry(?RetryOption $retryOption = null): callable
     {
         return static function (callable $handler) use ($retryOption) : RetryHandler {
             return new RetryHandler($retryOption, $handler);

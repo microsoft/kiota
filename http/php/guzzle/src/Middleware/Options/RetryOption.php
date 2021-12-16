@@ -124,9 +124,10 @@ class RetryOption
     /**
      * Default set to null
      *
-     * @param \DateInterval $retriesTimeLimit {@link $retriesTimeLimit}
+     * @param \DateInterval|null $retriesTimeLimit {@link $retriesTimeLimit}
+     * @return RetryOption
      */
-    public function setRetriesTimeLimit(\DateInterval $retriesTimeLimit): self
+    public function setRetriesTimeLimit(?\DateInterval $retriesTimeLimit): self
     {
         $this->retriesTimeLimit = $retriesTimeLimit;
         return $this;
@@ -142,6 +143,8 @@ class RetryOption
 
     /**
      * Default returns true
+     * Custom callback function to determine if request should be retried
+     * The callback should accept a delay time in seconds, number of retry attempts and a {@link ResponseInterface} and return a bool
      *
      * @param callable(int, int, ResponseInterface):bool $shouldRetry {@link $shouldRetry}
      */

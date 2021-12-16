@@ -72,7 +72,10 @@ class RetryHandler
      */
     private function onFulfilled(RequestInterface $request, array $options): callable
     {
-        return function (ResponseInterface $response) use ($request, $options) {
+        return function (?ResponseInterface $response) use ($request, $options) {
+            if (!$response) {
+                return $response;
+            }
             $retries = $this->getRetries($request);
             $delaySecs = $this->calculateDelay($retries, $response);
             if (!$this->shouldRetry($request, $retries, $delaySecs, $response)
@@ -80,7 +83,7 @@ class RetryHandler
                 return $response;
             }
             $options['delay'] = $delaySecs; // Guzzle sleeps the thread before executing request
-            $request = $request->withHeader(self::RETRY_ATTEMPT_HEADER, $retries ++);
+            $request = $request->withHeader(self::RETRY_ATTEMPT_HEADER, $retries + 1);
             $request->getBody()->rewind();
             return $this($request, $options);
         };
@@ -98,8 +101,8 @@ class RetryHandler
     {
         return function ($reason) use ($request, $options) {
             // No retry for network-related/other exceptions
-            if (!is_a(\GuzzleHttp\Exception\BadResponseException::class, $reason)) {
-                Create::rejectionFor($reason);
+            if (!is_a($reason, \GuzzleHttp\Exception\BadResponseException::class)) {
+                return Create::rejectionFor($reason);
             }
 
             $retries = $this->getRetries($request);
@@ -109,7 +112,7 @@ class RetryHandler
                 Create::rejectionFor($reason);
             }
             $options['delay'] = $delaySecs; // Guzzle sleeps the thread before executing request
-            $request = $request->withHeader(self::RETRY_ATTEMPT_HEADER, $retries ++);
+            $request = $request->withHeader(self::RETRY_ATTEMPT_HEADER, $retries + 1);
             $request->getBody()->rewind();
             return $this($request, $options);
         };
@@ -167,7 +170,7 @@ class RetryHandler
         }
 
         $retries ++;
-        $expoDelay = $this->exponentialDelay($retries);
+        $expoDelay = self::exponentialDelay($retries, $this->retryOption->getDelay());
         return ($expoDelay > $retryAfterSeconds) ? $expoDelay : $retryAfterSeconds;
     }
 
@@ -229,12 +232,14 @@ class RetryHandler
     }
 
     /**
-     * Exponential backoff delay function.
+     * Exponential backoff delay
      *
-     * @return int seconds.
+     * @param int $retries
+     * @param int $delaySecs
+     * @return int
      */
-    private function exponentialDelay(int $retries): int
+    public static function exponentialDelay(int $retries, int $delaySecs): int
     {
-        return (int) \pow(2, $retries - 1) * $this->retryOption->getDelay();
+        return (int) \pow(2, $retries - 1) * $delaySecs;
     }
 }

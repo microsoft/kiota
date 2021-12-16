@@ -9,8 +9,9 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^9.5",
-        "phpstan/phpstan": "^1.2"
-    },
+        "phpstan/phpstan": "^1.2",
+		"ext-json": "*"
+	},
     "license": "MIT",
     "authors": [
         {
