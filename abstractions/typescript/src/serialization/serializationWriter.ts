@@ -1,5 +1,4 @@
 import { Parsable } from "./parsable";
-import { ReadableStream } from 'web-streams-polyfill/es2018';
 
 /** Defines an interface for serialization of objects to a stream. */
 export interface SerializationWriter {
@@ -66,7 +65,7 @@ export interface SerializationWriter {
      * Gets the value of the serialized content.
      * @return the value of the serialized content.
      */
-    getSerializedContent(): ReadableStream;
+    getSerializedContent(): ArrayBuffer;
     /**
      * Writes the specified additional data values to the stream with an optional given key.
      * @param value the values to write to the stream.
