@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [0.0.15] - 2021-12-17
+
+### Changed
+
 - Fixes name collisions in dotnet by renaming "HttpMethod" enum to "Method" in dotnet abstractions
 - Add support for PHP Generation.
 - Migrated generator to dotnet 6 #815
