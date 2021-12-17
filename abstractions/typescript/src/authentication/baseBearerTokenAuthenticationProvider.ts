@@ -8,15 +8,15 @@ export abstract class BaseBearerTokenAuthenticationProvider implements Authentic
         if(!request) {
             throw new Error('request info cannot be null');
         }
-        if(!request.headers?.has(BaseBearerTokenAuthenticationProvider.authorizationHeaderKey)) {
+        if(!request.headers[(BaseBearerTokenAuthenticationProvider.authorizationHeaderKey)] {
             const token = await this.getAuthorizationToken(request);
             if(!token) {
                 throw new Error('Could not get an authorization token');
             }
             if(!request.headers) {
-                request.headers = new Map<string, string>();
+                request.headers = {};
             }
-            request.headers?.set(BaseBearerTokenAuthenticationProvider.authorizationHeaderKey, `Bearer ${token}`);
+            request.headers[BaseBearerTokenAuthenticationProvider.authorizationHeaderKey] = `Bearer ${token}`;
         }
     }
     /**
