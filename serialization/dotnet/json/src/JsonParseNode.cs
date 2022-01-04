@@ -73,7 +73,15 @@ namespace Microsoft.Kiota.Serialization.Json
         /// Get the <see cref="DateTimeOffset"/> value from the json node
         /// </summary>
         /// <returns>A <see cref="DateTimeOffset"/> value</returns>
-        public DateTimeOffset? GetDateTimeOffsetValue() => _jsonNode.GetDateTimeOffset();
+        public DateTimeOffset? GetDateTimeOffsetValue() 
+        {
+            // JsonElement.GetDateTimeOffset is super strict so try to be more lenient if it fails(e.g. when we have whitespace or other variant formats).
+            // ref - https://docs.microsoft.com/en-us/dotnet/standard/datetime/system-text-json-support
+            if(!_jsonNode.TryGetDateTimeOffset(out var value))
+                value = DateTimeOffset.Parse(_jsonNode.GetString());
+
+            return value;
+        }
 
         /// <summary>
         /// Get the enumeration value of type <typeparam name="T"/>from the json node
