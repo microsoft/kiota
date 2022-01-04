@@ -216,7 +216,7 @@ namespace Microsoft.Kiota.Serialization.Json
             if(item.AdditionalData == null)
                 item.AdditionalData = new Dictionary<string, object>();
 
-            foreach(var fieldValue in _jsonNode.EnumerateObject().Where(x => x.Value.ValueKind != JsonValueKind.Null))
+            foreach(var fieldValue in _jsonNode.EnumerateObject())
             {
                 if(fieldDeserializers.ContainsKey(fieldValue.Name))
                 {
