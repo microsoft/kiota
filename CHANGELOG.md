@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed an issue where multiple api clients could run into racing conditions in Go.
+
 ## [0.0.15] - 2021-12-17
 
 ### Changed
