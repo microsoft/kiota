@@ -31,7 +31,7 @@ namespace Microsoft.Kiota.Authentication.Azure.Tests
             var azureIdentityAuthenticationProvider = new AzureIdentityAuthenticationProvider(mockTokenCredential.Object, null);
             var testRequest = new RequestInformation()
             {
-                HttpMethod = HttpMethod.GET,
+                HttpMethod = Method.GET,
                 URI = new Uri("http://localhost")
             };
 
@@ -52,7 +52,7 @@ namespace Microsoft.Kiota.Authentication.Azure.Tests
             var azureIdentityAuthenticationProvider = new AzureIdentityAuthenticationProvider(mockTokenCredential.Object,"User.Read");
             var testRequest = new RequestInformation()
             {
-                HttpMethod = HttpMethod.GET,
+                HttpMethod = Method.GET,
                 URI = new Uri("http://localhost")
             };
             Assert.Empty(testRequest.Headers); // header collection is empty
