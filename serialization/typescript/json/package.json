@@ -2,10 +2,11 @@
     "name": "@microsoft/kiota-serialization-json",
     "version": "1.0.5",
     "description": "Implementation of Kiota Serialization interfaces for JSON",
-    "main": "dist/index.js",
+    "main": "dist/cjs/index.js",
+    "module": "dist/es/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
-        "build": "npm run build:clean && npm run build:cjs && npm run build:esm",
+        "build": "npm run build:cjs && npm run build:esm",
         "build:cjs": "tsc -p tsconfig.cjs.json",
         "build:esm": "tsc -p tsconfig.es.json",
         "test": "echo \"Error: no test specified\" && exit 1",
@@ -37,6 +38,7 @@
     },
     "dependencies": {
         "@microsoft/kiota-abstractions": "^1.0.20",
+        "tslib": "^2.3.1",
         "web-streams-polyfill": "^3.2.0"
     }
 }
