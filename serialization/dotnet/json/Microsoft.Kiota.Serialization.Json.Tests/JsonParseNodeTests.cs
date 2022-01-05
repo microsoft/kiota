@@ -16,7 +16,7 @@ namespace Microsoft.Kiota.Serialization.Json.Tests
                                             "    \"displayName\": \"Megan Bowen\",\r\n" +
                                             "    \"givenName\": \"Megan\",\r\n" +
                                             "    \"accountEnabled\": true,\r\n" +
-                                            "    \"createdDateTime\": \"2017-07-29T03:07:25Z\",\r\n" +
+                                            "    \"createdDateTime\": \"2017 -07-29T03:07:25Z\",\r\n" +
                                             "    \"jobTitle\": \"Auditor\",\r\n" +
                                             "    \"mail\": \"MeganB@M365x214355.onmicrosoft.com\",\r\n" +
                                             "    \"mobilePhone\": null,\r\n" +
@@ -41,6 +41,7 @@ namespace Microsoft.Kiota.Serialization.Json.Tests
             Assert.NotNull(testEntity);
             Assert.NotEmpty(testEntity.AdditionalData);
             Assert.True(testEntity.AdditionalData.ContainsKey("jobTitle"));
+            Assert.True(testEntity.AdditionalData.ContainsKey("mobilePhone"));
             Assert.Equal("Auditor", testEntity.AdditionalData["jobTitle"]);
             Assert.Equal("48d31887-5fad-4d73-a9f5-3c356e68a038", testEntity.Id);
         }
