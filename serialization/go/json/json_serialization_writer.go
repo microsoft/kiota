@@ -194,7 +194,7 @@ func (w *JsonSerializationWriter) WriteObjectValue(key string, item absser.Parsa
 
 // WriteCollectionOfObjectValues writes a collection of Parsable values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfObjectValues(key string, collection []absser.Parsable) error {
-	if len(collection) > 0 {
+	if collection != nil { // empty collections are meaningful
 		if key != "" {
 			w.writePropertyName(key)
 		}
@@ -217,7 +217,7 @@ func (w *JsonSerializationWriter) WriteCollectionOfObjectValues(key string, coll
 
 // WriteCollectionOfStringValues writes a collection of String values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfStringValues(key string, collection []string) error {
-	if len(collection) > 0 {
+	if collection != nil { // empty collections are meaningful
 		if key != "" {
 			w.writePropertyName(key)
 		}
@@ -240,7 +240,7 @@ func (w *JsonSerializationWriter) WriteCollectionOfStringValues(key string, coll
 
 // WriteCollectionOfInt32Values writes a collection of Int32 values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfInt32Values(key string, collection []int32) error {
-	if len(collection) > 0 {
+	if collection != nil { // empty collections are meaningful
 		if key != "" {
 			w.writePropertyName(key)
 		}
@@ -263,7 +263,7 @@ func (w *JsonSerializationWriter) WriteCollectionOfInt32Values(key string, colle
 
 // WriteCollectionOfInt64Values writes a collection of Int64 values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfInt64Values(key string, collection []int64) error {
-	if len(collection) > 0 {
+	if collection != nil { // empty collections are meaningful
 		if key != "" {
 			w.writePropertyName(key)
 		}
@@ -286,7 +286,7 @@ func (w *JsonSerializationWriter) WriteCollectionOfInt64Values(key string, colle
 
 // WriteCollectionOfFloat32Values writes a collection of Float32 values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfFloat32Values(key string, collection []float32) error {
-	if len(collection) > 0 {
+	if collection != nil { // empty collections are meaningful
 		if key != "" {
 			w.writePropertyName(key)
 		}
@@ -309,7 +309,7 @@ func (w *JsonSerializationWriter) WriteCollectionOfFloat32Values(key string, col
 
 // WriteCollectionOfFloat64Values writes a collection of Float64 values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfFloat64Values(key string, collection []float64) error {
-	if len(collection) > 0 {
+	if collection != nil { // empty collections are meaningful
 		if key != "" {
 			w.writePropertyName(key)
 		}
@@ -332,7 +332,7 @@ func (w *JsonSerializationWriter) WriteCollectionOfFloat64Values(key string, col
 
 // WriteCollectionOfTimeValues writes a collection of Time values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfTimeValues(key string, collection []time.Time) error {
-	if len(collection) > 0 {
+	if collection != nil { // empty collections are meaningful
 		if key != "" {
 			w.writePropertyName(key)
 		}
@@ -355,7 +355,7 @@ func (w *JsonSerializationWriter) WriteCollectionOfTimeValues(key string, collec
 
 // WriteCollectionOfUUIDValues writes a collection of UUID values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfUUIDValues(key string, collection []uuid.UUID) error {
-	if len(collection) > 0 {
+	if collection != nil { // empty collections are meaningful
 		if key != "" {
 			w.writePropertyName(key)
 		}
@@ -378,7 +378,7 @@ func (w *JsonSerializationWriter) WriteCollectionOfUUIDValues(key string, collec
 
 // WriteCollectionOfBoolValues writes a collection of Bool values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfBoolValues(key string, collection []bool) error {
-	if len(collection) > 0 {
+	if collection != nil { // empty collections are meaningful
 		if key != "" {
 			w.writePropertyName(key)
 		}

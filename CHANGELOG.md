@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+
+- Fixed an issue where multiple api clients could run into racing conditions in Go.
+
+## [0.0.15] - 2021-12-17
+
+### Changed
+
+- Fixes name collisions in dotnet by renaming "HttpMethod" enum to "Method" in dotnet abstractions
 - Add support for PHP Generation.
 - Migrated generator to dotnet 6 #815
 - Fixes a bug where json deserialization would fail in go
@@ -21,6 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upgrades go libraries to go17.
 - Fixes a bug in Go where reserved keywords for properties would be wrongly replaced.
 - Fixes a bug in Go where setters would be missing nil checks.
+- Fixes a bug where OData select query parameter would not be normalized
+- Fixes a bug in Go where empty collections would not be serialized.
+- Fixes a bug where generation would fail because of empty usings.
+- Fixes a bug where Java and Go escaped model properties would not serialize properly.
 
 ## [0.0.14] - 2021-11-08
 

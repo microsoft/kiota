@@ -1,5 +1,5 @@
 ---
-parent: Understand and Extend the Kiota generator
+parent: Kiota deep dive
 ---
 
 # Request builder
@@ -15,9 +15,8 @@ By creating properties on request builder classes, the developer can effectively
 The URL for the request is built using an [RFC6570 URL Template](https://datatracker.ietf.org/doc/html/rfc6570) and providing its parameters.
 
 ```csharp
-
-    var todo = await todoClient.Todos["<todoId>"].GetAsync();
-    var responsiblePerson =  await todoClient.Todos["<todoId>"].AssignedTo.GetAsync();
+var todo = await todoClient.Todos["<todoId>"].GetAsync();
+var responsiblePerson =  await todoClient.Todos["<todoId>"].AssignedTo.GetAsync();
 ```
 
 Each request builder class exposes the set of HTTP methods that are supported on that resource. Each operation method allows setting and configuring query parameters, setting HTTP headers and providing a custom response handler.
@@ -57,7 +56,7 @@ var requestBuilder = todoClient.TaskLists["taskListId"].Todos["todoId"].Assigned
 
 The URL template for the requestBuilder will look something like `{+baseurl}/taskLists/{task_list_id}/todos/{todo_id}/assignedTo{?select,expand}`
 
-> Note: the query parameters will only be present if included in the OpenAPI description.
+> **Note:** the query parameters will only be present if included in the OpenAPI description.
 
 The path and query parameters, as well as the base url will be provided by the request adapter before the request is executed.
 
@@ -100,7 +99,7 @@ Two navigation properties are in use in this fluent style API call: `.TaskLists`
 
 The underlying URL template looks like `{+baseurl}/taskLists/{task_list_id}/todos/{todo_id}/assignedTo{?select,expand}`, where both the `taskLists` and `todos` path segments do not require any parameter.
 
-> Note: If the target language doesn't support auto-property getters (get keyword in C# or TypeScript) a method with no parameter will be used instead.
+> **Note:** If the target language doesn't support auto-property getters (get keyword in C# or TypeScript) a method with no parameter will be used instead.
 
 This property always return a value (nonnull) and never throws an exception.
 
@@ -120,7 +119,7 @@ The underlying URL template looks like `{+baseurl}/taskLists/{task_list_id}/todo
 
 It is important to note that even if an endpoint to index in the collection `{+baseurl}/taskLists/{task_list_id}` does not exist, it will not impact the generation of the fluent style API for the sub-endpoint. If that indexing endpoint does exist, the only impact will be to the parent request builder which will now expose a `Get` method.
 
-> Note: for languages that do not support indexers, a method with a suffix and a single parameters is used instead.
+> **Note:** for languages that do not support indexers, a method with a suffix and a single parameters is used instead.
 
 ```Java
 var requestBuilder = todoClient.taskListsById("taskListId").todosById("todoId").assignedTo;

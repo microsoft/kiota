@@ -1,35 +1,37 @@
 ---
-parent: Required tools
+parent: Get started
 ---
 
-# Required tools for Dotnet
+# Build SDKs for .NET
+
+## Required tools
 
 - [.NET SDK 6.0](https://dotnet.microsoft.com/download)
 
 ## Target project requirements
 
-Before you can compile and run the generated files, you will need to make sure they are part of a project with the required dependencies. After creating a new project, or reusing an existing one, you will need to add references to the [abstraction](../../abstractions/dotnet) and the [authentication](../../authentication/dotnet/azure), [http](../../http/dotnet/httpclient), [serialization](../../serialization/dotnet/json) packages from the GitHub feed.
+Before you can compile and run the generated files, you will need to make sure they are part of a project with the required dependencies. After creating a new project, or reusing an existing one, you will need to add references to the [abstraction](https://github.com/microsoft/kiota/tree/main/abstractions/dotnet), [authentication](https://github.com/microsoft/kiota/tree/main/authentication/dotnet/azure), [http](https://github.com/microsoft/kiota/tree/main/http/dotnet/httpclient), and [serialization](https://github.com/microsoft/kiota/tree/main/serialization/dotnet/json) packages from the GitHub feed.
 
 ## Creating target projects
 
-> Note: you can use an existing project if you have one, in that case, you can skip the following section.
+> **Note:** you can use an existing project if you have one, in that case, you can skip the following section.
 
 Execute the following command in the directory you want to create a new project.
 
-```Shell
+```shell
 dotnet new console
 dotnet new gitignore
 ```
 
-> Note: in this example the console template is used, but you can use any CSharp template.
+> **Note:** in this example the console template is used, but you can use any CSharp template.
 
 ## Adding dependencies
 
-If you have not already, you will need to create a nuget.config to enable access to the packages in the GitHub package feed.  The article on installing the [Kiota command line](../generator/tool.md) tool shows how to do this.
+If you have not already, you will need to create a nuget.config to enable access to the packages in the GitHub package feed. The article on installing the [Kiota command line](../generator/tool.md) tool shows how to do this.
 
 Once the package feed is accessible the following packages can be added to the project.
 
-```Shell
+```shell
 dotnet add package Microsoft.Kiota.Abstractions
 dotnet add package Microsoft.Kiota.Http.HttpClientLibrary
 dotnet add package Microsoft.Kiota.Serialization.Json
@@ -37,13 +39,13 @@ dotnet add package Microsoft.Kiota.Authentication.Azure
 dotnet add package Azure.Identity
 ```
 
-Only the first package, Microsoft.Kiota.Abstractions is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
+Only the first package, `Microsoft.Kiota.Abstractions` is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
 
 ## Generating the SDK
 
 Kiota generates SDKs from OpenAPI documents. The example below is a minimal OpenAPI description that describes how to call the `/me` endpoint on Microsoft Graph.
 
-Create a file called openapi.yaml with the following contents:
+Create a file called **openapi.yaml** with the following contents:
 
 ```yaml
 openapi: 3.0.3
@@ -79,16 +81,14 @@ kiota -d openapi.yml -o graphclient -n GraphClient
 
 ## Creating an application registration
 
-> Note: this step is required if your client will be calling APIs that are protected by the Microsoft Identity Platform like Microsoft Graph.
+> **Note:** this step is required if your client will be calling APIs that are protected by the Microsoft Identity Platform like Microsoft Graph.
 
 To be able to authenticate against the demo application against Microsoft Graph, you will need to create an application registration.  You can do this via the Azure portal, or if you have [Microsoft Graph PowerShell](https://www.powershellgallery.com/packages/Microsoft.Graph) installed, you can use the following command to create the application.
 
-```PowerShell
-$app = New-MgApplication   -displayName "NativeGraphApp" `
-                            -IsFallbackPublicClient `
-                            -PublicClient @{ `
-                                RedirectUris = "http://localhost" `
-                            }
+```powershell
+$app = New-MgApplication -displayName "NativeGraphApp" `
+  -IsFallbackPublicClient `
+  -PublicClient @{ RedirectUris = "http://localhost" }
 ```
 
 Record the value of the ClientId property of the $app object as it will be needed in a later step.
@@ -112,8 +112,10 @@ namespace GraphApp
     {
         static async Task Main(string[] args)
         {
-            var credential = new InteractiveBrowserCredential("<insert clientId from $app.ClientId>");
-            var authProvider = new AzureIdentityAuthenticationProvider(credential, new string[] {"User.Read"});
+            var credential = new InteractiveBrowserCredential(
+                "<insert clientId from $app.ClientId>");
+            var authProvider = new AzureIdentityAuthenticationProvider(
+                credential, new string[] {"User.Read"});
             var requestAdapter = new HttpClientRequestAdapter(authProvider);
             var apiClient = new ApiClient(requestAdapter);
             var me = await apiClient.Me.GetAsync();
@@ -123,6 +125,8 @@ namespace GraphApp
 }
 ```
 
-> Note: if the target API doesn't require any authentication, you can use the **AnonymousAuthenticationProvider** instead.
-> Note: if the target API requires a Authorization bearer \<token> header but doesn't rely on the Microsoft Identity Platform, you can implement your own authentication provider by inheriting from **BaseBearerTokenAuthenticationProvider**.
-> Note: if the target API requires any other form of authentication schemes, you can implement the **IAuthenticationProvider** interface.
+> **Note:**
+>
+> - If the target API doesn't require any authentication, you can use the **AnonymousAuthenticationProvider** instead.
+> - If the target API requires a Authorization bearer \<token> header but doesn't rely on the Microsoft Identity Platform, you can implement your own authentication provider by inheriting from **BaseBearerTokenAuthenticationProvider**.
+> - If the target API requires any other form of authentication schemes, you can implement the **IAuthenticationProvider** interface.
