@@ -9,7 +9,7 @@ class AuthenticationProvider(ABC):
     """
     
     @abstractmethod
-    def authenticate_request(self, request: RequestInformation) -> Coroutine:
+    async def authenticate_request(self, request: RequestInformation) -> None:
         """Authenticates the application request
 
         Args:

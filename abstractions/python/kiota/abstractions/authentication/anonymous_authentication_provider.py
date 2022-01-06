@@ -15,4 +15,4 @@ class AnonymousAuthenticationProvider(AuthenticationProvider):
         Args:
             request (RequestInformation): Request information object
         """
-        return None
+        pass

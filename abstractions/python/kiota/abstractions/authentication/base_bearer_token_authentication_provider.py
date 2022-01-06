@@ -19,6 +19,8 @@ class BaseBearerAuthenticationProvider(AuthenticationProvider):
         Args:
             request (RequestInformation): Request information object
         """
+        if not request:
+            raise Exception("Request cannot be null")
         if AUTHORIZATION_HEADER in request.headers:
             token = await self.get_authorization_token(request)
             if not token:
@@ -26,8 +28,7 @@ class BaseBearerAuthenticationProvider(AuthenticationProvider):
             
             request.headers.update({f'{AUTHORIZATION_HEADER}': f'Bearer {token}'})
     
-    @abstractmethod
-    def get_authorization_token(self, request: RequestInformation) -> Union[str, None]:
+    async def get_authorization_token(self, request: RequestInformation) -> Union[str, None]:
         """Gets the authorization token for the given request.
 
         Args:
