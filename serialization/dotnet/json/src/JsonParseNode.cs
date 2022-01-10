@@ -220,6 +220,9 @@ namespace Microsoft.Kiota.Serialization.Json
             {
                 if(fieldDeserializers.ContainsKey(fieldValue.Name))
                 {
+                    if(fieldValue.Value.ValueKind == JsonValueKind.Null)
+                        continue;// If the property is already null just continue. As calling functions like GetDouble,GetBoolValue do not process JsonValueKind.Null.
+
                     var fieldDeserializer = fieldDeserializers[fieldValue.Name];
                     Debug.WriteLine($"found property {fieldValue.Name} to deserialize");
                     fieldDeserializer.Invoke(item, new JsonParseNode(fieldValue.Value)
