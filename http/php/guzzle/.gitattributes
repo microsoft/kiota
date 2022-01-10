@@ -1,0 +1,7 @@
+* text=auto eol=lf
+*.{png,jpg,jpeg,gif,webp,woff,woff2} binary
+/coverage export-ignore
+/docs export-ignore
+/vendor export-ignore
+.gitattributes export-ignore
+.gitignore export-ignore
