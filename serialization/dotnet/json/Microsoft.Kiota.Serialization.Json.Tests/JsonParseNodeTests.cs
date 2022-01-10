@@ -20,7 +20,7 @@ namespace Microsoft.Kiota.Serialization.Json.Tests
                                             "    \"jobTitle\": \"Auditor\",\r\n" +
                                             "    \"mail\": \"MeganB@M365x214355.onmicrosoft.com\",\r\n" +
                                             "    \"mobilePhone\": null,\r\n" +
-                                            "    \"officeLocation\": \"12/1110\",\r\n" +
+                                            "    \"officeLocation\": null,\r\n" +
                                             "    \"preferredLanguage\": \"en-US\",\r\n" +
                                             "    \"surname\": \"Bowen\",\r\n" +
                                             "    \"userPrincipalName\": \"MeganB@M365x214355.onmicrosoft.com\",\r\n" +
@@ -39,6 +39,7 @@ namespace Microsoft.Kiota.Serialization.Json.Tests
             var testEntity = jsonParseNode.GetObjectValue<TestEntity>();
             // Assert
             Assert.NotNull(testEntity);
+            Assert.Null(testEntity.OfficeLocation);
             Assert.NotEmpty(testEntity.AdditionalData);
             Assert.True(testEntity.AdditionalData.ContainsKey("jobTitle"));
             Assert.True(testEntity.AdditionalData.ContainsKey("mobilePhone"));
