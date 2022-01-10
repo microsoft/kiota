@@ -9,9 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added the ability to configure the underlying transport in Go. #1003
+
 ### Changed
 
 - Fixed an issue where multiple api clients could run into racing conditions in Go.
+- Fixed a bug where empty additional data in Go would lead to invalid JSON payloads during serialization.
 
 ## [0.0.15] - 2021-12-17
 
