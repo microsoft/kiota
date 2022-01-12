@@ -35,6 +35,15 @@ func (*mockSerializer) WriteByteArrayValue(key string, value []byte) error {
 func (*mockSerializer) WriteTimeValue(key string, value *time.Time) error {
 	return nil
 }
+func (*mockSerializer) WriteDurationValue(key string, value *time.Duration) error {
+	return nil
+}
+func (*mockSerializer) WriteDateOnlyValue(key string, value *serialization.DateOnly) error {
+	return nil
+}
+func (*mockSerializer) WriteTimeOnlyValue(key string, value *serialization.TimeOnly) error {
+	return nil
+}
 func (*mockSerializer) WriteUUIDValue(key string, value *uuid.UUID) error {
 	return nil
 }

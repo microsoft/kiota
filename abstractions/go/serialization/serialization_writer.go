@@ -26,6 +26,12 @@ type SerializationWriter interface {
 	WriteByteArrayValue(key string, value []byte) error
 	// WriteTimeValue writes a Time value to underlying the byte array.
 	WriteTimeValue(key string, value *time.Time) error
+	// WriteTimeOnlyValue writes the time part of a Time value to underlying the byte array.
+	WriteTimeOnlyValue(key string, value *TimeOnly) error
+	// WriteDateOnlyValue writes the date part of a Time value to underlying the byte array.
+	WriteDateOnlyValue(key string, value *DateOnly) error
+	// WriteDurationValue writes a Duration value to underlying the byte array.
+	WriteDurationValue(key string, value *time.Duration) error
 	// WriteUUIDValue writes a UUID value to underlying the byte array.
 	WriteUUIDValue(key string, value *uuid.UUID) error
 	// WriteObjectValue writes a Parsable value to underlying the byte array.
