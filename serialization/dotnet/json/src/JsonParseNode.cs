@@ -90,17 +90,18 @@ namespace Microsoft.Kiota.Serialization.Json
         public T? GetEnumValue<T>() where T : struct, Enum
         {
             var rawValue = _jsonNode.GetString();
-            if(string.IsNullOrEmpty(rawValue)) return default;
+            if(string.IsNullOrEmpty(rawValue)) return null;
             if(typeof(T).GetCustomAttributes<FlagsAttribute>().Any())
             {
                 return (T)(object)rawValue
                     .Split(',')
-                    .Select(x => Enum.Parse<T>(x, true))
+                    .Select(x => Enum.TryParse<T>(x, true, out var result) ? result : (T?)null)
+                    .Where(x => !x.Equals(null))
                     .Select(x => (int)(object)x)
                     .Sum();
             }
             else
-                return Enum.Parse<T>(rawValue, true);
+                return Enum.TryParse<T>(rawValue, true,out var result) ? result : null;
         }
 
         /// <summary>
