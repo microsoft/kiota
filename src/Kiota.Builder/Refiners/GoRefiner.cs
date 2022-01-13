@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Extensions;
@@ -291,45 +292,45 @@ public class GoRefiner : CommonLanguageRefiner
                                                 .Union(new CodeTypeBase[] { currentMethod.ReturnType})
                                                 .ToArray());
     }
+    private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {
+        {"DateTimeOffset", ("Time", new CodeUsing {
+                                        Name = "Time",
+                                        Declaration = new CodeType {
+                                            Name = "time",
+                                            IsExternal = true,
+                                        },
+                                    })},
+        {"TimeSpan", ("Duration", new CodeUsing {
+                                        Name = "Duration",
+                                        Declaration = new CodeType {
+                                            Name = "time",
+                                            IsExternal = true,
+                                        },
+                                    })},
+        {"DateOnly", (null, new CodeUsing {
+                                Name = "DateOnly",
+                                Declaration = new CodeType {
+                                    Name = "github.com/microsoft/kiota/abstractions/go/serialization",
+                                    IsExternal = true,
+                                },
+                            })},
+        {"TimeOnly", (null, new CodeUsing {
+                                Name = "TimeOnly",
+                                Declaration = new CodeType {
+                                    Name = "github.com/microsoft/kiota/abstractions/go/serialization",
+                                    IsExternal = true,
+                                },
+                            })},
+    };
     private static void CorrectDateTypes(CodeClass parentClass, params CodeTypeBase[] types) {
         if(parentClass == null)
             return;
-        foreach(var type in types)
-            if("DateTimeOffset".Equals(type.Name, StringComparison.OrdinalIgnoreCase)) {
-                type.Name = "Time";
-                parentClass.AddUsing(new CodeUsing {
-                    Name = "Time",
-                    Declaration = new CodeType {
-                        Name = "time",
-                        IsExternal = true,
-                    },
-                });
-            } else if("TimeSpan".Equals(type.Name, StringComparison.OrdinalIgnoreCase)) {
-                type.Name = "Duration";
-                parentClass.AddUsing(new CodeUsing {
-                    Name = "Duration",
-                    Declaration = new CodeType {
-                        Name = "time",
-                        IsExternal = true,
-                    },
-                });
-            } else if("DateOnly".Equals(type.Name, StringComparison.OrdinalIgnoreCase)) {
-                parentClass.AddUsing(new CodeUsing {
-                    Name = "DateOnly",
-                    Declaration = new CodeType {
-                        Name = "github.com/microsoft/kiota/abstractions/go/serialization",
-                        IsExternal = true,
-                    },
-                });
-            } else if("TimeOnly".Equals(type.Name, StringComparison.OrdinalIgnoreCase)) {
-                parentClass.AddUsing(new CodeUsing {
-                    Name = "TimeOnly",
-                    Declaration = new CodeType {
-                        Name = "github.com/microsoft/kiota/abstractions/go/serialization",
-                        IsExternal = true,
-                    },
-                });
-            }
+        foreach(var type in types.Where(x => DateTypesReplacements.ContainsKey(x.Name))) {
+            var replacement = DateTypesReplacements[type.Name];
+            if(replacement.Item1 != null)
+                type.Name = replacement.Item1;
+            parentClass.AddUsing(replacement.Item2.Clone() as CodeUsing);
+        }
     }
     private static void CorrectPropertyType(CodeProperty currentProperty) {
         if (currentProperty.Type != null) {
