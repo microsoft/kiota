@@ -52,6 +52,12 @@ type SerializationWriter interface {
 	WriteCollectionOfFloat64Values(key string, collection []float64) error
 	// WriteCollectionOfTimeValues writes a collection of Time values to underlying the byte array.
 	WriteCollectionOfTimeValues(key string, collection []time.Time) error
+	// WriteCollectionOfDurationValues writes a collection of Duration values to underlying the byte array.
+	WriteCollectionOfDurationValues(key string, collection []time.Duration) error
+	// WriteCollectionOfDateOnlyValues writes a collection of DateOnly values to underlying the byte array.
+	WriteCollectionOfDateOnlyValues(key string, collection []DateOnly) error
+	// WriteCollectionOfTimeOnlyValues writes a collection of TimeOnly values to underlying the byte array.
+	WriteCollectionOfTimeOnlyValues(key string, collection []TimeOnly) error
 	// WriteCollectionOfUUIDValues writes a collection of UUID values to underlying the byte array.
 	WriteCollectionOfUUIDValues(key string, collection []uuid.UUID) error
 	// GetSerializedContent returns the resulting byte array from the serialization writer.

@@ -74,6 +74,15 @@ func (*mockSerializer) WriteCollectionOfFloat64Values(key string, collection []f
 func (*mockSerializer) WriteCollectionOfTimeValues(key string, collection []time.Time) error {
 	return nil
 }
+func (*mockSerializer) WriteCollectionOfDurationValues(key string, collection []time.Duration) error {
+	return nil
+}
+func (*mockSerializer) WriteCollectionOfDateOnlyValues(key string, collection []serialization.DateOnly) error {
+	return nil
+}
+func (*mockSerializer) WriteCollectionOfTimeOnlyValues(key string, collection []serialization.TimeOnly) error {
+	return nil
+}
 func (*mockSerializer) WriteCollectionOfUUIDValues(key string, collection []uuid.UUID) error {
 	return nil
 }
