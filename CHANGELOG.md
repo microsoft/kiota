@@ -36,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug in Go where empty collections would not be serialized.
 - Fixes a bug where generation would fail because of empty usings.
 - Fixes a bug where Java and Go escaped model properties would not serialize properly.
+- Fixes a bug where null values would not be added to additionalData if there was no matching property in dotnet. 
+- Fixes a bug where deserialzation of enums would throw an ArgumentExcpetion if the member didn't exist in dotnet.
 
 ## [0.0.14] - 2021-11-08
 
