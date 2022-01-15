@@ -160,8 +160,8 @@ namespace Kiota.Builder.Writers.Php
                     .Where(x => x.Declaration != null && (x.Declaration.IsExternal ||
                                 !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)))
                     .Select(x => x.Declaration is {IsExternal: true}
-                            ? $"use {x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()}\\{x.Name.ReplaceDotsWithSlashInNamespaces()};"
-                            : $"use {x.Name.ReplaceDotsWithSlashInNamespaces()}\\{x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()};")
+                            ? $"use {x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()}\\{x.Name.ReplaceDotsWithSlashInNamespaces()}{(!string.IsNullOrEmpty(x.Alias) ? $" as {x.Alias}" : string.Empty)};"
+                            : $"use {x.Name.ReplaceDotsWithSlashInNamespaces()}\\{x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()}{(!string.IsNullOrEmpty(x.Alias) ? $" as {x.Alias}" : string.Empty)};")
                     .Distinct()
                     .OrderBy(x => x)
                     .ToList()

@@ -1,10 +1,12 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners
 {
     public class PhpRefiner: CommonLanguageRefiner
     {
+        private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
         public PhpRefiner(GenerationConfiguration configuration) : base(configuration) { }
         
         public override void Refine(CodeNamespace generatedCode)
@@ -21,6 +23,7 @@ namespace Kiota.Builder.Refiners
             MakeModelPropertiesNullable(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
+            AliasUsingWithSameSymbol(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             AddGetterAndSetterMethods(generatedCode,new()
             {
@@ -103,6 +106,32 @@ namespace Kiota.Builder.Refiners
                 x.Type.Name = "array";
             });
             CrawlTree(codeElement, CorrectParameterType);
+        }
+        
+        private static void AliasUsingWithSameSymbol(CodeElement currentElement) {
+            if(currentElement is CodeClass {StartBlock: CodeClass.Declaration currentDeclaration} currentClass && currentDeclaration.Usings.Any(x => !x.IsExternal)) {
+                var duplicatedSymbolsUsings = currentDeclaration.Usings
+                    .Distinct(usingComparer)
+                    .GroupBy(x => x.Declaration.Name, StringComparer.OrdinalIgnoreCase)
+                    .Where(x => x.Count() > 1)
+                    .SelectMany(x => x)
+                    .Union(currentDeclaration
+                        .Usings
+                        .Where(x => !x.IsExternal)
+                        .Where(x => x.Declaration
+                            .Name
+                            .Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase)));
+                var index = 0;
+                foreach (var usingElement in duplicatedSymbolsUsings)
+                {
+                    var declaration = usingElement.Declaration.TypeDefinition?.Name;
+                    if (string.IsNullOrEmpty(declaration)) continue;
+                    if (index > 0)
+                        usingElement.Alias = $"{declaration.ToFirstCharacterUpperCase()}{index}";
+                    index++;
+                }
+            }
+            CrawlTree(currentElement, AliasUsingWithSameSymbol);
         }
     }
 }
