@@ -1,8 +1,10 @@
 <?php
 namespace Microsoft\Kiota\Abstractions;
 
+use InvalidArgumentException;
 use Microsoft\Kiota\Abstractions\Serialization\Parsable;
 use Psr\Http\Message\StreamInterface;
+use RuntimeException;
 
 class RequestInformation {
 
@@ -35,7 +37,7 @@ class RequestInformation {
     /** @var string $contentTypeHeader */
     private static string $contentTypeHeader = "Content-Type";
 
-    /** @var array<string, RequestOption> Request options to apply to this request. */
+    /** @var array<RequestOption> Request options to apply to this request. */
     private array $_requestOptions = [];
 
     /**
@@ -48,24 +50,27 @@ class RequestInformation {
     }
 
     /**
-     * @param RequestAdapter $httpCore
+     * @param RequestAdapter $requestAdapter
      * @param string $contentType
-     * @param Parsable|object ...$values
+     * @param Parsable ...$values
      */
-    public function setContentFromParsable(RequestAdapter $httpCore, string $contentType, ...$values): void {
-        /** @var array<Parsable|object> $newValues */
+    public function setContentFromParsable(RequestAdapter $requestAdapter, string $contentType, Parsable ...$values): void {
+        /** @var array<Parsable> $newValues */
         $newValues = [];
 
-        foreach ($values as $key => $value) {
+        if (empty($contentType)) {
+            throw new InvalidArgumentException('$contentType cannot be empty.');
+        }
+        foreach ($values as $value) {
             $newValues []= $value;
         }
         if(count($newValues) === 0) {
-            throw new \RuntimeException('$values cannot be empty');
+            throw new InvalidArgumentException('$values cannot be empty');
         }
 
         $values = array_values($newValues);
         try {
-            $writer = $httpCore->getSerializationWriterFactory()
+            $writer = $requestAdapter->getSerializationWriterFactory()
                                ->getSerializationWriter($contentType);
             $this->headers[self::$contentTypeHeader] = $contentType;
 
@@ -75,8 +80,8 @@ class RequestInformation {
                 $writer->writeCollectionOfObjectValues(null, $values);
             }
 
-        } catch (\RuntimeException $ex) {
-            throw new \RuntimeException('Could not serialize payload ', 0, $ex);
+        } catch (RuntimeException $ex) {
+            throw new RuntimeException('Could not serialize payload ', 0, $ex);
         }
     }
 
@@ -88,7 +93,7 @@ class RequestInformation {
         $this->uri = http_build_url(parse_url($uriString));
 
         if (!$this->uri){
-            throw new \RuntimeException;
+            throw new RuntimeException;
         }
     }
 
@@ -101,13 +106,13 @@ class RequestInformation {
     public function setUri(?string $currentPath, ?string $pathSegment, bool $isRawUri): void {
         if ($isRawUri) {
             if ($currentPath === null || empty(trim($currentPath))) {
-                throw new \InvalidArgumentException('$currentPath cannot be null or empty');
+                throw new InvalidArgumentException('$currentPath cannot be null or empty');
             }
 
             $urls = parse_url($currentPath);
 
             if (!$urls) {
-                throw new \InvalidArgumentException('Invalid url provided');
+                throw new InvalidArgumentException('Invalid url provided');
             }
             $schemeHostAndPath = $urls['scheme'] . '://'.$urls['host'] . $urls['path'];
 

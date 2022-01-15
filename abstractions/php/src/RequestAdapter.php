@@ -36,4 +36,16 @@ interface RequestAdapter {
      * @param BackingStoreFactory $backingStoreFactory The backing store factory to use.
      */
     public function enableBackingStore(BackingStoreFactory $backingStoreFactory): void;
+
+    /**
+     * Sets The base url for every request.
+     * @param string $baseUrl The base url for every request.
+     */
+    public function setBaseUrl(string $baseUrl): void;
+
+    /**
+     * Gets The base url for every request.
+     * @return string The base url for every request.
+     */
+    public function getBaseUrl(): string;
 }

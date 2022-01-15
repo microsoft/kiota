@@ -61,9 +61,9 @@ abstract class Enum
      * @return bool the enum has the value
      * @throws ReflectionException
      */
-    public function has($value): bool
+    public static function has($value): bool
     {
-        return in_array($value, $this->toArray(), true);
+        return in_array($value, self::toArray(), true);
     }
 
     /**
@@ -84,7 +84,7 @@ abstract class Enum
      * @return mixed
      * @throws ReflectionException
      */
-    public function toArray()
+    public static function toArray()
     {
         $class = static::class;
 

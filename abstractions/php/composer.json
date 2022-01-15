@@ -3,6 +3,13 @@
     "description": "Abstractions for Kiota",
     "type": "library",
     "license": "MIT",
+    "authors": [
+      {
+        "name": "Microsoft Graph Client Tooling",
+        "email": "graphtooling@service.microsoft.com",
+        "role": "Developer"
+      }
+    ],
     "minimum-stability": "stable",
     "autoload": {
         "psr-4": {
