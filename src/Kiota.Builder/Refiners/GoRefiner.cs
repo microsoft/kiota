@@ -231,6 +231,13 @@ public class GoRefiner : CommonLanguageRefiner
         CrawlTree(currentElement, AddErrorImportForEnums);
     }
     private static readonly GoConventionService conventions = new();
+    private static readonly HashSet<string> typeToSkipStrConv = new(StringComparer.OrdinalIgnoreCase) {
+        "DateTimeOffset",
+        "Duration",
+        "TimeOnly",
+        "DateOnly",
+        "string"
+    };
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             "github.com/microsoft/kiota/abstractions/go", "RequestAdapter"),
@@ -244,8 +251,7 @@ public class GoRefiner : CommonLanguageRefiner
             "github.com/microsoft/kiota/abstractions/go/serialization", "Parsable"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor) &&
                     method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path) &&
-                                            !x.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase) &&
-                                            !x.Type.Name.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase)),
+                                            !typeToSkipStrConv.Contains(x.Type.Name)),
             "strconv", "FormatBool"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             "github.com/microsoft/kiota/abstractions/go/serialization", "SerializationWriter"),
