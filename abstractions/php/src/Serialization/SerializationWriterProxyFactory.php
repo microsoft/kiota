@@ -3,9 +3,9 @@ namespace Microsoft\Kiota\Abstractions\Serialization;
 
 /**
  * Proxy factory that allows the composition of before and after callbacks on existing factories.
- * @method onBefore(Parsable $x)
- * @method onAfter(Parsable $x)
- * @method onStart(Parsable $x, SerializationWriter $y)
+ * @method onBeforeObjectSerialization(Parsable $model)
+ * @method onAfterObjectSerialization(Parsable $model)
+ * @method onStartObjectSerialization(Parsable $model, SerializationWriter $serializationWriter)
  */
 abstract class SerializationWriterProxyFactory implements SerializationWriterFactory {
 
@@ -15,31 +15,31 @@ abstract class SerializationWriterProxyFactory implements SerializationWriterFac
     private SerializationWriterFactory $concrete;
 
     /**
-     * @var callable|null $onBefore
+     * @var callable|null $onBeforeObjectSerialization
      */
-    private  $onBefore;
+    private  $onBeforeObjectSerialization;
     /**
-     * @var callable|null $onAfter
+     * @var callable|null $onAfterObjectSerialization
      */
-    private  $onAfter;
+    private  $onAfterObjectSerialization;
 
     /**
      * @var callable|null
      */
-    private  $onStart;
+    private  $onStartObjectSerialization;
 
     /**
      * Creates a new proxy factory that wraps the specified concrete factory while composing the before and after callbacks.
      * @param SerializationWriterFactory $concrete the concrete factory to wrap
-     * @param callable|null $onBefore the callback to invoke before the serialization of any model object.
-     * @param callable|null $onAfter the callback to invoke after the serialization of any model object.
-     * @param callable|null $onStart the callback to invoke when the serialization of a model object starts.
+     * @param callable|null $onBeforeObjectSerialization the callback to invoke before the serialization of any model object.
+     * @param callable|null $onAfterObjectSerialization the callback to invoke after the serialization of any model object.
+     * @param callable|null $onStartObjectSerialization the callback to invoke when the serialization of a model object starts.
      */
-    public function __construct(SerializationWriterFactory $concrete, ?callable $onBefore = null, ?callable $onAfter = null, ?callable $onStart = null) {
+    public function __construct(SerializationWriterFactory $concrete, ?callable $onBeforeObjectSerialization = null, ?callable $onAfterObjectSerialization = null, ?callable $onStartObjectSerialization = null) {
         $this->concrete = $concrete;
-        $this->onBefore = $onBefore;
-        $this->onAfter = $onAfter;
-        $this->onStart = $onStart;
+        $this->onBeforeObjectSerialization = $onBeforeObjectSerialization;
+        $this->onAfterObjectSerialization = $onAfterObjectSerialization;
+        $this->onStartObjectSerialization = $onStartObjectSerialization;
     }
 
     /**
@@ -52,33 +52,33 @@ abstract class SerializationWriterProxyFactory implements SerializationWriterFac
         $originalAfter  = $writer->getOnAfterObjectSerialization();
         $originalStart = $writer->getOnStartObjectSerialization();
 
-        $writer->setOnBeforeObjectSerialization(function (Parsable $x) use ($originalBefore) {
-            if ($this->onBefore !== null) {
-                $this->onBefore($x);  // the callback set by the implementation (e.g. backing store)
+        $writer->setOnBeforeObjectSerialization(function (Parsable $model) use ($originalBefore) {
+            if ($this->onBeforeObjectSerialization !== null) {
+                $this->onBeforeObjectSerialization($model);  // the callback set by the implementation (e.g. backing store)
             }
 
             if ($originalBefore !== null) {
-                $originalBefore($x); // some callback that might already be set on the target
+                $originalBefore($model); // some callback that might already be set on the target
             }
         });
-        $writer->setOnAfterObjectSerialization(function (Parsable $x) use ($originalAfter) {
+        $writer->setOnAfterObjectSerialization(function (Parsable $model) use ($originalAfter) {
 
-            if ($this->onAfter !== null) {
-                $this->onAfter($x);
+            if ($this->onAfterObjectSerialization !== null) {
+                $this->onAfterObjectSerialization($model);
             }
 
             if ($originalAfter !== null) {
-                $originalAfter($x);
+                $originalAfter($model);
             }
         });
 
-        $writer->setOnStartObjectSerialization(function (Parsable $x, SerializationWriter $y) use ($originalStart) {
-            if ($this->onStart !== null) {
-                $this->onStart($x, $y);
+        $writer->setOnStartObjectSerialization(function (Parsable $model, SerializationWriter $serializationWriter) use ($originalStart) {
+            if ($this->onStartObjectSerialization !== null) {
+                $this->onStartObjectSerialization($model, $serializationWriter);
             }
 
             if ($originalStart !== null) {
-                $originalStart($x, $y);
+                $originalStart($model, $serializationWriter);
             }
         });
         return $writer;

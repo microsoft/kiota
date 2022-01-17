@@ -49,7 +49,9 @@ class RequestInformation {
             && is_string($this->pathParameters[self::$RAW_URL_KEY])) {
             $this->setUri($this->pathParameters[self::$RAW_URL_KEY]);
         } else {
-            return (new UriTemplate())->expand($this->urlTemplate, $this->pathParameters);
+            $template = (new UriTemplate());
+            $params = array_merge($this->pathParameters, $this->queryParameters);
+            return $template->expand($this->urlTemplate, $params);
         }
         return $this->uri;
     }
