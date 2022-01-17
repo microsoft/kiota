@@ -31,10 +31,15 @@ class CompressionOption
     private array $compressionCallbacks;
 
     /**
+     * Uses GZIP by default
+     *
      * @param callable[] $compressionCallbacks {@link $compressionCallbacks}
      */
-    public function __construct(array $compressionCallbacks = [CompressionOption::gzip()])
+    public function __construct(array $compressionCallbacks = [])
     {
+        if (empty($compressionCallbacks)) {
+            $compressionCallbacks[] = CompressionOption::gzip();
+        }
         $this->compressionCallbacks = $compressionCallbacks;
     }
 
@@ -81,7 +86,7 @@ class CompressionOption
         return static function (RequestInterface $request): RequestInterface {
             // Check if the request has a body
             if ($request->getBody()->getSize()) {
-                $compressedBody = gzinflate($request->getBody()->getContents());
+                $compressedBody = gzdeflate($request->getBody()->getContents());
                 return $request->withBody(Utils::streamFor($compressedBody))
                                 ->withAddedHeader('Content-Encoding', 'deflate');
             }
