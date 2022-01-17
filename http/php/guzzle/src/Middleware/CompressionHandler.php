@@ -68,18 +68,18 @@ class CompressionHandler
         }
         $fn = $this->nextHandler;
         return $fn($request, $options)->then(
-            $this->onFulfilled($request, $options),
-            $this->onRejected($request, $options)
+            $this->onFulfilled($options),
+            $this->onRejected($options)
         );
     }
 
     /**
      * if true, the request is retried with an uncompressed body
      *
-     * @param $options
+     * @param array $options
      * @return bool
      */
-    private function shouldRetry($options): bool
+    private function shouldRetry(array $options): bool
     {
         return (array_key_exists(self::COMPRESSION_RETRY_ATTEMPT, $options) && $options[self::COMPRESSION_RETRY_ATTEMPT] == 1);
     }
@@ -87,13 +87,12 @@ class CompressionHandler
     /**
      * Retries the request if 415 response was received
      *
-     * @param RequestInterface $request
      * @param array $options
      * @return callable
      */
-    private function onFulfilled(RequestInterface $request, array $options): callable
+    private function onFulfilled(array $options): callable
     {
-        return function (ResponseInterface $response) use ($request, $options) {
+        return function (ResponseInterface $response) use ($options) {
             if ($response->getStatusCode() == 415 && !array_key_exists(self::COMPRESSION_RETRY_ATTEMPT, $options)) {
                 $options[self::COMPRESSION_RETRY_ATTEMPT] = 1;
                 return $this($this->originalRequest, $options);
@@ -105,13 +104,12 @@ class CompressionHandler
     /**
      * Retry only if guzzle BadResponseException was thrown with a 415 status code
      *
-     * @param RequestInterface $request
      * @param array $options
      * @return callable
      */
-    private function onRejected(RequestInterface $request, array $options): callable
+    private function onRejected(array $options): callable
     {
-        return function ($reason) use ($request, $options) {
+        return function ($reason) use ($options) {
             // Only consider 415 BadResponseException in case guzzle http_errors = true
             if (is_a($reason, \GuzzleHttp\Exception\BadResponseException::class)) {
                 if ($reason->getResponse()->getStatusCode() == 415 && !array_key_exists(self::COMPRESSION_RETRY_ATTEMPT, $options)) {
