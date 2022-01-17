@@ -8,6 +8,7 @@
 
 namespace Microsoft\Kiota\Http\Middleware;
 
+use Microsoft\Kiota\Http\Middleware\Options\ChaosOption;
 use Microsoft\Kiota\Http\Middleware\Options\CompressionOption;
 use Microsoft\Kiota\Http\Middleware\Options\RetryOption;
 use Microsoft\Kiota\Http\Middleware\Options\TelemetryOption;
@@ -45,7 +46,7 @@ class KiotaMiddleware
      * @param CompressionOption|null $compressionOption
      * @return callable
      */
-    public static function compress(?CompressionOption $compressionOption = null): callable
+    public static function compression(?CompressionOption $compressionOption = null): callable
     {
         return static function (callable $handler) use ($compressionOption): CompressionHandler {
             return new CompressionHandler($handler, $compressionOption);
@@ -62,6 +63,19 @@ class KiotaMiddleware
     {
         return static function (callable $handler) use ($telemetryOption): TelemetryHandler {
             return new TelemetryHandler($handler, $telemetryOption);
+        };
+    }
+
+    /**
+     * Middleware that selects a chaos response (configured via {@link ChaosOption}) at random x% of the time
+     * If criteria is not met for a chaos response, the request is forwarded down the middleware chain
+     * @param ChaosOption|null $chaosOption
+     * @return callable
+     */
+    public static function chaos(?ChaosOption $chaosOption = null): callable
+    {
+        return static function (callable $handler) use ($chaosOption): ChaosHandler {
+            return new ChaosHandler($handler, $chaosOption);
         };
     }
 }
