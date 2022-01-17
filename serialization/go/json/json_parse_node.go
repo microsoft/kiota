@@ -376,8 +376,7 @@ func (n *JsonParseNode) GetTimeOnlyValue() (*absser.TimeOnly, error) {
 	if v == nil {
 		return nil, nil
 	}
-	parsed, err := absser.ParseTimeOnly(*v)
-	return &parsed, err
+	return absser.ParseTimeOnly(*v)
 }
 
 // GetDateOnlyValue returns a DateOnly value from the nodes.
@@ -389,8 +388,7 @@ func (n *JsonParseNode) GetDateOnlyValue() (*absser.DateOnly, error) {
 	if v == nil {
 		return nil, nil
 	}
-	parsed, err := absser.ParseDateOnly(*v)
-	return &parsed, err
+	return absser.ParseDateOnly(*v)
 }
 
 // GetUUIDValue returns a UUID value from the nodes.
