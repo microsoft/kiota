@@ -133,4 +133,20 @@ class RequestInformation {
             throw new RuntimeException('could not serialize payload.', 1, $ex);
         }
     }
+
+    /**
+     * Set the query parameters.
+     * @param array<string,mixed> $queryParameters
+     */
+    public function setQueryParameters(array $queryParameters): void {
+        $this->queryParameters = $queryParameters;
+    }
+
+    /**
+     * Set the path parameters.
+     * @param array<string,mixed> $pathParameters
+     */
+    public function setPathParameters(array $pathParameters): void {
+        $this->pathParameters = $pathParameters;
+    }
 }

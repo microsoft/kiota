@@ -100,9 +100,7 @@ class InMemoryBackingStore implements BackingStore
         $result = [];
 
         foreach ($this->store as $key => $val) {
-            $wrapper = $val;
-            $value = $wrapper[1];
-            if ($value === null && $wrapper[0]) {
+            if ($val[1] === null && $val[0]) {
                 $result []= $key;
             }
         }

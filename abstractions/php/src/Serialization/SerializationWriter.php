@@ -2,59 +2,61 @@
 namespace Microsoft\Kiota\Abstractions\Serialization;
 
 use DateInterval;
+use DateTime;
+use Microsoft\Kiota\Abstractions\Enum;
 use Psr\Http\Message\StreamInterface;
 
 /** Defines an interface for serialization of objects to a stream. */
 interface SerializationWriter {
     /**
      * Writes the specified string value to the stream with an optional given key.
-     * @param string $key the key to write the value with.
+     * @param string|null $key the key to write the value with.
      * @param string $value the value to write to the stream.
      */
-    public function writeStringValue(string $key, string $value): void;
+    public function writeStringValue(?string $key, string $value): void;
 
     /**
      * Writes the specified Boolean value to the stream with an optional given key.
-     * @param string $key the key to write the value with.
+     * @param string|null $key the key to write the value with.
      * @param bool $value the value to write to the stream.
      */
-    public function writeBooleanValue(string $key, bool $value): void;
+    public function writeBooleanValue(?string $key, bool $value): void;
 
     /**
      * Writes the specified Float value to the stream with an optional given key.
-     * @param string $key the key to write the value with.
+     * @param string|null $key the key to write the value with.
      * @param float $value the value to write to the stream.
      */
-    public function writeFloatValue(string $key, float $value): void;
+    public function writeFloatValue(?string $key, float $value): void;
 
     /**
      * Writes the specified Integer value to the stream with an optional given key.
-     * @param string $key the key to write the value with.
+     * @param string|null $key the key to write the value with.
      * @param int $value the value to write to the stream.
      */
-    public function writeIntegerValue(string $key, int $value): void;
+    public function writeIntegerValue(?string $key, int $value): void;
 
     /**
      * Writes the specified Long value to the stream with an optional given key.
-     * @param string $key the key to write the value with.
+     * @param string|null $key the key to write the value with.
      * @param int $value the value to write to the stream.
      */
-    public function writeLongValue(string $key, int $value): void;
+    public function writeLongValue(?string $key, int $value): void;
 
 
     /**
      * Writes the specified UUID value to the stream with an optional given key.
-     * @param string $key the key to write the value with.
+     * @param string|null $key the key to write the value with.
      * @param string $value the value to write to the stream.
      */
-    public function writeUUIDValue(string $key, string $value): void;
+    public function writeUUIDValue(?string $key, string $value): void;
 
     /**
      * Writes the specified OffsetDateTime value to the stream with an optional given key.
-     * @param string $key the key to write the value with.
-     * @param DateInterval $value the value to write to the stream.
+     * @param string|null $key the key to write the value with.
+     * @param DateTime $value the value to write to the stream.
      */
-    public function writeOffsetDateTimeValue(string $key, DateInterval $value): void;
+    public function writeDateTimeOffsetValue(?string $key, DateTime $value): void;
 
     /**
      * Writes the specified collection of object values to the stream with an optional given key.
@@ -78,23 +80,23 @@ interface SerializationWriter {
 
     /**
      * Writes the specified enum set value to the stream with an optional given key.
-     * @param string $key the key to write the value with.
-     * @param string[] $values the value to write to the stream.
+     * @param string|null $key the key to write the value with.
+     * @param array<Enum> $values the value to write to the stream.
      */
-    public function writeEnumSetValue(string $key, array $values): void;
+    public function writeEnumSetValue(?string $key, array $values): void;
 
     /**
      * Writes the specified enum value to the stream with an optional given key.
-     * @param string $key the key to write the value with.
-     * @param string $value the value to write to the stream.
+     * @param string|null $key the key to write the value with.
+     * @param Enum $value the value to write to the stream.
      */
-    public function writeEnumValue(string $key, string $value): void;
+    public function writeEnumValue(?string $key, Enum $value): void;
 
     /**
      * Writes a null value for the specified key.
-     * @param string $key the key to write the value with.
+     * @param string|null $key the key to write the value with.
      */
-    public function writeNullValue(string $key): void;
+    public function writeNullValue(?string $key): void;
 
     /**
      * Writes the specified additional data values to the stream with an optional given key.

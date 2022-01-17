@@ -30,13 +30,13 @@ abstract class SerializationWriterProxyFactory implements SerializationWriterFac
 
     /**
      * Creates a new proxy factory that wraps the specified concrete factory while composing the before and after callbacks.
-     * @param SerializationWriterFactory $concrete the concrete factory to wrap
+     * @param SerializationWriterFactory $concreteSerializationWriterFactory the concrete factory to wrap
      * @param callable|null $onBeforeObjectSerialization the callback to invoke before the serialization of any model object.
      * @param callable|null $onAfterObjectSerialization the callback to invoke after the serialization of any model object.
      * @param callable|null $onStartObjectSerialization the callback to invoke when the serialization of a model object starts.
      */
-    public function __construct(SerializationWriterFactory $concrete, ?callable $onBeforeObjectSerialization = null, ?callable $onAfterObjectSerialization = null, ?callable $onStartObjectSerialization = null) {
-        $this->concrete = $concrete;
+    public function __construct(SerializationWriterFactory $concreteSerializationWriterFactory, ?callable $onBeforeObjectSerialization = null, ?callable $onAfterObjectSerialization = null, ?callable $onStartObjectSerialization = null) {
+        $this->concrete = $concreteSerializationWriterFactory;
         $this->onBeforeObjectSerialization = $onBeforeObjectSerialization;
         $this->onAfterObjectSerialization = $onAfterObjectSerialization;
         $this->onStartObjectSerialization = $onStartObjectSerialization;

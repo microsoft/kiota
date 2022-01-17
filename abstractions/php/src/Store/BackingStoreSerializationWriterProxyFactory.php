@@ -13,45 +13,47 @@ class BackingStoreSerializationWriterProxyFactory extends SerializationWriterPro
 
     /**
      * Initializes a new instance of the BackingStoreSerializationWriterProxyFactory class given a concrete implementation of SerializationWriterFactory.
-     * @param SerializationWriterFactory $concrete a concrete implementation of SerializationWriterFactory to wrap.
+     * @param SerializationWriterFactory $concreteSerializationWriterFactory a concrete implementation of SerializationWriterFactory to wrap.
      */
-    public function __construct(SerializationWriterFactory $concrete){
-        parent::__construct($concrete,
-            static function (Parsable $model) {
-                if (is_a($model, BackedModel::class)) {
-                    $backedModel = $model;
-                    $backingStore = $backedModel->getBackingStore();
-                    if ($backingStore !== null) {
-                        $backingStore->setReturnOnlyChangedValues(true);
-                    }
+    public function __construct(SerializationWriterFactory $concreteSerializationWriterFactory){
+        $onBeforeObjectSerialization = static function (Parsable $model) {
+            if (is_a($model, BackedModel::class)) {
+                $backedModel = $model;
+                $backingStore = $backedModel->getBackingStore();
+                if ($backingStore !== null) {
+                    $backingStore->setReturnOnlyChangedValues(true);
                 }
-            },
-            static function (Parsable $model) {
-                if (is_a($model, BackedModel::class)) {
-                    $backedModel = $model;
-                    $backingStore = $backedModel->getBackingStore();
+            }
+        };
 
-                    if ($backingStore !== null) {
-                        $backingStore->setReturnOnlyChangedValues(false);
-                        $backingStore->setIsInitializationCompleted(true);
-                    }
+        $onAfterObjectSerialization = static function (Parsable $model) {
+            if (is_a($model, BackedModel::class)) {
+                $backedModel = $model;
+                $backingStore = $backedModel->getBackingStore();
+
+                if ($backingStore !== null) {
+                    $backingStore->setReturnOnlyChangedValues(false);
+                    $backingStore->setIsInitializationCompleted(true);
                 }
-            },
-            static function (Parsable $model, SerializationWriter $serializationWriter) {
-                if (is_a($model, BackedModel::class)) {
-                    $backedModel = $model;
+            }
+        };
 
-                    $backingStore = $backedModel->getBackingStore();
+        $onStartObjectSerialization = static function (Parsable $model, SerializationWriter $serializationWriter) {
+            if (is_a($model, BackedModel::class)) {
+                $backedModel = $model;
 
-                    if ($backingStore !== null) {
-                        $keys = $backingStore->enumerateKeysForValuesChangedToNull();
+                $backingStore = $backedModel->getBackingStore();
 
-                        foreach ($keys as $key) {
-                            $serializationWriter->writeNullValue($key);
-                        }
+                if ($backingStore !== null) {
+                    $keys = $backingStore->enumerateKeysForValuesChangedToNull();
+
+                    foreach ($keys as $key) {
+                        $serializationWriter->writeNullValue($key);
                     }
                 }
             }
-        );
+        };
+        parent::__construct($concreteSerializationWriterFactory, $onBeforeObjectSerialization,
+            $onAfterObjectSerialization, $onStartObjectSerialization);
     }
 }

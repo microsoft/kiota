@@ -61,14 +61,14 @@ interface ParseNode {
      * Gets the OffsetDateTime value of the node.
      * @return DateTimeInterface the OffsetDateTime value of the node.
      */
-    public function getOffsetDateTimeValue(): DateTimeInterface;
+    public function getDateTimeOffsetValue(): DateTimeInterface;
 
     /**
      * Gets the Enum value of the node.
      * @param string $targetEnum
-     * @return string the Enum value of the node.
+     * @return Enum the Enum value of the node.
      */
-    public function getEnumValue(string $targetEnum): string;
+    public function getEnumValue(string $targetEnum): Enum;
 
     /**
      * Gets the EnumSet value of the node.

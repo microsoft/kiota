@@ -8,6 +8,9 @@ use Microsoft\Kiota\Abstractions\Serialization\SerializationWriterFactory;
 use Microsoft\Kiota\Abstractions\Serialization\SerializationWriterFactoryRegistry;
 use Microsoft\Kiota\Abstractions\Store\BackingStoreParseNodeFactory;
 use Microsoft\Kiota\Abstractions\Store\BackingStoreSerializationWriterProxyFactory;
+use ReflectionClass;
+use ReflectionException;
+use RuntimeException;
 
 class ApiClientBuilder {
     private function __construct(){}
@@ -17,27 +20,33 @@ class ApiClientBuilder {
      * @param SerializationWriterFactory $factoryClass the class of the factory to be registered.
      */
     public static function registerDefaultSerializer(SerializationWriterFactory $factoryClass): void {
-        /** @var SerializationWriterFactory $factory */
-        $factory =  new (get_class($factoryClass))();
-        SerializationWriterFactoryRegistry::getDefaultInstance()
-            ->contentTypeAssociatedFactories[$factory->getValidContentType()] = $factory;
+        try {
+            $reflectionClass = new ReflectionClass($factoryClass);
+
+            /** @var SerializationWriterFactory $factory */
+            $factory = $reflectionClass->newInstance();
+            SerializationWriterFactoryRegistry::getDefaultInstance()
+                ->contentTypeAssociatedFactories[$factory->getValidContentType()] = $factory;
+        } catch (ReflectionException $exception){
+            throw new RuntimeException($exception);
+        }
     }
 
     /**
      * Registers the default deserializer to the registry.
-     * @param SerializationWriterFactory $factoryClass the class of the factory to be registered.
+     * @param ParseNodeFactory $factoryClass the class of the factory to be registered.
      */
-    public static function registerDefaultDeserializer(SerializationWriterFactory $factoryClass): void {
-        // TODO: Find the best way of doing this.
+    public static function registerDefaultDeserializer(ParseNodeFactory $factoryClass): void {
         try {
+            $reflectionClass = new ReflectionClass($factoryClass);
             /**
-             * @var SerializationWriterFactory $factory
+             * @var ParseNodeFactoryRegistry $factory
              */
-            $factory = new (get_class($factoryClass))();
-            SerializationWriterFactoryRegistry::getDefaultInstance()
+            $factory = $reflectionClass->newInstance();
+            ParseNodeFactoryRegistry::getDefaultInstance()
                 ->contentTypeAssociatedFactories[$factory->getValidContentType()] = $factory;
-        } catch (\Exception $exception) {
-            throw new \RuntimeException($exception);
+        } catch (ReflectionException $exception) {
+            throw new RuntimeException($exception);
         }
     }
 
