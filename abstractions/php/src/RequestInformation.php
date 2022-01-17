@@ -1,48 +1,105 @@
 <?php
 namespace Microsoft\Kiota\Abstractions;
 
+use Exception;
 use InvalidArgumentException;
 use Microsoft\Kiota\Abstractions\Serialization\Parsable;
 use Psr\Http\Message\StreamInterface;
+use Rize\UriTemplate;
 use RuntimeException;
 
 class RequestInformation {
-
-    /** @var string The url template for the current request.  */
+    /** @var string $RAW_URL_KEY */
+    private static string $RAW_URL_KEY = 'request-raw-url';
+    /** @var string $urlTemplate The url template for the current request */
     public string $urlTemplate;
-    /** @var string The URI of the request. */
-    public string $uri;
-
-    /** @var array<string, mixed> $pathParameters */
+    /**
+     * The path parameters for the current request
+     * @var array<string,mixed> $pathParameters
+     */
     public array $pathParameters = [];
 
-    /* @phpstan-ignore-next-line */
-    private const RAW_URL_KEY = 'request-raw-url';
-
-    /** @var string|null The HTTP method for the request */
-    public ?string $httpMethod;
-
+    /** @var string|null $uri */
+    private ?string $uri;
+    /**
+     * @var string The HTTP method for the request
+     */
+    public string $httpMethod;
+    /** @var array<string,mixed> The Query Parameters of the request. */
+    public array $queryParameters = [];
+    /** @var array<string, mixed>  The Request Headers. */
+    public array $headers = [];
     /** @var StreamInterface $content The Request Body. */
     public StreamInterface $content;
-
-    /** @var array<string,string[]|string> $headers  The Request Headers. */
-    public array $headers = [];
-
-    /** @var array<string,mixed> $queryParams The Query Parameters of the request. */
-    public array $queryParams = [];
-
+    /** @var array<string,RequestOption> */
+    private array $requestOptions = [];
     /** @var string $binaryContentType */
-    private static string $binaryContentType = "application/octet-stream";
-
+    private static string $binaryContentType = 'application/octet-stream';
     /** @var string $contentTypeHeader */
-    private static string $contentTypeHeader = "Content-Type";
+    private static string $contentTypeHeader = 'Content-Type';
 
-    /** @var array<RequestOption> Request options to apply to this request. */
-    private array $_requestOptions = [];
+    /** Gets the URI of the request.
+     * @return string
+     */
+    public function getUri(): string {
+        if (!empty($this->uri)) {
+            return $this->uri;
+        }
+        if(array_key_exists(self::$RAW_URL_KEY, $this->pathParameters)
+            && is_string($this->pathParameters[self::$RAW_URL_KEY])) {
+            $this->setUri($this->pathParameters[self::$RAW_URL_KEY]);
+        } else {
+            return (new UriTemplate())->expand($this->urlTemplate, $this->pathParameters);
+        }
+        return $this->uri;
+    }
 
     /**
-     * Sets the request body to be binary stream.
-     * @param StreamInterface $value The Binary stream
+     * Sets the URI of the request.
+     */
+    public function setUri(string $uri): void {
+        if (empty($uri)) {
+            throw new InvalidArgumentException('$uri cannot be empty.');
+        }
+        $this->uri = $uri;
+        $this->queryParameters = [];
+        $this->pathParameters = [];
+    }
+
+    /**
+     * Gets the request options for this request. Options are unique by type. If an option of the same type is added twice, the last one wins.
+     * @return array<string,RequestOption> the request options for this request.
+     */
+    public function getRequestOptions(): array {
+        return $this->requestOptions;
+    }
+
+    /**
+     * Adds request option(s) to this request.
+     * @param RequestOption ...$options the request option to add.
+     */
+    public function addRequestOptions(RequestOption ...$options): void {
+        if (empty($options)) {
+            return;
+        }
+        foreach ($options as $option) {
+            $this->requestOptions[get_class($option)] = $option;
+        }
+    }
+
+    /**
+     * Removes request option(s) from this request.
+     * @param RequestOption ...$options the request option to remove.
+     */
+    public function removeRequestOptions(RequestOption ...$options): void {
+        foreach ($options as $option) {
+            unset($this->requestOptions[get_class($option)]);
+        }
+    }
+
+    /**
+     * Sets the request body to be a binary stream.
+     * @param StreamInterface $value the binary stream
      */
     public function setStreamContent(StreamInterface $value): void {
         $this->content = $value;
@@ -50,115 +107,28 @@ class RequestInformation {
     }
 
     /**
-     * @param RequestAdapter $requestAdapter
-     * @param string $contentType
-     * @param Parsable ...$values
+     * Sets the request body from a model with the specified content type.
+     * @param RequestAdapter $requestAdapter The adapter service to get the serialization writer from.
+     * @param string $contentType the content type.
+     * @param Parsable ...$values the models.
      */
     public function setContentFromParsable(RequestAdapter $requestAdapter, string $contentType, Parsable ...$values): void {
-        /** @var array<Parsable> $newValues */
-        $newValues = [];
-
-        if (empty($contentType)) {
-            throw new InvalidArgumentException('$contentType cannot be empty.');
-        }
-        foreach ($values as $value) {
-            $newValues []= $value;
-        }
-        if(count($newValues) === 0) {
-            throw new InvalidArgumentException('$values cannot be empty');
+        if (empty($values)) {
+            throw new InvalidArgumentException('$values cannot be empty.');
         }
 
-        $values = array_values($newValues);
         try {
-            $writer = $requestAdapter->getSerializationWriterFactory()
-                               ->getSerializationWriter($contentType);
+            $writer = $requestAdapter->getSerializationWriterFactory()->getSerializationWriter($contentType);
             $this->headers[self::$contentTypeHeader] = $contentType;
 
-            if(count($values) === 1){
+            if (count($this->headers) === 1) {
                 $writer->writeObjectValue(null, $values[0]);
             } else {
                 $writer->writeCollectionOfObjectValues(null, $values);
             }
-
-        } catch (RuntimeException $ex) {
-            throw new RuntimeException('Could not serialize payload ', 0, $ex);
+            $this->content = $writer->getSerializedContent();
+        } catch (Exception $ex) {
+            throw new RuntimeException('could not serialize payload.', 1, $ex);
         }
-    }
-
-    /**
-     * Sets a request URI from the given string
-     * @param string $uriString the string to use to construct the URI.
-     */
-    public function setUriFromString(string $uriString): void {
-        $this->uri = http_build_url(parse_url($uriString));
-
-        if (!$this->uri){
-            throw new RuntimeException;
-        }
-    }
-
-    /**
-     * Sets the URI of the request.
-     * @param string|null $currentPath the current path (scheme, host, port, path, query parameters) of the request.
-     * @param string|null $pathSegment the segment to append to the current path.
-     * @param bool $isRawUri whether the path segment is a raw url. When true, the segment is not happened and the current path is parsed for query parameters.
-     */
-    public function setUri(?string $currentPath, ?string $pathSegment, bool $isRawUri): void {
-        if ($isRawUri) {
-            if ($currentPath === null || empty(trim($currentPath))) {
-                throw new InvalidArgumentException('$currentPath cannot be null or empty');
-            }
-
-            $urls = parse_url($currentPath);
-
-            if (!$urls) {
-                throw new InvalidArgumentException('Invalid url provided');
-            }
-            $schemeHostAndPath = $urls['scheme'] . '://'.$urls['host'] . $urls['path'];
-
-            $requestParameters = [];
-
-            if (array_key_exists('query', $urls)) {
-                parse_str($urls['query'], $requestParameters);
-            }
-            foreach ($requestParameters as $requestParameter => $requestParameterValue) {
-                if ($requestParameter !== null && !empty(trim($requestParameter))) {
-                    $this->queryParams[$requestParameter] = $requestParameterValue;
-                }
-            }
-            $this->setUriFromString($schemeHostAndPath);
-
-        } else {
-            $this->setUriFromString($currentPath . $pathSegment);
-        }
-    }
-
-    /**
-     * Removes middleware options from this request
-     * @param RequestOption ...$options The middleware options to remove.
-     */
-    public function removeRequestOptions(RequestOption ...$options): void {
-        foreach ($options as $middlewareOption) {
-            unset($this->_requestOptions[get_class($middlewareOption)]);
-        }
-    }
-
-    /**
-     * Adds a middleware option to this request.
-     * @param RequestOption ...$options The middleware options to add.
-     */
-    public function addRequestOptions(RequestOption ...$options): void {
-        foreach ($options as $requestOption) {
-            $this->_requestOptions[get_class($requestOption)] = $requestOption;
-        }
-    }
-
-    /**
-     * Gets the middleware options for this request. Options are unique by type
-     * If an option of the same type is added twice, the last one wins.
-     * @return array<RequestOption> The middleware options in this request.
-     */
-    public function getRequestOptions(): array {
-        return $this->_requestOptions;
     }
 }
