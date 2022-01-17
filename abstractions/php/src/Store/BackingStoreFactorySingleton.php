@@ -9,7 +9,7 @@ abstract class BackingStoreFactorySingleton
      * The backing store factory singleton instance.
      * @var BackingStoreFactory|null
      */
-    public static ?BackingStoreFactory $instance = null;
+    private static ?BackingStoreFactory $instance = null;
 
     /**
      * We use the getter method since PHP doesn't support instantiating an instance

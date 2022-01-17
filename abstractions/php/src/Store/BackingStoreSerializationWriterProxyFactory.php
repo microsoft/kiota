@@ -17,27 +17,29 @@ class BackingStoreSerializationWriterProxyFactory extends SerializationWriterPro
      */
     public function __construct(SerializationWriterFactory $concrete){
         parent::__construct($concrete,
-            function (Parsable $x) {
-                if (is_a($x, BackedModel::class)) {
-                    $backedModel = $x;
+            static function (Parsable $model) {
+                if (is_a($model, BackedModel::class)) {
+                    $backedModel = $model;
                     $backingStore = $backedModel->getBackingStore();
                     if ($backingStore !== null) {
                         $backingStore->setReturnOnlyChangedValues(true);
                     }
                 }
             },
-            function (Parsable $x) {
-                if (is_a($x, BackedModel::class)) {
-                    $backedModel = $x;
+            static function (Parsable $model) {
+                if (is_a($model, BackedModel::class)) {
+                    $backedModel = $model;
                     $backingStore = $backedModel->getBackingStore();
 
-                    $backingStore->setReturnOnlyChangedValues(false);
-                    $backingStore->setIsInitializationCompleted(true);
+                    if ($backingStore !== null) {
+                        $backingStore->setReturnOnlyChangedValues(false);
+                        $backingStore->setIsInitializationCompleted(true);
+                    }
                 }
             },
-            function (Parsable $x, SerializationWriter $y) {
-                if (is_a($x, BackedModel::class)) {
-                    $backedModel = $x;
+            static function (Parsable $model, SerializationWriter $serializationWriter) {
+                if (is_a($model, BackedModel::class)) {
+                    $backedModel = $model;
 
                     $backingStore = $backedModel->getBackingStore();
 
@@ -45,7 +47,7 @@ class BackingStoreSerializationWriterProxyFactory extends SerializationWriterPro
                         $keys = $backingStore->enumerateKeysForValuesChangedToNull();
 
                         foreach ($keys as $key) {
-                            $y->writeNullValue($key);
+                            $serializationWriter->writeNullValue($key);
                         }
                     }
                 }

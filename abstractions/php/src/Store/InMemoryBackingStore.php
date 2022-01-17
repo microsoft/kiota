@@ -23,10 +23,7 @@ class InMemoryBackingStore implements BackingStore
      */
     public function get(string $key) {
 
-        if (!array_key_exists($key, $this->store)) {
-            return null;
-        }
-        return $this->store[$key];
+        return $this->store[$key] ?? null;
     }
 
     /**

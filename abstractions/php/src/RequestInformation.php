@@ -41,7 +41,7 @@ class RequestInformation {
     /** Gets the URI of the request.
      * @return string
      */
-    public function getUri(): string {
+    public function getUri(): ?string {
         if (!empty($this->uri)) {
             return $this->uri;
         }

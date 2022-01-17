@@ -13,10 +13,10 @@ abstract class BaseBearerTokenAuthenticationProvider implements AuthenticationPr
      */
     private static string $authorizationHeaderKey = "Authorization";
     /**
-     * @param RequestInformation|null $request
+     * @param RequestInformation $request
      * @return Promise
      */
-    public function authenticateRequest(?RequestInformation $request): Promise {
+    public function authenticateRequest(RequestInformation $request): Promise {
         if (!array_key_exists(self::$authorizationHeaderKey, $request->headers)) {
             return $this->getAuthorizationToken($request)
                         ->then(function ($token) use($request) {
@@ -34,5 +34,5 @@ abstract class BaseBearerTokenAuthenticationProvider implements AuthenticationPr
      * @param RequestInformation $request
      * @return Promise
      */
-    public abstract function getAuthorizationToken(RequestInformation $request): Promise;
+    abstract public function getAuthorizationToken(RequestInformation $request): Promise;
 }

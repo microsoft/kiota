@@ -1,8 +1,6 @@
 <?php
 namespace Microsoft\Kiota\Abstractions\Serialization;
 
-use Closure;
-
 /**
  * Proxy factory that allows the composition of before and after callbacks on existing factories.
  * @method onBefore(Parsable $x)

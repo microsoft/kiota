@@ -78,7 +78,7 @@ class ApiClientBuilder {
      * @param ParseNodeFactoryRegistry $registry
      */
     private static function enableBackingStoreForParseNodeRegistry(ParseNodeFactoryRegistry $registry): void {
-        foreach (array_values($registry->contentTypeAssociatedFactories) as $factory){
+        foreach ($registry->contentTypeAssociatedFactories as $factory){
             if (!is_a($factory, BackingStoreParseNodeFactory::class) && !is_a($factory, ParseNodeFactoryRegistry::class)) {
                 $registry->contentTypeAssociatedFactories[$factory->getValidContentType()] = new BackingStoreParseNodeFactory($factory);
             }
