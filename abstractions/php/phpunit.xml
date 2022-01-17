@@ -14,4 +14,7 @@
             <html outputDirectory="coverage"/>
         </report>
     </coverage>
+    <php>
+        <ini name="memory_limit" value="500M" />
+    </php>
 </phpunit>
