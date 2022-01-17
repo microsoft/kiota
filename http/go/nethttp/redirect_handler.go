@@ -79,8 +79,8 @@ const permanentRedirect = 308
 const locationHeader = "Location"
 
 // Intercept implements the interface and evaluates whether to follow a redirect response.
-func (middleware RedirectHandler) Intercept(pipeline Pipeline, req *nethttp.Request) (*nethttp.Response, error) {
-	response, err := pipeline.Next(req)
+func (middleware RedirectHandler) Intercept(pipeline Pipeline, middlewareIndex int, req *nethttp.Request) (*nethttp.Response, error) {
+	response, err := pipeline.Next(req, middlewareIndex)
 	if err != nil {
 		return response, err
 	}
@@ -88,10 +88,10 @@ func (middleware RedirectHandler) Intercept(pipeline Pipeline, req *nethttp.Requ
 	if !ok {
 		reqOption = &middleware.options
 	}
-	return middleware.redirectRequest(pipeline, reqOption, req, response, 0)
+	return middleware.redirectRequest(pipeline, middlewareIndex, reqOption, req, response, 0)
 }
 
-func (middleware RedirectHandler) redirectRequest(pipeline Pipeline, reqOption redirectHandlerOptionsInt, req *nethttp.Request, response *nethttp.Response, redirectCount int) (*nethttp.Response, error) {
+func (middleware RedirectHandler) redirectRequest(pipeline Pipeline, middlewareIndex int, reqOption redirectHandlerOptionsInt, req *nethttp.Request, response *nethttp.Response, redirectCount int) (*nethttp.Response, error) {
 	shouldRedirect := reqOption.GetShouldRedirect() != nil && reqOption.GetShouldRedirect()(req, response) || reqOption.GetShouldRedirect() == nil
 	if middleware.isRedirectResponse(response) &&
 		redirectCount < reqOption.GetMaxRedirect() &&
@@ -101,11 +101,11 @@ func (middleware RedirectHandler) redirectRequest(pipeline Pipeline, reqOption r
 		if err != nil {
 			return response, err
 		}
-		result, err := pipeline.Next(redirectRequest)
+		result, err := pipeline.Next(redirectRequest, middlewareIndex)
 		if err != nil {
 			return result, err
 		}
-		return middleware.redirectRequest(pipeline, reqOption, redirectRequest, result, redirectCount)
+		return middleware.redirectRequest(pipeline, middlewareIndex, reqOption, redirectRequest, result, redirectCount)
 	}
 	return response, nil
 }

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.CommandLine;
-using System.CommandLine.Binding;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -56,22 +55,20 @@ namespace Kiota {
                 serializerOption,
                 deserializerOption,
             };
-            command.Handler = HandlerDescriptor.FromDelegate(new HandleCommandCallDel(HandleCommandCall)).GetCommandHandler();
+            command.SetHandler<string, GenerationLanguage, string, bool, string, LogLevel, string, List<string>, List<string>>(HandleCommandCall, outputOption, languageOption, descriptionOption, backingStoreOption, classOption, logLevelOption, namespaceOption, serializerOption, deserializerOption);
             return command;
         }
         private void AssignIfNotNullOrEmpty(string input, Action<GenerationConfiguration, string> assignment) {
             if (!string.IsNullOrEmpty(input))
                 assignment.Invoke(Configuration, input);
         }
-        private delegate Task HandleCommandCallDel(string output, GenerationLanguage? language, string openapi, bool backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer, List<string> deserializer);
-        private async Task HandleCommandCall(string output, GenerationLanguage? language, string openapi, bool backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer, List<string> deserializer) {
+        private async Task HandleCommandCall(string output, GenerationLanguage language, string openapi, bool backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer, List<string> deserializer) {
             AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
             AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
             AssignIfNotNullOrEmpty(classname, (c, s) => c.ClientClassName = s);
             AssignIfNotNullOrEmpty(namespacename, (c, s) => c.ClientNamespaceName = s);
             Configuration.UsesBackingStore = backingstore;
-            if (language.HasValue)
-                Configuration.Language = language.Value;
+            Configuration.Language = language;
             if(serializer?.Any() ?? false)
                 Configuration.Serializers.AddRange(serializer.Select(x => x.TrimQuotes()));
             if(deserializer?.Any() ?? false)

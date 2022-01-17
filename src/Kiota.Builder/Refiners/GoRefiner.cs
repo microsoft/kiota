@@ -40,7 +40,10 @@ namespace Kiota.Builder.Refiners {
                 generatedCode,
                 new GoReservedNamesProvider(),
                 x => $"{x}_escaped",
-                shouldReplaceCallback: x => x is not CodeProperty currentProp || currentProp.Access != AccessModifier.Public); // Go reserved keywords are all lowercase and public properties are uppercased
+                shouldReplaceCallback: x => x is not CodeProperty currentProp || 
+                                            !(currentProp.Parent is CodeClass parentClass &&
+                                            parentClass.IsOfKind(CodeClassKind.QueryParameters, CodeClassKind.ParameterSet) &&
+                                            currentProp.Access == AccessModifier.Public)); // Go reserved keywords are all lowercase and public properties are uppercased when we don't provide accessors (models)
             AddPropertiesAndMethodTypesImports(
                 generatedCode,
                 true,
