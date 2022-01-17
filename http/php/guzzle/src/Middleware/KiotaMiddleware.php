@@ -10,6 +10,7 @@ namespace Microsoft\Kiota\Http\Middleware;
 
 use Microsoft\Kiota\Http\Middleware\Options\CompressionOption;
 use Microsoft\Kiota\Http\Middleware\Options\RetryOption;
+use Microsoft\Kiota\Http\Middleware\Options\TelemetryOption;
 
 /**
  * Class KiotaMiddleware
@@ -48,6 +49,19 @@ class KiotaMiddleware
     {
         return static function (callable $handler) use ($compressionOption): CompressionHandler {
             return new CompressionHandler($handler, $compressionOption);
+        };
+    }
+
+    /**
+     * Middleware that allows configuration of a RequestInterface with telemetry data
+     *
+     * @param TelemetryOption|null $telemetryOption
+     * @return callable
+     */
+    public static function telemetry(?TelemetryOption $telemetryOption = null): callable
+    {
+        return static function (callable $handler) use ($telemetryOption): TelemetryHandler {
+            return new TelemetryHandler($handler, $telemetryOption);
         };
     }
 }
