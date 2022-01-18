@@ -15,7 +15,7 @@ class BackingStoreParseNodeFactory extends ParseNodeProxyFactory{
      */
     public function __construct(ParseNodeFactory $concrete) {
         parent::__construct($concrete,
-           function ($x) {
+           static function ($x) {
              if (is_a($x, BackedModel::class)) {
                  $backedModel = $x;
                  $backingStore = $backedModel->getBackingStore();
@@ -25,7 +25,7 @@ class BackingStoreParseNodeFactory extends ParseNodeProxyFactory{
                  }
              }
            },
-           function ($x) {
+           static function ($x) {
                if (is_a($x, BackedModel::class)) {
                    $backedModel = $x;
                    $backingStore = $backedModel->getBackingStore();

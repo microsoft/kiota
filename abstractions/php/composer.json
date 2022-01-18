@@ -23,6 +23,7 @@
     }
   },
   "require": {
+      "ramsey/uuid": "^3 || ^4",
       "php": "^7.4 || ^8.0",
       "php-http/promise": "^1.1.0",
       "php-http/message-factory": "^1.0.2",

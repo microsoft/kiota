@@ -39,9 +39,9 @@ interface BackingStore {
      * Creates a subscription to any data change happening.
      * @param callable $callback Callback to be invoked on data changes where the first parameter is the data key, the second the previous value and the third the new value.
      * @param string|null $subscriptionId
-     * @return string|null The subscription ID to use when removing the subscription
+     * @return string The subscription ID to use when removing the subscription
      */
-    public function subscribe(callable $callback, ?string $subscriptionId = null): ?string;
+    public function subscribe(callable $callback, ?string $subscriptionId = null): string;
 
     /**
      * Removes a subscription from the store based on its subscription id.

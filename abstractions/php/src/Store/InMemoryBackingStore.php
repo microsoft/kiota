@@ -2,7 +2,7 @@
 
 namespace Microsoft\Kiota\Abstractions\Store;
 
-use Closure;
+use Ramsey\Uuid\Uuid;
 
 class InMemoryBackingStore implements BackingStore
 {
@@ -22,8 +22,8 @@ class InMemoryBackingStore implements BackingStore
      * @return mixed
      */
     public function get(string $key) {
-
-        return $this->store[$key] ?? null;
+        $wrapper =  $this->store[$key] ?? null;
+        return $this->getValueFromWrapper($wrapper);
     }
 
     /**
@@ -32,23 +32,42 @@ class InMemoryBackingStore implements BackingStore
      */
     public function set(string $key, $value): void
     {
-        $this->store[$key] = $value;
+        $valueToAdd = [$this->isInitializationCompleted, $value];
+        $this->store[$key] = $valueToAdd;
+        $oldValue = $this->store[$key];
+
+        foreach ($this->subscriptionStore as $callback) {
+            $callback($key, $oldValue[1], $value);
+        }
     }
 
     /**
      * @return array<string,mixed>
      */
     public function enumerate(): array {
-        return [];
+        $result = [];
+
+        foreach ($this->store as $key => $value) {
+            $val = $this->getValueFromWrapper($value);
+
+            if ($val === null) {
+                $result[$key] = $value[1];
+            }
+        }
+        return $result;
     }
 
     /**
      * @param callable $callback
      * @param string|null $subscriptionId
-     * @return string|null
+     * @return string
      */
-    public function subscribe(callable $callback, ?string $subscriptionId = null): ?string {
-        return '';
+    public function subscribe(callable $callback, ?string $subscriptionId = null): string {
+        if ($subscriptionId === null) {
+            $subscriptionId = Uuid::uuid4()->toString();
+        }
+        $this->subscriptionStore[$subscriptionId] = $callback;
+        return $subscriptionId;
     }
 
     /**
@@ -105,5 +124,20 @@ class InMemoryBackingStore implements BackingStore
             }
         }
         return $result;
+    }
+
+    /**
+     * @param array<mixed>|null $wrapper
+     * @return mixed|null
+     */
+    public function getValueFromWrapper(?array $wrapper) {
+        if ($wrapper === null) {
+            return null;
+        }
+        $hasChangedValue = $wrapper[0];
+        if (!$this->returnOnlyChangedValues || $hasChangedValue) {
+            return $wrapper[1];
+        }
+        return null;
     }
 }

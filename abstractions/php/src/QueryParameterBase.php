@@ -26,9 +26,4 @@ abstract class QueryParameterBase {
             $target[$classPropertyName] = $classPropertyValue;
         }
     }
-
-    public function getClass(): string {
-        return get_class($this);
-    }
-
 }
