@@ -17,7 +17,7 @@ class RequestInformationTest extends TestCase {
             'baseUrl' => 'https://google.com',
             'user' => 'silas',
         ];
-        $queryParameters = ['startDate' => (new DateTime('now'))->format('Y-m-d')];
+        $queryParameters = ['startDate' => (new DateTime('2022-01-17'))->format('Y-m-d')];
         $this->requestInformation->urlTemplate = '{+baseUrl}/{user}/mails/?startDate=\'{startDate}\'';
         $this->requestInformation->pathParameters = $pathParameters;
         $this->requestInformation->queryParameters = $queryParameters;
