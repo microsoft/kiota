@@ -306,10 +306,10 @@ public class GoRefiner : CommonLanguageRefiner
                                             IsExternal = true,
                                         },
                                     })},
-        {"TimeSpan", ("Duration", new CodeUsing {
-                                        Name = "Duration",
+        {"TimeSpan", ("ISODuration", new CodeUsing {
+                                        Name = "ISODuration",
                                         Declaration = new CodeType {
-                                            Name = "time",
+                                            Name = "github.com/microsoft/kiota/abstractions/go/serialization",
                                             IsExternal = true,
                                         },
                                     })},

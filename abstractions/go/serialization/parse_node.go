@@ -32,8 +32,8 @@ type ParseNode interface {
 	GetInt64Value() (*int64, error)
 	// GetTimeValue returns a Time value from the nodes.
 	GetTimeValue() (*time.Time, error)
-	// GetDurationValue returns a Duration value from the nodes.
-	GetDurationValue() (*time.Duration, error)
+	// GetISODurationValue returns a ISODuration value from the nodes.
+	GetISODurationValue() (*ISODuration, error)
 	// GetTimeOnlyValue returns a TimeOnly value from the nodes.
 	GetTimeOnlyValue() (*TimeOnly, error)
 	// GetDateOnlyValue returns a DateOnly value from the nodes.

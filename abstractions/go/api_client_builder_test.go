@@ -35,7 +35,7 @@ func (*mockSerializer) WriteByteArrayValue(key string, value []byte) error {
 func (*mockSerializer) WriteTimeValue(key string, value *time.Time) error {
 	return nil
 }
-func (*mockSerializer) WriteDurationValue(key string, value *time.Duration) error {
+func (*mockSerializer) WriteISODurationValue(key string, value *serialization.ISODuration) error {
 	return nil
 }
 func (*mockSerializer) WriteDateOnlyValue(key string, value *serialization.DateOnly) error {
@@ -74,7 +74,7 @@ func (*mockSerializer) WriteCollectionOfFloat64Values(key string, collection []f
 func (*mockSerializer) WriteCollectionOfTimeValues(key string, collection []time.Time) error {
 	return nil
 }
-func (*mockSerializer) WriteCollectionOfDurationValues(key string, collection []time.Duration) error {
+func (*mockSerializer) WriteCollectionOfISODurationValues(key string, collection []serialization.ISODuration) error {
 	return nil
 }
 func (*mockSerializer) WriteCollectionOfDateOnlyValues(key string, collection []serialization.DateOnly) error {

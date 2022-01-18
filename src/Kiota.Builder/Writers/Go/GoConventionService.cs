@@ -69,9 +69,8 @@ public class GoConventionService : CommonLanguageConventionService
             "guid" when !includeImportSymbol => "UUID",
             "DateTimeOffset" or "Time" when includeImportSymbol => "i336074805fc853987abe6f7fe3ad97a6a6f3077a16391fec744f671a015fbd7e.Time",
             "DateTimeOffset" or "Time" when !includeImportSymbol => "Time",
-            "DateOnly" or "TimeOnly" when includeImportSymbol => $"{SerializationHash}.{type.Name}",
-            "DateOnly" or "TimeOnly" or "Duration" when !includeImportSymbol => type.Name,
-            "Duration" when includeImportSymbol => "i336074805fc853987abe6f7fe3ad97a6a6f3077a16391fec744f671a015fbd7e.Duration",
+            "DateOnly" or "TimeOnly" or "ISODuration" when includeImportSymbol => $"{SerializationHash}.{type.Name}",
+            "DateOnly" or "TimeOnly" or "ISODuration" when !includeImportSymbol => type.Name,
             "binary" => "[]byte",
             "string" or "float32" or "float64" or "int32" or "int64" => type.Name,
             "String" or "Int64" or "Int32" or "Float32" or "Float64" => type.Name.ToFirstCharacterLowerCase(), //casing hack
@@ -82,7 +81,7 @@ public class GoConventionService : CommonLanguageConventionService
         return typeName.TrimCollectionAndPointerSymbols() switch {
             "void" or "string" or "float" or "integer" or "long" or "double" or "boolean" or "guid" or "DateTimeOffset"
             or "bool" or "int32" or "int64" or "float32" or "float64" or "UUID" or "Time" or "decimal" or "TimeOnly"
-            or "DateOnly" or "Duration" => true,
+            or "DateOnly" or "ISODuration" => true,
             _ => false,
         };
     }
@@ -163,7 +162,7 @@ public class GoConventionService : CommonLanguageConventionService
             "integer" or "int32" => $"{StrConvHash}.FormatInt(int64({reference}), 10)",
             "long" => $"{StrConvHash}.FormatInt({reference}, 10)",
             "float" or "double" or "decimal" or "float64" or "float32" => $"{StrConvHash}.FormatFloat({reference}, 'E', -1, 64)",
-            "DateTimeOffset" or "Time" or "Duration" or "TimeSpan" or "TimeOnly" or "DateOnly" => $"({reference}).String()",
+            "DateTimeOffset" or "Time" or "ISODuration" or "TimeSpan" or "TimeOnly" or "DateOnly" => $"({reference}).String()",
             _ => reference,
         };
     }

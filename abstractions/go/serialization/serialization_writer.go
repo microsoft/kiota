@@ -30,8 +30,8 @@ type SerializationWriter interface {
 	WriteTimeOnlyValue(key string, value *TimeOnly) error
 	// WriteDateOnlyValue writes the date part of a Time value to underlying the byte array.
 	WriteDateOnlyValue(key string, value *DateOnly) error
-	// WriteDurationValue writes a Duration value to underlying the byte array.
-	WriteDurationValue(key string, value *time.Duration) error
+	// WriteISODurationValue writes a ISODuration value to underlying the byte array.
+	WriteISODurationValue(key string, value *ISODuration) error
 	// WriteUUIDValue writes a UUID value to underlying the byte array.
 	WriteUUIDValue(key string, value *uuid.UUID) error
 	// WriteObjectValue writes a Parsable value to underlying the byte array.
@@ -52,8 +52,8 @@ type SerializationWriter interface {
 	WriteCollectionOfFloat64Values(key string, collection []float64) error
 	// WriteCollectionOfTimeValues writes a collection of Time values to underlying the byte array.
 	WriteCollectionOfTimeValues(key string, collection []time.Time) error
-	// WriteCollectionOfDurationValues writes a collection of Duration values to underlying the byte array.
-	WriteCollectionOfDurationValues(key string, collection []time.Duration) error
+	// WriteCollectionOfISODurationValues writes a collection of ISODuration values to underlying the byte array.
+	WriteCollectionOfISODurationValues(key string, collection []ISODuration) error
 	// WriteCollectionOfDateOnlyValues writes a collection of DateOnly values to underlying the byte array.
 	WriteCollectionOfDateOnlyValues(key string, collection []DateOnly) error
 	// WriteCollectionOfTimeOnlyValues writes a collection of TimeOnly values to underlying the byte array.

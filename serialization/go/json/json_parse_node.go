@@ -244,8 +244,8 @@ func (n *JsonParseNode) getPrimitiveValue(targetType string) (interface{}, error
 		return n.GetTimeOnlyValue()
 	case "dateonly":
 		return n.GetDateOnlyValue()
-	case "duration":
-		return n.GetDurationValue()
+	case "isoduration":
+		return n.GetISODurationValue()
 	case "uuid":
 		return n.GetUUIDValue()
 	case "base64":
@@ -354,8 +354,8 @@ func (n *JsonParseNode) GetTimeValue() (*time.Time, error) {
 	return &parsed, err
 }
 
-// GetDurationValue returns a Duration value from the nodes.
-func (n *JsonParseNode) GetDurationValue() (*time.Duration, error) {
+// GetISODurationValue returns a ISODuration value from the nodes.
+func (n *JsonParseNode) GetISODurationValue() (*absser.ISODuration, error) {
 	v, err := n.GetStringValue()
 	if err != nil {
 		return nil, err
@@ -363,8 +363,7 @@ func (n *JsonParseNode) GetDurationValue() (*time.Duration, error) {
 	if v == nil {
 		return nil, nil
 	}
-	parsed, err := time.ParseDuration(*v)
-	return &parsed, err
+	return absser.ParseISODuration(*v)
 }
 
 // GetTimeOnlyValue returns a TimeOnly value from the nodes.

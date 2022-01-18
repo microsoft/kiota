@@ -141,8 +141,8 @@ func (w *JsonSerializationWriter) WriteTimeValue(key string, value *time.Time) e
 	return nil
 }
 
-// WriteDurationValue writes a Duration value to underlying the byte array.
-func (w *JsonSerializationWriter) WriteDurationValue(key string, value *time.Duration) error {
+// WriteISODurationValue writes a ISODuration value to underlying the byte array.
+func (w *JsonSerializationWriter) WriteISODurationValue(key string, value *absser.ISODuration) error {
 	if key != "" && value != nil {
 		w.writePropertyName(key)
 	}
@@ -395,15 +395,15 @@ func (w *JsonSerializationWriter) WriteCollectionOfTimeValues(key string, collec
 	return nil
 }
 
-// WriteCollectionOfDurationValues writes a collection of Duration values to underlying the byte array.
-func (w *JsonSerializationWriter) WriteCollectionOfDurationValues(key string, collection []time.Duration) error {
+// WriteCollectionOfISODurationValues writes a collection of ISODuration values to underlying the byte array.
+func (w *JsonSerializationWriter) WriteCollectionOfISODurationValues(key string, collection []absser.ISODuration) error {
 	if collection != nil { // empty collections are meaningful
 		if key != "" {
 			w.writePropertyName(key)
 		}
 		w.writeArrayStart()
 		for _, item := range collection {
-			err := w.WriteDurationValue("", &item)
+			err := w.WriteISODurationValue("", &item)
 			if err != nil {
 				return err
 			}
@@ -600,9 +600,9 @@ func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface
 				}
 				continue
 			}
-			dc, ok := value.([]time.Duration)
+			dc, ok := value.([]absser.ISODuration)
 			if ok {
-				err := w.WriteCollectionOfDurationValues(key, dc)
+				err := w.WriteCollectionOfISODurationValues(key, dc)
 				if err != nil {
 					return err
 				}
@@ -688,9 +688,9 @@ func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface
 				}
 				continue
 			}
-			dv, ok := value.(*time.Duration)
+			dv, ok := value.(*absser.ISODuration)
 			if ok {
-				err := w.WriteDurationValue(key, dv)
+				err := w.WriteISODurationValue(key, dv)
 				if err != nil {
 					return err
 				}
