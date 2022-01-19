@@ -2,10 +2,18 @@
     "name": "microsoft/kiota-http-guzzle",
     "description": "Kiota Request Adapter implementation",
     "type": "library",
+	"repositories": [
+		{
+			"type": "path",
+			"url": "../../../abstractions/php",
+			"only": ["microsoft/kiota-abstractions"]
+		}
+	],
 	"require": {
 		"php": "^7.4 | ^8.0",
         "php-http/guzzle7-adapter": "^1.0",
         "php-http/httplug": "^2.2",
+		"microsoft/kiota-abstractions": "dev-main",
 		"ext-zlib": "*"
 	},
     "require-dev": {
