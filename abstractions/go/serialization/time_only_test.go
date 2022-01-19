@@ -30,5 +30,5 @@ func TestItDoesntParseAFullDateATimeOnly(t *testing.T) {
 
 func TestItCreateANewTimeOnly(t *testing.T) {
 	dateOnly := NewTimeOnly(time.Date(1, 1, 1, 16, 20, 21, 0, time.UTC))
-	assert.Equal(t, "16:20:21", dateOnly.String())
+	assert.Equal(t, "16:20:21.000000000", dateOnly.String())
 }

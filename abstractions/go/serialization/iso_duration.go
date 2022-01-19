@@ -114,7 +114,7 @@ func (i ISODuration) String() string {
 
 // FromDuration returns an ISODuration from a time.Duration.
 func FromDuration(d time.Duration) *ISODuration {
-	return NewDuration(0, 0, 0, 0, 0, 0, int(d.Milliseconds()))
+	return NewDuration(0, 0, 0, 0, 0, int(d.Truncate(time.Second).Seconds()), int(d.Truncate(time.Millisecond).Milliseconds()))
 }
 
 // ToDuration returns the time.Duration representation of the ISODuration.
