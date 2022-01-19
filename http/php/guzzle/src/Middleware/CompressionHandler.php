@@ -63,8 +63,9 @@ class CompressionHandler
     public function __invoke(RequestInterface $request, array $options): PromiseInterface
     {
         $this->originalRequest = $request; // keep reference in case we have to retry with uncompressed body
-        if (!$this->shouldRetry($options)) {
+        if (!$this->isRetryAttempt($options)) {
             $request = $this->compress($request);
+            $options['curl'] = [\CURLOPT_ENCODING => '']; // Allow curl to add the Accept-Encoding header with all the de-compression methods it supports
         }
         $fn = $this->nextHandler;
         return $fn($request, $options)->then(
@@ -74,12 +75,12 @@ class CompressionHandler
     }
 
     /**
-     * if true, the request is retried with an uncompressed body
+     * Returns true if the request's options indicate it's a retry attempt
      *
      * @param array $options
      * @return bool
      */
-    private function shouldRetry(array $options): bool
+    private function isRetryAttempt(array $options): bool
     {
         return (array_key_exists(self::COMPRESSION_RETRY_ATTEMPT, $options) && $options[self::COMPRESSION_RETRY_ATTEMPT] == 1);
     }
