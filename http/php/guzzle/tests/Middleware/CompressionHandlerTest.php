@@ -94,7 +94,7 @@ class CompressionHandlerTest extends TestCase
     {
         $mockHandler = new MockHandler($mockResponses);
         $handlerStack = new HandlerStack($mockHandler);
-        $handlerStack->push(KiotaMiddleware::compress($compressionOption));
+        $handlerStack->push(KiotaMiddleware::compression($compressionOption));
 
         $guzzleClient = new Client(['handler' => $handlerStack, 'http_errors' => false]);
         return $guzzleClient->get("/", $requestOptions);
