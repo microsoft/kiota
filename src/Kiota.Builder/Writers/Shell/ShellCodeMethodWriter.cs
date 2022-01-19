@@ -122,10 +122,11 @@ namespace Kiota.Builder.Writers.Shell
                 // -h A=b -h
                 // -h A:B,B:C
                 // -h {"A": "B"}
-
+                var availableOptions = new List<string>();
                 foreach (var option in parametersList)
                 {
                     var type = option.Type as CodeType;
+                    var optionName = $"{NormalizeToIdentifier(option.Name)}Option";
                     var optionType = conventions.GetTypeString(option.Type, option);
                     if (option.ParameterKind == CodeParameterKind.RequestBody && type.TypeDefinition is CodeClass) optionType = "string";
 
@@ -152,17 +153,23 @@ namespace Kiota.Builder.Writers.Shell
                         optionBuilder.Append($", description: \"{option.Description}\"");
                     }
 
-                    optionBuilder.Append(')');
-                    writer.WriteLine($"var {NormalizeToIdentifier(option.Name)}Option = {optionBuilder};");
+                    optionBuilder.Append(") {");
+                    var strValue = $"{optionBuilder}";
+                    writer.WriteLine($"var {optionName} = {strValue}");
+                    writer.IncreaseIndent();
                     var isRequired = !option.Optional || option.IsOfKind(CodeParameterKind.Path);
-                    writer.WriteLine($"{NormalizeToIdentifier(option.Name)}Option.IsRequired = {isRequired.ToString().ToFirstCharacterLowerCase()};");
 
                     if (option.Type.IsCollection)
                     {
                         var arity = isRequired ? "OneOrMore" : "ZeroOrMore";
-                        writer.WriteLine($"{NormalizeToIdentifier(option.Name)}Option.Arity = ArgumentArity.{arity};");
+                        writer.WriteLine($"Arity = ArgumentArity.{arity}");
                     }
-                    writer.WriteLine($"command.AddOption({NormalizeToIdentifier(option.Name)}Option);");
+
+                    writer.DecreaseIndent();
+                    writer.WriteLine("};");
+                    writer.WriteLine($"{optionName}.IsRequired = {isRequired.ToString().ToFirstCharacterLowerCase()};");
+                    writer.WriteLine($"command.AddOption({optionName});");
+                    availableOptions.Add(optionName);
                 }
 
                 var paramTypes = parametersList.Select(x =>
@@ -177,18 +184,23 @@ namespace Kiota.Builder.Writers.Shell
                     }
 
                     return conventions.GetTypeString(x.Type, x);
-                }).Aggregate(string.Empty, (x, y) => string.IsNullOrEmpty(x) ? y : $"{x}, {y}");
-                var paramNames = parametersList.Select(x => NormalizeToIdentifier(x.Name)).Aggregate(string.Empty, (x, y) => string.IsNullOrEmpty(x) ? y : $"{x}, {y}");
+                }).ToList();
+                var paramNames = parametersList.Select(x => NormalizeToIdentifier(x.Name)).ToList();
                 var isHandlerVoid = conventions.VoidTypeName.Equals(originalMethod.ReturnType.Name, StringComparison.OrdinalIgnoreCase);
                 returnType = conventions.GetTypeString(originalMethod.ReturnType, originalMethod);
                 if (conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
                 {
-                    writer.WriteLine("command.AddOption(new Option<FileInfo>(\"--output\"));");
-                    paramTypes = string.IsNullOrWhiteSpace(paramTypes) ? fileParamType : string.Join(", ", paramTypes, fileParamType);
-                    paramNames = string.IsNullOrWhiteSpace(paramNames) ? fileParamName : string.Join(", ", paramNames, fileParamName);
+                    var fileOptionName = "outputOption";
+                    writer.WriteLine($"var {fileOptionName} = new Option<FileInfo>(\"--output\");");
+                    writer.WriteLine($"command.AddOption({fileOptionName});");
+                    paramTypes.Add(fileParamType);
+                    paramNames.Add(fileParamName);
+                    availableOptions.Add(fileOptionName);
                 }
-                var genericParameter = paramTypes.Length > 0 ? string.Join("", "<", paramTypes, ">") : "";
-                writer.WriteLine($"command.Handler = CommandHandler.Create{genericParameter}(async ({paramNames}) => {{");
+                var zipped = paramTypes.Zip(paramNames);
+                var projected = zipped.Select((x, y) => $"{x.First} {x.Second}");
+                var handlerParams = string.Join(", ", projected);
+                writer.WriteLine($"command.SetHandler(async ({handlerParams}) => {{");
                 writer.IncreaseIndent();
                 WriteCommandHandlerBody(originalMethod, requestParams, isHandlerVoid, returnType, writer);
                 // Get request generator method. To call it + get path & query parameters see WriteRequestExecutorBody in CSharp
@@ -249,7 +261,11 @@ namespace Kiota.Builder.Writers.Shell
                     
                 }
                 writer.DecreaseIndent();
-                writer.WriteLine("});");
+                var delimiter = "";
+                if (availableOptions.Any()) {
+                    delimiter = ", ";
+                }
+                writer.WriteLine($"}}{delimiter}{string.Join(", ", availableOptions)});");
                 writer.WriteLine("return command;");
             }
         }
