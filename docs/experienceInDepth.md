@@ -144,7 +144,6 @@ components:
 
 ## Hetreogenous collection
 
-```yaml
 ## Filtered collection
 
 ```yaml
