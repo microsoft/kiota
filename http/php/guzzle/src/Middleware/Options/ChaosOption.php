@@ -28,7 +28,7 @@ class ChaosOption
     /**
      * @var int Threshold below which a random $chaosResponse is returned
      */
-    private int $chaosPercentage = 10;
+    private int $chaosPercentage;
 
     /**
      * @var array set of chaos ResponseInterfaces or callables(RequestInterface, array):ResponseInterface that are returned/executed at random.
