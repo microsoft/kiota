@@ -32,7 +32,7 @@
     "registry": "https://npm.pkg.github.com"
   },
   "dependencies": {
-    "uri-template-lite": "^20.5.0",
+    "uri-template-lite": "^22.1.0",
     "uuid": "^8.3.2",
     "web-streams-polyfill": "^3.2.0"
   }
