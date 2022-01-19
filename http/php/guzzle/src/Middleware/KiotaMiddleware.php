@@ -8,6 +8,7 @@
 
 namespace Microsoft\Kiota\Http\Middleware;
 
+use Microsoft\Kiota\Http\Middleware\Options\CompressionOption;
 use Microsoft\Kiota\Http\Middleware\Options\RetryOption;
 
 /**
@@ -33,6 +34,20 @@ class KiotaMiddleware
     {
         return static function (callable $handler) use ($retryOption) : RetryHandler {
             return new RetryHandler($retryOption, $handler);
+        };
+    }
+
+    /**
+     * Middleware that compresses a request body based on compression callbacks provided in {@link CompressionOption} and retries
+     * the initial request with an uncompressed body only once if a 415 response is received.
+     *
+     * @param CompressionOption|null $compressionOption
+     * @return callable
+     */
+    public static function compress(?CompressionOption $compressionOption = null): callable
+    {
+        return static function (callable $handler) use ($compressionOption): CompressionHandler {
+            return new CompressionHandler($handler, $compressionOption);
         };
     }
 }
