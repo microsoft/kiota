@@ -293,7 +293,7 @@ public class GoRefiner : CommonLanguageRefiner
         } else if(currentMethod.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility, CodeMethodKind.RequestBuilderWithParameters, CodeMethodKind.RequestBuilderBackwardCompatibility)) {
             currentMethod.ReturnType.IsNullable = true;
         }
-        CorrectDateTypes(parentClass, currentMethod.Parameters
+        CorrectDateTypes(parentClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)
                                                 .Union(new CodeTypeBase[] { currentMethod.ReturnType})
                                                 .ToArray());
@@ -328,16 +328,6 @@ public class GoRefiner : CommonLanguageRefiner
                                 },
                             })},
     };
-    private static void CorrectDateTypes(CodeClass parentClass, params CodeTypeBase[] types) {
-        if(parentClass == null)
-            return;
-        foreach(var type in types.Where(x => DateTypesReplacements.ContainsKey(x.Name))) {
-            var replacement = DateTypesReplacements[type.Name];
-            if(replacement.Item1 != null)
-                type.Name = replacement.Item1;
-            parentClass.AddUsing(replacement.Item2.Clone() as CodeUsing);
-        }
-    }
     private static void CorrectPropertyType(CodeProperty currentProperty) {
         if (currentProperty.Type != null) {
             if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))
@@ -353,7 +343,7 @@ public class GoRefiner : CommonLanguageRefiner
                 if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                     currentProperty.DefaultValue = $"make({currentProperty.Type.Name})";
             } else
-                CorrectDateTypes(currentProperty.Parent as CodeClass, currentProperty.Type);
+                CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
         }
     }
 }
