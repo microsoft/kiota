@@ -51,6 +51,7 @@ namespace Kiota.Builder
         public string Description {get; set;}
         public string SerializationName { get; set; }
         public string NamePrefix { get; set; }
+        public bool IsNameEscaped { get; set; }
         public bool IsOfKind(params CodePropertyKind[] kinds) {
             return kinds?.Contains(PropertyKind) ?? false;
         }

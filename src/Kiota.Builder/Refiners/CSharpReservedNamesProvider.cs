@@ -90,6 +90,7 @@ namespace Kiota.Builder.Refiners {
             "string",
             "struct",
             "switch",
+            "task",
             "this",
             "throw",
             "true",

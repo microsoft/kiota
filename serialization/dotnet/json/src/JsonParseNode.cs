@@ -73,7 +73,15 @@ namespace Microsoft.Kiota.Serialization.Json
         /// Get the <see cref="DateTimeOffset"/> value from the json node
         /// </summary>
         /// <returns>A <see cref="DateTimeOffset"/> value</returns>
-        public DateTimeOffset? GetDateTimeOffsetValue() => _jsonNode.GetDateTimeOffset();
+        public DateTimeOffset? GetDateTimeOffsetValue() 
+        {
+            // JsonElement.GetDateTimeOffset is super strict so try to be more lenient if it fails(e.g. when we have whitespace or other variant formats).
+            // ref - https://docs.microsoft.com/en-us/dotnet/standard/datetime/system-text-json-support
+            if(!_jsonNode.TryGetDateTimeOffset(out var value))
+                value = DateTimeOffset.Parse(_jsonNode.GetString());
+
+            return value;
+        }
 
         /// <summary>
         /// Get the enumeration value of type <typeparam name="T"/>from the json node
@@ -82,17 +90,18 @@ namespace Microsoft.Kiota.Serialization.Json
         public T? GetEnumValue<T>() where T : struct, Enum
         {
             var rawValue = _jsonNode.GetString();
-            if(string.IsNullOrEmpty(rawValue)) return default;
+            if(string.IsNullOrEmpty(rawValue)) return null;
             if(typeof(T).GetCustomAttributes<FlagsAttribute>().Any())
             {
                 return (T)(object)rawValue
                     .Split(',')
-                    .Select(x => Enum.Parse<T>(x, true))
+                    .Select(x => Enum.TryParse<T>(x, true, out var result) ? result : (T?)null)
+                    .Where(x => !x.Equals(null))
                     .Select(x => (int)(object)x)
                     .Sum();
             }
             else
-                return Enum.Parse<T>(rawValue, true);
+                return Enum.TryParse<T>(rawValue, true,out var result) ? result : null;
         }
 
         /// <summary>
@@ -208,10 +217,13 @@ namespace Microsoft.Kiota.Serialization.Json
             if(item.AdditionalData == null)
                 item.AdditionalData = new Dictionary<string, object>();
 
-            foreach(var fieldValue in _jsonNode.EnumerateObject().Where(x => x.Value.ValueKind != JsonValueKind.Null))
+            foreach(var fieldValue in _jsonNode.EnumerateObject())
             {
                 if(fieldDeserializers.ContainsKey(fieldValue.Name))
                 {
+                    if(fieldValue.Value.ValueKind == JsonValueKind.Null)
+                        continue;// If the property is already null just continue. As calling functions like GetDouble,GetBoolValue do not process JsonValueKind.Null.
+
                     var fieldDeserializer = fieldDeserializers[fieldValue.Name];
                     Debug.WriteLine($"found property {fieldValue.Name} to deserialize");
                     fieldDeserializer.Invoke(item, new JsonParseNode(fieldValue.Value)
