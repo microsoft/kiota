@@ -17,7 +17,7 @@ class JsonSerializationWriterFactory implements SerializationWriterFactory
             throw new InvalidArgumentException('Content type cannot be empty');
         }
 
-        if($this->getValidContentType() !== $contentType){
+        if(strcasecmp($this->getValidContentType(),$contentType) !== 0){
             throw new InvalidArgumentException("expected a {$this->getValidContentType()} content type.");
         }
         return new JsonSerializationWriter();

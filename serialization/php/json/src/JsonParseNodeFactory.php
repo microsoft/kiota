@@ -20,7 +20,7 @@ class JsonParseNodeFactory implements ParseNodeFactory
             throw new InvalidArgumentException('$contentType cannot be empty.');
         }
 
-        if ($this->getValidContentType() !== $contentType){
+        if (strcasecmp($this->getValidContentType(),$contentType) !== 0){
             throw new InvalidArgumentException("expected a {$this->getValidContentType()} content type.");
         }
         if (empty($rawResponse->getContents())){
