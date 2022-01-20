@@ -1,7 +1,10 @@
+import { DateOnly } from "../dateOnly";
+import { Duration } from "../duration";
+import { TimeOnly } from "../timeOnly";
 import { Parsable } from "./parsable";
 
 /**
- * Interface for a deserialization node in a parse tree. This interace provides an abstraction layer over serialiation formats, libararies and implementations.
+ * Interface for a deserialization node in a parse tree. This interface provides an abstraction layer over serialization formats, libraries and implementations.
  */
 export interface ParseNode {
     /**
@@ -11,7 +14,7 @@ export interface ParseNode {
     getStringValue(): string;
     /**
      * Gets a new parse node for the given identifier.
-     * @param identitier the identifier of the current node property.
+     * @param identifier the identifier of the current node property.
      * @return a new parse node for the given identifier.
      */
     getChildNode(identifier: string): ParseNode;
@@ -35,6 +38,21 @@ export interface ParseNode {
      * @return the Date value of the node.
      */
     getDateValue(): Date;
+    /**
+     * Gets the Duration value of the node.
+     * @return the Duration value of the node.
+     */
+    getDurationValue(): Duration | undefined;
+     /**
+     * Gets the DateOnly value of the node.
+     * @return the DateOnly value of the node.
+     */
+    getDateOnlyValue(): DateOnly | undefined;
+    /**
+     * Gets the TimeOnly value of the node.
+     * @return the TimeOnly value of the node.
+     */
+    getTimeOnlyValue(): TimeOnly | undefined;
     /**
      * Gets the collection of primitive values of the node.
      * @return the collection of primitive values of the node.

@@ -64,9 +64,9 @@ export class Duration implements DurationInterface {
      * @returns The parsed Duration.
      * @throws An error if the value is invalid
      */
-    public static parse(value: string): Duration {
-        if (!value)
-            throw new Error("Value cannot be undefined");
+    public static parse(value: string | undefined): Duration | undefined {
+        if (!value || value.length === 0)
+            return undefined;
         const duration = parseDuration(value);
         return new Duration({
             years: duration.years ?? 0,

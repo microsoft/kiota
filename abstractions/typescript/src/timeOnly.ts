@@ -50,9 +50,9 @@ export class TimeOnly implements TimeOnlyInterface {
      * @returns The parsed TimeOnly.
      * @throws An error if the value is invalid
      */
-    public static parse(value: string): TimeOnly {
-        if(!value)
-            throw new Error("Value cannot be undefined");
+    public static parse(value: string | undefined): TimeOnly | undefined {
+        if(!value || value.length === 0)
+            return undefined;
         const ticks = Date.parse(value);
         if (isNaN(ticks)) {
             const exec = /^(?<hours>[01]\d|2[0-3]):(?<minutes>[0-5]\d):(?<seconds>[0-5]\d)(?:[.](?<milliseconds>\d{1,12}))?$/gi.exec(value);

@@ -44,9 +44,9 @@ export class DateOnly implements DateOnlyInterface {
      * @returns The parsed DateOnly.
      * @throws An error if the value is invalid
      */
-     public static parse(value: string): DateOnly {
-        if(!value)
-            throw new Error("Value cannot be undefined");
+     public static parse(value: string | undefined): DateOnly | undefined {
+        if(!value || value.length === 0)
+            return undefined;
         const ticks = Date.parse(value);
         if (isNaN(ticks)) {
             const exec = /^(?<year>\d{4,})-(?<month>0[1-9]|1[012])-(?<day>0[1-9]|[12]\d|3[01])$/gi.exec(value);
