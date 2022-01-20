@@ -10,7 +10,6 @@ type Pipeline interface {
 
 // custom transport for net/http with a middleware pipeline
 type customTransport struct {
-	nethttp.Transport
 	// middleware pipeline in use for the client
 	middlewarePipeline *middlewarePipeline
 }
@@ -23,9 +22,9 @@ type middlewarePipeline struct {
 	middlewares []Middleware
 }
 
-func newMiddlewarePipeline(middlewares []Middleware) *middlewarePipeline {
+func newMiddlewarePipeline(middlewares []Middleware, transport nethttp.RoundTripper) *middlewarePipeline {
 	return &middlewarePipeline{
-		transport:   nethttp.DefaultTransport,
+		transport:   transport,
 		middlewares: middlewares,
 	}
 }
@@ -45,12 +44,27 @@ func (transport *customTransport) RoundTrip(req *nethttp.Request) (*nethttp.Resp
 	return transport.middlewarePipeline.Next(req, 0)
 }
 
+// GetDefaultTransport returns the default http transport used by the library
+func GetDefaultTransport() nethttp.RoundTripper {
+	defaultTransport := nethttp.DefaultTransport.(*nethttp.Transport).Clone()
+	defaultTransport.ForceAttemptHTTP2 = true
+	return defaultTransport
+}
+
 // NewCustomTransport creates a new custom transport for http client with the provided set of middleware
 func NewCustomTransport(middlewares ...Middleware) *customTransport {
+	return NewCustomTransportWithParentTransport(nil, middlewares...)
+}
+
+// NewCustomTransportWithParentTransport creates a new custom transport which relies on the provided transport for http client with the provided set of middleware
+func NewCustomTransportWithParentTransport(parentTransport nethttp.RoundTripper, middlewares ...Middleware) *customTransport {
 	if len(middlewares) == 0 {
 		middlewares = GetDefaultMiddlewares()
 	}
+	if parentTransport == nil {
+		parentTransport = GetDefaultTransport()
+	}
 	return &customTransport{
-		middlewarePipeline: newMiddlewarePipeline(middlewares),
+		middlewarePipeline: newMiddlewarePipeline(middlewares, parentTransport),
 	}
 }

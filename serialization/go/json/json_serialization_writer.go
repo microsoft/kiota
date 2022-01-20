@@ -407,7 +407,7 @@ func (w *JsonSerializationWriter) GetSerializedContent() ([]byte, error) {
 
 // WriteAdditionalData writes additional data to underlying the byte array.
 func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface{}) error {
-	if value != nil {
+	if len(value) != 0 {
 		for key, value := range value {
 			p, ok := value.(absser.Parsable)
 			if ok {

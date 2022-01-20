@@ -23,16 +23,16 @@
   },
   "homepage": "https://github.com/microsoft/kiota#readme",
   "devDependencies": {
-    "@types/node": "^16.11.12",
+    "@types/node": "^17.0.10",
     "@types/uri-template-lite": "^19.12.1",
-    "@types/uuid": "^8.3.3",
-    "typescript": "^4.5.2"
+    "@types/uuid": "^8.3.4",
+    "typescript": "^4.5.4"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
   "dependencies": {
-    "uri-template-lite": "^20.5.0",
+    "uri-template-lite": "^22.1.0",
     "uuid": "^8.3.2",
     "web-streams-polyfill": "^3.2.0"
   }

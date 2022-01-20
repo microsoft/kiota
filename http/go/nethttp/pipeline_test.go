@@ -1,6 +1,7 @@
 package nethttplibrary
 
 import (
+	assert "github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
 )
@@ -45,4 +46,27 @@ func TestCanInterceptMultipleRequests(t *testing.T) {
 	if expect != got2 {
 		t.Errorf("Expected: %v, but received: %v", expect, got2)
 	}
+}
+
+func TestItReturnsADefaultTransport(t *testing.T) {
+	transport := GetDefaultTransport()
+	assert.NotNil(t, transport)
+	defaultTransport, ok := transport.(*http.Transport)
+	assert.True(t, ok)
+	assert.True(t, defaultTransport.ForceAttemptHTTP2)
+}
+
+func TestItAcceptsACustomizedTransport(t *testing.T) {
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.ForceAttemptHTTP2 = false
+	customTransport := NewCustomTransportWithParentTransport(transport)
+	assert.NotNil(t, customTransport)
+	result, ok := customTransport.middlewarePipeline.transport.(*http.Transport)
+	assert.True(t, ok)
+	assert.False(t, result.ForceAttemptHTTP2)
+}
+
+func TestItGetsADefaultTransportIfNoneIsProvided(t *testing.T) {
+	customTransport := NewCustomTransport()
+	assert.NotNil(t, customTransport.middlewarePipeline.transport)
 }
