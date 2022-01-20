@@ -2,11 +2,11 @@
   "name": "@microsoft/kiota-authentication-azure",
   "version": "1.0.5",
   "description": "Authentication provider for Kiota using Azure Identity",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:cjs": "mocha 'dist/test/*.js' ",
     "clean": "rm -r ./dist"
   },
   "repository": {
@@ -35,6 +35,14 @@
   },
   "devDependencies": {
     "@types/node": "^17.0.10",
-    "typescript": "^4.5.4"
+    "typescript": "^4.5.4",
+    "@types/chai": "^4.3.0",
+    "@types/mocha": "^9.1.0",
+    "@types/sinon": "^10.0.7",
+    "chai": "^4.2.0",
+    "esm": "^3.2.25",
+    "mocha": "^6.2.3",
+    "sinon": "^12.0.1",
+    "@azure/identity": "^2.0.1"
   }
 }
