@@ -1,6 +1,10 @@
 import { RequestInformation } from "../requestInformation";
 
-/** Authenticates the application request. */
+/**
+ * @interface
+ * Interface to be implementated to provide authentication information for a request.
+ * @property {Function} authenticateRequest - The function to authenticate the request.
+ */
 export interface AuthenticationProvider {
     /**
      * Authenticates the application and returns a token base on the provided Uri.
@@ -8,4 +12,15 @@ export interface AuthenticationProvider {
      * @return a Promise to await for the authentication to be completed.
      */
     authenticateRequest: (request: RequestInformation) => Promise<void>;
+}
+
+
+/**
+ * @interface
+ * An AccessTokenProvider implementation retrieves an access token
+ * to be used by an AuthenticationProvider implementation.
+ * @property {Function} authenticateRequest - The function to authenticate the request.
+ */
+export interface AccessTokenProvider {
+    getAuthorizationToken: (request?: RequestInformation) => Promise<string>;
 }
