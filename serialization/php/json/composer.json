@@ -28,6 +28,7 @@
     "ext-json": "*"
   },
   "require-dev": {
+    "roave/security-advisories": "dev-latest",
     "phpunit/phpunit": "^8 || ^9",
     "phpstan/phpstan": "^1.4"
   }

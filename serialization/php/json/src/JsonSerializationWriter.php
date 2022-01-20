@@ -41,8 +41,7 @@ class JsonSerializationWriter implements SerializationWriter
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
-        $this->writer []= "\"$value\"";
-        $this->writer []= self::PROPERTY_SEPARATOR;
+        $this->writePropertyValue("\"$value\"");
     }
 
     /**
@@ -52,8 +51,7 @@ class JsonSerializationWriter implements SerializationWriter
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
-        $this->writer []= $value;
-        $this->writer []= self::PROPERTY_SEPARATOR;
+        $this->writePropertyValue($value);
     }
 
     /**
@@ -63,8 +61,7 @@ class JsonSerializationWriter implements SerializationWriter
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
-        $this->writer []= $value;
-        $this->writer []= self::PROPERTY_SEPARATOR;
+        $this->writePropertyValue($value);
     }
 
     /**
@@ -74,8 +71,7 @@ class JsonSerializationWriter implements SerializationWriter
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
-        $this->writer []= $value;
-        $this->writer []= self::PROPERTY_SEPARATOR;
+        $this->writePropertyValue($value);
     }
 
     /**
@@ -152,7 +148,7 @@ class JsonSerializationWriter implements SerializationWriter
      * @inheritDoc
      */
     public function writeEnumSetValue(?string $key, array $values): void {
-        // TODO: Implement writeEnumSetValue() method.
+
     }
 
     /**
@@ -162,8 +158,7 @@ class JsonSerializationWriter implements SerializationWriter
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
-        $this->writer []= "\"{$value->value()}\"";
-        $this->writer [] = self::PROPERTY_SEPARATOR;
+        $this->writePropertyValue("\"{$value->value()}\"");
     }
 
     /**
@@ -173,8 +168,7 @@ class JsonSerializationWriter implements SerializationWriter
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
-        $this->writer []= 'null';
-        $this->writer []= self::PROPERTY_SEPARATOR;
+        $this->writePropertyValue('null');
     }
 
     /**
@@ -184,7 +178,6 @@ class JsonSerializationWriter implements SerializationWriter
         if($value === null) {
             return;
         }
-
         foreach ($value as $key => $val) {
             $this->writeAnyValue($key, $val);
         }
@@ -233,7 +226,8 @@ class JsonSerializationWriter implements SerializationWriter
     }
 
     /**
-     * @inheritDoc
+     * @param string $key
+     * @param mixed $value
      */
     public function writeAnyValue(string $key, $value): void{
         $type = gettype($value);
@@ -245,11 +239,84 @@ class JsonSerializationWriter implements SerializationWriter
             case 'string':
                 $this->writeStringValue($key, $value);
                 break;
-            case 'int':
+            case 'integer':
                 $this->writeIntegerValue($key, $value);
                 break;
+            case 'boolean':
+                $this->writeBooleanValue($key, $value);
+                break;
+            case 'object':
+                $this->writeNonParsableObjectValue($key, $value);
+                break;
+            case 'array':
+                $keys = array_filter(array_keys($value), 'is_string');
+                // If there are string keys then that means this is a single
+                // object we are dealing with
+                // otherwise it is a collection of objects.
+                if (!empty($keys)){
+                    $this->writeNonParsableObjectValue($key, (object)$value);
+                } else if (!empty($value)){
+                    if (is_a($value[0], Parsable::class)) {
+                        $this->writeCollectionOfObjectValues($key, $value);
+                    } else{
+                        $this->writeCollectionOfNonParsableObjectValues($key, $value);
+                    }
+                }
+                break;
             default:
+                if (is_a($value, Parsable::class)) {
+                    $this->writeObjectValue($key, $value);
+                }
                 break;
         }
+    }
+
+    /**
+     * @param string|null $key
+     * @param object $value
+     */
+    public function writeNonParsableObjectValue(?string $key, object $value): void{
+        if(!empty($key)) {
+            $this->writePropertyName($key);
+        }
+        $value = (array)$value;
+        $this->writer []= '{';
+        foreach ($value as $keyV => $val) {
+            $this->writeAnyValue($keyV, $val);
+        }
+        if (count($value) > 0){
+            array_pop($this->writer);
+        }
+        $this->writer []= '}';
+        $this->writer []= self::PROPERTY_SEPARATOR;
+    }
+
+    /**
+     * @param mixed $value
+     * @return void
+     */
+    private function writePropertyValue($value): void {
+        $this->writer []= $value;
+        $this->writer []= self::PROPERTY_SEPARATOR;
+    }
+
+    /**
+     * @param string $key
+     * @param array<mixed> $values
+     * @return void
+     */
+    public function writeCollectionOfNonParsableObjectValues(string $key, array $values): void {
+        if (!empty($key)) {
+            $this->writePropertyName($key);
+        }
+        $this->writer []= '[';
+        foreach ($values as $value){
+            $this->writeNonParsableObjectValue(null, (object)$value);
+        }
+        if (count($values) > 0){
+            array_pop($this->writer);
+        }
+        $this->writer []= ']';
+        $this->writer []= self::PROPERTY_SEPARATOR;
     }
 }

@@ -8,8 +8,15 @@ use Microsoft\Kiota\Abstractions\Serialization\ParseNode;
 
 class JsonParseNode implements ParseNode
 {
+    /** @var mixed|null $jsonNode*/
+    private $jsonNode;
 
-    public function __construct(array $content) {
+    /**
+     * @param mixed$content
+     */
+    public function __construct($content) {
+        $this->jsonNode = $content;
+
     }
 
     /**
