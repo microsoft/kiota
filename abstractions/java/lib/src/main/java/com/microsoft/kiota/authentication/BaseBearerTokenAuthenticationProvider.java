@@ -28,10 +28,10 @@ public class BaseBearerTokenAuthenticationProvider implements AuthenticationProv
             }
             return this.accessTokenProvider.getAuthorizationToken(targetUri)
                 .thenApply(token -> {
-                    if(token == null || token.isEmpty()) {
-                        throw new UnsupportedOperationException("Could not get an authorization token", null);
+                    if(!(token == null || token.isEmpty())) { 
+                    // Not an error, just no need to authenticate as we might have been given an external URL from the main API (large file upload, etc.)
+                        request.headers.put(authorizationHeaderKey, "Bearer " + token);
                     }
-                    request.headers.put(authorizationHeaderKey, "Bearer " + token);
                     return null;
                 });
         } else {
