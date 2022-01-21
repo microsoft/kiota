@@ -10,7 +10,7 @@ use RuntimeException;
 
 class RequestInformation {
     /** @var string $RAW_URL_KEY */
-    private static string $RAW_URL_KEY = 'request-raw-url';
+    public static string $RAW_URL_KEY = 'request-raw-url';
     /** @var string $urlTemplate The url template for the current request */
     public string $urlTemplate;
     /**

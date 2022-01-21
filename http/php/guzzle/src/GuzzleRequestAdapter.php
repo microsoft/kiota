@@ -129,7 +129,7 @@ class GuzzleRequestAdapter implements RequestAdapter
             function (ResponseInterface $result) use ($primitiveType, $responseHandler) {
                 if (!$responseHandler) {
                     $rootParseNode = $this->getRootParseNode($result);
-                    switch ($primitiveType) {
+                    switch (strtolower($primitiveType)) {
                         case 'int':
                         case 'long':
                             return $rootParseNode->getIntegerValue();
@@ -237,7 +237,7 @@ class GuzzleRequestAdapter implements RequestAdapter
             function (RequestInformation $requestInformation) {
                 $psrRequest = $this->getPsrRequestFromRequestInformation($requestInformation);
                 //TODO: Pass request options to the client & middleware downstream
-                return $this->guzzleAdapter->sendAsyncRequest($psrRequest);
+                return $this->guzzleAdapter->sendRequest($psrRequest);
             }
         );
     }
