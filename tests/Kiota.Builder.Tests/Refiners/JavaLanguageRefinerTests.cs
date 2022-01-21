@@ -258,7 +258,7 @@ public class JavaLanguageRefinerTests {
         const string factoryDefaultName = "ISerializationWriterFactory";
         const string deserializeDefaultName = "IDictionary<string, Action<Model, IParseNode>>";
         const string dateTimeOffsetDefaultName = "DateTimeOffset";
-        const string addiationalDataDefaultName = "new Dictionary<string, object>()";
+        const string additionalDataDefaultName = "new Dictionary<string, object>()";
         var model = root.AddClass(new CodeClass {
             Name = "model",
             ClassKind = CodeClassKind.Model
@@ -279,7 +279,7 @@ public class JavaLanguageRefinerTests {
             Name = "additionalData",
             PropertyKind = CodePropertyKind.AdditionalData,
             Type = new CodeType {
-                Name = addiationalDataDefaultName
+                Name = additionalDataDefaultName
             }
         });
         const string handlerDefaultName = "IResponseHandler";
@@ -329,7 +329,7 @@ public class JavaLanguageRefinerTests {
         Assert.Empty(model.Properties.Where(x => requestAdapterDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => factoryDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(x => addiationalDataDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.Properties.Where(x => additionalDataDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Methods.Where(x => deserializeDefaultName.Equals(x.ReturnType.Name)));
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => handlerDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => headersDefaultName.Equals(x.Type.Name)));

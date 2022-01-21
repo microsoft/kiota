@@ -537,7 +537,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             var replacement = dateTypesReplacements[type.Name];
             if(replacement.Item1 != null)
                 type.Name = replacement.Item1;
-            parentClass.AddUsing(replacement.Item2.Clone() as CodeUsing);
+            if(replacement.Item2 != null)
+                parentClass.AddUsing(replacement.Item2.Clone() as CodeUsing);
         }
     }
 }
