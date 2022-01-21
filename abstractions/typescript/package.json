@@ -1,6 +1,6 @@
 {
   "name": "@microsoft/kiota-abstractions",
-  "version": "1.0.24",
+  "version": "1.0.25",
   "description": "Core abstractions for kiota generated libraries in TypeScript and JavaScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
