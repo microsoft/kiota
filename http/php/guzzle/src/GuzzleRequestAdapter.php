@@ -235,10 +235,8 @@ class GuzzleRequestAdapter implements RequestAdapter
         $request = $this->authenticationProvider->authenticateRequest($requestInformation);
         return $request->then(
             function (RequestInformation $requestInformation) {
-                //TODO: How to handle/pass request-specific request options??
-                //TODO: Tweak handlers to respect request-level options as overrides for global request options
                 $psrRequest = $this->getPsrRequestFromRequestInformation($requestInformation);
-
+                //TODO: Pass request options to the client & middleware downstream
                 return $this->guzzleAdapter->sendAsyncRequest($psrRequest);
             }
         );
