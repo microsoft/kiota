@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -12,7 +12,7 @@ namespace Kiota.Builder.Writers.TypeScript {
             writer = languageWriter;
         }
         private readonly LanguageWriter writer;
-        public override string StreamTypeName => "ReadableStream";
+        public override string StreamTypeName => "ArrayBuffer";
 
         public override string VoidTypeName => throw new System.NotImplementedException();
 
