@@ -19,8 +19,8 @@ class RequestInformation {
      */
     public array $pathParameters = [];
 
-    /** @var string|null $uri */
-    private ?string $uri;
+    /** @var string $uri */
+    private string $uri;
     /**
      * @var string The HTTP method for the request
      */
@@ -36,12 +36,12 @@ class RequestInformation {
     /** @var string $binaryContentType */
     private static string $binaryContentType = 'application/octet-stream';
     /** @var string $contentTypeHeader */
-    private static string $contentTypeHeader = 'Content-Type';
+    public static string $contentTypeHeader = 'Content-Type';
 
     /** Gets the URI of the request.
      * @return string
      */
-    public function getUri(): ?string {
+    public function getUri(): string {
         if (!empty($this->uri)) {
             return $this->uri;
         }

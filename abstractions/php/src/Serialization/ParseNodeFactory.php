@@ -15,7 +15,7 @@ interface ParseNodeFactory {
      * @param StreamInterface $rawResponse the content type of the {@link StreamInterface}.
      * @return ParseNode a {@link ParseNode} that can deserialize the given {@link StreamInterface}.
      */
-    public function getParseNode(string $contentType, StreamInterface $rawResponse): ParseNode;
+    public function getRootParseNode(string $contentType, StreamInterface $rawResponse): ParseNode;
 
     /**
      * Returns the content type this factory's parse nodes can deserialize.

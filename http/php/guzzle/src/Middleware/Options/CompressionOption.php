@@ -9,6 +9,7 @@
 namespace Microsoft\Kiota\Http\Middleware\Options;
 
 use GuzzleHttp\Psr7\Utils;
+use Microsoft\Kiota\Abstractions\RequestOption;
 use Psr\Http\Message\RequestInterface;
 
 /**
@@ -21,7 +22,7 @@ use Psr\Http\Message\RequestInterface;
  * @license https://opensource.org/licenses/MIT MIT License
  * @link https://developer.microsoft.com/graph
  */
-class CompressionOption
+class CompressionOption implements RequestOption
 {
     /**
      * @var callable[] compression algorithms to be applied in order of occurrence.
