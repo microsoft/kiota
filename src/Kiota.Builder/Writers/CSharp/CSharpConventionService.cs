@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -9,7 +9,7 @@ namespace Kiota.Builder.Writers.CSharp {
         public override string StreamTypeName => "stream";
         public override string VoidTypeName => "void";
         public override string DocCommentPrefix => "/// ";
-        private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "float", "double", "decimal", "long", "Guid", "DateTimeOffset" };
+        private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "float", "double", "decimal", "long", "Guid", "DateTimeOffset", "TimeSpan", "Date","Time" };
         public static readonly char NullableMarker = '?';
         public static string NullableMarkerAsString => "?";
         public override string ParseNodeInterfaceName => "IParseNode";
