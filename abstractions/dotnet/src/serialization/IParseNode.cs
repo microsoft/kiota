@@ -1,4 +1,4 @@
-// ------------------------------------------------------------------------------
+﻿// ------------------------------------------------------------------------------
 //  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
 // ------------------------------------------------------------------------------
 
@@ -58,6 +58,21 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// </summary>
         /// <returns>The DateTimeOffset value of the node.</returns>
         DateTimeOffset? GetDateTimeOffsetValue();
+        /// <summary>
+        /// Gets the TimeSpan value of the node.
+        /// </summary>
+        /// <returns>The TimeSpan value of the node.</returns>
+        TimeSpan? GetTimeSpanValue();
+        /// <summary>
+        /// Gets the Date value of the node.
+        /// </summary>
+        /// <returns>The Date value of the node.</returns>
+        Date? GetDateValue();
+        /// <summary>
+        /// Gets the Time value of the node.
+        /// </summary>
+        /// <returns>The Time value of the node.</returns>
+        Time? GetTimeValue();
         /// <summary>
         /// Gets the collection of primitive values of the node.
         /// </summary>
