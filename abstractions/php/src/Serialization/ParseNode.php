@@ -54,14 +54,14 @@ interface ParseNode {
     /**
      * Gets the collection of model object values from the node
      * @param string $targetClass
-     * @return array
+     * @return object[]
      */
     public function getCollectionOfObjectValues(string $targetClass): array;
 
     /**
      * Gets the collection of primitive values from the node
      * @param string $primitiveType
-     * @return array
+     * @return array<mixed>
      */
     public function getCollectionOfPrimitiveValues(string $primitiveType): array;
 

@@ -13,7 +13,7 @@
 		"php": "^7.4 | ^8.0",
         "php-http/guzzle7-adapter": "^1.0",
         "php-http/httplug": "^2.2",
-		"microsoft/kiota-abstractions": "dev-main",
+		"microsoft/kiota-abstractions": "*@dev",
 		"ext-zlib": "*"
 	},
     "require-dev": {
