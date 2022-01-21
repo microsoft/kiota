@@ -45,7 +45,7 @@ class ChaosHandlerTest extends TestCase
             }
         ], 100);
         $requestOption = [
-            ChaosHandler::CHAOS_GUZZLE_CONFIG => $requestChaosOptions
+            ChaosOption::class => $requestChaosOptions
         ];
         $chaosClient = $this->getChaosClient(new ChaosOption());
         $chaosResponse = $chaosClient->get("/", $requestOption);

@@ -9,12 +9,13 @@
 namespace Microsoft\Kiota\Http;
 
 
+use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
-use Http\Adapter\Guzzle7\Client as GuzzleClientAdapter;
 use Http\Promise\Promise;
 use Microsoft\Kiota\Abstractions\Authentication\AuthenticationProvider;
 use Microsoft\Kiota\Abstractions\RequestAdapter;
 use Microsoft\Kiota\Abstractions\RequestInformation;
+use Microsoft\Kiota\Abstractions\RequestOption;
 use Microsoft\Kiota\Abstractions\ResponseHandler;
 use Microsoft\Kiota\Abstractions\Serialization\ParseNode;
 use Microsoft\Kiota\Abstractions\Serialization\ParseNodeFactory;
@@ -36,9 +37,9 @@ use Psr\Http\Message\StreamInterface;
 class GuzzleRequestAdapter implements RequestAdapter
 {
     /**
-     * @var GuzzleClientAdapter PHP-HTTP wrapper around \GuzzleHttp\Guzzle clients to make async requests
+     * @var Client
      */
-    private GuzzleClientAdapter $guzzleAdapter;
+    private Client $guzzleClient;
 
     /**
      * @var AuthenticationProvider
@@ -71,7 +72,7 @@ class GuzzleRequestAdapter implements RequestAdapter
         $this->authenticationProvider = $authenticationProvider;
         $this->parseNodeFactory = ($parseNodeFactory) ?: ParseNodeFactoryRegistry::getDefaultInstance();
         $this->serializationWriterFactory = ($serializationWriterFactory) ?: SerializationWriterFactoryRegistry::getDefaultInstance();
-        $this->guzzleAdapter = ($guzzleClient) ? new GuzzleClientAdapter($guzzleClient) : new GuzzleClientAdapter(KiotaClientFactory::create());
+        $this->guzzleClient = ($guzzleClient) ?: KiotaClientFactory::create();
     }
 
     /**
@@ -236,8 +237,7 @@ class GuzzleRequestAdapter implements RequestAdapter
         return $request->then(
             function (RequestInformation $requestInformation) {
                 $psrRequest = $this->getPsrRequestFromRequestInformation($requestInformation);
-                //TODO: Pass request options to the client & middleware downstream
-                return $this->guzzleAdapter->sendRequest($psrRequest);
+                return $this->guzzleClient->send($psrRequest, $requestInformation->getRequestOptions());
             }
         );
     }
