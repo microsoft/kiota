@@ -9,7 +9,7 @@ export class AzureIdentityAuthenticationProvider extends BaseBearerTokenAuthenti
     *@param scopes The scopes to use for authentication.
     *@param options The options to use for authentication.
     */
-    public constructor(readonly credentials: TokenCredential, readonly scopes: string[] = ['https://graph.microsoft.com/.default'], options?: GetTokenOptions) {
+    public constructor(credentials: TokenCredential, scopes: string[] = ['https://graph.microsoft.com/.default'], options?: GetTokenOptions) {
         super(new AzureIdentityAccessTokenProvider(credentials, scopes, options));
     }
 }
