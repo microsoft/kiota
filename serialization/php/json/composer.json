@@ -22,7 +22,7 @@
     }
   },
   "require": {
-    "microsoft/kiota-abstractions": "dev-main",
+    "microsoft/kiota-abstractions": "dev-silas/php/serialization/json",
     "guzzlehttp/psr7": "^1.6 || ^2",
     "php": "^7.4 || ^8",
     "ext-json": "*"

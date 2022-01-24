@@ -11,7 +11,7 @@ interface ParseNode {
     /**
      * Gets a new parse node for the given identifier.
      * @param string $identifier the identifier of the current node property.
-     * @return $this a new parse node for the given identifier.
+     * @return self a new parse node for the given identifier.
      */
     public function getChildNode(string $identifier): ParseNode;
 
@@ -53,9 +53,9 @@ interface ParseNode {
 
     /**
      * Gets the model object value of the node.
-     * @return object the model object value of the node.
+     * @return Parsable the model object value of the node.
      */
-    public function getObjectValue(): object;
+    public function getObjectValue(): Parsable;
 
     /**
      * Gets the OffsetDateTime value of the node.

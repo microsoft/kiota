@@ -38,27 +38,18 @@ class JsonSerializationWriter implements SerializationWriter
     /**
      * @inheritDoc
      */
-    public function writeStringValue(?string $key, string $value): void {
+    public function writeStringValue(?string $key, ?string $value): void {
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
-        $this->writePropertyValue("\"$value\"");
+        $propertyValue = $value !== null ? "\"$value\"" : 'null';
+        $this->writePropertyValue($propertyValue);
     }
 
     /**
      * @inheritDoc
      */
-    public function writeBooleanValue(?string $key, bool $value): void {
-        if (!empty($key)) {
-            $this->writePropertyName($key);
-        }
-        $this->writePropertyValue($value);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function writeFloatValue(?string $key, float $value): void {
+    public function writeBooleanValue(?string $key, ?bool $value): void {
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
@@ -68,7 +59,7 @@ class JsonSerializationWriter implements SerializationWriter
     /**
      * @inheritDoc
      */
-    public function writeIntegerValue(?string $key, int $value): void {
+    public function writeFloatValue(?string $key, ?float $value): void {
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
@@ -78,43 +69,61 @@ class JsonSerializationWriter implements SerializationWriter
     /**
      * @inheritDoc
      */
-    public function writeLongValue(?string $key, int $value): void {
+    public function writeIntegerValue(?string $key, ?int $value): void {
+        if (!empty($key)) {
+            $this->writePropertyName($key);
+        }
+        $this->writePropertyValue($value);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function writeLongValue(?string $key, ?int $value): void {
         $this->writeIntegerValue($key, $value);
     }
 
     /**
      * @inheritDoc
      */
-    public function writeUUIDValue(?string $key, string $value): void {
+    public function writeUUIDValue(?string $key, ?string $value): void {
         $this->writeStringValue($key, $value);
     }
 
     /**
      * @inheritDoc
      */
-    public function writeDateTimeOffsetValue(?string $key, DateTime $value): void {
+    public function writeDateTimeOffsetValue(?string $key, ?DateTime $value): void {
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
-        $this->writePropertyValue("\"{$value->format(DateTimeInterface::RFC3339)}Z\"");
+        if ($value !== null) {
+            $this->writePropertyValue("\"{$value->format(DateTimeInterface::RFC3339)}Z\"");
+        } else{
+            $this->writePropertyValue('null');
+        }
     }
 
     /**
      * @inheritDoc
      */
-    public function writeCollectionOfObjectValues(?string $key, array $values): void {
+    public function writeCollectionOfObjectValues(?string $key, ?array $values): void {
         if($key !== null){
             $this->writePropertyName($key);
         }
-        $this->writer []= '[';
-        foreach($values as $v) {
-            $this->writeObjectValue(null, $v);
-            $this->writer []= self::PROPERTY_SEPARATOR;
+        if ($values !== null) {
+            $this->writer [] = '[';
+            foreach ($values as $v) {
+                $this->writeObjectValue(null, $v);
+                $this->writer [] = self::PROPERTY_SEPARATOR;
+            }
+            if (count($values) > 0) {
+                array_pop($this->writer);
+            }
+            $this->writer [] = ']';
+        } else {
+            $this->writePropertyValue('null');
         }
-        if(count($values) > 0) {
-            array_pop($this->writer);
-        }
-        $this->writer []= ']';
         if($key !== null){
             $this->writer []= self::PROPERTY_SEPARATOR;
         }
@@ -151,22 +160,33 @@ class JsonSerializationWriter implements SerializationWriter
     /**
      * @inheritDoc
      */
-    public function writeEnumSetValue(?string $key, array $values): void {
-        $vals = [];
-        foreach ($values as $value){
-            $vals []= $value->value();
+    public function writeEnumSetValue(?string $key, ?array $values): void {
+        if (!empty($key)) {
+            $this->writePropertyName($key);
         }
-        $this->writeStringValue($key, implode(',', $vals));
+        if ($values !== null) {
+            $valS = [];
+            foreach ($values as $value){
+                $valS []= $value->value();
+            }
+            $this->writeStringValue($key, implode(',', $valS));
+        } else {
+            $this->writePropertyValue('null');
+        }
     }
 
     /**
      * @inheritDoc
      */
-    public function writeEnumValue(?string $key, Enum $value): void {
+    public function writeEnumValue(?string $key, ?Enum $value): void {
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
-        $this->writePropertyValue("\"{$value->value()}\"");
+        if ($value !== null) {
+            $this->writePropertyValue("\"{$value->value()}\"");
+        } else {
+            $this->writePropertyValue('null');
+        }
     }
 
     /**
@@ -181,6 +201,7 @@ class JsonSerializationWriter implements SerializationWriter
 
     /**
      * @inheritDoc
+     * @throws \JsonException
      */
     public function writeAdditionalData(?array $value): void {
         if($value === null) {
@@ -201,7 +222,7 @@ class JsonSerializationWriter implements SerializationWriter
     /**
      * @inheritDoc
      */
-    public function getOnBeforeObjectSerialization(): callable {
+    public function getOnBeforeObjectSerialization(): ?callable {
         return $this->onBeforeObjectSerialization;
     }
 
@@ -215,7 +236,7 @@ class JsonSerializationWriter implements SerializationWriter
     /**
      * @inheritDoc
      */
-    public function getOnAfterObjectSerialization(): callable {
+    public function getOnAfterObjectSerialization(): ?callable {
         return $this->onAfterObjectSerialization;
     }
 
@@ -229,15 +250,16 @@ class JsonSerializationWriter implements SerializationWriter
     /**
      * @inheritDoc
      */
-    public function getOnStartObjectSerialization(): callable {
+    public function getOnStartObjectSerialization(): ?callable {
         return $this->onStartObjectSerialization;
     }
 
     /**
-     * @param string $key
+     * @param string|null $key
      * @param mixed $value
+     * @throws \JsonException
      */
-    public function writeAnyValue(string $key, $value): void{
+    public function writeAnyValue(?string $key, $value): void{
         $type = gettype($value);
 
         switch ($type) {
@@ -282,20 +304,14 @@ class JsonSerializationWriter implements SerializationWriter
     /**
      * @param string|null $key
      * @param object $value
+     * @throws \JsonException
      */
     public function writeNonParsableObjectValue(?string $key, object $value): void{
         if(!empty($key)) {
             $this->writePropertyName($key);
         }
         $value = (array)$value;
-        $this->writer []= '{';
-        foreach ($value as $keyV => $val) {
-            $this->writeAnyValue($keyV, $val);
-        }
-        if (count($value) > 0){
-            array_pop($this->writer);
-        }
-        $this->writer []= '}';
+        $this->writer []= json_encode($value, JSON_THROW_ON_ERROR);
         $this->writer []= self::PROPERTY_SEPARATOR;
     }
 
@@ -309,17 +325,18 @@ class JsonSerializationWriter implements SerializationWriter
     }
 
     /**
-     * @param string $key
+     * @param string|null $key
      * @param array<mixed> $values
      * @return void
+     * @throws \JsonException
      */
-    public function writeCollectionOfNonParsableObjectValues(string $key, array $values): void {
+    public function writeCollectionOfNonParsableObjectValues(?string $key, array $values): void {
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
         $this->writer []= '[';
         foreach ($values as $value){
-            $this->writeNonParsableObjectValue(null, (object)$value);
+            $this->writeAnyValue(null, $value);
         }
         if (count($values) > 0){
             array_pop($this->writer);

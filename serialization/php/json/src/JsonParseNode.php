@@ -3,6 +3,7 @@
 namespace Microsoft\Kiota\Serialization\Json;
 
 use DateTimeInterface;
+use InvalidArgumentException;
 use Microsoft\Kiota\Abstractions\Enum;
 use Microsoft\Kiota\Abstractions\Serialization\Parsable;
 use Microsoft\Kiota\Abstractions\Serialization\ParseNode;
@@ -149,13 +150,17 @@ class JsonParseNode implements ParseNode
      * @inheritDoc
      */
     public function getEnumValue(string $targetEnum): Enum{
+        if (!is_subclass_of($targetEnum, Enum::class)) {
+            throw new InvalidArgumentException('Invalid enum provided.');
+        }
+        return new ($targetEnum)();
     }
 
     /**
      * @inheritDoc
      */
     public function getEnumSetValue(Enum $targetEnum): array {
-        // TODO: Implement getEnumSetValue() method.
+        return [$targetEnum->value()];
     }
 
     /**
