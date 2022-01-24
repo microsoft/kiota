@@ -1,6 +1,6 @@
 {
   "name": "@microsoft/kiota-abstractions",
-  "version": "1.0.24",
+  "version": "1.0.25",
   "description": "Core abstractions for kiota generated libraries in TypeScript and JavaScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -32,6 +32,7 @@
     "registry": "https://npm.pkg.github.com"
   },
   "dependencies": {
+    "tinyduration": "^3.2.2",
     "uri-template-lite": "^22.1.0",
     "uuid": "^8.3.2",
     "web-streams-polyfill": "^3.2.0"
