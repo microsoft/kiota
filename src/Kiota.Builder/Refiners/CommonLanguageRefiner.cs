@@ -263,12 +263,12 @@ namespace Kiota.Builder.Refiners {
                 var shouldInsertUsing = false;
                 if(BinaryType.Equals(currentMethod.ReturnType?.Name)) {
                     currentMethod.ReturnType.Name = symbol;
-                    shouldInsertUsing = string.IsNullOrWhiteSpace(ns);
+                    shouldInsertUsing = !string.IsNullOrWhiteSpace(ns);
                 }
                 var binaryParameter = currentMethod.Parameters.FirstOrDefault(x => x.Type.Name.Equals(BinaryType));
                 if(binaryParameter != null) {
                     binaryParameter.Type.Name = symbol;
-                    shouldInsertUsing = string.IsNullOrWhiteSpace(ns); ;
+                    shouldInsertUsing = !string.IsNullOrWhiteSpace(ns); ;
                 }
                 if(shouldInsertUsing) {
                     var newUsing = new CodeUsing {
