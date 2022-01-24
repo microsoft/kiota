@@ -74,9 +74,9 @@ interface SerializationWriter {
 
     /**
      * Gets the value of the serialized content.
-     * @return StreamInterface|null the value of the serialized content.
+     * @return StreamInterface the value of the serialized content.
      */
-    public function getSerializedContent(): ?StreamInterface;
+    public function getSerializedContent(): StreamInterface;
 
     /**
      * Writes the specified enum set value to the stream with an optional given key.

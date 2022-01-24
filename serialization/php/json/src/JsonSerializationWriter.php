@@ -11,9 +11,9 @@ use Microsoft\Kiota\Abstractions\Serialization\SerializationWriter;
 use Psr\Http\Message\StreamInterface;
 
 /**
- * @method onBeforeObjectSerialization(Parsable $value);
- * @method onStartObjectSerialization(Parsable $value, SerializationWriter $writer);
- * @method onAfterObjectSerialization(Parsable $value);
+ * @method onBeforeObjectSerialization(?Parsable $value);
+ * @method onStartObjectSerialization(?Parsable $value, SerializationWriter $writer);
+ * @method onAfterObjectSerialization(?Parsable $value);
  */
 class JsonSerializationWriter implements SerializationWriter
 {
@@ -143,7 +143,9 @@ class JsonSerializationWriter implements SerializationWriter
         if ($this->onStartObjectSerialization !== null) {
             $this->onStartObjectSerialization($value, $this);
         }
-        $value->serialize($this);
+        if ($value !== null) {
+            $value->serialize($this);
+        }
         if($this->onAfterObjectSerialization !== null) {
             $this->onAfterObjectSerialization($value);
         }
@@ -215,7 +217,7 @@ class JsonSerializationWriter implements SerializationWriter
     /**
      * @inheritDoc
      */
-    public function setOnBeforeObjectSerialization(callable $value): void {
+    public function setOnBeforeObjectSerialization(?callable $value): void {
         $this->onBeforeObjectSerialization = $value;
     }
 
@@ -229,7 +231,7 @@ class JsonSerializationWriter implements SerializationWriter
     /**
      * @inheritDoc
      */
-    public function setOnAfterObjectSerialization(callable $value): void {
+    public function setOnAfterObjectSerialization(?callable $value): void {
         $this->onAfterObjectSerialization = $value;
     }
 
@@ -243,7 +245,7 @@ class JsonSerializationWriter implements SerializationWriter
     /**
      * @inheritDoc
      */
-    public function setOnStartObjectSerialization(callable $value): void {
+    public function setOnStartObjectSerialization(?callable $value): void {
         $this->onStartObjectSerialization = $value;
     }
 
