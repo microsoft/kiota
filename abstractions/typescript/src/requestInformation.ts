@@ -3,26 +3,24 @@ import { ReadableStream } from 'web-streams-polyfill/es2018';
 import { Parsable } from "./serialization";
 import { RequestOption } from "./requestOption";
 import { RequestAdapter } from "./requestAdapter";
-import { URL } from "url";
 import * as urlTpl from "uri-template-lite";
 
 /** This class represents an abstract HTTP request. */
 export class RequestInformation {
     /** The URI of the request. */
-    private uri?: URL;
+    private uri?: string;
     /** The path parameters for the request. */
     public pathParameters: Map<string, unknown> = new Map<string, unknown>();
     /** The URL template for the request */
     public urlTemplate?: string;
     /** Gets the URL of the request  */
-    public get URL(): URL {
+    public get URL(): string {
         const rawUrl = this.pathParameters.get(RequestInformation.raw_url_key);
         if(this.uri) {
             return this.uri;
         } else if (rawUrl) {
-            const value = new URL(rawUrl as string);
-            this.URL = value;
-            return value;
+            this.URL = rawUrl as string;
+            return rawUrl as string;
         } else if(!this.queryParameters) {
             throw new Error("queryParameters cannot be undefined");
         } else if(!this.pathParameters) {
@@ -38,12 +36,11 @@ export class RequestInformation {
             this.pathParameters.forEach((v, k) => {
                 if(v) data[k] = v;
             });
-            const result = template.expand(data);
-            return new URL(result);
+            return template.expand(data);
         }   
     }
     /** Sets the URL of the request */
-    public set URL(url: URL) {
+    public set URL(url: string) {
         if(!url) throw new Error("URL cannot be undefined");
         this.uri = url;
         this.queryParameters.clear();
