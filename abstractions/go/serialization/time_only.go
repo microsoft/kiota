@@ -11,7 +11,7 @@ type TimeOnly struct {
 	time time.Time
 }
 
-var timeOnlyFormat = "15:04:05.000000000"
+const timeOnlyFormat = "15:04:05.000000000"
 
 var timeOnlyParsingFormats = map[int]string{
 	0: "15:04:05", //Go doesn't seem to support optional parameters in time.Parse, which is sad

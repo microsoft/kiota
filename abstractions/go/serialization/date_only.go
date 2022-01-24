@@ -10,7 +10,7 @@ type DateOnly struct {
 	time time.Time
 }
 
-var dateOnlyFormat = "2006-01-02"
+const dateOnlyFormat = "2006-01-02"
 
 // String returns the date only as a string following the RFC3339 standard.
 func (t DateOnly) String() string {
