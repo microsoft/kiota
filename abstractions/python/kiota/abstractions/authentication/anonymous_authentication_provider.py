@@ -1,6 +1,6 @@
 from ..request_information import RequestInformation
-
 from .authentication_provider import AuthenticationProvider
+
 
 class AnonymousAuthenticationProvider(AuthenticationProvider):
     """This authentication provider does not perform any authentication
@@ -8,8 +8,7 @@ class AnonymousAuthenticationProvider(AuthenticationProvider):
     Args:
         AuthenticationProvider (ABC): The abstract base class that this class implements
     """
-    
-    async def authenticate_request(request: RequestInformation) -> None:
+    async def authenticate_request(self, request: RequestInformation) -> None:
         """Authenticates the provided request information
 
         Args:
