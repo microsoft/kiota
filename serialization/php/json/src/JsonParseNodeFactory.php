@@ -20,14 +20,15 @@ class JsonParseNodeFactory implements ParseNodeFactory
             throw new InvalidArgumentException('$contentType cannot be empty.');
         }
 
-        if (strcasecmp($this->getValidContentType(),$contentType) !== 0){
+        $streamContents = $rawResponse->getContents();
+        if (strcasecmp($this->getValidContentType(), $contentType) !== 0){
             throw new InvalidArgumentException("expected a {$this->getValidContentType()} content type.");
         }
-        if (empty($rawResponse->getContents())){
+        if (empty($streamContents)){
             throw new InvalidArgumentException('$rawResponse cannot be empty.');
         }
         try {
-            $content = json_decode($rawResponse->getContents(), true, 512, JSON_THROW_ON_ERROR);
+            $content = json_decode($streamContents, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $ex){
             throw new RuntimeException('The was a problem parsing the response.', 1, $ex);
         }

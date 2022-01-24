@@ -3,6 +3,7 @@
 namespace Microsoft\Kiota\Serialization\Json;
 
 use DateTime;
+use DateTimeInterface;
 use GuzzleHttp\Psr7\Utils;
 use Microsoft\Kiota\Abstractions\Enum;
 use Microsoft\Kiota\Abstractions\Serialization\Parsable;
@@ -92,7 +93,10 @@ class JsonSerializationWriter implements SerializationWriter
      * @inheritDoc
      */
     public function writeDateTimeOffsetValue(?string $key, DateTime $value): void {
-        // TODO: Implement writeDateTimeOffsetValue() method.
+        if (!empty($key)) {
+            $this->writePropertyName($key);
+        }
+        $this->writePropertyValue("\"{$value->format(DateTimeInterface::RFC3339)}Z\"");
     }
 
     /**
@@ -148,7 +152,11 @@ class JsonSerializationWriter implements SerializationWriter
      * @inheritDoc
      */
     public function writeEnumSetValue(?string $key, array $values): void {
-
+        $vals = [];
+        foreach ($values as $value){
+            $vals []= $value->value();
+        }
+        $this->writeStringValue($key, implode(',', $vals));
     }
 
     /**

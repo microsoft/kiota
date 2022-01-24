@@ -4,17 +4,31 @@ namespace Microsoft\Kiota\Serialization\Json;
 
 use DateTimeInterface;
 use Microsoft\Kiota\Abstractions\Enum;
+use Microsoft\Kiota\Abstractions\Serialization\Parsable;
 use Microsoft\Kiota\Abstractions\Serialization\ParseNode;
+use Microsoft\Kiota\Serialization\Tests\Samples\Attachment;
+use RuntimeException;
 
+/**
+ * @method onBeforeAssignFieldValues(Parsable $result)
+ * @method onAfterAssignFieldValues(Parsable $result)
+ */
 class JsonParseNode implements ParseNode
 {
     /** @var mixed|null $jsonNode*/
     private $jsonNode;
 
+    /** @var callable|null */
+    public $onBeforeAssignFieldValues;
+    /** @var callable|null */
+    public $onAfterAssignFieldValues;
     /**
-     * @param mixed$content
+     * @param mixed $content
      */
     public function __construct($content) {
+        if ($content === null) {
+            return;
+        }
         $this->jsonNode = $content;
 
     }
@@ -23,56 +37,105 @@ class JsonParseNode implements ParseNode
      * @inheritDoc
      */
     public function getChildNode(string $identifier): ParseNode {
-        // TODO: Implement getChildNode() method.
+        return new self($this->jsonNode[$identifier] ?? null);
     }
 
     /**
      * @inheritDoc
      */
     public function getStringValue(): string {
-        // TODO: Implement getStringValue() method.
+        return $this->jsonNode;
     }
 
     /**
      * @inheritDoc
      */
     public function getBooleanValue(): bool {
-        // TODO: Implement getBooleanValue() method.
+        return (bool)$this->jsonNode;
     }
 
     /**
      * @inheritDoc
      */
     public function getIntegerValue(): int {
-        // TODO: Implement getIntegerValue() method.
+        return (int)$this->jsonNode;
     }
 
     /**
      * @inheritDoc
      */
     public function getFloatValue(): float {
-        // TODO: Implement getFloatValue() method.
+        return (float)$this->jsonNode;
     }
 
     /**
      * @inheritDoc
      */
     public function getLongValue(): int {
-        // TODO: Implement getLongValue() method.
+        return $this->getIntegerValue();
     }
 
     /**
      * @inheritDoc
      */
     public function getUUIDValue(): string {
-        // TODO: Implement getUUIDValue() method.
+        return $this->getStringValue();
+    }
+
+    /**
+     * @return array<Parsable>
+     */
+    public function getCollectionOfObjectValues(): array {
+        return array_map(static function ($val) {
+            return $val->getObjectValue($val);
+        }, array_map(static function ($value) {
+            return new JsonParseNode($value);
+        }, $this->jsonNode));
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    public function getCollectionOfPrimitiveObjectValues(): array {
+        return [];
     }
 
     /**
      * @inheritDoc
+     * @throws \Exception
      */
-    public function getObjectValue(): object {
-        // TODO: Implement getObjectValue() method.
+    public function getObjectValue(?string $type = null): Parsable {
+        if ($type === null){
+            throw new RuntimeException();
+        }
+        /** @var Parsable $result */
+        $result = new ($type);
+        if($this->onBeforeAssignFieldValues !== null) {
+            $this->onBeforeAssignFieldValues($result);
+        }
+        $this->assignFieldValues($result);
+        if ($this->onAfterAssignFieldValues !== null){
+            $this->onAfterAssignFieldValues($result);
+        }
+        return $result;
+    }
+
+    /**
+     * @param Parsable $result
+     * @return void
+     */
+    private function assignFieldValues(Parsable $result): void {
+        $fieldDeserializers = $result->getFieldDeserializers();
+
+        foreach ($this->jsonNode as $key => $value){
+            $deserializer = $fieldDeserializers[$key] ?? null;
+
+            if ($deserializer !== null){
+                $deserializer($result, new JsonParseNode($value));
+            } else {
+                $result->getAdditionalData()[$key] = $value;
+            }
+        }
     }
 
     /**
@@ -85,8 +148,7 @@ class JsonParseNode implements ParseNode
     /**
      * @inheritDoc
      */
-    public function getEnumValue(string $targetEnum): Enum {
-        // TODO: Implement getEnumValue() method.
+    public function getEnumValue(string $targetEnum): Enum{
     }
 
     /**
@@ -100,27 +162,27 @@ class JsonParseNode implements ParseNode
      * @inheritDoc
      */
     public function getOnBeforeAssignFieldValues(): ?callable {
-        // TODO: Implement getOnBeforeAssignFieldValues() method.
+        return $this->onBeforeAssignFieldValues;
     }
 
     /**
      * @inheritDoc
      */
     public function getOnAfterAssignFieldValues(): ?callable {
-        // TODO: Implement getOnAfterAssignFieldValues() method.
+        return $this->onAfterAssignFieldValues;
     }
 
     /**
      * @inheritDoc
      */
     public function setOnAfterAssignFieldValues(callable $value): void {
-        // TODO: Implement setOnAfterAssignFieldValues() method.
+        $this->onAfterAssignFieldValues = $value;
     }
 
     /**
      * @inheritDoc
      */
     public function setOnBeforeAssignFieldValues(callable $value): void {
-        // TODO: Implement setOnBeforeAssignFieldValues() method.
+        $this->onBeforeAssignFieldValues = $value;
     }
 }
