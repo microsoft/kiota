@@ -14,19 +14,27 @@ export class DateOnly implements DateOnlyInterface {
         month = 1,
         day = 1} : Partial<DateOnlyInterface>
     ) {
-        if (year < 0)
-            throw new Error("Year must be positive");
-        if (month < 1 || month > 12)
-            throw new Error("Month must be between 1 and 12");
-        if (day < 1 || day > 31)
-            throw new Error("Day must be between 1 and 31");
-        this.year = year;
-        this.month = month;
-        this.day = day;
+        this.date = new Date(year, month - 1, day);
     }
-    public year: number;
-    public month: number;
-    public day: number;
+    private date: Date;
+    public get year(): number {
+        return this.date.getFullYear();
+    }
+    public set year(value: number) {
+        this.date.setFullYear(value);
+    }
+    public get month(): number {
+        return this.date.getMonth() + 1;
+    }
+    public set month(value: number) {
+        this.date.setMonth(value - 1);
+    }
+    public get day(): number {
+        return this.date.getDate();
+    }
+    public set day(value: number) {
+        this.date.setDate(value);
+    }
     /**
      * Creates a new DateOnly from the given date.
      * @param date The date
@@ -36,7 +44,9 @@ export class DateOnly implements DateOnlyInterface {
     public static fromDate(date: Date): DateOnly {
         if (!date)
             throw new Error("Date cannot be undefined");
-        return new DateOnly({year: date.getFullYear(), month: date.getMonth(), day: date.getDate()});
+        const result = new DateOnly({});
+        result.date = new Date(date);
+        return result;
     }
     /**
      * Parses a string into a DateOnly. The string can be of the ISO 8601 time only format or a number representing the ticks of a Date.
