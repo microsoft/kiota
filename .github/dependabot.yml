@@ -52,6 +52,13 @@ updates:
   open-pull-requests-limit: 10
   labels:
     - Go
+- package-ecosystem: composer
+  directory: "/abstractions/php"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  labels:
+    - PHP
 - package-ecosystem: nuget
   directory: "/authentication/dotnet/azure"
   schedule:
