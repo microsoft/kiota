@@ -36,10 +36,9 @@ func (provider *BaseBearerTokenAuthenticationProvider) AuthenticateRequest(reque
 		if err != nil {
 			return err
 		}
-		if token == "" {
-			return errors.New("could not get an authorization token")
+		if token != "" {
+			request.Headers[authorizationHeader] = "Bearer " + token
 		}
-		request.Headers[authorizationHeader] = "Bearer " + token
 	}
 
 	return nil

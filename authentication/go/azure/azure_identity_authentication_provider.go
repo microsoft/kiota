@@ -19,7 +19,12 @@ func NewAzureIdentityAuthenticationProvider(credential azcore.TokenCredential) (
 
 // NewAzureIdentityAuthenticationProviderWithScopes creates a new instance of the AzureIdentityAuthenticationProvider.
 func NewAzureIdentityAuthenticationProviderWithScopes(credential azcore.TokenCredential, scopes []string) (*AzureIdentityAuthenticationProvider, error) {
-	accessTokenProvider, err := NewAzureIdentityAccessTokenProviderWithScopes(credential, scopes)
+	return NewAzureIdentityAuthenticationProviderWithScopesAndValidHosts(credential, scopes, nil)
+}
+
+// NewAzureIdentityAuthenticationProviderWithScopesAndValidHosts creates a new instance of the AzureIdentityAuthenticationProvider.
+func NewAzureIdentityAuthenticationProviderWithScopesAndValidHosts(credential azcore.TokenCredential, scopes []string, validhosts []string) (*AzureIdentityAuthenticationProvider, error) {
+	accessTokenProvider, err := NewAzureIdentityAccessTokenProviderWithScopesAndValidHosts(credential, scopes, validhosts)
 	if err != nil {
 		return nil, err
 	}
