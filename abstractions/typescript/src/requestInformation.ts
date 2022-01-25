@@ -15,12 +15,12 @@ export class RequestInformation {
     public urlTemplate?: string;
     /** Gets the URL of the request  */
     public get URL(): string {
-        const rawUrl = this.pathParameters.get(RequestInformation.raw_url_key);
+        const rawUrl = this.pathParameters.get(RequestInformation.raw_url_key) as string;
         if(this.uri) {
             return this.uri;
         } else if (rawUrl) {
-            this.URL = rawUrl as string;
-            return rawUrl as string;
+            this.URL = rawUrl;
+            return rawUrl;
         } else if(!this.queryParameters) {
             throw new Error("queryParameters cannot be undefined");
         } else if(!this.pathParameters) {
