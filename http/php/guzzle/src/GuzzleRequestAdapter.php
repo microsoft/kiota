@@ -12,6 +12,8 @@ namespace Microsoft\Kiota\Http;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
 use Http\Promise\Promise;
+use Microsoft\Graph\Core\Models\Date;
+use Microsoft\Graph\Core\Models\Time;
 use Microsoft\Kiota\Abstractions\Authentication\AuthenticationProvider;
 use Microsoft\Kiota\Abstractions\RequestAdapter;
 use Microsoft\Kiota\Abstractions\RequestInformation;
@@ -139,6 +141,14 @@ class GuzzleRequestAdapter implements RequestAdapter
                             return $rootParseNode->getBooleanValue();
                         case 'string':
                             return $rootParseNode->getStringValue();
+                        case \DateTime::class:
+                            return $rootParseNode->getDateTimeValue();
+                        case \DateInterval::class:
+                            return $rootParseNode->getDateIntervalValue();
+                        case Date::class:
+                            return $rootParseNode->getDateValue();
+                        case Time::class:
+                            return $rootParseNode->getTimeValue();
                         default:
                             throw new \InvalidArgumentException("Unsupported primitive type $primitiveType");
                     }

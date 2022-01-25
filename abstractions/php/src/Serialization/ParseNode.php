@@ -5,6 +5,8 @@ namespace Microsoft\Kiota\Abstractions\Serialization;
 
 use DateTimeInterface;
 use Closure;
+use Microsoft\Graph\Core\Models\Date;
+use Microsoft\Graph\Core\Models\Time;
 use Microsoft\Kiota\Abstractions\Enum;
 
 interface ParseNode {
@@ -70,6 +72,30 @@ interface ParseNode {
      * @return DateTimeInterface the OffsetDateTime value of the node.
      */
     public function getDateTimeOffsetValue(): DateTimeInterface;
+
+    /**
+     * Gets the DateTimeValue of the node
+     * @return DateTimeInterface
+     */
+    public function getDateTimeValue(): DateTimeInterface;
+
+    /**
+     * Gets the DateInterval value of the node
+     * @return \DateInterval
+     */
+    public function getDateIntervalValue(): \DateInterval;
+
+    /**
+     * Gets the Date only value of the node
+     * @return Date
+     */
+    public function getDateValue(): Date;
+
+    /**
+     * Gets the Time only value of the node
+     * @return Time
+     */
+    public function getTimeValue(): Time;
 
     /**
      * Gets the Enum value of the node.
