@@ -11,6 +11,7 @@ namespace Microsoft\Kiota\Http;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware as GuzzleMiddleware;
 use GuzzleHttp\Utils;
 use Microsoft\Kiota\Http\Middleware\KiotaMiddleware;
 
@@ -31,7 +32,7 @@ class KiotaClientFactory
      *
      * @return Client
      */
-    public static function create(): \GuzzleHttp\Client
+    public static function create(): Client
     {
         return self::createWithMiddleware(self::getDefaultHandlerStack());
     }
@@ -42,7 +43,7 @@ class KiotaClientFactory
      * @param HandlerStack $handlerStack
      * @return Client
      */
-    public static function createWithMiddleware(HandlerStack $handlerStack): \GuzzleHttp\Client
+    public static function createWithMiddleware(HandlerStack $handlerStack): Client
     {
         return new Client(['handler' => $handlerStack]);
     }
@@ -53,7 +54,7 @@ class KiotaClientFactory
      * @param array $guzzleConfig
      * @return Client
      */
-    public static function createWithConfig(array $guzzleConfig): \GuzzleHttp\Client
+    public static function createWithConfig(array $guzzleConfig): Client
     {
         return new Client($guzzleConfig);
     }
@@ -67,7 +68,7 @@ class KiotaClientFactory
     {
         $handlerStack = new HandlerStack(Utils::chooseHandler());
         $handlerStack->push(KiotaMiddleware::retry());
-        $handlerStack->push(\GuzzleHttp\Middleware::redirect());
+        $handlerStack->push(GuzzleMiddleware::redirect());
         return $handlerStack;
     }
 }

@@ -15,7 +15,6 @@ use Http\Promise\Promise;
 use Microsoft\Kiota\Abstractions\Authentication\AuthenticationProvider;
 use Microsoft\Kiota\Abstractions\RequestAdapter;
 use Microsoft\Kiota\Abstractions\RequestInformation;
-use Microsoft\Kiota\Abstractions\RequestOption;
 use Microsoft\Kiota\Abstractions\ResponseHandler;
 use Microsoft\Kiota\Abstractions\Serialization\ParseNode;
 use Microsoft\Kiota\Abstractions\Serialization\ParseNodeFactory;
@@ -62,12 +61,12 @@ class GuzzleRequestAdapter implements RequestAdapter
      * @param AuthenticationProvider $authenticationProvider
      * @param ParseNodeFactory|null $parseNodeFactory
      * @param SerializationWriterFactory|null $serializationWriterFactory
-     * @param \GuzzleHttp\Client|null $guzzleClient
+     * @param Client|null $guzzleClient
      */
     public function __construct(AuthenticationProvider $authenticationProvider,
                                 ?ParseNodeFactory $parseNodeFactory = null,
                                 ?SerializationWriterFactory $serializationWriterFactory = null,
-                                ?\GuzzleHttp\Client $guzzleClient = null)
+                                ?Client $guzzleClient = null)
     {
         $this->authenticationProvider = $authenticationProvider;
         $this->parseNodeFactory = ($parseNodeFactory) ?: ParseNodeFactoryRegistry::getDefaultInstance();
@@ -85,7 +84,7 @@ class GuzzleRequestAdapter implements RequestAdapter
             function (ResponseInterface $result) use ($targetClass, $responseHandler) {
                 if (!$responseHandler) {
                     $rootNode = $this->getRootParseNode($result);
-                    if ($targetClass === StreamInterface::class || in_array(StreamInterface::class, class_implements($targetClass))) {
+                    if ($targetClass === StreamInterface::class || is_subclass_of(StreamInterface::class, $targetClass)) {
                         return $result->getBody();
                     }
                     return $rootNode->getObjectValue($targetClass);
@@ -222,6 +221,12 @@ class GuzzleRequestAdapter implements RequestAdapter
         );
     }
 
+    /**
+     * Gets the root parse node using the parseNodeFactory based on the Content-Type
+     *
+     * @param ResponseInterface $response
+     * @return ParseNode
+     */
     private function getRootParseNode(ResponseInterface $response): ParseNode
     {
         if (!$response->hasHeader(RequestInformation::$contentTypeHeader)) {
@@ -231,6 +236,12 @@ class GuzzleRequestAdapter implements RequestAdapter
         return $this->parseNodeFactory->getRootParseNode($contentType, $response->getBody());
     }
 
+    /**
+     * Authenticates and executes the request
+     *
+     * @param RequestInformation $requestInformation
+     * @return Promise
+     */
     private function getHttpResponseMessage(RequestInformation $requestInformation): Promise
     {
         $request = $this->authenticationProvider->authenticateRequest($requestInformation);
