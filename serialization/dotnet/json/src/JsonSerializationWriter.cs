@@ -10,6 +10,8 @@ using Microsoft.Kiota.Abstractions.Serialization;
 using System.Collections.Generic;
 using System.Reflection;
 using Microsoft.Kiota.Abstractions.Extensions;
+using Microsoft.Kiota.Abstractions;
+using System.Xml;
 
 namespace Microsoft.Kiota.Serialization.Json
 {
@@ -147,6 +149,39 @@ namespace Microsoft.Kiota.Serialization.Json
         {
             if(!string.IsNullOrEmpty(key) && value.HasValue) writer.WritePropertyName(key);
             if(value.HasValue) writer.WriteStringValue(value.Value);
+        }
+
+        /// <summary>
+        /// Write the TimeSpan(An ISO8601 duration.For example, PT1M is "period time of 1 minute") value.
+        /// </summary>
+        /// <param name="key">The key of the json node</param>
+        /// <param name="value">The TimeSpan value</param>
+        public void WriteTimeSpanValue(string key, TimeSpan? value)
+        {
+            if(!string.IsNullOrEmpty(key) && value.HasValue) writer.WritePropertyName(key);
+            if(value.HasValue) writer.WriteStringValue(XmlConvert.ToString(value.Value));
+        }
+
+        /// <summary>
+        /// Write the Date value
+        /// </summary>
+        /// <param name="key">The key of the json node</param>
+        /// <param name="value">The Date value</param>
+        public void WriteDateValue(string key, Date? value)
+        {
+            if(!string.IsNullOrEmpty(key) && value.HasValue) writer.WritePropertyName(key);
+            if(value.HasValue) writer.WriteStringValue(value.Value.ToString());
+        }
+
+        /// <summary>
+        /// Write the Time value
+        /// </summary>
+        /// <param name="key">The key of the json node</param>
+        /// <param name="value">The Time value</param>
+        public void WriteTimeValue(string key, Time? value)
+        {
+            if(!string.IsNullOrEmpty(key) && value.HasValue) writer.WritePropertyName(key);
+            if(value.HasValue) writer.WriteStringValue(value.Value.ToString());
         }
 
         /// <summary>
@@ -310,11 +345,20 @@ namespace Microsoft.Kiota.Serialization.Json
                 case DateTimeOffset dto:
                     WriteDateTimeOffsetValue(key, dto);
                     break;
+                case TimeSpan timeSpan:
+                    WriteTimeSpanValue(key, timeSpan);
+                    break;
                 case IEnumerable<object> coll:
                     WriteCollectionOfPrimitiveValues(key, coll);
                     break;
                 case IParsable parseable:
                     WriteObjectValue(key, parseable);
+                    break;
+                case Date date:
+                    WriteDateValue(key, date);
+                    break;
+                case Time time:
+                    WriteTimeValue(key, time);
                     break;
                 case object o:
                     WriteNonParsableObjectValue(key, o);

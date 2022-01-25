@@ -141,6 +141,48 @@ func (w *JsonSerializationWriter) WriteTimeValue(key string, value *time.Time) e
 	return nil
 }
 
+// WriteISODurationValue writes a ISODuration value to underlying the byte array.
+func (w *JsonSerializationWriter) WriteISODurationValue(key string, value *absser.ISODuration) error {
+	if key != "" && value != nil {
+		w.writePropertyName(key)
+	}
+	if value != nil {
+		w.writeRawValue((*value).String())
+	}
+	if key != "" && value != nil {
+		w.writePropertySeparator()
+	}
+	return nil
+}
+
+// WriteTimeOnlyValue writes a TimeOnly value to underlying the byte array.
+func (w *JsonSerializationWriter) WriteTimeOnlyValue(key string, value *absser.TimeOnly) error {
+	if key != "" && value != nil {
+		w.writePropertyName(key)
+	}
+	if value != nil {
+		w.writeRawValue((*value).String())
+	}
+	if key != "" && value != nil {
+		w.writePropertySeparator()
+	}
+	return nil
+}
+
+// WriteDateOnlyValue writes a DateOnly value to underlying the byte array.
+func (w *JsonSerializationWriter) WriteDateOnlyValue(key string, value *absser.DateOnly) error {
+	if key != "" && value != nil {
+		w.writePropertyName(key)
+	}
+	if value != nil {
+		w.writeRawValue((*value).String())
+	}
+	if key != "" && value != nil {
+		w.writePropertySeparator()
+	}
+	return nil
+}
+
 // WriteUUIDValue writes a UUID value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteUUIDValue(key string, value *uuid.UUID) error {
 	if key != "" && value != nil {
@@ -353,6 +395,75 @@ func (w *JsonSerializationWriter) WriteCollectionOfTimeValues(key string, collec
 	return nil
 }
 
+// WriteCollectionOfISODurationValues writes a collection of ISODuration values to underlying the byte array.
+func (w *JsonSerializationWriter) WriteCollectionOfISODurationValues(key string, collection []absser.ISODuration) error {
+	if collection != nil { // empty collections are meaningful
+		if key != "" {
+			w.writePropertyName(key)
+		}
+		w.writeArrayStart()
+		for _, item := range collection {
+			err := w.WriteISODurationValue("", &item)
+			if err != nil {
+				return err
+			}
+			w.writePropertySeparator()
+		}
+		w.trimLastPropertySeparator()
+		w.writeArrayEnd()
+		if key != "" {
+			w.writePropertySeparator()
+		}
+	}
+	return nil
+}
+
+// WriteCollectionOfTimeOnlyValues writes a collection of TimeOnly values to underlying the byte array.
+func (w *JsonSerializationWriter) WriteCollectionOfTimeOnlyValues(key string, collection []absser.TimeOnly) error {
+	if collection != nil { // empty collections are meaningful
+		if key != "" {
+			w.writePropertyName(key)
+		}
+		w.writeArrayStart()
+		for _, item := range collection {
+			err := w.WriteTimeOnlyValue("", &item)
+			if err != nil {
+				return err
+			}
+			w.writePropertySeparator()
+		}
+		w.trimLastPropertySeparator()
+		w.writeArrayEnd()
+		if key != "" {
+			w.writePropertySeparator()
+		}
+	}
+	return nil
+}
+
+// WriteCollectionOfDateOnlyValues writes a collection of DateOnly values to underlying the byte array.
+func (w *JsonSerializationWriter) WriteCollectionOfDateOnlyValues(key string, collection []absser.DateOnly) error {
+	if collection != nil { // empty collections are meaningful
+		if key != "" {
+			w.writePropertyName(key)
+		}
+		w.writeArrayStart()
+		for _, item := range collection {
+			err := w.WriteDateOnlyValue("", &item)
+			if err != nil {
+				return err
+			}
+			w.writePropertySeparator()
+		}
+		w.trimLastPropertySeparator()
+		w.writeArrayEnd()
+		if key != "" {
+			w.writePropertySeparator()
+		}
+	}
+	return nil
+}
+
 // WriteCollectionOfUUIDValues writes a collection of UUID values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfUUIDValues(key string, collection []uuid.UUID) error {
 	if collection != nil { // empty collections are meaningful
@@ -481,6 +592,38 @@ func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface
 				}
 				continue
 			}
+			tc, ok := value.([]time.Time)
+			if ok {
+				err := w.WriteCollectionOfTimeValues(key, tc)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+			dc, ok := value.([]absser.ISODuration)
+			if ok {
+				err := w.WriteCollectionOfISODurationValues(key, dc)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+			toc, ok := value.([]absser.TimeOnly)
+			if ok {
+				err := w.WriteCollectionOfTimeOnlyValues(key, toc)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+			doc, ok := value.([]absser.DateOnly)
+			if ok {
+				err := w.WriteCollectionOfDateOnlyValues(key, doc)
+				if err != nil {
+					return err
+				}
+				continue
+			}
 			sv, ok := value.(*string)
 			if ok {
 				err := w.WriteStringValue(key, sv)
@@ -540,6 +683,30 @@ func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface
 			tv, ok := value.(*time.Time)
 			if ok {
 				err := w.WriteTimeValue(key, tv)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+			dv, ok := value.(*absser.ISODuration)
+			if ok {
+				err := w.WriteISODurationValue(key, dv)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+			tov, ok := value.(*absser.TimeOnly)
+			if ok {
+				err := w.WriteTimeOnlyValue(key, tov)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+			dov, ok := value.(*absser.DateOnly)
+			if ok {
+				err := w.WriteDateOnlyValue(key, dov)
 				if err != nil {
 					return err
 				}

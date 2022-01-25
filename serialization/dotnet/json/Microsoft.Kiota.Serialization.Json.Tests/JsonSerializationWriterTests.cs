@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Serialization.Json.Tests.Mocks;
 using Xunit;
 
@@ -16,6 +17,9 @@ namespace Microsoft.Kiota.Serialization.Json.Tests
             var testEntity = new TestEntity()
             {
                 Id = "48d31887-5fad-4d73-a9f5-3c356e68a038",
+                WorkDuration = TimeSpan.FromHours(1),
+                StartWorkTime = new Time(8, 0, 0),
+                BirthDay = new Date(2017, 9, 4),
                 AdditionalData = new Dictionary<string, object>
                 {
                     {"mobilePhone",null}, // write null value
@@ -37,6 +41,9 @@ namespace Microsoft.Kiota.Serialization.Json.Tests
             // Assert
             var expectedString = "{" +
                                  "\"id\":\"48d31887-5fad-4d73-a9f5-3c356e68a038\"," +
+                                 "\"workDuration\":\"PT1H\","+    // Serializes timespans
+                                 "\"birthDay\":\"2017-09-04\"," + // Serializes dates
+                                 "\"startWorkTime\":\"08:00:00\"," + //Serializes times
                                  "\"mobilePhone\":null," +
                                  "\"accountEnabled\":false," +
                                  "\"jobTitle\":\"Author\"," +
