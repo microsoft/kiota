@@ -7,7 +7,6 @@ use InvalidArgumentException;
 use Microsoft\Kiota\Abstractions\Enum;
 use Microsoft\Kiota\Abstractions\Serialization\Parsable;
 use Microsoft\Kiota\Abstractions\Serialization\ParseNode;
-use Microsoft\Kiota\Serialization\Tests\Samples\Attachment;
 use RuntimeException;
 
 /**
@@ -85,10 +84,11 @@ class JsonParseNode implements ParseNode
 
     /**
      * @return array<Parsable>
+     * @throws \Exception
      */
-    public function getCollectionOfObjectValues(): array {
-        return array_map(static function ($val) {
-            return $val->getObjectValue($val);
+    public function getCollectionOfObjectValues(string $type): array {
+        return array_map(static function ($val) use($type) {
+            return $val->getObjectValue($type);
         }, array_map(static function ($value) {
             return new JsonParseNode($value);
         }, $this->jsonNode));

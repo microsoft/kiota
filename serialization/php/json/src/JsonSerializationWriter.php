@@ -8,6 +8,9 @@ use GuzzleHttp\Psr7\Utils;
 use Microsoft\Kiota\Abstractions\Enum;
 use Microsoft\Kiota\Abstractions\Serialization\Parsable;
 use Microsoft\Kiota\Abstractions\Serialization\SerializationWriter;
+use Microsoft\Kiota\Abstractions\Types\Byte;
+use Microsoft\Kiota\Abstractions\Types\Date;
+use Microsoft\Kiota\Abstractions\Types\Time;
 use Psr\Http\Message\StreamInterface;
 
 /**
@@ -100,6 +103,23 @@ class JsonSerializationWriter implements SerializationWriter
         if ($value !== null) {
             $this->writePropertyValue("\"{$value->format(DateTimeInterface::RFC3339)}Z\"");
         } else{
+            $this->writePropertyValue('null');
+        }
+    }
+
+    /**
+     * @param string|null $key
+     * @param Date|null $value
+     * @return void
+     */
+    public function writeDateOnlyValue(?string $key, ?Date $value): void {
+        if (!empty($key)) {
+            $this->writePropertyName($key);
+        }
+        if ($value !== null) {
+            $valueString = (string)$value;
+            $this->writePropertyValue("\"{$valueString}\"");
+        } else {
             $this->writePropertyValue('null');
         }
     }
@@ -345,5 +365,21 @@ class JsonSerializationWriter implements SerializationWriter
         }
         $this->writer []= ']';
         $this->writer []= self::PROPERTY_SEPARATOR;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function writeTimeOnlyValue(?string $key, ?Time $value): void
+    {
+        // TODO: Implement writeTimeOnlyValue() method.
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function writeByteValue(?string $key, ?Byte $value): void
+    {
+        // TODO: Implement writeByteValue() method.
     }
 }
