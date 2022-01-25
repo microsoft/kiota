@@ -4,7 +4,6 @@
 namespace Microsoft\Kiota\Abstractions\Serialization;
 
 use DateTimeInterface;
-use Closure;
 use Microsoft\Kiota\Abstractions\Enum;
 
 interface ParseNode {

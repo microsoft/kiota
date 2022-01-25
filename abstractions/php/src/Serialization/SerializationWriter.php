@@ -4,6 +4,9 @@ namespace Microsoft\Kiota\Abstractions\Serialization;
 use DateInterval;
 use DateTime;
 use Microsoft\Kiota\Abstractions\Enum;
+use Microsoft\Kiota\Abstractions\Types\Byte;
+use Microsoft\Kiota\Abstractions\Types\Date;
+use Microsoft\Kiota\Abstractions\Types\Time;
 use Psr\Http\Message\StreamInterface;
 
 /** Defines an interface for serialization of objects to a stream. */
@@ -105,8 +108,31 @@ interface SerializationWriter {
     public function writeAdditionalData(?array $value): void;
 
     /**
+     * Write the Date-only Segment of DateTime.
+     * @param string|null $key
+     * @param Date|null $value
+     */
+    public function writeDateOnlyValue(?string $key, ?Date $value): void;
+
+    /**
+     * Write a TimeOnly value without the
+     * @param string|null $key
+     * @param Time|null $value
+     * @return void
+     */
+    public function writeTimeOnlyValue(?string $key, ?Time $value): void;
+
+    /**
+     * Write a byte value.
+     * @param string|null $key
+     * @param Byte|null $value
+     * @return void
+     */
+    public function writeByteValue(?string $key, ?Byte $value): void;
+
+    /**
      * Sets the callback called before the objects gets serialized.
-     * @param callable $value the callback called before the objects gets serialized.
+     * @param callable|null $value the callback called before the objects gets serialized.
      */
     public function setOnBeforeObjectSerialization(?callable $value): void;
 
