@@ -3,6 +3,7 @@
 // ------------------------------------------------------------------------------
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Kiota.Abstractions.Authentication;
@@ -29,13 +30,14 @@ public class BaseBearerTokenAuthenticationProvider : IAuthenticationProvider
     /// Authenticates the <see cref="RequestInformation"/> instance
     /// </summary>
     /// <param name="request">The request to authenticate</param>
+    /// <param name="cancellationToken">The cancellation token for the task</param>
     /// <returns></returns>
-    public async Task AuthenticateRequestAsync(RequestInformation request)
+    public async Task AuthenticateRequestAsync(RequestInformation request, CancellationToken cancellationToken = default)
     {
         if(request == null) throw new ArgumentNullException(nameof(request));
         if(!request.Headers.ContainsKey(AuthorizationHeaderKey))
         {
-            var token = await AccessTokenProvider.GetAuthorizationTokenAsync(request.URI);
+            var token = await AccessTokenProvider.GetAuthorizationTokenAsync(request.URI, cancellationToken);
             if(string.IsNullOrEmpty(token))
                 throw new InvalidOperationException("Could not get an authorization token");
             request.Headers.Add(AuthorizationHeaderKey, $"Bearer {token}");
