@@ -6,3 +6,4 @@ from .parse_node_proxy_factory import ParseNodeProxyFactory
 from .serialization_writer import SerializationWriter
 from .serialization_writer_factory import SerializationWriterFactory
 from .serialization_writer_factory_registry import SerializationWriterFactoryRegistry
+from .serialization_writer_proxy_factory import SerializationWriterProxyFactory
