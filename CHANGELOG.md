@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for PHP Json Serialization.
 - Update PHP abstractions to make property keys and values nullable in `SerializationWriter.php`.
 - Added Python abstractions library.
+- Adds hostname and protocol validation in authentication. #1051
 
 ### Changed
 
