@@ -5,8 +5,8 @@ namespace Microsoft\Kiota\Abstractions\Serialization;
 
 use DateTimeInterface;
 use Closure;
-use Microsoft\Graph\Core\Models\Date;
-use Microsoft\Graph\Core\Models\Time;
+use Microsoft\Kiota\Abstractions\Types\Date;
+use Microsoft\Kiota\Abstractions\Types\Time;
 use Microsoft\Kiota\Abstractions\Enum;
 
 interface ParseNode {

@@ -5,7 +5,7 @@
  * for license information.
  */
 
-namespace Microsoft\Graph\Core\Models;
+namespace Microsoft\Kiota\Abstractions\Types;
 
 use DateTime;
 use Exception;
