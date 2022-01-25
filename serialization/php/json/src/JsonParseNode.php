@@ -2,6 +2,7 @@
 
 namespace Microsoft\Kiota\Serialization\Json;
 
+use DateTime;
 use DateTimeInterface;
 use InvalidArgumentException;
 use Microsoft\Kiota\Abstractions\Enum;
@@ -142,7 +143,7 @@ class JsonParseNode implements ParseNode
     /**
      * @inheritDoc
      */
-    public function getDateTimeOffsetValue(): DateTimeInterface {
+    public function getDateTimeOffsetValue(): DateTime {
         // TODO: Implement getDateTimeOffsetValue() method.
     }
 
@@ -189,5 +190,22 @@ class JsonParseNode implements ParseNode
      */
     public function setOnBeforeAssignFieldValues(callable $value): void {
         $this->onBeforeAssignFieldValues = $value;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getCollectionOfPrimitiveValues(): array {
+        return array_map(static function ($x) {
+            $type = gettype($x);
+            return (new JsonParseNode($x))->getAnyValue($type);
+        }, $this->jsonNode);
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getAnyValue(string $type) {
+        return '';
     }
 }

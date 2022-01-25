@@ -15,7 +15,7 @@ class JsonParseNodeFactory implements ParseNodeFactory
     /**
      * @inheritDoc
      */
-    public function getParseNode(string $contentType, StreamInterface $rawResponse): ParseNode {
+    public function getRootParseNode(string $contentType, StreamInterface $rawResponse): ParseNode {
         if (empty($contentType)) {
             throw new InvalidArgumentException('$contentType cannot be empty.');
         }

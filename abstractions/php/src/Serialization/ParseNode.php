@@ -3,6 +3,7 @@
 
 namespace Microsoft\Kiota\Abstractions\Serialization;
 
+use DateTime;
 use DateTimeInterface;
 use Microsoft\Kiota\Abstractions\Enum;
 
@@ -52,15 +53,28 @@ interface ParseNode {
 
     /**
      * Gets the model object value of the node.
+     * @param string $type The type for the Parsable object.
      * @return Parsable the model object value of the node.
      */
-    public function getObjectValue(): Parsable;
+    public function getObjectValue(string $type): Parsable;
+
+    /**
+     * @param string $type The underlying type for the Parsable class.
+     * @return array<Parsable> An array of Parsable values.
+     */
+    public function getCollectionOfObjectValues(string $type): array;
+
+    /**
+     * Get a collection of values that are not parsable in Nature.
+     * @return array<mixed> A collection of primitive values.
+     */
+    public function getCollectionOfPrimitiveValues(): array;
 
     /**
      * Gets the OffsetDateTime value of the node.
-     * @return DateTimeInterface the OffsetDateTime value of the node.
+     * @return DateTime the OffsetDateTime value of the node.
      */
-    public function getDateTimeOffsetValue(): DateTimeInterface;
+    public function getDateTimeOffsetValue(): DateTime;
 
     /**
      * Gets the Enum value of the node.

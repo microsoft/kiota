@@ -1,8 +1,6 @@
 <?php
 namespace Microsoft\Kiota\Abstractions\Serialization;
 
-use Closure;
-
 /**
  * Defines the serializable model object.
  */

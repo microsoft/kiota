@@ -47,7 +47,7 @@ class Time
      * @throws Exception
      */
     public static function createFrom(int $hour, int $minutes, int $seconds = 0): self {
-        $date = new DateTime('1970-12-12T00:00:00Z');
+        $date = new DateTime('now');
         $date->setTime($hour, $minutes, $seconds);
         return self::createFromDateTime($date);
     }

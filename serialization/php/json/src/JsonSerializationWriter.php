@@ -56,7 +56,9 @@ class JsonSerializationWriter implements SerializationWriter
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
-        $this->writePropertyValue($value);
+        $valS = ['false', 'true'];
+        $vV= $value === null ? 'null' : $valS[$value];
+        $this->writePropertyValue($vV);
     }
 
     /**
@@ -282,23 +284,37 @@ class JsonSerializationWriter implements SerializationWriter
      * @throws \JsonException
      */
     public function writeAnyValue(?string $key, $value): void{
-        $type = gettype($value);
-
+        $type = get_debug_type($value);
         switch ($type) {
-            case 'double':
+            case 'float':
                 $this->writeFloatValue($key, $value);
                 break;
             case 'string':
                 $this->writeStringValue($key, $value);
                 break;
-            case 'integer':
+            case 'int':
                 $this->writeIntegerValue($key, $value);
                 break;
-            case 'boolean':
+            case 'bool':
                 $this->writeBooleanValue($key, $value);
                 break;
-            case 'object':
-                $this->writeNonParsableObjectValue($key, $value);
+            case 'null':
+                $this->writeNullValue($key);
+                break;
+            case Date::class:
+                $this->writeDateOnlyValue($key, $value);
+                break;
+            case Time::class:
+                $this->writeTimeOnlyValue($key, $value);
+                break;
+            case Byte::class:
+                $this->writeByteValue($key, $value);
+                break;
+            case DateTime::class:
+                $this->writeDateTimeOffsetValue($key, $value);
+                break;
+            case 'stdClass':
+                $this->writeNonParsableObjectValue($key, (object)$value);
                 break;
             case 'array':
                 $keys = array_filter(array_keys($value), 'is_string');
@@ -325,15 +341,22 @@ class JsonSerializationWriter implements SerializationWriter
 
     /**
      * @param string|null $key
-     * @param object $value
+     * @param mixed $value
      * @throws \JsonException
      */
-    public function writeNonParsableObjectValue(?string $key, object $value): void{
+    public function writeNonParsableObjectValue(?string $key, $value): void{
         if(!empty($key)) {
             $this->writePropertyName($key);
         }
+        $this->writer []= '{';
         $value = (array)$value;
-        $this->writer []= json_encode($value, JSON_THROW_ON_ERROR);
+        foreach ($value as $kKey => $kVal) {
+            $this->writeAnyValue($kKey, $kVal);
+        }
+        if (count($value) > 0) {
+            array_pop($this->writer);
+        }
+        $this->writer []= '}';
         $this->writer []= self::PROPERTY_SEPARATOR;
     }
 
@@ -370,16 +393,24 @@ class JsonSerializationWriter implements SerializationWriter
     /**
      * @inheritDoc
      */
-    public function writeTimeOnlyValue(?string $key, ?Time $value): void
-    {
-        // TODO: Implement writeTimeOnlyValue() method.
+    public function writeTimeOnlyValue(?string $key, ?Time $value): void {
+        if (!empty($key)) {
+            $this->writePropertyName($key);
+        }
+
+        $val = $value !== null ? "\"{$value}\"" : 'null';
+        $this->writePropertyValue($val);
     }
 
     /**
      * @inheritDoc
      */
-    public function writeByteValue(?string $key, ?Byte $value): void
-    {
-        // TODO: Implement writeByteValue() method.
+    public function writeByteValue(?string $key, ?Byte $value): void {
+        if (!empty($key)) {
+            $this->writePropertyName($key);
+        }
+
+        $val = $value !== null ? "\"{$value}\"" : 'null';
+        $this->writePropertyValue($val);
     }
 }

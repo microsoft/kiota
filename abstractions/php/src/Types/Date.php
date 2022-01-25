@@ -41,7 +41,7 @@ class Date {
      * @throws Exception
      */
     public static function createFrom(int $year, int $month, int $day): Date {
-        $date = new DateTime('1970-12-12T00:00:00Z');
+        $date = new DateTime('now');
         $date->setDate($year, $month, $day);
         return self::createFromDateTime($date);
     }
