@@ -1,4 +1,4 @@
-import { Parsable, ParseNode, toFirstCharacterUpper } from "@microsoft/kiota-abstractions";
+import { DateOnly, Duration, Parsable, ParseNode, TimeOnly, toFirstCharacterUpper } from "@microsoft/kiota-abstractions";
 
 export class JsonParseNode implements ParseNode {
     /**
@@ -15,6 +15,9 @@ export class JsonParseNode implements ParseNode {
     public getNumberValue = (): number => this._jsonNode as number;
     public getGuidValue = (): string => this._jsonNode as string;
     public getDateValue = (): Date => this._jsonNode as Date;
+    public getDateOnlyValue = () => DateOnly.parse(this.getStringValue());
+    public getTimeOnlyValue = () => TimeOnly.parse(this.getStringValue());
+    public getDurationValue = () => Duration.parse(this.getStringValue());
     public getCollectionOfPrimitiveValues = <T>(): T[] | undefined => {
         return (this._jsonNode as unknown[])
             .map(x => {
@@ -26,6 +29,12 @@ export class JsonParseNode implements ParseNode {
                 } else if (x instanceof Number) {
                     return currentParseNode.getNumberValue() as unknown as T;
                 } else if (x instanceof Date) {
+                    return currentParseNode.getDateValue() as unknown as T;
+                } else if (x instanceof DateOnly) {
+                    return currentParseNode.getDateValue() as unknown as T;
+                } else if (x instanceof TimeOnly) {
+                    return currentParseNode.getDateValue() as unknown as T;
+                } else if (x instanceof Duration) {
                     return currentParseNode.getDateValue() as unknown as T;
                 } else throw new Error(`encountered an unknown type during deserialization ${typeof x}`);
             });
