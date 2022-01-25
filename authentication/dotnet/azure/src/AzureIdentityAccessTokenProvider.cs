@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure.Core;
 using Microsoft.Kiota.Abstractions;
@@ -40,10 +41,11 @@ public class AzureIdentityAccessTokenProvider : IAccessTokenProvider
     /// Gets the authorization token for the given target URI.
     /// </summary>
     /// <param name="uri">The target <see cref="Uri"/> to get token for</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/> of the task</param>
     /// <returns>An authorization token string.</returns>
-    public async Task<string> GetAuthorizationTokenAsync(Uri uri)
+    public async Task<string> GetAuthorizationTokenAsync(Uri uri, CancellationToken cancellationToken = default)
     {
-        var result = await this._credential.GetTokenAsync(new TokenRequestContext(_scopes.ToArray()), default); //TODO: we might have to bubble that up for native apps or backend web apps to avoid blocking the UI/getting an exception
+        var result = await this._credential.GetTokenAsync(new TokenRequestContext(_scopes.ToArray()), cancellationToken); //TODO: we might have to bubble that up for native apps or backend web apps to avoid blocking the UI/getting an exception
         return result.Token;
     }
 
