@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import date, datetime, time, timedelta
 from enum import Enum
 from io import BytesIO
 from typing import Any, Callable, Dict, List, Optional, TypeVar
@@ -73,6 +73,36 @@ class SerializationWriter(ABC):
         Args:
             key (Optional[str]): The key to be used for the written value. May be null.
             value (Optional[datetime]): The datetime offset value to be written.
+        """
+        pass
+
+    @abstractmethod
+    def write_timespan_value(self, key: Optional[str], value: Optional[timedelta]) -> None:
+        """Writes the specified timespan value to the stream with an optional given key.
+
+        Args:
+            key (Optional[str]): The key to be used for the written value. May be null.
+            value (Optional[timedelta]): The timespan value to be written.
+        """
+        pass
+
+    @abstractmethod
+    def write_date_value(self, key: Optional[str], value: Optional[date]) -> None:
+        """Writes the specified date value to the stream with an optional given key.
+
+        Args:
+            key (Optional[str]): The key to be used for the written value. May be null.
+            value (Optional[date]): The date value to be written.
+        """
+        pass
+
+    @abstractmethod
+    def write_time_value(self, key: Optional[str], value: Optional[time]) -> None:
+        """Writes the specified time value to the stream with an optional given key.
+
+        Args:
+            key (Optional[str]): The key to be used for the written value. May be null.
+            value (Optional[time]): The time value to be written.
         """
         pass
 
