@@ -241,18 +241,13 @@ namespace Kiota.Builder.Writers.Shell
                     if (typeString != "Stream")
                     {
                         writer.WriteLine("var content = await response.Content.ReadAsStringAsync();");
+                        writer.WriteLine($"formatter.WriteOutput(content, {consoleParamName});");
                     } else
                     {
                         writer.WriteLine("var content = await response.Content.ReadAsStreamAsync();");
-                    }
-
-                    writer.WriteLine($"formatter.WriteOutput(content, {consoleParamName});");
-
-                    if (typeString == "Stream")
-                    {
                         writer.WriteLine($"if ({fileParamName} == null) {{");
                         writer.IncreaseIndent();
-                        WriteResponseToConsole(writer, "content");
+                        writer.WriteLine($"formatter.WriteOutput(content, {consoleParamName});");
                         writer.CloseBlock();
                         writer.WriteLine("else {");
                         writer.IncreaseIndent();
@@ -273,13 +268,6 @@ namespace Kiota.Builder.Writers.Shell
                 writer.WriteLine($"}}{delimiter}{string.Join(", ", availableOptions)});");
                 writer.WriteLine("return command;");
             }
-        }
-
-        private void WriteResponseToConsole(LanguageWriter writer, string argName)
-        {
-            writer.WriteLine($"using var reader = new StreamReader({argName});");
-            writer.WriteLine("var strContent = await reader.ReadToEndAsync();");
-            writer.WriteLine($"{consoleParamName}.WriteLine(strContent);");
         }
 
         protected virtual void WriteCommandHandlerBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer)
