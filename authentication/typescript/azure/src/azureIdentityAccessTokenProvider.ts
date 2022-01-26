@@ -1,6 +1,5 @@
 import { GetTokenOptions, TokenCredential } from "@azure/core-auth";
 import { AccessTokenProvider, AllowedHostsValidator } from '@microsoft/kiota-abstractions';
-import { url } from "inspector";
 
 export class AzureIdentityAccessTokenProvider implements AccessTokenProvider {
     /**
@@ -23,8 +22,8 @@ export class AzureIdentityAccessTokenProvider implements AccessTokenProvider {
         this.allowedHostsValidator = allowedHosts ? new AllowedHostsValidator(...allowedHosts) : new AllowedHostsValidator();
     }
     private readonly allowedHostsValidator: AllowedHostsValidator;
-    public getAuthorizationToken = async (): Promise<string> => {
-        if(!this.allowedHostsValidator.isUrlHostValid(url)) {
+    public getAuthorizationToken = async (url?:string): Promise<string> => {
+        if(!url || !this.allowedHostsValidator.isUrlHostValid(url)) {
             return '';
         }
         // @ts-ignore
