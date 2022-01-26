@@ -77,12 +77,12 @@ class SerializationWriter(ABC):
         pass
 
     @abstractmethod
-    def write_timespan_value(self, key: Optional[str], value: Optional[timedelta]) -> None:
-        """Writes the specified timespan value to the stream with an optional given key.
+    def write_timedelta_value(self, key: Optional[str], value: Optional[timedelta]) -> None:
+        """Writes the specified timedelta value to the stream with an optional given key.
 
         Args:
             key (Optional[str]): The key to be used for the written value. May be null.
-            value (Optional[timedelta]): The timespan value to be written.
+            value (Optional[timedelta]): The timedelta value to be written.
         """
         pass
 
