@@ -5,5 +5,5 @@
  * @property {Function} authenticateRequest - The function to authenticate the request.
  */
  export interface AccessTokenProvider {
-    getAuthorizationToken: (url:string) => Promise<string>;
+    getAuthorizationToken: (url?:string) => Promise<string>;
 }
