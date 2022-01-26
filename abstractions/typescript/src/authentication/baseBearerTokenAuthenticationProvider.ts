@@ -18,13 +18,12 @@ export class BaseBearerTokenAuthenticationProvider implements AuthenticationProv
         }
         if (!request.headers?.has(BaseBearerTokenAuthenticationProvider.authorizationHeaderKey)) {
             const token = await this.accessTokenProvider.getAuthorizationToken(request.URL);
-            if (!token) {
-                throw new Error('Could not get an authorization token');
-            }
             if (!request.headers) {
                 request.headers = new Map<string, string>();
             }
-            request.headers?.set(BaseBearerTokenAuthenticationProvider.authorizationHeaderKey, `Bearer ${token}`);
+            if(token) {
+                request.headers?.set(BaseBearerTokenAuthenticationProvider.authorizationHeaderKey, `Bearer ${token}`);
+            }
         }
     }
 }
