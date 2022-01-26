@@ -10,6 +10,7 @@ namespace Kiota.Builder.Refiners {
         public override void Refine(CodeNamespace generatedCode)
         {
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
             AddRawUrlConstructorOverload(generatedCode);
@@ -59,7 +60,7 @@ namespace Kiota.Builder.Refiners {
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
                 "Microsoft.Kiota.Abstractions", "IRequestAdapter"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-                "Microsoft.Kiota.Abstractions", "HttpMethod", "RequestInformation", "IRequestOption"),
+                "Microsoft.Kiota.Abstractions", "Method", "RequestInformation", "IRequestOption"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
                 "Microsoft.Kiota.Abstractions", "IResponseHandler"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
@@ -98,5 +99,41 @@ namespace Kiota.Builder.Refiners {
                 currentMethod.Name += "Async";
             CrawlTree(currentElement, AddAsyncSuffix);
         }
+        private static void CorrectPropertyType(CodeProperty currentProperty)
+        {
+            CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        }
+        private static void CorrectMethodType(CodeMethod currentMethod)
+        {
+            CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
+                                                    .Select(x => x.Type)
+                                                    .Union(new CodeTypeBase[] { currentMethod.ReturnType })
+                                                    .ToArray());
+        }
+        private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
+        {
+            {
+                "DateOnly",("Date", new CodeUsing
+                    {
+                        Name = "Date",
+                        Declaration = new CodeType
+                        {
+                            Name = "Microsoft.Kiota.Abstractions",
+                            IsExternal = true,
+                        },
+                    })
+            },
+            {
+                "TimeOnly",("Time", new CodeUsing
+                    {
+                        Name = "Time",
+                        Declaration = new CodeType
+                        {
+                            Name = "Microsoft.Kiota.Abstractions",
+                            IsExternal = true,
+                        },
+                    })
+            },
+        };
     }
 }

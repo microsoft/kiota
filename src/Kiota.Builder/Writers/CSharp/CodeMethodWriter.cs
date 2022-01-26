@@ -190,7 +190,7 @@ namespace Kiota.Builder.Writers.CSharp {
             var requestAdapterProperty = currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             writer.WriteLine($"var {RequestInfoVarName} = new RequestInformation {{");
             writer.IncreaseIndent();
-            writer.WriteLines($"HttpMethod = HttpMethod.{operationName?.ToUpperInvariant()},",
+            writer.WriteLines($"HttpMethod = Method.{operationName?.ToUpperInvariant()},",
                             $"UrlTemplate = {GetPropertyCall(urlTemplateProperty, "string.Empty")},",
                             $"PathParameters = {GetPropertyCall(urlTemplateParamsProperty, "string.Empty")},");
             writer.DecreaseIndent();

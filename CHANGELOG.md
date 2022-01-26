@@ -9,8 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added the ability to configure the underlying transport in Go. #1003
+- Added additional date time (date, time, duration) types in the generation process. #1017
+
 ### Changed
 
+- Fixed an issue where multiple api clients could run into racing conditions in Go.
+- Fixed a bug where empty additional data in Go would lead to invalid JSON payloads during serialization.
+- Fixed a bug where Go serialization would write empty arrays for nil values.
+
+## [0.0.15] - 2021-12-17
+
+### Changed
+
+- Fixes name collisions in dotnet by renaming "HttpMethod" enum to "Method" in dotnet abstractions
 - Add support for PHP Generation.
 - Migrated generator to dotnet 6 #815
 - Fixes a bug where json deserialization would fail in go
@@ -26,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug in Go where empty collections would not be serialized.
 - Fixes a bug where generation would fail because of empty usings.
 - Fixes a bug where Java and Go escaped model properties would not serialize properly.
+- Fixes a bug where null values would not be added to additionalData if there was no matching property in dotnet. 
+- Fixes a bug where deserialzation of enums would throw an ArgumentExcpetion if the member didn't exist in dotnet.
 
 ## [0.0.14] - 2021-11-08
 

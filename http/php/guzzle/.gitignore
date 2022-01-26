@@ -1,0 +1,8 @@
+composer.phar
+composer.lock
+/vendor/
+/coverage
+.idea/
+tests/Functional/TestConstants.php
+.phpunit.result.cache
+.phpdoc/

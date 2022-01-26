@@ -1,4 +1,4 @@
-import { Parsable, SerializationWriter } from "@microsoft/kiota-abstractions";
+import { DateOnly, Duration, Parsable, SerializationWriter, TimeOnly } from "@microsoft/kiota-abstractions";
 import { TextEncoder } from "util";
 import { ReadableStream } from 'web-streams-polyfill/es2018';
 
@@ -34,6 +34,21 @@ export class JsonSerializationWriter implements SerializationWriter {
     public writeDateValue = (key?: string, value?: Date): void => {
         key && value && this.writePropertyName(key);
         value && this.writer.push(`"${value.toISOString()}"`);
+        key && value && this.writer.push(JsonSerializationWriter.propertySeparator);
+    }
+    public writeDateOnlyValue = (key?: string, value?: DateOnly): void => {
+        key && value && this.writePropertyName(key);
+        value && this.writer.push(`"${value.toString()}"`);
+        key && value && this.writer.push(JsonSerializationWriter.propertySeparator);
+    }
+    public writeTimeOnlyValue = (key?: string, value?: TimeOnly): void => {
+        key && value && this.writePropertyName(key);
+        value && this.writer.push(`"${value.toString()}"`);
+        key && value && this.writer.push(JsonSerializationWriter.propertySeparator);
+    }
+    public writeDurationValue = (key?: string, value?: Duration): void => {
+        key && value && this.writePropertyName(key);
+        value && this.writer.push(`"${value.toString()}"`);
         key && value && this.writer.push(JsonSerializationWriter.propertySeparator);
     }
     public writeNullValue = (key?: string): void => {
@@ -126,6 +141,12 @@ export class JsonSerializationWriter implements SerializationWriter {
                 this.writeStringValue(key, value as any as string);
             } else if (value instanceof Date) {
                 this.writeDateValue(key, value as any as Date);
+            } else if (value instanceof DateOnly) {
+                this.writeDateOnlyValue(key, value as any as DateOnly);
+            } else if (value instanceof TimeOnly) {
+                this.writeTimeOnlyValue(key, value as any as TimeOnly);
+            } else if (value instanceof Duration) {
+                this.writeDurationValue(key, value as any as Duration);
             } else if (valueType === "number") {
                 this.writeNumberValue(key, value as any as number);
             } else if(Array.isArray(value)) {
