@@ -45,8 +45,8 @@ class JsonSerializationWriter implements SerializationWriter
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
-        $propertyValue = $value !== null ? "\"$value\"" : 'null';
-        $this->writePropertyValue($propertyValue);
+        $propertyValue = $value !== null ? '"'.addcslashes($value, "\\\r\n\"").'"' : 'null';
+        $this->writePropertyValue($key, $propertyValue);
     }
 
     /**
@@ -58,7 +58,7 @@ class JsonSerializationWriter implements SerializationWriter
         }
         $valS = ['false', 'true'];
         $vV= $value === null ? 'null' : $valS[$value];
-        $this->writePropertyValue($vV);
+        $this->writePropertyValue($key, $vV);
     }
 
     /**
@@ -68,7 +68,7 @@ class JsonSerializationWriter implements SerializationWriter
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
-        $this->writePropertyValue($value);
+        $this->writePropertyValue($key, $value);
     }
 
     /**
@@ -78,7 +78,7 @@ class JsonSerializationWriter implements SerializationWriter
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
-        $this->writePropertyValue($value);
+        $this->writePropertyValue($key, $value);
     }
 
     /**
@@ -103,9 +103,9 @@ class JsonSerializationWriter implements SerializationWriter
             $this->writePropertyName($key);
         }
         if ($value !== null) {
-            $this->writePropertyValue("\"{$value->format(DateTimeInterface::RFC3339)}Z\"");
+            $this->writePropertyValue($key, "\"{$value->format(DateTimeInterface::RFC3339)}Z\"");
         } else{
-            $this->writePropertyValue('null');
+            $this->writePropertyValue($key, 'null');
         }
     }
 
@@ -120,9 +120,9 @@ class JsonSerializationWriter implements SerializationWriter
         }
         if ($value !== null) {
             $valueString = (string)$value;
-            $this->writePropertyValue("\"{$valueString}\"");
+            $this->writePropertyValue($key, "\"{$valueString}\"");
         } else {
-            $this->writePropertyValue('null');
+            $this->writePropertyValue($key, 'null');
         }
     }
 
@@ -143,11 +143,11 @@ class JsonSerializationWriter implements SerializationWriter
                 array_pop($this->writer);
             }
             $this->writer [] = ']';
+            if ($key !== null) {
+                $this->writer []= self::PROPERTY_SEPARATOR;
+            }
         } else {
-            $this->writePropertyValue('null');
-        }
-        if($key !== null){
-            $this->writer []= self::PROPERTY_SEPARATOR;
+            $this->writePropertyValue($key, 'null');
         }
     }
 
@@ -158,26 +158,35 @@ class JsonSerializationWriter implements SerializationWriter
         if(!empty($key)) {
             $this->writePropertyName($key);
         }
-        if ($this->onBeforeObjectSerialization !== null) {
-            $this->onBeforeObjectSerialization($value);
-        }
-        $this->writer []= '{';
-        if ($this->onStartObjectSerialization !== null) {
-            $this->onStartObjectSerialization($value, $this);
-        }
-        if ($value !== null) {
+        if ($value === null) {
+            $this->writer []= 'null';
+        } else {
+            if ($this->onBeforeObjectSerialization !== null) {
+                $this->onBeforeObjectSerialization($value);
+            }
+            $this->writer [] = '{';
+            if ($this->onStartObjectSerialization !== null) {
+                $this->onStartObjectSerialization($value, $this);
+            }
             $value->serialize($this);
+            array_pop($this->writer);
+            if ($this->onAfterObjectSerialization !== null) {
+                $this->onAfterObjectSerialization($value);
+            }
+            $this->writer [] = '}';
         }
-        if($this->onAfterObjectSerialization !== null) {
-            $this->onAfterObjectSerialization($value);
+        if ($key !== null) {
+            $this->writer [] = self::PROPERTY_SEPARATOR;
         }
-        $this->writer []= '}';
     }
 
     /**
      * @inheritDoc
      */
     public function getSerializedContent(): StreamInterface {
+        if (count($this->writer) > 0 && $this->writer[count($this->writer) - 1] === ','){
+            array_pop($this->writer);
+        }
         return Utils::streamFor(implode('', $this->writer));
     }
 
@@ -195,7 +204,7 @@ class JsonSerializationWriter implements SerializationWriter
             }
             $this->writeStringValue($key, implode(',', $valS));
         } else {
-            $this->writePropertyValue('null');
+            $this->writePropertyValue($key, 'null');
         }
     }
 
@@ -207,9 +216,9 @@ class JsonSerializationWriter implements SerializationWriter
             $this->writePropertyName($key);
         }
         if ($value !== null) {
-            $this->writePropertyValue("\"{$value->value()}\"");
+            $this->writePropertyValue($key, "\"{$value->value()}\"");
         } else {
-            $this->writePropertyValue('null');
+            $this->writePropertyValue($key, 'null');
         }
     }
 
@@ -220,7 +229,7 @@ class JsonSerializationWriter implements SerializationWriter
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
-        $this->writePropertyValue('null');
+        $this->writePropertyValue($key, 'null');
     }
 
     /**
@@ -357,16 +366,22 @@ class JsonSerializationWriter implements SerializationWriter
             array_pop($this->writer);
         }
         $this->writer []= '}';
-        $this->writer []= self::PROPERTY_SEPARATOR;
+        if ($key !== null) {
+            $this->writer [] = self::PROPERTY_SEPARATOR;
+        }
     }
 
     /**
+     * @param string|null $key
      * @param mixed $value
      * @return void
      */
-    private function writePropertyValue($value): void {
+    private function writePropertyValue(?string $key, $value): void {
         $this->writer []= $value;
-        $this->writer []= self::PROPERTY_SEPARATOR;
+
+        if ($key !== null) {
+            $this->writer []= self::PROPERTY_SEPARATOR;
+        }
     }
 
     /**
@@ -387,7 +402,9 @@ class JsonSerializationWriter implements SerializationWriter
             array_pop($this->writer);
         }
         $this->writer []= ']';
-        $this->writer []= self::PROPERTY_SEPARATOR;
+        if ($key !== null) {
+            $this->writer [] = self::PROPERTY_SEPARATOR;
+        }
     }
 
     /**
@@ -399,7 +416,7 @@ class JsonSerializationWriter implements SerializationWriter
         }
 
         $val = $value !== null ? "\"{$value}\"" : 'null';
-        $this->writePropertyValue($val);
+        $this->writePropertyValue($key, $val);
     }
 
     /**
@@ -411,6 +428,6 @@ class JsonSerializationWriter implements SerializationWriter
         }
 
         $val = $value !== null ? "\"{$value}\"" : 'null';
-        $this->writePropertyValue($val);
+        $this->writePropertyValue($key, $val);
     }
 }

@@ -3,7 +3,6 @@
 namespace Microsoft\Kiota\Serialization\Json;
 
 use DateTime;
-use DateTimeInterface;
 use Exception;
 use InvalidArgumentException;
 use Microsoft\Kiota\Abstractions\Enum;
@@ -52,7 +51,7 @@ class JsonParseNode implements ParseNode
      * @inheritDoc
      */
     public function getStringValue(): ?string {
-        return $this->jsonNode !== null ? (string)$this->jsonNode : null;
+        return $this->jsonNode !== null ? addcslashes($this->jsonNode, "\\\r\n") : null;
     }
 
     /**
@@ -110,14 +109,15 @@ class JsonParseNode implements ParseNode
      * @throws Exception
      */
     public function getObjectValue(?string $type = null): ?Parsable {
-        if ($this->jsonNode === null) {
+        if ($this->jsonNode === null || $this->jsonNode === 'null') {
             return null;
         }
         if ($type === null){
-            throw new RuntimeException();
+            throw new RuntimeException("Invalid type $type provided.");
         }
         /** @var Parsable $result */
         $result = new ($type);
+        echo "$type Type\n";
         if($this->onBeforeAssignFieldValues !== null) {
             $this->onBeforeAssignFieldValues($result);
         }
@@ -164,14 +164,7 @@ class JsonParseNode implements ParseNode
         if (!is_subclass_of($targetEnum, Enum::class)) {
             throw new InvalidArgumentException('Invalid enum provided.');
         }
-        return new ($targetEnum)();
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getEnumSetValue(Enum $targetEnum): ?array {
-        return [$targetEnum->value()];
+        return new ($targetEnum)($this->jsonNode);
     }
 
     /**
