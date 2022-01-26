@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import date, datetime, time, timedelta
 from enum import Enum
 from io import BytesIO
 from typing import Callable, List, Optional, TypeVar
@@ -84,6 +84,33 @@ class ParseNode(ABC):
 
         Returns:
             datetime: The datetime offset value of the node
+        """
+        pass
+
+    @abstractmethod
+    def get_timespan_value(self) -> Optional[timedelta]:
+        """Gets the timespan value of the node
+
+        Returns:
+            timedelta: The timespan value of the node
+        """
+        pass
+
+    @abstractmethod
+    def get_date_value(self) -> Optional[date]:
+        """Gets the date value of the node
+
+        Returns:
+            date: The datevalue of the node in terms on year, month, and day.
+        """
+        pass
+
+    @abstractmethod
+    def get_time_value(self) -> Optional[time]:
+        """Gets the time value of the node
+
+        Returns:
+            time: The time value of the node in terms of hour, minute, and second.
         """
         pass
 
