@@ -86,13 +86,6 @@ interface ParseNode {
     public function getEnumValue(string $targetEnum): ?Enum;
 
     /**
-     * Gets the EnumSet value of the node.
-     * @param Enum $targetEnum
-     * @return array<string>|null the EnumSet value of the node.
-     */
-    public function getEnumSetValue(Enum $targetEnum): ?array;
-
-    /**
      * Get Date part value only from DateTime.
      * @return Date|null
      */
