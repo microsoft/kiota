@@ -18,6 +18,8 @@ class InMemoryBackingStore(BackingStore):
     __store: Dict[str, Tuple[bool, Any]] = {}
     __initialization_completed: bool = True
 
+    return_only_changed_values: bool = False
+
     def get(self, key: str) -> Optional[T]:
         """Gets the specified object with the given key from the store.
 
@@ -46,7 +48,7 @@ class InMemoryBackingStore(BackingStore):
         old_value = None
         if old_value_wrapper:
             old_value = old_value_wrapper[1]
-        self.__store[key] = (self.initialization_completed, value)
+        self.__store[key] = (self.get_is_initialization_completed(), value)
         for val in self.__subscriptions.values():
             val(key, old_value, value)
 
@@ -106,20 +108,23 @@ class InMemoryBackingStore(BackingStore):
         """
         self.__store.clear()
 
-    @property
-    def initialization_completed(self) -> bool:
+    def get_is_initialization_completed(self) -> bool:
         """Flag to show the initialization status of the store.
         """
         return self.__initialization_completed
 
-    @initialization_completed.setter
-    def initialization_completed(self, value: bool):
+    def set_is_initialization_completed(self, value: bool) -> None:
         self.__initialization_completed = value
         for key, val in self.__store.items():
             self.__store[key] = (not value, val[1])
 
-    @property
-    def return_only_changed_values(self) -> bool:
+    def get_return_only_changed_values(self) -> bool:
         """Determines whether the backing store should only return changed values when queried.
         """
-        return False
+        return self.return_only_changed_values
+
+    def set_return_only_changed_values(self, value: bool) -> None:
+        """Sets the flag to determines whether the backing store should only return changed values
+        when queried.
+        """
+        self.return_only_changed_values = value
