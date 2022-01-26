@@ -256,7 +256,7 @@ class GuzzleRequestAdapter implements RequestAdapter
     {
         $request = $this->authenticationProvider->authenticateRequest($requestInformation);
         return $request->then(
-            function (RequestInformation $requestInformation) {
+            function ($result) use ($requestInformation) {
                 $psrRequest = $this->getPsrRequestFromRequestInformation($requestInformation);
                 return $this->guzzleClient->send($psrRequest, $requestInformation->getRequestOptions());
             }

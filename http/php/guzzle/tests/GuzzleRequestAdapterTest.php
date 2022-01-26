@@ -65,7 +65,7 @@ class GuzzleRequestAdapterTest extends TestCase
     {
         $this->authenticationProvider = $this->createStub(AuthenticationProvider::class);
         $this->authenticationProvider->method('authenticateRequest')
-                                    ->willReturn(new FulfilledPromise($this->requestInformation));
+                                    ->willReturn(new FulfilledPromise(null));
     }
 
     private function mockRequestAdapter(array $mockResponses = []): GuzzleRequestAdapter
