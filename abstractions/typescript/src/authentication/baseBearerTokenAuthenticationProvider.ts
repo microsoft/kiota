@@ -9,7 +9,7 @@ export class BaseBearerTokenAuthenticationProvider implements AuthenticationProv
      * 
      * @param accessTokenProvider 
      */
-    public constructor(private accessTokenProvider: AccessTokenProvider) { };
+    public constructor(public readonly accessTokenProvider: AccessTokenProvider) { };
     
     public authenticateRequest = async (request: RequestInformation): Promise<void> => {
         if (!request) {

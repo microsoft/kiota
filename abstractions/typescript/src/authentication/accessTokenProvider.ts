@@ -1,5 +1,3 @@
-import { RequestInformation } from "../requestInformation";
-
 /**
  * @interface
  * An AccessTokenProvider implementation retrieves an access token
@@ -7,5 +5,5 @@ import { RequestInformation } from "../requestInformation";
  * @property {Function} authenticateRequest - The function to authenticate the request.
  */
  export interface AccessTokenProvider {
-    getAuthorizationToken: (request?: RequestInformation) => Promise<string>;
+    getAuthorizationToken: (url:string) => Promise<string>;
 }
