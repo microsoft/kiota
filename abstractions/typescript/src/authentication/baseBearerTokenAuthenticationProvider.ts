@@ -1,5 +1,6 @@
 import { RequestInformation } from "../requestInformation";
-import { AuthenticationProvider, AccessTokenProvider } from "./authenticationProvider";
+import { AccessTokenProvider} from "./accessTokenProvider";
+import { AuthenticationProvider } from "./authenticationProvider";
 
 /** Provides a base class for implementing AuthenticationProvider for Bearer token scheme. */
 export class BaseBearerTokenAuthenticationProvider implements AuthenticationProvider {
@@ -16,7 +17,7 @@ export class BaseBearerTokenAuthenticationProvider implements AuthenticationProv
             throw new Error('request info cannot be null');
         }
         if (!request.headers || !request.headers[BaseBearerTokenAuthenticationProvider.authorizationHeaderKey]) {
-            const token = await this.accessTokenProvider.getAuthorizationToken(request);
+            const token = await this.accessTokenProvider.getAuthorizationToken(request.URL);
             if (!request.headers) {
                 request.headers = {};
             }
