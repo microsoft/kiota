@@ -30,6 +30,14 @@ public interface IAccessTokenProvider
 }
 ```
 
+## Allowed hosts validator
+
+This utility class is in charge of validating the host of any request is present on an allow list. This is used by the base access token provider to check whether it should or not return a token to the request.
+
+If no hosts are present in the allow list, the token will be added to any request.
+
+This class should be reused when implementing additional authentication mechanisms.
+
 ## Base bearer token authentication provider
 
 A common practice in the industry for APIs is to implement authentication and authorization via the `Authorization` request header with a bearer token value.
