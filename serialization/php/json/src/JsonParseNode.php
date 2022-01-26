@@ -4,10 +4,14 @@ namespace Microsoft\Kiota\Serialization\Json;
 
 use DateTime;
 use DateTimeInterface;
+use Exception;
 use InvalidArgumentException;
 use Microsoft\Kiota\Abstractions\Enum;
 use Microsoft\Kiota\Abstractions\Serialization\Parsable;
 use Microsoft\Kiota\Abstractions\Serialization\ParseNode;
+use Microsoft\Kiota\Abstractions\Types\Byte;
+use Microsoft\Kiota\Abstractions\Types\Date;
+use Microsoft\Kiota\Abstractions\Types\Time;
 use RuntimeException;
 
 /**
@@ -24,7 +28,7 @@ class JsonParseNode implements ParseNode
     /** @var callable|null */
     public $onAfterAssignFieldValues;
     /**
-     * @param mixed $content
+     * @param mixed|null $content
      */
     public function __construct($content) {
         if ($content === null) {
@@ -37,57 +41,63 @@ class JsonParseNode implements ParseNode
     /**
      * @inheritDoc
      */
-    public function getChildNode(string $identifier): ParseNode {
+    public function getChildNode(string $identifier): ?ParseNode {
+        if ($this->jsonNode === null || $this->jsonNode[$identifier] === null) {
+            return null;
+        }
         return new self($this->jsonNode[$identifier] ?? null);
     }
 
     /**
      * @inheritDoc
      */
-    public function getStringValue(): string {
-        return $this->jsonNode;
+    public function getStringValue(): ?string {
+        return $this->jsonNode !== null ? (string)$this->jsonNode : null;
     }
 
     /**
      * @inheritDoc
      */
-    public function getBooleanValue(): bool {
-        return (bool)$this->jsonNode;
+    public function getBooleanValue(): ?bool {
+        return $this->jsonNode !== null ? (bool)$this->jsonNode : null;
     }
 
     /**
      * @inheritDoc
      */
-    public function getIntegerValue(): int {
-        return (int)$this->jsonNode;
+    public function getIntegerValue(): ?int {
+        return $this->jsonNode !== null ? (int)$this->jsonNode : null;
     }
 
     /**
      * @inheritDoc
      */
-    public function getFloatValue(): float {
-        return (float)$this->jsonNode;
+    public function getFloatValue(): ?float {
+        return $this->jsonNode !== null ? (float)$this->jsonNode : null;
     }
 
     /**
      * @inheritDoc
      */
-    public function getLongValue(): int {
+    public function getLongValue(): ?int {
         return $this->getIntegerValue();
     }
 
     /**
      * @inheritDoc
      */
-    public function getUUIDValue(): string {
+    public function getUUIDValue(): ?string {
         return $this->getStringValue();
     }
 
     /**
      * @return array<Parsable>
-     * @throws \Exception
+     * @throws Exception
      */
-    public function getCollectionOfObjectValues(string $type): array {
+    public function getCollectionOfObjectValues(string $type): ?array {
+        if ($this->jsonNode === null) {
+            return null;
+        }
         return array_map(static function ($val) use($type) {
             return $val->getObjectValue($type);
         }, array_map(static function ($value) {
@@ -96,17 +106,13 @@ class JsonParseNode implements ParseNode
     }
 
     /**
-     * @return array<mixed>
-     */
-    public function getCollectionOfPrimitiveObjectValues(): array {
-        return [];
-    }
-
-    /**
      * @inheritDoc
-     * @throws \Exception
+     * @throws Exception
      */
-    public function getObjectValue(?string $type = null): Parsable {
+    public function getObjectValue(?string $type = null): ?Parsable {
+        if ($this->jsonNode === null) {
+            return null;
+        }
         if ($type === null){
             throw new RuntimeException();
         }
@@ -142,15 +148,19 @@ class JsonParseNode implements ParseNode
 
     /**
      * @inheritDoc
+     * @throws Exception
      */
-    public function getDateTimeOffsetValue(): DateTime {
-        // TODO: Implement getDateTimeOffsetValue() method.
+    public function getDateTimeOffsetValue(): ?DateTime {
+        return ($this->jsonNode !== null) ? new DateTime($this->jsonNode) : null;
     }
 
     /**
      * @inheritDoc
      */
-    public function getEnumValue(string $targetEnum): Enum{
+    public function getEnumValue(string $targetEnum): ?Enum{
+        if ($this->jsonNode === null){
+            return null;
+        }
         if (!is_subclass_of($targetEnum, Enum::class)) {
             throw new InvalidArgumentException('Invalid enum provided.');
         }
@@ -160,7 +170,7 @@ class JsonParseNode implements ParseNode
     /**
      * @inheritDoc
      */
-    public function getEnumSetValue(Enum $targetEnum): array {
+    public function getEnumSetValue(Enum $targetEnum): ?array {
         return [$targetEnum->value()];
     }
 
@@ -195,7 +205,10 @@ class JsonParseNode implements ParseNode
     /**
      * @inheritDoc
      */
-    public function getCollectionOfPrimitiveValues(): array {
+    public function getCollectionOfPrimitiveValues(): ?array {
+        if ($this->jsonNode === null){
+            return null;
+        }
         return array_map(static function ($x) {
             $type = gettype($x);
             return (new JsonParseNode($x))->getAnyValue($type);
@@ -207,5 +220,30 @@ class JsonParseNode implements ParseNode
      */
     public function getAnyValue(string $type) {
         return '';
+    }
+
+    /**
+     * @inheritDoc
+     * @throws Exception
+     */
+    public function getDateOnlyValue(): ?Date {
+        return ($this->jsonNode !== null) ? new Date($this->jsonNode) : null;
+    }
+
+    /**
+     * @inheritDoc
+     * @throws Exception
+     */
+    public function getTimeOnlyValue(): ?Time
+    {
+        return ($this->jsonNode !== null) ? new Time($this->jsonNode) : null;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getByteValue(): ?Byte
+    {
+        return ($this->jsonNode !== null) ? new Byte($this->jsonNode) : null;
     }
 }
