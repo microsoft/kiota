@@ -105,15 +105,6 @@ export class RequestInformation {
         this.content = value;
     }
     /**
-     * Sets the request headers from a raw object.
-     * @param headers the headers.
-     */
-    public setHeadersFromRawObject = (h: object) : void => {
-        Object.entries(h).forEach(([k, v]) => {
-            this.headers[k]=  v as string;
-        });
-    }
-    /**
      * Sets the query string parameters from a raw object.
      * @param parameters the parameters.
      */
