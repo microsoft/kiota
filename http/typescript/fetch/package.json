@@ -1,6 +1,6 @@
 {
     "name": "@microsoft/kiota-http-fetchlibrary",
-    "version": "1.0.13",
+    "version": "1.0.14",
     "description": "Kiota request adapter implementation with fetch",
     "main": "dist/cjs/index.js",
     "module": "dist/es/index.js",
@@ -31,7 +31,7 @@
         "registry": "https://npm.pkg.github.com"
     },
     "dependencies": {
-        "@microsoft/kiota-abstractions": "^1.0.26",
+        "@microsoft/kiota-abstractions": "^1.0.27",
         "cross-fetch": "^3.1.5",
         "web-streams-polyfill": "^3.2.0"
     },
