@@ -88,11 +88,11 @@ class ParseNode(ABC):
         pass
 
     @abstractmethod
-    def get_timespan_value(self) -> Optional[timedelta]:
-        """Gets the timespan value of the node
+    def get_timedelta_value(self) -> Optional[timedelta]:
+        """Gets the timedelta value of the node
 
         Returns:
-            timedelta: The timespan value of the node
+            timedelta: The timedelta value of the node
         """
         pass
 
