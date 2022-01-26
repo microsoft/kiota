@@ -1,8 +1,8 @@
 {
 	"extends": "./tsconfig.base.json",
 	"compilerOptions": {
-		"module": "es6",
-		"target": "es6",
+		"module": "ES2017",
+		"target": "ES2017",
 		"outDir": "dist/es/"
 	},
 	"exclude": ["node_modules", "dist"],

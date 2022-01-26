@@ -32,6 +32,7 @@
         "registry": "https://npm.pkg.github.com"
     },
     "dependencies": {
+        "tslib": "^2.3.1",
         "@azure/core-auth": "^1.3.2",
         "@microsoft/kiota-abstractions": "^1.0.27"
     },
