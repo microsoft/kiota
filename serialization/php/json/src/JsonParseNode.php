@@ -117,7 +117,6 @@ class JsonParseNode implements ParseNode
         }
         /** @var Parsable $result */
         $result = new ($type);
-        echo "$type Type\n";
         if($this->onBeforeAssignFieldValues !== null) {
             $this->onBeforeAssignFieldValues($result);
         }
