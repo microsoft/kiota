@@ -1,13 +1,18 @@
-from typing import Any, Optional
+from typing import Any, TypeVar
 
-from .response_handler import ModelType, NativeResponseType, ResponseHandler
+from .response_handler import ResponseHandler
+from .serialization import Parsable
+
+NativeResponseType = TypeVar("NativeResponseType")
+ModelType = TypeVar("ModelType")
 
 
 class NativeResponseHandler(ResponseHandler):
     """Default response handler to access the native response object.
     """
-    value: Optional[Any] = None
+    # Native response object as returned by the core service
+    value: Any
 
     async def handle_response_async(self, response: NativeResponseType) -> ModelType:
         self.value = response
-        return self.value
+        return None
