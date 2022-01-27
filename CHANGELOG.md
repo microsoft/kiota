@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modified the TypeScript RequestInformation URL paramater data type from URL to string.
 - Modified TypeScript packages to provide CJS and ESM modules.
 - Modified the TypeScript RequestInformation query and path paramaters data type from Map to Record Type.
+- Modifying TypeScript RequestInformation headers and options to Record type.
 
 ## [0.0.15] - 2021-12-17
 

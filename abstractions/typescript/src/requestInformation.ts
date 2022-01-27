@@ -60,21 +60,21 @@ export class RequestInformation {
     /** The Query Parameters of the request. */
     public queryParameters: Record<string, string | number | boolean | undefined> = {} //TODO: case insensitive
     /** The Request Headers. */
-    public headers: Map<string, string> = new Map<string, string>(); //TODO: case insensitive
-    private _requestOptions = new Map<string, RequestOption>(); //TODO: case insensitive
+    public headers: Record<string, string> = {}; //TODO: case insensitive
+    private _requestOptions: Record<string, RequestOption> = {}; //TODO: case insensitive
     /** Gets the request options for the request. */
-    public getRequestOptions() { return this._requestOptions.values(); }
+    public getRequestOptions() { return this._requestOptions}
     public addRequestOptions(...options: RequestOption[]) {
         if (!options || options.length === 0) return;
         options.forEach(option => {
-            this._requestOptions.set(option.getKey(), option);
+            this._requestOptions[option.getKey()] = option
         });
     }
     /** Removes the request options for the request. */
     public removeRequestOptions(...options: RequestOption[]) {
         if (!options || options.length === 0) return;
         options.forEach(option => {
-            this._requestOptions.delete(option.getKey());
+           delete this._requestOptions[option.getKey()];
         });
     }
     private static binaryContentType = "application/octet-stream";
@@ -92,8 +92,8 @@ export class RequestInformation {
         if (!values || values.length === 0) throw new Error("values cannot be undefined or empty");
 
         const writer = requestAdapter.getSerializationWriterFactory().getSerializationWriter(contentType);
-        this.headers.set(RequestInformation.contentTypeHeader, contentType);
-        if (values.length === 1)
+        this.headers[RequestInformation.contentTypeHeader] = contentType;
+        if(values.length === 1)
             writer.writeObjectValue(undefined, values[0]);
         else
             writer.writeCollectionOfObjectValues(undefined, values);
@@ -104,17 +104,8 @@ export class RequestInformation {
      * @param value the binary stream
      */
     public setStreamContent = (value: ReadableStream): void => {
-        this.headers.set(RequestInformation.contentTypeHeader, RequestInformation.binaryContentType);
+        this.headers[RequestInformation.contentTypeHeader]= RequestInformation.binaryContentType;
         this.content = value;
-    }
-    /**
-     * Sets the request headers from a raw object.
-     * @param headers the headers.
-     */
-    public setHeadersFromRawObject = (h: object): void => {
-        Object.entries(h).forEach(([k, v]) => {
-            this.headers.set(k, v as string);
-        });
     }
     /**
      * Sets the query string parameters from a raw object.

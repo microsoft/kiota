@@ -181,10 +181,9 @@ export class FetchRequestAdapter implements RequestAdapter {
         requestInfo.pathParameters.set("baseurl", this.baseUrl);
         const request = {
             method: requestInfo.httpMethod?.toString(),
-            headers: new FetchHeadersCtor(),
+            headers: requestInfo.headers,
             body: requestInfo.content,
         } as RequestInit;
-        requestInfo.headers?.forEach((v, k) => (request.headers as Headers).set(k, v));
         return request;
     }
 }

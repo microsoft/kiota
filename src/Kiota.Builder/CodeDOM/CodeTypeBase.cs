@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -9,6 +9,12 @@ namespace Kiota.Builder {
             Array,
             Complex
         }
+
+        /// <summary>
+        /// Indicates that the type is a callback
+        /// Example: ActionOf:true parameterA: (y: typeA) => void
+        /// Example: ActionOf:false parameterA: typeA
+        /// </summary>
         public bool ActionOf {get;set;} = false;
         public bool IsNullable {get;set;} = true;
         public CodeTypeCollectionKind CollectionKind {get;set;} = CodeTypeCollectionKind.None;
