@@ -202,16 +202,45 @@ class JsonParseNode implements ParseNode
             return null;
         }
         return array_map(static function ($x) {
-            $type = gettype($x);
+            $type = get_debug_type($x);
             return (new JsonParseNode($x))->getAnyValue($type);
         }, $this->jsonNode);
     }
 
     /**
      * @return mixed
+     * @throws Exception
      */
     public function getAnyValue(string $type) {
-        return '';
+        switch ($type){
+            case 'bool':
+                return $this->getBooleanValue();
+            case 'string':
+                return $this->getStringValue();
+            case 'int':
+                return $this->getIntegerValue();
+            case 'float':
+                return $this->getFloatValue();
+            case 'null':
+                return null;
+            case 'array':
+                return $this->getCollectionOfPrimitiveValues();
+            case Date::class:
+                return $this->getDateOnlyValue();
+            case Time::class:
+                return $this->getTimeOnlyValue();
+            case Byte::class:
+                return $this->getByteValue();
+            default:
+                if (is_subclass_of($type, Enum::class)){
+                    return $this->getEnumValue($type);
+                }
+                if (is_subclass_of($type, Parsable::class)){
+                    return $this->getObjectValue($type);
+                }
+                throw new InvalidArgumentException("Unable to decode type $type");
+        }
+
     }
 
     /**

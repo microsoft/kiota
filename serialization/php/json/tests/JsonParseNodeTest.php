@@ -24,7 +24,7 @@ class JsonParseNodeTest extends TestCase
     private StreamInterface $stream;
 
     protected function setUp(): void {
-        $this->stream = Utils::streamFor('{"name": "Silas Kenneth", "age": 98, "height": 123.122, "maritalStatus": "complicated,single"}');
+        $this->stream = Utils::streamFor('{"name": "Silas Kenneth", "age": 98, "height": 123.122, "maritalStatus": "complicated,single", "address": {"city": "Nairobi", "street": "Luthuli"}}');
     }
 
     public function testGetIntegerValue(): void {
@@ -59,10 +59,6 @@ class JsonParseNodeTest extends TestCase
         $this->assertEquals(123.122, $expected->getHeight());
     }
 
-    public function testGetChildNode(): void {
-
-    }
-
     public function testGetFloatValue(): void {
         $this->parseNode = new JsonParseNode('1243.12');
         $expected = $this->parseNode->getFloatValue();
@@ -72,11 +68,25 @@ class JsonParseNodeTest extends TestCase
     public function testGetCollectionOfPrimitiveValues(): void {
         $this->parseNode = new JsonParseNode([1921, 1212,123,45,56]);
         $expected = $this->parseNode->getCollectionOfPrimitiveValues();
-        $this->assertEquals([], $expected);
+        $this->assertEquals([1921, 1212,123,45,56], $expected);
     }
 
+    /**
+     * @throws Exception
+     */
     public function testGetAnyValue(): void {
-
+        $this->parseNode = new JsonParseNode(12);
+        $expectedInteger = $this->parseNode->getAnyValue('int');
+        $this->parseNode = new JsonParseNode(12.009);
+        $expectedFloat = $this->parseNode->getAnyValue('float');
+        $this->parseNode = new JsonParseNode((new DateTime('2022-01-27'))->format(DateTimeInterface::RFC3339));
+        $expectedDate = $this->parseNode->getAnyValue(Date::class);
+        $this->parseNode = new JsonParseNode("Silas Kenneth");
+        $expectedString = $this->parseNode->getAnyValue('string');
+        $this->assertEquals(12, $expectedInteger);
+        $this->assertEquals(12.009, $expectedFloat);
+        $this->assertEquals('2022-01-27', (string)$expectedDate);
+        $this->assertEquals('Silas Kenneth', $expectedString);
     }
 
     public function testGetByteValue(): void {
