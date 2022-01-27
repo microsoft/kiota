@@ -43,7 +43,7 @@ class RetryHandler
      * @param RetryOption|null $retryOption
      * @param callable $nextHandler
      */
-    public function __construct(?RetryOption $retryOption, callable $nextHandler)
+    public function __construct(callable $nextHandler, ?RetryOption $retryOption = null)
     {
         $this->retryOption = ($retryOption) ?: new RetryOption();
         $this->nextHandler = $nextHandler;

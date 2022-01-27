@@ -7,85 +7,35 @@ using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners
 {
-    public class ShellRefiner : CommonLanguageRefiner, ILanguageRefiner
+    public class ShellRefiner : CSharpRefiner, ILanguageRefiner
     {
         public ShellRefiner(GenerationConfiguration configuration) : base(configuration) { }
         public override void Refine(CodeNamespace generatedCode)
         {
-            // Remove PathSegment field
-            // Convert Properties to AddCommand
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
+            AddRawUrlConstructorOverload(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             CreateCommandBuilders(generatedCode);
             AddAsyncSuffix(generatedCode);
             AddInnerClasses(generatedCode, false);
-            AddParsableInheritanceForModelClasses(generatedCode);
+            AddParsableInheritanceForModelClasses(generatedCode, "IParsable");
             CapitalizeNamespacesFirstLetters(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");
             MakeEnumPropertiesNullable(generatedCode);
-            ReplaceReservedNames(generatedCode, new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}");
+            /* Exclude the following as their names will be capitalized making the change unnecessary in this case sensitive language
+             * code classes, class declarations, property names, using declarations, namespace names
+             * Exclude CodeMethod as the return type will also be capitalized (excluding the CodeType is not enough since this is evaluated at the code method level)
+            */
+            ReplaceReservedNames(
+                generatedCode,
+                new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}",
+                new HashSet<Type> { typeof(CodeClass), typeof(CodeClass.Declaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod) }
+            );
             DisambiguatePropertiesWithClassNames(generatedCode);
             AddConstructorsForDefaultValues(generatedCode, false);
             AddSerializationModulesImport(generatedCode);
-        }
-        private static void DisambiguatePropertiesWithClassNames(CodeElement currentElement)
-        {
-            if (currentElement is CodeClass currentClass)
-            {
-                var sameNameProperty = currentClass
-                                                .GetChildElements(true)
-                                                .OfType<CodeProperty>()
-                                                .FirstOrDefault(x => x.Name.Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase));
-                if (sameNameProperty != null)
-                {
-                    currentClass.RemoveChildElement(sameNameProperty);
-                    sameNameProperty.SerializationName ??= sameNameProperty.Name;
-                    sameNameProperty.Name = $"{sameNameProperty.Name}_prop";
-                    currentClass.AddProperty(sameNameProperty);
-                }
-            }
-            CrawlTree(currentElement, DisambiguatePropertiesWithClassNames);
-        }
-        private static void MakeEnumPropertiesNullable(CodeElement currentElement)
-        {
-            if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model))
-                currentClass.GetChildElements(true)
-                            .OfType<CodeProperty>()
-                            .Where(x => x.Type is CodeType propType && propType.TypeDefinition is CodeEnum)
-                            .ToList()
-                            .ForEach(x => x.Type.IsNullable = true);
-            CrawlTree(currentElement, MakeEnumPropertiesNullable);
-        }
-        private static void RemoveModelClasses(CodeElement currentElement)
-        {
-            if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model))
-            {
-                var codeNamespace = currentClass.Parent as CodeNamespace;
-                codeNamespace.RemoveChildElement(currentClass);
-            }
-            CrawlTree(currentElement, RemoveModelClasses);
-        }
-
-        private static void RemoveEnums(CodeElement currentElement)
-        {
-            if (currentElement is CodeEnum currentEnum)
-            {
-                var codeNamespace = currentElement.Parent as CodeNamespace;
-                codeNamespace.RemoveChildElement(currentEnum);
-            }
-            CrawlTree(currentElement, RemoveEnums);
-        }
-
-        private static void RemoveConstructors(CodeElement currentElement)
-        {
-            if (currentElement is CodeMethod currentMethod && currentMethod.IsOfKind(CodeMethodKind.Constructor))
-            {
-                var codeClass = currentElement.Parent as CodeClass;
-                codeClass.RemoveChildElement(currentMethod);
-            }
-            CrawlTree(currentElement, RemoveConstructors);
         }
 
         private static void CreateCommandBuilders(CodeElement currentElement)
@@ -181,29 +131,6 @@ namespace Kiota.Builder.Refiners
             return codeMethod;
         }
 
-        private static void AddParsableInheritanceForModelClasses(CodeElement currentElement)
-        {
-            if (currentElement is CodeClass currentClass &&
-                currentClass.IsOfKind(CodeClassKind.Model) &&
-                currentClass.StartBlock is CodeClass.Declaration declaration)
-            {
-                declaration.AddImplements(new CodeType
-                {
-                    IsExternal = true,
-                    Name = $"IParsable",
-                });
-                (currentClass.Parent is CodeClass parentClass &&
-                parentClass.StartBlock is CodeClass.Declaration parentDeclaration ?
-                    parentDeclaration :
-                    declaration)
-                    .AddUsings(new CodeUsing
-                    {
-                        Name = "Microsoft.Kiota.Abstractions.Serialization"
-                    });
-            }
-            CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
-        }
-
         private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] {
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
                 "Microsoft.Kiota.Abstractions", "IRequestAdapter"),
@@ -246,17 +173,6 @@ namespace Kiota.Builder.Refiners
                 "System.Text",  "Encoding"),
         };
 
-        private static void CapitalizeNamespacesFirstLetters(CodeElement current)
-        {
-            if (current is CodeNamespace currentNamespace)
-                currentNamespace.Name = currentNamespace.Name?.Split('.')?.Select(x => x.ToFirstCharacterUpperCase())?.Aggregate((x, y) => $"{x}.{y}");
-            CrawlTree(current, CapitalizeNamespacesFirstLetters);
-        }
-        private static void AddAsyncSuffix(CodeElement currentElement)
-        {
-            if (currentElement is CodeMethod currentMethod && currentMethod.IsAsync)
-                currentMethod.Name += "Async";
-            CrawlTree(currentElement, AddAsyncSuffix);
-        }
+
     }
 }
