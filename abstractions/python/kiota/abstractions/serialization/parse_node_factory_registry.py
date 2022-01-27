@@ -10,7 +10,7 @@ from .parse_node_factory import ParseNodeFactory
 class ParseNodeFactoryRegistry(ParseNodeFactory):
     """Holds a list of all the registered factories for the various types of nodes
     """
-    CONTENT_TYPE_ASSOCIATED_FACTORIES: Dict[str, ParseNodeFactoryRegistry] = {}
+    CONTENT_TYPE_ASSOCIATED_FACTORIES: Dict[str, ParseNodeFactory] = {}
 
     __instance = None
 
