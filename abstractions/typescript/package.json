@@ -38,7 +38,6 @@
     "tinyduration": "^3.2.2",
     "tslib": "^2.3.1",
     "uri-template-lite": "^22.1.0",
-    "uuid": "^8.3.2",
-    "web-streams-polyfill": "^3.2.0"
+    "uuid": "^8.3.2"
   }
 }

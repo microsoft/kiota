@@ -17,7 +17,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
         AliasUsingsWithSameSymbol(generatedCode);
         AddParsableInheritanceForModelClasses(generatedCode, "Parsable");
-        ReplaceBinaryByNativeType(generatedCode, "ReadableStream", "web-streams-polyfill/es2018", true);
+        ReplaceBinaryByNativeType(generatedCode, "ArrayBuffer", null);
         ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
         AddGetterAndSetterMethods(generatedCode, new() {
                                                 CodePropertyKind.Custom,

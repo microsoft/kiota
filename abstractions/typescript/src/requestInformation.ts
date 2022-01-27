@@ -1,5 +1,4 @@
 import { HttpMethod } from "./httpMethod";
-import { ReadableStream } from 'web-streams-polyfill/es2018';
 import { Parsable } from "./serialization";
 import { RequestOption } from "./requestOption";
 import { RequestAdapter } from "./requestAdapter";
@@ -56,7 +55,7 @@ export class RequestInformation {
     /** The HTTP method for the request */
     public httpMethod?: HttpMethod;
     /** The Request Body. */
-    public content?: ReadableStream;
+    public content?: ArrayBuffer;
     /** The Query Parameters of the request. */
     public queryParameters: Record<string, string | number | boolean | undefined> = {} //TODO: case insensitive
     /** The Request Headers. */
@@ -103,7 +102,7 @@ export class RequestInformation {
      * Sets the request body to be a binary stream.
      * @param value the binary stream
      */
-    public setStreamContent = (value: ReadableStream): void => {
+    public setStreamContent = (value: ArrayBuffer): void => {
         this.headers[RequestInformation.contentTypeHeader]= RequestInformation.binaryContentType;
         this.content = value;
     }
