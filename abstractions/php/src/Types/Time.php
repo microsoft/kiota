@@ -9,12 +9,11 @@ namespace Microsoft\Kiota\Abstractions\Types;
 
 use DateTime;
 use Exception;
-use JsonSerializable;
 
 /**
  * This object represents time in hours minutes and seconds
  */
-class Time implements JsonSerializable
+class Time
 {
 
     /**
@@ -63,14 +62,5 @@ class Time implements JsonSerializable
      */
     public function __toString() {
         return $this->value;
-    }
-
-
-    /**
-     * Serialize for json serialization
-     * @return string
-     */
-    public function jsonSerialize(): string {
-        return $this->__toString();
     }
 }

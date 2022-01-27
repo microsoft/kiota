@@ -27,8 +27,7 @@
       "php": "^7.4 || ^8.0",
       "php-http/promise": "^1.1.0",
       "php-http/message-factory": "^1.0.2",
-      "rize/uri-template": "^0.3.4",
-    "ext-json": "*"
+      "rize/uri-template": "^0.3.4"
   },
     "require-dev": {
       "phpstan/phpstan": "^1.2.0",

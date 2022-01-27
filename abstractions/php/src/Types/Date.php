@@ -10,11 +10,12 @@ namespace Microsoft\Kiota\Abstractions\Types;
 use DateTime;
 use Exception;
 
-class Date implements \JsonSerializable {
+class Date
+{
     /**
      * @var string $value
      */
-    private $value;
+    private string $value;
 
     /**
      * @param string $dateString The date value in string format YYYY-MM-DD.
@@ -56,9 +57,5 @@ class Date implements \JsonSerializable {
      */
     public function __toString() {
         return $this->value;
-    }
-
-    public function jsonSerialize(): string {
-        return $this->__toString();
     }
 }
