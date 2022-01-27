@@ -5,7 +5,7 @@ from ..request_information import RequestInformation
 
 class AuthenticationProvider(ABC):
     """
-    Authenticates the application request
+    Base class for providing authentication information for a request.
     """
     @abstractmethod
     async def authenticate_request(self, request: RequestInformation) -> None:
