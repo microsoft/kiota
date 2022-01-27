@@ -1,11 +1,9 @@
-from ctypes import Union
 from io import BytesIO
-from re import U, template
-from typing import Any, Dict, List, Optional, Tuple, TypeVar
+from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar
 
-from uritemplate import URITemplate, expand
+from uritemplate import URITemplate
 
-from .http_method import HttpMethod
+from .method import Method
 from .request_option import RequestOption
 from .serialization import Parsable
 
@@ -14,7 +12,7 @@ T = TypeVar("T", bound=Parsable)
 QueryParams = TypeVar('QueryParams', int, float, str, bool, None)
 
 
-class RequestInformation:
+class RequestInformation(Generic[QueryParams]):
     """This class represents an abstract HTTP request
     """
     RAW_URL_KEY = 'request-raw-url'
@@ -22,7 +20,7 @@ class RequestInformation:
     CONTENT_TYPE_HEADER = 'Content-Type'
 
     # The uri of the request
-    __uri = Optional[Url]
+    __uri: Optional[Url]
 
     __request_options: Dict[str, RequestOption] = {}
 
@@ -30,10 +28,10 @@ class RequestInformation:
     path_parameters: Dict[str, Any] = {}
 
     # The URL template for the request
-    url_template = Optional[str]
+    url_template: Optional[str]
 
     # The HTTP Method for the request
-    http_method = str
+    http_method: Method
 
     # The query parameters for the request
     query_parameters: Dict[str, QueryParams] = {}
@@ -42,10 +40,9 @@ class RequestInformation:
     headers: Dict[str, str] = {}
 
     # The Request Body
-    content = BytesIO
+    content: BytesIO
 
-    @property
-    def url(self) -> Url:
+    def get_url(self) -> Url:
         """ Gets the URL of the request
         """
         raw_url = self.path_parameters.get(self.RAW_URL_KEY)
@@ -70,8 +67,7 @@ class RequestInformation:
         result = template.expand(data)
         return result
 
-    @url.setter
-    def url(self, url: Url) -> None:
+    def set_url(self, url: Url) -> None:
         """ Sets the URL of the request
         """
         if not url:
