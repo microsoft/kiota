@@ -19,7 +19,7 @@
   "autoload-dev": {
     "psr-4": {
       "Microsoft\\Kiota\\Abstractions\\": "./src",
-      "Microsoft\\Kiota\\Tests\\": "./tests"
+      "Microsoft\\Kiota\\Abstractions\\Tests\\": "./tests"
     }
   },
   "require": {

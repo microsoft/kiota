@@ -20,7 +20,7 @@ class Time
      * The final string representation of the Time
      * @var string $value
      */
-    private $value;
+    private string $value;
 
     /**
      * @param string $timeString The time value in string format HH:MM:SS
