@@ -54,18 +54,21 @@ namespace Kiota.Builder.Writers.Shell
                         var builderMethods = (codeElement.OriginalIndexer.ReturnType as CodeType).TypeDefinition.GetChildElements(true).OfType<CodeMethod>()
                             .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder))
                             .OrderBy(m => m.Name);
-                        // Filter out list builder commands. They contain the item builder commands already
-                        var itemBuilderMethods = builderMethods.Where(m => !m.ReturnType.IsCollection);
                         conventions.AddRequestBuilderBody(parent, targetClass, writer, prefix: "var builder = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
-                        writer.WriteLine("var commands = new List<Command> { ");
+                        writer.WriteLine("var commands = new List<Command> {");
                         writer.IncreaseIndent();
 
-                        foreach (var method in itemBuilderMethods)
+                        foreach (var method in builderMethods.Where(m => !m.ReturnType.IsCollection))
                         {
                             writer.WriteLine($"builder.{method.Name}(),");
                         }
 
                         writer.CloseBlock("};");
+
+                        foreach (var method in builderMethods.Where(m => m.ReturnType.IsCollection))
+                        {
+                            writer.WriteLine($"commands.AddRange(builder.{method.Name}());");
+                        }
 
                         writer.WriteLine("return commands;");
                     }
@@ -87,13 +90,21 @@ namespace Kiota.Builder.Writers.Shell
                             .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder))
                             .OrderBy(m => m.Name)
                             .ThenBy(m => m.ReturnType.IsCollection);
-                        // Filter out list builder commands. They contain the item builder commands already
-                        var itemBuilderMethods = builderMethods.Where(m => !m.ReturnType.IsCollection);
                         conventions.AddRequestBuilderBody(parent, targetClass, writer, prefix: "var builder = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
 
-                        foreach (var method in itemBuilderMethods)
+                        foreach (var method in builderMethods)
                         {
-                            writer.WriteLine($"command.AddCommand(builder.{method.Name}());");
+                            if (method.ReturnType.IsCollection)
+                            {
+                                writer.WriteLine($"foreach (var cmd in builder.{method.Name}()) {{");
+                                writer.IncreaseIndent();
+                                writer.WriteLine($"command.AddCommand(cmd);");
+                                writer.CloseBlock();
+                            }
+                            else
+                            {
+                                writer.WriteLine($"command.AddCommand(builder.{method.Name}());");
+                            }
                         }
                         // SubCommands
                     }
