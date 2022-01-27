@@ -4,11 +4,12 @@ from io import BytesIO
 from typing import List, Optional, TypeVar
 
 from .request_information import RequestInformation
-from .response_handler import ModelType, ResponseHandler
+from .response_handler import ResponseHandler
 from .serialization import Parsable, SerializationWriterFactory
 from .store import BackingStoreFactory
 
 ResponseType = TypeVar("ResponseType", str, int, float, bool, datetime, BytesIO)
+ModelType = TypeVar("ModelType", bound=Parsable)
 
 
 class RequestAdapter(ABC):
