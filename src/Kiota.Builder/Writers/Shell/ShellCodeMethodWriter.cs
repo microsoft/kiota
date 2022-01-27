@@ -249,6 +249,8 @@ namespace Kiota.Builder.Writers.Shell
                     var contentType = originalMethod.ContentType ?? "application/json";
                     writer.WriteLine("var response = responseHandler.Value as HttpResponseMessage;");
                     writer.WriteLine($"var formatter = OutputFormatterFactory.Instance.GetFormatter({outputFormatParamName});");
+                    writer.WriteLine("if (response.IsSuccessStatusCode) {");
+                    writer.IncreaseIndent();
                     if (typeString != "Stream")
                     {
                         writer.WriteLine("var content = await response.Content.ReadAsStringAsync();");
@@ -267,9 +269,15 @@ namespace Kiota.Builder.Writers.Shell
                         writer.WriteLine($"{consoleParamName}.WriteLine($\"Content written to {{{fileParamName}.FullName}}.\");");
                         writer.CloseBlock();
                     }
+                    writer.CloseBlock();
+                    writer.WriteLine("else {");
+                    writer.IncreaseIndent();
+                    writer.WriteLine("var content = await response.Content.ReadAsStringAsync();");
+                    writer.WriteLine("console.WriteLine(content);");
+                    writer.CloseBlock();
 
                     // Assume string content as stream here
-                    
+
                 }
                 writer.DecreaseIndent();
                 var delimiter = "";
