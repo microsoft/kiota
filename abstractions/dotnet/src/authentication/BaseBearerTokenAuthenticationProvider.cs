@@ -38,9 +38,8 @@ public class BaseBearerTokenAuthenticationProvider : IAuthenticationProvider
         if(!request.Headers.ContainsKey(AuthorizationHeaderKey))
         {
             var token = await AccessTokenProvider.GetAuthorizationTokenAsync(request.URI, cancellationToken);
-            if(string.IsNullOrEmpty(token))
-                throw new InvalidOperationException("Could not get an authorization token");
-            request.Headers.Add(AuthorizationHeaderKey, $"Bearer {token}");
+            if(!string.IsNullOrEmpty(token))
+                request.Headers.Add(AuthorizationHeaderKey, $"Bearer {token}");
         }
     }
 }

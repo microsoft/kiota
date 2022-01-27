@@ -1,4 +1,4 @@
-// ------------------------------------------------------------------------------
+﻿// ------------------------------------------------------------------------------
 //  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
 // ------------------------------------------------------------------------------
 
@@ -8,7 +8,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Core;
-using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Abstractions.Authentication;
 
 namespace Microsoft.Kiota.Authentication.Azure;
@@ -19,15 +18,21 @@ public class AzureIdentityAccessTokenProvider : IAccessTokenProvider
 {
     private readonly TokenCredential _credential;
     private readonly List<string> _scopes;
+    private readonly AllowedHostsValidator _allowedHostsValidator;
 
     /// <summary>
     /// The <see cref="AzureIdentityAccessTokenProvider"/> constructor
     /// </summary>
     /// <param name="credential">The credential implementation to use to obtain the access token.</param>
+    /// <param name="allowedHosts">The list of allowed hosts for which to request access tokens.</param>
     /// <param name="scopes">The scopes to request the access token for.</param>
-    public AzureIdentityAccessTokenProvider(TokenCredential credential, params string[] scopes)
+    public AzureIdentityAccessTokenProvider(TokenCredential credential, string [] allowedHosts, params string[] scopes)
     {
         _credential = credential ?? throw new ArgumentNullException(nameof(credential));
+
+        if(!allowedHosts?.Any() ?? true)
+            _allowedHostsValidator = new AllowedHostsValidator(new string[] { "graph.microsoft.com", "graph.microsoft.us", "dod-graph.microsoft.us", "graph.microsoft.de", "microsoftgraph.chinacloudapi.cn", "canary.graph.microsoft.com" });
+
         if(scopes == null)
             _scopes = new();
         else
@@ -45,6 +50,12 @@ public class AzureIdentityAccessTokenProvider : IAccessTokenProvider
     /// <returns>An authorization token string.</returns>
     public async Task<string> GetAuthorizationTokenAsync(Uri uri, CancellationToken cancellationToken = default)
     {
+        if(!_allowedHostsValidator.IsUrlHostValid(uri))
+            return string.Empty;
+
+        if(!uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Only https is supported");
+
         var result = await this._credential.GetTokenAsync(new TokenRequestContext(_scopes.ToArray()), cancellationToken); //TODO: we might have to bubble that up for native apps or backend web apps to avoid blocking the UI/getting an exception
         return result.Token;
     }
