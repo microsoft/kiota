@@ -18,17 +18,10 @@ namespace Microsoft.Kiota.Abstractions.Authentication
         /// <summary>
         /// The <see cref="AllowedHostsValidator"/> constructor
         /// </summary>
-        public AllowedHostsValidator(): this(new HashSet<string>(StringComparer.OrdinalIgnoreCase))
-        {
-        }
-
-        /// <summary>
-        /// The <see cref="AllowedHostsValidator"/> constructor
-        /// </summary>
         /// <param name="validHosts"> Collection of valid Hosts</param>
-        public AllowedHostsValidator(IEnumerable<string> validHosts)
+        public AllowedHostsValidator(IEnumerable<string> validHosts = null)
         {
-            _allowedHosts = new HashSet<string>(validHosts, StringComparer.OrdinalIgnoreCase);
+            _allowedHosts = new HashSet<string>(validHosts ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -36,7 +29,7 @@ namespace Microsoft.Kiota.Abstractions.Authentication
         /// </summary>
         public IEnumerable<string> AllowedHosts
         {
-            get => _allowedHosts.ToArray();
+            get => _allowedHosts.AsEnumerable();
             set
             {
                 if(value is null) throw new ArgumentNullException(nameof(value));
