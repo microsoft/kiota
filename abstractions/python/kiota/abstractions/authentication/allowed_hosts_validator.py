@@ -1,4 +1,5 @@
 from typing import List, Set
+from urllib.parse import urlparse
 
 
 class AllowedHostsValidator:
@@ -45,20 +46,15 @@ class AllowedHostsValidator:
         if not self.allowed_hosts:
             return True
 
-        scheme_and_rest = url.split("://")
-        if len(scheme_and_rest) >= 2:
-            rest = scheme_and_rest[1]
-            if rest:
-                return self._is_host_and_path_valid(rest)
-            if url.startswith("http"):
-                # protocol relative URL domain.tld/path
-                return self._is_host_and_path_valid(url)
-        return False
+        # Format: urlparse("scheme://netloc/path;parameters?query#fragment")
+        #Returns: ParseResult(scheme='scheme', netloc='netloc', path='/path;parameters', params='',
+        #    query='query', fragment='fragment')
+        o = urlparse(url)
 
-    def _is_host_and_path_valid(self, rest: str) -> bool:
-        host_and_rest = rest.split("/")
-        if len(host_and_rest) >= 2:
-            host = host_and_rest[0]
-            if host:
-                return host.lower() in self.allowed_hosts
+        if o.netloc:
+            return o.netloc.lower() in self.allowed_hosts
+        # For urls without a valid netloc e,g ./www.python.org/~hello?arg=1#frag
+        if not o.netloc and o.path:
+            return o.path.lower() in self.allowed_hosts
+
         return False
