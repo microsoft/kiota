@@ -12,13 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the ability to configure the underlying transport in Go. #1003
 - Added additional date time (date, time, duration) types in the generation process. #1017
 - PHP Request Adapter (includes middleware) #1048, #918, #1024, #1025
+- Added support for PHP Json Serialization.
+- Update PHP abstractions to make property keys and values nullable in `SerializationWriter.php`.
 
 ### Changed
 
 - Fixed an issue where multiple api clients could run into racing conditions in Go.
 - Fixed a bug where empty additional data in Go would lead to invalid JSON payloads during serialization.
 - Fixed a bug where Go serialization would write empty arrays for nil values.
-- Modified the TypeScript RequestInformation URL paramater data type from URL to string.
+- Modified the TypeScript RequestInformation URL parameter data type from URL to string.
 
 
 ## [0.0.15] - 2021-12-17
