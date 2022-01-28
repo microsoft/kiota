@@ -28,7 +28,7 @@ class JsonSerializationWriterTest extends TestCase
 
     public function testWriteLongValue(): void {
         $this->jsonSerializationWriter = new JsonSerializationWriter();
-        $this->jsonSerializationWriter->writeLongValue("timestamp", 28192199291929192);
+        $this->jsonSerializationWriter->writeIntegerValue("timestamp", 28192199291929192);
         $expected = '"timestamp":28192199291929192';
         $actual = $this->jsonSerializationWriter->getSerializedContent()->getContents();
         $this->assertEquals($expected, $actual);
@@ -40,7 +40,7 @@ class JsonSerializationWriterTest extends TestCase
     public function testWriteDateOnlyValue(): void {
         $this->jsonSerializationWriter = new JsonSerializationWriter();
         $date = Date::createFrom(2012, 12, 3);
-        $this->jsonSerializationWriter->writeDateOnlyValue("date", $date);
+        $this->jsonSerializationWriter->writeDateValue("date", $date);
         $expected = '"date":"2012-12-03"';
         $actual = $this->jsonSerializationWriter->getSerializedContent()->getContents();
         $this->assertEquals($expected, $actual);
@@ -48,7 +48,7 @@ class JsonSerializationWriterTest extends TestCase
 
     public function testWriteUUIDValue(): void{
         $this->jsonSerializationWriter = new JsonSerializationWriter();
-        $this->jsonSerializationWriter->writeUUIDValue("id", '9de7828f-4975-49c7-8734-805487dfb8a2');
+        $this->jsonSerializationWriter->writeStringValue("id", '9de7828f-4975-49c7-8734-805487dfb8a2');
         $expected = '"id":"9de7828f-4975-49c7-8734-805487dfb8a2"';
         $actual = $this->jsonSerializationWriter->getSerializedContent()->getContents();
         $this->assertEquals($expected, $actual);

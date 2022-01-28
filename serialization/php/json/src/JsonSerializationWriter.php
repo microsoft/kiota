@@ -2,6 +2,7 @@
 
 namespace Microsoft\Kiota\Serialization\Json;
 
+use DateInterval;
 use DateTime;
 use DateTimeInterface;
 use GuzzleHttp\Psr7\Utils;
@@ -35,11 +36,13 @@ class JsonSerializationWriter implements SerializationWriter
     /** @var callable|null $onBeforeObjectSerialization */
     private $onBeforeObjectSerialization;
 
-    public function writePropertyName(string $propertyName): void {
+    private function writePropertyName(string $propertyName): void {
         $this->writer []= "\"{$propertyName}\":";
     }
+
     /**
      * @inheritDoc
+     * @throws \JsonException
      */
     public function writeStringValue(?string $key, ?string $value): void {
         if (!empty($key)) {
@@ -84,21 +87,7 @@ class JsonSerializationWriter implements SerializationWriter
     /**
      * @inheritDoc
      */
-    public function writeLongValue(?string $key, ?int $value): void {
-        $this->writeIntegerValue($key, $value);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function writeUUIDValue(?string $key, ?string $value): void {
-        $this->writeStringValue($key, $value);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function writeDateTimeOffsetValue(?string $key, ?DateTime $value): void {
+    public function writeDateTimeValue(?string $key, ?DateTime $value): void {
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
@@ -114,7 +103,7 @@ class JsonSerializationWriter implements SerializationWriter
      * @param Date|null $value
      * @return void
      */
-    public function writeDateOnlyValue(?string $key, ?Date $value): void {
+    public function writeDateValue(?string $key, ?Date $value): void {
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
@@ -291,6 +280,7 @@ class JsonSerializationWriter implements SerializationWriter
     /**
      * @param string|null $key
      * @param mixed $value
+     * @throws \JsonException
      */
     public function writeAnyValue(?string $key, $value): void{
         $type = get_debug_type($value);
@@ -311,16 +301,19 @@ class JsonSerializationWriter implements SerializationWriter
                 $this->writeNullValue($key);
                 break;
             case Date::class:
-                $this->writeDateOnlyValue($key, $value);
+                $this->writeDateValue($key, $value);
                 break;
             case Time::class:
-                $this->writeTimeOnlyValue($key, $value);
+                $this->writeTimeValue($key, $value);
                 break;
             case Byte::class:
                 $this->writeByteValue($key, $value);
                 break;
             case DateTime::class:
-                $this->writeDateTimeOffsetValue($key, $value);
+                $this->writeDateTimeValue($key, $value);
+                break;
+            case DateInterval::class:
+                $this->writeDateIntervalValue($key, $value);
                 break;
             case 'stdClass':
                 $this->writeNonParsableObjectValue($key, (object)$value);
@@ -333,7 +326,7 @@ class JsonSerializationWriter implements SerializationWriter
                 if (!empty($keys)){
                     $this->writeNonParsableObjectValue($key, (object)$value);
                 } else if (!empty($value)){
-                    if (is_a($value[0], Parsable::class)) {
+                    if (is_subclass_of($value[0], Parsable::class)) {
                         $this->writeCollectionOfObjectValues($key, $value);
                     } else{
                         $this->writeCollectionOfNonParsableObjectValues($key, $value);
@@ -346,7 +339,7 @@ class JsonSerializationWriter implements SerializationWriter
                 } else if(is_subclass_of($type, Enum::class)){
                     $this->writeEnumValue($key, $value);
                 } else if(is_subclass_of($type, DateTimeInterface::class)){
-                    $this->writeDateTimeOffsetValue($key, $value);
+                    $this->writeDateTimeValue($key, $value);
                 }
                 break;
         }
@@ -413,12 +406,25 @@ class JsonSerializationWriter implements SerializationWriter
     /**
      * @inheritDoc
      */
-    public function writeTimeOnlyValue(?string $key, ?Time $value): void {
+    public function writeTimeValue(?string $key, ?Time $value): void {
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
 
         $val = $value !== null ? "\"{$value}\"" : 'null';
+        $this->writePropertyValue($key, $val);
+    }
+
+    public function writeDateIntervalValue(?string $key, ?DateInterval $value): void {
+        if (!empty($key)) {
+            $this->writePropertyName($key);
+        }
+
+        $res = null;
+        if ($value !== null){
+            $res = "P{$value->y}Y{$value->y}M{$value->d}DT{$value->h}H{$value->i}M{$value->s}S";
+        }
+        $val = $res !== null ? "\"{$res}\"" : 'null';
         $this->writePropertyValue($key, $val);
     }
 

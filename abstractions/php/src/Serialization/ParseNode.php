@@ -42,18 +42,6 @@ interface ParseNode {
     public function getFloatValue(): ?float;
 
     /**
-     * Gets the Long value of the node.
-     * @return int|null the Long value of the node.
-     */
-    public function getLongValue(): ?int;
-
-    /**
-     * Gets the UUID value of the node.
-     * @return string|null the UUID value of the node.
-     */
-    public function getUUIDValue(): ?string;
-
-    /**
      * Gets the model object value of the node.
      * @param string $type The type for the Parsable object.
      * @return Parsable|null the model object value of the node.
@@ -72,12 +60,6 @@ interface ParseNode {
      * @return array<mixed>|null A collection of primitive values.
      */
     public function getCollectionOfPrimitiveValues(?string $typeName = null): ?array;
-
-    /**
-     * Gets the OffsetDateTime value of the node.
-     * @return DateTime|null the OffsetDateTime value of the node.
-     */
-    public function getDateTimeOffsetValue(): ?DateTime;
 
     /**
      * Gets the DateTimeValue of the node

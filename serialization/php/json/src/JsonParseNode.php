@@ -12,7 +12,6 @@ use Microsoft\Kiota\Abstractions\Serialization\ParseNode;
 use Microsoft\Kiota\Abstractions\Types\Byte;
 use Microsoft\Kiota\Abstractions\Types\Date;
 use Microsoft\Kiota\Abstractions\Types\Time;
-use RuntimeException;
 
 /**
  * @method onBeforeAssignFieldValues(Parsable $result)
@@ -31,9 +30,6 @@ class JsonParseNode implements ParseNode
      * @param mixed|null $content
      */
     public function __construct($content) {
-        if ($content === null) {
-            return;
-        }
         $this->jsonNode = $content;
 
     }
@@ -50,6 +46,7 @@ class JsonParseNode implements ParseNode
 
     /**
      * @inheritDoc
+     * @throws \JsonException
      */
     public function getStringValue(): ?string {
         return $this->jsonNode !== null ? addcslashes($this->jsonNode, "\\\r\n") : null;
@@ -77,20 +74,6 @@ class JsonParseNode implements ParseNode
     }
 
     /**
-     * @inheritDoc
-     */
-    public function getLongValue(): ?int {
-        return $this->getIntegerValue();
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getUUIDValue(): ?string {
-        return $this->getStringValue();
-    }
-
-    /**
      * @return array<Parsable>
      * @throws Exception
      */
@@ -109,12 +92,12 @@ class JsonParseNode implements ParseNode
      * @inheritDoc
      * @throws Exception
      */
-    public function getObjectValue(?string $type = null): ?Parsable {
-        if ($this->jsonNode === null || $this->jsonNode === 'null') {
+    public function getObjectValue(string $type): ?Parsable {
+        if ($this->jsonNode === null) {
             return null;
         }
-        if ($type === null){
-            throw new RuntimeException("Invalid type $type provided.");
+        if (!is_subclass_of($type, Parsable::class)){
+            throw new InvalidArgumentException("Invalid type $type provided.");
         }
         /** @var Parsable $result */
         $result = new ($type);

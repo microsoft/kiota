@@ -13,6 +13,8 @@ use Microsoft\Kiota\Abstractions\Types\Date;
 use Microsoft\Kiota\Abstractions\Types\Time;
 use Microsoft\Kiota\Serialization\Json\JsonParseNode;
 use Microsoft\Kiota\Serialization\Json\JsonParseNodeFactory;
+use Microsoft\Kiota\Serialization\Json\JsonSerializationWriter;
+use Microsoft\Kiota\Serialization\Json\JsonSerializationWriterFactory;
 use Microsoft\Kiota\Serialization\Tests\Samples\Address;
 use Microsoft\Kiota\Serialization\Tests\Samples\MaritalStatus;
 use Microsoft\Kiota\Serialization\Tests\Samples\Person;
@@ -66,6 +68,9 @@ class JsonParseNodeTest extends TestCase
         $this->assertEquals(1243.12, $expected);
     }
 
+    /**
+     * @throws Exception
+     */
     public function testGetCollectionOfPrimitiveValues(): void {
         $this->parseNode = new JsonParseNode([1921, 1212,123,45,56]);
         $expected = $this->parseNode->getCollectionOfPrimitiveValues();
@@ -159,13 +164,13 @@ class JsonParseNodeTest extends TestCase
 
     public function testGetUUIDValue(): void{
         $this->parseNode = new JsonParseNode('4cbfc23b-d081-4bd2-90f5-61deebfa755c');
-        $expected = $this->parseNode->getUUIDValue();
+        $expected = $this->parseNode->getStringValue();
         $this->assertEquals('4cbfc23b-d081-4bd2-90f5-61deebfa755c', $expected);
     }
 
     public function testGetLongValue(): void {
         $this->parseNode = new JsonParseNode(6892759229690544128);
-        $expected = $this->parseNode->getLongValue();
+        $expected = $this->parseNode->getIntegerValue();
         $this->assertEquals(6892759229690544128, $expected);
     }
 
@@ -176,9 +181,8 @@ class JsonParseNodeTest extends TestCase
         $child = $this->parseNode->getChildNode('address');
         /** @var Address $address */
         $address = $child->getObjectValue(Address::class);
-
         $this->assertInstanceOf(Address::class, $address);
-        $this->assertEquals('Nairobi', $address->getCity());
+        $this->assertEquals((string)'Nairobi', $address->getCity());
 
     }
 }

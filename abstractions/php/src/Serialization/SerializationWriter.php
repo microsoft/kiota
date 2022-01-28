@@ -35,31 +35,16 @@ interface SerializationWriter {
     /**
      * Writes the specified Integer value to the stream with an optional given key.
      * @param string|null $key the key to write the value with.
-     * @param int $value the value to write to the stream.
-     */
-    public function writeIntegerValue(?string $key, ?int $value): void;
-
-    /**
-     * Writes the specified Long value to the stream with an optional given key.
-     * @param string|null $key the key to write the value with.
      * @param int|null $value the value to write to the stream.
      */
-    public function writeLongValue(?string $key, ?int $value): void;
-
-
-    /**
-     * Writes the specified UUID value to the stream with an optional given key.
-     * @param string|null $key the key to write the value with.
-     * @param string|null $value the value to write to the stream.
-     */
-    public function writeUUIDValue(?string $key, ?string $value): void;
+    public function writeIntegerValue(?string $key, ?int $value): void;
 
     /**
      * Writes the specified OffsetDateTime value to the stream with an optional given key.
      * @param string|null $key the key to write the value with.
      * @param DateTime|null $value the value to write to the stream.
      */
-    public function writeDateTimeOffsetValue(?string $key, ?DateTime $value): void;
+    public function writeDateTimeValue(?string $key, ?DateTime $value): void;
 
     /**
      * Writes the specified collection of object values to the stream with an optional given key.
@@ -112,7 +97,7 @@ interface SerializationWriter {
      * @param string|null $key
      * @param Date|null $value
      */
-    public function writeDateOnlyValue(?string $key, ?Date $value): void;
+    public function writeDateValue(?string $key, ?Date $value): void;
 
     /**
      * Write a TimeOnly value without the
@@ -120,7 +105,7 @@ interface SerializationWriter {
      * @param Time|null $value
      * @return void
      */
-    public function writeTimeOnlyValue(?string $key, ?Time $value): void;
+    public function writeTimeValue(?string $key, ?Time $value): void;
 
     /**
      * Write a byte value.
