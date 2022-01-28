@@ -8,7 +8,10 @@
 
 namespace Microsoft\Kiota\Http\Middleware;
 
+use Microsoft\Kiota\Http\Middleware\Options\ChaosOption;
+use Microsoft\Kiota\Http\Middleware\Options\CompressionOption;
 use Microsoft\Kiota\Http\Middleware\Options\RetryOption;
+use Microsoft\Kiota\Http\Middleware\Options\TelemetryOption;
 
 /**
  * Class KiotaMiddleware
@@ -32,7 +35,47 @@ class KiotaMiddleware
     public static function retry(?RetryOption $retryOption = null): callable
     {
         return static function (callable $handler) use ($retryOption) : RetryHandler {
-            return new RetryHandler($retryOption, $handler);
+            return new RetryHandler($handler, $retryOption);
+        };
+    }
+
+    /**
+     * Middleware that compresses a request body based on compression callbacks provided in {@link CompressionOption} and retries
+     * the initial request with an uncompressed body only once if a 415 response is received.
+     *
+     * @param CompressionOption|null $compressionOption
+     * @return callable
+     */
+    public static function compression(?CompressionOption $compressionOption = null): callable
+    {
+        return static function (callable $handler) use ($compressionOption): CompressionHandler {
+            return new CompressionHandler($handler, $compressionOption);
+        };
+    }
+
+    /**
+     * Middleware that allows configuration of a RequestInterface with telemetry data
+     *
+     * @param TelemetryOption|null $telemetryOption
+     * @return callable
+     */
+    public static function telemetry(?TelemetryOption $telemetryOption = null): callable
+    {
+        return static function (callable $handler) use ($telemetryOption): TelemetryHandler {
+            return new TelemetryHandler($handler, $telemetryOption);
+        };
+    }
+
+    /**
+     * Middleware that selects a chaos response (configured via {@link ChaosOption}) at random x% of the time
+     * If criteria is not met for a chaos response, the request is forwarded down the middleware chain
+     * @param ChaosOption|null $chaosOption
+     * @return callable
+     */
+    public static function chaos(?ChaosOption $chaosOption = null): callable
+    {
+        return static function (callable $handler) use ($chaosOption): ChaosHandler {
+            return new ChaosHandler($handler, $chaosOption);
         };
     }
 }

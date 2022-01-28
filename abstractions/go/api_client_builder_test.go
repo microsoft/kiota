@@ -35,6 +35,15 @@ func (*mockSerializer) WriteByteArrayValue(key string, value []byte) error {
 func (*mockSerializer) WriteTimeValue(key string, value *time.Time) error {
 	return nil
 }
+func (*mockSerializer) WriteISODurationValue(key string, value *serialization.ISODuration) error {
+	return nil
+}
+func (*mockSerializer) WriteDateOnlyValue(key string, value *serialization.DateOnly) error {
+	return nil
+}
+func (*mockSerializer) WriteTimeOnlyValue(key string, value *serialization.TimeOnly) error {
+	return nil
+}
 func (*mockSerializer) WriteUUIDValue(key string, value *uuid.UUID) error {
 	return nil
 }
@@ -63,6 +72,15 @@ func (*mockSerializer) WriteCollectionOfFloat64Values(key string, collection []f
 	return nil
 }
 func (*mockSerializer) WriteCollectionOfTimeValues(key string, collection []time.Time) error {
+	return nil
+}
+func (*mockSerializer) WriteCollectionOfISODurationValues(key string, collection []serialization.ISODuration) error {
+	return nil
+}
+func (*mockSerializer) WriteCollectionOfDateOnlyValues(key string, collection []serialization.DateOnly) error {
+	return nil
+}
+func (*mockSerializer) WriteCollectionOfTimeOnlyValues(key string, collection []serialization.TimeOnly) error {
 	return nil
 }
 func (*mockSerializer) WriteCollectionOfUUIDValues(key string, collection []uuid.UUID) error {

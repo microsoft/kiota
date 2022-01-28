@@ -43,7 +43,7 @@ class RetryHandler
      * @param RetryOption|null $retryOption
      * @param callable $nextHandler
      */
-    public function __construct(?RetryOption $retryOption, callable $nextHandler)
+    public function __construct(callable $nextHandler, ?RetryOption $retryOption = null)
     {
         $this->retryOption = ($retryOption) ?: new RetryOption();
         $this->nextHandler = $nextHandler;
@@ -56,6 +56,10 @@ class RetryHandler
      */
     public function __invoke(RequestInterface $request, array $options): PromiseInterface
     {
+        // Request-level options override global options
+        if (array_key_exists(RetryOption::class, $options)) {
+            $this->retryOption = $options[RetryOption::class];
+        }
         $fn = $this->nextHandler;
         return $fn($request, $options)->then(
             $this->onFulfilled($request, $options),

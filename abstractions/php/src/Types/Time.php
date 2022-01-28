@@ -1,4 +1,9 @@
 <?php
+/**
+ * Copyright (c) Microsoft Corporation.  All Rights Reserved.
+ * Licensed under the MIT License.  See License in the project root
+ * for license information.
+ */
 
 namespace Microsoft\Kiota\Abstractions\Types;
 
@@ -12,7 +17,7 @@ class Time
 {
 
     /**
-     * The final string representation of the TimeOfDay
+     * The final string representation of the Time
      * @var string $value
      */
     private string $value;
@@ -29,25 +34,25 @@ class Time
     }
 
     /**
-     * Creates a TimeOfDay object from a DateTime object
+     * Creates a Time object from a DateTime object
      * @param DateTime $dateTime
-     * @return self
+     * @return Time
      * @throws Exception
      */
-    public static function createFromDateTime(DateTime $dateTime): self {
+    public static function createFromDateTime(DateTime $dateTime): Time {
         return new self($dateTime->format('H:i:s'));
     }
 
     /**
-     * Creates a new TimeOfDay object from $hour,$minute and $seconds
+     * Creates a new Time object from $hour,$minute and $seconds
      * @param int $hour
      * @param int $minutes
      * @param int $seconds
-     * @return self
+     * @return Time
      * @throws Exception
      */
-    public static function createFrom(int $hour, int $minutes, int $seconds = 0): self {
-        $date = new DateTime('now');
+    public static function createFrom(int $hour, int $minutes, int $seconds = 0): Time {
+        $date = new DateTime('1970-12-12T00:00:00Z');
         $date->setTime($hour, $minutes, $seconds);
         return self::createFromDateTime($date);
     }

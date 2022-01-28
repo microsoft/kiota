@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Microsoft\Kiota\Abstractions\Serialization;
 
 use DateTime;
@@ -77,6 +76,30 @@ interface ParseNode {
      * @return DateTime|null the OffsetDateTime value of the node.
      */
     public function getDateTimeOffsetValue(): ?DateTime;
+
+    /**
+     * Gets the DateTimeValue of the node
+     * @return DateTime
+     */
+    public function getDateTimeValue(): DateTime;
+
+    /**
+     * Gets the DateInterval value of the node
+     * @return \DateInterval
+     */
+    public function getDateIntervalValue(): \DateInterval;
+
+    /**
+     * Gets the Date only value of the node
+     * @return Date
+     */
+    public function getDateValue(): Date;
+
+    /**
+     * Gets the Time only value of the node
+     * @return Time
+     */
+    public function getTimeValue(): Time;
 
     /**
      * Gets the Enum value of the node.

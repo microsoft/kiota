@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * Copyright (c) Microsoft Corporation.  All Rights Reserved.
+ * Licensed under the MIT License.  See License in the project root
+ * for license information.
+ */
+
 namespace Microsoft\Kiota\Abstractions\Types;
 
 use DateTime;
@@ -41,7 +47,7 @@ class Date {
      * @throws Exception
      */
     public static function createFrom(int $year, int $month, int $day): Date {
-        $date = new DateTime('now');
+        $date = new DateTime('1970-12-12T00:00:00Z');
         $date->setDate($year, $month, $day);
         return self::createFromDateTime($date);
     }

@@ -148,7 +148,7 @@ func (n *JsonParseNode) GetChildNode(index string) (absser.ParseNode, error) {
 // GetObjectValue returns the Parsable value from the node.
 func (n *JsonParseNode) GetObjectValue(ctor func() absser.Parsable) (absser.Parsable, error) {
 	if ctor == nil {
-		return nil, errors.New("constuctor is nil")
+		return nil, errors.New("constructor is nil")
 	}
 	if n == nil || n.value == nil {
 		return nil, nil
@@ -240,6 +240,12 @@ func (n *JsonParseNode) getPrimitiveValue(targetType string) (interface{}, error
 		return n.GetInt64Value()
 	case "time":
 		return n.GetTimeValue()
+	case "timeonly":
+		return n.GetTimeOnlyValue()
+	case "dateonly":
+		return n.GetDateOnlyValue()
+	case "isoduration":
+		return n.GetISODurationValue()
 	case "uuid":
 		return n.GetUUIDValue()
 	case "base64":
@@ -346,6 +352,42 @@ func (n *JsonParseNode) GetTimeValue() (*time.Time, error) {
 	}
 	parsed, err := time.Parse(time.RFC3339, *v)
 	return &parsed, err
+}
+
+// GetISODurationValue returns a ISODuration value from the nodes.
+func (n *JsonParseNode) GetISODurationValue() (*absser.ISODuration, error) {
+	v, err := n.GetStringValue()
+	if err != nil {
+		return nil, err
+	}
+	if v == nil {
+		return nil, nil
+	}
+	return absser.ParseISODuration(*v)
+}
+
+// GetTimeOnlyValue returns a TimeOnly value from the nodes.
+func (n *JsonParseNode) GetTimeOnlyValue() (*absser.TimeOnly, error) {
+	v, err := n.GetStringValue()
+	if err != nil {
+		return nil, err
+	}
+	if v == nil {
+		return nil, nil
+	}
+	return absser.ParseTimeOnly(*v)
+}
+
+// GetDateOnlyValue returns a DateOnly value from the nodes.
+func (n *JsonParseNode) GetDateOnlyValue() (*absser.DateOnly, error) {
+	v, err := n.GetStringValue()
+	if err != nil {
+		return nil, err
+	}
+	if v == nil {
+		return nil, nil
+	}
+	return absser.ParseDateOnly(*v)
 }
 
 // GetUUIDValue returns a UUID value from the nodes.
