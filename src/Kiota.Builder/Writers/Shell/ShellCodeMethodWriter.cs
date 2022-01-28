@@ -59,19 +59,18 @@ namespace Kiota.Builder.Writers.Shell
                             .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder))
                             .OrderBy(m => m.Name);
                         conventions.AddRequestBuilderBody(parent, targetClass, writer, prefix: "var builder = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
-                        writer.WriteLine("var commands = new List<Command> {");
-                        writer.IncreaseIndent();
+                        writer.WriteLine("var commands = new List<Command>();");
 
-                        foreach (var method in builderMethods.Where(m => !m.ReturnType.IsCollection))
+                        foreach (var method in builderMethods)
                         {
-                            writer.WriteLine($"builder.{method.Name}(),");
-                        }
-
-                        writer.CloseBlock("};");
-
-                        foreach (var method in builderMethods.Where(m => m.ReturnType.IsCollection))
-                        {
-                            writer.WriteLine($"commands.AddRange(builder.{method.Name}());");
+                            if (method.ReturnType.IsCollection)
+                            {
+                                writer.WriteLine($"commands.AddRange(builder.{method.Name}());");
+                            }
+                            else
+                            {
+                                writer.WriteLine($"commands.Add(builder.{method.Name}());");
+                            }
                         }
 
                         writer.WriteLine("return commands;");
