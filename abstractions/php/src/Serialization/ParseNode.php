@@ -68,9 +68,10 @@ interface ParseNode {
 
     /**
      * Get a collection of values that are not parsable in Nature.
+     * @param string|null $typeName
      * @return array<mixed>|null A collection of primitive values.
      */
-    public function getCollectionOfPrimitiveValues(): ?array;
+    public function getCollectionOfPrimitiveValues(?string $typeName): ?array;
 
     /**
      * Gets the OffsetDateTime value of the node.

@@ -197,13 +197,14 @@ class JsonParseNode implements ParseNode
 
     /**
      * @inheritDoc
+     * @throws Exception
      */
-    public function getCollectionOfPrimitiveValues(): ?array {
+    public function getCollectionOfPrimitiveValues(?string $typeName): ?array {
         if ($this->jsonNode === null){
             return null;
         }
-        return array_map(static function ($x) {
-            $type = get_debug_type($x);
+        return array_map(static function ($x) use ($typeName) {
+            $type = empty($typeName) ? get_debug_type($x) : $typeName;
             return (new JsonParseNode($x))->getAnyValue($type);
         }, $this->jsonNode);
     }
@@ -225,7 +226,7 @@ class JsonParseNode implements ParseNode
             case 'null':
                 return null;
             case 'array':
-                return $this->getCollectionOfPrimitiveValues();
+                return $this->getCollectionOfPrimitiveValues(null);
             case Date::class:
                 return $this->getDateValue();
             case Time::class:
