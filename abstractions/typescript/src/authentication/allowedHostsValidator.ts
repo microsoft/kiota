@@ -5,8 +5,8 @@ export class AllowedHostsValidator {
      * Creates a new AllowedHostsValidator object with provided values.
      * @param allowedHosts A list of valid hosts.  If the list is empty, all hosts are valid.
      */
-    public constructor(...allowedHosts: string[]) {
-        this.allowedHosts = new Set(allowedHosts?.map(x => x?.toLowerCase()));
+    public constructor(allowedHosts: Set<string> = new Set<string>()) {
+        this.allowedHosts = allowedHosts ?? new Set<string>();
     }
     /**
      * Gets the list of valid hosts.  If the list is empty, all hosts are valid.
@@ -19,8 +19,8 @@ export class AllowedHostsValidator {
      * Sets the list of valid hosts.  If the list is empty, all hosts are valid.
      * @param allowedHosts A list of valid hosts.  If the list is empty, all hosts are valid.
      */
-    public setAllowedHosts(...allowedHosts: string[]): void {
-        this.allowedHosts = new Set(allowedHosts?.map(x => x?.toLowerCase()));
+    public setAllowedHosts(allowedHosts: Set<string>): void {
+        this.allowedHosts = allowedHosts;
     }
     /**
      * Checks whether the provided host is valid.
