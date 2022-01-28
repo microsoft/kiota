@@ -91,7 +91,7 @@ export class RequestInformation {
         if (!values || values.length === 0) throw new Error("values cannot be undefined or empty");
 
         const writer = requestAdapter.getSerializationWriterFactory().getSerializationWriter(contentType);
-        if(this.headers){
+        if(!this.headers){
             this.headers = {};
         }
         this.headers[RequestInformation.contentTypeHeader] = contentType;
