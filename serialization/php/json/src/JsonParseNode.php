@@ -46,7 +46,6 @@ class JsonParseNode implements ParseNode
 
     /**
      * @inheritDoc
-     * @throws \JsonException
      */
     public function getStringValue(): ?string {
         return $this->jsonNode !== null ? addcslashes($this->jsonNode, "\\\r\n") : null;
@@ -127,14 +126,6 @@ class JsonParseNode implements ParseNode
                 $result->getAdditionalData()[$key] = $value;
             }
         }
-    }
-
-    /**
-     * @inheritDoc
-     * @throws Exception
-     */
-    public function getDateTimeOffsetValue(): ?DateTime {
-        return ($this->jsonNode !== null) ? new DateTime($this->jsonNode) : null;
     }
 
     /**

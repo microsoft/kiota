@@ -148,30 +148,20 @@ class JsonParseNodeTest extends TestCase
     /**
      * @throws \Exception
      */
-    public function testGetDateTimeOffsetValue(): void {
+    public function testGetDateTimeValue(): void {
         $value = (new DateTime('2022-01-27T12:59:45.596117'))->format(DateTimeInterface::RFC3339);
         $this->parseNode = new JsonParseNode($value);
-        $expected = $this->parseNode->getDateTimeOffsetValue();
+        $expected = $this->parseNode->getDateTimeValue();
         $this->assertInstanceOf(DateTime::class, $expected);
         $this->assertEquals($value, $expected->format(DateTimeInterface::RFC3339));
     }
 
+    /**
+     */
     public function testGetStringValue(): void{
         $this->parseNode = new JsonParseNode('Silas Kenneth was here');
         $expected = $this->parseNode->getStringValue();
         $this->assertEquals('Silas Kenneth was here', $expected);
-    }
-
-    public function testGetUUIDValue(): void{
-        $this->parseNode = new JsonParseNode('4cbfc23b-d081-4bd2-90f5-61deebfa755c');
-        $expected = $this->parseNode->getStringValue();
-        $this->assertEquals('4cbfc23b-d081-4bd2-90f5-61deebfa755c', $expected);
-    }
-
-    public function testGetLongValue(): void {
-        $this->parseNode = new JsonParseNode(6892759229690544128);
-        $expected = $this->parseNode->getIntegerValue();
-        $this->assertEquals(6892759229690544128, $expected);
     }
 
     public function testGetChildNode(): void {
