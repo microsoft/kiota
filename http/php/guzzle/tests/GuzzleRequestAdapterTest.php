@@ -10,8 +10,10 @@ use Http\Promise\FulfilledPromise;
 use Microsoft\Kiota\Abstractions\Authentication\AuthenticationProvider;
 use Microsoft\Kiota\Abstractions\RequestInformation;
 use Microsoft\Kiota\Abstractions\ResponseHandler;
+use Microsoft\Kiota\Abstractions\Serialization\Parsable;
 use Microsoft\Kiota\Abstractions\Serialization\ParseNode;
 use Microsoft\Kiota\Abstractions\Serialization\ParseNodeFactory;
+use Microsoft\Kiota\Abstractions\Serialization\SerializationWriter;
 use Microsoft\Kiota\Abstractions\Serialization\SerializationWriterFactory;
 use Microsoft\Kiota\Http\GuzzleRequestAdapter;
 use PHPUnit\Framework\TestCase;
@@ -185,20 +187,48 @@ class GuzzleRequestAdapterTest extends TestCase
 
 }
 
-class TestUser {
-    private int $id;
+class TestUser implements Parsable {
+    /**
+     * @var array<string, mixed> $additionalData
+     */
+    private array $additionalData = [];
+    private ?int $id;
 
-    public function __construct($id)
+    public function __construct(?int $id = null)
     {
         $this->id = $id;
     }
 
     /**
-     * @return int
+     * @return int|null
      */
-    public function getId(): int
+    public function getId(): ?int
     {
         return $this->id;
     }
 
+    public function getFieldDeserializers(): array
+    {
+        return [
+            "id" => function (self $o, ParseNode $n) {$o->setId($n->getIntegerValue());}
+        ];
+    }
+
+    public function setId(?int $value): void {
+        $this->id = $value;
+    }
+
+    public function serialize(SerializationWriter $writer): void
+    {
+        $writer->writeIntegerValue('id', $this->id);
+    }
+
+    public function getAdditionalData(): ?array {
+        return $this->additionalData;
+    }
+
+    public function setAdditionalData(array $value): void
+    {
+        $this->additionalData = $value;
+    }
 }

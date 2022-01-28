@@ -199,7 +199,7 @@ class JsonParseNode implements ParseNode
      * @inheritDoc
      * @throws Exception
      */
-    public function getCollectionOfPrimitiveValues(?string $typeName): ?array {
+    public function getCollectionOfPrimitiveValues(?string $typeName = null): ?array {
         if ($this->jsonNode === null){
             return null;
         }

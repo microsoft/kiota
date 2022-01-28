@@ -71,7 +71,7 @@ interface ParseNode {
      * @param string|null $typeName
      * @return array<mixed>|null A collection of primitive values.
      */
-    public function getCollectionOfPrimitiveValues(?string $typeName): ?array;
+    public function getCollectionOfPrimitiveValues(?string $typeName = null): ?array;
 
     /**
      * Gets the OffsetDateTime value of the node.
