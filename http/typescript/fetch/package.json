@@ -1,40 +1,49 @@
 {
-  "name": "@microsoft/kiota-http-fetchlibrary",
-  "version": "1.0.13",
-  "description": "Kiota request adapter implementation with fetch",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "clean": "rm -r ./dist"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/microsoft/kiota.git"
-  },
-  "keywords": [
-    "Kiota",
-    "OpenAPI",
-    "HTTP",
-    "fetch"
-  ],
-  "author": "Microsoft",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/microsoft/kiota/issues"
-  },
-  "homepage": "https://github.com/microsoft/kiota#readme",
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
-  "dependencies": {
-    "@microsoft/kiota-abstractions": "^1.0.26",
-    "cross-fetch": "^3.1.5",
-    "web-streams-polyfill": "^3.2.0"
-  },
-  "devDependencies": {
-    "@types/node": "^17.0.12",
-    "typescript": "^4.5.5"
-  }
+    "name": "@microsoft/kiota-http-fetchlibrary",
+    "version": "1.0.13",
+    "description": "Kiota request adapter implementation with fetch",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc -p tsconfig.json",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "clean": "rm -r ./dist",
+        "lint": "eslint . --ext .ts",
+		"lint:fix": "eslint . --ext .ts --fix"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/microsoft/kiota.git"
+    },
+    "keywords": [
+        "Kiota",
+        "OpenAPI",
+        "HTTP",
+        "fetch"
+    ],
+    "author": "Microsoft",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/microsoft/kiota/issues"
+    },
+    "homepage": "https://github.com/microsoft/kiota#readme",
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com"
+    },
+    "dependencies": {
+        "@microsoft/kiota-abstractions": "^1.0.26",
+        "cross-fetch": "^3.1.5",
+        "web-streams-polyfill": "^3.2.0"
+    },
+    "devDependencies": {
+        "@types/node": "^17.0.12",
+        "typescript": "^4.5.5",
+        "@typescript-eslint/eslint-plugin": "^4.0.0",
+		"@typescript-eslint/parser": "^3.8.0",
+        "eslint": "^7.19.0",
+        "eslint-config-prettier": "^8.3.0",
+        "eslint-plugin-prettier": "^3.3.1",
+        "eslint-plugin-simple-import-sort": "^7.0.0",
+        "prettier": "^2.5.1"
+    }
 }
