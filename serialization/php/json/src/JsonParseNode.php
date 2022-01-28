@@ -255,16 +255,14 @@ class JsonParseNode implements ParseNode
      * @inheritDoc
      * @throws Exception
      */
-    public function getTimeOnlyValue(): ?Time
-    {
+    public function getTimeOnlyValue(): ?Time {
         return ($this->jsonNode !== null) ? new Time($this->jsonNode) : null;
     }
 
     /**
      * @inheritDoc
      */
-    public function getByteValue(): ?Byte
-    {
+    public function getByteValue(): ?Byte {
         return ($this->jsonNode !== null) ? new Byte($this->jsonNode) : null;
     }
 }

@@ -40,6 +40,7 @@ class Person implements Parsable
         $writer->writeIntegerValue('age', $this->age);
         $writer->writeEnumValue('maritalStatus', $this->maritalStatus);
         $writer->writeFloatValue('height', $this->height);
+        $writer->writeObjectValue('address', $this->address);
     }
 
     /**

@@ -169,7 +169,9 @@ class JsonSerializationWriter implements SerializationWriter
                 $this->onStartObjectSerialization($value, $this);
             }
             $value->serialize($this);
-            array_pop($this->writer);
+            if ($this->writer[count($this->writer) - 1] === ',') {
+                array_pop($this->writer);
+            }
             if ($this->onAfterObjectSerialization !== null) {
                 $this->onAfterObjectSerialization($value);
             }
@@ -234,7 +236,6 @@ class JsonSerializationWriter implements SerializationWriter
 
     /**
      * @inheritDoc
-     * @throws \JsonException
      */
     public function writeAdditionalData(?array $value): void {
         if($value === null) {
@@ -290,7 +291,6 @@ class JsonSerializationWriter implements SerializationWriter
     /**
      * @param string|null $key
      * @param mixed $value
-     * @throws \JsonException
      */
     public function writeAnyValue(?string $key, $value): void{
         $type = get_debug_type($value);
@@ -343,6 +343,10 @@ class JsonSerializationWriter implements SerializationWriter
             default:
                 if (is_a($value, Parsable::class)) {
                     $this->writeObjectValue($key, $value);
+                } else if(is_subclass_of($type, Enum::class)){
+                    $this->writeEnumValue($key, $value);
+                } else if(is_subclass_of($type, DateTimeInterface::class)){
+                    $this->writeDateTimeOffsetValue($key, $value);
                 }
                 break;
         }
@@ -351,7 +355,6 @@ class JsonSerializationWriter implements SerializationWriter
     /**
      * @param string|null $key
      * @param mixed $value
-     * @throws \JsonException
      */
     public function writeNonParsableObjectValue(?string $key, $value): void{
         if(!empty($key)) {
@@ -388,7 +391,6 @@ class JsonSerializationWriter implements SerializationWriter
      * @param string|null $key
      * @param array<mixed> $values
      * @return void
-     * @throws \JsonException
      */
     public function writeCollectionOfNonParsableObjectValues(?string $key, array $values): void {
         if (!empty($key)) {
@@ -397,6 +399,7 @@ class JsonSerializationWriter implements SerializationWriter
         $this->writer []= '[';
         foreach ($values as $value){
             $this->writeAnyValue(null, $value);
+            $this->writer [] = self::PROPERTY_SEPARATOR;
         }
         if (count($values) > 0){
             array_pop($this->writer);
@@ -427,7 +430,7 @@ class JsonSerializationWriter implements SerializationWriter
             $this->writePropertyName($key);
         }
 
-        $val = $value !== null ? "\"{$value}\"" : 'null';
+        $val = $value !== null ? (int)(string)($value) : 'null';
         $this->writePropertyValue($key, $val);
     }
 }

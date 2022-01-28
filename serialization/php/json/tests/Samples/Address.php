@@ -27,6 +27,8 @@ class Address implements Parsable
      * @inheritDoc
      */
     public function serialize(SerializationWriter $writer): void {
+        $writer->writeStringValue('street', $this->street);
+        $writer->writeStringValue('city', $this->city);
     }
 
     /**

@@ -13,6 +13,7 @@ use Microsoft\Kiota\Abstractions\Types\Date;
 use Microsoft\Kiota\Abstractions\Types\Time;
 use Microsoft\Kiota\Serialization\Json\JsonParseNode;
 use Microsoft\Kiota\Serialization\Json\JsonParseNodeFactory;
+use Microsoft\Kiota\Serialization\Tests\Samples\Address;
 use Microsoft\Kiota\Serialization\Tests\Samples\MaritalStatus;
 use Microsoft\Kiota\Serialization\Tests\Samples\Person;
 use PHPUnit\Framework\TestCase;
@@ -158,7 +159,7 @@ class JsonParseNodeTest extends TestCase
 
     public function testGetUUIDValue(): void{
         $this->parseNode = new JsonParseNode('4cbfc23b-d081-4bd2-90f5-61deebfa755c');
-        $expected = $this->parseNode->getStringValue();
+        $expected = $this->parseNode->getUUIDValue();
         $this->assertEquals('4cbfc23b-d081-4bd2-90f5-61deebfa755c', $expected);
     }
 
@@ -166,5 +167,18 @@ class JsonParseNodeTest extends TestCase
         $this->parseNode = new JsonParseNode(6892759229690544128);
         $expected = $this->parseNode->getLongValue();
         $this->assertEquals(6892759229690544128, $expected);
+    }
+
+    public function testGetChildNode(): void {
+        $this->stream->rewind();
+        $this->parseNode = (new JsonParseNodeFactory())->getRootParseNode('application/json', $this->stream);
+
+        $child = $this->parseNode->getChildNode('address');
+        /** @var Address $address */
+        $address = $child->getObjectValue(Address::class);
+
+        $this->assertInstanceOf(Address::class, $address);
+        $this->assertEquals('Nairobi', $address->getCity());
+
     }
 }
