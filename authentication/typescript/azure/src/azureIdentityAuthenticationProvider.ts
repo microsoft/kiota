@@ -12,7 +12,7 @@ export class AzureIdentityAuthenticationProvider extends BaseBearerTokenAuthenti
     */
     public constructor(credentials: TokenCredential,
         scopes: string[] = ['https://graph.microsoft.com/.default'],
-        allowedHosts?: string[],
+        allowedHosts: Set<string> = new Set<string>(),
         options?: GetTokenOptions) {
         super(new AzureIdentityAccessTokenProvider(credentials, scopes, allowedHosts, options));
     }

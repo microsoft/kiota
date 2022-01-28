@@ -11,7 +11,7 @@ export class AzureIdentityAccessTokenProvider implements AccessTokenProvider {
      */
     public constructor(private readonly credentials: TokenCredential, 
         private readonly scopes: string[] = ['https://graph.microsoft.com/.default'],
-        allowedHosts: string[] = ['graph.microsoft.com', 'graph.microsoft.us', 'dod-graph.microsoft.us', 'graph.microsoft.de', 'microsoftgraph.chinacloudapi.cn', 'canary.graph.microsoft.com'],
+        allowedHosts: Set<string>= new Set<string>(['graph.microsoft.com', 'graph.microsoft.us', 'dod-graph.microsoft.us', 'graph.microsoft.de', 'microsoftgraph.chinacloudapi.cn', 'canary.graph.microsoft.com']),
         private readonly options?: GetTokenOptions) {
         if (!credentials) {
             throw new Error('parameter credentials cannot be null');
@@ -19,7 +19,7 @@ export class AzureIdentityAccessTokenProvider implements AccessTokenProvider {
         if (!scopes || scopes.length === 0) {
             throw new Error('scopes cannot be null or empty');
         }
-        this.allowedHostsValidator = allowedHosts ? new AllowedHostsValidator(...allowedHosts) : new AllowedHostsValidator();
+        this.allowedHostsValidator = new AllowedHostsValidator(allowedHosts);
     }
     private readonly allowedHostsValidator: AllowedHostsValidator;
     public getAuthorizationToken = async (url?:string): Promise<string> => {
