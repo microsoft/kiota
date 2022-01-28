@@ -2,6 +2,7 @@
 
 namespace Microsoft\Kiota\Serialization\Json;
 
+use DateInterval;
 use DateTime;
 use Exception;
 use InvalidArgumentException;
@@ -226,9 +227,9 @@ class JsonParseNode implements ParseNode
             case 'array':
                 return $this->getCollectionOfPrimitiveValues();
             case Date::class:
-                return $this->getDateOnlyValue();
+                return $this->getDateValue();
             case Time::class:
-                return $this->getTimeOnlyValue();
+                return $this->getTimeValue();
             case Byte::class:
                 return $this->getByteValue();
             default:
@@ -247,7 +248,7 @@ class JsonParseNode implements ParseNode
      * @inheritDoc
      * @throws Exception
      */
-    public function getDateOnlyValue(): ?Date {
+    public function getDateValue(): ?Date {
         return ($this->jsonNode !== null) ? new Date($this->jsonNode) : null;
     }
 
@@ -255,7 +256,7 @@ class JsonParseNode implements ParseNode
      * @inheritDoc
      * @throws Exception
      */
-    public function getTimeOnlyValue(): ?Time {
+    public function getTimeValue(): ?Time {
         return ($this->jsonNode !== null) ? new Time($this->jsonNode) : null;
     }
 
@@ -264,5 +265,21 @@ class JsonParseNode implements ParseNode
      */
     public function getByteValue(): ?Byte {
         return ($this->jsonNode !== null) ? new Byte($this->jsonNode) : null;
+    }
+
+    /**
+     * @inheritDoc
+     * @throws Exception
+     */
+    public function getDateTimeValue(): ?DateTime {
+        return ($this->jsonNode !== null) ? new DateTime($this->jsonNode) : null;
+    }
+
+    /**
+     * @inheritDoc
+     * @throws Exception
+     */
+    public function getDateIntervalValue(): ?DateInterval{
+        return ($this->jsonNode !== null) ? new DateInterval($this->jsonNode) : null;
     }
 }

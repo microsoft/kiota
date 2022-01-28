@@ -2,6 +2,7 @@
 
 namespace Microsoft\Kiota\Abstractions\Serialization;
 
+use DateInterval;
 use DateTime;
 use Microsoft\Kiota\Abstractions\Enum;
 use Microsoft\Kiota\Abstractions\Types\Byte;
@@ -79,27 +80,27 @@ interface ParseNode {
 
     /**
      * Gets the DateTimeValue of the node
-     * @return DateTime
+     * @return DateTime|null
      */
-    public function getDateTimeValue(): DateTime;
+    public function getDateTimeValue(): ?DateTime;
 
     /**
      * Gets the DateInterval value of the node
-     * @return \DateInterval
+     * @return DateInterval|null
      */
-    public function getDateIntervalValue(): \DateInterval;
+    public function getDateIntervalValue(): ?DateInterval;
 
     /**
      * Gets the Date only value of the node
-     * @return Date
+     * @return Date|null
      */
-    public function getDateValue(): Date;
+    public function getDateValue(): ?Date;
 
     /**
      * Gets the Time only value of the node
-     * @return Time
+     * @return Time|null
      */
-    public function getTimeValue(): Time;
+    public function getTimeValue(): ?Time;
 
     /**
      * Gets the Enum value of the node.
@@ -107,18 +108,6 @@ interface ParseNode {
      * @return Enum|null the Enum value of the node.
      */
     public function getEnumValue(string $targetEnum): ?Enum;
-
-    /**
-     * Get Date part value only from DateTime.
-     * @return Date|null
-     */
-    public function getDateOnlyValue(): ?Date;
-
-    /**
-     * Get the time part of DateTime
-     * @return Time|null
-     */
-    public function getTimeOnlyValue(): ?Time;
 
     /**
      * Return a byte value.
