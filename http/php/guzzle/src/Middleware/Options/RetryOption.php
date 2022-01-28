@@ -8,6 +8,7 @@
 
 namespace Microsoft\Kiota\Http\Middleware\Options;
 
+use Microsoft\Kiota\Abstractions\RequestOption;
 use Microsoft\Kiota\Http\Middleware\RetryHandler;
 use Psr\Http\Message\ResponseInterface;
 
@@ -21,7 +22,7 @@ use Psr\Http\Message\ResponseInterface;
  * @license https://opensource.org/licenses/MIT MIT License
  * @link https://developer.microsoft.com/graph
  */
-class RetryOption
+class RetryOption implements RequestOption
 {
     /**
      * Upper limit on {@link $maxRetries}

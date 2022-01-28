@@ -5,6 +5,8 @@ namespace Microsoft\Kiota\Abstractions\Serialization;
 
 use DateTimeInterface;
 use Closure;
+use Microsoft\Kiota\Abstractions\Types\Date;
+use Microsoft\Kiota\Abstractions\Types\Time;
 use Microsoft\Kiota\Abstractions\Enum;
 
 interface ParseNode {
@@ -40,12 +42,6 @@ interface ParseNode {
     public function getFloatValue(): float;
 
     /**
-     * Gets the Long value of the node.
-     * @return int the Long value of the node.
-     */
-    public function getLongValue(): int;
-
-    /**
      * Gets the UUID value of the node.
      * @return string the UUID value of the node.
      */
@@ -55,13 +51,51 @@ interface ParseNode {
      * Gets the model object value of the node.
      * @return object the model object value of the node.
      */
-    public function getObjectValue(): object;
+    public function getObjectValue(string $targetClass): object;
+
+    /**
+     * Gets the collection of model object values from the node
+     * @param string $targetClass
+     * @return object[]
+     */
+    public function getCollectionOfObjectValues(string $targetClass): array;
+
+    /**
+     * Gets the collection of primitive values from the node
+     * @param string $primitiveType
+     * @return array<mixed>
+     */
+    public function getCollectionOfPrimitiveValues(string $primitiveType): array;
 
     /**
      * Gets the OffsetDateTime value of the node.
      * @return DateTimeInterface the OffsetDateTime value of the node.
      */
     public function getDateTimeOffsetValue(): DateTimeInterface;
+
+    /**
+     * Gets the DateTimeValue of the node
+     * @return DateTimeInterface
+     */
+    public function getDateTimeValue(): DateTimeInterface;
+
+    /**
+     * Gets the DateInterval value of the node
+     * @return \DateInterval
+     */
+    public function getDateIntervalValue(): \DateInterval;
+
+    /**
+     * Gets the Date only value of the node
+     * @return Date
+     */
+    public function getDateValue(): Date;
+
+    /**
+     * Gets the Time only value of the node
+     * @return Time
+     */
+    public function getTimeValue(): Time;
 
     /**
      * Gets the Enum value of the node.
