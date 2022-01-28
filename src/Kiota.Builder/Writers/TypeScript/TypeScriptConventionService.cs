@@ -34,7 +34,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         writer.WriteLine($"const {TempDictionaryVarName} = getPathParameters({pathParametersReference});");
         if(parameters.Any())
             writer.WriteLines(parameters.Select(p => 
-                $"{p.Item3} && {TempDictionaryVarName}.set(\"{p.Item2}\", {p.Item3});"
+                $"{TempDictionaryVarName}[\"{p.Item2}\"] = {p.Item3}"
             ).ToArray());
     }
     #pragma warning restore CA1822 // Method should be static

@@ -95,9 +95,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.DefaultValue = "new Map<string, unknown>()";
         } else if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
             currentProperty.Type.IsNullable = false;
-            currentProperty.Type.Name = "Map<string, unknown>";
+            currentProperty.Type.Name = "Record<string, unknown>";
             if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
-                currentProperty.DefaultValue = "new Map<string, unknown>()";
+                currentProperty.DefaultValue = "{}";
         } else
             CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }

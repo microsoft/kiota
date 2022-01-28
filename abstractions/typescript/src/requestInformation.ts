@@ -30,13 +30,13 @@ export class RequestInformation {
             const template = new urlTpl.URI.Template(this.urlTemplate);
             const data = {} as { [key: string]: unknown };
             for (const key in this.queryParameters) {
-                if (data[key]) {
+                if (this.queryParameters[key]) {
                     data[key] = this.queryParameters[key];
                 }
 
             }
             for (const key in this.pathParameters) {
-                if (data[key]) {
+                if (this.pathParameters[key]) {
                     data[key] = this.pathParameters[key];
                 }
 
@@ -91,6 +91,9 @@ export class RequestInformation {
         if (!values || values.length === 0) throw new Error("values cannot be undefined or empty");
 
         const writer = requestAdapter.getSerializationWriterFactory().getSerializationWriter(contentType);
+        if(this.headers){
+            this.headers = {};
+        }
         this.headers[RequestInformation.contentTypeHeader] = contentType;
         if(values.length === 1)
             writer.writeObjectValue(undefined, values[0]);

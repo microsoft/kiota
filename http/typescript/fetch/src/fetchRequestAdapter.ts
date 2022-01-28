@@ -1,5 +1,4 @@
 import { AuthenticationProvider, BackingStoreFactory, BackingStoreFactorySingleton, RequestAdapter, Parsable, ParseNodeFactory, RequestInformation, ResponseHandler, ParseNodeFactoryRegistry, enableBackingStoreForParseNodeFactory, SerializationWriterFactoryRegistry, enableBackingStoreForSerializationWriterFactory, SerializationWriterFactory } from '@microsoft/kiota-abstractions';
-import { Headers as FetchHeadersCtor } from 'cross-fetch';
 import { HttpClient } from './httpClient';
 
 export class FetchRequestAdapter implements RequestAdapter {
@@ -115,7 +114,7 @@ export class FetchRequestAdapter implements RequestAdapter {
         } else {
             switch (responseType) {
                 case "ArrayBuffer":
-                    return await response.arrayBuffer();
+                    return await response.arrayBuffer() as unknown as ResponseType;
                 case 'string':
                 case 'number':
                 case 'boolean':
@@ -168,7 +167,7 @@ export class FetchRequestAdapter implements RequestAdapter {
         return await this.httpClient.fetch(requestInfo.URL, request);
     }
     private getRequestFromRequestInformation = (requestInfo: RequestInformation): RequestInit => {
-        requestInfo.pathParameters.set("baseurl", this.baseUrl);
+        requestInfo.pathParameters["baseurl"]= this.baseUrl;
         const request = {
             method: requestInfo.httpMethod?.toString(),
             headers: requestInfo.headers,
