@@ -43,6 +43,10 @@ class TelemetryHandler
 
     public function __invoke(RequestInterface $request, array $options): PromiseInterface
     {
+        // Request-level options override global options
+        if (array_key_exists(TelemetryOption::class, $options)) {
+            $this->telemetryOption = $options[TelemetryOption::class];
+        }
         if ($this->telemetryOption && $this->telemetryOption->getTelemetryConfigurator()) {
             $request = $this->telemetryOption->getTelemetryConfigurator()($request);
         }

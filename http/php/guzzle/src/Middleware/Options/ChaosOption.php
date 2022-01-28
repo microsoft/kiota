@@ -8,8 +8,8 @@
 
 namespace Microsoft\Kiota\Http\Middleware\Options;
 
+use Microsoft\Kiota\Abstractions\RequestOption;
 use Microsoft\Kiota\Http\Middleware\ChaosHandler;
-use Psr\Http\Message\ResponseInterface;
 
 /**
  * Class ChaosOption
@@ -21,7 +21,7 @@ use Psr\Http\Message\ResponseInterface;
  * @license https://opensource.org/licenses/MIT MIT License
  * @link https://developer.microsoft.com/graph
  */
-class ChaosOption
+class ChaosOption implements RequestOption
 {
     public const MAX_CHAOS_PERCENTAGE = 100;
 
