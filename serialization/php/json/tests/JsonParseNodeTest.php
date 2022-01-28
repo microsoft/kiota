@@ -118,7 +118,7 @@ class JsonParseNodeTest extends TestCase
      */
     public function testGetTimeOnlyValue(): void{
         $this->parseNode = new JsonParseNode((new DateTime('2022-01-27T12:59:45.596117'))->format(DATE_ATOM));
-        $expected = $this->parseNode->getTimeOnlyValue();
+        $expected = $this->parseNode->getTimeValue();
         $this->assertInstanceOf(Time::class, $expected);
         $this->assertEquals('12:59:45', (string)$expected);
     }
@@ -128,7 +128,7 @@ class JsonParseNodeTest extends TestCase
      */
     public function testGetDateOnlyValue(): void{
         $this->parseNode = new JsonParseNode((new DateTime('2022-01-27T12:59:45.596117'))->format(DATE_ATOM));
-        $expected = $this->parseNode->getDateOnlyValue();
+        $expected = $this->parseNode->getDateValue();
         $this->assertInstanceOf(Date::class, $expected);
         $this->assertEquals('2022-01-27', (string)$expected);
     }
