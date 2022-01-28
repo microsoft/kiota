@@ -32,6 +32,8 @@ public class AzureIdentityAccessTokenProvider : IAccessTokenProvider
 
         if(!allowedHosts?.Any() ?? true)
             _allowedHostsValidator = new AllowedHostsValidator(new string[] { "graph.microsoft.com", "graph.microsoft.us", "dod-graph.microsoft.us", "graph.microsoft.de", "microsoftgraph.chinacloudapi.cn", "canary.graph.microsoft.com" });
+        else
+            _allowedHostsValidator = new AllowedHostsValidator(allowedHosts);
 
         if(scopes == null)
             _scopes = new();
