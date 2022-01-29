@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -12,7 +12,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         writer = languageWriter;
     }
     private readonly LanguageWriter writer;
-    public override string StreamTypeName => "ReadableStream";
+    public override string StreamTypeName => "ArrayBuffer";
 
     public override string VoidTypeName => throw new NotImplementedException();
 
@@ -34,7 +34,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         writer.WriteLine($"const {TempDictionaryVarName} = getPathParameters({pathParametersReference});");
         if(parameters.Any())
             writer.WriteLines(parameters.Select(p => 
-                $"{p.Item3} && {TempDictionaryVarName}.set(\"{p.Item2}\", {p.Item3});"
+                $"{TempDictionaryVarName}[\"{p.Item2}\"] = {p.Item3}"
             ).ToArray());
     }
     #pragma warning restore CA1822 // Method should be static

@@ -1,6 +1,4 @@
 import { DateOnly, Duration, Parsable, SerializationWriter, TimeOnly } from "@microsoft/kiota-abstractions";
-import { TextEncoder } from "util";
-import { ReadableStream } from 'web-streams-polyfill/es2018';
 
 export class JsonSerializationWriter implements SerializationWriter {
     private readonly writer: string[] = [];
@@ -108,15 +106,19 @@ export class JsonSerializationWriter implements SerializationWriter {
             }
         }
     }
-    public getSerializedContent = (): ReadableStream<any> => {
-        const encoded = new TextEncoder().encode(this.writer.join(""));
-        return new ReadableStream<Uint8Array>({
-            start: (controller) => {
-                controller.enqueue(encoded);
-                controller.close();
-            }
-        });
+    public getSerializedContent = (): ArrayBuffer=> {
+        return this.convertStringToArrayBuffer(this.writer.join(``));
     }
+    
+    private convertStringToArrayBuffer = (str: string): ArrayBuffer => {
+        const arrayBuffer = new ArrayBuffer(str.length);
+        const uint8Array = new Uint8Array(arrayBuffer);
+        for (let i = 0; i < str.length; i++) {
+          uint8Array[i] = str.charCodeAt(i);
+        }
+        return arrayBuffer;
+    }
+
     public writeAdditionalData = (value: Map<string, unknown>) : void => {
         if(!value) return;
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -228,7 +228,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                             $"{RequestInfoVarName}.pathParameters = {GetPropertyCall(urlTemplateParamsProperty, "''")};",
                             $"{RequestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.ToString().ToUpperInvariant()};");
         if(requestParams.headers != null)
-            writer.WriteLine($"{requestParams.headers.Name} && {RequestInfoVarName}.setHeadersFromRawObject(h);");
+            writer.WriteLine($"{RequestInfoVarName}.headers = h;");
         if(requestParams.queryString != null)
             writer.WriteLines($"{requestParams.queryString.Name} && {RequestInfoVarName}.setQueryStringParametersFromRawObject(q);");
         if(requestParams.requestBody != null) {
