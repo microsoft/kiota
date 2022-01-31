@@ -1,115 +1,102 @@
 <?php
 
-
 namespace Microsoft\Kiota\Abstractions\Serialization;
 
-use DateTimeInterface;
-use Closure;
+use DateInterval;
+use DateTime;
+use Microsoft\Kiota\Abstractions\Enum;
+use Microsoft\Kiota\Abstractions\Types\Byte;
 use Microsoft\Kiota\Abstractions\Types\Date;
 use Microsoft\Kiota\Abstractions\Types\Time;
-use Microsoft\Kiota\Abstractions\Enum;
 
 interface ParseNode {
     /**
      * Gets a new parse node for the given identifier.
      * @param string $identifier the identifier of the current node property.
-     * @return $this a new parse node for the given identifier.
+     * @return self|null a new parse node for the given identifier.
      */
-    public function getChildNode(string $identifier): ParseNode;
+    public function getChildNode(string $identifier): ?ParseNode;
 
     /**
      * Gets the string value of the node.
-     * @return string the string value of the node.
+     * @return string|null the string value of the node.
      */
-    public function getStringValue(): string;
+    public function getStringValue(): ?string;
 
     /**
      * Gets the boolean value of the node.
-     * @return bool the boolean value of the node.
+     * @return bool|null the boolean value of the node.
      */
-    public function getBooleanValue(): bool;
+    public function getBooleanValue(): ?bool;
 
     /**
      * Gets the Integer value of the node.
-     * @return int the Integer value of the node.
+     * @return int|null the Integer value of the node.
      */
-    public function getIntegerValue(): int;
+    public function getIntegerValue(): ?int;
 
     /**
      * Gets the Float value of the node.
-     * @return float the Float value of the node.
+     * @return float|null the Float value of the node.
      */
-    public function getFloatValue(): float;
-
-    /**
-     * Gets the UUID value of the node.
-     * @return string the UUID value of the node.
-     */
-    public function getUUIDValue(): string;
+    public function getFloatValue(): ?float;
 
     /**
      * Gets the model object value of the node.
-     * @return object the model object value of the node.
+     * @param string $type The type for the Parsable object.
+     * @return Parsable|null the model object value of the node.
      */
-    public function getObjectValue(string $targetClass): object;
+    public function getObjectValue(string $type): ?Parsable;
 
     /**
-     * Gets the collection of model object values from the node
-     * @param string $targetClass
-     * @return object[]
+     * @param string $type The underlying type for the Parsable class.
+     * @return array<Parsable>|null An array of Parsable values.
      */
-    public function getCollectionOfObjectValues(string $targetClass): array;
+    public function getCollectionOfObjectValues(string $type): ?array;
 
     /**
-     * Gets the collection of primitive values from the node
-     * @param string $primitiveType
-     * @return array<mixed>
+     * Get a collection of values that are not parsable in Nature.
+     * @param string|null $typeName
+     * @return array<mixed>|null A collection of primitive values.
      */
-    public function getCollectionOfPrimitiveValues(string $primitiveType): array;
-
-    /**
-     * Gets the OffsetDateTime value of the node.
-     * @return DateTimeInterface the OffsetDateTime value of the node.
-     */
-    public function getDateTimeOffsetValue(): DateTimeInterface;
+    public function getCollectionOfPrimitiveValues(?string $typeName = null): ?array;
 
     /**
      * Gets the DateTimeValue of the node
-     * @return DateTimeInterface
+     * @return DateTime|null
      */
-    public function getDateTimeValue(): DateTimeInterface;
+    public function getDateTimeValue(): ?DateTime;
 
     /**
      * Gets the DateInterval value of the node
-     * @return \DateInterval
+     * @return DateInterval|null
      */
-    public function getDateIntervalValue(): \DateInterval;
+    public function getDateIntervalValue(): ?DateInterval;
 
     /**
      * Gets the Date only value of the node
-     * @return Date
+     * @return Date|null
      */
-    public function getDateValue(): Date;
+    public function getDateValue(): ?Date;
 
     /**
      * Gets the Time only value of the node
-     * @return Time
+     * @return Time|null
      */
-    public function getTimeValue(): Time;
+    public function getTimeValue(): ?Time;
 
     /**
      * Gets the Enum value of the node.
      * @param string $targetEnum
-     * @return Enum the Enum value of the node.
+     * @return Enum|null the Enum value of the node.
      */
-    public function getEnumValue(string $targetEnum): Enum;
+    public function getEnumValue(string $targetEnum): ?Enum;
 
     /**
-     * Gets the EnumSet value of the node.
-     * @param Enum $targetEnum
-     * @return array<string> the EnumSet value of the node.
+     * Return a byte value.
+     * @return Byte|null
      */
-    public function getEnumSetValue(Enum $targetEnum): array;
+    public function getByteValue(): ?Byte;
 
     /**
      * Gets the callback called before the node is deserialized.

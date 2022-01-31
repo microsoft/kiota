@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright (c) Microsoft Corporation.  All Rights Reserved.
  * Licensed under the MIT License.  See License in the project root
@@ -10,8 +11,7 @@ namespace Microsoft\Kiota\Abstractions\Types;
 use DateTime;
 use Exception;
 
-class Date
-{
+class Date {
     /**
      * @var string $value
      */
