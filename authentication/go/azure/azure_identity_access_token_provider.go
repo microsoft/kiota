@@ -16,7 +16,7 @@ import (
 type AzureIdentityAccessTokenProvider struct {
 	scopes                []string
 	credential            azcore.TokenCredential
-	allowedHostsValidator absauth.AllowedHostsValidator
+	allowedHostsValidator *absauth.AllowedHostsValidator
 }
 
 // NewAzureIdentityAccessTokenProvider creates a new instance of the AzureIdentityAccessTokenProvider using "https://graph.microsoft.com/.default" as the default scope.
@@ -48,7 +48,7 @@ func NewAzureIdentityAccessTokenProviderWithScopesAndValidHosts(credential azcor
 	result := &AzureIdentityAccessTokenProvider{
 		credential:            credential,
 		scopes:                finalScopes,
-		allowedHostsValidator: validator,
+		allowedHostsValidator: &validator,
 	}
 
 	return result, nil
@@ -56,7 +56,7 @@ func NewAzureIdentityAccessTokenProviderWithScopesAndValidHosts(credential azcor
 
 // GetAuthorizationToken returns the access token for the provided url.
 func (p *AzureIdentityAccessTokenProvider) GetAuthorizationToken(url *u.URL) (string, error) {
-	if !p.allowedHostsValidator.IsUrlHostValid(url) {
+	if !(*(p.allowedHostsValidator)).IsUrlHostValid(url) {
 		return "", nil
 	}
 	if !strings.EqualFold(url.Scheme, "https") {
@@ -70,4 +70,9 @@ func (p *AzureIdentityAccessTokenProvider) GetAuthorizationToken(url *u.URL) (st
 		return "", err
 	}
 	return token.Token, nil
+}
+
+// GetAllowedHostsValidator returns the hosts validator.
+func (p *AzureIdentityAccessTokenProvider) GetAllowedHostsValidator() *absauth.AllowedHostsValidator {
+	return p.allowedHostsValidator
 }

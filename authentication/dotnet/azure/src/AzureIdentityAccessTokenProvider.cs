@@ -18,7 +18,8 @@ public class AzureIdentityAccessTokenProvider : IAccessTokenProvider
 {
     private readonly TokenCredential _credential;
     private readonly List<string> _scopes;
-    private readonly AllowedHostsValidator _allowedHostsValidator;
+    /// <inheritdoc />
+    public AllowedHostsValidator AllowedHostsValidator { get; private set; }
 
     /// <summary>
     /// The <see cref="AzureIdentityAccessTokenProvider"/> constructor
@@ -31,9 +32,9 @@ public class AzureIdentityAccessTokenProvider : IAccessTokenProvider
         _credential = credential ?? throw new ArgumentNullException(nameof(credential));
 
         if(!allowedHosts?.Any() ?? true)
-            _allowedHostsValidator = new AllowedHostsValidator(new string[] { "graph.microsoft.com", "graph.microsoft.us", "dod-graph.microsoft.us", "graph.microsoft.de", "microsoftgraph.chinacloudapi.cn", "canary.graph.microsoft.com" });
+            AllowedHostsValidator = new AllowedHostsValidator(new string[] { "graph.microsoft.com", "graph.microsoft.us", "dod-graph.microsoft.us", "graph.microsoft.de", "microsoftgraph.chinacloudapi.cn", "canary.graph.microsoft.com" });
         else
-            _allowedHostsValidator = new AllowedHostsValidator(allowedHosts);
+            AllowedHostsValidator = new AllowedHostsValidator(allowedHosts);
 
         if(scopes == null)
             _scopes = new();
@@ -52,7 +53,7 @@ public class AzureIdentityAccessTokenProvider : IAccessTokenProvider
     /// <returns>An authorization token string.</returns>
     public async Task<string> GetAuthorizationTokenAsync(Uri uri, CancellationToken cancellationToken = default)
     {
-        if(!_allowedHostsValidator.IsUrlHostValid(uri))
+        if(!AllowedHostsValidator.IsUrlHostValid(uri))
             return string.Empty;
 
         if(!uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
