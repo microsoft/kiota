@@ -15,13 +15,13 @@ func TestItParsesADuration(t *testing.T) {
 func TestItMakesAnISODurationFromATimeDurationFor1h(t *testing.T) {
 	duration := time.Duration(1) * time.Hour
 	isoDuration := FromDuration(duration)
-	assert.Equal(t, "PT3600S", isoDuration.String()) //TODO this is technically invalid and needs to be fixed in the dependency https://github.com/cjlapao/common-go/pull/11
+	assert.Equal(t, "PT1H", isoDuration.String())
 }
 
 func TestItMakesAnISODurationFromATimeDurationFor1d(t *testing.T) {
 	duration := time.Duration(24) * time.Hour
 	isoDuration := FromDuration(duration)
-	assert.Equal(t, "PT86400S", isoDuration.String()) //TODO this is technically invalid and needs to be fixed in the dependency https://github.com/cjlapao/common-go/pull/11
+	assert.Equal(t, "P1D", isoDuration.String())
 }
 
 func TestItMakesAnNewISODurationFor1h(t *testing.T) {
@@ -39,7 +39,7 @@ func TestItMakesAnNewISODurationFor1wAnd1dAnd1h(t *testing.T) {
 	assert.Equal(t, "P1W1DT1H", isoDuration.String())
 }
 
-func TestItMakesAnNewISODurationFor1y1wAnd1dAnd1h(t *testing.T) {
-	isoDuration := NewDuration(1, 1, 1, 1, 0, 0, 0)
-	assert.Equal(t, "P1Y1W1DT1H", isoDuration.String())
+func TestItMakesAnNewISODurationFor1yAnd1dAnd1h(t *testing.T) {
+	isoDuration := NewDuration(1, 0, 1, 1, 0, 0, 0)
+	assert.Equal(t, "P1Y1DT1H", isoDuration.String())
 }
