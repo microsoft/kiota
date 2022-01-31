@@ -53,8 +53,5 @@ class AllowedHostsValidator:
 
         if o.netloc:
             return o.netloc.lower() in self.allowed_hosts
-        # For urls without a valid netloc e,g ./www.python.org/~hello?arg=1#frag
-        if not o.netloc and o.path:
-            return o.path.lower() in self.allowed_hosts
 
         return False
