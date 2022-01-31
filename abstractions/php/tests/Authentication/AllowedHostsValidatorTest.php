@@ -11,23 +11,23 @@ class AllowedHostsValidatorTest extends TestCase
 
     protected function setUp(): void
     {
-        $hosts = ["http://abc.com", "HTTPS://ABC.COM", "https://abc.com "];
+        $hosts = ["abc.com", "ABC.COM", "abc.com "];
         $this->defaultValidator = new AllowedHostsValidator($hosts);
         parent::setUp();
     }
 
     public function testConstructorSetsLowercaseTrimmedDeduplicatedHosts(): void
     {
-        $expected = ["http://abc.com", "https://abc.com"]; //duplicates should not be added to allowed hosts
+        $expected = ["abc.com"]; //duplicates should not be added to allowed hosts
         $this->assertEquals($expected, $this->defaultValidator->getAllowedHosts());
     }
 
     public function testSetAllowedHostsSetLowercaseTrimmedDeduplicatedHosts(): void
     {
-        $hosts = ["http://abc.com", "HTTPS://ABC.COM", "https://abc.com "];
+        $hosts = ["abc.com", "ABC.COM", "abc.com "];
         $validator = new AllowedHostsValidator();
         $validator->setAllowedHosts($hosts);
-        $expected = ["http://abc.com", "https://abc.com"]; //duplicates should not be added to allowed hosts
+        $expected = ["abc.com"]; //duplicates should not be added to allowed hosts
         $this->assertEquals($expected, $validator->getAllowedHosts());
     }
 
@@ -48,11 +48,5 @@ class AllowedHostsValidatorTest extends TestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->defaultValidator->isUrlHostValid("http/abc?%#:8080");
-    }
-
-    public function testIsUrlHostValidThrowsExceptionIfUrlHasNoScheme(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->defaultValidator->isUrlHostValid("abc.com");
     }
 }
