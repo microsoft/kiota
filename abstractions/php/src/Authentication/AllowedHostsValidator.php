@@ -61,24 +61,24 @@ class AllowedHostsValidator
      */
     public function isUrlHostValid(string $url): bool
     {
-        return empty($this->allowedHosts) || array_key_exists($this->extractSchemeAndHost($url), $this->allowedHosts);
+        return empty($this->allowedHosts) || array_key_exists($this->extractHost($url), $this->allowedHosts);
     }
 
     /**
-     * Parses the URL and extracts the scheme and host name
+     * Extracts the host name from $url
      *
      * @param string $url
      * @return string
      */
-    private function extractSchemeAndHost(string $url): string
+    private function extractHost(string $url): string
     {
         $urlParts = parse_url($url);
         if (!$urlParts) {
             throw new \InvalidArgumentException("$url is malformed");
-        } else if (array_key_exists("scheme", $urlParts) && array_key_exists("host", $urlParts)) {
-            return strtolower(trim( $urlParts["scheme"].'://'.$urlParts["host"]));
+        } else if (array_key_exists("host", $urlParts)) {
+            return strtolower(trim( $urlParts["host"]));
         } else {
-            throw new \InvalidArgumentException("$url must contain scheme and host");
+            throw new \InvalidArgumentException("$url must contain host");
         }
     }
 }
