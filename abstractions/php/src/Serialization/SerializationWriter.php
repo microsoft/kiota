@@ -108,6 +108,13 @@ interface SerializationWriter {
     public function writeTimeValue(?string $key, ?Time $value): void;
 
     /**
+     * Write DateInterval Value.
+     * @param string|null $key
+     * @param DateInterval|null $value
+     * @return void
+     */
+    public function writeDateIntervalValue(?string $key, ?DateInterval $value): void;
+    /**
      * Write a byte value.
      * @param string|null $key
      * @param Byte|null $value
