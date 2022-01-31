@@ -1,6 +1,7 @@
 import { GetTokenOptions, TokenCredential } from "@azure/core-auth";
 import { AccessTokenProvider, AllowedHostsValidator, validateProtocol } from '@microsoft/kiota-abstractions';
 
+/** Access token provider that leverages the Azure Identity library to retrieve an access token. */
 export class AzureIdentityAccessTokenProvider implements AccessTokenProvider {
     /**
      *@constructor
@@ -22,6 +23,9 @@ export class AzureIdentityAccessTokenProvider implements AccessTokenProvider {
         this.allowedHostsValidator = new AllowedHostsValidator(allowedHosts);
     }
     private readonly allowedHostsValidator: AllowedHostsValidator;
+    /**
+     * @inheritdoc
+     */
     public getAuthorizationToken = async (url?:string): Promise<string> => {
         if(!url || !this.allowedHostsValidator.isUrlHostValid(url)) {
             return '';
@@ -30,4 +34,8 @@ export class AzureIdentityAccessTokenProvider implements AccessTokenProvider {
         const result = await this.credentials.getToken(this.scopes, this.options);
         return result?.token ?? '';
     }
+    /**
+     * @inheritdoc
+     */
+    public getAllowedHostsValidator = () => this.allowedHostsValidator;
 }

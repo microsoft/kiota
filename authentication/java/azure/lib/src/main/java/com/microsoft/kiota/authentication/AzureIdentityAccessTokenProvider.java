@@ -53,4 +53,8 @@ public class AzureIdentityAccessTokenProvider implements AccessTokenProvider {
             this.setScopes(_scopes);
         }}).toFuture().thenApply(r -> r.getToken());
     }
+    @Nonnull
+    public AllowedHostsValidator getAllowedHostsValidator() {
+        return _hostValidator;
+    }
 }

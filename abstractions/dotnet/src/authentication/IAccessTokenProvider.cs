@@ -19,4 +19,8 @@ public interface IAccessTokenProvider
     /// <param name="cancellationToken">The cancellation token for the task</param>
     /// <returns>A Task that holds the access token to use for the request.</returns>
     Task<string> GetAuthorizationTokenAsync(Uri uri, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Returns the <see cref="AllowedHostsValidator"/> for the provider.
+    /// </summary>
+    AllowedHostsValidator AllowedHostsValidator { get; }
 }

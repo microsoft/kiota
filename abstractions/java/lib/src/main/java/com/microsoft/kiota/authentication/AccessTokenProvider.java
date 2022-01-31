@@ -14,4 +14,10 @@ public interface AccessTokenProvider {
      */
     @Nonnull
     CompletableFuture<String> getAuthorizationToken(@Nonnull final URI uri);
+    /**
+     * Returns the allowed hosts validator.
+     * @return The allowed hosts validator.
+     */
+    @Nonnull
+    AllowedHostsValidator getAllowedHostsValidator();
 }
