@@ -1,5 +1,5 @@
 import { GetTokenOptions, TokenCredential } from "@azure/core-auth";
-import { AccessTokenProvider, AllowedHostsValidator } from '@microsoft/kiota-abstractions';
+import { AccessTokenProvider, AllowedHostsValidator, validateProtocol } from '@microsoft/kiota-abstractions';
 
 export class AzureIdentityAccessTokenProvider implements AccessTokenProvider {
     /**
@@ -26,10 +26,7 @@ export class AzureIdentityAccessTokenProvider implements AccessTokenProvider {
         if(!url || !this.allowedHostsValidator.isUrlHostValid(url)) {
             return '';
         }
-        // @ts-ignore
-        if(!url.startsWith('https://') || (window && (window.location.protocol as string).toLowerCase() !== 'https:')) {
-            throw new Error('AzureIdentityAccessTokenProvider can only be used with https requests');
-        }
+        validateProtocol(url);
         const result = await this.credentials.getToken(this.scopes, this.options);
         return result?.token ?? '';
     }
