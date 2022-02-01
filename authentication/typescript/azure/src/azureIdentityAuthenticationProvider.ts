@@ -12,8 +12,8 @@ export class AzureIdentityAuthenticationProvider extends BaseBearerTokenAuthenti
     */
     public constructor(credentials: TokenCredential,
         scopes: string[] = ['https://graph.microsoft.com/.default'],
-        allowedHosts: Set<string> = new Set<string>(),
-        options?: GetTokenOptions) {
-        super(new AzureIdentityAccessTokenProvider(credentials, scopes, allowedHosts, options));
+        options?: GetTokenOptions,
+        allowedHosts: Set<string> = new Set<string>(['graph.microsoft.com', 'graph.microsoft.us', 'dod-graph.microsoft.us', 'graph.microsoft.de', 'microsoftgraph.chinacloudapi.cn', 'canary.graph.microsoft.com'])) {
+        super(new AzureIdentityAccessTokenProvider(credentials, scopes, options, allowedHosts));
     }
 }
