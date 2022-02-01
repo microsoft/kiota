@@ -1,0 +1,47 @@
+name: Python abstractions
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths: ['abstractions/python/**', '.github/workflows/**']
+  pull_request:
+    paths: ['abstractions/python/**', '.github/workflows/**']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      relativePath: ./abstractions/python
+    strategy:
+      matrix:
+        python-version: [3.7, 3.8, 3.9]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.4.0
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pipenv
+          pipenv install --dev --skip-lock
+        working-directory: ${{ env.relativePath }}
+      - name: Check code format
+        run: |
+          pipenv run yapf -dr kiota/abstractions
+        working-directory: ${{ env.relativePath }}
+      - name: Check import order
+        run: |
+          pipenv run isort kiota/abstractions
+        working-directory: ${{ env.relativePath }}
+      - name: Lint with Pylint
+        run: |
+          pipenv run pylint kiota/abstractions --disable=W --rcfile=.pylintrc
+        working-directory: ${{ env.relativePath }}
+      - name: Static type checking with Mypy
+        run: |
+          pipenv run mypy kiota/abstractions
+        working-directory: ${{ env.relativePath }}
