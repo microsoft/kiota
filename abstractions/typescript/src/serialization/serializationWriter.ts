@@ -1,5 +1,7 @@
 import { Parsable } from "./parsable";
-import { ReadableStream } from 'web-streams-polyfill/es2018';
+import { Duration } from "../duration";
+import { TimeOnly } from "../timeOnly";
+import { DateOnly } from "../dateOnly";
 
 /** Defines an interface for serialization of objects to a stream. */
 export interface SerializationWriter {
@@ -34,6 +36,24 @@ export interface SerializationWriter {
      */
     writeDateValue(key?: string | undefined, value?: Date | undefined): void;
     /**
+     * Writes the specified Duration value to the stream with an optional given key.
+     * @param key the key to write the value with.
+     * @param value the value to write to the stream.
+     */
+    writeDurationValue(key?: string | undefined, value?: Duration | undefined): void;
+    /**
+     * Writes the specified TimeOnly value to the stream with an optional given key.
+     * @param key the key to write the value with.
+     * @param value the value to write to the stream.
+     */
+    writeTimeOnlyValue(key?: string | undefined, value?: TimeOnly | undefined): void;
+    /**
+     * Writes the specified DateOnly value to the stream with an optional given key.
+     * @param key the key to write the value with.
+     * @param value the value to write to the stream.
+     */
+    writeDateOnlyValue(key?: string | undefined, value?: DateOnly | undefined): void;
+    /**
      * Writes the specified collection of primitive values to the stream with an optional given key.
      * @param key the key to write the value with.
      * @param value the value to write to the stream.
@@ -66,7 +86,7 @@ export interface SerializationWriter {
      * Gets the value of the serialized content.
      * @return the value of the serialized content.
      */
-    getSerializedContent(): ReadableStream;
+    getSerializedContent(): ArrayBuffer;
     /**
      * Writes the specified additional data values to the stream with an optional given key.
      * @param value the values to write to the stream.

@@ -1,5 +1,7 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Text.Json;
+using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Serialization.Json.Tests.Mocks;
 using Xunit;
 
@@ -14,16 +16,21 @@ namespace Microsoft.Kiota.Serialization.Json.Tests
                                             "        \"+1 412 555 0109\"\r\n" +
                                             "    ],\r\n" +
                                             "    \"displayName\": \"Megan Bowen\",\r\n" +
+                                            "    \"numbers\":\"one,two,thirtytwo\"," +
                                             "    \"givenName\": \"Megan\",\r\n" +
                                             "    \"accountEnabled\": true,\r\n" +
                                             "    \"createdDateTime\": \"2017 -07-29T03:07:25Z\",\r\n" +
                                             "    \"jobTitle\": \"Auditor\",\r\n" +
                                             "    \"mail\": \"MeganB@M365x214355.onmicrosoft.com\",\r\n" +
                                             "    \"mobilePhone\": null,\r\n" +
-                                            "    \"officeLocation\": \"12/1110\",\r\n" +
+                                            "    \"officeLocation\": null,\r\n" +
                                             "    \"preferredLanguage\": \"en-US\",\r\n" +
                                             "    \"surname\": \"Bowen\",\r\n" +
+                                            "    \"workDuration\": \"PT1H\",\r\n" +
+                                            "    \"startWorkTime\": \"08:00:00.0000000\",\r\n" +
+                                            "    \"endWorkTime\": \"17:00:00.0000000\",\r\n" +
                                             "    \"userPrincipalName\": \"MeganB@M365x214355.onmicrosoft.com\",\r\n" +
+                                            "    \"birthDay\": \"2017-09-04\",\r\n" +
                                             "    \"id\": \"48d31887-5fad-4d73-a9f5-3c356e68a038\"\r\n" +
                                             "}";
 
@@ -39,11 +46,17 @@ namespace Microsoft.Kiota.Serialization.Json.Tests
             var testEntity = jsonParseNode.GetObjectValue<TestEntity>();
             // Assert
             Assert.NotNull(testEntity);
+            Assert.Null(testEntity.OfficeLocation);
             Assert.NotEmpty(testEntity.AdditionalData);
             Assert.True(testEntity.AdditionalData.ContainsKey("jobTitle"));
             Assert.True(testEntity.AdditionalData.ContainsKey("mobilePhone"));
             Assert.Equal("Auditor", testEntity.AdditionalData["jobTitle"]);
             Assert.Equal("48d31887-5fad-4d73-a9f5-3c356e68a038", testEntity.Id);
+            Assert.Equal(TestEnum.One | TestEnum.Two, testEntity.Numbers ); // Unknown enum value is not included
+            Assert.Equal(TimeSpan.FromHours(1), testEntity.WorkDuration); // Parses timespan values
+            Assert.Equal(new Time(8,0,0).ToString(),testEntity.StartWorkTime.ToString());// Parses time values
+            Assert.Equal(new Time(17, 0, 0).ToString(), testEntity.EndWorkTime.ToString());// Parses time values
+            Assert.Equal(new Date(2017,9,4).ToString(), testEntity.BirthDay.ToString());// Parses date values
         }
 
         [Fact]

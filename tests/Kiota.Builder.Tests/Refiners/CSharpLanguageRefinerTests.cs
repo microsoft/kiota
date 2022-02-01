@@ -145,6 +145,46 @@ namespace Kiota.Builder.Refiners.Tests {
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
             Assert.Equal(serializationName, propToAdd.SerializationName);
         }
+        [Fact]
+        public void ReplacesDateOnlyByNativeType()
+        {
+            var model = root.AddClass(new CodeClass
+            {
+                Name = "model",
+                ClassKind = CodeClassKind.Model
+            }).First();
+            var method = model.AddMethod(new CodeMethod
+            {
+                Name = "method",
+                ReturnType = new CodeType
+                {
+                    Name = "DateOnly"
+                },
+            }).First();
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+            Assert.NotEmpty(model.StartBlock.Usings);
+            Assert.Equal("Date", method.ReturnType.Name);
+        }
+        [Fact]
+        public void ReplacesTimeOnlyByNativeType()
+        {
+            var model = root.AddClass(new CodeClass
+            {
+                Name = "model",
+                ClassKind = CodeClassKind.Model
+            }).First();
+            var method = model.AddMethod(new CodeMethod
+            {
+                Name = "method",
+                ReturnType = new CodeType
+                {
+                    Name = "TimeOnly"
+                },
+            }).First();
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+            Assert.NotEmpty(model.StartBlock.Usings);
+            Assert.Equal("Time", method.ReturnType.Name);
+        }
         #endregion
     }
 }

@@ -180,7 +180,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             Assert.Contains("requestInfo.httpMethod = HttpMethod", result);
             Assert.Contains("requestInfo.urlTemplate = ", result);
             Assert.Contains("requestInfo.pathParameters = ", result);
-            Assert.Contains("setHeadersFromRawObject", result);
+            Assert.Contains("requestInfo.headers =", result);
             Assert.Contains("setQueryStringParametersFromRawObject", result);
             Assert.Contains("setContentFromParsable", result);
             Assert.Contains("addRequestOptions", result);

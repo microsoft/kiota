@@ -485,7 +485,7 @@ namespace Kiota.Builder.Writers.Go {
             var errorPrefix = $"err {errorVarDeclaration(shouldDeclareErrorVar)}= writer.";
             var isEnum = propType is CodeType eType && eType.TypeDefinition is CodeEnum;
             var isClass = propType is CodeType cType && cType.TypeDefinition is CodeClass;
-            if(isEnum && !propType.IsCollection)
+            if(isEnum || propType.IsCollection)
                 writer.WriteLine($"if {valueGet} != nil {{");
             else
                 writer.WriteLine("{");// so the err var scope is limited

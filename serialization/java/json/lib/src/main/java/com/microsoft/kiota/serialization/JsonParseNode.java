@@ -9,7 +9,10 @@ import com.google.gson.JsonPrimitive;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.Period;
 import java.util.Base64;
 import java.util.EnumSet;
 import java.util.Iterator;
@@ -71,6 +74,15 @@ public class JsonParseNode implements ParseNode {
     public OffsetDateTime getOffsetDateTimeValue() {
         return OffsetDateTime.parse(currentNode.getAsString());
     }
+    public LocalDate getLocalDateValue() {
+        return LocalDate.parse(currentNode.getAsString());
+    }
+    public LocalTime getLocalTimeValue() {
+        return LocalTime.parse(currentNode.getAsString());
+    }
+    public Period getPeriodValue() {
+        return Period.parse(currentNode.getAsString());
+    }
     public <T> List<T> getCollectionOfPrimitiveValues(final Class<T> targetClass) {
         Objects.requireNonNull(targetClass, "parameter targetClass cannot be null");
         if(currentNode.isJsonArray()) {
@@ -109,6 +121,12 @@ public class JsonParseNode implements ParseNode {
                                 return (T)itemNode.getUUIDValue();
                             } else if(targetClass == OffsetDateTime.class) {
                                 return (T)itemNode.getOffsetDateTimeValue();
+                            } else if(targetClass == LocalDate.class) {
+                                return (T)itemNode.getLocalDateValue();
+                            } else if(targetClass == LocalTime.class) {
+                                return (T)itemNode.getLocalTimeValue();
+                            } else if(targetClass == Period.class) {
+                                return (T)itemNode.getPeriodValue();
                             } else {
                                 throw new RuntimeException("unknown type to deserialize " + targetClass.getName());
                             }
