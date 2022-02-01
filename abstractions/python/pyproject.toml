@@ -15,3 +15,17 @@ Home = "https://github.com/microsoft/kiota#readme"
 
 [tool.flit.module]
 name = "kiota"
+
+[mypy]
+warn_unused_configs = true
+files = "kiota.abstractions"
+ignore_missing_imports = true
+
+[tool.yapf]
+based_on_style = "pep8"
+dedent_closing_brackets = true
+each_dict_entry_on_separate_line = true
+column_limit = 100
+
+[tool.isort]
+profile = "hug"
