@@ -45,3 +45,29 @@ jobs:
         run: |
           pipenv run mypy kiota/abstractions
         working-directory: ${{ env.relativePath }}
+
+  publish:
+    name: Publish distribution to PyPI
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    needs: [build]
+    env:
+      relativePath: ./abstractions/python
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+      - name: Install flit
+        run: |
+          pip install flit
+        working-directory: ${{ env.relativePath }}
+      - name: Publish the distibution to PyPI
+        run: flit publish
+        working-directory: ${{ env.relativePath }}
+        env:
+          FLIT_INDEX_URL: https://upload.pypi.org/legacy/
+          FLIT_USERNAME: __token__
+          FLIT_PASSWORD: ${{ secrets.PYPI_API_TOKEN }} 
