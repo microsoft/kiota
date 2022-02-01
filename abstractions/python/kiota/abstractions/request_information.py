@@ -1,11 +1,14 @@
 from io import BytesIO
-from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Tuple, TypeVar
 
 from uritemplate import URITemplate
 
 from .method import Method
 from .request_option import RequestOption
 from .serialization import Parsable
+
+if TYPE_CHECKING:
+    from .request_adapter import RequestAdapter
 
 Url = str
 T = TypeVar("T", bound=Parsable)
@@ -94,7 +97,7 @@ class RequestInformation(Generic[QueryParams]):
             del self.__request_options[option.get_key()]
 
     def set_content_from_parsable(
-        self, request_adapter: Optional["RequestAdapter"], content_type: Optional[str],
+        self, request_adapter: Optional['RequestAdapter'], content_type: Optional[str],
         values: List[T]
     ) -> None:
         """Sets the request body from a model with the specified content type.

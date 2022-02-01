@@ -74,7 +74,7 @@ def enable_backing_store_for_parse_node_factory(original: ParseNodeFactory) -> P
 
 def enable_backing_store_for_parse_node_registry(registry: ParseNodeFactoryRegistry) -> None:
     for key, val in registry.CONTENT_TYPE_ASSOCIATED_FACTORIES.items():
-        if not isinstance(val, BackingStoreParseNodeFactory, ParseNodeFactoryRegistry):
+        if not isinstance(val, (BackingStoreParseNodeFactory, ParseNodeFactoryRegistry)):
             registry.CONTENT_TYPE_ASSOCIATED_FACTORIES[key] = BackingStoreParseNodeFactory(val)
 
 
@@ -82,6 +82,8 @@ def enable_backing_store_for_serialization_registry(
     registry: SerializationWriterFactoryRegistry
 ) -> None:
     for key, val in registry.CONTENT_TYPE_ASSOCIATED_FACTORIES.items():
-        if not isinstance(val, SerializationWriterProxyFactory, SerializationWriterFactoryRegistry):
+        if not isinstance(
+            val, (SerializationWriterProxyFactory, SerializationWriterFactoryRegistry)
+        ):
             registry.CONTENT_TYPE_ASSOCIATED_FACTORIES[
                 key] = BackingStoreSerializationWriterProxyFactory(val)

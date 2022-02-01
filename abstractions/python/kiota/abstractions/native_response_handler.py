@@ -1,4 +1,4 @@
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 from .response_handler import ResponseHandler
 from .serialization import Parsable
@@ -15,4 +15,4 @@ class NativeResponseHandler(ResponseHandler):
 
     async def handle_response_async(self, response: NativeResponseType) -> ModelType:
         self.value = response
-        return None
+        return cast(ModelType, None)
