@@ -2,9 +2,9 @@
   "name": "@microsoft/kiota-authentication-azure",
   "version": "1.0.6",
   "description": "Authentication provider for Kiota using Azure Identity",
-  "main": "dist/cjs/index.js",
-  "module": "dist/es/index.js",
-  "types": "dist/cjs/index.d.ts",
+  "main": "dist/cjs/src/index.js",
+  "module": "dist/es/src/index.js",
+  "types": "dist/cjs/src/index.d.ts",
   "scripts": {
       "build": "npm run build:cjs && npm run build:esm",
       "build:cjs": "tsc -p tsconfig.cjs.json",
