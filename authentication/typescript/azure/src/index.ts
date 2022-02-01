@@ -1,1 +1,1 @@
-export * from './azureIdentityAuthenticationProvider';
+export * from "./azureIdentityAuthenticationProvider";
