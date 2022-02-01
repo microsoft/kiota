@@ -68,6 +68,6 @@ jobs:
         run: flit publish
         working-directory: ${{ env.relativePath }}
         env:
-          FLIT_INDEX_URL: https://upload.pypi.org/legacy/
+          FLIT_INDEX_URL: https://test.pypi.org/legacy/
           FLIT_USERNAME: __token__
-          FLIT_PASSWORD: ${{ secrets.PYPI_API_TOKEN }} 
+          FLIT_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }} 
