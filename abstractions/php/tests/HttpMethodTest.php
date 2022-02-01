@@ -1,6 +1,6 @@
 <?php
 
-namespace Microsoft\Kiota\Tests;
+namespace Microsoft\Kiota\Abstractions\Tests;
 
 use InvalidArgumentException;
 use Microsoft\Kiota\Abstractions\HttpMethod;

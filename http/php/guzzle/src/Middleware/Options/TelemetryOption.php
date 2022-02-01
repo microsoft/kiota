@@ -8,6 +8,7 @@
 
 namespace Microsoft\Kiota\Http\Middleware\Options;
 
+use Microsoft\Kiota\Abstractions\RequestOption;
 use Microsoft\Kiota\Http\Middleware\TelemetryHandler;
 use Psr\Http\Message\RequestInterface;
 
@@ -21,7 +22,7 @@ use Psr\Http\Message\RequestInterface;
  * @license https://opensource.org/licenses/MIT MIT License
  * @link https://developer.microsoft.com/graph
  */
-class TelemetryOption
+class TelemetryOption implements RequestOption
 {
     /**
      * @var callable(RequestInterface):RequestInterface

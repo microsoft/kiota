@@ -46,7 +46,7 @@ export interface RequestAdapter {
      * @typeParam ResponseType the type of the response model to deserialize the response into.
      * @return a {@link Promise} with the deserialized primitive response model.
      */
-    sendPrimitiveAsync<ResponseType>(requestInfo: RequestInformation, responseType: "string" | "number" | "boolean" | "Date" | "ReadableStream", responseHandler: ResponseHandler | undefined): Promise<ResponseType>;
+    sendPrimitiveAsync<ResponseType>(requestInfo: RequestInformation, responseType: "string" | "number" | "boolean" | "Date" | "ArrayBuffer", responseHandler: ResponseHandler | undefined): Promise<ResponseType>;
     /**
      * Excutes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model.
      * @param requestInfo the request info to execute.

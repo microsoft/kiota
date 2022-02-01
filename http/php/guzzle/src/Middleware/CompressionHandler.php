@@ -62,6 +62,11 @@ class CompressionHandler
      */
     public function __invoke(RequestInterface $request, array $options): PromiseInterface
     {
+        // Request-level options override global options
+        if (array_key_exists(CompressionOption::class, $options)) {
+            $this->compressionOption = $options[CompressionOption::class];
+        }
+
         $this->originalRequest = $request; // keep reference in case we have to retry with uncompressed body
         if (!$this->isRetryAttempt($options)) {
             $request = $this->compress($request);

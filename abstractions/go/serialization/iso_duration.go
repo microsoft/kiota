@@ -114,10 +114,10 @@ func (i ISODuration) String() string {
 
 // FromDuration returns an ISODuration from a time.Duration.
 func FromDuration(d time.Duration) *ISODuration {
-	return NewDuration(0, 0, 0, 0, 0, int(d.Truncate(time.Second).Seconds()), int(d.Truncate(time.Millisecond).Milliseconds()))
+	return NewDuration(0, 0, 0, 0, 0, 0, int(d.Truncate(time.Millisecond).Milliseconds()))
 }
 
 // ToDuration returns the time.Duration representation of the ISODuration.
-func (d ISODuration) ToDuration() time.Duration {
+func (d ISODuration) ToDuration() (time.Duration, error) {
 	return d.duration.ToDuration()
 }

@@ -1,8 +1,6 @@
 <?php
 namespace Microsoft\Kiota\Abstractions\Serialization;
 
-use Closure;
-
 /**
  * Defines the serializable model object.
  */
@@ -22,9 +20,9 @@ interface Parsable {
 
     /**
      * Gets the additional data for this object that did not belong to the properties.
-     * @return array<string, mixed> The additional data for this object.
+     * @return array<string,mixed>|null The additional data for this object.
      */
-    public function getAdditionalData(): array;
+    public function getAdditionalData(): ?array;
 
     /**
      * Sets the additional data for this object that did not belong to the properties.
