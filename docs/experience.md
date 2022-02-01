@@ -152,7 +152,7 @@ paths:
 
 ```csharp
 
-   int speakerCount = await apiClient.Speakers.Count;
+   int speakerCount = await apiClient.Speakers.Count.GetAsync();
 
 ```
 
@@ -202,9 +202,8 @@ components:
 
 ```
 
-## Hetreogenous collection
+## Heterogenous collection
 
-```yaml
 ## Filtered collection
 
 ```yaml
@@ -280,7 +279,6 @@ components:
 ```csharp
    IEnunmerable<Session> sessions = await apiClient.Sessions.GetAsync(); 
    List<Presentation> presentations = sessions.Where(s => s.GetType() == typeOf(Presentation)).ToList();
-```
 
 ## Explicit Error Response
 
