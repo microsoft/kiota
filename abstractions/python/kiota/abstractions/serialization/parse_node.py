@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import date, datetime, time, timedelta
 from enum import Enum
 from io import BytesIO
 from typing import Callable, List, Optional, TypeVar
@@ -88,6 +88,33 @@ class ParseNode(ABC):
         pass
 
     @abstractmethod
+    def get_timedelta_value(self) -> Optional[timedelta]:
+        """Gets the timedelta value of the node
+
+        Returns:
+            timedelta: The timedelta value of the node
+        """
+        pass
+
+    @abstractmethod
+    def get_date_value(self) -> Optional[date]:
+        """Gets the date value of the node
+
+        Returns:
+            date: The datevalue of the node in terms on year, month, and day.
+        """
+        pass
+
+    @abstractmethod
+    def get_time_value(self) -> Optional[time]:
+        """Gets the time value of the node
+
+        Returns:
+            time: The time value of the node in terms of hour, minute, and second.
+        """
+        pass
+
+    @abstractmethod
     def get_collection_of_primitive_values(self) -> List[T]:
         """Gets the collection of primitive values of the node
 
@@ -142,7 +169,7 @@ class ParseNode(ABC):
         pass
 
     @abstractmethod
-    def on_before_assign_field_values(self) -> Callable[[Parsable], None]:
+    def get_on_before_assign_field_values(self) -> Callable[[Parsable], None]:
         """Gets the callback called before the node is deserialized.
 
         Returns:
@@ -151,10 +178,30 @@ class ParseNode(ABC):
         pass
 
     @abstractmethod
-    def on_after_assign_field_values(self) -> Optional[Callable[[Parsable], None]]:
+    def get_on_after_assign_field_values(self) -> Optional[Callable[[Parsable], None]]:
         """Gets the callback called before the node is deserialized.
 
         Returns:
             Callable[[Parsable], None]: the callback called before the node is deserialized.
+        """
+        pass
+
+    @abstractmethod
+    def set_on_before_assign_field_values(self, value: Callable[[Parsable], None]) -> None:
+        """Sets the callback called before the node is deserialized.
+
+        Args:
+            value (Callable[[Parsable], None]): the callback called before the node is
+            deserialized.
+        """
+        pass
+
+    @abstractmethod
+    def set_on_after_assign_field_values(self, value: Callable[[Parsable], None]) -> None:
+        """Sets the callback called after the node is deserialized.
+
+        Args:
+            value (Callable[[Parsable], None]): the callback called after the node is
+            deserialized.
         """
         pass

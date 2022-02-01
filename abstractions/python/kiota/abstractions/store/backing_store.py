@@ -83,9 +83,8 @@ class BackingStore(ABC):
         """
         pass
 
-    @property
     @abstractmethod
-    def initialization_completed(self) -> bool:
+    def get_is_initialization_completed(self) -> bool:
         """Whether the initialization of the object and/or the initial deserialization has been
         completed to track whether objects have changed.
 
@@ -94,11 +93,27 @@ class BackingStore(ABC):
         """
         pass
 
-    @property
     @abstractmethod
-    def return_only_changed_values(self) -> bool:
+    def set_is_initialization_completed(self, bool) -> None:
+        """Sets whether the initialization of the object and/or the initial deserialization has been
+        completed to track whether objects have changed.
+        """
+        pass
+
+    @abstractmethod
+    def get_return_only_changed_values(self) -> bool:
         """Whether to return only values that have changed since the initialization of the object
         when calling the Get and Enumerate methods.
+
+        Returns:
+            bool:
+        """
+        pass
+
+    @abstractmethod
+    def set_return_only_changed_values(self, bool) -> None:
+        """Sets whether to return only values that have changed since the initialization of the
+        object when calling the Get and Enumerate methods.
 
         Returns:
             bool:

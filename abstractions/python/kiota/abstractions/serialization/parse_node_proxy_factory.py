@@ -33,10 +33,36 @@ class ParseNodeProxyFactory(ParseNodeFactory):
         Returns:
             str: The valid content type for the ParseNodeFactory instance
         """
-        return super().get_valid_content_type()
+        return self._concrete.get_valid_content_type()
 
     def get_root_parse_node(self, content_type: str, content: BytesIO) -> ParseNode:
-        node = self._concrete.get_root_parse_node(content_type, content)
-        original_before = node.on_before_assign_field_values
+        """Create a parse node from the given stream and content type.
 
-        return super().get_root_parse_node(content_type, content)
+        Args:
+            content_type (str): The content type of the parse node.
+            content (BytesIO): The stream to read the parse node from.
+
+        Returns:
+            ParseNode: A parse node.
+        """
+        node = self._concrete.get_root_parse_node(content_type, content)
+        original_before = node.get_on_before_assign_field_values()
+        original_after = node.get_on_after_assign_field_values()
+
+        def before_callback(value):
+            if self._on_before:
+                self._on_before(value)
+            if original_before:
+                original_before(value)
+
+        node.set_on_before_assign_field_values(before_callback)
+
+        def after_callback(value):
+            if self._on_after:
+                self._on_after(value)
+            if original_after:
+                original_after(value)
+
+        node.set_on_after_assign_field_values(after_callback)
+
+        return node
