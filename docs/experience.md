@@ -279,6 +279,7 @@ components:
 ```csharp
    IEnunmerable<Session> sessions = await apiClient.Sessions.GetAsync(); 
    List<Presentation> presentations = sessions.Where(s => s.GetType() == typeOf(Presentation)).ToList();
+```
 
 ## Explicit Error Response
 
