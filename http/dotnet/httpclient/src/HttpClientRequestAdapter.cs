@@ -199,7 +199,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
             if(requestInfo == null)
                 throw new ArgumentNullException(nameof(requestInfo));
 
-            await authProvider.AuthenticateRequestAsync(requestInfo);
+            await authProvider.AuthenticateRequestAsync(requestInfo, cancellationToken);
 
             using var message = GetRequestMessageFromRequestInformation(requestInfo);
             var response = await this.client.SendAsync(message,cancellationToken);
