@@ -99,6 +99,12 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// <returns>The model object value of the node.</returns>
         T GetObjectValue<T>() where T : IParsable;
         /// <summary>
+        /// Gets the resulting error from the node.
+        /// </summary>
+        /// <returns>The error object value of the node.</returns>
+        /// <param name="factory">The error factory.</param>
+        IParsable GetErrorValue(Func<IParsable> factory);
+        /// <summary>
         /// Callback called before the node is deserialized.
         /// </summary>
         Action<IParsable> OnBeforeAssignFieldValues { get; set; }
