@@ -31,7 +31,7 @@ jobs:
         working-directory: ${{ env.relativePath }}
       - name: Check code format
         run: |
-          pipenv run yapf -dr authentication-azure
+          pipenv run yapf -dr authentication_azure
         working-directory: ${{ env.relativePath }}
       - name: Check import order
         run: |
