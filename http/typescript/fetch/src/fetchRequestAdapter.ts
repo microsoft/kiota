@@ -161,13 +161,16 @@ export class FetchRequestAdapter implements RequestAdapter {
         if (!requestInfo) {
             throw new Error('requestInfo cannot be null');
         }
+        this.setBaseUrlForRequestInformation(requestInfo);
         await this.authenticationProvider.authenticateRequest(requestInfo);
 
         const request = this.getRequestFromRequestInformation(requestInfo);
         return await this.httpClient.fetch(requestInfo.URL, request);
     }
+    private setBaseUrlForRequestInformation = (requestInfo: RequestInformation): void => {
+        requestInfo.pathParameters["baseurl"] = this.baseUrl;
+    }
     private getRequestFromRequestInformation = (requestInfo: RequestInformation): RequestInit => {
-        requestInfo.pathParameters["baseurl"]= this.baseUrl;
         const request = {
             method: requestInfo.httpMethod?.toString(),
             headers: requestInfo.headers,
