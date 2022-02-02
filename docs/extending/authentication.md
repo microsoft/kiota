@@ -19,16 +19,38 @@ public interface IAuthenticationProvider
 
 Where the request parameter is the abstract request to be executed. And the return value must be a Task that completes whenever the authentication sequence has completed and the request object has been updates with the additional authentication/authorization information.
 
+## Access Token Provider interface
+
+Implementations of this interface can be used in combination with the BaseBearerTokenAuthentication provider class to provide the access token to the request before it's executed. They can also be used to retrieve an access token to build and execute arbitrary requests with a native http client.
+
+```csharp
+public interface IAccessTokenProvider
+{
+    Task<string> GetAuthorizationToken(Uri uri);
+}
+```
+
+## Allowed hosts validator
+
+This utility class is in charge of validating the host of any request is present on an allow list. This is used by the base access token provider to check whether it should or not return a token to the request.
+
+If no hosts are present in the allow list, the token will be added to any request.
+
+This class should be reused when implementing additional authentication mechanisms.
+
 ## Base bearer token authentication provider
 
 A common practice in the industry for APIs is to implement authentication and authorization via the `Authorization` request header with a bearer token value.
 
-Should you want to add support for additional authentication providers for that scheme, Kiota abstractions already offer a base class to extend so you only need to implement the access token acquisition sequence and not the header composition/addition.
+Should you want to add support for additional authentication providers for that scheme, Kiota abstractions already offer a class to use in combination with available or your own implementation of Access Token Provider so you only need to implement the access token acquisition sequence and not the header composition/addition.
 
 ```csharp
-public abstract class BaseBearerTokenAuthenticationProvider
+public class BaseBearerTokenAuthenticationProvider
 {
-    public abstract Task<string> GetAuthorizationToken(RequestInformation request);
+    public BaseBearerTokenAuthenticationProvider(IAccessTokenProvider tokenProvider) {
+
+    }
+    public IAccessTokenProvider AccessTokenProvider {get; private set;};
 }
 ```
 

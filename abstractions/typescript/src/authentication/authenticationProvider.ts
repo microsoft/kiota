@@ -1,6 +1,10 @@
 import { RequestInformation } from "../requestInformation";
 
-/** Authenticates the application request. */
+/**
+ * @interface
+ * Interface to be implementated to provide authentication information for a request.
+ * @property {Function} authenticateRequest - The function to authenticate the request.
+ */
 export interface AuthenticationProvider {
     /**
      * Authenticates the application and returns a token base on the provided Uri.
