@@ -82,5 +82,14 @@ namespace Kiota.Builder.Extensions.Tests {
             Assert.Equal("graph.users.messages", node.Children.First().Value.GetNodeNamespaceFromPath("graph"));
             Assert.Equal("users.messages", node.Children.First().Value.GetNodeNamespaceFromPath(null));
         }
+        [Fact]
+        public void SanitizesAtSign() {
+            var doc = new OpenApiDocument {
+                Paths = new(),
+            };
+            doc.Paths.Add("\\deviceManagement\\microsoft.graph.getRoleScopeTagsByIds(ids=@ids)", new() {});
+            var node = OpenApiUrlTreeNode.Create(doc, Label);
+            Assert.Equal("graph.deviceManagement.getRoleScopeTagsByIdsWithIds", node.Children.First().Value.GetNodeNamespaceFromPath("graph"));
+        }
     }
 }

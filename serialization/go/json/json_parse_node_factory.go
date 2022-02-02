@@ -6,7 +6,7 @@ import (
 	absser "github.com/microsoft/kiota/abstractions/go/serialization"
 )
 
-// ParseNodeFactory implementation for JSON
+// JsonParseNodeFactory is a ParseNodeFactory implementation for JSON
 type JsonParseNodeFactory struct {
 }
 
@@ -15,9 +15,12 @@ func NewJsonParseNodeFactory() *JsonParseNodeFactory {
 	return &JsonParseNodeFactory{}
 }
 
+// GetValidContentType returns the content type this factory's parse nodes can deserialize.
 func (f *JsonParseNodeFactory) GetValidContentType() (string, error) {
 	return "application/json", nil
 }
+
+// GetRootParseNode return a new ParseNode instance that is the root of the content
 func (f *JsonParseNodeFactory) GetRootParseNode(contentType string, content []byte) (absser.ParseNode, error) {
 	validType, err := f.GetValidContentType()
 	if err != nil {

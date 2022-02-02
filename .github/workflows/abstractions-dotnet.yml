@@ -17,9 +17,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2.4.0
       - name: Setup .NET
-        uses: actions/setup-dotnet@v1.8.2
+        uses: actions/setup-dotnet@v1.9.0
         with:
-          dotnet-version: 5.0.x
+          dotnet-version: 6.0.x
       - name: Restore dependencies
         run: dotnet restore ${{ env.solutionName }}
         working-directory: ${{ env.relativePath }}
@@ -55,9 +55,9 @@ jobs:
     needs: [build]
     steps:
       - name: Setup .NET
-        uses: actions/setup-dotnet@v1.8.2
+        uses: actions/setup-dotnet@v1.9.0
         with:
-          dotnet-version: 5.0.x
+          dotnet-version: 6.0.x
       - uses: actions/download-artifact@v2
         with:
           name: drop

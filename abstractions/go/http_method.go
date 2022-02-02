@@ -24,7 +24,7 @@ const (
 	HEAD
 )
 
-// Returns the string representation of the HTTP method.
+// String returns the string representation of the HTTP method.
 func (m HttpMethod) String() string {
 	return []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS", "CONNECT", "PUT", "TRACE", "HEAD"}[m]
 }

@@ -16,4 +16,4 @@
     ```
 
 1. `npm login --scope=@microsoft --registry=https://npm.pkg.github.com` (use a token with package:read, repo and SSO enabled for the Microsoft organization as the password)
-1. `npm i @microsoft/kiota-http-fetch -S`.
+1. `npm i @microsoft/kiota-http-fetchlibrary -S`.

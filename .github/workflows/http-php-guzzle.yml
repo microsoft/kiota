@@ -1,0 +1,32 @@
+﻿name: PHP Http
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths: ['http/php/guzzle/**', '.github/workflows/**']
+  pull_request:
+    paths: ['http/php/guzzle/**', '.github/workflows/**']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      relativePath: ./http/php/guzzle
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.4.0
+      - name: Setup PHP and Xdebug for Code Coverage report
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          coverage: xdebug
+      - name: Install dependencies
+        run: composer install
+        working-directory: ${{ env.relativePath }}
+      - name: Run static analysis
+        run: ./vendor/bin/phpstan
+        working-directory: ${{ env.relativePath }}
+      - name: Run tests
+        run: ./vendor/bin/phpunit --coverage-text
+        working-directory: ${{ env.relativePath }}

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -11,7 +11,8 @@ namespace Kiota.Builder.Refiners {
         {
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "_by_id");
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
-            AddParsableInheritanceForModelClasses(generatedCode);
+            RemoveCancellationParameter(generatedCode);
+            AddParsableInheritanceForModelClasses(generatedCode, "MicrosoftKiotaAbstractions::Parsable");
             AddInheritedAndMethodTypesImports(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectCoreType(generatedCode, null, CorrectPropertyType);
@@ -58,16 +59,6 @@ namespace Kiota.Builder.Refiners {
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
                 "microsoft_kiota_abstractions", "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
         };
-        private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
-                && currentClass.StartBlock is CodeClass.Declaration declaration) {
-                declaration.AddImplements(new CodeType {
-                    IsExternal = true,
-                    Name = $"MicrosoftKiotaAbstractions::Parsable",
-                });
-            }
-            CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
-        }
         protected static void AddInheritedAndMethodTypesImports(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
                 && currentClass.StartBlock is CodeClass.Declaration declaration && declaration.Inherits != null) {

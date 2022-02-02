@@ -1,4 +1,4 @@
-﻿// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 //  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
 // ------------------------------------------------------------------------------
 
@@ -42,7 +42,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Middleware
             // Decompress response content when Content-Encoding: gzip header is present.
             if(ShouldDecompressContent(response))
             {
-                StreamContent streamContent = new StreamContent(new GZipStream(await response.Content.ReadAsStreamAsync(cancellationToken), CompressionMode.Decompress));
+                StreamContent streamContent = new StreamContent(new GZipStream(await response.Content.ReadAsStreamAsync(), CompressionMode.Decompress));
                 // Copy Content Headers to the destination stream content
                 foreach(var httpContentHeader in response.Content.Headers)
                 {
@@ -61,7 +61,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Middleware
         /// <returns></returns>
         private static bool ShouldDecompressContent(HttpResponseMessage httpResponse)
         {
-            return httpResponse.Content.Headers.ContentEncoding.Contains(GZip);
+            return httpResponse.Content?.Headers?.ContentEncoding.Contains(GZip) ?? false;
         }
     }
 }

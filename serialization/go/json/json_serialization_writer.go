@@ -11,12 +11,12 @@ import (
 	absser "github.com/microsoft/kiota/abstractions/go/serialization"
 )
 
-// The SerializationWriter implementation for JSON.
+// JsonSerializationWriter implements SerializationWriter for JSON.
 type JsonSerializationWriter struct {
 	writer []string
 }
 
-// Creates a new instance of the JsonSerializationWriter.
+// NewJsonSerializationWriter creates a new instance of the JsonSerializationWriter.
 func NewJsonSerializationWriter() *JsonSerializationWriter {
 	return &JsonSerializationWriter{
 		writer: make([]string, 0),
@@ -53,6 +53,7 @@ func (w *JsonSerializationWriter) writeObjectEnd() {
 	w.writeRawValue("}")
 }
 
+// WriteStringValue writes a String value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteStringValue(key string, value *string) error {
 	if key != "" && value != nil {
 		w.writePropertyName(key)
@@ -65,6 +66,8 @@ func (w *JsonSerializationWriter) WriteStringValue(key string, value *string) er
 	}
 	return nil
 }
+
+// WriteBoolValue writes a Bool value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteBoolValue(key string, value *bool) error {
 	if key != "" && value != nil {
 		w.writePropertyName(key)
@@ -77,6 +80,8 @@ func (w *JsonSerializationWriter) WriteBoolValue(key string, value *bool) error 
 	}
 	return nil
 }
+
+// WriteInt32Value writes a Int32 value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteInt32Value(key string, value *int32) error {
 	if value != nil {
 		cast := int64(*value)
@@ -84,6 +89,8 @@ func (w *JsonSerializationWriter) WriteInt32Value(key string, value *int32) erro
 	}
 	return nil
 }
+
+// WriteInt64Value writes a Int64 value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteInt64Value(key string, value *int64) error {
 	if key != "" && value != nil {
 		w.writePropertyName(key)
@@ -96,6 +103,8 @@ func (w *JsonSerializationWriter) WriteInt64Value(key string, value *int64) erro
 	}
 	return nil
 }
+
+// WriteFloat32Value writes a Float32 value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteFloat32Value(key string, value *float32) error {
 	if value != nil {
 		cast := float64(*value)
@@ -103,6 +112,8 @@ func (w *JsonSerializationWriter) WriteFloat32Value(key string, value *float32) 
 	}
 	return nil
 }
+
+// WriteFloat64Value writes a Float64 value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteFloat64Value(key string, value *float64) error {
 	if key != "" && value != nil {
 		w.writePropertyName(key)
@@ -115,6 +126,8 @@ func (w *JsonSerializationWriter) WriteFloat64Value(key string, value *float64) 
 	}
 	return nil
 }
+
+// WriteTimeValue writes a Time value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteTimeValue(key string, value *time.Time) error {
 	if key != "" && value != nil {
 		w.writePropertyName(key)
@@ -127,6 +140,50 @@ func (w *JsonSerializationWriter) WriteTimeValue(key string, value *time.Time) e
 	}
 	return nil
 }
+
+// WriteISODurationValue writes a ISODuration value to underlying the byte array.
+func (w *JsonSerializationWriter) WriteISODurationValue(key string, value *absser.ISODuration) error {
+	if key != "" && value != nil {
+		w.writePropertyName(key)
+	}
+	if value != nil {
+		w.writeRawValue((*value).String())
+	}
+	if key != "" && value != nil {
+		w.writePropertySeparator()
+	}
+	return nil
+}
+
+// WriteTimeOnlyValue writes a TimeOnly value to underlying the byte array.
+func (w *JsonSerializationWriter) WriteTimeOnlyValue(key string, value *absser.TimeOnly) error {
+	if key != "" && value != nil {
+		w.writePropertyName(key)
+	}
+	if value != nil {
+		w.writeRawValue((*value).String())
+	}
+	if key != "" && value != nil {
+		w.writePropertySeparator()
+	}
+	return nil
+}
+
+// WriteDateOnlyValue writes a DateOnly value to underlying the byte array.
+func (w *JsonSerializationWriter) WriteDateOnlyValue(key string, value *absser.DateOnly) error {
+	if key != "" && value != nil {
+		w.writePropertyName(key)
+	}
+	if value != nil {
+		w.writeRawValue((*value).String())
+	}
+	if key != "" && value != nil {
+		w.writePropertySeparator()
+	}
+	return nil
+}
+
+// WriteUUIDValue writes a UUID value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteUUIDValue(key string, value *uuid.UUID) error {
 	if key != "" && value != nil {
 		w.writePropertyName(key)
@@ -139,6 +196,8 @@ func (w *JsonSerializationWriter) WriteUUIDValue(key string, value *uuid.UUID) e
 	}
 	return nil
 }
+
+// WriteByteArrayValue writes a ByteArray value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteByteArrayValue(key string, value []byte) error {
 	if key != "" && value != nil {
 		w.writePropertyName(key)
@@ -151,6 +210,8 @@ func (w *JsonSerializationWriter) WriteByteArrayValue(key string, value []byte) 
 	}
 	return nil
 }
+
+// WriteObjectValue writes a Parsable value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteObjectValue(key string, item absser.Parsable) error {
 	if !item.IsNil() {
 		if key != "" {
@@ -172,8 +233,10 @@ func (w *JsonSerializationWriter) WriteObjectValue(key string, item absser.Parsa
 	}
 	return nil
 }
+
+// WriteCollectionOfObjectValues writes a collection of Parsable values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfObjectValues(key string, collection []absser.Parsable) error {
-	if len(collection) > 0 {
+	if collection != nil { // empty collections are meaningful
 		if key != "" {
 			w.writePropertyName(key)
 		}
@@ -193,8 +256,10 @@ func (w *JsonSerializationWriter) WriteCollectionOfObjectValues(key string, coll
 	}
 	return nil
 }
+
+// WriteCollectionOfStringValues writes a collection of String values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfStringValues(key string, collection []string) error {
-	if len(collection) > 0 {
+	if collection != nil { // empty collections are meaningful
 		if key != "" {
 			w.writePropertyName(key)
 		}
@@ -214,8 +279,10 @@ func (w *JsonSerializationWriter) WriteCollectionOfStringValues(key string, coll
 	}
 	return nil
 }
+
+// WriteCollectionOfInt32Values writes a collection of Int32 values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfInt32Values(key string, collection []int32) error {
-	if len(collection) > 0 {
+	if collection != nil { // empty collections are meaningful
 		if key != "" {
 			w.writePropertyName(key)
 		}
@@ -235,8 +302,10 @@ func (w *JsonSerializationWriter) WriteCollectionOfInt32Values(key string, colle
 	}
 	return nil
 }
+
+// WriteCollectionOfInt64Values writes a collection of Int64 values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfInt64Values(key string, collection []int64) error {
-	if len(collection) > 0 {
+	if collection != nil { // empty collections are meaningful
 		if key != "" {
 			w.writePropertyName(key)
 		}
@@ -256,8 +325,10 @@ func (w *JsonSerializationWriter) WriteCollectionOfInt64Values(key string, colle
 	}
 	return nil
 }
+
+// WriteCollectionOfFloat32Values writes a collection of Float32 values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfFloat32Values(key string, collection []float32) error {
-	if len(collection) > 0 {
+	if collection != nil { // empty collections are meaningful
 		if key != "" {
 			w.writePropertyName(key)
 		}
@@ -277,8 +348,10 @@ func (w *JsonSerializationWriter) WriteCollectionOfFloat32Values(key string, col
 	}
 	return nil
 }
+
+// WriteCollectionOfFloat64Values writes a collection of Float64 values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfFloat64Values(key string, collection []float64) error {
-	if len(collection) > 0 {
+	if collection != nil { // empty collections are meaningful
 		if key != "" {
 			w.writePropertyName(key)
 		}
@@ -298,8 +371,10 @@ func (w *JsonSerializationWriter) WriteCollectionOfFloat64Values(key string, col
 	}
 	return nil
 }
+
+// WriteCollectionOfTimeValues writes a collection of Time values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfTimeValues(key string, collection []time.Time) error {
-	if len(collection) > 0 {
+	if collection != nil { // empty collections are meaningful
 		if key != "" {
 			w.writePropertyName(key)
 		}
@@ -319,8 +394,79 @@ func (w *JsonSerializationWriter) WriteCollectionOfTimeValues(key string, collec
 	}
 	return nil
 }
+
+// WriteCollectionOfISODurationValues writes a collection of ISODuration values to underlying the byte array.
+func (w *JsonSerializationWriter) WriteCollectionOfISODurationValues(key string, collection []absser.ISODuration) error {
+	if collection != nil { // empty collections are meaningful
+		if key != "" {
+			w.writePropertyName(key)
+		}
+		w.writeArrayStart()
+		for _, item := range collection {
+			err := w.WriteISODurationValue("", &item)
+			if err != nil {
+				return err
+			}
+			w.writePropertySeparator()
+		}
+		w.trimLastPropertySeparator()
+		w.writeArrayEnd()
+		if key != "" {
+			w.writePropertySeparator()
+		}
+	}
+	return nil
+}
+
+// WriteCollectionOfTimeOnlyValues writes a collection of TimeOnly values to underlying the byte array.
+func (w *JsonSerializationWriter) WriteCollectionOfTimeOnlyValues(key string, collection []absser.TimeOnly) error {
+	if collection != nil { // empty collections are meaningful
+		if key != "" {
+			w.writePropertyName(key)
+		}
+		w.writeArrayStart()
+		for _, item := range collection {
+			err := w.WriteTimeOnlyValue("", &item)
+			if err != nil {
+				return err
+			}
+			w.writePropertySeparator()
+		}
+		w.trimLastPropertySeparator()
+		w.writeArrayEnd()
+		if key != "" {
+			w.writePropertySeparator()
+		}
+	}
+	return nil
+}
+
+// WriteCollectionOfDateOnlyValues writes a collection of DateOnly values to underlying the byte array.
+func (w *JsonSerializationWriter) WriteCollectionOfDateOnlyValues(key string, collection []absser.DateOnly) error {
+	if collection != nil { // empty collections are meaningful
+		if key != "" {
+			w.writePropertyName(key)
+		}
+		w.writeArrayStart()
+		for _, item := range collection {
+			err := w.WriteDateOnlyValue("", &item)
+			if err != nil {
+				return err
+			}
+			w.writePropertySeparator()
+		}
+		w.trimLastPropertySeparator()
+		w.writeArrayEnd()
+		if key != "" {
+			w.writePropertySeparator()
+		}
+	}
+	return nil
+}
+
+// WriteCollectionOfUUIDValues writes a collection of UUID values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfUUIDValues(key string, collection []uuid.UUID) error {
-	if len(collection) > 0 {
+	if collection != nil { // empty collections are meaningful
 		if key != "" {
 			w.writePropertyName(key)
 		}
@@ -340,8 +486,10 @@ func (w *JsonSerializationWriter) WriteCollectionOfUUIDValues(key string, collec
 	}
 	return nil
 }
+
+// WriteCollectionOfBoolValues writes a collection of Bool values to underlying the byte array.
 func (w *JsonSerializationWriter) WriteCollectionOfBoolValues(key string, collection []bool) error {
-	if len(collection) > 0 {
+	if collection != nil { // empty collections are meaningful
 		if key != "" {
 			w.writePropertyName(key)
 		}
@@ -361,12 +509,16 @@ func (w *JsonSerializationWriter) WriteCollectionOfBoolValues(key string, collec
 	}
 	return nil
 }
+
+// GetSerializedContent returns the resulting byte array from the serialization writer.
 func (w *JsonSerializationWriter) GetSerializedContent() ([]byte, error) {
 	resultStr := strings.Join(w.writer, "")
 	return []byte(resultStr), nil
 }
+
+// WriteAdditionalData writes additional data to underlying the byte array.
 func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface{}) error {
-	if value != nil {
+	if len(value) != 0 {
 		for key, value := range value {
 			p, ok := value.(absser.Parsable)
 			if ok {
@@ -440,6 +592,38 @@ func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface
 				}
 				continue
 			}
+			tc, ok := value.([]time.Time)
+			if ok {
+				err := w.WriteCollectionOfTimeValues(key, tc)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+			dc, ok := value.([]absser.ISODuration)
+			if ok {
+				err := w.WriteCollectionOfISODurationValues(key, dc)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+			toc, ok := value.([]absser.TimeOnly)
+			if ok {
+				err := w.WriteCollectionOfTimeOnlyValues(key, toc)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+			doc, ok := value.([]absser.DateOnly)
+			if ok {
+				err := w.WriteCollectionOfDateOnlyValues(key, doc)
+				if err != nil {
+					return err
+				}
+				continue
+			}
 			sv, ok := value.(*string)
 			if ok {
 				err := w.WriteStringValue(key, sv)
@@ -504,6 +688,30 @@ func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface
 				}
 				continue
 			}
+			dv, ok := value.(*absser.ISODuration)
+			if ok {
+				err := w.WriteISODurationValue(key, dv)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+			tov, ok := value.(*absser.TimeOnly)
+			if ok {
+				err := w.WriteTimeOnlyValue(key, tov)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+			dov, ok := value.(*absser.DateOnly)
+			if ok {
+				err := w.WriteDateOnlyValue(key, dov)
+				if err != nil {
+					return err
+				}
+				continue
+			}
 			ba, ok := value.([]byte)
 			if ok {
 				err := w.WriteByteArrayValue(key, ba)
@@ -517,6 +725,8 @@ func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface
 	}
 	return nil
 }
+
+// Close clears the internal buffer.
 func (w *JsonSerializationWriter) Close() error {
 	return nil
 }

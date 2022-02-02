@@ -1,6 +1,4 @@
-import { Parsable, SerializationWriter } from "@microsoft/kiota-abstractions";
-import { TextEncoder } from "util";
-import { ReadableStream } from 'web-streams-polyfill/es2018';
+import { DateOnly, Duration, Parsable, SerializationWriter, TimeOnly } from "@microsoft/kiota-abstractions";
 
 export class JsonSerializationWriter implements SerializationWriter {
     private readonly writer: string[] = [];
@@ -34,6 +32,21 @@ export class JsonSerializationWriter implements SerializationWriter {
     public writeDateValue = (key?: string, value?: Date): void => {
         key && value && this.writePropertyName(key);
         value && this.writer.push(`"${value.toISOString()}"`);
+        key && value && this.writer.push(JsonSerializationWriter.propertySeparator);
+    }
+    public writeDateOnlyValue = (key?: string, value?: DateOnly): void => {
+        key && value && this.writePropertyName(key);
+        value && this.writer.push(`"${value.toString()}"`);
+        key && value && this.writer.push(JsonSerializationWriter.propertySeparator);
+    }
+    public writeTimeOnlyValue = (key?: string, value?: TimeOnly): void => {
+        key && value && this.writePropertyName(key);
+        value && this.writer.push(`"${value.toString()}"`);
+        key && value && this.writer.push(JsonSerializationWriter.propertySeparator);
+    }
+    public writeDurationValue = (key?: string, value?: Duration): void => {
+        key && value && this.writePropertyName(key);
+        value && this.writer.push(`"${value.toString()}"`);
         key && value && this.writer.push(JsonSerializationWriter.propertySeparator);
     }
     public writeNullValue = (key?: string): void => {
@@ -93,15 +106,19 @@ export class JsonSerializationWriter implements SerializationWriter {
             }
         }
     }
-    public getSerializedContent = (): ReadableStream<any> => {
-        const encoded = new TextEncoder().encode(this.writer.join(""));
-        return new ReadableStream<Uint8Array>({
-            start: (controller) => {
-                controller.enqueue(encoded);
-                controller.close();
-            }
-        });
+    public getSerializedContent = (): ArrayBuffer=> {
+        return this.convertStringToArrayBuffer(this.writer.join(``));
     }
+    
+    private convertStringToArrayBuffer = (str: string): ArrayBuffer => {
+        const arrayBuffer = new ArrayBuffer(str.length);
+        const uint8Array = new Uint8Array(arrayBuffer);
+        for (let i = 0; i < str.length; i++) {
+          uint8Array[i] = str.charCodeAt(i);
+        }
+        return arrayBuffer;
+    }
+
     public writeAdditionalData = (value: Map<string, unknown>) : void => {
         if(!value) return;
 
@@ -126,6 +143,12 @@ export class JsonSerializationWriter implements SerializationWriter {
                 this.writeStringValue(key, value as any as string);
             } else if (value instanceof Date) {
                 this.writeDateValue(key, value as any as Date);
+            } else if (value instanceof DateOnly) {
+                this.writeDateOnlyValue(key, value as any as DateOnly);
+            } else if (value instanceof TimeOnly) {
+                this.writeTimeOnlyValue(key, value as any as TimeOnly);
+            } else if (value instanceof Duration) {
+                this.writeDurationValue(key, value as any as Duration);
             } else if (valueType === "number") {
                 this.writeNumberValue(key, value as any as number);
             } else if(Array.isArray(value)) {

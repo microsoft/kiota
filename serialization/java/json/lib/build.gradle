@@ -28,7 +28,7 @@ repositories {
 
 dependencies {
     // Use JUnit Jupiter API for testing.
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
 
     // Use JUnit Jupiter Engine for testing.
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
@@ -36,7 +36,7 @@ dependencies {
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation 'com.google.guava:guava:31.0.1-jre'
     api 'com.google.code.gson:gson:2.8.9'
-    api 'com.microsoft.kiota:kiota-abstractions:1.0.20'
+    api 'com.microsoft.kiota:kiota-abstractions:1.0.24'
 }
 
 publishing {
@@ -53,7 +53,7 @@ publishing {
     publications {
         gpr(MavenPublication) {
             artifactId 'kiota-serialization-json'
-            version '1.0.5'
+            version '1.0.6'
             from(components.java)
         }
     }

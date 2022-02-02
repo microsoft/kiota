@@ -32,8 +32,9 @@ namespace Kiota.Builder.Writers.Go {
                 writer.DecreaseIndent();
                 writer.WriteLines(")", string.Empty);
             }
-            conventions.WriteShortDescription((codeElement.Parent as CodeClass).Description, writer);
-            writer.WriteLine($"type {codeElement.Name.ToFirstCharacterUpperCase()} struct {{");
+            var className = codeElement.Name.ToFirstCharacterUpperCase();
+            conventions.WriteShortDescription($"{className} {(codeElement.Parent as CodeClass).Description.ToFirstCharacterLowerCase()}", writer);
+            writer.WriteLine($"type {className} struct {{");
             writer.IncreaseIndent();
             if(codeElement.Inherits?.AllTypes?.Any() ?? false) {
                 var parentTypeName = conventions.GetTypeString(codeElement.Inherits.AllTypes.First(), codeElement.Parent.Parent, true, false);

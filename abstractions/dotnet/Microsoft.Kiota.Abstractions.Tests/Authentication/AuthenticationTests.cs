@@ -16,7 +16,7 @@ namespace Microsoft.Kiota.Abstractions.Tests
             var anonymousAuthenticationProvider = new AnonymousAuthenticationProvider();
             var testRequest = new RequestInformation()
             {
-                HttpMethod = HttpMethod.GET,
+                HttpMethod = Method.GET,
                 URI = new Uri("http://localhost")
             };
             Assert.Empty(testRequest.Headers); // header collection is empty
@@ -39,7 +39,7 @@ namespace Microsoft.Kiota.Abstractions.Tests
             var testAuthProvider = mockBaseBearerTokenAuthenticationProvider.Object;
             var testRequest = new RequestInformation()
             {
-                HttpMethod = HttpMethod.GET,
+                HttpMethod = Method.GET,
                 URI = new Uri("http://localhost")
             };
             Assert.Empty(testRequest.Headers); // header collection is empty

@@ -7,7 +7,6 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Kiota.Abstractions;
-using HttpMethod = System.Net.Http.HttpMethod;
 
 namespace Microsoft.Kiota.Http.HttpClientLibrary.Extensions
 {
@@ -24,9 +23,9 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Extensions
         /// <returns>A request option</returns>
         public static T GetRequestOption<T>(this HttpRequestMessage httpRequestMessage) where T : IRequestOption
         {
-            if(httpRequestMessage.Options.TryGetValue(
-                new HttpRequestOptionsKey<IRequestOption>(typeof(T).FullName),
-                out IRequestOption requestOption))
+            if(httpRequestMessage.Properties.TryGetValue(
+                typeof(T).FullName,
+                out var requestOption))
             {
                 return (T)requestOption;
             }
@@ -50,8 +49,8 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Extensions
                 newRequest.Headers.TryAddWithoutValidation(key, value);
 
             // Copy request properties.
-            foreach(var (key, value) in originalRequest.Options)
-                newRequest.Options.TryAdd(key, value);
+            foreach(var (key, value) in originalRequest.Properties)
+                newRequest.Properties.TryAdd(key, value);
 
             // Set Content if previous request had one.
             if(originalRequest.Content != null)

@@ -178,7 +178,7 @@ namespace Kiota.Builder.Writers.CSharp {
             var parametersList = new CodeParameter[] { requestParams.requestBody, requestParams.queryString, requestParams.headers, requestParams.options }
                                 .Select(x => x?.Name).Where(x => x != null).Aggregate((x,y) => $"{x}, {y}");
             writer.WriteLine($"var requestInfo = {generatorMethodName}({parametersList});");
-            writer.WriteLine($"{(isVoid ? string.Empty : "return ")}await RequestAdapter.{GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnType)}(requestInfo, responseHandler);");
+            writer.WriteLine($"{(isVoid ? string.Empty : "return ")}await RequestAdapter.{GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnType)}(requestInfo, responseHandler, cancellationToken);");
         }
         private const string RequestInfoVarName = "requestInfo";
         private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer) {
@@ -190,7 +190,7 @@ namespace Kiota.Builder.Writers.CSharp {
             var requestAdapterProperty = currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             writer.WriteLine($"var {RequestInfoVarName} = new RequestInformation {{");
             writer.IncreaseIndent();
-            writer.WriteLines($"HttpMethod = HttpMethod.{operationName?.ToUpperInvariant()},",
+            writer.WriteLines($"HttpMethod = Method.{operationName?.ToUpperInvariant()},",
                             $"UrlTemplate = {GetPropertyCall(urlTemplateProperty, "string.Empty")},",
                             $"PathParameters = {GetPropertyCall(urlTemplateParamsProperty, "string.Empty")},");
             writer.DecreaseIndent();

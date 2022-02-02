@@ -29,6 +29,10 @@ namespace Kiota.Builder
         /// Only used for languages that do not support overloads or optional parameters like go.
         /// </summary>
         ParameterSet,
+        /// <summary>
+        /// A single parameter to be provided by the SDK user which can be used to cancel requests.
+        /// </summary>
+        Cancellation
     }
 
     public class CodeParameter : CodeTerminal, ICloneable, IDocumentedElement
