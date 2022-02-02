@@ -1,0 +1,14 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+azure-core = "==1.21.1"
+
+[dev-packages]
+flit = "==3.5.1"
+pylint = "==2.12.2"
+mypy = "==0.910"
+yapf = "==0.31.0"
+isort = "==5.10.1"
