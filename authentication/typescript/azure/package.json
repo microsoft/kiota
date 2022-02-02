@@ -12,6 +12,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "clean": "rm -r ./dist"
   },
+  "repository": "git://github.com/microsoft/kiota.git",
   "keywords": [
     "Kiota",
     "OpenApi",
