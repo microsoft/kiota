@@ -30,4 +30,10 @@ interface AccessTokenProvider
      * @return Promise
      */
     public function getAuthorizationTokenAsync(string $url): Promise;
+
+    /**
+     * Returns the {@link AllowedHostsValidator} instance used by the AccessTokenProvider
+     * @return AllowedHostsValidator
+     */
+    public function getAllowedHostsValidator(): AllowedHostsValidator;
 }
