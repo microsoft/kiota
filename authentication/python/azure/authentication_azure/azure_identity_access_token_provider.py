@@ -14,9 +14,8 @@ class AzureIdentityAccessTokenProvider(AccessTokenProvider):
         options: Optional[Dict],
         scopes: List[str] = ['https://graph.microsoft.com/.default'],
         allowed_hosts: Set[str] = {
-            'graph.microsoft.com', 'graph.microsoft.us',
-            'dod-graph.microsoft.us', 'graph.microsoft.de',
-            'microsoftgraph.chinacloudapi.cn', 'canary.graph.microsoft.com'
+            'graph.microsoft.com', 'graph.microsoft.us', 'dod-graph.microsoft.us',
+            'graph.microsoft.de', 'microsoftgraph.chinacloudapi.cn', 'canary.graph.microsoft.com'
         },
     ) -> None:
         if not credentials:
@@ -37,13 +36,11 @@ class AzureIdentityAccessTokenProvider(AccessTokenProvider):
         Returns:
             str: The access token to use for the request.
         """
-        if not uri or not self.get_allowed_hosts_validator().is_url_host_valid(
-                uri):
+        if not uri or not self.get_allowed_hosts_validator().is_url_host_valid(uri):
             return ""
-            
+
         if self._options:
-            result = await self._credentials.get_token(*self._scopes,
-                                                   **self._options)
+            result = await self._credentials.get_token(*self._scopes, **self._options)
         result = await self._credentials.get_token(*self._scopes)
         if result and result.token:
             return result.token
