@@ -48,7 +48,7 @@ describe("Test authentication using @azure/identity", () => {
         const request: RequestInformation = new RequestInformation();
         const tokenCredentialAuthenticationProvider = new AzureIdentityAuthenticationProvider(clientCredential, scopes);
         await tokenCredentialAuthenticationProvider.authenticateRequest(request);
-        assert.equal(request.headers.get("Authorization"), "Bearer " + accessToken.token);
+        assert.equal(request.headers["Authorization"], "Bearer " + accessToken.token);
     });
 
     it("AccessToken is appended correctly in header by BaseBearerTokenAuthenticationProvider", async () => {
@@ -66,6 +66,6 @@ describe("Test authentication using @azure/identity", () => {
         const accessTokenProvider = new AzureIdentityAccessTokenProvider(clientCredential, scopes);
         const tokenCredentialAuthenticationProvider = new BaseBearerTokenAuthenticationProvider(accessTokenProvider);
         await tokenCredentialAuthenticationProvider.authenticateRequest(request);
-        assert.equal(request.headers.get("Authorization"), "Bearer " + accessToken.token);
+        assert.equal(request.headers["Authorization"], "Bearer " + accessToken.token);
     });
 });
