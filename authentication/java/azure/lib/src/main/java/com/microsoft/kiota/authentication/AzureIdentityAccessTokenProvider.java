@@ -38,12 +38,12 @@ public class AzureIdentityAccessTokenProvider implements AccessTokenProvider {
         if (allowedHosts == null || allowedHosts.length == 0) {
             _hostValidator = new AllowedHostsValidator(new String[] { "graph.microsoft.com", "graph.microsoft.us", "dod-graph.microsoft.us", "graph.microsoft.de", "microsoftgraph.chinacloudapi.cn", "canary.graph.microsoft.com" });
         } else {
-            _hostValidator = new AllowedHostsValidator(hostValidator);
+            _hostValidator = new AllowedHostsValidator(allowedHosts);
         }
     }
     @Nonnull
     public CompletableFuture<String> getAuthorizationToken(@Nonnull final URI uri) {
-        if(!_hostValidator.isAllowed(uri.getHost())) {
+        if(!_hostValidator.isUrlHostValid(uri)) {
             return CompletableFuture.completedFuture("");
         }
         if(!uri.getScheme().equalsIgnoreCase("https")) {
