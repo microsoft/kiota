@@ -11,7 +11,6 @@
 
 import { FetchRequestInfo, FetchRequestInit, FetchResponse } from "../utils/fetchDefinitions";
 import { Middleware } from "./middleware";
-import { MiddlewareContext } from "./middlewareContext";
 
 /**
  * @class
@@ -35,7 +34,7 @@ export class CustomFetchHandler implements Middleware {
 	 * @param {Context} context - The request context object
 	 * @returns A promise that resolves to nothing
 	 */
-	public async execute(context: MiddlewareContext): Promise<FetchResponse> {
-		return await this.customFetch(context.requestUrl, context.fetchRequestInit);
+	public async execute(url: string, requestInit: FetchRequestInit): Promise<FetchResponse> {
+		return await this.customFetch(url, requestInit);
 	}
 }

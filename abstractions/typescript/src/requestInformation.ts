@@ -65,17 +65,17 @@ export class RequestInformation {
     private _requestOptions: Record<string, RequestOption> = {}; //TODO: case insensitive
     /** Gets the request options for the request. */
     public getRequestOptions() { return this._requestOptions}
-    public addRequestOptions(...options: RequestOption[]) {
-        if (!options || options.length === 0) return;
-        options.forEach(option => {
-            this._requestOptions[option.getKey()] = option
-        });
+    public addRequestOptions(options: Record<string,RequestOption>) {
+        if (!options) return;
+       for(const key in options){
+            this._requestOptions[key] = options[key];
+        };
     }
     /** Removes the request options for the request. */
-    public removeRequestOptions(...options: RequestOption[]) {
-        if (!options || options.length === 0) return;
-        options.forEach(option => {
-           delete this._requestOptions[option.getKey()];
+    public removeRequestOptions(...optionKeys: string[]) {
+        if (!optionKeys || optionKeys.length === 0) return;
+        optionKeys.forEach(option => {
+           delete this._requestOptions[option];
         });
     }
     private static binaryContentType = "application/octet-stream";

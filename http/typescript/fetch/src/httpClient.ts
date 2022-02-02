@@ -1,7 +1,6 @@
 import { CustomFetchHandler } from "./middlewares/customFetchHandler";
 import { DefaultFetchHandler } from "./middlewares/defaultFetchHandler";
 import { Middleware } from "./middlewares/middleware";
-import { MiddlewareContext } from "./middlewares/middlewareContext";
 import { MiddlewareFactory } from "./middlewares/middlewareFactory";
 import { FetchRequestInfo, FetchRequestInit, FetchResponse } from "./utils/fetchDefinitions";
 
@@ -29,7 +28,7 @@ export class HttpClient {
 		} else {
 			if (middlewares[0] === null) {
 				if (!customFetch) {
-					this.setMiddleware(new DefaultFetchHandler());
+					this.setMiddleware(...MiddlewareFactory.getDefaultMiddlewareChain());
 				}
 				return;
 			} else {
@@ -80,13 +79,13 @@ export class HttpClient {
 	 * @param options request options.
 	 * @returns the promise resolving the response.
 	 */
-	public async executeFetch(context: MiddlewareContext): Promise<FetchResponse> {
+	public async executeFetch(url: string, requestInit?: FetchRequestInit, requestOptions?: RequestOption[]): Promise<FetchResponse> {
 		if (this.customFetch && !this.middleware) {
-			return this.customFetch(context.requestUrl, context.requestInformationOptions);
+			return this.customFetch(url, requestInit);
 		}
 
 		if (this.middleware) {
-			return await this.middleware.execute(context);
+			return await this.middleware.execute(url, requestInit, requestOptions);
 		} else {
 			throw new Error("Please provide middlewares or a custom fetch function to execute the request");
 		}

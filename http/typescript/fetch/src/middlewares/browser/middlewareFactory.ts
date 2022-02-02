@@ -37,7 +37,7 @@ export class MiddlewareFactory {
 		if (customFetch) {
 			middlewareArray.push(new CustomFetchHandler(customFetch));
 		} else {
-			middlewareArray.push(new DefaultFetchHandler());
+			middlewareArray.push(new CustomFetchHandler(fetch as any));
 		}
 		return middlewareArray;
 	}

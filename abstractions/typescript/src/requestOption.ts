@@ -8,7 +8,4 @@
  * Interface accepting request options
  * to be passed in RequestInformaton object
  */
-export interface RequestOption {
-	/** Gets the option key for when adding it to a request. Must be unique. */
-	getKey(): string;
-}
+export interface RequestOption {}

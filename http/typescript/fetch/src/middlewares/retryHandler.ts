@@ -151,14 +151,14 @@ export class RetryHandler implements Middleware {
 	 * @param {RetryHandlerOptions} options - The retry middleware options instance
 	 * @returns A Promise that resolves to nothing
 	 */
-	private async executeWithRetry(context: MiddlewareContext, retryAttempts: number, options: RetryHandlerOptions): Promise<FetchResponse> {
-		const response = await this.next.execute(context);
-		if (retryAttempts < options.maxRetries && this.isRetry(response) && this.isBuffered(context.requestUrl, context.fetchRequestInit) && options.shouldRetry(options.delay, retryAttempts, context.requestUrl, context.fetchRequestInit, response)) {
+	private async executeWithRetry(url: string, requestInit: FetchRequestInit, retryAttempts:number, requestOptions?: Record<string, RequestOption>): Promise<FetchResponse> {
+		const response = await this.next.execute(url, requestInit, requestOptions);
+		if (retryAttempts < this.options.maxRetries && this.isRetry(response) && this.isBuffered(url, requestInit) && this.options.shouldRetry(this.options.delay, retryAttempts, url, requestInit as FetchRequestInit, response)) {
 			++retryAttempts;
-			setRequestHeader(context.fetchRequestInit, RetryHandler.RETRY_ATTEMPT_HEADER, retryAttempts.toString());
-			const delay = this.getDelay(response, retryAttempts, options.delay);
+			setRequestHeader(requestInit, RetryHandler.RETRY_ATTEMPT_HEADER, retryAttempts.toString());
+			const delay = this.getDelay(response, retryAttempts, this.options.delay);
 			await this.sleep(delay);
-			return await this.executeWithRetry(context, retryAttempts, options);
+			return await this.executeWithRetry(url, requestInit, retryAttempts, requestOptions);
 		} else {
 			return response;
 		}
@@ -171,9 +171,12 @@ export class RetryHandler implements Middleware {
 	 * @param {Context} context - The context object of the request
 	 * @returns A Promise that resolves to nothing
 	 */
-	public execute(context: MiddlewareContext): Promise<FetchResponse> {
+	public execute(url: string, requestInit: FetchRequestInit, requestOptions?: Record<string, RequestOption>): Promise<FetchResponse> {
 		const retryAttempts = 0;
-		const options: RetryHandlerOptions = ((context?.requestInformationOptions && context.requestInformationOptions[RetryHandlerOptionKey]) as RetryHandlerOptions) || this.options;
-		return this.executeWithRetry(context, retryAttempts, options);
+
+        if((requestOptions && requestOptions[RetryHandlerOptionKey])){
+            this.options = requestOptions[RetryHandlerOptionKey] as RetryHandlerOptions;
+        }
+	    return this.executeWithRetry(url, requestInit, retryAttempts, requestOptions);
 	}
 }

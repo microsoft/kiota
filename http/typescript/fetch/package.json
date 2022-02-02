@@ -2,42 +2,81 @@
     "name": "@microsoft/kiota-http-fetchlibrary",
     "version": "1.0.14",
     "description": "Kiota request adapter implementation with fetch",
-    "main": "dist/cjs/index.js",
-    "module": "dist/es/index.js",
-    "types": "dist/cjs/index.d.ts",
-    "scripts": {
-        "build": "npm run build:cjs && npm run build:esm",
-        "build:cjs": "tsc -p tsconfig.cjs.json",
-        "build:esm": "tsc -p tsconfig.es.json",
-        "test": "echo \"Error: no test specified\" && exit 1",
-        "clean": "rm -r ./dist"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git://github.com/microsoft/kiota.git"
-    },
     "keywords": [
         "Kiota",
         "OpenAPI",
         "HTTP",
         "fetch"
     ],
-    "author": "Microsoft",
-    "license": "MIT",
+    "homepage": "https://github.com/microsoft/kiota#readme",
     "bugs": {
         "url": "https://github.com/microsoft/kiota/issues"
     },
-    "homepage": "https://github.com/microsoft/kiota#readme",
-    "publishConfig": {
-        "registry": "https://npm.pkg.github.com"
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/microsoft/kiota.git"
+    },
+    "license": "MIT",
+    "author": "Microsoft",
+    "main": "dist/cjs/src/index.js",
+    "browser": {
+        "./dist/es/src/index.js": "./dist/es/src/browser/index.js",
+        "./dist/es/src/utils/utils.js": "./dist/es/src/utils/browser/utils.js",
+        "./dist/es/src/middlewares/defaultFetchHandler.js": "./dist/es/src/middlewares/browser/defaultFetchHandler.js",
+        "./dist/es/src/middlewares/middlewareFactory.js": "./dist/es/src/middlewares/browser/middlewareFactory.js"
+    },
+    "types": "dist/cjs/src/index.d.ts",
+    "files": [
+        "dist/",
+        "src/"
+    ],
+    "scripts": {
+        "build": "npm run build:cjs && npm run build:es",
+        "build:cjs": "tsc -p tsconfig.cjs.json",
+        "build:es": "tsc -p tsconfig.es.json",
+        "clean": "rm -r ./dist",
+        "karma": "npm run rollup && karma  start --single-run --browsers ChromeHeadless karma.conf.js",
+        "lint": "eslint . --ext .ts",
+        "lint:fix": "eslint . --ext .ts --fix",
+        "rollup": "rollup -c",
+        "test": "npm run test:cjs && npm run test:es && npm run karma",
+        "test:cjs": "npm run build:cjs   && mocha  'dist/cjs/test/common/**/*.js' && mocha  'dist/cjs/test/node/**/*.js'",
+        "test:es": " npm run build:es && mocha 'dist/es/test/common/**/*.js'  --require  esm && mocha 'dist/es/test/node/**/*.js'  --require  esm"
     },
     "dependencies": {
-        "@microsoft/kiota-abstractions": "^1.0.27",
-        "cross-fetch": "^3.1.5",
-        "tslib": "^2.3.1"
+        "@microsoft/kiota-abstractions": "file:microsoft-kiota-abstractions-1.0.21.tgz",
+        "node-fetch": "^2.6.5",
+        "tslib": "2.3.1"
     },
     "devDependencies": {
+        "@rollup/plugin-commonjs": "^21.0.0",
+        "@rollup/plugin-node-resolve": "^13.0.5",
+        "@types/chai": "^4.2.22",
         "@types/node": "^17.0.13",
+        "@types/sinon": "^10.0.4",
+        "@typescript-eslint/eslint-plugin": "^5.0.0",
+        "@typescript-eslint/parser": "^5.0.0",
+        "chai": "^4.3.4",
+        "eslint": "^7.32.0",
+        "eslint-config-prettier": "^7.2.0",
+        "eslint-plugin-prettier": "^3.4.1",
+        "eslint-plugin-simple-import-sort": "^7.0.0",
+        "esm": "^3.2.25",
+        "karma": "^6.3.4",
+        "karma-chai": "^0.1.0",
+        "karma-chrome-launcher": "^3.1.0",
+        "karma-firefox-launcher": "^2.1.1",
+        "karma-mocha": "^2.0.1",
+        "karma-typescript": "^5.5.2",
+        "mocha": "^8.4.0",
+        "prettier": "^1.19.1",
+        "rollup": "^2.58.0",
+        "rollup-plugin-terser": "^7.0.2",
+        "sinon": "^11.1.2",
+        "tslib": "^2.3.1",
         "typescript": "^4.5.5"
+    },
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com"
     }
 }
