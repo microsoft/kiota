@@ -1,6 +1,7 @@
+import imp
 from typing import Dict, List, Optional, Set
 
-from kiota.abstractions import BaseBearerTokenAuthenticationProvider
+from kiota.abstractions.authentication import BaseBearerTokenAuthenticationProvider
 
 from azure.core.credentials_async import AsyncTokenCredential
 
@@ -8,6 +9,7 @@ from .azure_identity_access_token_provider import AzureIdentityAccessTokenProvid
 
 
 class AzureIdentityAuthenticationProvider(BaseBearerTokenAuthenticationProvider):
+
     def __init__(
         self,
         credentials: AsyncTokenCredential,
@@ -30,4 +32,6 @@ class AzureIdentityAuthenticationProvider(BaseBearerTokenAuthenticationProvider)
             Defaults to {'graph.microsoft.com', 'graph.microsoft.us', 'dod-graph.microsoft.us',
             'graph.microsoft.de', 'microsoftgraph.chinacloudapi.cn', 'canary.graph.microsoft.com'}.
         """
-        super().init(AzureIdentityAccessTokenProvider(credentials, options, scopes, allowed_hosts))
+        super().__init__(
+            AzureIdentityAccessTokenProvider(credentials, options, scopes, allowed_hosts)
+        )

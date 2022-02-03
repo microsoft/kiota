@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Set
 
-from kiota.abstractions import AccessTokenProvider, AllowedHostsValidator
+from kiota.abstractions.authentication import AccessTokenProvider, AllowedHostsValidator
 
 from azure.core.credentials_async import AsyncTokenCredential
 
@@ -8,6 +8,7 @@ from azure.core.credentials_async import AsyncTokenCredential
 class AzureIdentityAccessTokenProvider(AccessTokenProvider):
     """Access token provider that leverages the Azure Identity library to retrieve an access token.
     """
+
     def __init__(
         self,
         credentials: AsyncTokenCredential,
