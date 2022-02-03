@@ -16,7 +16,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
 
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
         var parentClass = codeElement.Parent as CodeClass;
-        var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
+        var inherits = parentClass.StartBlock is CodeClass.Declaration declaration && declaration.Inherits != null && !parentClass.IsErrorDefinition;
         var isVoid = conventions.VoidTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
         WriteMethodDocumentation(codeElement, writer);
         WriteMethodPrototype(codeElement, writer, returnType, inherits, isVoid);
@@ -44,7 +44,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 WriteRequestExecutorBody(codeElement, requestParams, isVoid, returnType, writer);
                 break;
             case CodeMethodKind.Deserializer:
-                WriteDeserializerBody(codeElement, parentClass, writer);
+                WriteDeserializerBody(inherits, codeElement, parentClass, writer);
                 break;
             case CodeMethodKind.ClientConstructor:
                 WriteConstructorBody(parentClass, codeElement, writer);
@@ -131,9 +131,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 writer.WriteLine($"{property.Name.ToFirstCharacterUpperCase()} = {parameter.Name};");
         }
     }
-    private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
-        var hideParentMember = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
-        var parentSerializationInfo = hideParentMember ? $"(base.{codeElement.Name.ToFirstCharacterUpperCase()}())" : string.Empty;
+    private void WriteDeserializerBody(bool shouldHide, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
+        var parentSerializationInfo = shouldHide ? $"(base.{codeElement.Name.ToFirstCharacterUpperCase()}())" : string.Empty;
         writer.WriteLine($"return new Dictionary<string, Action<T, {conventions.ParseNodeInterfaceName}>>{parentSerializationInfo} {{");
         writer.IncreaseIndent();
         foreach(var otherProp in parentClass
