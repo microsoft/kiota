@@ -42,7 +42,7 @@ namespace Kiota.Builder.Writers.Php
                         WriteGetterBody(writer, codeElement);
                         break;
                     case CodeMethodKind.Deserializer:
-                        WriteDeserializerBody(parentClass, writer);
+                        WriteDeserializerBody(parentClass, writer, codeElement);
                         break;
                     case CodeMethodKind.RequestBuilderWithParameters:
                         WriteRequestBuilderWithParametersBody(returnType, writer);
@@ -215,21 +215,62 @@ namespace Kiota.Builder.Writers.Php
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
             var propertyType = conventions.TranslateType(propType);
             if(propType is CodeType currentType) {
-                if(isCollection) 
-                    return $"writeCollectionOfObjectValues";
-                else if(currentType.TypeDefinition is CodeEnum currentEnum)
+                if(isCollection) { 
+                    if(currentType.TypeDefinition is null or CodeEnum){
+                        return "writeCollectionOfNonParsableObjectValues";
+                    }
+                    return currentType.TypeDefinition is CodeEnum ? "writeCollectionOfEnumValues" : "writeCollectionOfObjectValues";
+                }
+
+                if (currentType.TypeDefinition is CodeEnum)
+                {
                     return "writeEnumValue";
+                }
+
+                if (currentType.TypeDefinition is CodeClass cc && cc.IsOfKind(CodeClassKind.Model))
+                {
+                    return "writeObjectValue";
+                }
             }
-            switch(propertyType) {
-                case "string" or "Guid":
-                    return "writeStringValue";
-                case "bool":
-                    return "writeBooleanValue";
-                case "boolean" or "number" or "Date":
-                    return $"write{propertyType.ToFirstCharacterUpperCase()}Value";
-                default:
-                    return $"writeObjectValue";
+
+            var lowerCaseProp = propertyType.ToLower();
+            return lowerCaseProp switch
+            {
+                "string" or "guid" => "writeStringValue",
+                "enum" => "writeEnumValue",
+                "bool" => "writeBooleanValue",
+                "boolean" or "number" or "date" or "time" or "datetime" =>
+                    $"write{propertyType.ToFirstCharacterUpperCase()}Value",
+                "datetimeoffset" => "writeDateTimeValue",
+                "duration" => "writeDateIntervalValue",
+                "int" => "writeIntegerValue",
+                _ => "writeAnyValue"
+            };
+        }
+        
+        private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method, CodeProperty property) {
+            var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
+            var propertyType = conventions.GetTypeString(propType, method, false);
+            if(propType is CodeType currentType) {
+                if(isCollection)
+                    if(currentType.TypeDefinition is null or CodeEnum)
+                        return $"$n->getCollectionOfPrimitiveValues()";
+                    else if (currentType.TypeDefinition is CodeEnum enumType)
+                        return $"$n->getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)";
+                    else
+                        return $"$n->getCollectionOfObjectValues({conventions.TranslateType(propType)}::class)";
+                else if (currentType.TypeDefinition is CodeEnum)
+                    return $"$n->getEnumValue({propertyType.ToFirstCharacterUpperCase()}::class)";
             }
+
+            var lowerCaseType = propertyType.ToLower();
+            return lowerCaseType switch
+            {
+                "int" => $"$n->getIntegerValue()",
+                "bool" => "$n->getBooleanValue()",
+                _ when conventions.PrimitiveTypes.Contains(lowerCaseType) => $"$n->get{propertyType.ToFirstCharacterUpperCase()}Value()",
+                _ => $"$n->getObjectValue({propertyType.ToFirstCharacterUpperCase()}::class)",
+            };
         }
 
         private static void WriteSetterBody(LanguageWriter writer, CodeMethod codeElement)
@@ -277,7 +318,7 @@ namespace Kiota.Builder.Writers.Php
                 writer.WriteLine($"{RequestInfoVarName}->addRequestOptions(...$options);");
             writer.WriteLine($"return {RequestInfoVarName};");
         }
-        private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer) {
+        private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer, CodeMethod method) {
             var inherits = (parentClass.StartBlock as CodeClass.Declaration)?.Inherits != null;
             var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
             writer.WriteLine($"return {(inherits ? "array_merge(parent::getFieldDeserializers()," : string.Empty)} [");
@@ -286,7 +327,7 @@ namespace Kiota.Builder.Writers.Php
                 fieldToSerialize
                     .OrderBy(x => x.Name)
                     .Select(x => 
-                        $"'{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}' => function (self $o, {conventions.GetTypeString(x.Type, x)} $n) {{ $o->set{x.Name.ToFirstCharacterUpperCase()}($n); }},")
+                        $"'{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}' => function (self $o, ParseNode $n) {{ $o->set{x.Name.ToFirstCharacterUpperCase()}({GetDeserializationMethodName(x.Type, method, x)}); }},")
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
                 writer.DecreaseIndent();

@@ -33,6 +33,8 @@ namespace Kiota.Builder.Writers.Php
         public string DocCommentStart => "/**";
 
         public string DocCommentEnd => "*/";
+        
+        internal HashSet<string> PrimitiveTypes = new() {"string", "boolean", "integer", "float", "date", "datetime", "time", "dateinterval"};
 
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
         {
@@ -70,7 +72,6 @@ namespace Kiota.Builder.Writers.Php
                 CodeParameterKind.Serializer => "$writer",
                 CodeParameterKind.ResponseHandler => "$responseHandler",
                 CodeParameterKind.SetterValue => "$value",
-                CodeParameterKind.Path => "$urlTemplate",
                 _ => $"${parameter.Name.ToFirstCharacterLowerCase()}"
             };
         }

@@ -150,7 +150,12 @@ namespace Kiota.Builder.Tests.Writers.Php
                     Access = AccessModifier.Private,
                     Type = new CodeType()
                     {
-                        Name = "EmailAddress"
+                        Name = "EmailAddress",
+                        TypeDefinition = new CodeClass()
+                        {
+                            Name = "EmailAddress",
+                            ClassKind = CodeClassKind.Model
+                        }
                     },
                     PropertyKind = CodePropertyKind.Custom
                 });
@@ -383,7 +388,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             _codeMethodWriter.WriteCodeElement(deserializerMethod, writer);
             var result = tw.ToString();
 
-            Assert.Contains("'name' => function (ParentClass $o, string $n) { $o->setName($n); },", result);
+            Assert.Contains("'name' => function (self $o, ParseNode $n) { $o->setName($n->getStringValue()); },", result);
         }
 
         [Fact]

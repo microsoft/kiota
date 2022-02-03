@@ -123,6 +123,12 @@ interface SerializationWriter {
     public function writeByteValue(?string $key, ?Byte $value): void;
 
     /**
+     * @param string|null $key
+     * @param array<mixed>|null $value
+     * @return void
+     */
+    public function writeCollectionOfNonParsableObjectValues(?string $key, ?array $value): void;
+    /**
      * Sets the callback called before the objects gets serialized.
      * @param callable|null $value the callback called before the objects gets serialized.
      */

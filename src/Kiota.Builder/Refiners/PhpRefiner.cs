@@ -11,10 +11,7 @@ namespace Kiota.Builder.Refiners
         
         public override void Refine(CodeNamespace generatedCode)
         {
-            ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"{reservedWord.ToFirstCharacterUpperCase()}Escaped", new ()
-            {
-                typeof(CodeProperty)
-            });
+            ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Escaped{reservedWord.ToFirstCharacterUpperCase()}");
             ConvertUnionTypesToWrapper(generatedCode, false);
             AddConstructorsForDefaultValues(generatedCode, true);
             RemoveCancellationParameter(generatedCode);
@@ -59,7 +56,9 @@ namespace Kiota.Builder.Refiners
                 "Microsoft\\Kiota\\Abstractions\\Store", "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor), "Http\\Promise", "Promise", "RejectedPromise"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor), "", "Exception"),
-            new (x => x is CodeEnum, "Microsoft\\Kiota\\Abstractions\\", "Enum")
+            new (x => x is CodeEnum, "Microsoft\\Kiota\\Abstractions\\", "Enum"),
+            new(x => x is CodeProperty property && property.Type.Name.Equals("DateTime", StringComparison.OrdinalIgnoreCase), "", "DateTime"),
+            new(x => x is CodeProperty property && property.Type.Name.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase), "", "DateTime")
         };
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter)) {
@@ -84,6 +83,9 @@ namespace Kiota.Builder.Refiners
             } else if (currentProperty.IsOfKind(CodePropertyKind.RequestBuilder))
             {
                 currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
+            } else if (currentProperty.Type.Name.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase))
+            {
+                currentProperty.Type.Name = "DateTime";
             }
         }
 
@@ -121,14 +123,13 @@ namespace Kiota.Builder.Refiners
                         .Where(x => x.Declaration
                             .Name
                             .Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase)));
-                var index = 0;
+                var rand = new Random();
                 foreach (var usingElement in duplicatedSymbolsUsings)
                 {
                     var declaration = usingElement.Declaration.TypeDefinition?.Name;
                     if (string.IsNullOrEmpty(declaration)) continue;
-                    if (index > 0)
-                        usingElement.Alias = $"{declaration.ToFirstCharacterUpperCase()}{index}";
-                    index++;
+                    var replacement = $"{declaration.ToFirstCharacterUpperCase()}{rand.Next(10, 200)}{rand.Next(10, 200)}{rand.Next(10, 200)}{rand.Next(10, 200)}";
+                        usingElement.Alias = $"{replacement}";
                 }
             }
             CrawlTree(currentElement, AliasUsingWithSameSymbol);

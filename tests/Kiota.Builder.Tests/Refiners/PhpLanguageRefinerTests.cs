@@ -53,7 +53,7 @@ namespace Kiota.Builder.Refiners.Tests
             }).First();
             
             ILanguageRefiner.Refine(new GenerationConfiguration {Language = GenerationLanguage.PHP}, root);
-            Assert.Equal("GraphContinue",property.Name);
+            Assert.Equal("EscapedContinue",property.Name);
         }
         
         [Fact]
