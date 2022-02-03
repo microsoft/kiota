@@ -440,11 +440,17 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                 .OfType<CodeIndexer>()
                                 .Select(x => x.ReturnType)
                                 .Distinct();
+            var errorTypes = currentClassChildren
+                                .OfType<CodeMethod>()
+                                .Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor))
+                                .SelectMany(x => x.ErrorMappings.Values)
+                                .Distinct();
             var usingsToAdd = propertiesTypes
                                 .Union(methodsParametersTypes)
                                 .Union(methodsReturnTypes)
                                 .Union(indexerTypes)
                                 .Union(inheritTypes)
+                                .Union(errorTypes)
                                 .Where(x => x != null)
                                 .SelectMany(x => x?.AllTypes?.Select(y => new Tuple<CodeType, CodeNamespace>(y, y?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())))
                                 .Where(x => x.Item2 != null && (includeCurrentNamespace || x.Item2 != currentClassNamespace))
@@ -554,6 +560,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Name = parentClassName,
                 Declaration = new CodeType {
                     Name = parentClassNamespace,
+                    IsExternal = true,
                 }
             });
         }
