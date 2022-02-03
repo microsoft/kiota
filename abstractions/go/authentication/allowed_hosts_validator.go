@@ -41,7 +41,7 @@ func (v *AllowedHostsValidator) IsUrlHostValid(uri *u.URL) bool {
 	if uri == nil {
 		return false
 	}
-	host := uri.Host
+	host := uri.Hostname()
 	if host == "" {
 		return false
 	}

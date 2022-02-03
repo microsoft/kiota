@@ -1,6 +1,6 @@
 {
     "name": "@microsoft/kiota-http-fetchlibrary",
-    "version": "1.0.14",
+    "version": "1.0.15",
     "description": "Kiota request adapter implementation with fetch",
     "main": "dist/cjs/index.js",
     "module": "dist/es/index.js",

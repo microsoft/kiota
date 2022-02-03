@@ -208,6 +208,7 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
     }
     private CompletableFuture<Response> getHttpResponseMessage(@Nonnull final RequestInformation requestInfo) {
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
+        this.setBaseUrlForRequestInformation(requestInfo);
         return this.authProvider.authenticateRequest(requestInfo).thenCompose(x -> {
             try {
                 final OkHttpCallbackFutureWrapper wrapper = new OkHttpCallbackFutureWrapper();
@@ -221,8 +222,11 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
         });
         
     }
-    private Request getRequestFromRequestInformation(@Nonnull final RequestInformation requestInfo) throws URISyntaxException, MalformedURLException {
+    private void setBaseUrlForRequestInformation(@Nonnull final RequestInformation requestInfo) {
+        Objects.requireNonNull(requestInfo);
         requestInfo.pathParameters.put("baseurl", getBaseUrl());
+    }
+    private Request getRequestFromRequestInformation(@Nonnull final RequestInformation requestInfo) throws URISyntaxException, MalformedURLException {
         final RequestBody body = requestInfo.content == null ? null :
                                 new RequestBody() {
                                     @Override
