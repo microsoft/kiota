@@ -16,7 +16,7 @@ Home = "https://github.com/microsoft/kiota#readme"
 [tool.flit.module]
 name = "authentication_azure"
 
-[mypy]
+[tool.mypy]
 warn_unused_configs = true
 files = "authentication_azure"
 ignore_missing_imports = true
