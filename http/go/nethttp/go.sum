@@ -9,6 +9,8 @@ github.com/microsoft/kiota/abstractions/go v0.0.0-20211129093841-858bd540489b h1
 github.com/microsoft/kiota/abstractions/go v0.0.0-20211129093841-858bd540489b/go.mod h1:pIT6aBVb0aHisY52bSbYvb0nyxe+TqdZ8lkpKB7pLIo=
 github.com/microsoft/kiota/abstractions/go v0.0.0-20220202150655-0505f19ca2d1 h1:X/Gl5CyFGfxeWluUsKDhw958XKOsx7wfPG82FVH9tH4=
 github.com/microsoft/kiota/abstractions/go v0.0.0-20220202150655-0505f19ca2d1/go.mod h1:BUv5PFNuBLFXQlDtarjdgqdqDjee3FgfjrNkfZlA5us=
+github.com/microsoft/kiota/abstractions/go v0.0.0-20220203083330-462603bf370f h1:uW+dBi9EsNsfbaV44vIm/fOnpTDkOTmoc1hCnsaeDWs=
+github.com/microsoft/kiota/abstractions/go v0.0.0-20220203083330-462603bf370f/go.mod h1:BUv5PFNuBLFXQlDtarjdgqdqDjee3FgfjrNkfZlA5us=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
