@@ -49,11 +49,6 @@ func GetDefaultTransport() nethttp.RoundTripper {
 	defaultTransport := nethttp.DefaultTransport.(*nethttp.Transport).Clone()
 	defaultTransport.ForceAttemptHTTP2 = true
 
-	/*
-		Makes the transport add "Accept-Encoding: gzip" header and automatic decompression
-		of the response body.
-	*/
-	defaultTransport.DisableCompression = false
 	return defaultTransport
 }
 

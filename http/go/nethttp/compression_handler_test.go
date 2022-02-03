@@ -54,8 +54,36 @@ func TestCompressionHandlerCompressesRequestBody(t *testing.T) {
 	}))
 	defer testServer.Close()
 
-	client := GetDefaultClient(&CompressionHandler{})
+	client := getDefaultClientWithoutMiddleware()
+	client.Transport = NewCustomTransport(&CompressionHandler{})
 	client.Post(testServer.URL, "application/json", bytes.NewBuffer(postBody))
 
 	assert.Greater(t, len(postBody), len(compressedBody))
+}
+
+func TestCompressionHandlerRetriesRequest(t *testing.T) {
+	postBody, _ := json.Marshal(map[string]string{"name": "Test", "email": "Test@Test.com"})
+	status := 415
+	reqCount := 0
+
+	testServer := httptest.NewServer(nethttp.HandlerFunc(func(res nethttp.ResponseWriter, req *nethttp.Request) {
+		defer req.Body.Close()
+		res.Header().Set("Content-Type", "application/json")
+		res.WriteHeader(status)
+		status = 200
+		reqCount += 1
+		fmt.Fprint(res, `{}`)
+	}))
+	defer testServer.Close()
+
+	client := getDefaultClientWithoutMiddleware()
+	client.Transport = NewCustomTransport(&CompressionHandler{})
+	client.Post(testServer.URL, "application/json", bytes.NewBuffer(postBody))
+
+	assert.Equal(t, reqCount, 2)
+}
+
+func TestResetTransport(t *testing.T) {
+	client := getDefaultClientWithoutMiddleware()
+	client.Transport = &nethttp.Transport{}
 }

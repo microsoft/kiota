@@ -3,7 +3,6 @@ package nethttplibrary
 import (
 	"bytes"
 	"compress/gzip"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -40,6 +39,7 @@ func (c *CompressionHandler) Intercept(pipeline Pipeline, middlewareIndex int, r
 	}
 
 	req.Header.Set("Content-Encoding", "gzip")
+	req.Header.Set("Accept-Encoding", "gzip")
 
 	req.Body = compressedBody
 	defer req.Body.Close()
@@ -47,7 +47,6 @@ func (c *CompressionHandler) Intercept(pipeline Pipeline, middlewareIndex int, r
 
 	resp, err := pipeline.Next(req, middlewareIndex)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 
