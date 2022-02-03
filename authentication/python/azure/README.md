@@ -14,4 +14,4 @@
 ## Using the Azure Authentication Library
 
 1. Install the package by running the command
-`pip install -i https://test.pypi.org/simple/ kiota-authentication-azure`
+`pip install -i https://test.pypi.org/simple/kiota-authentication-azure`
