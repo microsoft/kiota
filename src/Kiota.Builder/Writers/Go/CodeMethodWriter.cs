@@ -301,11 +301,8 @@ namespace Kiota.Builder.Writers.Go {
             WriteReturnError(writer);
             writer.WriteLine("if val != nil {");
             writer.IncreaseIndent();
-            if (!property.Type.IsCollection && property.Type.AllTypes.First().TypeDefinition is CodeEnum)
-                writer.WriteLine($"cast := val.({propertyTypeImportName})");
             var valueArgument = property.Type.AllTypes.First().TypeDefinition switch {
-                CodeClass when !property.Type.IsCollection => $"val.(*{propertyTypeImportName})",
-                CodeEnum when !property.Type.IsCollection => $"&cast",
+                CodeClass or CodeEnum when !property.Type.IsCollection => $"val.(*{propertyTypeImportName})",
                 _ when property.Type.IsCollection => "res",
                 _ => "val",
             };
@@ -491,7 +488,7 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLine("{");// so the err var scope is limited
             writer.IncreaseIndent();
             if(isEnum && !propType.IsCollection)
-                writer.WriteLine($"cast := {valueGet}.String()");
+                writer.WriteLine($"cast := (*{valueGet}).String()");
             else if(isClass && propType.IsCollection) {
                 var parsableSymbol = GetConversionHelperMethodImport(parentClass, "Parsable");
                 writer.WriteLines($"cast := make([]{parsableSymbol}, len({valueGet}))",
