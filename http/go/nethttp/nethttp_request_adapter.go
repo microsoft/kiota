@@ -88,6 +88,7 @@ func (a *NetHttpRequestAdapter) GetBaseUrl() string {
 	return a.baseUrl
 }
 func (a *NetHttpRequestAdapter) getHttpResponseMessage(requestInfo abs.RequestInformation) (*nethttp.Response, error) {
+	a.setBaseUrlForRequestInformation(requestInfo)
 	err := a.authenticationProvider.AuthenticateRequest(requestInfo)
 	if err != nil {
 		return nil, err
@@ -106,8 +107,10 @@ func (a *NetHttpRequestAdapter) getResponsePrimaryContentType(response *nethttp.
 	splat := strings.Split(rawType, ";")
 	return strings.ToLower(splat[0])
 }
-func (a *NetHttpRequestAdapter) getRequestFromRequestInformation(requestInfo abs.RequestInformation) (*nethttp.Request, error) {
+func (a *NetHttpRequestAdapter) setBaseUrlForRequestInformation(requestInfo abs.RequestInformation) {
 	requestInfo.PathParameters["baseurl"] = a.GetBaseUrl()
+}
+func (a *NetHttpRequestAdapter) getRequestFromRequestInformation(requestInfo abs.RequestInformation) (*nethttp.Request, error) {
 	uri, err := requestInfo.GetUri()
 	if err != nil {
 		return nil, err

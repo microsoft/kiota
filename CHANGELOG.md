@@ -14,8 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PHP Request Adapter (includes middleware) #1048, #918, #1024, #1025
 - Added support for PHP Json Serialization.
 - Update PHP abstractions to make property keys and values nullable in `SerializationWriter.php`.
-- Added Python abstractions library.
+- Adds Python abstractions library. #925
 - Adds hostname and protocol validation in authentication. #1051
+- Adds Azure Identity Authentication Provider for Python. #1108
 
 ### Changed
 

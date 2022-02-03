@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v0.21.0
-	github.com/microsoft/kiota/abstractions/go v0.0.0-20220202140831-13ba7796cb22
+	github.com/microsoft/kiota/abstractions/go v0.0.0-20220203083330-462603bf370f
 	github.com/stretchr/testify v1.7.0
 )
 

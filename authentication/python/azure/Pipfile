@@ -1,0 +1,20 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[[source]]
+url = "https://test.pypi.org/simple/"
+verify_ssl = true
+name = "testpypi"
+
+[packages]
+azure-core = {version="1.21.1", index="pypi"}
+kiota-abstractions = {version="*", index="testpypi"}
+
+[dev-packages]
+flit = {version="3.5.1", index="pypi"}
+pylint = {version="2.12.2", index="pypi"}
+mypy = {version="0.910", index="pypi"}
+yapf = {version="0.31.0", index="pypi"}
+isort = {version="5.10.1", index="pypi"}
