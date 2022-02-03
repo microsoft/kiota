@@ -72,7 +72,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
                 return result;
             }
             else
-                return await responseHandler.HandleResponseAsync<HttpResponseMessage, IEnumerable<ModelType>>(response);
+                return await responseHandler.HandleResponseAsync<HttpResponseMessage, IEnumerable<ModelType>>(response, errorMapping);
         }
         /// <summary>
         /// Executes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model collection.
@@ -93,7 +93,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
                 return result;
             }
             else
-                return await responseHandler.HandleResponseAsync<HttpResponseMessage, IEnumerable<ModelType>>(response);
+                return await responseHandler.HandleResponseAsync<HttpResponseMessage, IEnumerable<ModelType>>(response, errorMapping);
         }
         /// <summary>
         /// Send a <see cref="RequestInformation"/> instance with an instance of <typeparam name="ModelType"></typeparam>
@@ -115,7 +115,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
                 return result;
             }
             else
-                return await responseHandler.HandleResponseAsync<HttpResponseMessage, ModelType>(response);
+                return await responseHandler.HandleResponseAsync<HttpResponseMessage, ModelType>(response, errorMapping);
         }
         /// <summary>
         /// Send a <see cref="RequestInformation"/> instance with a primitive instance of <typeparam name="ModelType"></typeparam>
@@ -174,7 +174,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
                 }
             }
             else
-                return await responseHandler.HandleResponseAsync<HttpResponseMessage, ModelType>(response);
+                return await responseHandler.HandleResponseAsync<HttpResponseMessage, ModelType>(response, errorMapping);
         }
         /// <summary>
         /// Send a <see cref="RequestInformation"/> instance with an empty request body
@@ -192,7 +192,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
             if(responseHandler == null)
                 response.Dispose();
             else
-                await responseHandler.HandleResponseAsync<HttpResponseMessage, object>(response);
+                await responseHandler.HandleResponseAsync<HttpResponseMessage, object>(response, errorMapping);
         }
         private async Task ThrowFailedResponse(HttpResponseMessage response, Dictionary<string, Func<IParsable>> errorMapping)
         {
