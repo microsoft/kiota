@@ -187,6 +187,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
         public async Task SendNoContentAsync(RequestInformation requestInfo, IResponseHandler responseHandler = null, Dictionary<string, Func<IParsable>> errorMapping = default, CancellationToken cancellationToken = default)
         {
             var response = await GetHttpResponseMessage(requestInfo, cancellationToken);
+            await ThrowFailedResponse(response, errorMapping);
             requestInfo.Content?.Dispose();
             if(responseHandler == null)
                 response.Dispose();
