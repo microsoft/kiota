@@ -1,4 +1,5 @@
 from typing import Dict, List, Optional, Set
+from urllib.parse import urlparse
 
 from kiota.abstractions.authentication import AccessTokenProvider, AllowedHostsValidator
 
@@ -39,6 +40,10 @@ class AzureIdentityAccessTokenProvider(AccessTokenProvider):
         """
         if not uri or not self.get_allowed_hosts_validator().is_url_host_valid(uri):
             return ""
+
+        parsed_url = urlparse(uri)
+        if not parsed_url.scheme == 'https':
+            raise Exception("Only https is supported")
 
         if self._options:
             result = await self._credentials.get_token(*self._scopes, **self._options)
