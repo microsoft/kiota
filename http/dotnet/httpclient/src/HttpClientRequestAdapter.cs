@@ -205,12 +205,12 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
                 !errorMapping.TryGetValue(statusCodeAsString, out errorFactory) &&
                 !(statusCodeAsInt >= 400 && statusCodeAsInt < 500 && errorMapping.TryGetValue("4XX", out errorFactory)) &&
                 !(statusCodeAsInt >= 500 && statusCodeAsInt < 600 && errorMapping.TryGetValue("5XX", out errorFactory)))
-                    throw new HttpRequestException($"The server returned an unexpected status code and no error factory is registered for this code: {statusCodeAsString}");
+                    throw new ApiException($"The server returned an unexpected status code and no error factory is registered for this code: {statusCodeAsString}");
 
             var rootNode = await GetRootParseNode(response);
             var result = rootNode.GetErrorValue(errorFactory);
             if(result is not Exception ex)
-                throw new HttpRequestException($"The server returned an unexpected status code and the error registered for this code failed to deserialize: {statusCodeAsString}");
+                throw new ApiException($"The server returned an unexpected status code and the error registered for this code failed to deserialize: {statusCodeAsString}");
             else throw ex;
         }
         private async Task<IParseNode> GetRootParseNode(HttpResponseMessage response)
