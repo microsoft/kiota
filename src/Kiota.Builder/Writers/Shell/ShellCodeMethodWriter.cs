@@ -20,6 +20,8 @@ namespace Kiota.Builder.Writers.Shell
         private const string fileParamName = "file";
         private const string outputFormatParamType = "FormatterType";
         private const string outputFormatParamName = "output";
+        private const string outputFormatterFactoryParamType = "IOutputFormatterFactory";
+        private const string outputFormatterFactoryParamName = "outputFormatterFactory";
 
         public ShellCodeMethodWriter(CSharpConventionService conventionService) : base(conventionService)
         {
@@ -226,6 +228,10 @@ namespace Kiota.Builder.Writers.Shell
                     availableOptions.Add(outputOptionName);
                 }
 
+                // Add output formatter factory param
+                paramTypes.Add(outputFormatterFactoryParamType);
+                paramNames.Add(outputFormatterFactoryParamName);
+
                 // Add console param
                 paramTypes.Add(consoleParamType);
                 paramNames.Add(consoleParamName);
@@ -234,10 +240,8 @@ namespace Kiota.Builder.Writers.Shell
                 var handlerParams = string.Join(", ", projected);
                 writer.WriteLine($"command.SetHandler(async ({handlerParams}) => {{");
                 writer.IncreaseIndent();
-                writer.WriteLine("var responseHandler = new NativeResponseHandler();");
                 WriteCommandHandlerBody(originalMethod, requestParams, isHandlerVoid, returnType, writer);
                 // Get request generator method. To call it + get path & query parameters see WriteRequestExecutorBody in CSharp
-                writer.WriteLine("// Print request output. What if the request has no return?");
                 if (isHandlerVoid)
                 {
                     writer.WriteLine($"{consoleParamName}.WriteLine(\"Success\");");
@@ -246,37 +250,25 @@ namespace Kiota.Builder.Writers.Shell
                     var type = originalMethod.ReturnType as CodeType;
                     var typeString = conventions.GetTypeString(type, originalMethod);
                     var contentType = originalMethod.ContentType ?? "application/json";
-                    writer.WriteLine("var response = responseHandler.Value as HttpResponseMessage;");
-                    writer.WriteLine($"var formatter = OutputFormatterFactory.Instance.GetFormatter({outputFormatParamName});");
-                    writer.WriteLine("if (response.IsSuccessStatusCode) {");
-                    writer.IncreaseIndent();
+                    var formatterVar = "formatter";
+
+                    writer.WriteLine($"var {formatterVar} = {outputFormatterFactoryParamName}.GetFormatter({outputFormatParamName});");
                     if (typeString != "Stream")
                     {
-                        writer.WriteLine("var content = await response.Content.ReadAsStringAsync();");
-                        writer.WriteLine($"formatter.WriteOutput(content, {consoleParamName});");
+                        writer.WriteLine($"{formatterVar}.WriteOutput(response, {consoleParamName});");
                     } else
                     {
-                        writer.WriteLine("var content = await response.Content.ReadAsStreamAsync();");
                         writer.WriteLine($"if ({fileParamName} == null) {{");
                         writer.IncreaseIndent();
-                        writer.WriteLine($"formatter.WriteOutput(content, {consoleParamName});");
+                        writer.WriteLine($"{formatterVar}.WriteOutput(response, {consoleParamName});");
                         writer.CloseBlock();
                         writer.WriteLine("else {");
                         writer.IncreaseIndent();
                         writer.WriteLine($"using var writeStream = {fileParamName}.OpenWrite();");
-                        writer.WriteLine("await content.CopyToAsync(writeStream);");
+                        writer.WriteLine("await response.CopyToAsync(writeStream);");
                         writer.WriteLine($"{consoleParamName}.WriteLine($\"Content written to {{{fileParamName}.FullName}}.\");");
                         writer.CloseBlock();
                     }
-                    writer.CloseBlock();
-                    writer.WriteLine("else {");
-                    writer.IncreaseIndent();
-                    writer.WriteLine("var content = await response.Content.ReadAsStringAsync();");
-                    writer.WriteLine("console.WriteLine(content);");
-                    writer.CloseBlock();
-
-                    // Assume string content as stream here
-
                 }
                 writer.DecreaseIndent();
                 var delimiter = "";
@@ -355,7 +347,13 @@ namespace Kiota.Builder.Writers.Shell
                 writer.WriteLine("});");
             }
 
-            writer.WriteLine($"await RequestAdapter.SendNoContentAsync(requestInfo, responseHandler);");
+            var requestMethod = "SendPrimitiveAsync<Stream>";
+            if (isVoid)
+            {
+                requestMethod = "SendNoContentAsync";
+            }
+
+            writer.WriteLine($"{(isVoid ? string.Empty : "var response = ")}await RequestAdapter.{requestMethod}(requestInfo);");
         }
 
         /// <summary>
