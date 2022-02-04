@@ -1,10 +1,70 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Xunit;
 
 namespace Kiota.Builder.Refiners.Tests;
 public class JavaLanguageRefinerTests {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
     #region CommonLanguageRefinerTests
+    [Fact]
+    public void AddsExceptionInheritanceOnErrorClasses() {
+        var model = root.AddClass(new CodeClass {
+            Name = "somemodel",
+            ClassKind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+
+        var declaration = model.StartBlock as CodeClass.Declaration;
+
+        Assert.Contains("Exception", declaration.Usings.Select(x => x.Name));
+        Assert.Equal("Exception", declaration.Inherits.Name);
+    }
+    [Fact]
+    public void FailsExceptionInheritanceOnErrorClassesWhichAlreadyInherit() {
+        var model = root.AddClass(new CodeClass {
+            Name = "somemodel",
+            ClassKind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+        var declaration = model.StartBlock as CodeClass.Declaration;
+        declaration.Inherits = new CodeType {
+            Name = "SomeOtherModel"
+        };
+        Assert.Throws<InvalidOperationException>(() => ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root));
+    }
+    [Fact]
+    public void AddsUsingsForErrorTypesForRequestExecutor() {
+        var requestBuilder = root.AddClass(new CodeClass {
+            Name = "somerequestbuilder",
+            ClassKind = CodeClassKind.RequestBuilder,
+        }).First();
+        var subNS = root.AddNamespace($"{root.Name}.subns"); // otherwise the import gets trimmed
+        var errorClass = subNS.AddClass(new CodeClass {
+            Name = "Error4XX",
+            ClassKind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+        var requestExecutor = requestBuilder.AddMethod(new CodeMethod {
+            Name = "get",
+            MethodKind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType {
+                Name = "string"
+            },
+            ErrorMappings = new () {
+                { "4XX", new CodeType {
+                        Name = "Error4XX",
+                        TypeDefinition = errorClass,
+                    } 
+                },
+            },
+        }).First();
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+
+        var declaration = requestBuilder.StartBlock as CodeClass.Declaration;
+
+        Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
+    }
     [Fact]
     public void EscapesReservedKeywordsInInternalDeclaration() {
         var model = root.AddClass(new CodeClass {
