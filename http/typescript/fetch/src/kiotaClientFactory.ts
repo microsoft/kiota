@@ -6,7 +6,7 @@ import { MiddlewareFactory } from "./middlewares/middlewareFactory";
  * @returns the default middlewares.
  */
 export function getDefaultMiddlewares(): Middleware[] {
-	return MiddlewareFactory.getDefaultMiddlewareChain();
+	return []; //TODO add default middlewares
 }
 /**
  * Gets the default request settings to be used for the client.

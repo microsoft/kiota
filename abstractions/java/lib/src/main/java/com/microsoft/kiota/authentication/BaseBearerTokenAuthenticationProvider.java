@@ -3,34 +3,39 @@ package com.microsoft.kiota.authentication;
 import com.microsoft.kiota.RequestInformation;
 
 import java.lang.UnsupportedOperationException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.concurrent.CompletableFuture;
 import java.util.Objects;
 
 import javax.annotation.Nonnull;
 
 /** Provides a base class for implementing AuthenticationProvider for Bearer token scheme. */
-public abstract class BaseBearerTokenAuthenticationProvider implements AuthenticationProvider {
+public class BaseBearerTokenAuthenticationProvider implements AuthenticationProvider {
+    public BaseBearerTokenAuthenticationProvider(@Nonnull final AccessTokenProvider accessTokenProvider) {
+        this.accessTokenProvider = Objects.requireNonNull(accessTokenProvider);
+    }
+    private final AccessTokenProvider accessTokenProvider;
     private final static String authorizationHeaderKey = "Authorization";
     public CompletableFuture<Void> authenticateRequest(final RequestInformation request) {
         Objects.requireNonNull(request);
         if(!request.headers.keySet().contains(authorizationHeaderKey)) {
-            return this.getAuthorizationToken(request)
+            final URI targetUri;
+            try {
+                targetUri = request.getUri();
+            } catch (URISyntaxException e) {
+                return CompletableFuture.failedFuture(e);
+            }
+            return this.accessTokenProvider.getAuthorizationToken(targetUri)
                 .thenApply(token -> {
-                    if(token == null || token.isEmpty()) {
-                        throw new UnsupportedOperationException("Could not get an authorization token", null);
+                    if(token != null && !token.isEmpty()) { 
+                    // Not an error, just no need to authenticate as we might have been given an external URL from the main API (large file upload, etc.)
+                        request.headers.put(authorizationHeaderKey, "Bearer " + token);
                     }
-                    request.headers.put(authorizationHeaderKey, "Bearer " + token);
                     return null;
                 });
         } else {
             return CompletableFuture.completedFuture(null);
         }
     }
-    /**
-     * This method is called by the BaseBearerTokenAuthenticationProvider class to authenticate the request via the returned access token.
-     * @param request The request to authenticate.
-     * @return A CompletableFuture that holds the access token to use for the request.
-     */
-    @Nonnull
-    public abstract CompletableFuture<String> getAuthorizationToken(@Nonnull final RequestInformation request);
 }

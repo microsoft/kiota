@@ -1,22 +1,38 @@
 {
     "root": true,
     "parser": "@typescript-eslint/parser",
-    "plugins": ["@typescript-eslint", "prettier", "simple-import-sort"],
-    "extends": ["eslint:recommended", "plugin:@typescript-eslint/eslint-recommended", "plugin:@typescript-eslint/recommended", "prettier"],
+    "plugins": [
+        "@typescript-eslint",
+        "prettier",
+        "simple-import-sort"
+    ],
+    "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/eslint-recommended",
+        "plugin:@typescript-eslint/recommended",
+        "prettier"
+    ],
     "rules": {
         "@typescript-eslint/no-empty-interface": "warn",
         "@typescript-eslint/ban-types": "off",
         "@typescript-eslint/no-unused-vars": "error",
         "@typescript-eslint/no-explicit-any": "off",
         "@typescript-eslint/explicit-module-boundary-types": "off",
-        "prettier/prettier": "error",
+        "prettier/prettier": [
+            "error",
+            {
+                "endOfLine": "auto"
+            }
+        ],
         "@typescript-eslint/no-var-requires": "error",
         "@typescript-eslint/no-non-null-assertion": "error",
         "@typescript-eslint/naming-convention": [
             "error",
             {
                 "selector": "typeLike",
-                "format": ["PascalCase"],
+                "format": [
+                    "PascalCase"
+                ],
                 "filter": {
                     "regex": "^(__String|[A-Za-z]+_[A-Za-z]+)$",
                     "match": false
@@ -24,7 +40,9 @@
             },
             {
                 "selector": "interface",
-                "format": ["PascalCase"],
+                "format": [
+                    "PascalCase"
+                ],
                 "custom": {
                     "regex": "^I[A-Z]",
                     "match": false
@@ -36,7 +54,11 @@
             },
             {
                 "selector": "variable",
-                "format": ["camelCase", "PascalCase", "UPPER_CASE"],
+                "format": [
+                    "camelCase",
+                    "PascalCase",
+                    "UPPER_CASE"
+                ],
                 "leadingUnderscore": "allow",
                 "filter": {
                     "regex": "^(_{1,2}filename|_{1,2}dirname|_+|[A-Za-z]+_[A-Za-z]+)$",
@@ -45,7 +67,10 @@
             },
             {
                 "selector": "function",
-                "format": ["camelCase", "PascalCase"],
+                "format": [
+                    "camelCase",
+                    "PascalCase"
+                ],
                 "leadingUnderscore": "allow",
                 "filter": {
                     "regex": "^[A-Za-z]+_[A-Za-z]+$",
@@ -54,7 +79,9 @@
             },
             {
                 "selector": "parameter",
-                "format": ["camelCase"],
+                "format": [
+                    "camelCase"
+                ],
                 "leadingUnderscore": "allow",
                 "filter": {
                     "regex": "^(_+|[A-Za-z]+_[A-Z][a-z]+)$",
@@ -63,7 +90,10 @@
             },
             {
                 "selector": "method",
-                "format": ["camelCase", "PascalCase"],
+                "format": [
+                    "camelCase",
+                    "PascalCase"
+                ],
                 "leadingUnderscore": "allow",
                 "filter": {
                     "regex": "^[A-Za-z]+_[A-Za-z]+$",
@@ -72,7 +102,9 @@
             },
             {
                 "selector": "memberLike",
-                "format": ["camelCase"],
+                "format": [
+                    "camelCase"
+                ],
                 "leadingUnderscore": "allow",
                 "filter": {
                     "regex": "^[A-Za-z]+_[A-Za-z]+$",
@@ -81,7 +113,10 @@
             },
             {
                 "selector": "enumMember",
-                "format": ["camelCase", "PascalCase"],
+                "format": [
+                    "camelCase",
+                    "PascalCase"
+                ],
                 "leadingUnderscore": "allow",
                 "filter": {
                     "regex": "^[A-Za-z]+_[A-Za-z]+$",
@@ -106,13 +141,19 @@
                 "allowTemplateLiterals": true
             }
         ],
-        "@typescript-eslint/space-within-parens": ["off", "never"],
+        "@typescript-eslint/space-within-parens": [
+            "off",
+            "never"
+        ],
         "@typescript-eslint/triple-slash-reference": "error",
         "@typescript-eslint/type-annotation-spacing": "error",
         "@typescript-eslint/unified-signatures": "error",
         "@typescript-eslint/adjacent-overload-signatures": "error",
         "@typescript-eslint/array-type": "error",
-        "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
+        "@typescript-eslint/consistent-type-definitions": [
+            "error",
+            "interface"
+        ],
         "@typescript-eslint/no-inferrable-types": "error",
         "@typescript-eslint/no-misused-new": "error",
         "@typescript-eslint/no-this-alias": "error",
@@ -157,7 +198,10 @@
         "simple-import-sort/imports": "error",
         "brace-style": "error",
         "constructor-super": "error",
-        "curly": ["error", "multi-line"],
+        "curly": [
+            "error",
+            "multi-line"
+        ],
         "dot-notation": "off",
         "eqeqeq": "error",
         "new-parens": "error",
@@ -184,7 +228,10 @@
         "prefer-object-spread": "error",
         "quote-props": "off",
         "space-in-parens": "error",
-        "unicode-bom": ["error", "never"],
+        "unicode-bom": [
+            "error",
+            "never"
+        ],
         "use-isnan": "error"
     }
 }
