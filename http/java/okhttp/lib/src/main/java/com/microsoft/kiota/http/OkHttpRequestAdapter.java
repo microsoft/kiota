@@ -93,7 +93,7 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
         }
     }
     @Nonnull
-    public <ModelType extends Parsable> CompletableFuture<Iterable<ModelType>> sendCollectionAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler, @Nullable final HashMap<String, Class<Parsable>> errorMappings) {
+    public <ModelType extends Parsable> CompletableFuture<Iterable<ModelType>> sendCollectionAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler, @Nullable final HashMap<String, Class<? extends Parsable>> errorMappings) {
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
 
         return this.getHttpResponseMessage(requestInfo)
@@ -115,7 +115,7 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
         });
     }
     @Nonnull
-    public <ModelType extends Parsable> CompletableFuture<ModelType> sendAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler, @Nullable final HashMap<String, Class<Parsable>> errorMappings) {
+    public <ModelType extends Parsable> CompletableFuture<ModelType> sendAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler, @Nullable final HashMap<String, Class<? extends Parsable>> errorMappings) {
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
 
         return this.getHttpResponseMessage(requestInfo)
@@ -140,7 +140,7 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
         return mediaType.type() + "/" + mediaType.subtype();
     }
     @Nonnull
-    public <ModelType> CompletableFuture<ModelType> sendPrimitiveAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler, @Nullable final HashMap<String, Class<Parsable>> errorMappings) {
+    public <ModelType> CompletableFuture<ModelType> sendPrimitiveAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler, @Nullable final HashMap<String, Class<? extends Parsable>> errorMappings) {
         return this.getHttpResponseMessage(requestInfo)
         .thenCompose(r -> this.throwFailedResponse(r, errorMappings))
         .thenCompose(response -> {
@@ -185,7 +185,7 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
             }
         });
     }
-    public <ModelType> CompletableFuture<Iterable<ModelType>> sendPrimitiveCollectionAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler, @Nullable final HashMap<String, Class<Parsable>> errorMappings) {
+    public <ModelType> CompletableFuture<Iterable<ModelType>> sendPrimitiveCollectionAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler, @Nullable final HashMap<String, Class<? extends Parsable>> errorMappings) {
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
 
         return this.getHttpResponseMessage(requestInfo)
@@ -213,7 +213,7 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
             return rootNode;
         }
     }
-    private CompletableFuture<Response> throwFailedResponse(final Response response, final HashMap<String, Class<Parsable>> errorMappings) {
+    private CompletableFuture<Response> throwFailedResponse(final Response response, final HashMap<String, Class<? extends Parsable>> errorMappings) {
         if (response.isSuccessful()) return CompletableFuture.completedFuture(response);
 
         final String statusCodeAsString = Integer.toString(response.code());
@@ -224,7 +224,7 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
            !(statusCode >= 500 && statusCode < 600 && errorMappings.containsKey("5XX"))) {
             return CompletableFuture.failedFuture(new ApiException("the server returned an unexpected status code and no error class is registered for this code " + statusCode));
         }
-        final Class<Parsable> errorClass = errorMappings.containsKey(statusCodeAsString) ?
+        final Class<? extends Parsable> errorClass = errorMappings.containsKey(statusCodeAsString) ?
                                                     errorMappings.get(statusCodeAsString) :
                                                     (statusCode >= 400 && statusCode < 500 ?
                                                         errorMappings.get("4XX") :

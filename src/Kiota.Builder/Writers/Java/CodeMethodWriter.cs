@@ -224,7 +224,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         var errorMappingVarName = "null";
         if(codeElement.ErrorMappings.Any()) {
             errorMappingVarName = "errorMapping";
-            writer.WriteLine($"final HashMap<String, Class<Parsable>> {errorMappingVarName} = new HashMap<String, Class<Parsable>>({codeElement.ErrorMappings.Count}) {{{{");
+            writer.WriteLine($"final HashMap<String, Class<? extends Parsable>> {errorMappingVarName} = new HashMap<String, Class<? extends Parsable>>({codeElement.ErrorMappings.Count}) {{{{");
             writer.IncreaseIndent();
             foreach(var errorMapping in codeElement.ErrorMappings) {
                 writer.WriteLine($"put(\"{errorMapping.Key.ToUpperInvariant()}\", {errorMapping.Value.Name.ToFirstCharacterUpperCase()}.class);");
@@ -344,7 +344,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             _ => code.Name.ToFirstCharacterLowerCase()
         };
         var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> conventions.GetParameterSignature(p, code)).ToList());
-        var throwableDeclarations = code.IsOfKind(CodeMethodKind.RequestGenerator) ? "throws URISyntaxException ": string.Empty;
+        var throwableDeclarations = code.MethodKind switch {
+            CodeMethodKind.RequestGenerator => "throws URISyntaxException ",
+            _ => string.Empty
+        };
         var collectionCorrectedReturnType = code.ReturnType.IsArray && code.IsOfKind(CodeMethodKind.RequestExecutor) ?
                                             $"Iterable<{returnType.StripArraySuffix()}>" :
                                             returnType;

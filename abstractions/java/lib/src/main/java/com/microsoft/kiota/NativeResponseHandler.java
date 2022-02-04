@@ -16,14 +16,14 @@ public class NativeResponseHandler implements ResponseHandler {
 
     /** The error mappings for the response to use when deserializing failed responses bodies. Where an error code like 401 applies specifically to that status code, a class code like 4XX applies to all status codes within the range if an the specific error code is not present. */
     @Nullable
-    public HashMap<String, Class<Parsable>> errorMappings;
+    public HashMap<String, Class<? extends Parsable>> errorMappings;
 
     /** {@inheritdoc} */
     @Nonnull
     @Override
     public <NativeResponseType, ModelType> CompletableFuture<ModelType> handleResponseAsync(
             NativeResponseType response,
-            HashMap<String, Class<Parsable>> errorMappings) {
+            HashMap<String, Class<? extends Parsable>> errorMappings) {
         this.value = response;
         this.errorMappings = errorMappings;
         return CompletableFuture.completedFuture(null);

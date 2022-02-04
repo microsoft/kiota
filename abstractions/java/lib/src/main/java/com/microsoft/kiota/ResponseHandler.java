@@ -19,5 +19,5 @@ public interface ResponseHandler {
      * @return A CompletableFuture that represents the asynchronous operation and contains the deserialized response.
      */
     @Nonnull
-    <NativeResponseType, ModelType> CompletableFuture<ModelType> handleResponseAsync(@Nonnull final NativeResponseType response, @Nullable final HashMap<String, Class<Parsable>> errorMappings);
+    <NativeResponseType, ModelType> CompletableFuture<ModelType> handleResponseAsync(@Nonnull final NativeResponseType response, @Nullable final HashMap<String, Class<? extends Parsable>> errorMappings);
 }
