@@ -228,7 +228,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                             $"{RequestInfoVarName}.pathParameters = {GetPropertyCall(urlTemplateParamsProperty, "''")};",
                             $"{RequestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.ToString().ToUpperInvariant()};");
         if(requestParams.headers != null)
-            writer.WriteLine($"{RequestInfoVarName}.headers = h;");
+            writer.WriteLine($"if(h) {RequestInfoVarName}.headers = h;");
         if(requestParams.queryString != null)
             writer.WriteLines($"{requestParams.queryString.Name} && {RequestInfoVarName}.setQueryStringParametersFromRawObject(q);");
         if(requestParams.requestBody != null) {
