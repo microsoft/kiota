@@ -5,5 +5,6 @@ export class ApiError implements Error {
     public stack?: string;
     public constructor(message?: string) {
         this.message = message || "";
+        this.name = "ApiError";
     }
 }

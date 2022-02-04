@@ -168,7 +168,7 @@ export class FetchRequestAdapter implements RequestAdapter {
         const rootNode = await this.getRootParseNode(response);
         const error = rootNode.getObjectValue(factory);
         
-        if(error instanceof Error) throw error;
+        if(error) throw error;
         else throw new ApiError("unexpected error type" + typeof(error))
     }
     private getHttpResponseMessage = async (requestInfo: RequestInformation): Promise<Response> => {
