@@ -27,6 +27,7 @@ func GetDefaultMiddlewares() []Middleware {
 	return []Middleware{
 		NewRetryHandler(),
 		NewRedirectHandler(),
+		&CompressionHandler{},
 		//TODO add additional middlewares
 	}
 }
