@@ -17,8 +17,8 @@ public class CSharpLanguageRefinerTests {
         
         var declaration = model.StartBlock as CodeClass.Declaration;
 
-        Assert.Contains("Exception", declaration.Usings.Select(x => x.Name));
-        Assert.Equal("Exception", declaration.Inherits.Name);
+        Assert.Contains("ApiException", declaration.Usings.Select(x => x.Name));
+        Assert.Equal("ApiException", declaration.Inherits.Name);
     }
     [Fact]
     public void FailsExceptionInheritanceOnErrorClassesWhichAlreadyInherit() {

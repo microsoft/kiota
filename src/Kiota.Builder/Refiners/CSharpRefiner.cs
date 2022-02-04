@@ -35,8 +35,8 @@ namespace Kiota.Builder.Refiners {
             AddSerializationModulesImport(generatedCode);
             AddParentClassToErrorClasses(
                 generatedCode,
-                "Exception",
-                "System"
+                "ApiException",
+                "Microsoft.Kiota.Abstractions"
             );
         }
         private static void DisambiguatePropertiesWithClassNames(CodeElement currentElement) {
