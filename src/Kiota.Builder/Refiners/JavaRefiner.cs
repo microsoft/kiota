@@ -39,8 +39,8 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                                     new [] { "com.microsoft.kiota.serialization.ParseNodeFactoryRegistry" });
         AddParentClassToErrorClasses(
                 generatedCode,
-                "Exception",
-                "java.lang"
+                "ApiException",
+                "com.microsoft.kiota"
         );
     }
     private static void SetSetterParametersToNullable(CodeElement currentElement, params Tuple<CodeMethodKind, CodePropertyKind>[] accessorPairs) {

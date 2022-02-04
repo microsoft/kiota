@@ -16,6 +16,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.microsoft.kiota.ApiClientBuilder;
+import com.microsoft.kiota.ApiException;
 import com.microsoft.kiota.RequestInformation;
 import com.microsoft.kiota.RequestOption;
 import com.microsoft.kiota.ResponseHandler;
@@ -221,7 +222,7 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
            !errorMappings.containsKey(statusCodeAsString) &&
            !(statusCode >= 400 && statusCode < 500 && errorMappings.containsKey("4XX")) &&
            !(statusCode >= 500 && statusCode < 600 && errorMappings.containsKey("5XX"))) {
-            return CompletableFuture.failedFuture(new RuntimeException("the server returned an unexpected status code and no error class is registered for this code " + statusCode));
+            return CompletableFuture.failedFuture(new ApiException("the server returned an unexpected status code and no error class is registered for this code " + statusCode));
         }
         final Class<Parsable> errorClass = errorMappings.containsKey(statusCodeAsString) ?
                                                     errorMappings.get(statusCodeAsString) :
@@ -234,7 +235,7 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
             if (error instanceof Exception) {
                 return CompletableFuture.failedFuture((Exception)error);
             } else {
-                return CompletableFuture.failedFuture(new RuntimeException("unexpected error type " + error.getClass().getName()));
+                return CompletableFuture.failedFuture(new ApiException("unexpected error type " + error.getClass().getName()));
             }
         } catch (IOException ex) {
             return CompletableFuture.failedFuture(ex);
