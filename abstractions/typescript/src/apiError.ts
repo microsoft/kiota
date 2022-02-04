@@ -1,11 +1,9 @@
 /** Parent interface for errors thrown by the client when receiving failed responses to its requests. */
-interface ApiError extends Error {
+export class ApiError implements Error {
+    public name: string;
+    public message: string;
+    public stack?: string;
+    public constructor(message?: string) {
+        this.message = message || "";
+    }
 }
-
-interface ApiErrorConstructor extends ErrorConstructor {
-    new(message?: string): ApiError;
-    (message?: string): ApiError;
-    readonly prototype: ApiError;
-}
-
-export var ApiError: ApiErrorConstructor;
