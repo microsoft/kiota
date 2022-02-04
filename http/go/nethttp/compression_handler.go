@@ -40,22 +40,19 @@ func (c *CompressionHandler) Intercept(pipeline Pipeline, middlewareIndex int, r
 
 	req.Header.Set("Content-Encoding", "gzip")
 	req.Header.Set("Accept-Encoding", "gzip")
-
 	req.Body = compressedBody
-	defer req.Body.Close()
 	req.ContentLength = int64(contentLength)
 
+	// Sending request with compressed body
 	resp, err := pipeline.Next(req, middlewareIndex)
 	if err != nil {
 		return nil, err
 	}
 
-	// If we get an error send uncompressed request
+	// If response has status 415 retry request with uncompressed body
 	if resp.StatusCode == 415 {
 		delete(req.Header, "Content-Encoding")
-
 		req.Body = ioutil.NopCloser(bytes.NewBuffer(unCompressedBody))
-		defer req.Body.Close()
 		req.ContentLength = unCompressedContentLength
 
 		return pipeline.Next(req, middlewareIndex)

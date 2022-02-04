@@ -48,7 +48,6 @@ func TestCompressionHandlerCompressesRequestBody(t *testing.T) {
 
 	testServer := httptest.NewServer(nethttp.HandlerFunc(func(res nethttp.ResponseWriter, req *nethttp.Request) {
 		compressedBody, _ = io.ReadAll(req.Body)
-		defer req.Body.Close()
 		res.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(res, `{}`)
 	}))
