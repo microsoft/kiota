@@ -22,13 +22,13 @@ namespace Microsoft.Kiota.Abstractions
         /// <summary>
         /// The error mappings for the response to use when deserializing failed responses bodies. Where an error code like 401 applies specifically to that status code, a class code like 4XX applies to all status codes within the range if an the specific error code is not present.
         /// </summary>
-        public Dictionary<string, Func<IParsable>> ErrorsMappings { get; set; }
+        public Dictionary<string, Func<IParsable>> ErrorMappings { get; set; }
 
         /// <inheritdoc />
         public Task<ModelType> HandleResponseAsync<NativeResponseType, ModelType>(NativeResponseType response, Dictionary<string, Func<IParsable>> errorMappings)
         {
             Value = response;
-            ErrorsMappings = errorMappings;
+            ErrorMappings = errorMappings;
             return Task.FromResult(default(ModelType));
         }
     }
