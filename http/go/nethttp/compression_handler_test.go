@@ -21,7 +21,7 @@ func TestCompressionHandlerAddsAcceptEncodingHeader(t *testing.T) {
 	}))
 	defer testServer.Close()
 
-	client := GetDefaultClient(&CompressionHandler{})
+	client := GetDefaultClient(NewCompressionHandler())
 	client.Post(testServer.URL, "application/json", bytes.NewBuffer(postBody))
 
 	assert.Equal(t, acceptEncodingHeader, "gzip")
@@ -36,7 +36,7 @@ func TestCompressionHandlerAddsContentEncodingHeader(t *testing.T) {
 	}))
 	defer testServer.Close()
 
-	client := GetDefaultClient(&CompressionHandler{})
+	client := GetDefaultClient(NewCompressionHandler())
 	client.Post(testServer.URL, "application/json", bytes.NewBuffer(postBody))
 
 	assert.Equal(t, contentTypeHeader, "gzip")
@@ -54,7 +54,7 @@ func TestCompressionHandlerCompressesRequestBody(t *testing.T) {
 	defer testServer.Close()
 
 	client := getDefaultClientWithoutMiddleware()
-	client.Transport = NewCustomTransport(&CompressionHandler{})
+	client.Transport = NewCustomTransport(NewCompressionHandler())
 	client.Post(testServer.URL, "application/json", bytes.NewBuffer(postBody))
 
 	assert.Greater(t, len(postBody), len(compressedBody))
@@ -76,7 +76,7 @@ func TestCompressionHandlerRetriesRequest(t *testing.T) {
 	defer testServer.Close()
 
 	client := getDefaultClientWithoutMiddleware()
-	client.Transport = NewCustomTransport(&CompressionHandler{})
+	client.Transport = NewCustomTransport(NewCompressionHandler())
 	client.Post(testServer.URL, "application/json", bytes.NewBuffer(postBody))
 
 	assert.Equal(t, reqCount, 2)

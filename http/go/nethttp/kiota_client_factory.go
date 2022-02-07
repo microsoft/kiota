@@ -6,7 +6,7 @@ import (
 	nethttp "net/http"
 )
 
-// Create a new default net/http client with the options configured for the Kiota request adapter
+// GetDefaultClient creates a new default net/http client with the options configured for the Kiota request adapter
 func GetDefaultClient(middleware ...Middleware) *nethttp.Client {
 	client := getDefaultClientWithoutMiddleware()
 	client.Transport = NewCustomTransport(middleware...)
@@ -22,12 +22,12 @@ func getDefaultClientWithoutMiddleware() *nethttp.Client {
 	return client
 }
 
-// Creates a new default set of middlewares for the Kiota request adapter
+// GetDefaultMiddlewares creates a new default set of middlewares for the Kiota request adapter
 func GetDefaultMiddlewares() []Middleware {
 	return []Middleware{
 		NewRetryHandler(),
 		NewRedirectHandler(),
-		&CompressionHandler{},
+		NewCompressionHandler(),
 		//TODO add additional middlewares
 	}
 }

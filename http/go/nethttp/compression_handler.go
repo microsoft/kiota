@@ -8,25 +8,32 @@ import (
 	"net/http"
 )
 
-type CompressionHandler struct{}
+type CompressionHandler struct {
+	options CompressionOptions
+}
 
-func compressReqBody(reqBody io.ReadCloser) (io.ReadCloser, int, error) {
-	body, err := ioutil.ReadAll(reqBody)
-	if err != nil {
-		return nil, 0, err
-	}
+type CompressionOptions struct {
+	enableCompression bool
+}
 
-	var buffer bytes.Buffer
-	gzipWriter := gzip.NewWriter(&buffer)
-	if _, err := gzipWriter.Write(body); err != nil {
-		return nil, 0, err
-	}
-	defer gzipWriter.Close()
+func NewCompressionHandler() *CompressionHandler {
+	options := NewCompressionOptions(true)
+	return NewCompressionHandlerWithOptions(options)
+}
 
-	return ioutil.NopCloser(bytes.NewBuffer(buffer.Bytes())), len(buffer.Bytes()), nil
+func NewCompressionHandlerWithOptions(option CompressionOptions) *CompressionHandler {
+	return &CompressionHandler{options: option}
+}
+
+func NewCompressionOptions(enableCompression bool) CompressionOptions {
+	return CompressionOptions{enableCompression: enableCompression}
 }
 
 func (c *CompressionHandler) Intercept(pipeline Pipeline, middlewareIndex int, req *http.Request) (*http.Response, error) {
+	if c.options.enableCompression != true {
+		return pipeline.Next(req, middlewareIndex)
+	}
+
 	unCompressedBody, err := ioutil.ReadAll(req.Body)
 	unCompressedContentLength := req.ContentLength
 	if err != nil {
@@ -59,4 +66,20 @@ func (c *CompressionHandler) Intercept(pipeline Pipeline, middlewareIndex int, r
 	}
 
 	return resp, nil
+}
+
+func compressReqBody(reqBody io.ReadCloser) (io.ReadCloser, int, error) {
+	body, err := ioutil.ReadAll(reqBody)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var buffer bytes.Buffer
+	gzipWriter := gzip.NewWriter(&buffer)
+	if _, err := gzipWriter.Write(body); err != nil {
+		return nil, 0, err
+	}
+	defer gzipWriter.Close()
+
+	return ioutil.NopCloser(bytes.NewBuffer(buffer.Bytes())), len(buffer.Bytes()), nil
 }
