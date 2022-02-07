@@ -6,6 +6,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+
+	abstractions "github.com/microsoft/kiota/abstractions/go"
 )
 
 type CompressionHandler struct {
@@ -15,6 +17,13 @@ type CompressionHandler struct {
 type CompressionOptions struct {
 	enableCompression bool
 }
+
+type compression interface {
+	abstractions.RequestOption
+	ShouldCompress() bool
+}
+
+var compressKey = abstractions.RequestOptionKey{Key: "CompressionHandler"}
 
 func NewCompressionHandler() *CompressionHandler {
 	options := NewCompressionOptions(true)
@@ -29,8 +38,21 @@ func NewCompressionOptions(enableCompression bool) CompressionOptions {
 	return CompressionOptions{enableCompression: enableCompression}
 }
 
+func (o CompressionOptions) GetKey() abstractions.RequestOptionKey {
+	return compressKey
+}
+
+func (o CompressionOptions) ShouldCompress() bool {
+	return o.enableCompression
+}
+
 func (c *CompressionHandler) Intercept(pipeline Pipeline, middlewareIndex int, req *http.Request) (*http.Response, error) {
-	if c.options.enableCompression != true {
+	reqOption, ok := req.Context().Value(compressKey).(compression)
+	if !ok {
+		reqOption = c.options
+	}
+
+	if reqOption.ShouldCompress() != true {
 		return pipeline.Next(req, middlewareIndex)
 	}
 
