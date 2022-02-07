@@ -97,13 +97,15 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
 
         return this.getHttpResponseMessage(requestInfo)
-        .thenCompose(r -> this.throwFailedResponse(r, errorMappings))
         .thenCompose(response -> {
             if(responseHandler == null) {
                 try {
+                    this.throwFailedResponse(response, errorMappings);
                     final ParseNode rootNode = getRootParseNode(response);
                     final Iterable<ModelType> result = rootNode.getCollectionOfObjectValues(targetClass);
                     return CompletableFuture.completedStage(result);
+                } catch(ApiException ex) {
+                    return CompletableFuture.failedFuture(ex);
                 } catch(IOException ex) {
                     return CompletableFuture.failedFuture(new RuntimeException("failed to read the response body", ex));
                 } finally {
@@ -119,13 +121,15 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
 
         return this.getHttpResponseMessage(requestInfo)
-        .thenCompose(r -> this.throwFailedResponse(r, errorMappings))
         .thenCompose(response -> {
             if(responseHandler == null) {
                 try {
+                    this.throwFailedResponse(response, errorMappings);
                     final ParseNode rootNode = getRootParseNode(response);
                     final ModelType result = rootNode.getObjectValue(targetClass);
                     return CompletableFuture.completedStage(result);
+                } catch(ApiException ex) {
+                    return CompletableFuture.failedFuture(ex);
                 } catch(IOException ex) {
                     return CompletableFuture.failedFuture(new RuntimeException("failed to read the response body", ex));
                 } finally {
@@ -142,10 +146,10 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
     @Nonnull
     public <ModelType> CompletableFuture<ModelType> sendPrimitiveAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler, @Nullable final HashMap<String, Class<? extends Parsable>> errorMappings) {
         return this.getHttpResponseMessage(requestInfo)
-        .thenCompose(r -> this.throwFailedResponse(r, errorMappings))
         .thenCompose(response -> {
             if(responseHandler == null) {
                 try {
+                    this.throwFailedResponse(response, errorMappings);
                     if(targetClass == Void.class) {
                         return CompletableFuture.completedStage(null);
                     } else {
@@ -175,6 +179,8 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
                         }
                         return CompletableFuture.completedStage((ModelType)result);
                     }
+                } catch(ApiException ex) {
+                    return CompletableFuture.failedFuture(ex);
                 } catch(IOException ex) {
                     return CompletableFuture.failedFuture(new RuntimeException("failed to read the response body", ex));
                 } finally {
@@ -189,13 +195,15 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
 
         return this.getHttpResponseMessage(requestInfo)
-        .thenCompose(r -> this.throwFailedResponse(r, errorMappings))
         .thenCompose(response -> {
             if(responseHandler == null) {
                 try {
+                    this.throwFailedResponse(response, errorMappings);
                     final ParseNode rootNode = getRootParseNode(response);
                     final Iterable<ModelType> result = rootNode.getCollectionOfPrimitiveValues(targetClass);
                     return CompletableFuture.completedStage(result);
+                } catch(ApiException ex) {
+                    return CompletableFuture.failedFuture(ex);
                 } catch(IOException ex) {
                     return CompletableFuture.failedFuture(new RuntimeException("failed to read the response body", ex));
                 } finally {
@@ -213,8 +221,8 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
             return rootNode;
         }
     }
-    private CompletableFuture<Response> throwFailedResponse(final Response response, final HashMap<String, Class<? extends Parsable>> errorMappings) {
-        if (response.isSuccessful()) return CompletableFuture.completedFuture(response);
+    private Response throwFailedResponse(final Response response, final HashMap<String, Class<? extends Parsable>> errorMappings) throws IOException, ApiException {
+        if (response.isSuccessful()) return response;
 
         final String statusCodeAsString = Integer.toString(response.code());
         final Integer statusCode = response.code();
@@ -222,7 +230,7 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
            !errorMappings.containsKey(statusCodeAsString) &&
            !(statusCode >= 400 && statusCode < 500 && errorMappings.containsKey("4XX")) &&
            !(statusCode >= 500 && statusCode < 600 && errorMappings.containsKey("5XX"))) {
-            return CompletableFuture.failedFuture(new ApiException("the server returned an unexpected status code and no error class is registered for this code " + statusCode));
+            throw new ApiException("the server returned an unexpected status code and no error class is registered for this code " + statusCode);
         }
         final Class<? extends Parsable> errorClass = errorMappings.containsKey(statusCodeAsString) ?
                                                     errorMappings.get(statusCodeAsString) :
@@ -232,13 +240,11 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
         try {
             final ParseNode rootNode = getRootParseNode(response);
             final Parsable error = rootNode.getObjectValue(errorClass);
-            if (error instanceof Exception) {
-                return CompletableFuture.failedFuture((Exception)error);
+            if (error instanceof ApiException) {
+                throw (ApiException)error;
             } else {
-                return CompletableFuture.failedFuture(new ApiException("unexpected error type " + error.getClass().getName()));
+                throw new ApiException("unexpected error type " + error.getClass().getName());
             }
-        } catch (IOException ex) {
-            return CompletableFuture.failedFuture(ex);
         } finally {
             response.close();
         }
