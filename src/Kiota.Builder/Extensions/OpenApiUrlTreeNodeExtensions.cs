@@ -7,40 +7,9 @@ using Microsoft.OpenApi.Services;
 
 namespace Kiota.Builder.Extensions {
     public static class OpenApiUrlTreeNodeExtensions {
-
-        // where component id and the value is the set of openapiurlNode referencing it
-        public static Dictionary<string, HashSet<OpenApiUrlTreeNode>> GetComponentsReferenceIndex(this OpenApiUrlTreeNode rootNode, string label) {
-            var result = new Dictionary<string, HashSet<OpenApiUrlTreeNode>>(StringComparer.OrdinalIgnoreCase);
-            AddAllPathsEntries(rootNode, result, label);
-            return result;
-        }
-        private static void AddAllPathsEntries(OpenApiUrlTreeNode currentNode, Dictionary<string, HashSet<OpenApiUrlTreeNode>> index, string label) {
-            if(currentNode == null || string.IsNullOrEmpty(label))
-                return;
-            
-            if(currentNode.PathItems.ContainsKey(label) && currentNode.HasOperations(label)) {
-                var nodeOperations = currentNode.PathItems[label].Operations.Values;
-                var requestSchemasFirstLevel = nodeOperations.SelectMany(x => x.RequestBody?.Content?.Values?.Select(y => y.Schema) ?? Enumerable.Empty<OpenApiSchema>());
-                var responseSchemasFirstLevel = nodeOperations.SelectMany(x => 
-                                                    x?.Responses?.Values?.SelectMany(y => 
-                                                                    y?.Content?.Values?.Select(z => z.Schema) ?? Enumerable.Empty<OpenApiSchema>()) ?? Enumerable.Empty<OpenApiSchema>());
-                var operationFirstLevelSchemas = requestSchemasFirstLevel.Union(responseSchemasFirstLevel);
-
-                operationFirstLevelSchemas.SelectMany(x => x.GetSchemaReferenceIds()).ToList().ForEach(x => {
-                    if(index.TryGetValue(x, out var entry))
-                        entry.Add(currentNode);
-                    else
-                        index.Add(x, new(new [] { currentNode}));
-                });
-            }
-            
-            if(currentNode.Children != null)
-                foreach(var child in currentNode.Children.Values)
-                    AddAllPathsEntries(child, index, label);
-        }
         private static string GetDotIfBothNotNullOfEmpty(string x, string y) => string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) ? string.Empty : ".";
         private static readonly Func<string, string> replaceSingleParameterSegementByItem =
-        x => x.IsPathSegmentWithSingleSimpleParamter() ? "item" : x;
+        x => x.IsPathSegmentWithSingleSimpleParameter() ? "item" : x;
         public static string GetNamespaceFromPath(this string currentPath, string prefix) => 
             prefix + 
                     ((currentPath?.Contains(pathNameSeparator) ?? false) ?
@@ -59,6 +28,8 @@ namespace Kiota.Builder.Extensions {
             currentNode?.Path?.GetNamespaceFromPath(prefix);
         //{id}, name(idParam={id}), name(idParam='{id}'), name(idParam='{id}',idParam2='{id2}')
         private static readonly Regex PathParametersRegex = new(@"(?:\w+)?=?'?\{(?<paramName>\w+)\}'?,?", RegexOptions.Compiled);
+        // microsoft.graph.getRoleScopeTagsByIds(ids=@ids)
+        private static readonly Regex AtSignPathParameterRegex = new(@"=@(\w+)", RegexOptions.Compiled);
         private static readonly char requestParametersChar = '{';
         private static readonly char requestParametersEndChar = '}';
         private static readonly char requestParametersSectionChar = '(';
@@ -69,7 +40,9 @@ namespace Kiota.Builder.Extensions {
         private static string CleanupParametersFromPath(string pathSegment) {
             if((pathSegment?.Contains(requestParametersChar) ?? false) ||
                 (pathSegment?.Contains(requestParametersSectionChar) ?? false))
-                return PathParametersRegex.Replace(pathSegment, requestParametersMatchEvaluator)
+                return PathParametersRegex.Replace(
+                                            AtSignPathParameterRegex.Replace(pathSegment, "={$1}"),
+                                        requestParametersMatchEvaluator)
                                         .TrimEnd(requestParametersSectionEndChar)
                                         .Replace(requestParametersSectionChar.ToString(), string.Empty);
             return pathSegment;
@@ -107,10 +80,10 @@ namespace Kiota.Builder.Extensions {
                 currentNode.PathItems[label].Summary ??
                 defaultValue :
             defaultValue;
-        public static bool DoesNodeBelongToItemSubnamespace(this OpenApiUrlTreeNode currentNode) => currentNode.IsPathSegmentWithSingleSimpleParamter();
-        public static bool IsPathSegmentWithSingleSimpleParamter(this OpenApiUrlTreeNode currentNode) =>
-            currentNode?.Segment.IsPathSegmentWithSingleSimpleParamter() ?? false;
-        public static bool IsPathSegmentWithSingleSimpleParamter(this string currentSegment)
+        public static bool DoesNodeBelongToItemSubnamespace(this OpenApiUrlTreeNode currentNode) => currentNode.IsPathSegmentWithSingleSimpleParameter();
+        public static bool IsPathSegmentWithSingleSimpleParameter(this OpenApiUrlTreeNode currentNode) =>
+            currentNode?.Segment.IsPathSegmentWithSingleSimpleParameter() ?? false;
+        private static bool IsPathSegmentWithSingleSimpleParameter(this string currentSegment)
         {
             return (currentSegment?.StartsWith(requestParametersChar) ?? false) &&
                     currentSegment.EndsWith(requestParametersEndChar) &&
@@ -119,6 +92,34 @@ namespace Kiota.Builder.Extensions {
         public static bool IsComplexPathWithAnyNumberOfParameters(this OpenApiUrlTreeNode currentNode)
         {
             return (currentNode?.Segment?.Contains(requestParametersSectionChar) ?? false) && currentNode.Segment.EndsWith(requestParametersSectionEndChar);
+        }
+        public static string GetUrlTemplate(this OpenApiUrlTreeNode currentNode) {
+            var queryStringParameters = string.Empty;
+            if(currentNode.HasOperations(Constants.DefaultOpenApiLabel))
+            {
+                var pathItem = currentNode.PathItems[Constants.DefaultOpenApiLabel];
+                var parameters = pathItem.Parameters.Where(x => x.In == ParameterLocation.Query).ToList();
+                parameters.AddRange(pathItem.Operations.SelectMany(x => x.Value.Parameters).Where(x => x.In == ParameterLocation.Query));
+                if(parameters.Any())
+                    queryStringParameters = "{?" + 
+                                            parameters.Select(x => 
+                                                                x.Name.TrimStart('$') +
+                                                                (x.Explode ? 
+                                                                    "*" : string.Empty))
+                                                    .Aggregate((x, y) => $"{x},{y}") +
+                                            '}';
+            }
+            return "{+baseurl}" + 
+                    SanitizePathParameterNames(currentNode.Path.Replace('\\', '/')) +
+                    queryStringParameters;
+        }
+        private static readonly Regex pathParamMatcher = new(@"{[\w-]+}",RegexOptions.Compiled);
+        private static string SanitizePathParameterNames(string original) {
+            if(string.IsNullOrEmpty(original) || !original.Contains('{')) return original;
+            var parameters = pathParamMatcher.Matches(original);
+            foreach(var value in parameters.Select(x => x.Value))
+                original = original.Replace(value, value.Replace('-', '_'));
+            return original;
         }
     }
 }

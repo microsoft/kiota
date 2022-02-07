@@ -73,33 +73,41 @@ namespace Kiota.Builder.Writers.Ruby {
         private void WriteRequestBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
         {
             var importSymbol = conventions.GetTypeString(codeElement.ReturnType, parentClass);
-            var currentPathProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
-            conventions.AddRequestBuilderBody(currentPathProperty != null, importSymbol, writer, prefix: "return ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
+            conventions.AddRequestBuilderBody(parentClass, importSymbol, writer, prefix: "return ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
         }
         private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer) {
-            var requestAdapterProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.RequestAdapter));
+            var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             var requestAdapterParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.RequestAdapter));
             var requestAdapterPropertyName = requestAdapterProperty.Name.ToSnakeCase();
             writer.WriteLine($"@{requestAdapterPropertyName} = {requestAdapterParameter.Name.ToSnakeCase()}");
+            writer.WriteLine($"{requestAdapterPropertyName}.set_base_url('{method.BaseUrl}')");
         }
         private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
             if(inherits)
                 writer.WriteLine("super");
             foreach(var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
                                                                             CodePropertyKind.RequestBuilder,
-                                                                            CodePropertyKind.PathSegment)
+                                                                            CodePropertyKind.UrlTemplate,
+                                                                            CodePropertyKind.PathParameters)
                                             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
                                             .OrderBy(x => x.Name)) {
                 writer.WriteLine($"@{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue}");
             }
             if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
-                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.CurrentPath, CodePropertyKind.CurrentPath, writer);
-                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RawUrl, CodePropertyKind.RawUrl, writer);
+                if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
+                    var pathParametersParam = currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters);
+                    var pathParametersParamName = pathParametersParam.Name.ToSnakeCase();
+                    writer.WriteLine($"if {pathParametersParamName}.is_a? String");
+                    writer.IncreaseIndent();
+                    writer.WriteLine($"{pathParametersParamName} = {{ \"request-raw-url\" => {pathParametersParamName} }}");
+                    writer.CloseBlock("end");
+                }
+                AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer);
             }
         }
         private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
-            var property = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(propertyKind));
+            var property = parentClass.GetPropertyOfKind(propertyKind);
             var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
             if(property != null && parameter != null) {
                 writer.WriteLine($"@{property.Name.ToSnakeCase()} = {parameter.Name.ToSnakeCase()}");
@@ -116,10 +124,11 @@ namespace Kiota.Builder.Writers.Ruby {
             writer.WriteLine($"return @{codeElement.AccessedProperty?.Name?.ToSnakeCase()}");
         }
         private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType) {
+            var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var prefix = conventions.GetNormalizedNamespacePrefixForType(codeElement.ReturnType);
-            var currentPathProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
-            var pathSegment = codeElement.PathSegment;
-            conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer, $" + \"/{(string.IsNullOrEmpty(pathSegment) ? string.Empty : pathSegment + "/" )}\" + id", $"return {prefix}");
+            writer.WriteLines($"{conventions.TempDictionaryVarName} = @{pathParametersProperty.Name.ToSnakeCase()}.clone",
+                            $"{conventions.TempDictionaryVarName}[\"{codeElement.OriginalIndexer.ParameterName}\"] = id");
+            conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, $"return {prefix}");
         }
         private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer) {
             if((parentClass.StartBlock as CodeClass.Declaration).Inherits != null)
@@ -168,11 +177,12 @@ namespace Kiota.Builder.Writers.Ruby {
         private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeClass parentClass, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
-            var currentPathProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.CurrentPath).FirstOrDefault();
-            var pathSegmentProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.PathSegment).FirstOrDefault();
-            var rawUrlProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.RawUrl).FirstOrDefault();
+            var urlTemplateParamsProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
+            var urlTemplateProperty = parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate);
+            var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             writer.WriteLines("request_info = MicrosoftKiotaAbstractions::RequestInformation.new()",
-                                $"request_info.set_uri({GetPropertyCall(currentPathProperty, "''")}, {GetPropertyCall(pathSegmentProperty, "''")}, {GetPropertyCall(rawUrlProperty, "false")})",
+                                $"request_info.url_template = {GetPropertyCall(urlTemplateProperty, "''")}",
+                                $"request_info.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}",
                                 $"request_info.http_method = :{codeElement.HttpMethod?.ToString().ToUpperInvariant()}");
             if(headersParam != null)
                 writer.WriteLine($"request_info.set_headers_from_raw_object(h)");
@@ -182,13 +192,13 @@ namespace Kiota.Builder.Writers.Ruby {
                 if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"request_info.set_stream_content({requestBodyParam.Name})");
                 else
-                    writer.WriteLine($"request_info.set_content_from_parsable(self.{RubyConventionService.HttpCorePropertyName}, \"{codeElement.ContentType}\", {requestBodyParam.Name})");
+                    writer.WriteLine($"request_info.set_content_from_parsable(self.{requestAdapterProperty.Name.ToSnakeCase()}, \"{codeElement.ContentType}\", {requestBodyParam.Name})");
             }
             writer.WriteLine("return request_info;");
         }
         private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"@{property.Name.ToSnakeCase()}";
         private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer) {
-            var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();
+            var additionalDataProperty = parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData);
             if((parentClass.StartBlock as CodeClass.Declaration).Inherits != null)
                 writer.WriteLine("super");
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {

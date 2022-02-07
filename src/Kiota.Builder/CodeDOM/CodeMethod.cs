@@ -17,7 +17,9 @@ namespace Kiota.Builder
         Setter,
         ClientConstructor,
         RequestBuilderBackwardCompatibility,
-        RequestBuilderWithParameters
+        RequestBuilderWithParameters,
+        RawUrlConstructor,
+        NullCheck,
     }
     public enum HttpMethod {
         Get,
@@ -47,10 +49,12 @@ namespace Kiota.Builder
             parameters.RemoveAll(p => p.IsOfKind(kinds));
         }
         public IEnumerable<CodeParameter> Parameters { get => parameters; }
-        public string PathSegment { get; set; }
         public bool IsStatic {get;set;} = false;
         public bool IsAsync {get;set;} = true;
         public string Description {get; set;}
+        /// <summary>
+        /// The property this method accesses to when it's a getter or setter.
+        /// </summary>
         public CodeProperty AccessedProperty { get; set; }
         public bool IsOfKind(params CodeMethodKind[] kinds) {
             return kinds?.Contains(MethodKind) ?? false;
@@ -71,6 +75,15 @@ namespace Kiota.Builder
         /// Provides a reference to the original method that this method is an overload of.
         /// </summary>
         public CodeMethod OriginalMethod { get; set; }
+        /// <summary>
+        /// The original indexer codedom element this method replaces when it is of kind IndexerBackwardCompatibility.
+        /// </summary>
+        public CodeIndexer OriginalIndexer { get; set; }
+        /// <summary>
+        /// The base url for every request read from the servers property on the description.
+        /// Only provided for constructor on Api client
+        /// </summary>
+        public string BaseUrl { get; set; }
 
         public object Clone()
         {
@@ -84,12 +97,13 @@ namespace Kiota.Builder
                 IsStatic = IsStatic,
                 Description = Description?.Clone() as string,
                 ContentType = ContentType?.Clone() as string,
+                BaseUrl = BaseUrl?.Clone() as string,
                 AccessedProperty = AccessedProperty,
-                PathSegment = PathSegment?.Clone() as string,
                 SerializerModules = SerializerModules == null ? null : new (SerializerModules),
                 DeserializerModules = DeserializerModules == null ? null : new (DeserializerModules),
                 OriginalMethod = OriginalMethod,
-                Parent = Parent
+                Parent = Parent,
+                OriginalIndexer = OriginalIndexer,
             };
             if(Parameters?.Any() ?? false)
                 method.AddParameter(Parameters.Select(x => x.Clone() as CodeParameter).ToArray());

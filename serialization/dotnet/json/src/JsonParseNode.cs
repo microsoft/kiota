@@ -9,6 +9,8 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
 using Microsoft.Kiota.Abstractions.Serialization;
+using Microsoft.Kiota.Abstractions;
+using System.Xml;
 
 namespace Microsoft.Kiota.Serialization.Json
 {
@@ -73,7 +75,55 @@ namespace Microsoft.Kiota.Serialization.Json
         /// Get the <see cref="DateTimeOffset"/> value from the json node
         /// </summary>
         /// <returns>A <see cref="DateTimeOffset"/> value</returns>
-        public DateTimeOffset? GetDateTimeOffsetValue() => _jsonNode.GetDateTimeOffset();
+        public DateTimeOffset? GetDateTimeOffsetValue() 
+        {
+            // JsonElement.GetDateTimeOffset is super strict so try to be more lenient if it fails(e.g. when we have whitespace or other variant formats).
+            // ref - https://docs.microsoft.com/en-us/dotnet/standard/datetime/system-text-json-support
+            if(!_jsonNode.TryGetDateTimeOffset(out var value))
+                value = DateTimeOffset.Parse(_jsonNode.GetString());
+
+            return value;
+        }
+
+        /// <summary>
+        /// Get the <see cref="TimeSpan"/> value from the json node
+        /// </summary>
+        /// <returns>A <see cref="TimeSpan"/> value</returns>
+        public TimeSpan? GetTimeSpanValue()
+        {
+            var jsonString = _jsonNode.GetString();
+            if(string.IsNullOrEmpty(jsonString))
+                return null;
+
+            // Parse an ISO8601 duration.http://en.wikipedia.org/wiki/ISO_8601#Durations to a TimeSpan
+            return XmlConvert.ToTimeSpan(jsonString);
+        }
+
+        /// <summary>
+        /// Get the <see cref="Date"/> value from the json node
+        /// </summary>
+        /// <returns>A <see cref="Date"/> value</returns>
+        public Date? GetDateValue()
+        {
+            var dateString = _jsonNode.GetString();
+            if(!DateTime.TryParse(dateString,out var result))
+                return null;
+
+            return new Date(result);
+        }
+
+        /// <summary>
+        /// Get the <see cref="Time"/> value from the json node
+        /// </summary>
+        /// <returns>A <see cref="Time"/> value</returns>
+        public Time? GetTimeValue()
+        {
+            var dateString = _jsonNode.GetString();
+            if(!DateTime.TryParse(dateString,out var result))
+                return null;
+
+            return new Time(result);
+        }
 
         /// <summary>
         /// Get the enumeration value of type <typeparam name="T"/>from the json node
@@ -82,17 +132,18 @@ namespace Microsoft.Kiota.Serialization.Json
         public T? GetEnumValue<T>() where T : struct, Enum
         {
             var rawValue = _jsonNode.GetString();
-            if(string.IsNullOrEmpty(rawValue)) return default;
+            if(string.IsNullOrEmpty(rawValue)) return null;
             if(typeof(T).GetCustomAttributes<FlagsAttribute>().Any())
             {
                 return (T)(object)rawValue
                     .Split(',')
-                    .Select(x => Enum.Parse<T>(x, true))
+                    .Select(x => Enum.TryParse<T>(x, true, out var result) ? result : (T?)null)
+                    .Where(x => !x.Equals(null))
                     .Select(x => (int)(object)x)
                     .Sum();
             }
             else
-                return Enum.Parse<T>(rawValue, true);
+                return Enum.TryParse<T>(rawValue, true,out var result) ? result : null;
         }
 
         /// <summary>
@@ -145,6 +196,9 @@ namespace Microsoft.Kiota.Serialization.Json
         private static Type doubleType = typeof(double?);
         private static Type guidType = typeof(Guid?);
         private static Type dateTimeOffsetType = typeof(DateTimeOffset?);
+        private static Type timeSpanType = typeof(TimeSpan?);
+        private static Type dateType = typeof(Date?);
+        private static Type timeType = typeof(Time?);
 
         /// <summary>
         /// Get the collection of primitives of type <typeparam name="T"/>from the json node
@@ -174,6 +228,12 @@ namespace Microsoft.Kiota.Serialization.Json
                     yield return (T)(object)currentParseNode.GetGuidValue();
                 else if(genericType == dateTimeOffsetType)
                     yield return (T)(object)currentParseNode.GetDateTimeOffsetValue();
+                else if(genericType == timeSpanType)
+                    yield return (T)(object)currentParseNode.GetTimeSpanValue();
+                else if(genericType == dateType)
+                    yield return (T)(object)currentParseNode.GetDateValue();
+                else if(genericType == timeType)
+                    yield return (T)(object)currentParseNode.GetTimeValue();
                 else
                     throw new InvalidOperationException($"unknown type for deserialization {genericType.FullName}");
             }
@@ -208,10 +268,13 @@ namespace Microsoft.Kiota.Serialization.Json
             if(item.AdditionalData == null)
                 item.AdditionalData = new Dictionary<string, object>();
 
-            foreach(var fieldValue in _jsonNode.EnumerateObject().Where(x => x.Value.ValueKind != JsonValueKind.Null))
+            foreach(var fieldValue in _jsonNode.EnumerateObject())
             {
                 if(fieldDeserializers.ContainsKey(fieldValue.Name))
                 {
+                    if(fieldValue.Value.ValueKind == JsonValueKind.Null)
+                        continue;// If the property is already null just continue. As calling functions like GetDouble,GetBoolValue do not process JsonValueKind.Null.
+
                     var fieldDeserializer = fieldDeserializers[fieldValue.Name];
                     Debug.WriteLine($"found property {fieldValue.Name} to deserialize");
                     fieldDeserializer.Invoke(item, new JsonParseNode(fieldValue.Value)

@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.TypeScript {
@@ -21,7 +21,11 @@ namespace Kiota.Builder.Writers.TypeScript {
                                                                     .GroupBy(x => x.Item3)
                                                                     .OrderBy(x => x.Key);
             foreach (var codeUsing in importSymbolsAndPaths)
-                writer.WriteLine($"import {{{codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct().Aggregate((x,y) => x + ", " + y)}}} from '{codeUsing.Key}';");
+                if (!string.IsNullOrWhiteSpace(codeUsing.Key))
+                {
+                    writer.WriteLine($"import {{{codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct().OrderBy(x => x).Aggregate((x, y) => x + ", " + y)}}} from '{codeUsing.Key}';");
+                }
+
             writer.WriteLine();
             var inheritSymbol = conventions.GetTypeString(codeElement.Inherits, codeElement);
             var derivation = (inheritSymbol == null ? string.Empty : $" extends {inheritSymbol}") +

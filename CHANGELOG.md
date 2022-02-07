@@ -9,6 +9,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added the ability to configure the underlying transport in Go. #1003
+- Added additional date time (date, time, duration) types in the generation process. #1017
+- PHP Request Adapter (includes middleware) #1048, #918, #1024, #1025
+- Added support for PHP Json Serialization.
+- Adds Python abstractions library. #925
+- Adds hostname and protocol validation in authentication. #1051
+- Adds Azure Identity Authentication Provider for Python. #1108
+
+### Changed
+
+- Fixed an issue where multiple api clients could run into racing conditions in Go.
+- Fixed a bug where empty additional data in Go would lead to invalid JSON payloads during serialization.
+- Fixed a bug where Go serialization would write empty arrays for nil values.
+- Modified the TypeScript RequestInformation URL paramater data type from URL to string.
+- Modified TypeScript packages to provide CJS and ESM modules.
+- Modified the TypeScript RequestInformation query and path paramaters data type from Map to Record Type.
+- Modified TypeScript RequestInformation headers and options to Record type.
+- Modified the TypeScript RequestInformation content data type to ArrayBuffer.
+- Updated PHP abstractions to make property keys and values nullable in `SerializationWriter.php`.
+- Fixed an issue where enum collections parsing would fail in Go.
+
+## [0.0.15] - 2021-12-17
+
+### Changed
+
+- Fixes name collisions in dotnet by renaming "HttpMethod" enum to "Method" in dotnet abstractions
+- Add support for PHP Generation.
+- Migrated generator to dotnet 6 #815
+- Fixes a bug where json deserialization would fail in go
+- Fixes a bug where query parameters would not be added to the request in go
+- Fixes a bug where at signs in path would derail generation
+- Fixes Go doc comments in packages and generation
+- Fixes a bug where RequestInformation did not accept some content headers in dotnet
+- Added support for providing cancellation token in dotnet #874, #875, #876
+- Upgrades go libraries to go17.
+- Fixes a bug in Go where reserved keywords for properties would be wrongly replaced.
+- Fixes a bug in Go where setters would be missing nil checks.
+- Fixes a bug where OData select query parameter would not be normalized
+- Fixes a bug in Go where empty collections would not be serialized.
+- Fixes a bug where generation would fail because of empty usings.
+- Fixes a bug where Java and Go escaped model properties would not serialize properly.
+- Fixes a bug where null values would not be added to additionalData if there was no matching property in dotnet. 
+- Fixes a bug where deserialzation of enums would throw an ArgumentExcpetion if the member didn't exist in dotnet.
+
+## [0.0.14] - 2021-11-08
+
+### Added
+
+- Added support for changing the base url #795
+
+### Changed
+
+- Fixes a bug where arrays of enums could be wrongly mapped.
+- Fixes a bug where go deserialization would fail on collections of scalars.
+- Fixes a bug where TypeScript query parameters would be added to headers instead #812
+- Update dotnet abstractions and core libraries to target netstandard2.1 from net5.0
+
+## [0.0.13] - 2021-10-27
+
+### Changed
+
+- Technical release to bump version number of go packages after replace removal
+
+## [0.0.12] - 2021-10-27
+
+### Added
+
+- Adds Go authentication, http and serialization libraries and finalizes the generation #716
+
+## [0.0.11] - 2021-10-27
+
+### Changed
+
+- Switched to URL templates instead of string contract for URL building #683
+- Fixed a bug where CSharp method names would not follow naming conventions #730
+
+## [0.0.10] - 2021-10-06
+
 ### Changed
 
 - Renames middlewareoption into requestoption to stay agnostic from implementation #635

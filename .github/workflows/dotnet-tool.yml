@@ -15,11 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v2.4.0
       - name: Setup .NET
-        uses: actions/setup-dotnet@v1.8.2
+        uses: actions/setup-dotnet@v1.9.0
         with:
-          dotnet-version: 5.0.x
+          dotnet-version: 6.0.x
       - name: Restore dependencies
         run: dotnet restore kiota.csproj
         working-directory: ${{ env.relativePath }}

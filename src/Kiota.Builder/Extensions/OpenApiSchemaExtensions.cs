@@ -26,13 +26,14 @@ namespace Kiota.Builder.Extensions {
                 return new List<string>{schema.Xml.Name};
             else return Enumerable.Empty<string>();
         }
-        public static IEnumerable<OpenApiSchema> GetSchemasWithValidReferenceId(this OpenApiSchema schema) {
+        public static IEnumerable<OpenApiSchema> GetNonEmptySchemas(this OpenApiSchema schema) {
             if(schema == null) return Enumerable.Empty<OpenApiSchema>();
             else if(!string.IsNullOrEmpty(schema.Reference?.Id)) return new OpenApiSchema[] { schema };
-            else if(schema.Items != null) return schema.Items.GetSchemasWithValidReferenceId();
-            else if(schema.AnyOf.Any()) return schema.AnyOf.SelectMany(x => x.GetSchemasWithValidReferenceId());
-            else if(schema.AllOf.Any()) return schema.AllOf.SelectMany(x => x.GetSchemasWithValidReferenceId());
-            else if(schema.OneOf.Any()) return schema.OneOf.SelectMany(x => x.GetSchemasWithValidReferenceId());
+            else if(schema.Properties?.Any() ?? false) return new OpenApiSchema[] { schema };
+            else if(schema.Items != null) return schema.Items.GetNonEmptySchemas();
+            else if(schema.AnyOf.Any()) return schema.AnyOf.SelectMany(x => x.GetNonEmptySchemas());
+            else if(schema.AllOf.Any()) return schema.AllOf.SelectMany(x => x.GetNonEmptySchemas());
+            else if(schema.OneOf.Any()) return schema.OneOf.SelectMany(x => x.GetNonEmptySchemas());
             else return Enumerable.Empty<OpenApiSchema>();            
         }
         private static IEnumerable<string> FlattenIfRequired(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter) {

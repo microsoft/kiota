@@ -12,9 +12,9 @@ namespace Microsoft.Kiota.Abstractions.Tests
             // Arrange as the request builders would
             var requestInfo = new RequestInformation
             {
-                HttpMethod = HttpMethod.GET,
+                HttpMethod = Method.GET,
+                UrlTemplate = "http://localhost/me?select={select}"
             };
-            requestInfo.SetURI("http://localhost/me", "", true);
             Action<GetQueryParameters> q = x => x.Select = new[] { "id", "displayName" };
             var qParams = new GetQueryParameters();
             q.Invoke(qParams);

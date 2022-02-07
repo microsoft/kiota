@@ -3,18 +3,25 @@
  */
 package com.microsoft.kiota;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RequestInformationTest {
     @Test
-    void setsRawUri() {
+    void setsRawUri() throws URISyntaxException {
         final var requestInfo = new RequestInformation();
-        requestInfo.setUri("https://graph.microsoft.com/test", null, true);
-        assertEquals("https://graph.microsoft.com/test", requestInfo.uri.toString());
-
-        requestInfo.setUri("https://graph.microsoft.com/test?qp=one", null, true);
-        assertEquals("https://graph.microsoft.com/test", requestInfo.uri.toString());
-        assertEquals("one", requestInfo.queryParameters.get("qp"));
+        requestInfo.setUri(new URI("https://graph.microsoft.com/test"));
+        assertEquals("https://graph.microsoft.com/test", requestInfo.getUri().toString());
+    }
+    @Test
+    void setsQueryParameters() throws URISyntaxException {
+        final var requestInfo = new RequestInformation();
+        requestInfo.urlTemplate = "https://graph.microsoft.com/test{?select,expand}";
+        requestInfo.queryParameters.put("select", Arrays.asList("id", "displayName"));
+        assertEquals("https://graph.microsoft.com/test?select=id,displayName", requestInfo.getUri().toString());
     }
 }

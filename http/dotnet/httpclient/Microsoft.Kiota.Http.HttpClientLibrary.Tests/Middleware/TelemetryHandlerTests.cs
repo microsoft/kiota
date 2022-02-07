@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Kiota.Abstractions;
+using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Http.HttpClientLibrary.Middleware;
 using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
 using Xunit;
@@ -14,6 +15,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Middleware
     {
         private readonly HttpMessageInvoker _invoker;
 
+        private readonly HttpClientRequestAdapter requestAdapter;
         public TelemetryHandlerTests()
         {
             var telemetryHandler = new TelemetryHandler
@@ -21,6 +23,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Middleware
                 InnerHandler = new FakeSuccessHandler()
             };
             this._invoker = new HttpMessageInvoker(telemetryHandler);
+            requestAdapter = new HttpClientRequestAdapter(new AnonymousAuthenticationProvider());
         }
 
         [Fact]
@@ -29,11 +32,11 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Middleware
             // Arrange
             var requestInfo = new RequestInformation
             {
-                HttpMethod = Abstractions.HttpMethod.GET,
+                HttpMethod = Method.GET,
                 URI = new Uri("http://localhost")
             };
             // Act and get a request message
-            var requestMessage = HttpClientRequestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
+            var requestMessage = requestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
             Assert.Empty(requestMessage.Headers);
 
             // Act
@@ -50,7 +53,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Middleware
             // Arrange
             var requestInfo = new RequestInformation
             {
-                HttpMethod = Abstractions.HttpMethod.GET,
+                HttpMethod = Method.GET,
                 URI = new Uri("http://localhost")
             };
             var telemetryHandlerOption = new TelemetryHandlerOption
@@ -64,7 +67,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Middleware
             // Configures the telemetry at the request level
             requestInfo.AddRequestOptions(telemetryHandlerOption);
             // Act and get a request message
-            var requestMessage = HttpClientRequestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
+            var requestMessage = requestAdapter.GetRequestMessageFromRequestInformation(requestInfo);
             Assert.Empty(requestMessage.Headers);
 
             // Act
@@ -98,11 +101,11 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Tests.Middleware
             var invoker = new HttpMessageInvoker(handler);
             var requestInfo = new RequestInformation
             {
-                HttpMethod = Abstractions.HttpMethod.GET,
+                HttpMethod = Method.GET,
                 URI = new Uri("http://localhost")
             };
 
-            var requestMessage = HttpClientRequestAdapter.GetRequestMessageFromRequestInformation(requestInfo);// get a request message
+            var requestMessage = requestAdapter.GetRequestMessageFromRequestInformation(requestInfo);// get a request message
             Assert.Empty(requestMessage.Headers);
 
             // Act
