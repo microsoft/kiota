@@ -13,3 +13,6 @@ type Parsable interface {
 	// IsNil returns whether the current object is nil or not.
 	IsNil() bool
 }
+
+// ParsableFactory is a factory for creating Parsable.
+type ParsableFactory func() Parsable

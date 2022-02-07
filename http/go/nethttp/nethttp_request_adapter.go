@@ -139,7 +139,7 @@ func (a *NetHttpRequestAdapter) getRequestFromRequestInformation(requestInfo abs
 }
 
 // SendAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized response model.
-func (a *NetHttpRequestAdapter) SendAsync(requestInfo abs.RequestInformation, constructor abs.ParsableFactory, responseHandler abs.ResponseHandler, errorMappings abs.ErrorMappings) (absser.Parsable, error) {
+func (a *NetHttpRequestAdapter) SendAsync(requestInfo abs.RequestInformation, constructor absser.ParsableFactory, responseHandler abs.ResponseHandler, errorMappings abs.ErrorMappings) (absser.Parsable, error) {
 	response, err := a.getHttpResponseMessage(requestInfo)
 	if err != nil {
 		return nil, err
@@ -167,7 +167,7 @@ func (a *NetHttpRequestAdapter) SendAsync(requestInfo abs.RequestInformation, co
 }
 
 // SendCollectionAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized response model collection.
-func (a *NetHttpRequestAdapter) SendCollectionAsync(requestInfo abs.RequestInformation, constructor abs.ParsableFactory, responseHandler abs.ResponseHandler, errorMappings abs.ErrorMappings) ([]absser.Parsable, error) {
+func (a *NetHttpRequestAdapter) SendCollectionAsync(requestInfo abs.RequestInformation, constructor absser.ParsableFactory, responseHandler abs.ResponseHandler, errorMappings abs.ErrorMappings) ([]absser.Parsable, error) {
 	response, err := a.getHttpResponseMessage(requestInfo)
 	if err != nil {
 		return nil, err
@@ -300,18 +300,32 @@ func (a *NetHttpRequestAdapter) throwFailedResponses(response *nethttp.Response,
 	}
 
 	statusAsString := strconv.Itoa(response.StatusCode)
+	var errorCtor absser.ParsableFactory = nil
 	if len(errorMappings) != 0 {
 		if errorMappings[statusAsString] != nil {
-			return (errorMappings[statusAsString]()).(error)
+			errorCtor = errorMappings[statusAsString]
 		} else if response.StatusCode >= 400 && response.StatusCode < 500 && errorMappings["4XX"] != nil {
-			return (errorMappings["4XX"]()).(error)
+			errorCtor = errorMappings["4XX"]
 		} else if response.StatusCode >= 500 && response.StatusCode < 600 && errorMappings["5XX"] != nil {
-			return (errorMappings["5XX"]()).(error)
+			errorCtor = errorMappings["5XX"]
 		}
 	}
 
-	return &abs.ApiError{
-		Message: "The server returned an unexpected status code and no error factory is registered for this code: " + statusAsString,
+	if errorCtor == nil {
+		return &abs.ApiError{
+			Message: "The server returned an unexpected status code and no error factory is registered for this code: " + statusAsString,
+		}
 	}
 
+	rootNode, err := a.getRootParseNode(response)
+	if err != nil {
+		return err
+	}
+
+	errValue, err := rootNode.GetObjectValue(errorCtor)
+	if err != nil {
+		return err
+	}
+
+	return errValue.(error)
 }

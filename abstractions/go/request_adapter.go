@@ -12,18 +12,15 @@ import (
 	s "github.com/microsoft/kiota/abstractions/go/serialization"
 )
 
-// ParsableFactory is a factory for creating Parsable.
-type ParsableFactory func() s.Parsable
-
 // ErrorMappings is a mapping of status codes to error types factories.
-type ErrorMappings map[string]ParsableFactory
+type ErrorMappings map[string]s.ParsableFactory
 
 // RequestAdapter is the service responsible for translating abstract RequestInformation into native HTTP requests.
 type RequestAdapter interface {
 	// SendAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized response model.
-	SendAsync(requestInfo RequestInformation, constructor ParsableFactory, responseHandler ResponseHandler, errorMappings ErrorMappings) (s.Parsable, error)
+	SendAsync(requestInfo RequestInformation, constructor s.ParsableFactory, responseHandler ResponseHandler, errorMappings ErrorMappings) (s.Parsable, error)
 	// SendCollectionAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized response model collection.
-	SendCollectionAsync(requestInfo RequestInformation, constructor ParsableFactory, responseHandler ResponseHandler, errorMappings ErrorMappings) ([]s.Parsable, error)
+	SendCollectionAsync(requestInfo RequestInformation, constructor s.ParsableFactory, responseHandler ResponseHandler, errorMappings ErrorMappings) ([]s.Parsable, error)
 	// SendPrimitiveAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model.
 	SendPrimitiveAsync(requestInfo RequestInformation, typeName string, responseHandler ResponseHandler, errorMappings ErrorMappings) (interface{}, error)
 	// SendPrimitiveCollectionAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model collection.
