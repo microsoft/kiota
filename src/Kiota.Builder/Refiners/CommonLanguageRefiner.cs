@@ -180,9 +180,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 !returnType.IsExternal &&
                 provider.ReservedNames.Contains(returnType.Name))
                 returnType.Name = replacement.Invoke(returnType.Name);
-                ReplaceReservedParameterNamesTypes(currentMethod, provider, replacement);
             if(currentMethod.ErrorMappings.Values.Select(x => x.Name).Any(x => provider.ReservedNames.Contains(x)))
                 ReplaceErrorMappingNames(currentMethod, provider, replacement);
+            ReplaceReservedParameterNamesTypes(currentMethod, provider, replacement);
         } else if (current is CodeProperty currentProperty &&
                 isNotInExceptions &&
                 shouldReplace &&
