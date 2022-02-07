@@ -14,3 +14,8 @@ func (e *ApiError) Error() string {
 		return "error status code received from the API"
 	}
 }
+
+// NewApiError creates a new ApiError instance
+func NewApiError() *ApiError {
+	return &ApiError{}
+}
