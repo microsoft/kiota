@@ -63,7 +63,8 @@ namespace Kiota.Builder.Tests.Writers.Php
                 ReturnType = new CodeType()
                 {
                     Name = "void"
-                }
+                },
+                Parent = parentClass
             };
             _codeMethodWriter.WriteCodeElement(codeMethod, writer);
             var result = tw.ToString();
@@ -462,7 +463,8 @@ namespace Kiota.Builder.Tests.Writers.Php
                 AccessedProperty = new CodeProperty() {Name = "emailAddress", Access = AccessModifier.Private, Type = new CodeType()
                 {
                     Name = "emailAddress"
-                }}
+                }},
+                Parent = parentClass
             };
 
             _codeMethodWriter.WriteCodeElement(getter, writer);
@@ -485,6 +487,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                 {
                     Name = "emailAddress"
                 }},
+                Parent = parentClass
 
             };
             
@@ -515,7 +518,8 @@ namespace Kiota.Builder.Tests.Writers.Php
                     IsNullable = false
                 },
                 Name = "message",
-                MethodKind = CodeMethodKind.RequestBuilderWithParameters
+                MethodKind = CodeMethodKind.RequestBuilderWithParameters,
+                Parent = parentClass
             };
             
             codeMethod.AddParameter(new CodeParameter()

@@ -25,16 +25,6 @@ namespace Kiota.Builder.Writers.Php
             writer.WriteLine("");
         }
 
-        private static string GetReturnType(CodeProperty codeProperty)
-        {
-            if (codeProperty.PropertyKind == CodePropertyKind.RequestBuilder)
-            {
-                return string.Empty;
-            }
-
-            return string.Empty;
-        }
-
         private void WritePropertyDocComment(CodeProperty codeProperty, LanguageWriter writer)
         {
             var propertyDescription = codeProperty.Description;

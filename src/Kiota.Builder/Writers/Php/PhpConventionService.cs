@@ -2,12 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Refiners;
 
 namespace Kiota.Builder.Writers.Php
 {
     public class PhpConventionService: CommonLanguageConventionService
     {
         public override string TempDictionaryVarName => "urlTplParams";
+
+        private static CodeUsingDeclarationNameComparer _usingDeclarationNameComparer = new();
 
         public override string GetAccessModifier(AccessModifier access)
         {
@@ -40,6 +43,14 @@ namespace Kiota.Builder.Writers.Php
         {
             if(code is CodeUnionType) 
                 throw new InvalidOperationException($"PHP does not support union types, the union type {code.Name} should have been filtered out by the refiner.");
+            if (code is CodeType currentType)
+            {
+                var typeName = TranslateType(currentType);
+                if (!currentType.IsExternal && IsSymbolDuplicated(typeName, targetElement))
+                {
+                    return $"{MakeNamespaceAliasVariable(currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name.ToFirstCharacterUpperCase())}{typeName.ToFirstCharacterUpperCase()}";
+                }
+            }
             return code.IsCollection ? "array" : TranslateType(code);
         }
 
@@ -131,7 +142,7 @@ namespace Kiota.Builder.Writers.Php
             }
         }
 
-        public void AddRequestBuilderBody(string returnType, LanguageWriter writer, string suffix = default)
+        public void AddRequestBuilderBody(string returnType, LanguageWriter writer, string suffix = default, CodeElement method = default)
         {
             writer.WriteLines($"return new {returnType}($this->{RemoveDollarSignFromPropertyName(PathParametersPropertyName)}{suffix}, $this->{RemoveDollarSignFromPropertyName(RequestAdapterPropertyName)});");
         }
@@ -192,6 +203,23 @@ namespace Kiota.Builder.Writers.Php
                 writer.WriteLines(parameters.Select(p => 
                     $"${TempDictionaryVarName}['{p.Item2}'] = {p.Item3};"
                 ).ToArray());
+        }
+        
+        private static bool IsSymbolDuplicated(string symbol, CodeElement targetElement) {
+            var targetClass = targetElement as CodeClass ?? targetElement.GetImmediateParentOfType<CodeClass>();
+            if (targetClass.Parent is CodeClass parentClass) 
+                targetClass = parentClass;
+            return (targetClass.StartBlock as CodeClass.Declaration)
+                ?.Usings
+                ?.Where(x => !x.IsExternal && symbol.Equals(x.Declaration.TypeDefinition.Name, StringComparison.OrdinalIgnoreCase))
+                ?.Distinct(_usingDeclarationNameComparer)
+                ?.Count() > 1;
+        }
+
+        private static string MakeNamespaceAliasVariable(string name)
+        {
+            var parts = name.Split('\\', '.');
+            return string.Join(string.Empty, parts.Select(x => x.ToFirstCharacterUpperCase()).ToArray());
         }
     }
 }

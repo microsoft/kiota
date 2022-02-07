@@ -45,7 +45,7 @@ namespace Kiota.Builder.Writers.Php
                         WriteDeserializerBody(parentClass, writer, codeElement);
                         break;
                     case CodeMethodKind.RequestBuilderWithParameters:
-                        WriteRequestBuilderWithParametersBody(returnType, writer);
+                        WriteRequestBuilderWithParametersBody(returnType, writer, codeElement);
                         break;
                     case CodeMethodKind.RequestGenerator:
                         WriteRequestGeneratorBody(codeElement, requestParams, parentClass, writer);
@@ -285,9 +285,9 @@ namespace Kiota.Builder.Writers.Php
             writer.WriteLine($"return $this->{propertyName};");
         }
 
-        private void WriteRequestBuilderWithParametersBody(string returnType, LanguageWriter writer)
+        private void WriteRequestBuilderWithParametersBody(string returnType, LanguageWriter writer, CodeElement element = default)
         {
-            conventions.AddRequestBuilderBody(returnType, writer);
+            conventions.AddRequestBuilderBody(returnType, writer, default, element);
         }
         
         private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"$this->{property.Name}";

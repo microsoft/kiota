@@ -128,8 +128,11 @@ namespace Kiota.Builder.Refiners
                 {
                     var declaration = usingElement.Declaration.TypeDefinition?.Name;
                     if (string.IsNullOrEmpty(declaration)) continue;
-                    var replacement = $"{declaration.ToFirstCharacterUpperCase()}{rand.Next(10, 200)}{rand.Next(10, 200)}{rand.Next(10, 200)}{rand.Next(10, 200)}";
-                        usingElement.Alias = $"{replacement}";
+                    var replacement = string.Join(string.Empty, usingElement.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name
+                        .Split('\\', '.')
+                        .Select(x => x.ToFirstCharacterUpperCase())
+                        .ToArray());
+                    usingElement.Alias = $"{replacement}{declaration.ToFirstCharacterUpperCase()}";
                 }
             }
             CrawlTree(currentElement, AliasUsingWithSameSymbol);
