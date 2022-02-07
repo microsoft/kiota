@@ -87,6 +87,11 @@ public class GoRefiner : CommonLanguageRefiner
             new string[] {"github.com/microsoft/kiota/abstractions/go/serialization.ParseNodeFactory", "github.com/microsoft/kiota/abstractions/go.RegisterDefaultDeserializer"});
         ReplaceExecutorAndGeneratorParametersByParameterSets(
             generatedCode);
+        AddParentClassToErrorClasses(
+                generatedCode,
+                "ApiError",
+                "github.com/microsoft/kiota/serialization"
+        );
     }
     private static void ReplaceExecutorAndGeneratorParametersByParameterSets(CodeElement currentElement) {
         if (currentElement is CodeMethod currentMethod &&
