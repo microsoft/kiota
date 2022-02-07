@@ -13,7 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added additional date time (date, time, duration) types in the generation process. #1017
 - PHP Request Adapter (includes middleware) #1048, #918, #1024, #1025
 - Added support for PHP Json Serialization.
-- Update PHP abstractions to make property keys and values nullable in `SerializationWriter.php`.
 - Adds Python abstractions library. #925
 - Adds hostname and protocol validation in authentication. #1051
 - Adds Azure Identity Authentication Provider for Python. #1108
@@ -28,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modified the TypeScript RequestInformation query and path paramaters data type from Map to Record Type.
 - Modified TypeScript RequestInformation headers and options to Record type.
 - Modified the TypeScript RequestInformation content data type to ArrayBuffer.
+- Updated PHP abstractions to make property keys and values nullable in `SerializationWriter.php`.
+- Fixed an issue where enum collections parsing would fail in Go.
 
 ## [0.0.15] - 2021-12-17
 
