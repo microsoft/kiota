@@ -82,6 +82,29 @@ func TestCompressionHandlerRetriesRequest(t *testing.T) {
 	assert.Equal(t, reqCount, 2)
 }
 
+func TestTransportDecompressesResponse(t *testing.T) {
+	postBody, _ := json.Marshal(map[string]string{"name": "Test", "email": "Test@Test.com"})
+	var compressedBody []byte
+
+	testServer := httptest.NewServer(nethttp.HandlerFunc(func(res nethttp.ResponseWriter, req *nethttp.Request) {
+		compressedBody, _ = io.ReadAll(req.Body)
+		fmt.Println(compressedBody)
+
+		res.Header().Set("Content-Type", "application/json")
+		res.Header().Set("Content-Encoding", "gzip")
+		fmt.Fprint(res, string(compressedBody))
+	}))
+	defer testServer.Close()
+
+	client := getDefaultClientWithoutMiddleware()
+	client.Transport = NewCustomTransport(NewCompressionHandler())
+
+	fmt.Print(testServer.URL)
+	resp, _ := client.Post(testServer.URL, "application/json", bytes.NewBuffer(postBody))
+
+	assert.True(t, resp.Uncompressed)
+}
+
 func TestResetTransport(t *testing.T) {
 	client := getDefaultClientWithoutMiddleware()
 	client.Transport = &nethttp.Transport{}

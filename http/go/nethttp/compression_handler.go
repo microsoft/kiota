@@ -3,6 +3,7 @@ package nethttplibrary
 import (
 	"bytes"
 	"compress/gzip"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -67,6 +68,9 @@ func (c *CompressionHandler) Intercept(pipeline Pipeline, middlewareIndex int, r
 	}
 
 	unCompressedBody, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		fmt.Println("Sending uncompressed")
+	}
 	unCompressedContentLength := req.ContentLength
 	if err != nil {
 		return nil, err
@@ -78,7 +82,6 @@ func (c *CompressionHandler) Intercept(pipeline Pipeline, middlewareIndex int, r
 	}
 
 	req.Header.Set("Content-Encoding", "gzip")
-	req.Header.Set("Accept-Encoding", "gzip")
 	req.Body = compressedBody
 	req.ContentLength = int64(contentLength)
 
