@@ -62,7 +62,7 @@ func (c *CompressionHandler) Intercept(pipeline Pipeline, middlewareIndex int, r
 		reqOption = c.options
 	}
 
-	if reqOption.ShouldCompress() != true {
+	if !reqOption.ShouldCompress() || req.Body == nil {
 		return pipeline.Next(req, middlewareIndex)
 	}
 
@@ -78,7 +78,6 @@ func (c *CompressionHandler) Intercept(pipeline Pipeline, middlewareIndex int, r
 	}
 
 	req.Header.Set("Content-Encoding", "gzip")
-	req.Header.Set("Accept-Encoding", "gzip")
 	req.Body = compressedBody
 	req.ContentLength = int64(contentLength)
 
