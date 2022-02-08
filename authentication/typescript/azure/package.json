@@ -48,7 +48,7 @@
         "sinon": "^13.0.1",
         "@azure/identity": "^2.0.2",
         "@typescript-eslint/eslint-plugin": "^5.0.0",
-        "@typescript-eslint/parser": "^5.0.0",
+        "@typescript-eslint/parser": "^5.11.0",
         "eslint": "^8.8.0",
         "eslint-config-prettier": "^8.3.0",
         "eslint-plugin-prettier": "^4.0.0",
