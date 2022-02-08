@@ -21,6 +21,7 @@ public class KiotaBuilder
 {
     private readonly ILogger<KiotaBuilder> logger;
     private readonly GenerationConfiguration config;
+    private OpenApiDocument openApiDocument;
 
     public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config)
     {
@@ -50,14 +51,14 @@ public class KiotaBuilder
 
         // Step 2 - Parse OpenAPI
         sw.Start();
-        var doc = CreateOpenApiDocument(input);
+        openApiDocument = CreateOpenApiDocument(input);
         StopLogAndReset(sw, "step 2 - parsing the document - took");
 
-        SetApiRootUrl(doc);
+        SetApiRootUrl();
 
         // Step 3 - Create Uri Space of API
         sw.Start();
-        var openApiTree = CreateUriSpace(doc);
+        var openApiTree = CreateUriSpace(openApiDocument);
         StopLogAndReset(sw, "step 3 - create uri space - took");
 
         // Step 4 - Create Source Model
@@ -75,8 +76,8 @@ public class KiotaBuilder
         await CreateLanguageSourceFilesAsync(config.Language, generatedCode);
         StopLogAndReset(sw, "step 6 - writing files - took");
     }
-    private void SetApiRootUrl(OpenApiDocument doc) {
-        config.ApiRootUrl = doc.Servers.FirstOrDefault()?.Url.TrimEnd('/');
+    private void SetApiRootUrl() {
+        config.ApiRootUrl = openApiDocument.Servers.FirstOrDefault()?.Url.TrimEnd('/');
         if(string.IsNullOrEmpty(config.ApiRootUrl))
             throw new InvalidOperationException("A servers entry (v3) or host + basePath + schems properties (v2) must be present in the OpenAPI description.");
     }
@@ -147,6 +148,9 @@ public class KiotaBuilder
     /// <returns>Root node of the API URI space</returns>
     public OpenApiUrlTreeNode CreateUriSpace(OpenApiDocument doc)
     {
+        if(doc == null) throw new ArgumentNullException(nameof(doc));
+        if(openApiDocument == null) openApiDocument = doc;
+
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         var node = OpenApiUrlTreeNode.Create(doc, Constants.DefaultOpenApiLabel);
@@ -866,8 +870,31 @@ public class KiotaBuilder
             var declaration = newClass.StartBlock as CodeClass.Declaration;
             declaration.Inherits = new CodeType { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
         }
+        if(schema.Discriminator != null) {
+            newClass.DiscriminatorPropertyName = schema.Discriminator.PropertyName;
+            newClass.DiscriminatorMappings = schema.Discriminator
+                                                    .Mapping
+                                                    .Where(x => !x.Key.Equals(schema.Reference?.Id, StringComparison.OrdinalIgnoreCase))
+                                                    .Select(x => (x.Key, GetCodeTypeForMapping(currentNode, x.Value, currentNamespace, newClass, schema)))
+                                                    .Where(x => x.Item2 != null)
+                                                    .ToDictionary(x => x.Key, x => x.Item2);
+        }
         CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass);
         return newClass;
+    }
+    private CodeTypeBase GetCodeTypeForMapping(OpenApiUrlTreeNode currentNode, string referenceId, CodeNamespace currentNamespace, CodeClass currentClass, OpenApiSchema currentSchema) {
+        var componentKey = referenceId.Replace("#/components/schemas/", string.Empty);
+        if(!openApiDocument.Components.Schemas.TryGetValue(componentKey, out var discriminatorSchema)) {
+            logger.LogWarning($"Discriminator {componentKey} not found in the OpenAPI document.");
+            return null;
+        }
+        var className = currentNode.GetClassName(schema: discriminatorSchema);
+        var shouldInherit = discriminatorSchema.AllOf.Any(x => currentSchema.Reference.Id.Equals(x.Reference?.Id, StringComparison.OrdinalIgnoreCase));
+        var codeClass = AddModelDeclarationIfDoesntExit(currentNode, discriminatorSchema, className, currentNamespace, shouldInherit ? currentClass : null);
+        return new CodeType {
+            Name = codeClass.Name,
+            TypeDefinition = codeClass,
+        };
     }
     private void CreatePropertiesForModelClass(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, CodeNamespace ns, CodeClass model) {
         AddSerializationMembers(model, schema?.AdditionalPropertiesAllowed ?? false, config.UsesBackingStore);
