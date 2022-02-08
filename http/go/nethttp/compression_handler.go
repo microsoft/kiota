@@ -62,7 +62,7 @@ func (c *CompressionHandler) Intercept(pipeline Pipeline, middlewareIndex int, r
 		reqOption = c.options
 	}
 
-	if !reqOption.ShouldCompress() {
+	if !reqOption.ShouldCompress() || req.Body == nil {
 		return pipeline.Next(req, middlewareIndex)
 	}
 
