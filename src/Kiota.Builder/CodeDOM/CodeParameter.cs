@@ -32,7 +32,11 @@ namespace Kiota.Builder
         /// <summary>
         /// A single parameter to be provided by the SDK user which can be used to cancel requests.
         /// </summary>
-        Cancellation
+        Cancellation,
+        /// <summary>
+        /// A parameter representing the mapping value to be used for deserialization during discrimination.
+        /// </summary>
+        MappingValue
     }
 
     public class CodeParameter : CodeTerminal, ICloneable, IDocumentedElement

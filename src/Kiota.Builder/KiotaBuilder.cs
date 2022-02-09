@@ -870,15 +870,24 @@ public class KiotaBuilder
             var declaration = newClass.StartBlock as CodeClass.Declaration;
             declaration.Inherits = new CodeType { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
         }
-        if(schema.Discriminator != null) {
-            newClass.DiscriminatorPropertyName = schema.Discriminator.PropertyName;
-            newClass.DiscriminatorMappings = schema.Discriminator
+        newClass.DiscriminatorPropertyName = schema.Discriminator?.PropertyName;
+        var factoryMethod = newClass.AddMethod(new CodeMethod {
+            Name = "Factory",
+            ReturnType = new CodeType { TypeDefinition = newClass, Name = newClass.Name },
+            MethodKind = CodeMethodKind.Factory,
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter {
+            Name = "mappingValue",
+            ParameterKind = CodeParameterKind.MappingValue,
+            Type = new CodeType { Name = "string", IsExternal = true, IsNullable = false },
+        });
+        if(schema.Discriminator?.Mapping?.Any() ?? false)
+            factoryMethod.DiscriminatorMappings = schema.Discriminator
                                                     .Mapping
                                                     .Where(x => !x.Key.Equals(schema.Reference?.Id, StringComparison.OrdinalIgnoreCase))
                                                     .Select(x => (x.Key, GetCodeTypeForMapping(currentNode, x.Value, currentNamespace, newClass, schema)))
                                                     .Where(x => x.Item2 != null)
                                                     .ToDictionary(x => x.Key, x => x.Item2);
-        }
         CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass);
         return newClass;
     }

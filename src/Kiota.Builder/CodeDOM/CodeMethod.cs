@@ -21,6 +21,10 @@ public enum CodeMethodKind
     RawUrlConstructor,
     NullCheck,
     CommandBuilder,
+    /// <summary>
+    /// The method to be used during deserialization with the discriminator property to get a new instance of the target type.
+    /// </summary>
+    Factory,
 }
 public enum HttpMethod {
     Get,
@@ -123,6 +127,10 @@ public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
     /// Mapping of the error code and response types for this method.
     /// </summary>
     public Dictionary<string, CodeTypeBase> ErrorMappings { get; set; } = new ();
+    /// <summary>
+    /// Gets/Sets the discriminator values for the class where the key is the value as represented in the payload.
+    /// </summary>
+    public Dictionary<string, CodeTypeBase> DiscriminatorMappings { get; set; } = new();
 
     public object Clone()
     {
@@ -143,7 +151,8 @@ public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
             OriginalMethod = OriginalMethod,
             Parent = Parent,
             OriginalIndexer = OriginalIndexer,
-            ErrorMappings = ErrorMappings == null ? null : new (ErrorMappings)
+            ErrorMappings = ErrorMappings == null ? null : new (ErrorMappings),
+            DiscriminatorMappings = DiscriminatorMappings == null ? null : new (DiscriminatorMappings),
         };
         if(Parameters?.Any() ?? false)
             method.AddParameter(Parameters.Select(x => x.Clone() as CodeParameter).ToArray());

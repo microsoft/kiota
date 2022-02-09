@@ -35,11 +35,7 @@ public class CodeClass : CodeBlock, IDocumentedElement, ITypeDefinition
     /// <summary>
     /// Gets/Sets the name of the property to use for discrimination during deserialization.
     /// </summary>
-    public string DiscriminatorPropertyName { get; set; }
-    /// <summary>
-    /// Gets/Sets the discriminator values for the class where the key is the value as represented in the payload.
-    /// </summary>
-    public Dictionary<string, CodeTypeBase> DiscriminatorMappings { get; set; } = new();
+    public string DiscriminatorPropertyName { get; set; }    
     /// <summary>
     /// Name of Class
     /// </summary>
