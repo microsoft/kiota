@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
 
@@ -8,6 +9,7 @@ namespace Kiota.Builder.Refiners
     {
         private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
         public PhpRefiner(GenerationConfiguration configuration) : base(configuration) { }
+        
         
         public override void Refine(CodeNamespace generatedCode)
         {
@@ -33,7 +35,42 @@ namespace Kiota.Builder.Refiners
             ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
         }
-        
+        private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
+        {
+            {
+                "DateOnly",("Date", new CodeUsing
+                {
+                    Name = "Date",
+                    Declaration = new CodeType
+                    {
+                        Name = "Microsoft\\Kiota\\Abstractions\\Types",
+                        IsExternal = true,
+                    },
+                })
+            },
+            {
+                "TimeOnly",("Time", new CodeUsing
+                {
+                    Name = "Time",
+                    Declaration = new CodeType
+                    {
+                        Name = "Microsoft\\Kiota\\Abstractions\\Types",
+                        IsExternal = true,
+                    },
+                })
+            },
+            {
+                "TimeSpan", ("DateInterval", new CodeUsing()
+                {
+                    Name = "DateInterval",
+                    Declaration = new CodeType
+                    {
+                        Name = "",
+                        IsExternal = true
+                    }
+                })
+            }
+        };
         private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = { 
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
                 "Microsoft\\Kiota\\Abstractions", "RequestAdapter"),
@@ -87,6 +124,7 @@ namespace Kiota.Builder.Refiners
             {
                 currentProperty.Type.Name = "DateTime";
             }
+            CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
         }
 
         private static void CorrectMethodType(CodeMethod method)
@@ -109,7 +147,7 @@ namespace Kiota.Builder.Refiners
             });
             CrawlTree(codeElement, CorrectParameterType);
         }
-        
+
         private static void AliasUsingWithSameSymbol(CodeElement currentElement) {
             if(currentElement is CodeClass {StartBlock: CodeClass.Declaration currentDeclaration} currentClass && currentDeclaration.Usings.Any(x => !x.IsExternal)) {
                 var duplicatedSymbolsUsings = currentDeclaration.Usings

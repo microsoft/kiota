@@ -90,6 +90,19 @@ namespace Kiota.Builder.Writers.Php
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer);
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RawUrl, CodePropertyKind.UrlTemplate, writer);
             }
+            var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
+            if (currentMethod.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor) &&
+                parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
+                currentMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path)))
+            {
+                writer.WriteLine($"$urlTplParams = $pathParameters;");
+                currentMethod.Parameters.Where(parameter => parameter.IsOfKind(CodeParameterKind.Path)).ToList()
+                    .ForEach(parameter =>
+                    {
+                        writer.WriteLine($"$urlTplParams['{parameter.Name}'] = ${parameter.Name};");
+                    });
+                writer.WriteLine($"{GetPropertyCall(pathParametersProperty, "[]")} = array_merge({GetPropertyCall(pathParametersProperty, "[]")}, $urlTplParams);");
+            }
         }
         private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
             var property = parentClass.GetChildElements(true).OfType<CodeProperty>().FirstOrDefault(x => x.IsOfKind(propertyKind));
@@ -191,7 +204,25 @@ namespace Kiota.Builder.Writers.Php
             var returnValue = isConstructor
                 ? string.Empty
                 : $": {optionalCharacterReturn}{conventions.GetTypeString(codeMethod.ReturnType, codeMethod)}";
-            writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodPrefix}{methodName}({methodParameters}){returnValue} {{");
+            var pathParametersParam = codeMethod.Parameters.OfKind(CodeParameterKind.PathParameters);
+            var requestAdapterParam = codeMethod.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.RequestAdapter);
+            if (isConstructor && codeMethod?.Parent is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder))
+            {
+                var pathParameters = codeMethod.Parameters
+                    .Where(parameter => parameter.IsOfKind(CodeParameterKind.Path))
+                    .Select(parameter => $"{conventions.GetParameterSignature(parameter, codeMethod)}");
+                var pathParamsString = string.Empty;
+                var parameters = pathParameters.ToList();
+                if (parameters.Any()) pathParamsString = $", {string.Join(", ", parameters)}";
+                var pathParametersString = pathParametersParam != null ? $"{conventions.GetParameterSignature(pathParametersParam, codeMethod)}, " : string.Empty;
+                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodName}({pathParametersString}{conventions.GetParameterSignature(requestAdapterParam, codeMethod)}{pathParamsString}) {{");
+            }
+            else
+            {
+                writer.WriteLine(
+                    $"{conventions.GetAccessModifier(codeMethod.Access)} function {methodPrefix}{methodName}({methodParameters}){returnValue} {{");
+            }
+
             writer.IncreaseIndent();
             
         }
@@ -239,10 +270,11 @@ namespace Kiota.Builder.Writers.Php
                 "string" or "guid" => "writeStringValue",
                 "enum" => "writeEnumValue",
                 "bool" => "writeBooleanValue",
-                "boolean" or "number" or "date" or "time" or "datetime" =>
+                "float" or "double" => "writeFloatValue",
+                "boolean" or "date" or "time" or "datetime" =>
                     $"write{propertyType.ToFirstCharacterUpperCase()}Value",
                 "datetimeoffset" => "writeDateTimeValue",
-                "duration" => "writeDateIntervalValue",
+                "duration" or "timespan" or "dateinterval" => "writeDateIntervalValue",
                 "int" => "writeIntegerValue",
                 _ => "writeAnyValue"
             };
@@ -304,8 +336,16 @@ namespace Kiota.Builder.Writers.Php
                                 $"{RequestInfoVarName}->httpMethod = HttpMethod::{codeElement?.HttpMethod?.ToString().ToUpperInvariant()};");
             if(requestParams.headers != null)
                 writer.WriteLine($"{RequestInfoVarName}->setHeadersFromRawObject({conventions.GetParameterName(requestParams.headers)});");
-            if(requestParams.queryString != null)
-                writer.WriteLines($"{RequestInfoVarName}->setQueryStringParametersFromRawObject({conventions.GetParameterName(requestParams.queryString)});");
+            if (requestParams.queryString != null)
+            {
+                writer.WriteLine($"if ({conventions.GetParameterName(requestParams.queryString)} !== null) {{");
+                writer.IncreaseIndent();
+                writer.WriteLines(
+                    $"{RequestInfoVarName}->setQueryParameters({conventions.GetParameterName(requestParams.queryString)});");
+                writer.DecreaseIndent();
+                writer.WriteLine("}");
+            }
+
             if(requestParams.requestBody != null) {
                 if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{RequestInfoVarName}->setStreamContent({conventions.GetParameterName(requestParams.requestBody)});");
@@ -374,7 +414,15 @@ namespace Kiota.Builder.Writers.Php
         private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod codeMethod, LanguageWriter writer)
         {
             var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
+            WriteSerializationRegistration(codeMethod.SerializerModules, writer, "registerDefaultSerializer");
+            WriteSerializationRegistration(codeMethod.DeserializerModules, writer, "registerDefaultDeserializer");
             writer.WriteLine($"{GetPropertyCall(requestAdapterProperty, string.Empty)}->setBaseUrl('{codeMethod.BaseUrl}');");
+        }
+        
+        private static void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, string methodName) {
+            if(serializationModules != null)
+                foreach(var module in serializationModules)
+                    writer.WriteLine($"ApiClientBuilder::{methodName}({module}::class);");
         }
     }
 }

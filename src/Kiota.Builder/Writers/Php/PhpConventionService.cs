@@ -95,7 +95,7 @@ namespace Kiota.Builder.Writers.Php
             {
                 CodeParameterKind.RequestAdapter => $"RequestAdapter {GetParameterName(parameter)}",
                 CodeParameterKind.ResponseHandler => $"ResponseHandler {GetParameterName(parameter)}",
-                CodeParameterKind.QueryParameter => $"GetQueryParameters {GetParameterName(parameter)}",
+                CodeParameterKind.QueryParameter => $"array {GetParameterName(parameter)}",
                 CodeParameterKind.Serializer => $"SerializationWriter {GetParameterName(parameter)}",
                 CodeParameterKind.BackingStore => $"BackingStore {GetParameterName(parameter)}",
                 _ => $"{typeString} {GetParameterName(parameter)}"
@@ -105,11 +105,6 @@ namespace Kiota.Builder.Writers.Php
                             (methodTarget != null && !methodTarget.IsOfKind(CodeMethodKind.Setter));
             return parameter.Optional ? $"?{parameterSuffix} {(qualified ?  "= null" : string.Empty)}" : parameterSuffix;
         }
-        public string GetParameterSignature(CodeParameter parameter, CodeMethod codeMethod)
-        {
-            return GetParameterSignature(parameter, codeMethod as CodeElement);
-        }
-
         public string GetParameterDocNullable(CodeParameter parameter, CodeElement codeElement)
         {
             var parameterSignature = GetParameterSignature(parameter, codeElement).Trim().Split(' ');
@@ -144,7 +139,16 @@ namespace Kiota.Builder.Writers.Php
 
         public void AddRequestBuilderBody(string returnType, LanguageWriter writer, string suffix = default, CodeElement method = default)
         {
-            writer.WriteLines($"return new {returnType}($this->{RemoveDollarSignFromPropertyName(PathParametersPropertyName)}{suffix}, $this->{RemoveDollarSignFromPropertyName(RequestAdapterPropertyName)});");
+            var codeMethod = method as CodeMethod;
+            var pathParameters = codeMethod?.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path));
+            var joined = string.Empty;
+            var codeParameters = pathParameters?.ToList();
+            if (pathParameters != null && codeParameters.Any())
+            {
+                joined = $", {string.Join(", ", codeParameters.Select(parameter => $"${parameter.Name}"))}";
+            }
+
+            writer.WriteLines($"return new {returnType}($this->{RemoveDollarSignFromPropertyName(PathParametersPropertyName)}{suffix}, $this->{RemoveDollarSignFromPropertyName(RequestAdapterPropertyName)}{joined});");
         }
 
         private string RemoveDollarSignFromPropertyName(string propertyName)
