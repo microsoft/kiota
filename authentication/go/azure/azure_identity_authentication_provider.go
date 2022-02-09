@@ -1,0 +1,36 @@
+// Package microsoft_kiota_authentication_azure implements Kiota abstractions for authentication using the Azure Core library.
+// In order to use this package, you must also add the github.com/Azure/azure-sdk-for-go/sdk/azidentity.
+package microsoft_kiota_authentication_azure
+
+import (
+	azcore "github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	auth "github.com/microsoft/kiota/abstractions/go/authentication"
+)
+
+// AzureIdentityAuthenticationProvider implementation of AuthenticationProvider that supports implementations of TokenCredential from Azure.Identity.
+type AzureIdentityAuthenticationProvider struct {
+	auth.BaseBearerTokenAuthenticationProvider
+}
+
+// NewAzureIdentityAuthenticationProvider creates a new instance of the AzureIdentityAuthenticationProvider using "https://graph.microsoft.com/.default" as the default scope.
+func NewAzureIdentityAuthenticationProvider(credential azcore.TokenCredential) (*AzureIdentityAuthenticationProvider, error) {
+	return NewAzureIdentityAuthenticationProviderWithScopes(credential, nil)
+}
+
+// NewAzureIdentityAuthenticationProviderWithScopes creates a new instance of the AzureIdentityAuthenticationProvider.
+func NewAzureIdentityAuthenticationProviderWithScopes(credential azcore.TokenCredential, scopes []string) (*AzureIdentityAuthenticationProvider, error) {
+	return NewAzureIdentityAuthenticationProviderWithScopesAndValidHosts(credential, scopes, nil)
+}
+
+// NewAzureIdentityAuthenticationProviderWithScopesAndValidHosts creates a new instance of the AzureIdentityAuthenticationProvider.
+func NewAzureIdentityAuthenticationProviderWithScopesAndValidHosts(credential azcore.TokenCredential, scopes []string, validhosts []string) (*AzureIdentityAuthenticationProvider, error) {
+	accessTokenProvider, err := NewAzureIdentityAccessTokenProviderWithScopesAndValidHosts(credential, scopes, validhosts)
+	if err != nil {
+		return nil, err
+	}
+	baseBearer := auth.NewBaseBearerTokenAuthenticationProvider(accessTokenProvider)
+	result := &AzureIdentityAuthenticationProvider{
+		BaseBearerTokenAuthenticationProvider: *baseBearer,
+	}
+	return result, nil
+}

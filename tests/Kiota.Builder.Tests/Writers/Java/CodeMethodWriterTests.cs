@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Refiners;
 using Kiota.Builder.Tests;
 using Xunit;
 
@@ -13,6 +14,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
         private readonly LanguageWriter writer;
         private readonly CodeMethod method;
         private readonly CodeClass parentClass;
+        private readonly CodeNamespace root;
         private const string MethodName = "methodName";
         private const string ReturnTypeName = "Somecustomtype";
         private const string MethodDescription = "some description";
@@ -23,7 +25,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
-            var root = CodeNamespace.InitRootNamespace();
+            root = CodeNamespace.InitRootNamespace();
             parentClass = new CodeClass {
                 Name = "parentClass"
             };
@@ -47,16 +49,15 @@ namespace Kiota.Builder.Writers.Java.Tests {
                 PropertyKind = CodePropertyKind.RequestAdapter,
             });
             parentClass.AddProperty(new CodeProperty {
-                Name = "isRawUrl",
-                PropertyKind = CodePropertyKind.RawUrl,
+                Name = "pathParameters",
+                PropertyKind = CodePropertyKind.PathParameters,
+                Type = new CodeType {
+                    Name = "string",
+                }
             });
             parentClass.AddProperty(new CodeProperty {
-                Name = "currentPath",
-                PropertyKind = CodePropertyKind.CurrentPath,
-            });
-            parentClass.AddProperty(new CodeProperty {
-                Name = "pathSegment",
-                PropertyKind = CodePropertyKind.PathSegment,
+                Name = "urlTemplate",
+                PropertyKind = CodePropertyKind.UrlTemplate,
             });
         }
         private void AddSerializationProperties() {
@@ -191,7 +192,8 @@ namespace Kiota.Builder.Writers.Java.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("final RequestInformation requestInfo = new RequestInformation()", result);
-            Assert.Contains("this.setUri", result);
+            Assert.Contains("urlTemplate =", result);
+            Assert.Contains("pathParameters =", result);
             Assert.Contains("httpMethod = HttpMethod.GET", result);
             Assert.Contains("h.accept(requestInfo.headers)", result);
             Assert.Contains("AddQueryParameters", result);
@@ -385,20 +387,27 @@ namespace Kiota.Builder.Writers.Java.Tests {
         }
         [Fact]
         public void WritesIndexer() {
+            AddRequestProperties();
             method.MethodKind = CodeMethodKind.IndexerBackwardCompatibility;
-            method.PathSegment = "somePath";
+            method.OriginalIndexer = new CodeIndexer {
+                Name = "idx",
+                IndexType = new CodeType {
+                    Name = "int"
+                },
+                ParameterName = "collectionId"
+            };
             writer.Write(method);
             var result = tw.ToString();
+            Assert.Contains("collectionId", result);
             Assert.Contains("requestAdapter", result);
-            Assert.Contains("pathSegment", result);
-            Assert.Contains("+ id", result);
+            Assert.Contains("pathParameters", result);
+            Assert.Contains("id", result);
             Assert.Contains("return new", result);
-            Assert.Contains(method.PathSegment, result);
         }
         [Fact]
         public void WritesPathParameterRequestBuilder() {
+            AddRequestProperties();
             method.MethodKind = CodeMethodKind.RequestBuilderWithParameters;
-            method.PathSegment = "somePath";
             method.AddParameter(new CodeParameter {
                 Name = "pathParam",
                 ParameterKind = CodeParameterKind.Path,
@@ -409,7 +418,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("requestAdapter", result);
-            Assert.Contains("pathSegment", result);
+            Assert.Contains("pathParameters", result);
             Assert.Contains("pathParam", result);
             Assert.Contains("return new", result);
         }
@@ -468,15 +477,50 @@ namespace Kiota.Builder.Writers.Java.Tests {
             method.MethodKind = CodeMethodKind.Constructor;
             var defaultValue = "someVal";
             var propName = "propWithDefaultValue";
+            parentClass.ClassKind = CodeClassKind.RequestBuilder;
             parentClass.AddProperty(new CodeProperty {
                 Name = propName,
                 DefaultValue = defaultValue,
-                PropertyKind = CodePropertyKind.PathSegment,
+                PropertyKind = CodePropertyKind.UrlTemplate,
+            });
+            AddRequestProperties();
+            method.AddParameter(new CodeParameter {
+                Name = "pathParameters",
+                ParameterKind = CodeParameterKind.PathParameters,
+                Type = new CodeType {
+                    Name = "Map<String, String>"
+                }
             });
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
             Assert.Contains($"this.{propName} = {defaultValue}", result);
+            Assert.Contains("new Map<String, String>(pathParameters)", result);
+        }
+        [Fact]
+        public void WritesRawUrlConstructor() {
+            method.MethodKind = CodeMethodKind.RawUrlConstructor;
+            var defaultValue = "someVal";
+            var propName = "propWithDefaultValue";
+            parentClass.ClassKind = CodeClassKind.RequestBuilder;
+            parentClass.AddProperty(new CodeProperty {
+                Name = propName,
+                DefaultValue = defaultValue,
+                PropertyKind = CodePropertyKind.UrlTemplate,
+            });
+            AddRequestProperties();
+            method.AddParameter(new CodeParameter {
+                Name = "rawUrl",
+                ParameterKind = CodeParameterKind.RawUrl,
+                Type = new CodeType {
+                    Name = "string"
+                }
+            });
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+            Assert.Contains($"this.{propName} = {defaultValue}", result);
+            Assert.Contains($"urlTplParams.put(\"request-raw-url\", rawUrl);", result);
         }
         [Fact]
         public void WritesApiConstructor() {
@@ -532,6 +576,35 @@ namespace Kiota.Builder.Writers.Java.Tests {
             tempWriter.Write(method);
             var result = tw.ToString();
             Assert.Contains("enableBackingStore", result);
+        }
+        [Fact]
+        public void AccessorsTargetingEscapedPropertiesAreNotEscapedThemselves() {
+            var model = root.AddClass(new CodeClass {
+                Name = "SomeClass",
+                ClassKind = CodeClassKind.Model
+            }).First();
+            model.AddProperty(new CodeProperty {
+                Name = "short",
+                Type = new CodeType { Name = "string" },
+                Access = AccessModifier.Public,
+                PropertyKind = CodePropertyKind.Custom,
+            });
+            ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+            var getter = model.Methods.First(x => x.IsOfKind(CodeMethodKind.Getter));
+            var setter = model.Methods.First(x => x.IsOfKind(CodeMethodKind.Setter));
+            var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, DefaultPath, DefaultName);
+            tempWriter.SetTextWriter(tw);
+            tempWriter.Write(getter);
+            var result = tw.ToString();
+            Assert.Contains("getShort", result);
+            Assert.DoesNotContain("getShort_escaped", result);
+            
+            using var tw2 = new StringWriter();
+            tempWriter.SetTextWriter(tw2);
+            tempWriter.Write(setter);
+            result = tw2.ToString();
+            Assert.Contains("setShort", result);
+            Assert.DoesNotContain("setShort_escaped", result);
         }
     }
 }

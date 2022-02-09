@@ -2,6 +2,9 @@ package com.microsoft.kiota.serialization;
 
 import java.lang.Enum;
 import java.time.OffsetDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.Period;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
@@ -11,12 +14,12 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * Interface for a deserialization node in a parse tree. This interace provides an abstraction layer over serialiation formats, libararies and implementations.
+ * Interface for a deserialization node in a parse tree. This interface provides an abstraction layer over serialization formats, libraries and implementations.
  */
 public interface ParseNode {
     /**
      * Gets a new parse node for the given identifier.
-     * @param identitier the identifier of the current node property.
+     * @param identifier the identifier of the current node property.
      * @return a new parse node for the given identifier.
      */
     @Nonnull
@@ -69,6 +72,28 @@ public interface ParseNode {
      */
     @Nonnull
     OffsetDateTime getOffsetDateTimeValue();
+
+    /**
+     * Gets the LocalDate value of the node.
+     * @return the LocalDate value of the node.
+     */
+    @Nonnull
+    LocalDate getLocalDateValue();
+
+    /**
+     * Gets the LocalTime value of the node.
+     * @return the LocalTime value of the node.
+     */
+    @Nonnull
+    LocalTime getLocalTimeValue();
+
+    /**
+     * Gets the Period value of the node.
+     * @return the Period value of the node.
+     */
+    @Nonnull
+    Period getPeriodValue();
+
     /**
      * Gets the Enum value of the node.
      * @return the Enum value of the node.
@@ -112,7 +137,7 @@ public interface ParseNode {
     @Nullable
     Consumer<Parsable> getOnBeforeAssignFieldValues();
     /**
-     * Gets the callback called after the node is deseserialized.
+     * Gets the callback called after the node is deserialized.
      * @return the callback called after the node is deserialized.
      */
     @Nullable

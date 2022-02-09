@@ -1,3 +1,22 @@
 {
-    "omnisharp.enableRoslynAnalyzers": true
+    "omnisharp.enableRoslynAnalyzers": true,
+    "markdownlint.config": {
+        "MD028": false,
+        "MD025": {
+            "front_matter_title": ""
+        }
+    },
+    "cSpell.ignoreWords": [
+        "Todos",
+        "gson",
+        "kiotaabstractions",
+        "msgraph",
+        "okhttp",
+        "okhttp3",
+        "squareup"
+    ],
+    "cSpell.words": [
+        "npmrc",
+        "serializers"
+    ]
 }

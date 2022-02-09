@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-RSpec.describe MicrosoftKiotaNethttp do
+RSpec.describe MicrosoftKiotaNethttplibrary do
   it "has a version number" do
-    expect(MicrosoftKiotaNethttp::VERSION).not_to be nil
+    expect(MicrosoftKiotaNethttplibrary::VERSION).not_to be nil
   end
 
   it "does something useful" do

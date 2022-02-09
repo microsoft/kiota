@@ -1,37 +1,52 @@
 {
-  "name": "@microsoft/kiota-abstractions",
-  "version": "1.0.21",
-  "description": "Core abstractions for kiota generated libraries in TypeScript and JavaScript",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "clean": "rm -r ./dist"
-  },
-  "repository": "git://github.com/microsoft/kiota.git",
-  "keywords": [
-    "kiota",
-    "openAPI",
-    "Microsoft",
-    "Graph"
-  ],
-  "author": "Microsoft",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/microsoft/kiota/issues"
-  },
-  "homepage": "https://github.com/microsoft/kiota#readme",
-  "devDependencies": {
-    "@types/node": "^16.10.2",
-    "@types/uuid": "^8.3.1",
-    "typescript": "^4.4.3"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
-  "dependencies": {
-    "uuid": "^8.3.2",
-    "web-streams-polyfill": "^3.1.1"
-  }
+    "name": "@microsoft/kiota-abstractions",
+    "version": "1.0.28",
+    "description": "Core abstractions for kiota generated libraries in TypeScript and JavaScript",
+    "main": "dist/cjs/index.js",
+    "module": "dist/es/index.js",
+    "types": "dist/cjs/index.d.ts",
+    "scripts": {
+        "build": "npm run build:cjs && npm run build:esm",
+        "build:cjs": "tsc -p tsconfig.cjs.json",
+        "build:esm": "tsc -p tsconfig.es.json",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "lint": "eslint . --ext .ts",
+        "lint:fix": "eslint . --ext .ts --fix",
+        "clean": "rm -r ./dist"
+    },
+    "repository": "git://github.com/microsoft/kiota.git",
+    "keywords": [
+        "kiota",
+        "openAPI",
+        "Microsoft",
+        "Graph"
+    ],
+    "author": "Microsoft",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/microsoft/kiota/issues"
+    },
+    "homepage": "https://github.com/microsoft/kiota#readme",
+    "devDependencies": {
+        "@types/node": "^17.0.16",
+        "@types/uri-template-lite": "^19.12.1",
+        "@types/uuid": "^8.3.4",
+        "typescript": "^4.5.5",
+        "@typescript-eslint/eslint-plugin": "^5.11.0",
+        "@typescript-eslint/parser": "^5.11.0",
+        "eslint": "^8.8.0",
+        "eslint-config-prettier": "^8.3.0",
+        "eslint-plugin-prettier": "^4.0.0",
+        "eslint-plugin-simple-import-sort": "^7.0.0",
+        "prettier": "^2.5.1"
+    },
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com"
+    },
+    "dependencies": {
+        "tinyduration": "^3.2.2",
+        "tslib": "^2.3.1",
+        "uri-template-lite": "^22.1.0",
+        "uuid": "^8.3.2"
+    }
 }

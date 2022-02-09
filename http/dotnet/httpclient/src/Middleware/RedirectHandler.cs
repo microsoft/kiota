@@ -1,4 +1,4 @@
-// ------------------------------------------------------------------------------
+﻿// ------------------------------------------------------------------------------
 //  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
 // ------------------------------------------------------------------------------
 
@@ -64,7 +64,10 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Middleware
                 while(redirectCount < RedirectOption.MaxRedirect)
                 {
                     // Drain response content to free responses.
-                    await response.Content.ReadAsByteArrayAsync(cancellationToken);
+                    if(response.Content != null)
+                    {
+                        await response.Content.ReadAsByteArrayAsync();
+                    }
 
                     // general clone request with internal CloneAsync (see CloneAsync for details) extension method
                     var newRequest = await response.RequestMessage.CloneAsync();

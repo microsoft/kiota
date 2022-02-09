@@ -79,7 +79,10 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Middleware
             {
                 // Drain response content to free connections. Need to perform this
                 // before retry attempt and before the TooManyRetries ServiceException.
-                await response.Content.ReadAsByteArrayAsync(cancellationToken);
+                if(response.Content != null)
+                {
+                    await response.Content.ReadAsByteArrayAsync();
+                }
 
                 // Call Delay method to get delay time from response's Retry-After header or by exponential backoff
                 Task delay = Delay(response, retryCount, RetryOption.Delay, out double delayInSeconds, cancellationToken);
@@ -118,7 +121,10 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary.Middleware
 
             // Drain response content to free connections. Need to perform this
             // before retry attempt and before the TooManyRetries ServiceException.
-            await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            if(response.Content != null)
+            {
+                await response.Content.ReadAsByteArrayAsync();
+            }
 
             throw new InvalidOperationException(
                 "Too many retries performed",

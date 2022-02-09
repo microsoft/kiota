@@ -7,13 +7,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Abstractions.Serialization;
 using Microsoft.Kiota.Abstractions.Store;
 using Microsoft.Kiota.Abstractions.Authentication;
-using Microsoft.Kiota.Abstractions.Extensions;
+using System.Threading;
 
 namespace Microsoft.Kiota.Http.HttpClientLibrary
 {
@@ -51,13 +50,18 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
             }
         }
         /// <summary>
+        /// The base url for every request.
+        /// </summary>
+        public string BaseUrl { get; set; }
+        /// <summary>
         /// Send a <see cref="RequestInformation"/> instance with a collection instance of <typeparam name="ModelType"></typeparam>
         /// </summary>
         /// <param name="requestInfo">The <see cref="RequestInformation"/> instance to send</param>
         /// <param name="responseHandler">The <see cref="IResponseHandler"/> to use with the response</param>
-        public async Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default) where ModelType : IParsable
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/> to use for cancelling the request.</param>
+        public async Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default, CancellationToken cancellationToken = default) where ModelType : IParsable
         {
-            var response = await GetHttpResponseMessage(requestInfo);
+            var response = await GetHttpResponseMessage(requestInfo, cancellationToken);
             requestInfo.Content?.Dispose();
             if(responseHandler == null)
             {
@@ -73,9 +77,10 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
         /// </summary>
         /// <param name="requestInfo">The RequestInformation object to use for the HTTP request.</param>
         /// <param name="responseHandler">The response handler to use for the HTTP request instead of the default handler.</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/> to use for cancelling the request.</param>
         /// <returns>The deserialized primitive response model collection.</returns>
-        public async Task<IEnumerable<ModelType>> SendPrimitiveCollectionAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default) {
-            var response = await GetHttpResponseMessage(requestInfo);
+        public async Task<IEnumerable<ModelType>> SendPrimitiveCollectionAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default, CancellationToken cancellationToken = default) {
+            var response = await GetHttpResponseMessage(requestInfo, cancellationToken);
             requestInfo.Content?.Dispose();
             if(responseHandler == null)
             {
@@ -91,9 +96,11 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
         /// </summary>
         /// <param name="requestInfo">The <see cref="RequestInformation"/> instance to send</param>
         /// <param name="responseHandler">The <see cref="IResponseHandler"/> to use with the response</param>
-        public async Task<ModelType> SendAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = null) where ModelType : IParsable
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/> to use for cancelling the request.</param>
+        /// <returns>The deserialized response model.</returns>
+        public async Task<ModelType> SendAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = null, CancellationToken cancellationToken = default) where ModelType : IParsable
         {
-            var response = await GetHttpResponseMessage(requestInfo);
+            var response = await GetHttpResponseMessage(requestInfo, cancellationToken);
             requestInfo.Content?.Dispose();
             if(responseHandler == null)
             {
@@ -109,10 +116,11 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
         /// </summary>
         /// <param name="requestInfo">The <see cref="RequestInformation"/> instance to send</param>
         /// <param name="responseHandler">The <see cref="IResponseHandler"/> to use with the response</param>
-        /// <returns></returns>
-        public async Task<ModelType> SendPrimitiveAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default)
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/> to use for cancelling the request.</param>
+        /// <returns>The deserialized primitive response model.</returns>
+        public async Task<ModelType> SendPrimitiveAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default, CancellationToken cancellationToken = default)
         {
-            var response = await GetHttpResponseMessage(requestInfo);
+            var response = await GetHttpResponseMessage(requestInfo, cancellationToken);
             requestInfo.Content?.Dispose();
             if(responseHandler == null)
             {
@@ -165,10 +173,11 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
         /// </summary>
         /// <param name="requestInfo">The <see cref="RequestInformation"/> instance to send</param>
         /// <param name="responseHandler">The <see cref="IResponseHandler"/> to use with the response</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/> to use for cancelling the request.</param>
         /// <returns></returns>
-        public async Task SendNoContentAsync(RequestInformation requestInfo, IResponseHandler responseHandler = null)
+        public async Task SendNoContentAsync(RequestInformation requestInfo, IResponseHandler responseHandler = null, CancellationToken cancellationToken = default)
         {
-            var response = await GetHttpResponseMessage(requestInfo);
+            var response = await GetHttpResponseMessage(requestInfo, cancellationToken);
             requestInfo.Content?.Dispose();
             if(responseHandler == null)
                 response.Dispose();
@@ -185,59 +194,48 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
             response.Dispose();
             return rootNode;
         }
-        private async Task<HttpResponseMessage> GetHttpResponseMessage(RequestInformation requestInfo)
+        private async Task<HttpResponseMessage> GetHttpResponseMessage(RequestInformation requestInfo, CancellationToken cancellationToken)
         {
             if(requestInfo == null)
                 throw new ArgumentNullException(nameof(requestInfo));
 
-            await authProvider.AuthenticateRequestAsync(requestInfo);
+            SetBaseUrlForRequestInformation(requestInfo);
+            await authProvider.AuthenticateRequestAsync(requestInfo, cancellationToken);
 
             using var message = GetRequestMessageFromRequestInformation(requestInfo);
-            var response = await this.client.SendAsync(message);
+            var response = await this.client.SendAsync(message,cancellationToken);
             if(response == null)
                 throw new InvalidOperationException("Could not get a response after calling the service");
             return response;
         }
-        private const string ContentTypeHeaderName = "content-type";
-        internal static HttpRequestMessage GetRequestMessageFromRequestInformation(RequestInformation requestInfo)
+        private void SetBaseUrlForRequestInformation(RequestInformation requestInfo)
+        {
+            requestInfo.PathParameters.Add("baseurl", BaseUrl);
+        }
+        /// <summary>
+        /// Creates a <see cref="HttpRequestMessage"/> instance from a <see cref="RequestInformation"/> instance.
+        /// </summary>
+        /// <param name="requestInfo">The <see cref="RequestInformation"/> instance to convert.</param>
+        /// <returns>A <see cref="HttpRequestMessage"/> instance</returns>
+        public HttpRequestMessage GetRequestMessageFromRequestInformation(RequestInformation requestInfo)
         {
             var message = new HttpRequestMessage
             {
-                Method = new System.Net.Http.HttpMethod(requestInfo.HttpMethod.ToString().ToUpperInvariant()),
-                RequestUri = new Uri(requestInfo.URI +
-                                        ((requestInfo.QueryParameters?.Any() ?? false) ?
-                                            "?" + requestInfo.QueryParameters
-                                                        .Select(x => $"{x.Key}{(x.Value == null ? string.Empty : "=")}{GetStringForQueryParameter(x.Value)}")
-                                                        .Aggregate((x, y) => $"{x}&{y}") :
-                                            string.Empty)),
+                Method = new HttpMethod(requestInfo.HttpMethod.ToString().ToUpperInvariant()),
+                RequestUri = requestInfo.URI,
             };
 
             if(requestInfo.RequestOptions.Any())
-                requestInfo.RequestOptions.ToList().ForEach(x => message.Options.Set(new HttpRequestOptionsKey<IRequestOption>(x.GetType().FullName), x));
-            if(requestInfo.Headers?.Any() ?? false)
-                requestInfo.Headers.Where(x => !ContentTypeHeaderName.Equals(x.Key, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => message.Headers.Add(x.Key, x.Value));
-            if(requestInfo.Content != null)
-            {
-                message.Content = new StreamContent(requestInfo.Content);
-                if(requestInfo?.Headers?.ContainsKey(ContentTypeHeaderName) ?? false)
-                    message.Content.Headers.ContentType = new MediaTypeHeaderValue(requestInfo.Headers[ContentTypeHeaderName]);
-            }
-            return message;
-        }
+                requestInfo.RequestOptions.ToList().ForEach(x => message.Properties.Add(x.GetType().FullName, x));
 
-        private static string GetStringForQueryParameter(object value)
-        {
-            return value switch
-            {
-                null => string.Empty,
-                bool booleanValue =>
-                    // ToString returns True/False with the first character in uppercase
-                    booleanValue.ToString().ToFirstCharacterLowerCase(),
-                IEnumerable<object> collection =>
-                    // the collection could be of booleans for all we know, make sure its cleaned up as well by this same function
-                    string.Join(',', collection.Select(GetStringForQueryParameter)),
-                _ => value.ToString()
-            };
+            if(requestInfo.Content != null)
+                message.Content = new StreamContent(requestInfo.Content);
+            if(requestInfo.Headers?.Any() ?? false)
+                foreach(var (key,value) in requestInfo.Headers)
+                    if(!message.Headers.TryAddWithoutValidation(key, value) && message.Content != null)
+                        message.Content.Headers.TryAddWithoutValidation(key, value);// Try to add the headers we couldn't add to the HttpRequestMessage before to the HttpContent
+
+            return message;
         }
 
         /// <summary>

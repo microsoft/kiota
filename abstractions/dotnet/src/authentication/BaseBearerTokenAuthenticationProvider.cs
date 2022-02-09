@@ -3,38 +3,43 @@
 // ------------------------------------------------------------------------------
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Kiota.Abstractions.Authentication
+namespace Microsoft.Kiota.Abstractions.Authentication;
+/// <summary>
+///     Provides a base class for implementing <see cref="IAuthenticationProvider" /> for Bearer token scheme.
+/// </summary>
+public class BaseBearerTokenAuthenticationProvider : IAuthenticationProvider
 {
     /// <summary>
-    ///     Provides a base class for implementing <see cref="IAuthenticationProvider" /> for Bearer token scheme.
+    /// Creates a new instance of <see cref="BaseBearerTokenAuthenticationProvider"/>.
     /// </summary>
-    public abstract class BaseBearerTokenAuthenticationProvider : IAuthenticationProvider
+    /// <param name="accessTokenProvider">The <see cref="IAccessTokenProvider"/> to use for getting the access token.</param>
+    public BaseBearerTokenAuthenticationProvider(IAccessTokenProvider accessTokenProvider)
     {
-        private const string AuthorizationHeaderKey = "Authorization";
+        AccessTokenProvider = accessTokenProvider ?? throw new ArgumentNullException(nameof(accessTokenProvider));
+    }
+    /// <summary>
+    ///     Gets the <see cref="IAccessTokenProvider" /> to use for getting the access token.
+    /// </summary>
+    public IAccessTokenProvider AccessTokenProvider {get; private set;}
+    private const string AuthorizationHeaderKey = "Authorization";
 
-        /// <summary>
-        /// Authenticates the <see cref="RequestInformation"/> instance
-        /// </summary>
-        /// <param name="request">The request to authenticate</param>
-        /// <returns></returns>
-        public async Task AuthenticateRequestAsync(RequestInformation request)
+    /// <summary>
+    /// Authenticates the <see cref="RequestInformation"/> instance
+    /// </summary>
+    /// <param name="request">The request to authenticate</param>
+    /// <param name="cancellationToken">The cancellation token for the task</param>
+    /// <returns></returns>
+    public async Task AuthenticateRequestAsync(RequestInformation request, CancellationToken cancellationToken = default)
+    {
+        if(request == null) throw new ArgumentNullException(nameof(request));
+        if(!request.Headers.ContainsKey(AuthorizationHeaderKey))
         {
-            if(request == null) throw new ArgumentNullException(nameof(request));
-            if(!request.Headers.ContainsKey(AuthorizationHeaderKey))
-            {
-                var token = await GetAuthorizationTokenAsync(request);
-                if(string.IsNullOrEmpty(token))
-                    throw new InvalidOperationException("Could not get an authorization token");
+            var token = await AccessTokenProvider.GetAuthorizationTokenAsync(request.URI, cancellationToken);
+            if(!string.IsNullOrEmpty(token))
                 request.Headers.Add(AuthorizationHeaderKey, $"Bearer {token}");
-            }
         }
-        /// <summary>
-        ///     This method is called by the <see cref="BaseBearerTokenAuthenticationProvider" /> class to authenticate the request via the returned access token.
-        /// </summary>
-        /// <param name="request">The request to authenticate.</param>
-        /// <returns>A Task that holds the access token to use for the request.</returns>
-        public abstract Task<string> GetAuthorizationTokenAsync(RequestInformation request);
     }
 }

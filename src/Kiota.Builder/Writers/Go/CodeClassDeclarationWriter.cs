@@ -10,7 +10,7 @@ namespace Kiota.Builder.Writers.Go {
         public override void WriteCodeElement(CodeClass.Declaration codeElement, LanguageWriter writer)
         {
             if(codeElement?.Parent?.Parent is CodeNamespace ns)
-                writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment()}");
+                writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().Replace("-", string.Empty)}");
             var importSegments = codeElement
                                 .Usings
                                 .Where(x => !x.Declaration.IsExternal)
@@ -32,7 +32,9 @@ namespace Kiota.Builder.Writers.Go {
                 writer.DecreaseIndent();
                 writer.WriteLines(")", string.Empty);
             }
-            writer.WriteLine($"type {codeElement.Name.ToFirstCharacterUpperCase()} struct {{");
+            var className = codeElement.Name.ToFirstCharacterUpperCase();
+            conventions.WriteShortDescription($"{className} {(codeElement.Parent as CodeClass).Description.ToFirstCharacterLowerCase()}", writer);
+            writer.WriteLine($"type {className} struct {{");
             writer.IncreaseIndent();
             if(codeElement.Inherits?.AllTypes?.Any() ?? false) {
                 var parentTypeName = conventions.GetTypeString(codeElement.Inherits.AllTypes.First(), codeElement.Parent.Parent, true, false);

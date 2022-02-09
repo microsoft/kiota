@@ -13,5 +13,13 @@ module MicrosoftKiotaAbstractions
       raise NotImplementedError.new
     end
 
+    def set_base_url(base_url)
+      raise NotImplementedError.new
+    end
+
+    def get_base_url()
+      raise NotImplementedError.new
+    end
+
   end
 end
