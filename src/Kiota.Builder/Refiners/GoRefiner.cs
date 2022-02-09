@@ -92,6 +92,10 @@ public class GoRefiner : CommonLanguageRefiner
                 "ApiError",
                 "github.com/microsoft/kiota/abstractions/go"
         );
+        AddDiscriminatorMappingsUsingsToParentClasses(
+            generatedCode,
+            true
+        );
     }
     private static void ReplaceExecutorAndGeneratorParametersByParameterSets(CodeElement currentElement) {
         if (currentElement is CodeMethod currentMethod &&

@@ -872,7 +872,7 @@ public class KiotaBuilder
         }
         newClass.DiscriminatorPropertyName = schema.Discriminator?.PropertyName;
         var factoryMethod = newClass.AddMethod(new CodeMethod {
-            Name = "Factory",
+            Name = "Create",
             ReturnType = new CodeType { TypeDefinition = newClass, Name = newClass.Name },
             MethodKind = CodeMethodKind.Factory,
             IsStatic = true,

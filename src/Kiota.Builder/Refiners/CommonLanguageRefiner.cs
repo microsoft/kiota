@@ -576,20 +576,33 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, x => AddParentClassToErrorClasses(x, parentClassName, parentClassNamespace));
     }
-    protected static void AddDiscriminatorMappingsUsingsToParentClasses(CodeElement currentElement) {
+    protected static void AddDiscriminatorMappingsUsingsToParentClasses(CodeElement currentElement, bool addFactoryMethodImport = false) {
         if(currentElement is CodeMethod currentMethod &&
-            currentMethod.IsOfKind(CodeMethodKind.Factory) &&
-            currentMethod.DiscriminatorMappings.Any() &&
             currentMethod.Parent is CodeClass parentClass &&
             parentClass.StartBlock is CodeClass.Declaration declaration) {
-            declaration.AddUsings(currentMethod.DiscriminatorMappings.Select(x => new CodeUsing {
-                Name = x.Value.Name,
-                Declaration = x.Value is CodeType codeType && codeType.TypeDefinition != null ? new CodeType {
-                    Name = codeType.TypeDefinition.Name,
-                    TypeDefinition = codeType.TypeDefinition,
-                } : null,
-            }).ToArray());
+                if(currentMethod.IsOfKind(CodeMethodKind.Factory) &&
+                    currentMethod.DiscriminatorMappings.Any()) {
+                        declaration.AddUsings(currentMethod.DiscriminatorMappings.Select(x => new CodeUsing {
+                            Name = x.Value.Name,
+                            Declaration = x.Value is CodeType codeType && codeType.TypeDefinition != null ? new CodeType {
+                                Name = codeType.TypeDefinition.Name,
+                                TypeDefinition = codeType.TypeDefinition,
+                            } : null,
+                        }).ToArray());
+                } else if (addFactoryMethodImport &&
+                    currentMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
+                    currentMethod.ReturnType is CodeType type &&
+                    type.TypeDefinition is CodeClass modelClass &&
+                    modelClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory)) is CodeMethod factoryMethod) {
+                        declaration.AddUsings(new CodeUsing {
+                            Name = factoryMethod.Name,
+                            Declaration = new CodeType {
+                                Name = factoryMethod.Name,
+                                TypeDefinition = factoryMethod,
+                            }
+                        });
+                }
         }
-        CrawlTree(currentElement, AddDiscriminatorMappingsUsingsToParentClasses);
+        CrawlTree(currentElement, x => AddDiscriminatorMappingsUsingsToParentClasses(x, addFactoryMethodImport));
     }
 }

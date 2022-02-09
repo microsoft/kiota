@@ -72,6 +72,88 @@ public class GoLanguageRefinerTests {
         Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
     }
     [Fact]
+    public void AddsUsingsForDiscriminatorTypes() {
+        var parentModel = root.AddClass(new CodeClass {
+            Name = "parentModel",
+            ClassKind = CodeClassKind.Model,
+        }).First();
+        var childModel = root.AddClass(new CodeClass {
+            Name = "childModel",
+            ClassKind = CodeClassKind.Model,
+        }).First();
+        (childModel.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
+            Name = "parentModel",
+            TypeDefinition = parentModel,
+        };
+        var factoryMethod = parentModel.AddMethod(new CodeMethod {
+            Name = "factory",
+            MethodKind = CodeMethodKind.Factory,
+            ReturnType = new CodeType {
+                Name = "parentModel",
+                TypeDefinition = parentModel,
+            },
+            DiscriminatorMappings = new() {
+                { "ns.childmodel", new CodeType {
+                        Name = "childModel",
+                        TypeDefinition = childModel,
+                    }
+                },
+            }
+        }).First();
+        var parentModelDeclaration = parentModel.StartBlock as CodeClass.Declaration;
+        Assert.Empty(parentModelDeclaration.Usings);
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        Assert.Equal(childModel, parentModelDeclaration.Usings.First(x => x.Name.Equals("childModel", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
+        Assert.Null(parentModelDeclaration.Usings.FirstOrDefault(x => x.Name.Equals("factory", StringComparison.OrdinalIgnoreCase)));
+    }
+    [Fact]
+    public void AddsUsingsForFactoryMethods() {
+        var parentModel = root.AddClass(new CodeClass {
+            Name = "parentModel",
+            ClassKind = CodeClassKind.Model,
+        }).First();
+        var childModel = root.AddClass(new CodeClass {
+            Name = "childModel",
+            ClassKind = CodeClassKind.Model,
+        }).First();
+        (childModel.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
+            Name = "parentModel",
+            TypeDefinition = parentModel,
+        };
+        var factoryMethod = parentModel.AddMethod(new CodeMethod {
+            Name = "factory",
+            MethodKind = CodeMethodKind.Factory,
+            ReturnType = new CodeType {
+                Name = "parentModel",
+                TypeDefinition = parentModel,
+            },
+            DiscriminatorMappings = new() {
+                { "ns.childmodel", new CodeType {
+                        Name = "childModel",
+                        TypeDefinition = childModel,
+                    }
+                },
+            }
+        }).First();
+        var requestBuilderClass = root.AddClass(new CodeClass {
+            Name = "somerequestbuilder",
+            ClassKind = CodeClassKind.RequestBuilder,
+        }).First();
+        var requestExecutor = requestBuilderClass.AddMethod(new CodeMethod {
+            Name = "get",
+            MethodKind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType {
+                Name = parentModel.Name,
+                TypeDefinition = parentModel,
+            },
+        }).First();
+        var requestBuilderDeclaration = requestBuilderClass.StartBlock as CodeClass.Declaration;
+        Assert.Empty(requestBuilderDeclaration.Usings);
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        Assert.Equal(factoryMethod, requestBuilderDeclaration.Usings.First(x => x.Name.Equals("factory", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
+        Assert.Null(requestBuilderDeclaration.Usings.FirstOrDefault(x => x.Name.Equals("childModel", StringComparison.OrdinalIgnoreCase)));
+    }
+    [Fact]
     public void DoesNotKeepCancellationParametersInRequestExecutors()
     {
         var model = root.AddClass(new CodeClass
