@@ -1,4 +1,5 @@
 export * from "./parsable";
+export * from "./parsableFactory";
 export * from "./parseNode";
 export * from "./parseNodeFactory";
 export * from "./parseNodeFactoryRegistry";

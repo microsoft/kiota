@@ -2,6 +2,7 @@ import {
   DateOnly,
   Duration,
   Parsable,
+  ParsableFactory,
   ParseNode,
   TimeOnly,
   toFirstCharacterUpper,
@@ -49,14 +50,14 @@ export class JsonParseNode implements ParseNode {
     });
   };
   public getCollectionOfObjectValues = <T extends Parsable>(
-    type: new () => T
+    type: ParsableFactory<T>
   ): T[] | undefined => {
     return (this._jsonNode as unknown[])
       .map((x) => new JsonParseNode(x))
       .map((x) => x.getObjectValue<T>(type));
   };
-  public getObjectValue = <T extends Parsable>(type: new () => T): T => {
-    const result = new type();
+  public getObjectValue = <T extends Parsable>(type: ParsableFactory<T>): T => {
+    const result = type(this);
     this.onBeforeAssignFieldValues && this.onBeforeAssignFieldValues(result);
     this.assignFieldValues(result);
     this.onAfterAssignFieldValues && this.onAfterAssignFieldValues(result);
