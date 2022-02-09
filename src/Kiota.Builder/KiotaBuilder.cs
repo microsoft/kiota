@@ -870,7 +870,6 @@ public class KiotaBuilder
             var declaration = newClass.StartBlock as CodeClass.Declaration;
             declaration.Inherits = new CodeType { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
         }
-        newClass.DiscriminatorPropertyName = schema.Discriminator?.PropertyName;
         var factoryMethod = newClass.AddMethod(new CodeMethod {
             Name = "Create",
             ReturnType = new CodeType { TypeDefinition = newClass, Name = newClass.Name },
@@ -883,6 +882,7 @@ public class KiotaBuilder
             Optional = false,
             Type = new CodeType { Name = ParseNodeInterface, IsExternal = true },
         });
+        factoryMethod.DiscriminatorPropertyName = schema.Discriminator?.PropertyName;
         if(schema.Discriminator?.Mapping?.Any() ?? false)
             factoryMethod.DiscriminatorMappings = schema.Discriminator
                                                     .Mapping

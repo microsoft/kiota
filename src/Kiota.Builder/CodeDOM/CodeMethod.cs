@@ -131,6 +131,10 @@ public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
     /// Gets/Sets the discriminator values for the class where the key is the value as represented in the payload.
     /// </summary>
     public Dictionary<string, CodeTypeBase> DiscriminatorMappings { get; set; } = new();
+    /// <summary>
+    /// Gets/Sets the name of the property to use for discrimination during deserialization.
+    /// </summary>
+    public string DiscriminatorPropertyName { get; set; } 
 
     public object Clone()
     {
@@ -153,6 +157,7 @@ public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
             OriginalIndexer = OriginalIndexer,
             ErrorMappings = ErrorMappings == null ? null : new (ErrorMappings),
             DiscriminatorMappings = DiscriminatorMappings == null ? null : new (DiscriminatorMappings),
+            DiscriminatorPropertyName = DiscriminatorPropertyName?.Clone() as string
         };
         if(Parameters?.Any() ?? false)
             method.AddParameter(Parameters.Select(x => x.Clone() as CodeParameter).ToArray());

@@ -30,12 +30,7 @@ public class CodeClass : CodeBlock, IDocumentedElement, ITypeDefinition
 
     public bool IsErrorDefinition { get; set; }
 
-    public string Description {get; set;}
-
-    /// <summary>
-    /// Gets/Sets the name of the property to use for discrimination during deserialization.
-    /// </summary>
-    public string DiscriminatorPropertyName { get; set; }    
+    public string Description {get; set;}   
     /// <summary>
     /// Name of Class
     /// </summary>
