@@ -875,6 +875,7 @@ public class KiotaBuilder
             Name = "Factory",
             ReturnType = new CodeType { TypeDefinition = newClass, Name = newClass.Name },
             MethodKind = CodeMethodKind.Factory,
+            IsStatic = true,
         }).First();
         factoryMethod.AddParameter(new CodeParameter {
             Name = "mappingValue",

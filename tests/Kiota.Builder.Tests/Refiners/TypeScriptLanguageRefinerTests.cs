@@ -75,6 +75,40 @@ public class TypeScriptLanguageRefinerTests {
 
         Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
     }
+    [Fact]
+    public void AddsUsingsForDiscriminatorTypes() {
+        var parentModel = root.AddClass(new CodeClass {
+            Name = "parentModel",
+            ClassKind = CodeClassKind.Model,
+        }).First();
+        var childModel = root.AddClass(new CodeClass {
+            Name = "childModel",
+            ClassKind = CodeClassKind.Model,
+        }).First();
+        (childModel.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
+            Name = "parentModel",
+            TypeDefinition = parentModel,
+        };
+        var factoryMethod = parentModel.AddMethod(new CodeMethod {
+            Name = "factory",
+            MethodKind = CodeMethodKind.Factory,
+            ReturnType = new CodeType {
+                Name = "parentModel",
+                TypeDefinition = parentModel,
+            },
+            DiscriminatorMappings = new() {
+                { "ns.childmodel", new CodeType {
+                        Name = "childModel",
+                        TypeDefinition = childModel,
+                    }
+                },
+            }
+        }).First();
+        var parentModelDeclaration = parentModel.StartBlock as CodeClass.Declaration;
+        Assert.Empty(parentModelDeclaration.Usings);
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        Assert.Equal(childModel, parentModelDeclaration.Usings.First(x => x.Name.Equals("childModel", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
+    }
 #endregion
 #region typescript
     private const string HttpCoreDefaultName = "IRequestAdapter";

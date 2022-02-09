@@ -181,7 +181,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 provider.ReservedNames.Contains(returnType.Name))
                 returnType.Name = replacement.Invoke(returnType.Name);
             if(currentMethod.ErrorMappings.Values.Select(x => x.Name).Any(x => provider.ReservedNames.Contains(x)))
-                ReplaceErrorMappingNames(currentMethod, provider, replacement);
+                ReplaceMappingNames(currentMethod.ErrorMappings, provider, replacement);
+            if(currentMethod.DiscriminatorMappings.Values.Select(x => x.Name).Any(x => provider.ReservedNames.Contains(x)))
+                ReplaceMappingNames(currentMethod.DiscriminatorMappings, provider, replacement);
             ReplaceReservedParameterNamesTypes(currentMethod, provider, replacement);
         } else if (current is CodeProperty currentProperty &&
                 isNotInExceptions &&
@@ -227,9 +229,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                                             x)
                                             .Aggregate((x, y) => $"{x}.{y}");
     }
-    private static void ReplaceErrorMappingNames(CodeMethod currentMethod, IReservedNamesProvider provider, Func<string, string> replacement)
+    private static void ReplaceMappingNames(Dictionary<string, CodeTypeBase> mappings, IReservedNamesProvider provider, Func<string, string> replacement)
     {
-        currentMethod.ErrorMappings.Values.Where(x => provider.ReservedNames.Contains(x.Name))
+        mappings.Values.Where(x => provider.ReservedNames.Contains(x.Name))
                                         .ToList()
                                         .ForEach(x => x.Name = replacement.Invoke(x.Name));
     }
@@ -573,5 +575,21 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             });
         }
         CrawlTree(currentElement, x => AddParentClassToErrorClasses(x, parentClassName, parentClassNamespace));
+    }
+    protected static void AddDiscriminatorMappingsUsingsToParentClasses(CodeElement currentElement) {
+        if(currentElement is CodeMethod currentMethod &&
+            currentMethod.IsOfKind(CodeMethodKind.Factory) &&
+            currentMethod.DiscriminatorMappings.Any() &&
+            currentMethod.Parent is CodeClass parentClass &&
+            parentClass.StartBlock is CodeClass.Declaration declaration) {
+            declaration.AddUsings(currentMethod.DiscriminatorMappings.Select(x => new CodeUsing {
+                Name = x.Value.Name,
+                Declaration = x.Value is CodeType codeType && codeType.TypeDefinition != null ? new CodeType {
+                    Name = codeType.TypeDefinition.Name,
+                    TypeDefinition = codeType.TypeDefinition,
+                } : null,
+            }).ToArray());
+        }
+        CrawlTree(currentElement, AddDiscriminatorMappingsUsingsToParentClasses);
     }
 }

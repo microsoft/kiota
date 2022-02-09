@@ -37,6 +37,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "ApiError",
                 "@microsoft/kiota-abstractions"
         );
+        AddDiscriminatorMappingsUsingsToParentClasses(
+            generatedCode
+        );
     }
     private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
     private static void AliasUsingsWithSameSymbol(CodeElement currentElement) {
