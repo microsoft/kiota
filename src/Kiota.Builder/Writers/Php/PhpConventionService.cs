@@ -175,10 +175,20 @@ namespace Kiota.Builder.Writers.Php
                 codeElement.Usings?
                     .Where(x => x.Declaration != null && (x.Declaration.IsExternal ||
                                 !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)))
-                    .Select(x => x.Declaration is {IsExternal: true}
-                            ? $"use {x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()}\\{x.Name.ReplaceDotsWithSlashInNamespaces()}{(!string.IsNullOrEmpty(x.Alias) ? $" as {x.Alias}" : string.Empty)};"
-                            : $"use {x.Name.ReplaceDotsWithSlashInNamespaces()}\\{x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()}{(!string.IsNullOrEmpty(x.Alias) ? $" as {x.Alias}" : string.Empty)};")
-                    .Distinct()
+                    .Select(x =>
+                    {
+                        string namespaceValue;
+                        if (x.Declaration is {IsExternal: true})
+                        {
+                            namespaceValue = string.IsNullOrEmpty(x.Declaration.Name) ? string.Empty : $"{x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()}\\";
+                            return
+                                $"use {namespaceValue}{x.Name.ReplaceDotsWithSlashInNamespaces()}{(!string.IsNullOrEmpty(x.Alias) ? $" as {x.Alias}" : string.Empty)};";
+                        }
+                        namespaceValue = string.IsNullOrEmpty(x.Name) ? string.Empty : $"{x.Name.ReplaceDotsWithSlashInNamespaces()}\\";
+                            return
+                                $"use {namespaceValue}{x.Declaration.Name.ReplaceDotsWithSlashInNamespaces()}{(!string.IsNullOrEmpty(x.Alias) ? $" as {x.Alias}" : string.Empty)};";
+                    })
+                        .Distinct()
                     .OrderBy(x => x)
                     .ToList()
                     .ForEach(x =>
