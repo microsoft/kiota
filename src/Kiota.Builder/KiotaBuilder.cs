@@ -878,9 +878,10 @@ public class KiotaBuilder
             IsStatic = true,
         }).First();
         factoryMethod.AddParameter(new CodeParameter {
-            Name = "mappingValue",
+            Name = "parseNode",
             ParameterKind = CodeParameterKind.MappingValue,
-            Type = new CodeType { Name = "string", IsExternal = true, IsNullable = false },
+            Optional = false,
+            Type = new CodeType { Name = ParseNodeInterface, IsExternal = true },
         });
         if(schema.Discriminator?.Mapping?.Any() ?? false)
             factoryMethod.DiscriminatorMappings = schema.Discriminator
@@ -937,8 +938,9 @@ public class KiotaBuilder
     private const string BackingStorePropertyName = "BackingStore";
     private const string BackingStoreInterface = "IBackingStore";
     private const string BackedModelInterface = "IBackedModel";
+    private const string ParseNodeInterface = "IParseNode";
     internal static void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties, bool usesBackingStore) {
-        var serializationPropsType = $"IDictionary<string, Action<T, IParseNode>>";
+        var serializationPropsType = $"IDictionary<string, Action<T, {ParseNodeInterface}>>";
         if(!model.ContainsMember(FieldDeserializersMethodName)) {
             var deserializeProp = new CodeMethod {
                 Name = FieldDeserializersMethodName,
