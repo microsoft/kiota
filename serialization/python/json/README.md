@@ -2,7 +2,7 @@
 
 ## To-do
 
-![Python](https://github.com/microsoft/kiota/actions/workflows/authentication-python-azure.yml/badge.svg)
+![Python](https://github.com/microsoft/kiota/actions/workflows/kiota-serialization-json/badge.svg)
 
 - [] coverage code
 - [x] analyzers
