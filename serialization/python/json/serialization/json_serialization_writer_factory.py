@@ -25,8 +25,9 @@ class JSONSerializationWriterFactory(SerializationWriterFactory):
         """
         if not content_type:
             raise TypeError("Content Type cannot be null")
-        if self.get_valid_content_type() != content_type:
+        valid_content_type = self.get_valid_content_type()
+        if valid_content_type.casefold() != content_type.casefold():
             raise TypeError(
-                f"Expected {self.get_valid_content_type()} as content type")
+                f"Expected {valid_content_type} as content type")
 
         return JsonSerializationWriter()
