@@ -115,19 +115,23 @@ namespace Kiota.Builder.Refiners
             return new CodeType
             {
                 Name = "Command",
-                IsExternal = true
+                IsExternal = true,
+                Parent = parent,
             };
         }
 
         private static CodeMethod CreateBuildCommandMethod(CodeProperty navProperty, CodeClass parent)
         {
-            var codeMethod = new CodeMethod();
-            codeMethod.IsAsync = false;
-            codeMethod.Name = $"Build{navProperty.Name.ToFirstCharacterUpperCase()}Command";
-            codeMethod.MethodKind = CodeMethodKind.CommandBuilder;
+            var codeMethod = new CodeMethod
+            {
+                IsAsync = false,
+                Name = $"Build{navProperty.Name.ToFirstCharacterUpperCase()}Command",
+                MethodKind = CodeMethodKind.CommandBuilder
+            };
             codeMethod.ReturnType = CreateCommandType(codeMethod);
             codeMethod.AccessedProperty = navProperty;
             codeMethod.SimpleName = navProperty.Name;
+            codeMethod.Parent = parent;
             return codeMethod;
         }
 

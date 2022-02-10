@@ -10,7 +10,7 @@ namespace Kiota.Builder.Writers.Shell
 {
     class ShellCodeMethodWriter : CodeMethodWriter
     {
-        private static Regex delimitedRegex = new Regex("(?<=[a-z])[-_\\.]([A-Za-z])", RegexOptions.Compiled);
+        private static Regex delimitedRegex = new Regex("(?<=[a-z])[-_\\.]+([A-Za-z])", RegexOptions.Compiled);
         private static Regex camelCaseRegex = new Regex("(?<=[a-z])([A-Z])", RegexOptions.Compiled);
         private static Regex identifierRegex = new Regex("(?:[-_\\.]([a-zA-Z]))", RegexOptions.Compiled);
         private static Regex uppercaseRegex = new Regex("([A-Z])", RegexOptions.Compiled);
@@ -89,7 +89,6 @@ namespace Kiota.Builder.Writers.Shell
                     {
                         // Include namespace to avoid type ambiguity on similarly named classes. Currently, if we have namespaces A and A.B where both namespaces have type T,
                         // Trying to use type A.B.T in namespace A without using the fully qualified name will break the build.
-                        // TODO: Fix this in the refiner.
                         var targetClass = string.Join(".", codeReturnType.TypeDefinition.Parent.Name, conventions.GetTypeString(codeReturnType, codeElement));
                         var builderMethods = codeReturnType.TypeDefinition.GetChildElements(true).OfType<CodeMethod>()
                             .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder))
@@ -118,7 +117,6 @@ namespace Kiota.Builder.Writers.Shell
                 }
             } else
             {
-                var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
                 var generatorMethod = (codeElement.Parent as CodeClass)
                                                 .Methods
                                                 .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod);
@@ -249,7 +247,6 @@ namespace Kiota.Builder.Writers.Shell
                 {
                     var type = originalMethod.ReturnType as CodeType;
                     var typeString = conventions.GetTypeString(type, originalMethod);
-                    var contentType = originalMethod.ContentType ?? "application/json";
                     var formatterVar = "formatter";
 
                     writer.WriteLine($"var {formatterVar} = {outputFormatterFactoryParamName}.GetFormatter({outputFormatParamName});");
@@ -284,7 +281,6 @@ namespace Kiota.Builder.Writers.Shell
         {
             if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
-            var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
             var generatorMethod = (codeElement.Parent as CodeClass)
                                                 .Methods
                                                 .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod);
@@ -339,10 +335,9 @@ namespace Kiota.Builder.Writers.Shell
                 }
                 writer.CloseBlock("});");
 
-                foreach (var param in generatorMethod.PathAndQueryParameters.Where(p => p.IsOfKind(CodeParameterKind.PathParameters)))
+                foreach (var paramName in generatorMethod.PathAndQueryParameters.Where(p => p.IsOfKind(CodeParameterKind.PathParameters)).Select(p => p.Name))
                 {
-                    var paramName = NormalizeToIdentifier(param.Name);
-                    writer.WriteLine($"requestInfo.PathParameters.Add(\"{param.Name}\", {paramName});");
+                    writer.WriteLine($"requestInfo.PathParameters.Add(\"{paramName}\", {NormalizeToIdentifier(paramName)});");
                 }
             }
             else
@@ -364,7 +359,7 @@ namespace Kiota.Builder.Writers.Shell
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        private string NormalizeToIdentifier(string input)
+        private static string NormalizeToIdentifier(string input)
         {
             return identifierRegex.Replace(input, m => m.Groups[1].Value.ToUpper());
         }
@@ -374,12 +369,11 @@ namespace Kiota.Builder.Writers.Shell
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        private string NormalizeToOption(string input)
+        private static string NormalizeToOption(string input)
         {
-            var result = input;
-            result = camelCaseRegex.Replace(input, "-$1");
+            var result = camelCaseRegex.Replace(input, "-$1");
             // 2 passes for cases like "singleValueLegacyExtendedProperty_id"
-            result = delimitedRegex.Replace(input, "-$1");
+            result = delimitedRegex.Replace(result, "-$1");
 
             return result.ToLower();
         }
