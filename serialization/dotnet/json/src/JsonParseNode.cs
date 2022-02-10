@@ -9,6 +9,8 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
 using Microsoft.Kiota.Abstractions.Serialization;
+using Microsoft.Kiota.Abstractions;
+using System.Xml;
 
 namespace Microsoft.Kiota.Serialization.Json
 {
@@ -84,6 +86,46 @@ namespace Microsoft.Kiota.Serialization.Json
         }
 
         /// <summary>
+        /// Get the <see cref="TimeSpan"/> value from the json node
+        /// </summary>
+        /// <returns>A <see cref="TimeSpan"/> value</returns>
+        public TimeSpan? GetTimeSpanValue()
+        {
+            var jsonString = _jsonNode.GetString();
+            if(string.IsNullOrEmpty(jsonString))
+                return null;
+
+            // Parse an ISO8601 duration.http://en.wikipedia.org/wiki/ISO_8601#Durations to a TimeSpan
+            return XmlConvert.ToTimeSpan(jsonString);
+        }
+
+        /// <summary>
+        /// Get the <see cref="Date"/> value from the json node
+        /// </summary>
+        /// <returns>A <see cref="Date"/> value</returns>
+        public Date? GetDateValue()
+        {
+            var dateString = _jsonNode.GetString();
+            if(!DateTime.TryParse(dateString,out var result))
+                return null;
+
+            return new Date(result);
+        }
+
+        /// <summary>
+        /// Get the <see cref="Time"/> value from the json node
+        /// </summary>
+        /// <returns>A <see cref="Time"/> value</returns>
+        public Time? GetTimeValue()
+        {
+            var dateString = _jsonNode.GetString();
+            if(!DateTime.TryParse(dateString,out var result))
+                return null;
+
+            return new Time(result);
+        }
+
+        /// <summary>
         /// Get the enumeration value of type <typeparam name="T"/>from the json node
         /// </summary>
         /// <returns>An enumeration value or null</returns>
@@ -154,6 +196,9 @@ namespace Microsoft.Kiota.Serialization.Json
         private static Type doubleType = typeof(double?);
         private static Type guidType = typeof(Guid?);
         private static Type dateTimeOffsetType = typeof(DateTimeOffset?);
+        private static Type timeSpanType = typeof(TimeSpan?);
+        private static Type dateType = typeof(Date?);
+        private static Type timeType = typeof(Time?);
 
         /// <summary>
         /// Get the collection of primitives of type <typeparam name="T"/>from the json node
@@ -183,6 +228,12 @@ namespace Microsoft.Kiota.Serialization.Json
                     yield return (T)(object)currentParseNode.GetGuidValue();
                 else if(genericType == dateTimeOffsetType)
                     yield return (T)(object)currentParseNode.GetDateTimeOffsetValue();
+                else if(genericType == timeSpanType)
+                    yield return (T)(object)currentParseNode.GetTimeSpanValue();
+                else if(genericType == dateType)
+                    yield return (T)(object)currentParseNode.GetDateValue();
+                else if(genericType == timeType)
+                    yield return (T)(object)currentParseNode.GetTimeValue();
                 else
                     throw new InvalidOperationException($"unknown type for deserialization {genericType.FullName}");
             }

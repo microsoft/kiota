@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v2.4.0
       - uses: actions/setup-node@v2.5.1
         with:
-          node-version: '14'
+          node-version: '16'
       - run: npm ci
         working-directory: ${{ env.relativePath }}
       - run: npm run build
@@ -42,7 +42,9 @@ jobs:
     steps:
       - uses: actions/setup-node@v2.5.1
         with:
-          node-version: '14'
+          node-version: '16'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@microsoft'
       - uses: actions/download-artifact@v2
         with:
           name: drop

@@ -525,6 +525,12 @@ namespace Kiota.Builder
                     isExternal = true;
                 if("date-time".Equals(format, StringComparison.OrdinalIgnoreCase))
                     typeName = "DateTimeOffset";
+                else if("duration".Equals(format, StringComparison.OrdinalIgnoreCase))
+                    typeName = "TimeSpan";
+                else if("date".Equals(format, StringComparison.OrdinalIgnoreCase))
+                    typeName = "DateOnly";
+                else if("time".Equals(format, StringComparison.OrdinalIgnoreCase))
+                    typeName = "TimeOnly";
                 else if ("base64url".Equals(format, StringComparison.OrdinalIgnoreCase))
                     typeName = "binary";
             } else if ("double".Equals(format, StringComparison.OrdinalIgnoreCase) || 

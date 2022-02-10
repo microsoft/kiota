@@ -43,7 +43,7 @@ If you have not already, you will need to create a `.npmrc` to enable access to 
 
 ### Installing Kiota
 
-The article on installing the [Kiota command line](../generator/tool.md) tool shows how to do this.
+The article on installing the [Kiota command line](./index.md) tool shows how to do this.
 
 Once the package feed is accessible the following packages can be added to the project.
 

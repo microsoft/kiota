@@ -42,14 +42,18 @@ abstract class Enum
     /**
      * Create a new enum
      *
-     * @param mixed $value The value of the enum
+     * @param string $value The value of the enum
      *
      * @throws InvalidArgumentException|ReflectionException if enum value is invalid
      */
-    public function __construct($value)
+    public function __construct(string $value)
     {
-        if (!self::has($value)) {
-            throw new InvalidArgumentException("Invalid enum value $value");
+        $components = explode(',', $value);
+
+        foreach ($components as $component) {
+            if (!self::has($component)) {
+                throw new InvalidArgumentException("Invalid enum value $value");
+            }
         }
         $this->_value = $value;
     }

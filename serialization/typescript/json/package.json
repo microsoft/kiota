@@ -1,40 +1,52 @@
 {
-  "name": "@microsoft/kiota-serialization-json",
-  "version": "1.0.5",
-  "description": "Implementation of Kiota Serialization interfaces for JSON",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "clean": "rm -r ./dist"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/microsoft/kiota.git"
-  },
-  "keywords": [
-    "kiota",
-    "openAPI",
-    "Microsoft",
-    "Graph",
-    "JSON"
-  ],
-  "author": "Microsoft",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/microsoft/kiota/issues"
-  },
-  "homepage": "https://github.com/microsoft/kiota#readme",
-  "devDependencies": {
-    "@types/node": "^17.0.10",
-    "typescript": "^4.5.5"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
-  "dependencies": {
-    "@microsoft/kiota-abstractions": "^1.0.20",
-    "web-streams-polyfill": "^3.2.0"
-  }
+    "name": "@microsoft/kiota-serialization-json",
+    "version": "1.0.7",
+    "description": "Implementation of Kiota Serialization interfaces for JSON",
+    "main": "dist/cjs/index.js",
+    "module": "dist/es/index.js",
+    "types": "dist/cjs/index.d.ts",
+    "scripts": {
+        "build": "npm run build:cjs && npm run build:esm",
+        "build:cjs": "tsc -p tsconfig.cjs.json",
+        "build:esm": "tsc -p tsconfig.es.json",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "lint": "eslint . --ext .ts",
+        "lint:fix": "eslint . --ext .ts --fix",
+        "clean": "rm -r ./dist"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/microsoft/kiota.git"
+    },
+    "keywords": [
+        "kiota",
+        "openAPI",
+        "Microsoft",
+        "Graph",
+        "JSON"
+    ],
+    "author": "Microsoft",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/microsoft/kiota/issues"
+    },
+    "homepage": "https://github.com/microsoft/kiota#readme",
+    "devDependencies": {
+        "@types/node": "^17.0.17",
+        "typescript": "^4.5.5",
+        "@typescript-eslint/eslint-plugin": "^5.11.0",
+        "@typescript-eslint/parser": "^5.11.0",
+        "eslint": "^8.8.0",
+        "eslint-config-prettier": "^8.3.0",
+        "eslint-plugin-prettier": "^4.0.0",
+        "eslint-plugin-simple-import-sort": "^7.0.0",
+        "prettier": "^2.5.1"
+    },
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com"
+    },
+    "dependencies": {
+        "tslib": "^2.3.1",
+        "@microsoft/kiota-abstractions": "^1.0.27"
+    }
 }
