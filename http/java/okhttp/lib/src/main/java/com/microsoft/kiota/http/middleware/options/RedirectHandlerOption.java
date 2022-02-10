@@ -1,14 +1,15 @@
 package com.microsoft.kiota.http.middleware.options;
 
-import com.microsoft.kiota.http.middleware.IShouldRedirect;
-
 import javax.annotation.Nullable;
+
+import com.microsoft.kiota.RequestOption;
+
 import javax.annotation.Nonnull;
 
 /**
  * Options to be passed to the redirect middleware.
  */
-public class RedirectOptions {
+public class RedirectHandlerOption implements RequestOption {
     private int maxRedirects;
     /**
      * The default maximum number of redirects to follow
@@ -28,7 +29,7 @@ public class RedirectOptions {
     /**
      * Create default instance of redirect options, with default values of max redirects and should redirect
      */
-    public RedirectOptions() {
+    public RedirectHandlerOption() {
         this(DEFAULT_MAX_REDIRECTS, DEFAULT_SHOULD_REDIRECT);
     }
 
@@ -36,7 +37,7 @@ public class RedirectOptions {
      * @param maxRedirects Max redirects to occur
      * @param shouldRedirect Should redirect callback called before every redirect
      */
-    public RedirectOptions(int maxRedirects, @Nullable final IShouldRedirect shouldRedirect) {
+    public RedirectHandlerOption(int maxRedirects, @Nullable final IShouldRedirect shouldRedirect) {
         if(maxRedirects < 0)
             throw new IllegalArgumentException("Max redirects cannot be negative");
         if(maxRedirects > MAX_REDIRECTS)

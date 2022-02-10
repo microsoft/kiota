@@ -1,14 +1,15 @@
 package com.microsoft.kiota.http.middleware.options;
 
-import com.microsoft.kiota.http.middleware.IShouldRetry;
-
 import javax.annotation.Nullable;
+
+import com.microsoft.kiota.RequestOption;
+
 import javax.annotation.Nonnull;
 
 /**
  * The options to be passed to the retry middleware.
  */
-public class RetryOptions {
+public class RetryHandlerOption implements RequestOption{
     private IShouldRetry mShouldretry;
     /**
      * Default retry evaluation, always retry.
@@ -41,7 +42,7 @@ public class RetryOptions {
     /**
      * Create default instance of retry options, with default values of delay, max retries and shouldRetry callback.
      */
-    public RetryOptions(){
+    public RetryHandlerOption(){
         this(DEFAULT_SHOULD_RETRY, DEFAULT_MAX_RETRIES, DEFAULT_DELAY);
     }
 
@@ -52,7 +53,7 @@ public class RetryOptions {
      * @param delay Delay in seconds between retries
      */
     @SuppressWarnings("LambdaLast")
-    public RetryOptions(@Nullable final IShouldRetry shouldRetry, int maxRetries, long delay) {
+    public RetryHandlerOption(@Nullable final IShouldRetry shouldRetry, int maxRetries, long delay) {
         if(delay > MAX_DELAY)
             throw new IllegalArgumentException("Delay cannot exceed " + MAX_DELAY);
         if(delay < 0)

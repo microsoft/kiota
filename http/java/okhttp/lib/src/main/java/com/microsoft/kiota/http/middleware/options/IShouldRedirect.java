@@ -1,4 +1,4 @@
-package com.microsoft.kiota.http.middleware;
+package com.microsoft.kiota.http.middleware.options;
 
 import javax.annotation.Nonnull;
 

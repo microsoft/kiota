@@ -1,7 +1,10 @@
-package src.main.java.com.microsoft.kiota.http;
+package com.microsoft.kiota.http;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import com.microsoft.kiota.http.middleware.RedirectHandler;
+import com.microsoft.kiota.http.middleware.RetryHandler;
 
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
@@ -37,6 +40,10 @@ public class KiotaClientFactory {
      */
     @Nonnull
     public static Interceptor[] CreateDefaultInterceptors() {
-        return new Interceptor[] {}; //TODO add the list of default interceptors when they are ready
+        return new Interceptor[] {
+            new RedirectHandler(),
+            new RetryHandler()
+        }; //TODO add the list of default interceptors when they are ready
+        //DO we want to add Telemetry and Chaos as defaults? 
     }
 }

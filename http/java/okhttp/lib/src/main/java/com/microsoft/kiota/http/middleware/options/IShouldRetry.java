@@ -1,4 +1,4 @@
-package com.microsoft.kiota.http.middleware;
+package com.microsoft.kiota.http.middleware.options;
 
 import okhttp3.Request;
 import okhttp3.Response;

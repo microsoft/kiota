@@ -35,7 +35,6 @@ import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import okhttp3.Response;
 import okio.BufferedSink;
-import src.main.java.com.microsoft.kiota.http.KiotaClientFactory;
 
 public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter {
     private final static String contentTypeHeaderKey = "Content-Type";

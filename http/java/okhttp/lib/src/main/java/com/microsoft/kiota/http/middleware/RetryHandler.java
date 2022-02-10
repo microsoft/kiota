@@ -6,10 +6,8 @@ import java.util.Objects;
 import javax.annotation.Nullable;
 import javax.annotation.Nonnull;
 
-import com.microsoft.kiota.http.middleware.IShouldRetry;
-import com.microsoft.kiota.http.middleware.MiddlewareType;
-import com.microsoft.kiota.http.middleware.options.RetryOptions;
-import com.microsoft.kiota.http.middleware.options.TelemetryOptions;
+import com.microsoft.kiota.http.middleware.options.IShouldRetry;
+import com.microsoft.kiota.http.middleware.options.RetryHandlerOption;
 import com.microsoft.kiota.http.logger.DefaultLogger;
 import com.microsoft.kiota.http.logger.ILogger;
 
@@ -29,7 +27,7 @@ public class RetryHandler implements Interceptor{
      */
     public final MiddlewareType MIDDLEWARE_TYPE = MiddlewareType.RETRY;
 
-    private RetryOptions mRetryOption;
+    private RetryHandlerOption mRetryOption;
 
     /**
      * Header name to track the retry attempt number
@@ -63,18 +61,18 @@ public class RetryHandler implements Interceptor{
     /**
      * @param retryOption Create Retry handler using retry option
      */
-    public RetryHandler(@Nullable final RetryOptions retryOption) {
+    public RetryHandler(@Nullable final RetryHandlerOption retryOption) {
         this(new DefaultLogger(), retryOption);
     }
     /**
      * @param retryOption Create Retry handler using retry option
      * @param logger logger to use for telemetry
      */
-    public RetryHandler(@Nonnull final ILogger logger, @Nullable final RetryOptions retryOption) {
+    public RetryHandler(@Nonnull final ILogger logger, @Nullable final RetryHandlerOption retryOption) {
         this.logger = Objects.requireNonNull(logger, "logger parameter cannot be null");
         this.mRetryOption = retryOption;
         if(this.mRetryOption == null) {
-            this.mRetryOption = new RetryOptions();
+            this.mRetryOption = new RetryHandlerOption();
         }
     }
     /**
@@ -84,13 +82,13 @@ public class RetryHandler implements Interceptor{
         this(null);
     }
 
-    boolean retryRequest(Response response, int executionCount, Request request, RetryOptions retryOptions) {
+    boolean retryRequest(Response response, int executionCount, Request request, RetryHandlerOption retryOption) {
 
         // Should retry option
         // Use should retry common for all requests
         IShouldRetry shouldRetryCallback = null;
-        if(retryOptions != null) {
-            shouldRetryCallback = retryOptions.shouldRetry();
+        if(retryOption != null) {
+            shouldRetryCallback = retryOption.shouldRetry();
         }
 
         boolean shouldRetry = false;
@@ -100,14 +98,14 @@ public class RetryHandler implements Interceptor{
         // Payloads with forward only streams will be have the responses returned
         // without any retry attempt.
         shouldRetry =
-                retryOptions != null
-                        && executionCount <= retryOptions.maxRetries()
+                retryOption != null
+                        && executionCount <= retryOption.maxRetries()
                         && checkStatus(statusCode) && isBuffered(request)
                         && shouldRetryCallback != null
-                        && shouldRetryCallback.shouldRetry(retryOptions.delay(), executionCount, request, response);
+                        && shouldRetryCallback.shouldRetry(retryOption.delay(), executionCount, request, response);
 
         if(shouldRetry) {
-            long retryInterval = getRetryAfter(response, retryOptions.delay(), executionCount);
+            long retryInterval = getRetryAfter(response, retryOption.delay(), executionCount);
             try {
                 Thread.sleep(retryInterval);
             } catch (InterruptedException e) {
@@ -127,7 +125,7 @@ public class RetryHandler implements Interceptor{
      */
     long getRetryAfter(Response response, long delay, int executionCount) {
         String retryAfterHeader = response.header(RETRY_AFTER);
-        double retryDelay = RetryOptions.DEFAULT_DELAY * DELAY_MILLISECONDS;
+        double retryDelay = RetryHandlerOption.DEFAULT_DELAY * DELAY_MILLISECONDS;
         if(retryAfterHeader != null) {
             retryDelay = Long.parseLong(retryAfterHeader) * DELAY_MILLISECONDS;
         } else {
@@ -135,7 +133,7 @@ public class RetryHandler implements Interceptor{
             retryDelay = (executionCount < 2 ? delay : retryDelay + delay) + (double)Math.random();
             retryDelay *= DELAY_MILLISECONDS;
         }
-        return (long)Math.min(retryDelay, RetryOptions.MAX_DELAY * DELAY_MILLISECONDS);
+        return (long)Math.min(retryDelay, RetryHandlerOption.MAX_DELAY * DELAY_MILLISECONDS);
     }
 
     boolean checkStatus(int statusCode) {
@@ -166,18 +164,10 @@ public class RetryHandler implements Interceptor{
     @Nonnull
     public Response intercept(@Nonnull final Chain chain) throws IOException {
         Request request = chain.request();
-
-        TelemetryOptions telemetryOptions = request.tag(TelemetryOptions.class);
-        if(telemetryOptions == null) {
-            telemetryOptions = new TelemetryOptions();
-            request = request.newBuilder().tag(TelemetryOptions.class, telemetryOptions).build();
-        }
-        telemetryOptions.setFeatureUsage(TelemetryOptions.RETRY_HANDLER_ENABLED_FLAG);
-
         Response response = chain.proceed(request);
 
         // Use should retry pass along with this request
-        RetryOptions retryOption = request.tag(RetryOptions.class);
+        RetryHandlerOption retryOption = request.tag(RetryHandlerOption.class);
         retryOption = retryOption != null ? retryOption : mRetryOption;
 
         int executionCount = 1;
