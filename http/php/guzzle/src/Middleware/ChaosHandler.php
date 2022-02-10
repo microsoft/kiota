@@ -11,6 +11,7 @@ namespace Microsoft\Kiota\Http\Middleware;
 use GuzzleHttp\Promise\Create;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Response;
+use Microsoft\Kiota\Abstractions\RequestOption;
 use Microsoft\Kiota\Http\Middleware\Options\ChaosOption;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -28,11 +29,6 @@ use Psr\Http\Message\ResponseInterface;
  */
 class ChaosHandler
 {
-    /**
-     * Key to use to set request specific {@link ChaosOption}'s within Guzzle's request options
-     */
-    public const CHAOS_GUZZLE_CONFIG = 'kiota_chaos_option';
-
     /**
      * @var callable Next handler in the middleware pipeline
      */
@@ -60,8 +56,9 @@ class ChaosHandler
      */
     public function __invoke(RequestInterface $request, array $options): PromiseInterface
     {
-        if (array_key_exists(self::CHAOS_GUZZLE_CONFIG, $options)) {
-            $this->chaosOption = $options[self::CHAOS_GUZZLE_CONFIG];
+        // Request-level options override global options
+        if (array_key_exists(ChaosOption::class, $options)) {
+            $this->chaosOption = $options[ChaosOption::class];
         }
 
         $randomPercentage = rand(0, ChaosOption::MAX_CHAOS_PERCENTAGE);

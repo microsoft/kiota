@@ -56,6 +56,10 @@ class RetryHandler
      */
     public function __invoke(RequestInterface $request, array $options): PromiseInterface
     {
+        // Request-level options override global options
+        if (array_key_exists(RetryOption::class, $options)) {
+            $this->retryOption = $options[RetryOption::class];
+        }
         $fn = $this->nextHandler;
         return $fn($request, $options)->then(
             $this->onFulfilled($request, $options),

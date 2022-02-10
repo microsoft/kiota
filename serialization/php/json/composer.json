@@ -1,0 +1,35 @@
+{
+  "name": "microsoft/kiota-serialization-json",
+  "description": "Implementation of Kiota Abstraction using Json.",
+  "authors": [
+    {
+      "name": "Microsoft Graph Client Tooling",
+      "email": "graphtooling@service.microsoft.com",
+      "role": "Developer"
+    }
+  ],
+  "license": ["MIT"],
+  "repositories": [
+    {
+      "type": "path",
+      "url": "../../../abstractions/php"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Microsoft\\Kiota\\Serialization\\Json\\": "src",
+      "Microsoft\\Kiota\\Serialization\\Tests\\": "tests"
+    }
+  },
+  "require": {
+    "microsoft/kiota-abstractions": "*@dev",
+    "guzzlehttp/psr7": "^1.6 || ^2",
+    "php": "^7.4 || ^8",
+    "ext-json": "*"
+  },
+  "require-dev": {
+    "roave/security-advisories": "dev-latest",
+    "phpunit/phpunit": "^8 || ^9",
+    "phpstan/phpstan": "^1.4"
+  }
+}

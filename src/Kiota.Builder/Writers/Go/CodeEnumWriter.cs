@@ -41,17 +41,21 @@ namespace Kiota.Builder.Writers.Go {
             writer.WriteLines("}",
                             $"func Parse{typeName}(v string) (interface{{}}, error) {{");
             writer.IncreaseIndent();
+            writer.WriteLine($"result := {codeElement.Options.First().ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
             writer.WriteLine($"switch strings.ToUpper(v) {{");
             writer.IncreaseIndent();
             foreach (var item in codeElement.Options) {
                 writer.WriteLine($"case \"{item.ToUpperInvariant()}\":");
                 writer.IncreaseIndent();
-                writer.WriteLine($"return {item.ToUpperInvariant()}_{typeName.ToUpperInvariant()}, nil");
+                writer.WriteLine($"result = {item.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
                 writer.DecreaseIndent();
             }
+            writer.WriteLine("default:");
+            writer.IncreaseIndent();
+            writer.WriteLine($"return 0, errors.New(\"Unknown {typeName} value: \" + v)");
             writer.DecreaseIndent();
-            writer.WriteLines("}",
-                            $"return 0, errors.New(\"Unknown {typeName} value: \" + v)");
+            writer.CloseBlock();
+            writer.WriteLine("return &result, nil");
             writer.CloseBlock();
             writer.WriteLine($"func Serialize{typeName}(values []{typeName}) []string {{");
             writer.IncreaseIndent();

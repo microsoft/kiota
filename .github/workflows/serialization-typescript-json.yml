@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-node@v2.5.1
         with:
           always-auth: true
-          node-version: '14'
+          node-version: '16'
           registry-url: 'https://npm.pkg.github.com'
           scope: '@microsoft'
       - run: npm ci
@@ -47,7 +47,9 @@ jobs:
     steps:
       - uses: actions/setup-node@v2.5.1
         with:
-          node-version: '14'
+          node-version: '16'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@microsoft'
       - uses: actions/download-artifact@v2
         with:
           name: drop
