@@ -11,14 +11,24 @@ import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;
 
+/**
+ * TelemetryHandler implementation using OkHttp3
+ */
 public class TelemetryHandler implements Interceptor{
 
-    private TelemetryHandlerOption _telemetryHandlerOption; 
+    private TelemetryHandlerOption _telemetryHandlerOption;
 
+    /**
+     * TelemetryHandler no param constructor
+     */
     public TelemetryHandler() {
         this(null);
     }
 
+    /**
+     * TelemetryHandler constructor with passed in options.
+     * @param telemetryHandlerOption The user specified telemetryHandlerOptions
+     */
     public TelemetryHandler(@Nullable TelemetryHandlerOption telemetryHandlerOption) {
         if (telemetryHandlerOption == null) {
             this._telemetryHandlerOption = new TelemetryHandlerOption();
@@ -26,7 +36,12 @@ public class TelemetryHandler implements Interceptor{
         this._telemetryHandlerOption = telemetryHandlerOption;
     }
 
-    
+    /**
+     * Send the HttpRequest after telemetryOptions are handled
+     * @param chain
+     * @return
+     * @throws IOException
+     */
     @Override
     public Response intercept(@Nonnull Chain chain) throws IOException {
         final Request request = chain.request();

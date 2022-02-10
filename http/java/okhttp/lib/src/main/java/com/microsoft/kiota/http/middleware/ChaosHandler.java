@@ -53,7 +53,7 @@ public class ChaosHandler implements Interceptor {
             return new Response
                     .Builder()
                     .request(request)
-                    .protocol(Protocol.HTTP_1_1)
+                    .protocol(Protocol.HTTP_1_1)//TODO: Confirming that this will need to be removed
                     .code(MSClientErrorCodeTooManyRequests)
                     .message("Too Many Requests")
                     .addHeader(RETRY_AFTER, retryAfterValue)

@@ -13,10 +13,6 @@ public class TelemetryUtilities {
      */
     private String clientRequestId;
     /**
-     * Http request header to send the telemetry infromation with
-     */
-    public static final String SDK_VERSION = "SdkVersion";
-    /**
      * Current SDK version
      */
     public static final String VERSION = ""; //Set This Upon Release
@@ -47,6 +43,7 @@ public class TelemetryUtilities {
     public void setClientRequestId(@Nonnull final String clientRequestId) {
         this.clientRequestId = Objects.requireNonNull(clientRequestId, "parameter clientRequestId cannot be null");
     }
+
     /**
      * Gets the client request id
      * @return the client request id
@@ -58,13 +55,23 @@ public class TelemetryUtilities {
         }
         return clientRequestId;
     }
-    
+
+    public String getSdkVersionValue() {
+        final String androidVersion = getAndroidAPILevel();
+        final String javaVersion = System.getProperty("java.version");
+        final String sdkVersionValue =  GRAPH_VERSION_PREFIX + "/" + VERSION + " " +
+                (DEFAULT_VERSION_VALUE.equals(javaVersion) ? "" : (", " + JAVA_VERSION_PREFIX + "/" + javaVersion)) +
+                (DEFAULT_VERSION_VALUE.equals(androidVersion) ? "" : (", " + ANDROID_VERSION_PREFIX + "/" + androidVersion));
+        return sdkVersionValue;
+    }
+
     public String getAndroidAPILevel() {
         if(androidAPILevel == null) {
             androidAPILevel = getAndroidAPILevelInternal();
         }
         return androidAPILevel;
     }
+
     private String getAndroidAPILevelInternal() {
         try {
             final Class<?> buildClass = Class.forName("android.os.Build");
@@ -89,7 +96,5 @@ public class TelemetryUtilities {
             return DEFAULT_VERSION_VALUE;
         }
     }
-
-
 
 }
