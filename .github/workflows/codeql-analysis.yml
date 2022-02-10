@@ -15,10 +15,10 @@ on:
   workflow_dispatch:
   push:
     branches: [ main ]
-    path-ignore: ['abstractions/**', 'authentication/**', 'serialization/**', 'http/**', '**.md', '.vscode/**', '**.svg']
+    path-ignore: ['abstractions/**', 'authentication/**', 'serialization/**', 'http/**', 'cli/**', '**.md', '.vscode/**', '**.svg']
   pull_request:
     # The branches below must be a subset of the branches above
-    path-ignore: ['abstractions/**', 'authentication/**', 'serialization/**', 'http/**', '**.md', '.vscode/**', '**.svg']
+    path-ignore: ['abstractions/**', 'authentication/**', 'serialization/**', 'http/**', 'cli/**', '**.md', '.vscode/**', '**.svg']
   schedule:
     - cron: '20 9 * * 5'
 

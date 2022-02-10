@@ -166,7 +166,7 @@ namespace Kiota.Builder.Refiners
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
                 "System.CommandLine",  "Command", "RootCommand"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
-                "Microsoft.Graph.Cli.Core.IO",  "IOutputFormatterFactory"),
+                "Microsoft.Kiota.Cli.Commons.IO",  "IOutputFormatterFactory"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
                 "System.Text",  "Encoding"),
         };
