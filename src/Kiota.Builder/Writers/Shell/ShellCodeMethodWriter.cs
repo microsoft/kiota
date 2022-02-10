@@ -289,34 +289,37 @@ namespace Kiota.Builder.Writers.Shell
                                                 .Methods
                                                 .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod);
             var requestBodyParam = requestParams.requestBody;
-            var requestBodyParamType = requestBodyParam?.Type as CodeType;
-            if (requestBodyParamType?.TypeDefinition is CodeClass)
-            {
-                writer.WriteLine($"using var stream = new MemoryStream(Encoding.UTF8.GetBytes({requestBodyParam.Name}));");
-                writer.WriteLine("var parseNode = ParseNodeFactoryRegistry.DefaultInstance.GetRootParseNode(\"application/json\", stream);");
-
-                var typeString = conventions.GetTypeString(requestBodyParamType, requestBodyParam, false);
-
-                if (requestBodyParamType.IsCollection)
+            if (requestBodyParam != null) {
+                var requestBodyParamType = requestBodyParam?.Type as CodeType;
+                if (requestBodyParamType?.TypeDefinition is CodeClass)
                 {
-                    writer.WriteLine($"var model = parseNode.GetCollectionOfObjectValues<{typeString}>();");
-                } else
+                    writer.WriteLine($"using var stream = new MemoryStream(Encoding.UTF8.GetBytes({requestBodyParam.Name}));");
+                    writer.WriteLine("var parseNode = ParseNodeFactoryRegistry.DefaultInstance.GetRootParseNode(\"application/json\", stream);");
+
+                    var typeString = conventions.GetTypeString(requestBodyParamType, requestBodyParam, false);
+
+                    if (requestBodyParamType.IsCollection)
+                    {
+                        writer.WriteLine($"var model = parseNode.GetCollectionOfObjectValues<{typeString}>();");
+                    } else
+                    {
+                        writer.WriteLine($"var model = parseNode.GetObjectValue<{typeString}>();");
+                    }
+
+                    requestBodyParam.Name = "model";
+                } else if (conventions.StreamTypeName.Equals(requestBodyParamType?.Name, StringComparison.OrdinalIgnoreCase))
                 {
-                    writer.WriteLine($"var model = parseNode.GetObjectValue<{typeString}>();");
+                    var name = requestBodyParam.Name;
+                    requestBodyParam.Name = "stream";
+                    writer.WriteLine($"using var {requestBodyParam.Name} = {name}.OpenRead();");
                 }
-
-                requestBodyParam.Name = "model";
-            } else if (conventions.StreamTypeName.Equals(requestBodyParamType?.Name, StringComparison.OrdinalIgnoreCase))
-            {
-                var name = requestBodyParam.Name;
-                requestBodyParam.Name = "stream";
-                writer.WriteLine($"using var {requestBodyParam.Name} = {name}.OpenRead();");
             }
+            
             var parametersList = new CodeParameter[] { requestParams.requestBody, requestParams.queryString, requestParams.headers, requestParams.options }
                                 .Select(x => x?.Name).Where(x => x != null).DefaultIfEmpty().Aggregate((x, y) => $"{x}, {y}");
             var separator = string.IsNullOrWhiteSpace(parametersList) ? "" : ", ";
             writer.WriteLine($"var requestInfo = {generatorMethod?.Name}({parametersList}{separator}q => {{");
-            if (generatorMethod.PathAndQueryParameters != null)
+            if (generatorMethod?.PathAndQueryParameters != null)
             {
                 writer.IncreaseIndent();
                 foreach (var param in generatorMethod.PathAndQueryParameters.Where(p => p.IsOfKind(CodeParameterKind.QueryParameter)))
