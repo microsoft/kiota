@@ -39,241 +39,261 @@ namespace Kiota.Builder.Writers.Shell
                 // Build method
                 // Puts together the BuildXXCommand objects. Needs a nav property name e.g. users
                 // Command("users") -> Command("get")
-                if (String.IsNullOrWhiteSpace(name))
+                if (string.IsNullOrWhiteSpace(name))
                 {
                     // BuildCommand function
-                    if (codeElement.OriginalMethod?.MethodKind == CodeMethodKind.ClientConstructor)
-                    {
-                        var commandBuilderMethods = classMethods.Where(m => m.MethodKind == CodeMethodKind.CommandBuilder && m != codeElement).OrderBy(m => m.Name);
-                        writer.WriteLine($"var command = new RootCommand();");
-                        writer.WriteLine($"command.Description = \"{codeElement.OriginalMethod.Description}\";");
-                        foreach (var method in commandBuilderMethods)
-                        {
-                            writer.WriteLine($"command.AddCommand({method.Name}());");
-                        }
-
-                        writer.WriteLine("return command;");
-                    }
-                    else if (codeElement.OriginalIndexer != null)
-                    {
-                        var targetClass = conventions.GetTypeString(codeElement.OriginalIndexer.ReturnType, codeElement);
-                        var builderMethods = (codeElement.OriginalIndexer.ReturnType as CodeType).TypeDefinition.GetChildElements(true).OfType<CodeMethod>()
-                            .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder))
-                            .OrderBy(m => m.Name);
-                        conventions.AddRequestBuilderBody(parent, targetClass, writer, prefix: "var builder = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
-                        writer.WriteLine("var commands = new List<Command>();");
-
-                        foreach (var method in builderMethods)
-                        {
-                            if (method.ReturnType.IsCollection)
-                            {
-                                writer.WriteLine($"commands.AddRange(builder.{method.Name}());");
-                            }
-                            else
-                            {
-                                writer.WriteLine($"commands.Add(builder.{method.Name}());");
-                            }
-                        }
-
-                        writer.WriteLine("return commands;");
-                    }
-                } else
+                    WriteUnnamedBuildCommand(codeElement, writer, parent, classMethods);
+                }
+                else
                 {
-                    var codeReturnType = (codeElement.AccessedProperty?.Type) as CodeType;
-
-                    writer.WriteLine($"var command = new Command(\"{name}\");");
-                    if (!string.IsNullOrEmpty(codeElement.Description) || !string.IsNullOrEmpty(codeElement?.OriginalMethod?.Description))
-                        writer.WriteLine($"command.Description = \"{codeElement.Description ?? codeElement?.OriginalMethod?.Description}\";");
-
-                    if (codeReturnType != null)
-                    {
-                        // Include namespace to avoid type ambiguity on similarly named classes. Currently, if we have namespaces A and A.B where both namespaces have type T,
-                        // Trying to use type A.B.T in namespace A without using the fully qualified name will break the build.
-                        var targetClass = string.Join(".", codeReturnType.TypeDefinition.Parent.Name, conventions.GetTypeString(codeReturnType, codeElement));
-                        var builderMethods = codeReturnType.TypeDefinition.GetChildElements(true).OfType<CodeMethod>()
-                            .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder))
-                            .OrderBy(m => m.Name)
-                            .ThenBy(m => m.ReturnType.IsCollection);
-                        conventions.AddRequestBuilderBody(parent, targetClass, writer, prefix: "var builder = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
-
-                        foreach (var method in builderMethods)
-                        {
-                            if (method.ReturnType.IsCollection)
-                            {
-                                writer.WriteLine($"foreach (var cmd in builder.{method.Name}()) {{");
-                                writer.IncreaseIndent();
-                                writer.WriteLine($"command.AddCommand(cmd);");
-                                writer.CloseBlock();
-                            }
-                            else
-                            {
-                                writer.WriteLine($"command.AddCommand(builder.{method.Name}());");
-                            }
-                        }
-                        // SubCommands
-                    }
-
-                    writer.WriteLine("return command;");
+                    WriteContainerCommand(codeElement, writer, parent, name);
                 }
             } else
             {
-                var generatorMethod = (codeElement.Parent as CodeClass)
-                                                .Methods
-                                                .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod);
-                var pathAndQueryParams = generatorMethod.PathAndQueryParameters;
-                var originalMethod = codeElement.OriginalMethod;
-                var origParams = originalMethod.Parameters;
-                var parametersList = pathAndQueryParams?.Where(p => p.Name != null)?.ToList() ?? new List<CodeParameter>();
-                if (origParams.Any(p => p.IsOfKind(CodeParameterKind.RequestBody)))
+                WriteExecutableCommand(codeElement, requestParams, writer, name);
+            }
+        }
+
+        private void WriteExecutableCommand(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, string name)
+        {
+            var generatorMethod = (codeElement.Parent as CodeClass)
+                                           .Methods
+                                           .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod);
+            var pathAndQueryParams = generatorMethod.PathAndQueryParameters;
+            var originalMethod = codeElement.OriginalMethod;
+            var origParams = originalMethod.Parameters;
+            var parametersList = pathAndQueryParams?.Where(p => p.Name != null)?.ToList() ?? new List<CodeParameter>();
+            if (origParams.Any(p => p.IsOfKind(CodeParameterKind.RequestBody)))
+            {
+                parametersList.Add(origParams.OfKind(CodeParameterKind.RequestBody));
+            }
+            writer.WriteLine($"var command = new Command(\"{name}\");");
+            if (codeElement.Description != null || codeElement?.OriginalMethod?.Description != null)
+                writer.WriteLine($"command.Description = \"{codeElement.Description ?? codeElement?.OriginalMethod?.Description}\";");
+            writer.WriteLine("// Create options for all the parameters");
+            // investigate exploding query params
+            // Check the possible formatting options for headers in a cli.
+            // -h A=b -h
+            // -h A:B,B:C
+            // -h {"A": "B"}
+            var availableOptions = new List<string>();
+            foreach (var option in parametersList)
+            {
+                var type = option.Type as CodeType;
+                var optionName = $"{NormalizeToIdentifier(option.Name)}Option";
+                var optionType = conventions.GetTypeString(option.Type, option);
+                if (option.ParameterKind == CodeParameterKind.RequestBody && type.TypeDefinition is CodeClass) optionType = "string";
+
+                // Binary body handling
+                if (option.ParameterKind == CodeParameterKind.RequestBody && conventions.StreamTypeName.Equals(option.Type?.Name, StringComparison.OrdinalIgnoreCase))
                 {
-                    parametersList.Add(origParams.OfKind(CodeParameterKind.RequestBody));
-                }
-                writer.WriteLine($"var command = new Command(\"{name}\");");
-                if (codeElement.Description != null || codeElement?.OriginalMethod?.Description != null)
-                    writer.WriteLine($"command.Description = \"{codeElement.Description ?? codeElement?.OriginalMethod?.Description}\";");
-                writer.WriteLine("// Create options for all the parameters"); // investigate exploding query params
-                // Check the possible formatting options for headers in a cli.
-                // -h A=b -h
-                // -h A:B,B:C
-                // -h {"A": "B"}
-                var availableOptions = new List<string>();
-                foreach (var option in parametersList)
-                {
-                    var type = option.Type as CodeType;
-                    var optionName = $"{NormalizeToIdentifier(option.Name)}Option";
-                    var optionType = conventions.GetTypeString(option.Type, option);
-                    if (option.ParameterKind == CodeParameterKind.RequestBody && type.TypeDefinition is CodeClass) optionType = "string";
-
-                    // Binary body handling
-                    if (option.ParameterKind == CodeParameterKind.RequestBody && conventions.StreamTypeName.Equals(option.Type?.Name, StringComparison.OrdinalIgnoreCase)) {
-                        option.Name = "file";
-                    }
-
-                    var optionBuilder = new StringBuilder("new Option");
-                    if (!String.IsNullOrEmpty(optionType))
-                    {
-                        optionBuilder.Append($"<{optionType}>");
-                    }
-                    optionBuilder.Append("(\"");
-                    if (option.Name.Length > 1) optionBuilder.Append('-');
-                    optionBuilder.Append($"-{NormalizeToOption(option.Name)}\"");
-                    if (option.DefaultValue != null)
-                    {
-                        optionBuilder.Append($", getDefaultValue: ()=> {option.DefaultValue}");
-                    }
-
-                    if (!String.IsNullOrEmpty(option.Description))
-                    {
-                        optionBuilder.Append($", description: \"{option.Description}\"");
-                    }
-
-                    optionBuilder.Append(") {");
-                    var strValue = $"{optionBuilder}";
-                    writer.WriteLine($"var {optionName} = {strValue}");
-                    writer.IncreaseIndent();
-                    var isRequired = !option.Optional || option.IsOfKind(CodeParameterKind.Path);
-
-                    if (option.Type.IsCollection)
-                    {
-                        var arity = isRequired ? "OneOrMore" : "ZeroOrMore";
-                        writer.WriteLine($"Arity = ArgumentArity.{arity}");
-                    }
-
-                    writer.DecreaseIndent();
-                    writer.WriteLine("};");
-                    writer.WriteLine($"{optionName}.IsRequired = {isRequired.ToString().ToFirstCharacterLowerCase()};");
-                    writer.WriteLine($"command.AddOption({optionName});");
-                    availableOptions.Add(optionName);
+                    option.Name = "file";
                 }
 
-                var paramTypes = parametersList.Select(x =>
+                var optionBuilder = new StringBuilder("new Option");
+                if (!String.IsNullOrEmpty(optionType))
                 {
-                    var codeType = x.Type as CodeType;
-                    if (x.ParameterKind == CodeParameterKind.RequestBody && codeType.TypeDefinition is CodeClass)
-                    {
-                        return "string";
-                    } else if (conventions.StreamTypeName.Equals(x.Type?.Name, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return "FileInfo";
-                    }
-
-                    return conventions.GetTypeString(x.Type, x);
-                }).ToList();
-                var paramNames = parametersList.Select(x => NormalizeToIdentifier(x.Name)).ToList();
-                var isHandlerVoid = conventions.VoidTypeName.Equals(originalMethod.ReturnType.Name, StringComparison.OrdinalIgnoreCase);
-                returnType = conventions.GetTypeString(originalMethod.ReturnType, originalMethod);
-                if (conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
+                    optionBuilder.Append($"<{optionType}>");
+                }
+                optionBuilder.Append("(\"");
+                if (option.Name.Length > 1) optionBuilder.Append('-');
+                optionBuilder.Append($"-{NormalizeToOption(option.Name)}\"");
+                if (option.DefaultValue != null)
                 {
-                    var fileOptionName = "fileOption";
-                    writer.WriteLine($"var {fileOptionName} = new Option<{fileParamType}>(\"--{fileParamName}\");");
-                    writer.WriteLine($"command.AddOption({fileOptionName});");
-                    paramTypes.Add(fileParamType);
-                    paramNames.Add(fileParamName);
-                    availableOptions.Add(fileOptionName);
+                    optionBuilder.Append($", getDefaultValue: ()=> {option.DefaultValue}");
                 }
 
-                // Add output type param
-                if (!isHandlerVoid)
+                if (!String.IsNullOrEmpty(option.Description))
                 {
-                    var outputOptionName = "outputOption";
-                    writer.WriteLine($"var {outputOptionName} = new Option<{outputFormatParamType}>(\"--{outputFormatParamName}\", () => FormatterType.JSON){{");
-                    writer.IncreaseIndent();
-                    writer.WriteLine("IsRequired = true");
-                    writer.CloseBlock("};");
-                    writer.WriteLine($"command.AddOption({outputOptionName});");
-                    paramTypes.Add(outputFormatParamType);
-                    paramNames.Add(outputFormatParamName);
-                    availableOptions.Add(outputOptionName);
+                    optionBuilder.Append($", description: \"{option.Description}\"");
                 }
 
-                // Add output formatter factory param
-                paramTypes.Add(outputFormatterFactoryParamType);
-                paramNames.Add(outputFormatterFactoryParamName);
-
-                // Add console param
-                paramTypes.Add(consoleParamType);
-                paramNames.Add(consoleParamName);
-                var zipped = paramTypes.Zip(paramNames);
-                var projected = zipped.Select((x, y) => $"{x.First} {x.Second}");
-                var handlerParams = string.Join(", ", projected);
-                writer.WriteLine($"command.SetHandler(async ({handlerParams}) => {{");
+                optionBuilder.Append(") {");
+                var strValue = $"{optionBuilder}";
+                writer.WriteLine($"var {optionName} = {strValue}");
                 writer.IncreaseIndent();
-                WriteCommandHandlerBody(originalMethod, requestParams, isHandlerVoid, returnType, writer);
-                // Get request generator method. To call it + get path & query parameters see WriteRequestExecutorBody in CSharp
-                if (isHandlerVoid)
-                {
-                    writer.WriteLine($"{consoleParamName}.WriteLine(\"Success\");");
-                } else
-                {
-                    var type = originalMethod.ReturnType as CodeType;
-                    var typeString = conventions.GetTypeString(type, originalMethod);
-                    var formatterVar = "formatter";
+                var isRequired = !option.Optional || option.IsOfKind(CodeParameterKind.Path);
 
-                    writer.WriteLine($"var {formatterVar} = {outputFormatterFactoryParamName}.GetFormatter({outputFormatParamName});");
-                    if (typeString != "Stream")
+                if (option.Type.IsCollection)
+                {
+                    var arity = isRequired ? "OneOrMore" : "ZeroOrMore";
+                    writer.WriteLine($"Arity = ArgumentArity.{arity}");
+                }
+
+                writer.DecreaseIndent();
+                writer.WriteLine("};");
+                writer.WriteLine($"{optionName}.IsRequired = {isRequired.ToString().ToFirstCharacterLowerCase()};");
+                writer.WriteLine($"command.AddOption({optionName});");
+                availableOptions.Add(optionName);
+            }
+
+            var paramTypes = parametersList.Select(x =>
+            {
+                var codeType = x.Type as CodeType;
+                if (x.ParameterKind == CodeParameterKind.RequestBody && codeType.TypeDefinition is CodeClass)
+                {
+                    return "string";
+                }
+                else if (conventions.StreamTypeName.Equals(x.Type?.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return "FileInfo";
+                }
+
+                return conventions.GetTypeString(x.Type, x);
+            }).ToList();
+            var paramNames = parametersList.Select(x => NormalizeToIdentifier(x.Name)).ToList();
+            var isHandlerVoid = conventions.VoidTypeName.Equals(originalMethod.ReturnType.Name, StringComparison.OrdinalIgnoreCase);
+            var returnType = conventions.GetTypeString(originalMethod.ReturnType, originalMethod);
+            if (conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
+            {
+                var fileOptionName = "fileOption";
+                writer.WriteLine($"var {fileOptionName} = new Option<{fileParamType}>(\"--{fileParamName}\");");
+                writer.WriteLine($"command.AddOption({fileOptionName});");
+                paramTypes.Add(fileParamType);
+                paramNames.Add(fileParamName);
+                availableOptions.Add(fileOptionName);
+            }
+
+            // Add output type param
+            if (!isHandlerVoid)
+            {
+                var outputOptionName = "outputOption";
+                writer.WriteLine($"var {outputOptionName} = new Option<{outputFormatParamType}>(\"--{outputFormatParamName}\", () => FormatterType.JSON){{");
+                writer.IncreaseIndent();
+                writer.WriteLine("IsRequired = true");
+                writer.CloseBlock("};");
+                writer.WriteLine($"command.AddOption({outputOptionName});");
+                paramTypes.Add(outputFormatParamType);
+                paramNames.Add(outputFormatParamName);
+                availableOptions.Add(outputOptionName);
+            }
+
+            // Add output formatter factory param
+            paramTypes.Add(outputFormatterFactoryParamType);
+            paramNames.Add(outputFormatterFactoryParamName);
+
+            // Add console param
+            paramTypes.Add(consoleParamType);
+            paramNames.Add(consoleParamName);
+            var zipped = paramTypes.Zip(paramNames);
+            var projected = zipped.Select((x, y) => $"{x.First} {x.Second}");
+            var handlerParams = string.Join(", ", projected);
+            writer.WriteLine($"command.SetHandler(async ({handlerParams}) => {{");
+            writer.IncreaseIndent();
+            WriteCommandHandlerBody(originalMethod, requestParams, isHandlerVoid, returnType, writer);
+            // Get request generator method. To call it + get path & query parameters see WriteRequestExecutorBody in CSharp
+            if (isHandlerVoid)
+            {
+                writer.WriteLine($"{consoleParamName}.WriteLine(\"Success\");");
+            }
+            else
+            {
+                var type = originalMethod.ReturnType as CodeType;
+                var typeString = conventions.GetTypeString(type, originalMethod);
+                var formatterVar = "formatter";
+
+                writer.WriteLine($"var {formatterVar} = {outputFormatterFactoryParamName}.GetFormatter({outputFormatParamName});");
+                if (typeString != "Stream")
+                {
+                    writer.WriteLine($"{formatterVar}.WriteOutput(response, {consoleParamName});");
+                }
+                else
+                {
+                    writer.WriteLine($"if ({fileParamName} == null) {{");
+                    writer.IncreaseIndent();
+                    writer.WriteLine($"{formatterVar}.WriteOutput(response, {consoleParamName});");
+                    writer.CloseBlock();
+                    writer.WriteLine("else {");
+                    writer.IncreaseIndent();
+                    writer.WriteLine($"using var writeStream = {fileParamName}.OpenWrite();");
+                    writer.WriteLine("await response.CopyToAsync(writeStream);");
+                    writer.WriteLine($"{consoleParamName}.WriteLine($\"Content written to {{{fileParamName}.FullName}}.\");");
+                    writer.CloseBlock();
+                }
+            }
+            writer.DecreaseIndent();
+            var delimiter = "";
+            if (availableOptions.Any())
+            {
+                delimiter = ", ";
+            }
+            writer.WriteLine($"}}{delimiter}{string.Join(", ", availableOptions)});");
+            writer.WriteLine("return command;");
+        }
+
+        private void WriteContainerCommand(CodeMethod codeElement, LanguageWriter writer, CodeClass parent, string name)
+        {
+            writer.WriteLine($"var command = new Command(\"{name}\");");
+            if (!string.IsNullOrEmpty(codeElement.Description) || !string.IsNullOrEmpty(codeElement?.OriginalMethod?.Description))
+                writer.WriteLine($"command.Description = \"{codeElement.Description ?? codeElement?.OriginalMethod?.Description}\";");
+
+            if ((codeElement.AccessedProperty?.Type) is CodeType codeReturnType)
+            {
+                // Include namespace to avoid type ambiguity on similarly named classes. Currently, if we have namespaces A and A.B where both namespaces have type T,
+                // Trying to use type A.B.T in namespace A without using the fully qualified name will break the build.
+                var targetClass = string.Join(".", codeReturnType.TypeDefinition.Parent.Name, conventions.GetTypeString(codeReturnType, codeElement));
+                var builderMethods = codeReturnType.TypeDefinition.GetChildElements(true).OfType<CodeMethod>()
+                    .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder))
+                    .OrderBy(m => m.Name)
+                    .ThenBy(m => m.ReturnType.IsCollection);
+                conventions.AddRequestBuilderBody(parent, targetClass, writer, prefix: "var builder = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
+
+                foreach (var method in builderMethods)
+                {
+                    if (method.ReturnType.IsCollection)
                     {
-                        writer.WriteLine($"{formatterVar}.WriteOutput(response, {consoleParamName});");
-                    } else
-                    {
-                        writer.WriteLine($"if ({fileParamName} == null) {{");
+                        writer.WriteLine($"foreach (var cmd in builder.{method.Name}()) {{");
                         writer.IncreaseIndent();
-                        writer.WriteLine($"{formatterVar}.WriteOutput(response, {consoleParamName});");
-                        writer.CloseBlock();
-                        writer.WriteLine("else {");
-                        writer.IncreaseIndent();
-                        writer.WriteLine($"using var writeStream = {fileParamName}.OpenWrite();");
-                        writer.WriteLine("await response.CopyToAsync(writeStream);");
-                        writer.WriteLine($"{consoleParamName}.WriteLine($\"Content written to {{{fileParamName}.FullName}}.\");");
+                        writer.WriteLine($"command.AddCommand(cmd);");
                         writer.CloseBlock();
                     }
+                    else
+                    {
+                        writer.WriteLine($"command.AddCommand(builder.{method.Name}());");
+                    }
                 }
-                writer.DecreaseIndent();
-                var delimiter = "";
-                if (availableOptions.Any()) {
-                    delimiter = ", ";
+                // SubCommands
+            }
+
+            writer.WriteLine("return command;");
+        }
+
+        private void WriteUnnamedBuildCommand(CodeMethod codeElement, LanguageWriter writer, CodeClass parent, IEnumerable<CodeMethod> classMethods)
+        {
+            if (codeElement.OriginalMethod?.MethodKind == CodeMethodKind.ClientConstructor)
+            {
+                var commandBuilderMethods = classMethods.Where(m => m.MethodKind == CodeMethodKind.CommandBuilder && m != codeElement).OrderBy(m => m.Name);
+                writer.WriteLine($"var command = new RootCommand();");
+                writer.WriteLine($"command.Description = \"{codeElement.OriginalMethod.Description}\";");
+                foreach (var method in commandBuilderMethods)
+                {
+                    writer.WriteLine($"command.AddCommand({method.Name}());");
                 }
-                writer.WriteLine($"}}{delimiter}{string.Join(", ", availableOptions)});");
+
                 writer.WriteLine("return command;");
+            }
+            else if (codeElement.OriginalIndexer != null)
+            {
+                var targetClass = conventions.GetTypeString(codeElement.OriginalIndexer.ReturnType, codeElement);
+                var builderMethods = (codeElement.OriginalIndexer.ReturnType as CodeType).TypeDefinition.GetChildElements(true).OfType<CodeMethod>()
+                    .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder))
+                    .OrderBy(m => m.Name);
+                conventions.AddRequestBuilderBody(parent, targetClass, writer, prefix: "var builder = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
+                writer.WriteLine("var commands = new List<Command>();");
+
+                foreach (var method in builderMethods)
+                {
+                    if (method.ReturnType.IsCollection)
+                    {
+                        writer.WriteLine($"commands.AddRange(builder.{method.Name}());");
+                    }
+                    else
+                    {
+                        writer.WriteLine($"commands.Add(builder.{method.Name}());");
+                    }
+                }
+
+                writer.WriteLine("return commands;");
             }
         }
 
