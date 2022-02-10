@@ -1,4 +1,4 @@
-// ------------------------------------------------------------------------------
+﻿// ------------------------------------------------------------------------------
 //  Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.  See License in the project root for license information.
 // ------------------------------------------------------------------------------
 
@@ -61,6 +61,24 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// <param name="key">The key to be used for the written value. May be null.</param>
         /// <param name="value">The DateTimeOffset value to be written.</param>
         void WriteDateTimeOffsetValue(string key, DateTimeOffset? value);
+        /// <summary>
+        /// Writes the specified TimeSpan value to the stream with an optional given key.
+        /// </summary>
+        /// <param name="key">The key to be used for the written value. May be null.</param>
+        /// <param name="value">The TimeSpan value to be written.</param>
+        void WriteTimeSpanValue(string key, TimeSpan? value);
+        /// <summary>
+        /// Writes the specified Date value to the stream with an optional given key.
+        /// </summary>
+        /// <param name="key">The key to be used for the written value. May be null.</param>
+        /// <param name="value">The Date value to be written.</param>
+        void WriteDateValue(string key, Date? value);
+        /// <summary>
+        /// Writes the specified Time value to the stream with an optional given key.
+        /// </summary>
+        /// <param name="key">The key to be used for the written value. May be null.</param>
+        /// <param name="value">The Time value to be written.</param>
+        void WriteTimeValue(string key, Time? value);
         /// <summary>
         /// Writes the specified collection of primitive values to the stream with an optional given key.
         /// </summary>

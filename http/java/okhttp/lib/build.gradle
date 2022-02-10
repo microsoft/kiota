@@ -53,7 +53,7 @@ publishing {
     publications {
         gpr(MavenPublication) {
             artifactId 'kiota-http-okhttplibrary'
-            version '1.0.12'
+            version '1.0.13'
             from(components.java)
         }
     }

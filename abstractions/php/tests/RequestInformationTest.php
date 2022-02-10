@@ -1,6 +1,6 @@
 <?php
 
-namespace Microsoft\Kiota\Tests;
+namespace Microsoft\Kiota\Abstractions\Tests;
 use DateTime;
 use Microsoft\Kiota\Abstractions\RequestInformation;
 use PHPUnit\Framework\TestCase;

@@ -199,13 +199,18 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
             if(requestInfo == null)
                 throw new ArgumentNullException(nameof(requestInfo));
 
-            await authProvider.AuthenticateRequestAsync(requestInfo);
+            SetBaseUrlForRequestInformation(requestInfo);
+            await authProvider.AuthenticateRequestAsync(requestInfo, cancellationToken);
 
             using var message = GetRequestMessageFromRequestInformation(requestInfo);
             var response = await this.client.SendAsync(message,cancellationToken);
             if(response == null)
                 throw new InvalidOperationException("Could not get a response after calling the service");
             return response;
+        }
+        private void SetBaseUrlForRequestInformation(RequestInformation requestInfo)
+        {
+            requestInfo.PathParameters.Add("baseurl", BaseUrl);
         }
         /// <summary>
         /// Creates a <see cref="HttpRequestMessage"/> instance from a <see cref="RequestInformation"/> instance.
@@ -214,7 +219,6 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
         /// <returns>A <see cref="HttpRequestMessage"/> instance</returns>
         public HttpRequestMessage GetRequestMessageFromRequestInformation(RequestInformation requestInfo)
         {
-            requestInfo.PathParameters.Add("baseurl", BaseUrl);
             var message = new HttpRequestMessage
             {
                 Method = new HttpMethod(requestInfo.HttpMethod.ToString().ToUpperInvariant()),

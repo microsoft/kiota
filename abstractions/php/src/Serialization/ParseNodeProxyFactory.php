@@ -41,8 +41,8 @@ abstract class ParseNodeProxyFactory implements ParseNodeFactory {
      * @param StreamInterface $rawResponse
      * @return ParseNode
      */
-    public function getParseNode(string $contentType, StreamInterface $rawResponse): ParseNode {
-        $node = $this->concreteParseNodeFactory->getParseNode($contentType, $rawResponse);
+    public function getRootParseNode(string $contentType, StreamInterface $rawResponse): ParseNode {
+        $node = $this->concreteParseNodeFactory->getRootParseNode($contentType, $rawResponse);
         $originalBefore  = $node->getOnBeforeAssignFieldValues();
         $originalAfter  = $node->getOnAfterAssignFieldValues();
 

@@ -30,12 +30,12 @@ class ParseNodeFactoryRegistry implements ParseNodeFactory {
      * @param StreamInterface $rawResponse
      * @return ParseNode
      */
-    public function getParseNode(string $contentType, StreamInterface $rawResponse): ParseNode {
+    public function getRootParseNode(string $contentType, StreamInterface $rawResponse): ParseNode {
         if (empty(trim($contentType))) {
             throw new InvalidArgumentException('$contentType cannot be empty.');
         }
         if (array_key_exists($contentType, $this->contentTypeAssociatedFactories)) {
-            return $this->contentTypeAssociatedFactories[$contentType]->getParseNode($contentType, $rawResponse);
+            return $this->contentTypeAssociatedFactories[$contentType]->getRootParseNode($contentType, $rawResponse);
         }
         throw new UnexpectedValueException('Content type ' . $contentType . ' does not have a factory to be parsed');
     }
