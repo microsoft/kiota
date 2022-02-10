@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -49,16 +50,19 @@ public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
         EnsureElementsAreChildren(value);
         returnType = value;
     }}
-    private readonly List<CodeParameter> parameters = new ();
+    private readonly ConcurrentDictionary<string, CodeParameter> parameters = new ();
     public void RemoveParametersByKind(params CodeParameterKind[] kinds) {
-        parameters.RemoveAll(p => p.IsOfKind(kinds));
+        parameters.Where(p => p.Value.IsOfKind(kinds))
+                            .Select(x => x.Key)
+                            .ToList()
+                            .ForEach(x => parameters.Remove(x, out var _));
     }
 
     public void ClearParameters()
     {
         parameters.Clear();
     }
-    public IEnumerable<CodeParameter> Parameters { get => parameters; }
+    public IEnumerable<CodeParameter> Parameters { get => parameters.Values; }
     public bool IsStatic {get;set;} = false;
     public bool IsAsync {get;set;} = true;
     public string Description {get; set;}
@@ -126,11 +130,11 @@ public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
     /// <summary>
     /// Mapping of the error code and response types for this method.
     /// </summary>
-    public Dictionary<string, CodeTypeBase> ErrorMappings { get; set; } = new ();
+    public ConcurrentDictionary<string, CodeTypeBase> ErrorMappings { get; set; } = new ();
     /// <summary>
     /// Gets/Sets the discriminator values for the class where the key is the value as represented in the payload.
     /// </summary>
-    public Dictionary<string, CodeTypeBase> DiscriminatorMappings { get; set; } = new();
+    public ConcurrentDictionary<string, CodeTypeBase> DiscriminatorMappings { get; set; } = new();
     /// <summary>
     /// Gets/Sets the name of the property to use for discrimination during deserialization.
     /// </summary>
@@ -171,6 +175,6 @@ public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
         if(!methodParameters.Any())
             throw new ArgumentOutOfRangeException(nameof(methodParameters));
         EnsureElementsAreChildren(methodParameters);
-        parameters.AddRange(methodParameters);
+        methodParameters.ToList().ForEach(x => parameters.TryAdd(x.Name, x));
     }
 }

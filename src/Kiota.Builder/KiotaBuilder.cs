@@ -571,7 +571,7 @@ public class KiotaBuilder
             {
                 codeClass.IsErrorDefinition = true;
             }
-            executorMethod.ErrorMappings.Add(errorCode, errorType);
+            executorMethod.ErrorMappings.TryAdd(errorCode, errorType);
         }
     }
     private void CreateOperationMethods(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
@@ -875,6 +875,7 @@ public class KiotaBuilder
             ReturnType = new CodeType { TypeDefinition = newClass, Name = newClass.Name },
             MethodKind = CodeMethodKind.Factory,
             IsStatic = true,
+            IsAsync = false,
         }).First();
         factoryMethod.AddParameter(new CodeParameter {
             Name = "parseNode",
@@ -884,12 +885,13 @@ public class KiotaBuilder
         });
         factoryMethod.DiscriminatorPropertyName = schema.Discriminator?.PropertyName;
         if(schema.Discriminator?.Mapping?.Any() ?? false)
-            factoryMethod.DiscriminatorMappings = schema.Discriminator
-                                                    .Mapping
-                                                    .Where(x => !x.Key.Equals(schema.Reference?.Id, StringComparison.OrdinalIgnoreCase))
-                                                    .Select(x => (x.Key, GetCodeTypeForMapping(currentNode, x.Value, currentNamespace, newClass, schema)))
-                                                    .Where(x => x.Item2 != null)
-                                                    .ToDictionary(x => x.Key, x => x.Item2);
+            schema.Discriminator
+                    .Mapping
+                    .Where(x => !x.Key.Equals(schema.Reference?.Id, StringComparison.OrdinalIgnoreCase))
+                    .Select(x => (x.Key, GetCodeTypeForMapping(currentNode, x.Value, currentNamespace, newClass, schema)))
+                    .Where(x => x.Item2 != null)
+                    .ToList()
+                    .ForEach(x => factoryMethod.DiscriminatorMappings.TryAdd(x.Key, x.Item2));
         CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass);
         return newClass;
     }

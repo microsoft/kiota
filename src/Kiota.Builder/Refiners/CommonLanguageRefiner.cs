@@ -229,7 +229,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                                             x)
                                             .Aggregate((x, y) => $"{x}.{y}");
     }
-    private static void ReplaceMappingNames(Dictionary<string, CodeTypeBase> mappings, IReservedNamesProvider provider, Func<string, string> replacement)
+    private static void ReplaceMappingNames(IDictionary<string, CodeTypeBase> mappings, IReservedNamesProvider provider, Func<string, string> replacement)
     {
         mappings.Values.Where(x => provider.ReservedNames.Contains(x.Name))
                                         .ToList()
@@ -581,7 +581,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             currentMethod.Parent is CodeClass parentClass &&
             parentClass.StartBlock is CodeClass.Declaration declaration) {
                 if(currentMethod.IsOfKind(CodeMethodKind.Factory) &&
-                    currentMethod.DiscriminatorMappings.Any()) {
+                    currentMethod.DiscriminatorMappings != null) {
                         declaration.AddUsings(currentMethod.DiscriminatorMappings.Select(x => new CodeUsing {
                             Name = x.Value.Name,
                             Declaration = x.Value is CodeType codeType && codeType.TypeDefinition != null ? new CodeType {

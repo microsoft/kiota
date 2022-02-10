@@ -66,6 +66,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             case CodeMethodKind.RequestBuilderWithParameters:
                 WriteRequestBuilderWithParametersBody(codeElement, parentClass, returnType, writer);
                 break;
+            case CodeMethodKind.Factory:
+                WriteFactoryMethodBody(codeElement, returnType, writer);
+                break;
             case CodeMethodKind.RawUrlConstructor:
                 throw new InvalidOperationException("RawUrlConstructor is not supported as typescript relies on union types.");
             case CodeMethodKind.RequestBuilderBackwardCompatibility:
@@ -77,6 +80,34 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         writer.DecreaseIndent();
         writer.WriteLine("};");
     }
+
+    private static void WriteFactoryMethodBody(CodeMethod codeElement, string returnType, LanguageWriter writer)
+    {
+        var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
+        if(!string.IsNullOrEmpty(codeElement.DiscriminatorPropertyName)) {
+            writer.WriteLines($"const mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode(\"{codeElement.DiscriminatorPropertyName}\");",
+                                $"if (mappingValueNode) {{");
+            writer.IncreaseIndent();
+            writer.WriteLines($"const mappingValue = mappingValueNode.getStringValue();",
+                            "if (mappingValue) {");
+            writer.IncreaseIndent();
+
+            writer.WriteLine($"switch (mappingValue) {{");
+            writer.IncreaseIndent();
+            foreach(var mappedType in codeElement.DiscriminatorMappings) {
+                writer.WriteLine($"case \"{mappedType.Key}\":");
+                writer.IncreaseIndent();
+                writer.WriteLine($"return new {mappedType.Value.Name.ToFirstCharacterUpperCase()}();");
+                writer.DecreaseIndent();
+            }
+            writer.CloseBlock();
+            writer.CloseBlock();
+            writer.CloseBlock();
+        }
+
+        writer.WriteLine($"return new {returnType.ToFirstCharacterUpperCase()}();");
+    }
+
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer) {
         var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
         localConventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"this.{pathParametersProperty.Name}",
@@ -297,6 +328,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             _ => code.Name,
         })?.ToFirstCharacterLowerCase();
         var asyncPrefix = code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? " async ": string.Empty;
+        var staticPrefix = code.IsStatic ? "static " : string.Empty;
         var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> localConventions.GetParameterSignature(p, code)).ToList());
         var asyncReturnTypePrefix = code.IsAsync ? "Promise<": string.Empty;
         var asyncReturnTypeSuffix = code.IsAsync ? ">": string.Empty;
@@ -308,7 +340,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             };
         var shouldHaveTypeSuffix = !code.IsAccessor && !isConstructor;
         var returnTypeSuffix = shouldHaveTypeSuffix ? $" : {asyncReturnTypePrefix}{returnType}{nullableSuffix}{asyncReturnTypeSuffix}" : string.Empty;
-        writer.WriteLine($"{accessModifier} {accessorPrefix}{methodName}{asyncPrefix}({parameters}){returnTypeSuffix} {{");
+        writer.WriteLine($"{accessModifier} {accessorPrefix}{staticPrefix}{methodName}{asyncPrefix}({parameters}){returnTypeSuffix} {{");
     }
     private string GetDeserializationMethodName(CodeTypeBase propType) {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
