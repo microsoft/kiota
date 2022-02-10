@@ -34,9 +34,9 @@ namespace Kiota.Builder
         /// </summary>
         Cancellation,
         /// <summary>
-        /// A parameter representing the mapping value to be used for deserialization during discrimination.
+        /// A parameter representing the parse node to be used for deserialization during discrimination.
         /// </summary>
-        MappingValue
+        ParseNode
     }
 
     public class CodeParameter : CodeTerminal, ICloneable, IDocumentedElement

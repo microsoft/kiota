@@ -878,7 +878,7 @@ public class KiotaBuilder
         }).First();
         factoryMethod.AddParameter(new CodeParameter {
             Name = "parseNode",
-            ParameterKind = CodeParameterKind.MappingValue,
+            ParameterKind = CodeParameterKind.ParseNode,
             Optional = false,
             Type = new CodeType { Name = ParseNodeInterface, IsExternal = true },
         });

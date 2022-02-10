@@ -38,7 +38,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "@microsoft/kiota-abstractions"
         );
         AddDiscriminatorMappingsUsingsToParentClasses(
-            generatedCode
+            generatedCode,
+            "ParseNode"
         );
     }
     private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
@@ -79,7 +80,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             AbstractionsPackageName, "ResponseHandler"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             AbstractionsPackageName, "SerializationWriter"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
             AbstractionsPackageName, "ParseNode"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.IndexerBackwardCompatibility),
             AbstractionsPackageName, "getPathParameters"),

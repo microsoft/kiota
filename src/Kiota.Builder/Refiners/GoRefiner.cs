@@ -94,6 +94,7 @@ public class GoRefiner : CommonLanguageRefiner
         );
         AddDiscriminatorMappingsUsingsToParentClasses(
             generatedCode,
+            "ParseNode",
             true
         );
     }
@@ -264,7 +265,7 @@ public class GoRefiner : CommonLanguageRefiner
             "strconv", "FormatBool"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             "github.com/microsoft/kiota/abstractions/go/serialization", "SerializationWriter"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
             "github.com/microsoft/kiota/abstractions/go/serialization", "ParseNode", "Parsable"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor) && method.ErrorMappings.Any(),
             "github.com/microsoft/kiota/abstractions/go/serialization", "Parsable"),

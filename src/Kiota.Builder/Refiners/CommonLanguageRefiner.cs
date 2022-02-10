@@ -576,7 +576,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, x => AddParentClassToErrorClasses(x, parentClassName, parentClassNamespace));
     }
-    protected static void AddDiscriminatorMappingsUsingsToParentClasses(CodeElement currentElement, bool addFactoryMethodImport = false) {
+    protected static void AddDiscriminatorMappingsUsingsToParentClasses(CodeElement currentElement, string parseNodeInterfaceName, bool addFactoryMethodImport = false) {
         if(currentElement is CodeMethod currentMethod &&
             currentMethod.Parent is CodeClass parentClass &&
             parentClass.StartBlock is CodeClass.Declaration declaration) {
@@ -589,6 +589,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                 TypeDefinition = codeType.TypeDefinition,
                             } : null,
                         }).ToArray());
+                        currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode).Type.Name = parseNodeInterfaceName;
                 } else if (addFactoryMethodImport &&
                     currentMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
                     currentMethod.ReturnType is CodeType type &&
@@ -603,6 +604,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                         });
                 }
         }
-        CrawlTree(currentElement, x => AddDiscriminatorMappingsUsingsToParentClasses(x, addFactoryMethodImport));
+        CrawlTree(currentElement, x => AddDiscriminatorMappingsUsingsToParentClasses(x, parseNodeInterfaceName, addFactoryMethodImport));
     }
 }
