@@ -84,7 +84,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     private static void WriteFactoryMethodBody(CodeMethod codeElement, string returnType, LanguageWriter writer)
     {
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
-        if(!string.IsNullOrEmpty(codeElement.DiscriminatorPropertyName)) {
+        if(codeElement.ShouldWriteDiscriminatorSwitch) {
             writer.WriteLines($"const mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode(\"{codeElement.DiscriminatorPropertyName}\");",
                                 $"if (mappingValueNode) {{");
             writer.IncreaseIndent();
@@ -243,10 +243,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var errorMappingVarName = "undefined";
         if(codeElement.ErrorMappings.Any()) {
             errorMappingVarName = "errorMapping";
-            writer.WriteLine($"const {errorMappingVarName}: Record<string, new () => Parsable> = {{");
+            writer.WriteLine($"const {errorMappingVarName}: Record<string, ParsableFactory<Parsable>> = {{");
             writer.IncreaseIndent();
             foreach(var errorMapping in codeElement.ErrorMappings) {
-                writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {errorMapping.Value.Name.ToFirstCharacterUpperCase()},");
+                writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {errorMapping.Value.Name.ToFirstCharacterUpperCase()}{FactoryMethodName},");
             }
             writer.CloseBlock("};");
         }
@@ -352,14 +352,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 if(currentType.TypeDefinition == null)
                     return $"getCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>()";
                 else
-                    return $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
+                    return $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()}{FactoryMethodName})";
         }
         return propertyType switch
         {
             "string" or "boolean" or "number" or "Guid" or "Date" or "DateOnly" or "TimeOnly" or "Duration" => $"get{propertyType.ToFirstCharacterUpperCase()}Value()",
-            _ => $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})",
+            _ => $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()}{FactoryMethodName})",
         };
     }
+    private const string FactoryMethodName = ".create";
     private string GetSerializationMethodName(CodeTypeBase propType) {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         var propertyType = localConventions.TranslateType(propType);
@@ -381,7 +382,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     private string GetTypeFactory(bool isVoid, bool isStream, string returnType) {
         if(isVoid) return string.Empty;
         else if(isStream || conventions.IsPrimitiveType(returnType)) return $" \"{returnType}\",";
-        else return $" {returnType},";
+        else return $" {returnType}{FactoryMethodName},";
     }
     private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType) {
         if(isVoid) return "sendNoResponseContentAsync";

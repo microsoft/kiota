@@ -85,7 +85,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.IndexerBackwardCompatibility),
             AbstractionsPackageName, "getPathParameters"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            AbstractionsPackageName, "Parsable"),
+            AbstractionsPackageName, "Parsable", "ParsableFactory"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
             AbstractionsPackageName, "Parsable"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&

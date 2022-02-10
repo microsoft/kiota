@@ -140,6 +140,10 @@ public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
     /// </summary>
     public string DiscriminatorPropertyName { get; set; } 
 
+    public bool ShouldWriteDiscriminatorSwitch { get {
+        return !string.IsNullOrEmpty(DiscriminatorPropertyName) && DiscriminatorMappings.Any();
+    } }
+
     public object Clone()
     {
         var method = new CodeMethod {

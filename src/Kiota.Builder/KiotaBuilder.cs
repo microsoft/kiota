@@ -872,7 +872,7 @@ public class KiotaBuilder
         }
         var factoryMethod = newClass.AddMethod(new CodeMethod {
             Name = "Create",
-            ReturnType = new CodeType { TypeDefinition = newClass, Name = newClass.Name },
+            ReturnType = new CodeType { TypeDefinition = newClass, Name = newClass.Name, IsNullable = false },
             MethodKind = CodeMethodKind.Factory,
             IsStatic = true,
             IsAsync = false,
