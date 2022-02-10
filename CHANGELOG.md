@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modified the TypeScript RequestInformation content data type to ArrayBuffer.
 - Updated PHP abstractions to make property keys and values nullable in `SerializationWriter.php`.
 - Fixed an issue where enum collections parsing would fail in Go.
+- Breaking. Kiota clients generate error types and throw when the target API returns a failed response (dotnet, go, java, typescript). #1100
 
 ## [0.0.15] - 2021-12-17
 

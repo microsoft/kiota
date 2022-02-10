@@ -87,6 +87,11 @@ public class GoRefiner : CommonLanguageRefiner
             new string[] {"github.com/microsoft/kiota/abstractions/go/serialization.ParseNodeFactory", "github.com/microsoft/kiota/abstractions/go.RegisterDefaultDeserializer"});
         ReplaceExecutorAndGeneratorParametersByParameterSets(
             generatedCode);
+        AddParentClassToErrorClasses(
+                generatedCode,
+                "ApiError",
+                "github.com/microsoft/kiota/abstractions/go"
+        );
     }
     private static void ReplaceExecutorAndGeneratorParametersByParameterSets(CodeElement currentElement) {
         if (currentElement is CodeMethod currentMethod &&
@@ -257,6 +262,8 @@ public class GoRefiner : CommonLanguageRefiner
             "github.com/microsoft/kiota/abstractions/go/serialization", "SerializationWriter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
             "github.com/microsoft/kiota/abstractions/go/serialization", "ParseNode", "Parsable"),
+        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor) && method.ErrorMappings.Any(),
+            "github.com/microsoft/kiota/abstractions/go/serialization", "Parsable"),
         new (x => x is CodeEnum num, "ToUpper", "strings"),
     };//TODO add backing store types once we have them defined
     private static void CorrectMethodType(CodeMethod currentMethod) {

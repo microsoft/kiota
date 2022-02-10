@@ -508,4 +508,219 @@ public class KiotaBuilderTests
         var progressProp = codeModel.FindChildByName<CodeProperty>("progress", true);
         Assert.Equal("TimeSpan", progressProp.Type.Name);
     }
+    [Fact]
+    public void AddsErrorMapping(){
+        var node = OpenApiUrlTreeNode.Create();
+        node.Attach("tasks", new OpenApiPathItem() {
+            Operations = {
+                [OperationType.Get] = new OpenApiOperation() { 
+                    Responses = new OpenApiResponses
+                    {
+                        ["200"] = new OpenApiResponse()
+                        {
+                            Content =
+                            {
+                                ["application/json"] = new OpenApiMediaType()
+                                {
+                                    Schema = new OpenApiSchema
+                                    {
+                                        Type = "object",
+                                        Properties = new Dictionary<string, OpenApiSchema> {
+                                            {
+                                                "progress", new OpenApiSchema{
+                                                    Type = "string",
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        ["4XX"] = new OpenApiResponse()
+                        {
+                            Content =
+                            {
+                                ["application/json"] = new OpenApiMediaType()
+                                {
+                                    Schema = new OpenApiSchema
+                                    {
+                                        Type = "object",
+                                        Properties = new Dictionary<string, OpenApiSchema> {
+                                            {
+                                                "errorId", new OpenApiSchema{
+                                                    Type = "string",
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        ["5XX"] = new OpenApiResponse()
+                        {
+                            Content =
+                            {
+                                ["application/json"] = new OpenApiMediaType()
+                                {
+                                    Schema = new OpenApiSchema
+                                    {
+                                        Type = "object",
+                                        Properties = new Dictionary<string, OpenApiSchema> {
+                                            {
+                                                "serviceErrorId", new OpenApiSchema{
+                                                    Type = "string",
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        ["401"] = new OpenApiResponse()
+                        {
+                            Content =
+                            {
+                                ["application/json"] = new OpenApiMediaType()
+                                {
+                                    Schema = new OpenApiSchema
+                                    {
+                                        Type = "object",
+                                        Properties = new Dictionary<string, OpenApiSchema> {
+                                            {
+                                                "authenticationRealm", new OpenApiSchema{
+                                                    Type = "string",
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } 
+        }, "default");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var codeModel = builder.CreateSourceModel(node);
+        var executorMethod = codeModel.FindChildByName<CodeMethod>("get", true);
+        Assert.NotNull(executorMethod);
+        Assert.NotEmpty(executorMethod.ErrorMappings);
+        Assert.Contains("4XX", executorMethod.ErrorMappings.Keys);
+        Assert.Contains("401", executorMethod.ErrorMappings.Keys);
+        Assert.Contains("5XX", executorMethod.ErrorMappings.Keys);
+        var errorType401 = codeModel.FindChildByName<CodeClass>("tasks401Error", true);
+        Assert.NotNull(errorType401);
+        Assert.True(errorType401.IsErrorDefinition);
+        Assert.NotNull(errorType401.FindChildByName<CodeProperty>("authenticationRealm", true));
+        var errorType4XX = codeModel.FindChildByName<CodeClass>("tasks4XXError", true);
+        Assert.NotNull(errorType4XX);
+        Assert.True(errorType4XX.IsErrorDefinition);
+        Assert.NotNull(errorType4XX.FindChildByName<CodeProperty>("errorId", true));
+        var errorType5XX = codeModel.FindChildByName<CodeClass>("tasks5XXError", true);
+        Assert.NotNull(errorType5XX);
+        Assert.True(errorType5XX.IsErrorDefinition);
+        Assert.NotNull(errorType5XX.FindChildByName<CodeProperty>("serviceErrorId", true));
+
+    }
+    [Fact]
+    public void DoesntAddSuffixesToErrorTypesWhenComponents(){
+        var errorSchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "errorId", new OpenApiSchema {
+                        Type = "string"
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.error",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var errorResponse = new OpenApiResponse()
+        {
+            Content =
+            {
+                ["application/json"] = new OpenApiMediaType()
+                {
+                    Schema = errorSchema
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "microsoft.graph.error",
+                Type = ReferenceType.Response
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument() {
+            Paths = new OpenApiPaths() {
+                ["tasks"] = new OpenApiPathItem() {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation() { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse()
+                                {
+                                    Content =
+                                    {
+                                        ["application/json"] = new OpenApiMediaType()
+                                        {
+                                            Schema = new OpenApiSchema
+                                            {
+                                                Type = "object",
+                                                Properties = new Dictionary<string, OpenApiSchema> {
+                                                    {
+                                                        "progress", new OpenApiSchema{
+                                                            Type = "string",
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                ["4XX"] = errorResponse,
+                                ["5XX"] = errorResponse,
+                                ["401"] = errorResponse
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new OpenApiComponents() {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "microsoft.graph.error", errorSchema
+                    }
+                },
+                Responses = new Dictionary<string, OpenApiResponse> {
+                    {
+                        "microsoft.graph.error", errorResponse
+                    }
+                }
+            },
+        };
+        var node = OpenApiUrlTreeNode.Create(document, "default");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var codeModel = builder.CreateSourceModel(node);
+        var executorMethod = codeModel.FindChildByName<CodeMethod>("get", true);
+        Assert.NotNull(executorMethod);
+        Assert.NotEmpty(executorMethod.ErrorMappings);
+        Assert.Contains("4XX", executorMethod.ErrorMappings.Keys);
+        Assert.Contains("401", executorMethod.ErrorMappings.Keys);
+        Assert.Contains("5XX", executorMethod.ErrorMappings.Keys);
+        var errorType = codeModel.FindChildByName<CodeClass>("Error", true);
+        Assert.NotNull(errorType);
+        Assert.True(errorType.IsErrorDefinition);
+        Assert.NotNull(errorType.FindChildByName<CodeProperty>("errorId", true));
+        
+        Assert.Null(codeModel.FindChildByName<CodeClass>("tasks401Error", true));
+        Assert.Null(codeModel.FindChildByName<CodeClass>("tasks4XXError", true));
+        Assert.Null(codeModel.FindChildByName<CodeClass>("tasks5XXError", true));
+    }
+
 }
