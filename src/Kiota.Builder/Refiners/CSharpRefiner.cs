@@ -99,11 +99,11 @@ namespace Kiota.Builder.Refiners {
                 currentMethod.Name += "Async";
             CrawlTree(currentElement, AddAsyncSuffix);
         }
-        private static void CorrectPropertyType(CodeProperty currentProperty)
+        protected static void CorrectPropertyType(CodeProperty currentProperty)
         {
             CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
         }
-        private static void CorrectMethodType(CodeMethod currentMethod)
+        protected static void CorrectMethodType(CodeMethod currentMethod)
         {
             CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                                     .Select(x => x.Type)

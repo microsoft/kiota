@@ -13,6 +13,7 @@ namespace Kiota.Builder.Refiners
         public override void Refine(CodeNamespace generatedCode)
         {
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
             AddRawUrlConstructorOverload(generatedCode);
