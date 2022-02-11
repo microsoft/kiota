@@ -84,7 +84,7 @@ namespace Kiota.Builder.Writers.Shell
                 if (option.ParameterKind == CodeParameterKind.RequestBody && type.TypeDefinition is CodeClass) optionType = "string";
 
                 // Binary body handling
-                if (option.ParameterKind == CodeParameterKind.RequestBody && conventions.StreamTypeName.Equals(option.Type?.Name, StringComparison.OrdinalIgnoreCase))
+                if (option.IsOfKind(CodeParameterKind.RequestBody) && conventions.StreamTypeName.Equals(option.Type?.Name, StringComparison.OrdinalIgnoreCase))
                 {
                     option.Name = "file";
                 }
@@ -129,7 +129,7 @@ namespace Kiota.Builder.Writers.Shell
             var paramTypes = parametersList.Select(x =>
             {
                 var codeType = x.Type as CodeType;
-                if (x.ParameterKind == CodeParameterKind.RequestBody && codeType.TypeDefinition is CodeClass)
+                if (x.IsOfKind(CodeParameterKind.RequestBody) && codeType.TypeDefinition is CodeClass)
                 {
                     return "string";
                 }
