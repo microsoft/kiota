@@ -13,17 +13,17 @@ namespace Kiota.Builder.Refiners
         public override void Refine(CodeNamespace generatedCode)
         {
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            AddDefaultImports(generatedCode, additionalUsingEvaluators);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
-            CreateCommandBuilders(generatedCode);
-            AddAsyncSuffix(generatedCode);
             AddInnerClasses(generatedCode, false);
             AddParsableInheritanceForModelClasses(generatedCode, "IParsable");
             CapitalizeNamespacesFirstLetters(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");
             MakeEnumPropertiesNullable(generatedCode);
+            CreateCommandBuilders(generatedCode);
             /* Exclude the following as their names will be capitalized making the change unnecessary in this case sensitive language
              * code classes, class declarations, property names, using declarations, namespace names
              * Exclude CodeMethod as the return type will also be capitalized (excluding the CodeType is not enough since this is evaluated at the code method level)
@@ -91,6 +91,7 @@ namespace Kiota.Builder.Refiners
                     clone.SimpleName = cmdName;
                     clone.ClearParameters();
                     currentClass.AddMethod(clone);
+                    currentClass.RemoveChildElement(requestMethod);
                 }
 
                 // Build root command
@@ -135,42 +136,11 @@ namespace Kiota.Builder.Refiners
             return codeMethod;
         }
 
-        private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] {
-            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
-                "Microsoft.Kiota.Abstractions", "IRequestAdapter"),
-            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-                "Microsoft.Kiota.Abstractions", "HttpMethod", "RequestInformation", "IRequestOption"),
-            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-                "Microsoft.Kiota.Abstractions", "IResponseHandler"),
-            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
-                "Microsoft.Kiota.Abstractions.Serialization", "ISerializationWriter"),
-            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
-                "Microsoft.Kiota.Abstractions.Serialization", "IParseNode"),
-            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
-                "Microsoft.Kiota.Abstractions.Serialization", "IParsable"),
-            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-                "Microsoft.Kiota.Abstractions.Serialization", "IParsable"),
-            new (x => x is CodeClass || x is CodeEnum,
-                "System", "String"),
-            new (x => x is CodeClass,
-                "System.Collections.Generic", "List", "Dictionary"),
-            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder),
-                "System.IO", "Stream"),
-            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-                "System.Threading", "CancellationToken"),
+        private static readonly AdditionalUsingEvaluator[] additionalUsingEvaluators = new AdditionalUsingEvaluator[] {
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
-                "System.Threading.Tasks", "Task"),
-            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder),
-                "System.Linq", "Enumerable"),
-            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
-                        method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
-                "Microsoft.Kiota.Abstractions.Store",  "IBackingStoreFactory", "IBackingStoreFactorySingleton"),
-            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
-                "Microsoft.Kiota.Abstractions.Store",  "IBackingStore", "IBackedModel", "BackingStoreFactorySingleton" ),
+                "System.CommandLine",  "Command", "RootCommand", "IConsole"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
-                "System.CommandLine",  "Command", "RootCommand"),
-            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
-                "Microsoft.Kiota.Cli.Commons.IO",  "IOutputFormatterFactory"),
+                "Microsoft.Kiota.Cli.Commons.IO", "IOutputFormatter", "IOutputFormatterFactory", "FormatterType"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
                 "System.Text",  "Encoding"),
         };
