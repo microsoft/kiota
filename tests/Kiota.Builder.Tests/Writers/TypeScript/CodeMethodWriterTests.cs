@@ -166,10 +166,10 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("const requestInfo", result);
-            Assert.Contains("const errorMapping: Record<string, new () => Parsable> =", result);
-            Assert.Contains("\"4XX\": Error4XX,", result);
-            Assert.Contains("\"5XX\": Error5XX,", result);
-            Assert.Contains("\"403\": Error403,", result);
+            Assert.Contains("const errorMapping: Record<string, ParsableFactory<Parsable>> =", result);
+            Assert.Contains("\"4XX\": Error4XX.create,", result);
+            Assert.Contains("\"5XX\": Error5XX.create,", result);
+            Assert.Contains("\"403\": Error403.create,", result);
             Assert.Contains("sendAsync", result);
             Assert.Contains("Promise.reject", result);
             AssertExtensions.CurlyBracesAreClosed(result);
