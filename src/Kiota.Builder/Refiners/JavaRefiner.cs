@@ -37,6 +37,11 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                                     new [] { "com.microsoft.kiota.ApiClientBuilder",
                                             "com.microsoft.kiota.serialization.SerializationWriterFactoryRegistry" },
                                     new [] { "com.microsoft.kiota.serialization.ParseNodeFactoryRegistry" });
+        AddParentClassToErrorClasses(
+                generatedCode,
+                "ApiException",
+                "com.microsoft.kiota"
+        );
     }
     private static void SetSetterParametersToNullable(CodeElement currentElement, params Tuple<CodeMethodKind, CodePropertyKind>[] accessorPairs) {
         if(currentElement is CodeMethod method &&

@@ -33,6 +33,11 @@ namespace Kiota.Builder.Refiners {
             DisambiguatePropertiesWithClassNames(generatedCode);
             AddConstructorsForDefaultValues(generatedCode, false);
             AddSerializationModulesImport(generatedCode);
+            AddParentClassToErrorClasses(
+                generatedCode,
+                "ApiException",
+                "Microsoft.Kiota.Abstractions"
+            );
         }
         protected static void DisambiguatePropertiesWithClassNames(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass) {
