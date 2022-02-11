@@ -652,21 +652,26 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected static void AddStaticMethodsUsingsForRequestExecutor(CodeElement currentElement, Func<CodeType, string> functionNameCallback) {
         if(currentElement is CodeMethod currentMethod &&
             currentMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
-            currentMethod.Parent is CodeClass parentClass &&
-            currentMethod.ReturnType is CodeType returnType &&
-            returnType.TypeDefinition != null) {
-                var staticMethodName = functionNameCallback.Invoke(returnType);
-                var staticMethodNS = returnType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>();
-                var staticMethod = staticMethodNS.FindChildByName<CodeFunction>(staticMethodName);
-                if(staticMethod != null)
-                    parentClass.AddUsing(new CodeUsing{
-                        Name = staticMethodName,
-                        Declaration = new CodeType {
-                            Name = staticMethodName,
-                            TypeDefinition = staticMethod,
-                        }
-                    });
+            currentMethod.Parent is CodeClass parentClass) {
+                if(currentMethod.ErrorMappings.Any())
+                    currentMethod.ErrorMappings.Values.OfType<CodeType>().ToList().ForEach(x => AddStaticMethodImportToClass(parentClass, x, functionNameCallback));
+                if(currentMethod.ReturnType is CodeType returnType &&
+                    returnType.TypeDefinition != null)
+                    AddStaticMethodImportToClass(parentClass, returnType, functionNameCallback);
             }
         CrawlTree(currentElement, x => AddStaticMethodsUsingsForRequestExecutor(x, functionNameCallback));
+    }
+    private static void AddStaticMethodImportToClass(CodeClass parentClass, CodeType returnType, Func<CodeType, string> functionNameCallback) {
+        var staticMethodName = functionNameCallback.Invoke(returnType);
+        var staticMethodNS = returnType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>();
+        var staticMethod = staticMethodNS.FindChildByName<CodeFunction>(staticMethodName);
+        if(staticMethod != null)
+            parentClass.AddUsing(new CodeUsing{
+                Name = staticMethodName,
+                Declaration = new CodeType {
+                    Name = staticMethodName,
+                    TypeDefinition = staticMethod,
+                }
+            });
     }
 }
