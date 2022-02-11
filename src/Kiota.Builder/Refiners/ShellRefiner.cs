@@ -85,6 +85,7 @@ namespace Kiota.Builder.Refiners
 
                     clone.IsAsync = false;
                     clone.Name = $"Build{cmdName}Command";
+                    clone.Description = requestMethod.Description;
                     clone.ReturnType = CreateCommandType();
                     clone.MethodKind = CodeMethodKind.CommandBuilder;
                     clone.OriginalMethod = requestMethod;
@@ -101,6 +102,7 @@ namespace Kiota.Builder.Refiners
                     var rootMethod = new CodeMethod
                     {
                         Name = "BuildCommand",
+                        Description = clientConstructor.Description,
                         IsAsync = false,
                         MethodKind = CodeMethodKind.CommandBuilder,
                         ReturnType = new CodeType { Name = "Command", IsExternal = true },

@@ -62,14 +62,14 @@ namespace Kiota.Builder.Writers.Shell
             var pathAndQueryParams = generatorMethod.PathAndQueryParameters;
             var originalMethod = codeElement.OriginalMethod;
             var origParams = originalMethod.Parameters;
-            var parametersList = pathAndQueryParams?.Where(p => p.Name != null)?.ToList() ?? new List<CodeParameter>();
+            var parametersList = pathAndQueryParams?.Where(p => !string.IsNullOrWhiteSpace(p.Name))?.ToList() ?? new List<CodeParameter>();
             if (origParams.Any(p => p.IsOfKind(CodeParameterKind.RequestBody)))
             {
                 parametersList.Add(origParams.OfKind(CodeParameterKind.RequestBody));
             }
             writer.WriteLine($"var command = new Command(\"{name}\");");
-            if (codeElement.Description != null || codeElement?.OriginalMethod?.Description != null)
-                writer.WriteLine($"command.Description = \"{codeElement.Description ?? codeElement?.OriginalMethod?.Description}\";");
+            if (!string.IsNullOrWhiteSpace(codeElement.Description))
+                writer.WriteLine($"command.Description = \"{codeElement.Description}\";");
             writer.WriteLine("// Create options for all the parameters");
             // investigate exploding query params
             // Check the possible formatting options for headers in a cli.
@@ -103,7 +103,7 @@ namespace Kiota.Builder.Writers.Shell
                     optionBuilder.Append($", getDefaultValue: ()=> {option.DefaultValue}");
                 }
 
-                if (!String.IsNullOrEmpty(option.Description))
+                if (!string.IsNullOrEmpty(option.Description))
                 {
                     optionBuilder.Append($", description: \"{option.Description}\"");
                 }
