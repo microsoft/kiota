@@ -198,7 +198,7 @@ components:
 
 ```csharp
 
-   IEnumerable<Speaker> speakers = await apiClient.Speakers.GetAsync(new { Location="Montreal" });
+   IEnumerable<Speaker> speakers = await apiClient.Speakers.GetAsync(x => { x.Location="Montreal"; });
 
 ```
 
