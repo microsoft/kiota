@@ -28,11 +28,12 @@ export class JsonParseNode implements ParseNode {
   public getCollectionOfPrimitiveValues = <T>(): T[] | undefined => {
     return (this._jsonNode as unknown[]).map((x) => {
       const currentParseNode = new JsonParseNode(x);
-      if (x instanceof Boolean) {
+      const typeOfX = typeof x;
+      if (typeOfX === "boolean") {
         return currentParseNode.getBooleanValue() as unknown as T;
-      } else if (x instanceof String) {
+      } else if (typeOfX === "string") {
         return currentParseNode.getStringValue() as unknown as T;
-      } else if (x instanceof Number) {
+      } else if (typeOfX === "number") {
         return currentParseNode.getNumberValue() as unknown as T;
       } else if (x instanceof Date) {
         return currentParseNode.getDateValue() as unknown as T;
