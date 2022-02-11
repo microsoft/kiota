@@ -485,6 +485,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             
             setter.AddParameter(new CodeParameter()
             {
+                Name = "value",
                 ParameterKind = CodeParameterKind.SetterValue,
                 Type = new CodeType()
                 {

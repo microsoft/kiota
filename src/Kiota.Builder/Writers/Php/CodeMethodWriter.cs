@@ -156,14 +156,18 @@ namespace Kiota.Builder.Writers.Php
             };
         }
         
+        private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
         private void WriteMethodsAndParameters(CodeMethod codeMethod, LanguageWriter writer, IReadOnlyList<string> orNullReturn, bool isConstructor = false)
         {
-            var methodParameters = string.Join(", ", codeMethod.Parameters.Select(x => conventions.GetParameterSignature(x, codeMethod)).ToList());
+            var methodParameters = string.Join(", ", codeMethod.Parameters
+                                                                .OrderBy(x => x, parameterOrderComparer)
+                                                                .Select(x => conventions.GetParameterSignature(x, codeMethod))
+                                                                .ToList());
 
             var methodName = codeMethod.MethodKind switch
             {
-                (CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor) => "__construct",
-                (CodeMethodKind.Getter or CodeMethodKind.Setter) => codeMethod.AccessedProperty?.Name?.ToFirstCharacterUpperCase(),
+                CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor => "__construct",
+                CodeMethodKind.Getter or CodeMethodKind.Setter => codeMethod.AccessedProperty?.Name?.ToFirstCharacterUpperCase(),
                 _ => codeMethod.Name.ToFirstCharacterLowerCase()
             };
             var methodPrefix = codeMethod.MethodKind switch

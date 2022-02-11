@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Kiota.Builder {
@@ -20,15 +21,16 @@ namespace Kiota.Builder {
                 CodeParameterKind.RequestAdapter => 3,
                 CodeParameterKind.Path => 4,
                 CodeParameterKind.QueryParameter => 5,
-                CodeParameterKind.Headers => 6,
-                CodeParameterKind.Options => 7,
-                CodeParameterKind.ResponseHandler => 8,
-                CodeParameterKind.Serializer => 9,
-                CodeParameterKind.BackingStore => 10,
-                CodeParameterKind.SetterValue => 11,
-                CodeParameterKind.RequestBody => 12,
-                CodeParameterKind.Custom => 13,
-                _ => 14,
+                CodeParameterKind.RequestBody => 6,
+                CodeParameterKind.Headers => 7,
+                CodeParameterKind.Options => 8,
+                CodeParameterKind.ResponseHandler => 9,
+                CodeParameterKind.Serializer => 10,
+                CodeParameterKind.BackingStore => 11,
+                CodeParameterKind.SetterValue => 12,
+                CodeParameterKind.ParseNode => 13,
+                CodeParameterKind.Custom => 14,
+                _ => 15,
             };
         }
         private static readonly int optionalWeight = 1000;
