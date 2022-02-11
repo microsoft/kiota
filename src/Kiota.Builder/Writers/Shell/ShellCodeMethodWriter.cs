@@ -68,8 +68,7 @@ namespace Kiota.Builder.Writers.Shell
                 parametersList.Add(origParams.OfKind(CodeParameterKind.RequestBody));
             }
             writer.WriteLine($"var command = new Command(\"{name}\");");
-            if (!string.IsNullOrWhiteSpace(codeElement.Description))
-                writer.WriteLine($"command.Description = \"{codeElement.Description}\";");
+            WriteCommandDescription(codeElement, writer);
             writer.WriteLine("// Create options for all the parameters");
             // investigate exploding query params
             // Check the possible formatting options for headers in a cli.
@@ -221,11 +220,16 @@ namespace Kiota.Builder.Writers.Shell
             writer.WriteLine("return command;");
         }
 
+        private static void WriteCommandDescription(CodeMethod codeElement, LanguageWriter writer)
+        {
+            if (!string.IsNullOrWhiteSpace(codeElement.Description))
+                writer.WriteLine($"command.Description = \"{codeElement.Description}\";");
+        }
+
         private void WriteContainerCommand(CodeMethod codeElement, LanguageWriter writer, CodeClass parent, string name)
         {
             writer.WriteLine($"var command = new Command(\"{name}\");");
-            if (!string.IsNullOrEmpty(codeElement.Description) || !string.IsNullOrEmpty(codeElement?.OriginalMethod?.Description))
-                writer.WriteLine($"command.Description = \"{codeElement.Description ?? codeElement?.OriginalMethod?.Description}\";");
+            WriteCommandDescription(codeElement, writer);
 
             if ((codeElement.AccessedProperty?.Type) is CodeType codeReturnType)
             {
@@ -264,7 +268,7 @@ namespace Kiota.Builder.Writers.Shell
             {
                 var commandBuilderMethods = classMethods.Where(m => m.MethodKind == CodeMethodKind.CommandBuilder && m != codeElement).OrderBy(m => m.Name);
                 writer.WriteLine($"var command = new RootCommand();");
-                writer.WriteLine($"command.Description = \"{codeElement.OriginalMethod.Description}\";");
+                WriteCommandDescription(codeElement, writer);
                 foreach (var method in commandBuilderMethods)
                 {
                     writer.WriteLine($"command.AddCommand({method.Name}());");
