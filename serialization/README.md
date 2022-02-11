@@ -7,3 +7,4 @@ Your project will need a reference to the abstraction package to build and run, 
 - [Go](./go/json): relies on [encoding/json](https://pkg.go.dev/encoding/json) for JSON serialization/deserialization.
 - [Java](./java/json) : relies on [Gson](https://github.com/google/gson) for JSON serialization/deserialization.
 - [TypeScript](./typescript/json) : relies on the native JSON capabilities for JSON serialization/deserialization.
+- [PHP](./php/json) : relies on the native JSON capabilities for JSON deserialization
