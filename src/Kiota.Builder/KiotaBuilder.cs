@@ -871,7 +871,7 @@ public class KiotaBuilder
             declaration.Inherits = new CodeType { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
         }
         var factoryMethod = newClass.AddMethod(new CodeMethod {
-            Name = "Create",
+            Name = "CreateFromDiscriminatorValue",
             ReturnType = new CodeType { TypeDefinition = newClass, Name = newClass.Name, IsNullable = false },
             MethodKind = CodeMethodKind.Factory,
             IsStatic = true,

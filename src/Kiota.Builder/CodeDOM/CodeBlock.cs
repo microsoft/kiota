@@ -54,7 +54,7 @@ namespace Kiota.Builder
                 if(currentMethod.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) &&
                     returnedValue is CodeProperty cProp &&
                     cProp.IsOfKind(CodePropertyKind.RequestBuilder)) {
-                    // indexer retrofited to method in the parent request builder on the path and conflicting with the collection request builder propeerty
+                    // indexer retrofitted to method in the parent request builder on the path and conflicting with the collection request builder property
                     returnedValue = innerChildElements.GetOrAdd($"{element.Name}-indexerbackcompat", element);
                     added = true;
                 } else if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor)) {
