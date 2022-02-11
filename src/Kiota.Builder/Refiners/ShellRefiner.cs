@@ -64,7 +64,8 @@ namespace Kiota.Builder.Refiners
                         OriginalIndexer = indexer
                     };
 
-                    method.ReturnType = CreateCommandType(method);
+                    // ReturnType setter assigns the parent
+                    method.ReturnType = CreateCommandType();
                     method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
                     currentClass.AddMethod(method);
                     currentClass.RemoveChildElement(indexer);
@@ -84,7 +85,7 @@ namespace Kiota.Builder.Refiners
 
                     clone.IsAsync = false;
                     clone.Name = $"Build{cmdName}Command";
-                    clone.ReturnType = CreateCommandType(clone);
+                    clone.ReturnType = CreateCommandType();
                     clone.MethodKind = CodeMethodKind.CommandBuilder;
                     clone.OriginalMethod = requestMethod;
                     clone.SimpleName = cmdName;
@@ -110,13 +111,12 @@ namespace Kiota.Builder.Refiners
             CrawlTree(currentElement, CreateCommandBuilders);
         }
 
-        private static CodeType CreateCommandType(CodeElement parent)
+        private static CodeType CreateCommandType()
         {
             return new CodeType
             {
                 Name = "Command",
                 IsExternal = true,
-                Parent = parent,
             };
         }
 
@@ -128,7 +128,7 @@ namespace Kiota.Builder.Refiners
                 Name = $"Build{navProperty.Name.ToFirstCharacterUpperCase()}Command",
                 MethodKind = CodeMethodKind.CommandBuilder
             };
-            codeMethod.ReturnType = CreateCommandType(codeMethod);
+            codeMethod.ReturnType = CreateCommandType();
             codeMethod.AccessedProperty = navProperty;
             codeMethod.SimpleName = navProperty.Name;
             codeMethod.Parent = parent;
