@@ -53,7 +53,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 WriteRequestExecutorBody(codeElement, requestParams, isVoid, returnType, writer);
                 break;
             case CodeMethodKind.Deserializer:
-                WriteDeserializerBody(codeElement, parentClass, writer);
+                WriteDeserializerBody(inherits, codeElement, parentClass, writer);
                 break;
             case CodeMethodKind.ClientConstructor:
                 WriteConstructorBody(parentClass, codeElement, writer);
