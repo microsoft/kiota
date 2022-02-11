@@ -34,6 +34,8 @@ namespace Kiota.Builder
                     await RenderCodeNamespaceToSingleFileAsync(writer, codeClass, writer.PathSegmenter.GetPath(root, codeClass));
                 else if (codeElement is CodeEnum codeEnum)
                     await RenderCodeNamespaceToSingleFileAsync(writer, codeEnum, writer.PathSegmenter.GetPath(root, codeEnum));
+                else if (codeElement is CodeFunction codeFunction)
+                    await RenderCodeNamespaceToSingleFileAsync(writer, codeFunction, writer.PathSegmenter.GetPath(root, codeFunction));
                 else if (codeElement is CodeNamespace codeNamespace)
                 {
                     if (!string.IsNullOrEmpty(codeNamespace.Name) && !string.IsNullOrEmpty(root.Name) &&

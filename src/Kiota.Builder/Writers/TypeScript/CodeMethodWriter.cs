@@ -14,6 +14,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
         if(codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
         if(writer == null) throw new ArgumentNullException(nameof(writer));
+        if(codeElement.Parent is CodeFunction) return;
         if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
 
         localConventions = new TypeScriptConventionService(writer); //because we allow inline type definitions for methods parameters
@@ -29,11 +30,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
         var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
         var requestParams = new RequestParams(requestBodyParam, queryStringParam, headersParam, optionsParam);
-        if(!codeElement.IsOfKind(CodeMethodKind.Setter))
-            foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
-                var parameterName = parameter.Name.ToFirstCharacterLowerCase();
-                writer.WriteLine($"if(!{parameterName}) throw new Error(\"{parameterName} cannot be undefined\");");
-            }
+        WriteDefensiveStatements(codeElement, writer);
         switch(codeElement.MethodKind) {
             case CodeMethodKind.IndexerBackwardCompatibility:
                 WriteIndexerBody(codeElement, parentClass, returnType, writer);
@@ -48,7 +45,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 WriteRequestGeneratorBody(codeElement, requestParams, parentClass, writer);
             break;
             case CodeMethodKind.RequestExecutor:
-                WriteRequestExecutorBody(codeElement, requestParams, isVoid, returnType, writer);
+                WriteRequestExecutorBody(codeElement, requestParams, isVoid, returnType, parentClass, writer);
                 break;
             case CodeMethodKind.Getter:
                 WriteGetterBody(codeElement, writer, parentClass);
@@ -67,8 +64,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 WriteRequestBuilderWithParametersBody(codeElement, parentClass, returnType, writer);
                 break;
             case CodeMethodKind.Factory:
-                WriteFactoryMethodBody(codeElement, returnType, writer);
-                break;
+                throw new InvalidOperationException("Factory methods are implemented as functions in TypeScript");
             case CodeMethodKind.RawUrlConstructor:
                 throw new InvalidOperationException("RawUrlConstructor is not supported as typescript relies on union types.");
             case CodeMethodKind.RequestBuilderBackwardCompatibility:
@@ -80,34 +76,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         writer.DecreaseIndent();
         writer.WriteLine("};");
     }
+    internal static void WriteDefensiveStatements(CodeMethod codeElement, LanguageWriter writer) {
+        if(codeElement.IsOfKind(CodeMethodKind.Setter)) return;
 
-    private static void WriteFactoryMethodBody(CodeMethod codeElement, string returnType, LanguageWriter writer)
-    {
-        var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
-        if(codeElement.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
-            writer.WriteLines($"const mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode(\"{codeElement.DiscriminatorPropertyName}\");",
-                                $"if (mappingValueNode) {{");
-            writer.IncreaseIndent();
-            writer.WriteLines($"const mappingValue = mappingValueNode.getStringValue();",
-                            "if (mappingValue) {");
-            writer.IncreaseIndent();
-
-            writer.WriteLine($"switch (mappingValue) {{");
-            writer.IncreaseIndent();
-            foreach(var mappedType in codeElement.DiscriminatorMappings) {
-                writer.WriteLine($"case \"{mappedType.Key}\":");
-                writer.IncreaseIndent();
-                writer.WriteLine($"return new {mappedType.Value.Name.ToFirstCharacterUpperCase()}();");
-                writer.DecreaseIndent();
-            }
-            writer.CloseBlock();
-            writer.CloseBlock();
-            writer.CloseBlock();
+        foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
+            var parameterName = parameter.Name.ToFirstCharacterLowerCase();
+            writer.WriteLine($"if(!{parameterName}) throw new Error(\"{parameterName} cannot be undefined\");");
         }
-
-        writer.WriteLine($"return new {returnType.ToFirstCharacterUpperCase()}();");
     }
-
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer) {
         var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
         localConventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"this.{pathParametersProperty.Name}",
@@ -214,12 +190,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         writer.IncreaseIndent();
         var parentClassName = parentClass.Name.ToFirstCharacterUpperCase();
         foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
-            writer.WriteLine($"[\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", (o, n) => {{ (o as unknown as {parentClassName}).{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type)}; }}],");
+            writer.WriteLine($"[\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", (o, n) => {{ (o as unknown as {parentClassName}).{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type, parentClassName)}; }}],");
         }
         writer.DecreaseIndent();
         writer.WriteLine("]);");
     }
-    private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer) {
+    private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnType, CodeClass parentClass, LanguageWriter writer) {
         if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
         var generatorMethodName = (codeElement.Parent as CodeClass)
@@ -246,7 +222,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             writer.WriteLine($"const {errorMappingVarName}: Record<string, ParsableFactory<Parsable>> = {{");
             writer.IncreaseIndent();
             foreach(var errorMapping in codeElement.ErrorMappings) {
-                writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {errorMapping.Value.Name.ToFirstCharacterUpperCase()}{FactoryMethodName},");
+                writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {GetFactoryMethodName(errorMapping.Value.Name)},");
             }
             writer.CloseBlock("};");
         }
@@ -320,7 +296,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     }
     private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid) {
-        var accessModifier = localConventions.GetAccessModifier(code.Access);
+        WriteMethodPrototypeInternal(code, writer, returnType, isVoid, localConventions, false);
+    }
+    internal static void WriteMethodPrototypeInternal(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid, TypeScriptConventionService pConventions, bool isFunction) {
+        var accessModifier = isFunction ? string.Empty : pConventions.GetAccessModifier(code.Access);
         var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor);
         var methodName = (code.MethodKind switch {
             _ when code.IsAccessor => code.AccessedProperty?.Name,
@@ -328,8 +307,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             _ => code.Name,
         })?.ToFirstCharacterLowerCase();
         var asyncPrefix = code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? " async ": string.Empty;
-        var staticPrefix = code.IsStatic ? "static " : string.Empty;
-        var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> localConventions.GetParameterSignature(p, code)).ToList());
+        var staticPrefix = code.IsStatic && !isFunction ? "static " : string.Empty;
+        var functionPrefix = isFunction ? "export function " : " ";
+        var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> pConventions.GetParameterSignature(p, code)).ToList());
         var asyncReturnTypePrefix = code.IsAsync ? "Promise<": string.Empty;
         var asyncReturnTypeSuffix = code.IsAsync ? ">": string.Empty;
         var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? " | undefined" : string.Empty;
@@ -340,9 +320,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             };
         var shouldHaveTypeSuffix = !code.IsAccessor && !isConstructor;
         var returnTypeSuffix = shouldHaveTypeSuffix ? $" : {asyncReturnTypePrefix}{returnType}{nullableSuffix}{asyncReturnTypeSuffix}" : string.Empty;
-        writer.WriteLine($"{accessModifier} {accessorPrefix}{staticPrefix}{methodName}{asyncPrefix}({parameters}){returnTypeSuffix} {{");
+        writer.WriteLine($"{accessModifier}{functionPrefix}{accessorPrefix}{staticPrefix}{methodName}{asyncPrefix}({parameters}){returnTypeSuffix} {{");
     }
-    private string GetDeserializationMethodName(CodeTypeBase propType) {
+    private string GetDeserializationMethodName(CodeTypeBase propType, string parentClassName) {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         var propertyType = localConventions.TranslateType(propType);
         if(propType is CodeType currentType) {
@@ -352,15 +332,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 if(currentType.TypeDefinition == null)
                     return $"getCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>()";
                 else
-                    return $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()}{FactoryMethodName})";
+                    return $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propertyType)})";
         }
         return propertyType switch
         {
             "string" or "boolean" or "number" or "Guid" or "Date" or "DateOnly" or "TimeOnly" or "Duration" => $"get{propertyType.ToFirstCharacterUpperCase()}Value()",
-            _ => $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()}{FactoryMethodName})",
+            _ => $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propertyType)})",
         };
     }
-    private const string FactoryMethodName = ".createFromDiscriminatorValue";
+    private static string GetFactoryMethodName(string targetClassName) =>
+        $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
     private string GetSerializationMethodName(CodeTypeBase propType) {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         var propertyType = localConventions.TranslateType(propType);
@@ -382,7 +363,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     private string GetTypeFactory(bool isVoid, bool isStream, string returnType) {
         if(isVoid) return string.Empty;
         else if(isStream || conventions.IsPrimitiveType(returnType)) return $" \"{returnType}\",";
-        else return $" {returnType}{FactoryMethodName},";
+        else return $" {GetFactoryMethodName(returnType)},";
     }
     private string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType) {
         if(isVoid) return "sendNoResponseContentAsync";

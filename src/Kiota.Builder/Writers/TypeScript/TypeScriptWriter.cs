@@ -10,6 +10,7 @@ namespace Kiota.Builder.Writers.TypeScript
             AddOrReplaceCodeElementWriter(new CodeClassEndWriter());
             AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeFunctionWriter(conventionService, clientNamespaceName));
             AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeTypeWriter(conventionService));
         }

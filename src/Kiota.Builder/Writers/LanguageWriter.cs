@@ -108,6 +108,9 @@ namespace Kiota.Builder.Writers
                     case CodeNamespace n:
                         ((ICodeElementWriter<CodeNamespace>) elementWriter).WriteCodeElement(n, this);
                         break;
+                    case CodeFunction n:
+                        ((ICodeElementWriter<CodeFunction>) elementWriter).WriteCodeElement(n, this);
+                        break;
                 }
             else if(!(code is CodeClass) && !(code is CodeNamespace.BlockDeclaration) && !(code is CodeNamespace.BlockEnd))
                 throw new InvalidOperationException($"Dispatcher missing for type {code.GetType()}");

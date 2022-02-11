@@ -39,7 +39,30 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         );
         AddDiscriminatorMappingsUsingsToParentClasses(
             generatedCode,
-            "ParseNode"
+            "ParseNode",
+            addUsings: false
+        );
+        Func<string, string> factoryNameCallbackFromTypeName = x => $"create{x.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
+        ReplaceLocalMethodsByGlobalFunctions(
+            generatedCode,
+            x => factoryNameCallbackFromTypeName(x.Parent.Name),
+            x => new List<CodeUsing>(x.DiscriminatorMappings
+                                    .Select(y => y.Value)
+                                    .OfType<CodeType>()
+                                    .Select(y => new CodeUsing { Name = y.Name, Declaration = y })) {
+                    new() { Name = "ParseNode", Declaration = new() { Name = AbstractionsPackageName, IsExternal = true } },
+                    new() { Name = x.Parent.Parent.Name, Declaration = new() { Name = x.Parent.Name, TypeDefinition = x.Parent } },
+                }.ToArray(),
+            CodeMethodKind.Factory
+        );
+        Func<CodeType, string> factoryNameCallbackFromType = x => factoryNameCallbackFromTypeName(x.Name);
+        AddStaticMethodsUsingsForDeserializer(
+            generatedCode,
+            factoryNameCallbackFromType
+        );
+        AddStaticMethodsUsingsForRequestExecutor(
+            generatedCode,
+            factoryNameCallbackFromType
         );
     }
     private static readonly CodeUsingDeclarationNameComparer usingComparer = new();

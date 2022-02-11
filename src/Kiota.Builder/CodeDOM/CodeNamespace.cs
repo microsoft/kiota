@@ -105,5 +105,14 @@ namespace Kiota.Builder
                 else return 0;
             }
         }
+
+        public IEnumerable<CodeFunction> AddFunction(params CodeFunction[] globalFunctions)
+        {
+            if(globalFunctions == null || globalFunctions.Any( x=> x == null))
+                throw new ArgumentNullException(nameof(globalFunctions));
+            if(!globalFunctions.Any())
+                throw new ArgumentOutOfRangeException(nameof(globalFunctions));
+            return AddRange(globalFunctions);
+        }
     }
 }

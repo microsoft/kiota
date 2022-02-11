@@ -576,19 +576,20 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, x => AddParentClassToErrorClasses(x, parentClassName, parentClassNamespace));
     }
-    protected static void AddDiscriminatorMappingsUsingsToParentClasses(CodeElement currentElement, string parseNodeInterfaceName, bool addFactoryMethodImport = false) {
+    protected static void AddDiscriminatorMappingsUsingsToParentClasses(CodeElement currentElement, string parseNodeInterfaceName, bool addFactoryMethodImport = false, bool addUsings = true) {
         if(currentElement is CodeMethod currentMethod &&
             currentMethod.Parent is CodeClass parentClass &&
             parentClass.StartBlock is CodeClass.Declaration declaration) {
                 if(currentMethod.IsOfKind(CodeMethodKind.Factory) &&
                     currentMethod.DiscriminatorMappings != null) {
-                        declaration.AddUsings(currentMethod.DiscriminatorMappings.Select(x => new CodeUsing {
-                            Name = x.Value.Name,
-                            Declaration = x.Value is CodeType codeType && codeType.TypeDefinition != null ? new CodeType {
-                                Name = codeType.TypeDefinition.Name,
-                                TypeDefinition = codeType.TypeDefinition,
-                            } : null,
-                        }).ToArray());
+                        if(addUsings)
+                            declaration.AddUsings(currentMethod.DiscriminatorMappings.Select(x => new CodeUsing {
+                                Name = x.Value.Name,
+                                Declaration = x.Value is CodeType codeType && codeType.TypeDefinition != null ? new CodeType {
+                                    Name = codeType.TypeDefinition.Name,
+                                    TypeDefinition = codeType.TypeDefinition,
+                                } : null,
+                            }).ToArray());
                         if (currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode, out var parameter))
                             parameter.Type.Name = parseNodeInterfaceName;
                 } else if (addFactoryMethodImport &&
@@ -605,6 +606,67 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                         });
                 }
         }
-        CrawlTree(currentElement, x => AddDiscriminatorMappingsUsingsToParentClasses(x, parseNodeInterfaceName, addFactoryMethodImport));
+        CrawlTree(currentElement, x => AddDiscriminatorMappingsUsingsToParentClasses(x, parseNodeInterfaceName, addFactoryMethodImport, addUsings));
+    }
+    protected static void ReplaceLocalMethodsByGlobalFunctions(CodeElement currentElement, Func<CodeMethod, string> nameUpdateCallback, Func<CodeMethod, CodeUsing[]> usingsCallback, params CodeMethodKind[] kindsToReplace) {
+        if(currentElement is CodeMethod currentMethod &&
+            currentMethod.IsOfKind(kindsToReplace) &&
+            currentMethod.Parent is CodeClass parentClass &&
+            parentClass.Parent is CodeNamespace parentNamespace) {
+                var usings = usingsCallback?.Invoke(currentMethod);
+                var newName = nameUpdateCallback.Invoke(currentMethod);
+                parentClass.RemoveChildElement(currentMethod);
+                var globalFunction = new CodeFunction(currentMethod) {
+                    Name = newName,
+                };
+                if(usings != null)
+                    globalFunction.AddUsing(usings);
+                parentNamespace.AddFunction(globalFunction);
+            }
+        
+        CrawlTree(currentElement, x => ReplaceLocalMethodsByGlobalFunctions(x, nameUpdateCallback, usingsCallback, kindsToReplace));
+    }
+    protected static void AddStaticMethodsUsingsForDeserializer(CodeElement currentElement, Func<CodeType, string> functionNameCallback) {
+        if(currentElement is CodeMethod currentMethod &&
+            currentMethod.IsOfKind(CodeMethodKind.Deserializer) &&
+            currentMethod.Parent is CodeClass parentClass) {
+                foreach(var property in parentClass.GetChildElements(true).OfType<CodeProperty>()) {
+                    if (property.Type is not CodeType propertyType || propertyType.TypeDefinition == null)
+                        continue;
+                    var staticMethodName = functionNameCallback.Invoke(propertyType);
+                    var staticMethodNS = propertyType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>();
+                    var staticMethod = staticMethodNS.FindChildByName<CodeFunction>(staticMethodName);
+                    if(staticMethod == null)
+                        continue;
+                    parentClass.AddUsing(new CodeUsing{
+                        Name = staticMethodName,
+                        Declaration = new CodeType {
+                            Name = staticMethodName,
+                            TypeDefinition = staticMethod,
+                        }
+                    });
+                }
+            }
+        CrawlTree(currentElement, x => AddStaticMethodsUsingsForDeserializer(x, functionNameCallback));
+    }
+    protected static void AddStaticMethodsUsingsForRequestExecutor(CodeElement currentElement, Func<CodeType, string> functionNameCallback) {
+        if(currentElement is CodeMethod currentMethod &&
+            currentMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
+            currentMethod.Parent is CodeClass parentClass &&
+            currentMethod.ReturnType is CodeType returnType &&
+            returnType.TypeDefinition != null) {
+                var staticMethodName = functionNameCallback.Invoke(returnType);
+                var staticMethodNS = returnType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>();
+                var staticMethod = staticMethodNS.FindChildByName<CodeFunction>(staticMethodName);
+                if(staticMethod != null)
+                    parentClass.AddUsing(new CodeUsing{
+                        Name = staticMethodName,
+                        Declaration = new CodeType {
+                            Name = staticMethodName,
+                            TypeDefinition = staticMethod,
+                        }
+                    });
+            }
+        CrawlTree(currentElement, x => AddStaticMethodsUsingsForRequestExecutor(x, functionNameCallback));
     }
 }

@@ -30,7 +30,7 @@ public class CodeClass : CodeBlock, IDocumentedElement, ITypeDefinition
 
     public bool IsErrorDefinition { get; set; }
 
-    public string Description {get; set;}   
+    public string Description {get; set;}
     /// <summary>
     /// Name of Class
     /// </summary>
