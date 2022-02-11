@@ -84,7 +84,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     private static void WriteFactoryMethodBody(CodeMethod codeElement, string returnType, LanguageWriter writer)
     {
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
-        if(codeElement.ShouldWriteDiscriminatorSwitch) {
+        if(codeElement.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
             writer.WriteLines($"const mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode(\"{codeElement.DiscriminatorPropertyName}\");",
                                 $"if (mappingValueNode) {{");
             writer.IncreaseIndent();
