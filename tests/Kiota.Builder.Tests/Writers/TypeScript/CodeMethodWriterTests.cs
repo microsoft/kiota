@@ -159,11 +159,9 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             var error401 = root.AddClass(new CodeClass{
                 Name = "Error401",
             }).First();
-            method.ErrorMappings = new () {
-                {"4XX", new CodeType {Name = "Error4XX", TypeDefinition = error4XX}},
-                {"5XX", new CodeType {Name = "Error5XX", TypeDefinition = error5XX}},
-                {"403", new CodeType {Name = "Error403", TypeDefinition = error401}},
-            };
+            method.ErrorMappings.TryAdd("4XX", new CodeType {Name = "Error4XX", TypeDefinition = error4XX});
+            method.ErrorMappings.TryAdd("5XX", new CodeType {Name = "Error5XX", TypeDefinition = error5XX});
+            method.ErrorMappings.TryAdd("403", new CodeType {Name = "Error403", TypeDefinition = error401});
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();

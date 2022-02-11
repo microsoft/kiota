@@ -51,14 +51,11 @@ public class JavaLanguageRefinerTests {
             ReturnType = new CodeType {
                 Name = "string"
             },
-            ErrorMappings = new () {
-                { "4XX", new CodeType {
+        }).First();
+        requestExecutor.ErrorMappings.TryAdd("4XX", new CodeType {
                         Name = "Error4XX",
                         TypeDefinition = errorClass,
-                    } 
-                },
-            },
-        }).First();
+                    });
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
 
         var declaration = requestBuilder.StartBlock as CodeClass.Declaration;

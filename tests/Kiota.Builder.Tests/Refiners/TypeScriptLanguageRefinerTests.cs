@@ -61,14 +61,11 @@ public class TypeScriptLanguageRefinerTests {
             ReturnType = new CodeType {
                 Name = "string"
             },
-            ErrorMappings = new () {
-                { "4XX", new CodeType {
+        }).First();
+        requestExecutor.ErrorMappings.TryAdd("4XX", new CodeType {
                         Name = "Error4XX",
                         TypeDefinition = errorClass,
-                    } 
-                },
-            },
-        }).First();
+                    });
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
         var declaration = requestBuilder.StartBlock as CodeClass.Declaration;
@@ -96,14 +93,11 @@ public class TypeScriptLanguageRefinerTests {
                 Name = "parentModel",
                 TypeDefinition = parentModel,
             },
-            DiscriminatorMappings = new() {
-                { "ns.childmodel", new CodeType {
+        }).First();
+        factoryMethod.DiscriminatorMappings.TryAdd("ns.childmodel", new CodeType {
                         Name = "childModel",
                         TypeDefinition = childModel,
-                    }
-                },
-            }
-        }).First();
+                    });
         var parentModelDeclaration = parentModel.StartBlock as CodeClass.Declaration;
         Assert.Empty(parentModelDeclaration.Usings);
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);

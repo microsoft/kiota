@@ -822,9 +822,9 @@ public class KiotaBuilderTests
         var entityClass = codeModel.FindChildByName<CodeClass>("entity", true);
         var directoryObjectClass = codeModel.FindChildByName<CodeClass>("directoryObject", true);
         Assert.NotNull(entityClass);
-        Assert.Equal("@odata.type", entityClass.DiscriminatorPropertyName);
         var factoryMethod = entityClass.FindChildByName<CodeMethod>("Factory");
         Assert.NotNull(factoryMethod);
+        Assert.Equal("@odata.type", factoryMethod.DiscriminatorPropertyName);
         Assert.NotEmpty(factoryMethod.DiscriminatorMappings);
         var doFactoryMethod = directoryObjectClass.FindChildByName<CodeMethod>("Factory");
         Assert.NotNull(doFactoryMethod);
