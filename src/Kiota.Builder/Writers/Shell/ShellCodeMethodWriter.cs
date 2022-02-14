@@ -75,56 +75,7 @@ namespace Kiota.Builder.Writers.Shell
             // -h A=b -h
             // -h A:B,B:C
             // -h {"A": "B"}
-            var availableOptions = new List<string>();
-            foreach (var option in parametersList)
-            {
-                var type = option.Type as CodeType;
-                var optionName = $"{NormalizeToIdentifier(option.Name)}Option";
-                var optionType = conventions.GetTypeString(option.Type, option);
-                if (option.ParameterKind == CodeParameterKind.RequestBody && type.TypeDefinition is CodeClass) optionType = "string";
-
-                // Binary body handling
-                if (option.IsOfKind(CodeParameterKind.RequestBody) && conventions.StreamTypeName.Equals(option.Type?.Name, StringComparison.OrdinalIgnoreCase))
-                {
-                    option.Name = "file";
-                }
-
-                var optionBuilder = new StringBuilder("new Option");
-                if (!String.IsNullOrEmpty(optionType))
-                {
-                    optionBuilder.Append($"<{optionType}>");
-                }
-                optionBuilder.Append("(\"");
-                if (option.Name.Length > 1) optionBuilder.Append('-');
-                optionBuilder.Append($"-{NormalizeToOption(option.Name)}\"");
-                if (option.DefaultValue != null)
-                {
-                    optionBuilder.Append($", getDefaultValue: ()=> {option.DefaultValue}");
-                }
-
-                if (!string.IsNullOrEmpty(option.Description))
-                {
-                    optionBuilder.Append($", description: \"{option.Description}\"");
-                }
-
-                optionBuilder.Append(") {");
-                var strValue = $"{optionBuilder}";
-                writer.WriteLine($"var {optionName} = {strValue}");
-                writer.IncreaseIndent();
-                var isRequired = !option.Optional || option.IsOfKind(CodeParameterKind.Path);
-
-                if (option.Type.IsCollection)
-                {
-                    var arity = isRequired ? "OneOrMore" : "ZeroOrMore";
-                    writer.WriteLine($"Arity = ArgumentArity.{arity}");
-                }
-
-                writer.DecreaseIndent();
-                writer.WriteLine("};");
-                writer.WriteLine($"{optionName}.IsRequired = {isRequired.ToString().ToFirstCharacterLowerCase()};");
-                writer.WriteLine($"command.AddOption({optionName});");
-                availableOptions.Add(optionName);
-            }
+            var availableOptions = WriteExecutableCommandOptions(writer, parametersList);
 
             var paramTypes = parametersList.Select(x =>
             {
@@ -218,6 +169,62 @@ namespace Kiota.Builder.Writers.Shell
             }
             writer.WriteLine($"}}{delimiter}{string.Join(", ", availableOptions)});");
             writer.WriteLine("return command;");
+        }
+
+        private List<string> WriteExecutableCommandOptions(LanguageWriter writer, List<CodeParameter> parametersList)
+        {
+            var availableOptions = new List<string>();
+            foreach (var option in parametersList)
+            {
+                var type = option.Type as CodeType;
+                var optionName = $"{NormalizeToIdentifier(option.Name)}Option";
+                var optionType = conventions.GetTypeString(option.Type, option);
+                if (option.ParameterKind == CodeParameterKind.RequestBody && type.TypeDefinition is CodeClass) optionType = "string";
+
+                // Binary body handling
+                if (option.IsOfKind(CodeParameterKind.RequestBody) && conventions.StreamTypeName.Equals(option.Type?.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    option.Name = "file";
+                }
+
+                var optionBuilder = new StringBuilder("new Option");
+                if (!String.IsNullOrEmpty(optionType))
+                {
+                    optionBuilder.Append($"<{optionType}>");
+                }
+                optionBuilder.Append("(\"");
+                if (option.Name.Length > 1) optionBuilder.Append('-');
+                optionBuilder.Append($"-{NormalizeToOption(option.Name)}\"");
+                if (option.DefaultValue != null)
+                {
+                    optionBuilder.Append($", getDefaultValue: ()=> {option.DefaultValue}");
+                }
+
+                if (!string.IsNullOrEmpty(option.Description))
+                {
+                    optionBuilder.Append($", description: \"{option.Description}\"");
+                }
+
+                optionBuilder.Append(") {");
+                var strValue = $"{optionBuilder}";
+                writer.WriteLine($"var {optionName} = {strValue}");
+                writer.IncreaseIndent();
+                var isRequired = !option.Optional || option.IsOfKind(CodeParameterKind.Path);
+
+                if (option.Type.IsCollection)
+                {
+                    var arity = isRequired ? "OneOrMore" : "ZeroOrMore";
+                    writer.WriteLine($"Arity = ArgumentArity.{arity}");
+                }
+
+                writer.DecreaseIndent();
+                writer.WriteLine("};");
+                writer.WriteLine($"{optionName}.IsRequired = {isRequired.ToString().ToFirstCharacterLowerCase()};");
+                writer.WriteLine($"command.AddOption({optionName});");
+                availableOptions.Add(optionName);
+            }
+
+            return availableOptions;
         }
 
         private static void WriteCommandDescription(CodeMethod codeElement, LanguageWriter writer)
