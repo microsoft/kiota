@@ -30,26 +30,30 @@ namespace Kiota.Builder
         {
             foreach (var codeElement in root.GetChildElements(true))
             {
-                if (codeElement is CodeClass codeClass)
-                    await RenderCodeNamespaceToSingleFileAsync(writer, codeClass, writer.PathSegmenter.GetPath(root, codeClass));
-                else if (codeElement is CodeEnum codeEnum)
-                    await RenderCodeNamespaceToSingleFileAsync(writer, codeEnum, writer.PathSegmenter.GetPath(root, codeEnum));
-                else if (codeElement is CodeFunction codeFunction)
-                    await RenderCodeNamespaceToSingleFileAsync(writer, codeFunction, writer.PathSegmenter.GetPath(root, codeFunction));
-                else if (codeElement is CodeNamespace codeNamespace)
-                {
-                    if (!string.IsNullOrEmpty(codeNamespace.Name) && !string.IsNullOrEmpty(root.Name) &&
-                        _configuration.ShouldWriteNamespaceIndices &&
-                        !_configuration.ClientNamespaceName.Contains(codeNamespace.Name, StringComparison.OrdinalIgnoreCase))
-                    {
-                        var namespaceNameLastSegment = codeNamespace.Name.Split('.').Last().ToLowerInvariant();
-                        // if the module already has a class with the same name, it's going to be declared automatically
-                        if (_configuration.ShouldWriteBarrelsIfClassExists ||
-                            codeNamespace.FindChildByName<CodeClass>(namespaceNameLastSegment, false) == null)
-                            await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(root, codeNamespace));
-                    }
-                    await RenderCodeNamespaceToFilePerClassAsync(writer, codeNamespace);
+                switch(codeElement) {
+                    case CodeClass:
+                    case CodeEnum:
+                    case CodeFunction:
+                        await RenderCodeNamespaceToSingleFileAsync(writer, codeElement, writer.PathSegmenter.GetPath(root, codeElement));
+                        break;
+                    case CodeNamespace codeNamespace:
+                        await RenderBarrel(writer, root, codeNamespace);
+                        await RenderCodeNamespaceToFilePerClassAsync(writer, codeNamespace);
+                    break;
                 }
+            }
+        }
+        private async Task RenderBarrel(LanguageWriter writer, CodeNamespace root, CodeNamespace codeNamespace) {
+            if (!string.IsNullOrEmpty(codeNamespace.Name) &&
+                !string.IsNullOrEmpty(root.Name) &&
+                _configuration.ShouldWriteNamespaceIndices &&
+                !_configuration.ClientNamespaceName.Contains(codeNamespace.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                var namespaceNameLastSegment = codeNamespace.Name.Split('.').Last().ToLowerInvariant();
+                // if the module already has a class with the same name, it's going to be declared automatically
+                if (_configuration.ShouldWriteBarrelsIfClassExists ||
+                    codeNamespace.FindChildByName<CodeClass>(namespaceNameLastSegment, false) == null)
+                    await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(root, codeNamespace));
             }
         }
         private readonly CodeElementOrderComparer _rendererElementComparer;

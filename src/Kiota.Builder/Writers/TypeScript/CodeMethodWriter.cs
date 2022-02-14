@@ -45,7 +45,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 WriteRequestGeneratorBody(codeElement, requestParams, parentClass, writer);
             break;
             case CodeMethodKind.RequestExecutor:
-                WriteRequestExecutorBody(codeElement, requestParams, isVoid, returnType, parentClass, writer);
+                WriteRequestExecutorBody(codeElement, requestParams, isVoid, returnType, writer);
                 break;
             case CodeMethodKind.Getter:
                 WriteGetterBody(codeElement, writer, parentClass);
@@ -190,12 +190,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         writer.IncreaseIndent();
         var parentClassName = parentClass.Name.ToFirstCharacterUpperCase();
         foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
-            writer.WriteLine($"[\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", (o, n) => {{ (o as unknown as {parentClassName}).{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type, parentClassName)}; }}],");
+            writer.WriteLine($"[\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", (o, n) => {{ (o as unknown as {parentClassName}).{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type)}; }}],");
         }
         writer.DecreaseIndent();
         writer.WriteLine("]);");
     }
-    private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnType, CodeClass parentClass, LanguageWriter writer) {
+    private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer) {
         if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
         var generatorMethodName = (codeElement.Parent as CodeClass)
@@ -322,7 +322,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var returnTypeSuffix = shouldHaveTypeSuffix ? $" : {asyncReturnTypePrefix}{returnType}{nullableSuffix}{asyncReturnTypeSuffix}" : string.Empty;
         writer.WriteLine($"{accessModifier}{functionPrefix}{accessorPrefix}{staticPrefix}{methodName}{asyncPrefix}({parameters}){returnTypeSuffix} {{");
     }
-    private string GetDeserializationMethodName(CodeTypeBase propType, string parentClassName) {
+    private string GetDeserializationMethodName(CodeTypeBase propType) {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         var propertyType = localConventions.TranslateType(propType);
         if(propType is CodeType currentType) {
