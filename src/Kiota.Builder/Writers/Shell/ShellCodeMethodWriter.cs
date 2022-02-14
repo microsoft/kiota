@@ -352,7 +352,7 @@ namespace Kiota.Builder.Writers.Shell
                 foreach (var param in generatorMethod.PathAndQueryParameters.Where(p => p.IsOfKind(CodeParameterKind.QueryParameter)))
                 {
                     var paramName = NormalizeToIdentifier(param.Name);
-                    bool isStringParam = param.Type.Name?.ToLower() == "string" && !param.Type.IsCollection;
+                    bool isStringParam = "string".Equals(param.Type.Name, StringComparison.OrdinalIgnoreCase) && !param.Type.IsCollection;
                     bool indentParam = true;
                     if (isStringParam)
                     {
