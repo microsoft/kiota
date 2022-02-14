@@ -9,11 +9,12 @@ namespace Kiota.Builder.Writers.Go {
 
         public override void WriteCodeElement(CodeClass.Declaration codeElement, LanguageWriter writer)
         {
-            if(codeElement?.Parent?.Parent is CodeNamespace ns)
+            var ns = codeElement?.Parent?.Parent as CodeNamespace;
+            if (ns != null)
                 writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().Replace("-", string.Empty)}");
             var importSegments = codeElement
                                 .Usings
-                                .Where(x => !x.Declaration.IsExternal)
+                                .Where(x => !x.Declaration.IsExternal && !x.Name.Equals(ns.Name, StringComparison.OrdinalIgnoreCase))
                                 .Select(x => x.GetInternalNamespaceImport())
                                 .Select(x => new Tuple<string, string>(x.GetNamespaceImportSymbol(), x))
                                 .Distinct()

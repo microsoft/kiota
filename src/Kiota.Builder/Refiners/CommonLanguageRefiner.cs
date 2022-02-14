@@ -583,12 +583,16 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 if(currentMethod.IsOfKind(CodeMethodKind.Factory) &&
                     currentMethod.DiscriminatorMappings != null) {
                         if(addUsings)
-                            declaration.AddUsings(currentMethod.DiscriminatorMappings.Select(x => new CodeUsing {
-                                Name = x.Value.Name,
-                                Declaration = x.Value is CodeType codeType && codeType.TypeDefinition != null ? new CodeType {
-                                    Name = codeType.TypeDefinition.Name,
-                                    TypeDefinition = codeType.TypeDefinition,
-                                } : null,
+                            declaration.AddUsings(currentMethod.DiscriminatorMappings
+                                .Select(x => x.Value)
+                                .OfType<CodeType>()
+                                .Where(x => x.TypeDefinition != null)
+                                .Select(x => new CodeUsing {
+                                    Name = x.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name,
+                                    Declaration = new CodeType {
+                                        Name = x.TypeDefinition.Name,
+                                        TypeDefinition = x.TypeDefinition,
+                                    },
                             }).ToArray());
                         if (currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode, out var parameter))
                             parameter.Type.Name = parseNodeInterfaceName;
@@ -598,7 +602,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     type.TypeDefinition is CodeClass modelClass &&
                     modelClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory)) is CodeMethod factoryMethod) {
                         declaration.AddUsings(new CodeUsing {
-                            Name = factoryMethod.Name,
+                            Name = modelClass.GetImmediateParentOfType<CodeNamespace>().Name,
                             Declaration = new CodeType {
                                 Name = factoryMethod.Name,
                                 TypeDefinition = factoryMethod,

@@ -71,11 +71,40 @@ namespace Kiota.Builder.Writers.Go {
                 case CodeMethodKind.NullCheck:
                     WriteNullCheckBody(writer);
                     break;
+                case CodeMethodKind.Factory:
+                    WriteFactoryMethodBody(codeElement, writer);
+                    break;
                 default:
                     writer.WriteLine("return nil");
                 break;
             }
             writer.CloseBlock();
+        }
+        private void WriteFactoryMethodBody(CodeMethod codeElement, LanguageWriter writer){
+            var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
+            if(codeElement.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
+                writer.WriteLines($"mappingValueNode, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{codeElement.DiscriminatorPropertyName}\")");
+                WriteReturnError(writer, codeElement.ReturnType.Name);
+                writer.WriteLine("if mappingValueNode != nil {");
+                writer.IncreaseIndent();
+                writer.WriteLines($"mappingValue, err := mappingValueNode.GetStringValue()");
+                WriteReturnError(writer, codeElement.ReturnType.Name);
+                writer.WriteLine("if mappingValue != nil {");
+                writer.IncreaseIndent();
+                writer.WriteLine("switch mappingValue {");
+                writer.IncreaseIndent();
+                foreach(var mappedType in codeElement.DiscriminatorMappings) {
+                    writer.WriteLine($"case \"{mappedType.Key}\":");
+                    writer.IncreaseIndent();
+                    writer.WriteLine($"return {conventions.GetImportedStaticMethodName(mappedType.Value, codeElement.Parent)}(), nil");
+                    writer.DecreaseIndent();
+                }
+                writer.CloseBlock();
+                writer.CloseBlock();
+                writer.CloseBlock();
+            }
+
+            writer.WriteLine($"return {conventions.GetImportedStaticMethodName(codeElement.ReturnType, codeElement.Parent)}(), nil");
         }
         private void WriteMethodDocumentation(CodeMethod code, string methodName, LanguageWriter writer) {
             if(!string.IsNullOrEmpty(code.Description))
@@ -137,6 +166,7 @@ namespace Kiota.Builder.Writers.Go {
                     => $"Set{code.AccessedProperty.SerializationName.ToFirstCharacterUpperCase()}",
                 CodeMethodKind.Getter => $"Get{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
                 CodeMethodKind.Setter => $"Set{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
+                CodeMethodKind.Factory => $"Create{parentClass.Name.ToFirstCharacterUpperCase()}FromDiscriminatorValue",
                 _ when isConstructor => $"New{code.Parent.Name.ToFirstCharacterUpperCase()}",
                 _ when code.Access == AccessModifier.Public => code.Name.ToFirstCharacterUpperCase(),
                 _ => code.Name.ToFirstCharacterLowerCase()
@@ -144,7 +174,7 @@ namespace Kiota.Builder.Writers.Go {
             WriteMethodDocumentation(code, methodName, writer);
             var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p => conventions.GetParameterSignature(p, parentClass)).ToList());
             var classType = conventions.GetTypeString(new CodeType { Name = parentClass.Name, TypeDefinition = parentClass }, parentClass);
-            var associatedTypePrefix = isConstructor ? string.Empty : $" (m {classType})";
+            var associatedTypePrefix = isConstructor ||code.IsStatic ? string.Empty : $" (m {classType})";
             var finalReturnType = isConstructor ? classType : $"{returnType}{returnTypeAsyncSuffix}";
             var errorDeclaration = code.IsOfKind(CodeMethodKind.ClientConstructor, 
                                                 CodeMethodKind.Constructor, 
@@ -340,7 +370,7 @@ namespace Kiota.Builder.Writers.Go {
             var constructorFunction = returnType switch {
                 _ when isVoid => string.Empty,
                 _ when isPrimitive || isBinary => $"\"{returnType.TrimCollectionAndPointerSymbols()}\", ",
-                _ => $"func () {parsableImportSymbol} {{ return {conventions.GetImportedStaticMethodName(codeElement.ReturnType, codeElement.Parent)}() }}, ",
+                _ => $"func () {parsableImportSymbol} {{ return {conventions.GetImportedStaticMethodName(codeElement.ReturnType, codeElement.Parent, "Create", "FromDiscriminatorValue")}() }}, ",
             };
             var errorMappingVarName = "nil";
             if(codeElement.ErrorMappings.Any()) {
@@ -348,7 +378,7 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLine($"{errorMappingVarName} := {conventions.AbstractionsHash}.ErrorMappings {{");
                 writer.IncreaseIndent();
                 foreach(var errorMapping in codeElement.ErrorMappings) {
-                    writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": func() {parsableImportSymbol} {{ return {conventions.GetImportedStaticMethodName(errorMapping.Value, codeElement.Parent)}() }},");
+                    writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": func() {parsableImportSymbol} {{ return {conventions.GetImportedStaticMethodName(errorMapping.Value, codeElement.Parent, "Create", "FromDiscriminatorValue")}() }},");
                 }
                 writer.CloseBlock();
             }
@@ -472,7 +502,7 @@ namespace Kiota.Builder.Writers.Go {
         private string GetTypeFactory(CodeTypeBase propTypeBase, CodeClass parentClass, string propertyTypeName) {
             if(propTypeBase is CodeType propType) {
                 var parsableSymbol = GetConversionHelperMethodImport(parentClass, "Parsable");
-                return $"func () {parsableSymbol} {{ return {conventions.GetImportedStaticMethodName(propType, parentClass)}() }}";
+                return $"func () {parsableSymbol} {{ return {conventions.GetImportedStaticMethodName(propType, parentClass, "Create", "FromDiscriminatorValue")}() }}";
             } else return GetTypeFactory(propTypeBase.AllTypes.First(), parentClass, propertyTypeName);
         }
         private void WriteSerializationMethodCall(CodeTypeBase propType, CodeClass parentClass, string serializationKey, string valueGet, bool shouldDeclareErrorVar, LanguageWriter writer) {
