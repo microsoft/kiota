@@ -91,8 +91,9 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// <summary>
         /// Gets the collection of model objects values of the node.
         /// </summary>
+        /// <param name="factory">The factory to use to create the model object.</param>
         /// <returns>The collection of model objects values.</returns>
-        IEnumerable<T> GetCollectionOfObjectValues<T>() where T : IParsable;
+        IEnumerable<T> GetCollectionOfObjectValues<T>(ParsableFactory factory) where T : IParsable;
         /// <summary>
         /// Gets the enum value of the node.
         /// </summary>
@@ -101,14 +102,9 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// <summary>
         /// Gets the model object value of the node.
         /// </summary>
+        /// <param name="factory">The factory to use to create the model object.</param>
         /// <returns>The model object value of the node.</returns>
-        T GetObjectValue<T>() where T : IParsable;
-        /// <summary>
-        /// Gets the resulting error from the node.
-        /// </summary>
-        /// <returns>The error object value of the node.</returns>
-        /// <param name="factory">The error factory.</param>
-        IParsable GetErrorValue(Func<IParsable> factory);
+        T GetObjectValue<T>(ParsableFactory factory) where T : IParsable;
         /// <summary>
         /// Callback called before the node is deserialized.
         /// </summary>

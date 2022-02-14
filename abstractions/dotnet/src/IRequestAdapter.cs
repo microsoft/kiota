@@ -29,20 +29,22 @@ namespace Microsoft.Kiota.Abstractions
         /// Executes the HTTP request specified by the given RequestInformation and returns the deserialized response model.
         /// </summary>
         /// <param name="requestInfo">The RequestInformation object to use for the HTTP request.</param>
+        /// <param name="factory">The factory of the response model to deserialize the response into.</param>
         /// <param name="responseHandler">The response handler to use for the HTTP request instead of the default handler.</param>
         /// <param name="errorMapping">The error factories mapping to use in case of a failed request.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> to use for cancelling the requests.</param>
         /// <returns>The deserialized response model.</returns>
-        Task<ModelType> SendAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default, Dictionary<string, Func<IParsable>> errorMapping = default, CancellationToken cancellationToken = default) where ModelType : IParsable;
+        Task<ModelType> SendAsync<ModelType>(RequestInformation requestInfo, ParsableFactory<ModelType> factory, IResponseHandler responseHandler = default, Dictionary<string, Func<IParsable>> errorMapping = default, CancellationToken cancellationToken = default) where ModelType : IParsable;
         /// <summary>
         /// Executes the HTTP request specified by the given RequestInformation and returns the deserialized response model collection.
         /// </summary>
         /// <param name="requestInfo">The RequestInformation object to use for the HTTP request.</param>
+        /// <param name="factory">The factory of the response model to deserialize the response into.</param>
         /// <param name="responseHandler">The response handler to use for the HTTP request instead of the default handler.</param>
         /// <param name="errorMapping">The error factories mapping to use in case of a failed request.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> to use for cancelling the requests.</param>
         /// <returns>The deserialized response model collection.</returns>
-        Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(RequestInformation requestInfo, IResponseHandler responseHandler = default, Dictionary<string, Func<IParsable>> errorMapping = default, CancellationToken cancellationToken = default) where ModelType : IParsable;
+        Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(RequestInformation requestInfo, ParsableFactory<ModelType> factory, IResponseHandler responseHandler = default, Dictionary<string, Func<IParsable>> errorMapping = default, CancellationToken cancellationToken = default) where ModelType : IParsable;
         /// <summary>
         /// Executes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model.
         /// </summary>
