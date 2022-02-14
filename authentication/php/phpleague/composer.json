@@ -24,8 +24,9 @@
     },
 	"require-dev": {
 		"phpunit/phpunit": "^9.5.13",
-        "phpstan/phpstan": "^1.4.6"
-	},
+        "phpstan/phpstan": "^1.4.6",
+        "ext-json": "*"
+    },
     "autoload": {
         "psr-4": {
             "Microsoft\\Kiota\\Authentication\\": "src/"

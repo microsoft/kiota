@@ -3,7 +3,6 @@
     "description": "Abstractions for Kiota",
     "type": "library",
     "license": "MIT",
-    "version": "1.0.28",
     "authors": [
       {
         "name": "Microsoft Graph Client Tooling",
