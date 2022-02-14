@@ -79,8 +79,14 @@ namespace Kiota.Builder.Refiners
                     var cmdName = clone.Name;
                     if (classHasIndexers)
                     {
-                        if (clone.HttpMethod == HttpMethod.Get) cmdName = "List";
-                        if (clone.HttpMethod == HttpMethod.Post) cmdName = "Create";
+                        switch (clone.HttpMethod) {
+                            case HttpMethod.Get:
+                                cmdName = "List";
+                                break;
+                            case HttpMethod.Post:
+                                cmdName = "Create";
+                                break;
+                        }
                     }
 
                     clone.IsAsync = false;
