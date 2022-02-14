@@ -167,15 +167,15 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             var result = tw.ToString();
             Assert.Contains("const requestInfo", result);
             Assert.Contains("const errorMapping: Record<string, ParsableFactory<Parsable>> =", result);
-            Assert.Contains("\"4XX\": Error4XX.create,", result);
-            Assert.Contains("\"5XX\": Error5XX.create,", result);
-            Assert.Contains("\"403\": Error403.create,", result);
+            Assert.Contains("\"4XX\": createError4XXFromDiscriminatorValue,", result);
+            Assert.Contains("\"5XX\": createError5XXFromDiscriminatorValue,", result);
+            Assert.Contains("\"403\": createError403FromDiscriminatorValue,", result);
             Assert.Contains("sendAsync", result);
             Assert.Contains("Promise.reject", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
-        public void WritesModelFactoryBody() {
+        public void WritesModelFactoryBodyThrowsIfMethodAndNotFactory() {
             var parentModel = root.AddClass(new CodeClass {
                 Name = "parentModel",
                 ClassKind = CodeClassKind.Model,
@@ -213,146 +213,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
                 },
                 Optional = false,
             });
-            writer.Write(factoryMethod);
-            var result = tw.ToString();
-            Assert.Contains("const mappingValueNode = parseNode.getChildNode(\"@odata.type\")", result);
-            Assert.Contains("if (mappingValueNode) {", result);
-            Assert.Contains("const mappingValue = mappingValueNode.getStringValue()", result);
-            Assert.Contains("if (mappingValue) {", result);
-            Assert.Contains("switch (mappingValue) {", result);
-            Assert.Contains("case \"ns.childmodel\":", result);
-            Assert.Contains("return new ChildModel();", result);
-            Assert.Contains("return new ParentModel();", result);
-            AssertExtensions.CurlyBracesAreClosed(result);
-        }
-        [Fact]
-        public void DoesntWriteFactorySwitchOnEmptyPropertyName() {
-            var parentModel = root.AddClass(new CodeClass {
-                Name = "parentModel",
-                ClassKind = CodeClassKind.Model,
-            }).First();
-            var childModel = root.AddClass(new CodeClass {
-                Name = "childModel",
-                ClassKind = CodeClassKind.Model,
-            }).First();
-            (childModel.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
-                Name = "parentModel",
-                TypeDefinition = parentModel,
-            };
-            var factoryMethod = parentModel.AddMethod(new CodeMethod {
-                Name = "factory",
-                MethodKind = CodeMethodKind.Factory,
-                ReturnType = new CodeType {
-                    Name = "parentModel",
-                    TypeDefinition = parentModel,
-                },
-            }).First();
-            factoryMethod.DiscriminatorMappings.TryAdd("ns.childmodel", new CodeType {
-                            Name = "childModel",
-                            TypeDefinition = childModel,
-                        });
-            factoryMethod.DiscriminatorPropertyName = string.Empty;
-            factoryMethod.AddParameter(new CodeParameter {
-                Name = "parseNode",
-                ParameterKind = CodeParameterKind.ParseNode,
-                Type = new CodeType {
-                    Name = "ParseNode",
-                    TypeDefinition = new CodeClass {
-                        Name = "ParseNode",
-                    },
-                    IsExternal = true,
-                },
-                Optional = false,
-            });
-            writer.Write(factoryMethod);
-            var result = tw.ToString();
-            Assert.DoesNotContain("const mappingValueNode = parseNode.getChildNode(\"@odata.type\")", result);
-            Assert.DoesNotContain("if (mappingValueNode) {", result);
-            Assert.DoesNotContain("const mappingValue = mappingValueNode.getStringValue()", result);
-            Assert.DoesNotContain("if (mappingValue) {", result);
-            Assert.DoesNotContain("switch (mappingValue) {", result);
-            Assert.DoesNotContain("case \"ns.childmodel\":", result);
-            Assert.DoesNotContain("return new ChildModel();", result);
-            Assert.Contains("return new ParentModel();", result);
-            AssertExtensions.CurlyBracesAreClosed(result);
-        }
-        [Fact]
-        public void DoesntWriteFactorySwitchOnMissingParameter() {
-            var parentModel = root.AddClass(new CodeClass {
-                Name = "parentModel",
-                ClassKind = CodeClassKind.Model,
-            }).First();
-            var childModel = root.AddClass(new CodeClass {
-                Name = "childModel",
-                ClassKind = CodeClassKind.Model,
-            }).First();
-            (childModel.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
-                Name = "parentModel",
-                TypeDefinition = parentModel,
-            };
-            var factoryMethod = parentModel.AddMethod(new CodeMethod {
-                Name = "factory",
-                MethodKind = CodeMethodKind.Factory,
-                ReturnType = new CodeType {
-                    Name = "parentModel",
-                    TypeDefinition = parentModel,
-                },
-            }).First();
-            factoryMethod.DiscriminatorMappings.TryAdd("ns.childmodel", new CodeType {
-                            Name = "childModel",
-                            TypeDefinition = childModel,
-                        });
-            factoryMethod.DiscriminatorPropertyName = "@odata.type";
-            writer.Write(factoryMethod);
-            var result = tw.ToString();
-            Assert.DoesNotContain("const mappingValueNode = parseNode.getChildNode(\"@odata.type\")", result);
-            Assert.DoesNotContain("if (mappingValueNode) {", result);
-            Assert.DoesNotContain("const mappingValue = mappingValueNode.getStringValue()", result);
-            Assert.DoesNotContain("if (mappingValue) {", result);
-            Assert.DoesNotContain("switch (mappingValue) {", result);
-            Assert.DoesNotContain("case \"ns.childmodel\":", result);
-            Assert.DoesNotContain("return new ChildModel();", result);
-            Assert.Contains("return new ParentModel();", result);
-            AssertExtensions.CurlyBracesAreClosed(result);
-        }
-        [Fact]
-        public void DoesntWriteFactorySwitchOnEmptyMappings() {
-            var parentModel = root.AddClass(new CodeClass {
-                Name = "parentModel",
-                ClassKind = CodeClassKind.Model,
-            }).First();
-            var factoryMethod = parentModel.AddMethod(new CodeMethod {
-                Name = "factory",
-                MethodKind = CodeMethodKind.Factory,
-                ReturnType = new CodeType {
-                    Name = "parentModel",
-                    TypeDefinition = parentModel,
-                },
-            }).First();
-            factoryMethod.DiscriminatorPropertyName = "@odata.type";
-            factoryMethod.AddParameter(new CodeParameter {
-                Name = "parseNode",
-                ParameterKind = CodeParameterKind.ParseNode,
-                Type = new CodeType {
-                    Name = "ParseNode",
-                    TypeDefinition = new CodeClass {
-                        Name = "ParseNode",
-                    },
-                    IsExternal = true,
-                },
-                Optional = false,
-            });
-            writer.Write(factoryMethod);
-            var result = tw.ToString();
-            Assert.DoesNotContain("const mappingValueNode = parseNode.getChildNode(\"@odata.type\")", result);
-            Assert.DoesNotContain("if (mappingValueNode) {", result);
-            Assert.DoesNotContain("const mappingValue = mappingValueNode.getStringValue()", result);
-            Assert.DoesNotContain("if (mappingValue) {", result);
-            Assert.DoesNotContain("switch (mappingValue) {", result);
-            Assert.DoesNotContain("case \"ns.childmodel\":", result);
-            Assert.DoesNotContain("return new ChildModel();", result);
-            Assert.Contains("return new ParentModel();", result);
-            AssertExtensions.CurlyBracesAreClosed(result);
+            Assert.Throws<InvalidOperationException>(() => writer.Write(factoryMethod));
         }
         [Fact]
         public void DoesntCreateDictionaryOnEmptyErrorMapping() {

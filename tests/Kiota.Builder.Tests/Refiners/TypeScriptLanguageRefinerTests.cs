@@ -93,15 +93,15 @@ public class TypeScriptLanguageRefinerTests {
                 Name = "parentModel",
                 TypeDefinition = parentModel,
             },
+            IsStatic = true,
         }).First();
         factoryMethod.DiscriminatorMappings.TryAdd("ns.childmodel", new CodeType {
                         Name = "childModel",
                         TypeDefinition = childModel,
                     });
-        var parentModelDeclaration = parentModel.StartBlock as CodeClass.Declaration;
-        Assert.Empty(parentModelDeclaration.Usings);
+        Assert.False(factoryMethod.Parent is CodeFunction);
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
-        Assert.Equal(childModel, parentModelDeclaration.Usings.First(x => x.Name.Equals("childModel", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
+        Assert.Equal(childModel, (factoryMethod.Parent as CodeFunction).StartBlock.Usings.First(x => x.Name.Equals("childModel", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
     }
 #endregion
 #region typescript
