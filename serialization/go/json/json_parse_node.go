@@ -153,7 +153,10 @@ func (n *JsonParseNode) GetObjectValue(ctor absser.ParsableFactory) (absser.Pars
 	if n == nil || n.value == nil {
 		return nil, nil
 	}
-	result := ctor(n)
+	result, err := ctor(n)
+	if err != nil {
+		return nil, err
+	}
 	//TODO on before when implementing backing store
 	properties, ok := n.value.(map[string]*JsonParseNode)
 	if !ok {

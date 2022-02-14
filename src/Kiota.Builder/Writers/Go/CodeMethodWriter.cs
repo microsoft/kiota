@@ -91,7 +91,8 @@ namespace Kiota.Builder.Writers.Go {
                 WriteReturnError(writer, codeElement.ReturnType.Name);
                 writer.WriteLine("if mappingValue != nil {");
                 writer.IncreaseIndent();
-                writer.WriteLine("switch mappingValue {");
+                writer.WriteLines("mappingStr := *mappingValue",
+                                    "switch mappingStr {");
                 writer.IncreaseIndent();
                 foreach(var mappedType in codeElement.DiscriminatorMappings) {
                     writer.WriteLine($"case \"{mappedType.Key}\":");
@@ -104,7 +105,7 @@ namespace Kiota.Builder.Writers.Go {
                 writer.CloseBlock();
             }
 
-            writer.WriteLine($"return {conventions.GetImportedStaticMethodName(codeElement.ReturnType, codeElement.Parent)}(), nil");
+            writer.WriteLine($"return New{codeElement.Parent.Name.ToFirstCharacterUpperCase()}(), nil");
         }
         private void WriteMethodDocumentation(CodeMethod code, string methodName, LanguageWriter writer) {
             if(!string.IsNullOrEmpty(code.Description))
@@ -366,11 +367,10 @@ namespace Kiota.Builder.Writers.Go {
             var isVoid = string.IsNullOrEmpty(typeShortName);
             WriteGeneratorMethodCall(codeElement, requestParams, writer, $"{RequestInfoVarName}, err := ");
             WriteReturnError(writer, returnType);
-            var parsableImportSymbol = GetConversionHelperMethodImport(codeElement.Parent as CodeClass, "Parsable");
             var constructorFunction = returnType switch {
                 _ when isVoid => string.Empty,
                 _ when isPrimitive || isBinary => $"\"{returnType.TrimCollectionAndPointerSymbols()}\", ",
-                _ => $"func () {parsableImportSymbol} {{ return {conventions.GetImportedStaticMethodName(codeElement.ReturnType, codeElement.Parent, "Create", "FromDiscriminatorValue")}() }}, ",
+                _ => $"{conventions.GetImportedStaticMethodName(codeElement.ReturnType, codeElement.Parent, "Create", "FromDiscriminatorValue")}, ",
             };
             var errorMappingVarName = "nil";
             if(codeElement.ErrorMappings.Any()) {
@@ -378,7 +378,7 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLine($"{errorMappingVarName} := {conventions.AbstractionsHash}.ErrorMappings {{");
                 writer.IncreaseIndent();
                 foreach(var errorMapping in codeElement.ErrorMappings) {
-                    writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": func() {parsableImportSymbol} {{ return {conventions.GetImportedStaticMethodName(errorMapping.Value, codeElement.Parent, "Create", "FromDiscriminatorValue")}() }},");
+                    writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {conventions.GetImportedStaticMethodName(errorMapping.Value, codeElement.Parent, "Create", "FromDiscriminatorValue")},");
                 }
                 writer.CloseBlock();
             }
@@ -500,10 +500,9 @@ namespace Kiota.Builder.Writers.Go {
             };
         }
         private string GetTypeFactory(CodeTypeBase propTypeBase, CodeClass parentClass, string propertyTypeName) {
-            if(propTypeBase is CodeType propType) {
-                var parsableSymbol = GetConversionHelperMethodImport(parentClass, "Parsable");
-                return $"func () {parsableSymbol} {{ return {conventions.GetImportedStaticMethodName(propType, parentClass, "Create", "FromDiscriminatorValue")}() }}";
-            } else return GetTypeFactory(propTypeBase.AllTypes.First(), parentClass, propertyTypeName);
+            if(propTypeBase is CodeType propType)
+                return $"{conventions.GetImportedStaticMethodName(propType, parentClass, "Create", "FromDiscriminatorValue")}";
+            else return GetTypeFactory(propTypeBase.AllTypes.First(), parentClass, propertyTypeName);
         }
         private void WriteSerializationMethodCall(CodeTypeBase propType, CodeClass parentClass, string serializationKey, string valueGet, bool shouldDeclareErrorVar, LanguageWriter writer) {
             serializationKey = $"\"{serializationKey}\"";

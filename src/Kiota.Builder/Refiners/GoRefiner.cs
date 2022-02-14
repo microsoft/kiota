@@ -255,10 +255,6 @@ public class GoRefiner : CommonLanguageRefiner
             "github.com/microsoft/kiota/abstractions/go", "RequestInformation", "HttpMethod", "RequestOption"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
             "github.com/microsoft/kiota/abstractions/go", "ResponseHandler"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor) &&
-                    !conventions.IsScalarType(method.ReturnType.Name) &&
-                    !conventions.IsPrimitiveType(method.ReturnType.Name),
-            "github.com/microsoft/kiota/abstractions/go/serialization", "Parsable"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor) &&
                     method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path) &&
                                             !typeToSkipStrConv.Contains(x.Type.Name)),
@@ -267,8 +263,6 @@ public class GoRefiner : CommonLanguageRefiner
             "github.com/microsoft/kiota/abstractions/go/serialization", "SerializationWriter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
             "github.com/microsoft/kiota/abstractions/go/serialization", "ParseNode", "Parsable"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor) && method.ErrorMappings.Any(),
-            "github.com/microsoft/kiota/abstractions/go/serialization", "Parsable"),
         new (x => x is CodeEnum num, "ToUpper", "strings"),
     };//TODO add backing store types once we have them defined
     private static void CorrectMethodType(CodeMethod currentMethod) {
@@ -304,6 +298,9 @@ public class GoRefiner : CommonLanguageRefiner
                 .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
         } else if(currentMethod.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility, CodeMethodKind.RequestBuilderWithParameters, CodeMethodKind.RequestBuilderBackwardCompatibility, CodeMethodKind.Factory)) {
             currentMethod.ReturnType.IsNullable = true;
+            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ParseNode)).ToList().ForEach(x => x.Type.IsNullable = false);
+            if(currentMethod.IsOfKind(CodeMethodKind.Factory))
+                currentMethod.ReturnType = new CodeType { Name = "Parsable", IsNullable = false, IsExternal = true };
         }
         CorrectDateTypes(parentClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)

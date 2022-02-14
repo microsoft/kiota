@@ -15,4 +15,4 @@ type Parsable interface {
 }
 
 // ParsableFactory is a factory for creating Parsable.
-type ParsableFactory func(parseNode ParseNode) Parsable
+type ParsableFactory func(parseNode ParseNode) (Parsable, error)
