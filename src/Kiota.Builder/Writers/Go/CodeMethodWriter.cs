@@ -83,7 +83,9 @@ namespace Kiota.Builder.Writers.Go {
         private void WriteFactoryMethodBody(CodeMethod codeElement, LanguageWriter writer){
             var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
             if(codeElement.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
-                writer.WriteLines($"mappingValueNode, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{codeElement.DiscriminatorPropertyName}\")");
+                writer.WriteLine($"if {parseNodeParameter.Name.ToFirstCharacterLowerCase()} != nil {{");
+                writer.IncreaseIndent();
+                writer.WriteLine($"mappingValueNode, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{codeElement.DiscriminatorPropertyName}\")");
                 WriteReturnError(writer, codeElement.ReturnType.Name);
                 writer.WriteLine("if mappingValueNode != nil {");
                 writer.IncreaseIndent();
@@ -100,6 +102,7 @@ namespace Kiota.Builder.Writers.Go {
                     writer.WriteLine($"return {conventions.GetImportedStaticMethodName(mappedType.Value, codeElement.Parent)}(), nil");
                     writer.DecreaseIndent();
                 }
+                writer.CloseBlock();
                 writer.CloseBlock();
                 writer.CloseBlock();
                 writer.CloseBlock();
