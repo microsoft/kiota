@@ -34,6 +34,7 @@ namespace Kiota.Builder
             }
         }
         public void AddUsing(params CodeUsing[] codeUsings) => StartBlock.AddUsings(codeUsings);
+        public IEnumerable<CodeUsing> Usings => StartBlock.Usings;
         protected IEnumerable<T> AddRange<T>(params T[] elements) where T : CodeElement {
             if(elements == null) return Enumerable.Empty<T>();
             EnsureElementsAreChildren(elements);

@@ -234,7 +234,7 @@ public class GoRefiner : CommonLanguageRefiner
     }
     private static void AddErrorImportForEnums(CodeElement currentElement) {
         if(currentElement is CodeEnum currentEnum) {
-            currentEnum.AddUsings(new CodeUsing {
+            currentEnum.AddUsing(new CodeUsing {
                 Name = "errors",
             });
         }

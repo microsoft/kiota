@@ -256,13 +256,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         var usingsToAdd = evaluators.Where(x => x.CodeElementEvaluator.Invoke(current))
                         .SelectMany(x => usingSelector(x))
                         .ToArray();
-        if(usingsToAdd.Any()) 
-            if(current is CodeEnum currentEnum) 
-                currentEnum.AddUsings(usingsToAdd);
-            else {
-                var parentClass = current.GetImmediateParentOfType<CodeClass>();
-                var targetClass = parentClass.Parent is CodeClass parentClassParent ? parentClassParent : parentClass;
-                targetClass.AddUsing(usingsToAdd);
+        if(usingsToAdd.Any()) {
+                var parentBlock = current.GetImmediateParentOfType<CodeBlock>();
+                var targetBlock = parentBlock.Parent is CodeClass parentClassParent ? parentClassParent : parentBlock;
+                targetBlock.AddUsing(usingsToAdd);
             }
         CrawlTree(current, c => AddDefaultImports(c, evaluators));
     }

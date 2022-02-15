@@ -836,7 +836,7 @@ public class KiotaBuilder
             if(schema.Enum.Any()) {
                 var newEnum = new CodeEnum { 
                     Name = declarationName,
-                    Options = schema.Enum.OfType<OpenApiString>().Select(x => x.Value).Where(x => !"null".Equals(x)).ToList(),//TODO set the flag property
+                    Options = schema.Enum.OfType<OpenApiString>().Select(x => x.Value).Where(x => !"null".Equals(x)).ToHashSet(),//TODO set the flag property
                     Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel),
                 };
                 return currentNamespace.AddEnum(newEnum).First();
