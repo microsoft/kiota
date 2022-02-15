@@ -106,7 +106,6 @@ func compressReqBody(reqBody []byte) (io.ReadCloser, int, error) {
 		return nil, 0, err
 	}
 
-	defer gzipWriter.Close()
 	if err := gzipWriter.Close(); err != nil {
 		return nil, 0, err
 	}
