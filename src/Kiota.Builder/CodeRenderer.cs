@@ -34,6 +34,7 @@ namespace Kiota.Builder
                     case CodeClass:
                     case CodeEnum:
                     case CodeFunction:
+                    case CodeInterface:
                         await RenderCodeNamespaceToSingleFileAsync(writer, codeElement, writer.PathSegmenter.GetPath(root, codeElement));
                         break;
                     case CodeNamespace codeNamespace:

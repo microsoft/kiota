@@ -114,5 +114,13 @@ namespace Kiota.Builder
                 throw new ArgumentOutOfRangeException(nameof(globalFunctions));
             return AddRange(globalFunctions);
         }
+        public IEnumerable<CodeInterface> AddInterface(params CodeInterface[] interfaces)
+        {
+            if(interfaces == null || interfaces.Any( x=> x == null))
+                throw new ArgumentNullException(nameof(interfaces));
+            if(!interfaces.Any())
+                throw new ArgumentOutOfRangeException(nameof(interfaces));
+            return AddRange(interfaces);
+        }
     }
 }
