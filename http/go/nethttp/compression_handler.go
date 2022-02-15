@@ -72,14 +72,14 @@ func (c *CompressionHandler) Intercept(pipeline Pipeline, middlewareIndex int, r
 		return nil, err
 	}
 
-	compressedBody, contentLength, err := compressReqBody(req.Body)
+	compressedBody, size, err := compressReqBody(unCompressedBody)
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Set("Content-Encoding", "gzip")
 	req.Body = compressedBody
-	req.ContentLength = int64(contentLength)
+	req.ContentLength = int64(size)
 
 	// Sending request with compressed body
 	resp, err := pipeline.Next(req, middlewareIndex)
@@ -99,18 +99,17 @@ func (c *CompressionHandler) Intercept(pipeline Pipeline, middlewareIndex int, r
 	return resp, nil
 }
 
-func compressReqBody(reqBody io.ReadCloser) (io.ReadCloser, int, error) {
-	body, err := ioutil.ReadAll(reqBody)
-	if err != nil {
-		return nil, 0, err
-	}
-
+func compressReqBody(reqBody []byte) (io.ReadCloser, int, error) {
 	var buffer bytes.Buffer
 	gzipWriter := gzip.NewWriter(&buffer)
-	if _, err := gzipWriter.Write(body); err != nil {
+	if _, err := gzipWriter.Write(reqBody); err != nil {
 		return nil, 0, err
 	}
-	defer gzipWriter.Close()
 
-	return ioutil.NopCloser(bytes.NewBuffer(buffer.Bytes())), len(buffer.Bytes()), nil
+	defer gzipWriter.Close()
+	if err := gzipWriter.Close(); err != nil {
+		return nil, 0, err
+	}
+
+	return ioutil.NopCloser(&buffer), buffer.Len(), nil
 }
