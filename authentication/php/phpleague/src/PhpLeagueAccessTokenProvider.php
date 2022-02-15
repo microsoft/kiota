@@ -12,6 +12,7 @@ namespace Microsoft\Kiota\Authentication;
 use Http\Promise\FulfilledPromise;
 use Http\Promise\Promise;
 use Http\Promise\RejectedPromise;
+use League\OAuth2\Client\Grant\GrantFactory;
 use League\OAuth2\Client\Provider\GenericProvider;
 use League\OAuth2\Client\Token\AccessToken;
 use Microsoft\Kiota\Abstractions\Authentication\AccessTokenProvider;
@@ -62,11 +63,7 @@ class PhpLeagueAccessTokenProvider implements AccessTokenProvider
         }
         $this->scopes = $scopes;
         $this->allowedHostsValidator = new AllowedHostsValidator($allowedHosts);
-        $this->oauthProvider = new GenericProvider([
-            'urlAccessToken' => "https://login.microsoftonline.com/{$tokenRequestContext->getTenantId()}/oauth2/v2.0/token",
-            'urlAuthorize' => '', // required to instantiate Generic Provider
-            'urlResourceOwnerDetails' => '' // required to instantiate Generic Provider
-        ]);
+        $this->initOauthProvider();
     }
 
     /**
@@ -108,6 +105,24 @@ class PhpLeagueAccessTokenProvider implements AccessTokenProvider
     public function getOauthProvider(): GenericProvider
     {
         return $this->oauthProvider;
+    }
+
+    /**
+     * Initialises a PHP League provider
+     */
+    private function initOauthProvider(): void
+    {
+        $grantFactory = new GrantFactory();
+        // Add our custom grant type to the registry
+        $grantFactory->setGrant('urn:ietf:params:oauth:grant-type:jwt-bearer', new OnBehalfOfGrant());
+
+        $this->oauthProvider = new GenericProvider([
+            'urlAccessToken' => "https://login.microsoftonline.com/{$this->tokenRequestContext->getTenantId()}/oauth2/v2.0/token",
+            'urlAuthorize' => '', // required to instantiate Generic Provider
+            'urlResourceOwnerDetails' => '' // required to instantiate Generic Provider
+        ], [
+            'grantFactory' => $grantFactory
+        ]);
     }
 
 }

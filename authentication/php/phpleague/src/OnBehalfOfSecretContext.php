@@ -9,39 +9,35 @@
 namespace Microsoft\Kiota\Authentication;
 
 /**
- * Class AuthorizationCodeSecretContext
+ * Class OnBehalfOfSecretContext
  *
- * Request params for the token request of the authorization_code flow using a secret
+ * Token request parameters for the on_behalf_of flow
  *
  * @package Microsoft\Kiota\Authentication
  * @copyright 2022 Microsoft Corporation
  * @license https://opensource.org/licenses/MIT MIT License
  * @link https://developer.microsoft.com/graph
  */
-class AuthorizationCodeSecretContext implements TokenRequestContext
+class OnBehalfOfSecretContext implements TokenRequestContext
 {
     /**
-     * @var string Tenant Id
+     * @var string
      */
     private string $tenantId;
     /**
-     * @var string Client Id
+     * @var string
      */
     private string $clientId;
     /**
-     * @var string Client Secret
+     * @var string
      */
     private string $clientSecret;
     /**
-     * @var string Code from the authorization step
+     * @var string
      */
-    private string $authCode;
+    private string $assertion;
     /**
-     * @var string Same redirectUri used to acquire the authorization code
-     */
-    private string $redirectUri;
-    /**
-     * @var array Extra params to add to the request
+     * @var array<string, string>
      */
     private array $additionalParams;
 
@@ -49,20 +45,18 @@ class AuthorizationCodeSecretContext implements TokenRequestContext
      * @param string $tenantId
      * @param string $clientId
      * @param string $clientSecret
-     * @param string $authCode
-     * @param string $redirectUri
-     * @param array $additionalParams
+     * @param string $assertion initial access token sent to the current API
+     * @param array<string, string> $additionalParams extra params to be added to token request
      */
-    public function __construct(string $tenantId, string $clientId, string $clientSecret, string $authCode, string $redirectUri, array $additionalParams = [])
+    public function __construct(string $tenantId, string $clientId, string $clientSecret, string $assertion, array $additionalParams = [])
     {
-        if (!$tenantId || !$clientId || !$clientSecret || !$authCode || !$redirectUri) {
+        if (!$tenantId || !$clientId || !$clientSecret || !$assertion) {
             throw new \InvalidArgumentException("Params cannot be empty");
         }
         $this->tenantId = $tenantId;
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
-        $this->authCode = $authCode;
-        $this->redirectUri = $redirectUri;
+        $this->assertion = $assertion;
         $this->additionalParams = $additionalParams;
     }
 
@@ -74,9 +68,9 @@ class AuthorizationCodeSecretContext implements TokenRequestContext
         return array_merge($this->additionalParams, [
             'client_id' => $this->clientId,
             'client_secret' => $this->clientSecret,
-            'code' => $this->authCode,
-            'redirect_uri' => $this->redirectUri,
-            'grant_type' => $this->getGrantType()
+            'assertion' => $this->assertion,
+            'grant_type' => $this->getGrantType(),
+            'requested_token_use' => 'on_behalf_of'
         ]);
     }
 
@@ -85,7 +79,7 @@ class AuthorizationCodeSecretContext implements TokenRequestContext
      */
     public function getGrantType(): string
     {
-        return 'authorization_code';
+        return 'urn:ietf:params:oauth:grant-type:jwt-bearer';
     }
 
     /**
