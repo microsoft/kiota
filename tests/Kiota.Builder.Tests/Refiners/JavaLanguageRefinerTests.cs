@@ -10,7 +10,7 @@ public class JavaLanguageRefinerTests {
     public void AddsExceptionInheritanceOnErrorClasses() {
         var model = root.AddClass(new CodeClass {
             Name = "somemodel",
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
@@ -24,7 +24,7 @@ public class JavaLanguageRefinerTests {
     public void FailsExceptionInheritanceOnErrorClassesWhichAlreadyInherit() {
         var model = root.AddClass(new CodeClass {
             Name = "somemodel",
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
         var declaration = model.StartBlock as CodeClass.Declaration;
@@ -37,17 +37,17 @@ public class JavaLanguageRefinerTests {
     public void AddsUsingsForErrorTypesForRequestExecutor() {
         var requestBuilder = root.AddClass(new CodeClass {
             Name = "somerequestbuilder",
-            ClassKind = CodeClassKind.RequestBuilder,
+            Kind = CodeClassKind.RequestBuilder,
         }).First();
         var subNS = root.AddNamespace($"{root.Name}.subns"); // otherwise the import gets trimmed
         var errorClass = subNS.AddClass(new CodeClass {
             Name = "Error4XX",
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
         var requestExecutor = requestBuilder.AddMethod(new CodeMethod {
             Name = "get",
-            MethodKind = CodeMethodKind.RequestExecutor,
+            Kind = CodeMethodKind.RequestExecutor,
             ReturnType = new CodeType {
                 Name = "string"
             },
@@ -66,7 +66,7 @@ public class JavaLanguageRefinerTests {
     public void EscapesReservedKeywordsInInternalDeclaration() {
         var model = root.AddClass(new CodeClass {
             Name = "break",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var nUsing = new CodeUsing {
             Name = "some.ns",
@@ -84,7 +84,7 @@ public class JavaLanguageRefinerTests {
     public void EscapesReservedKeywords() {
         var model = root.AddClass(new CodeClass {
             Name = "break",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.NotEqual("break", model.Name);
@@ -94,15 +94,15 @@ public class JavaLanguageRefinerTests {
     public void AddsDefaultImports() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var requestBuilder = root.AddClass(new CodeClass {
             Name = "rb",
-            ClassKind = CodeClassKind.RequestBuilder,
+            Kind = CodeClassKind.RequestBuilder,
         }).First();
         requestBuilder.AddMethod(new CodeMethod {
             Name = "get",
-            MethodKind = CodeMethodKind.RequestExecutor,
+            Kind = CodeMethodKind.RequestExecutor,
         });
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
@@ -112,7 +112,7 @@ public class JavaLanguageRefinerTests {
     public void ReplacesDateTimeOffsetByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var method = model.AddMethod(new CodeMethod {
             Name = "method",
@@ -128,7 +128,7 @@ public class JavaLanguageRefinerTests {
     public void ReplacesDateOnlyByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var method = model.AddMethod(new CodeMethod {
             Name = "method",
@@ -144,7 +144,7 @@ public class JavaLanguageRefinerTests {
     public void ReplacesTimeOnlyByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var method = model.AddMethod(new CodeMethod {
             Name = "method",
@@ -160,7 +160,7 @@ public class JavaLanguageRefinerTests {
     public void ReplacesDurationByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var method = model.AddMethod(new CodeMethod {
             Name = "method",
@@ -176,7 +176,7 @@ public class JavaLanguageRefinerTests {
     public void ReplacesBinaryByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var method = model.AddMethod(new CodeMethod {
             Name = "method",
@@ -192,16 +192,16 @@ public class JavaLanguageRefinerTests {
     public void ReplacesIndexersByMethodsWithParameter() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var requestBuilder = root.AddClass(new CodeClass {
             Name = "requestBuilder",
-            ClassKind = CodeClassKind.RequestBuilder
+            Kind = CodeClassKind.RequestBuilder
         }).First();
         requestBuilder.AddProperty(new CodeProperty {
             Name = "urlTemplate",
             DefaultValue = "path",
-            PropertyKind = CodePropertyKind.UrlTemplate,
+            Kind = CodePropertyKind.UrlTemplate,
             Type = new CodeType {
                 Name = "string",
             }
@@ -233,7 +233,7 @@ public class JavaLanguageRefinerTests {
     public void AddsInnerClasses() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var method = model.AddMethod(new CodeMethod {
             Name = "method1",
@@ -244,7 +244,7 @@ public class JavaLanguageRefinerTests {
         }).First();
         var parameter = new CodeParameter {
             Name = "param1",
-            ParameterKind = CodeParameterKind.QueryParameter,
+            Kind = CodeParameterKind.QueryParameter,
             Type = new CodeType {
                 Name = "SomeCustomType",
                 ActionOf = true,
@@ -263,12 +263,12 @@ public class JavaLanguageRefinerTests {
         var model = root.AddClass(new CodeClass
         {
             Name = "model",
-            ClassKind = CodeClassKind.RequestBuilder
+            Kind = CodeClassKind.RequestBuilder
         }).First();
         var method = model.AddMethod(new CodeMethod
         {
             Name = "getMethod",
-            MethodKind = CodeMethodKind.RequestExecutor,
+            Kind = CodeMethodKind.RequestExecutor,
             ReturnType = new CodeType
             {
                 Name = "string"
@@ -278,7 +278,7 @@ public class JavaLanguageRefinerTests {
         {
             Name = "cancelletionToken",
             Optional = true,
-            ParameterKind = CodeParameterKind.Cancellation,
+            Kind = CodeParameterKind.Cancellation,
             Description = "Cancellation token to use when cancelling requests",
             Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
         };
@@ -293,7 +293,7 @@ public class JavaLanguageRefinerTests {
     public void AddsEnumSetImport() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         model.AddProperty(new CodeProperty{
             Name = "prop1",
@@ -318,23 +318,23 @@ public class JavaLanguageRefinerTests {
         const string additionalDataDefaultName = "new Dictionary<string, object>()";
         var model = root.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         model.AddProperty(new () {
             Name = "core",
-            PropertyKind = CodePropertyKind.RequestAdapter,
+            Kind = CodePropertyKind.RequestAdapter,
             Type = new CodeType {
                 Name = requestAdapterDefaultName
             }
         }, new () {
             Name = "someDate",
-            PropertyKind = CodePropertyKind.Custom,
+            Kind = CodePropertyKind.Custom,
             Type = new CodeType {
                 Name = dateTimeOffsetDefaultName,
             }
         }, new () {
             Name = "additionalData",
-            PropertyKind = CodePropertyKind.AdditionalData,
+            Kind = CodePropertyKind.AdditionalData,
             Type = new CodeType {
                 Name = additionalDataDefaultName
             }
@@ -343,7 +343,7 @@ public class JavaLanguageRefinerTests {
         const string headersDefaultName = "IDictionary<string, string>";
         var executorMethod = model.AddMethod(new CodeMethod {
             Name = "executor",
-            MethodKind = CodeMethodKind.RequestExecutor,
+            Kind = CodeMethodKind.RequestExecutor,
             ReturnType = new CodeType {
                 Name = "string"
             }
@@ -352,17 +352,17 @@ public class JavaLanguageRefinerTests {
             ReturnType = new CodeType {
                 Name = deserializeDefaultName,
             },
-            MethodKind = CodeMethodKind.Deserializer
+            Kind = CodeMethodKind.Deserializer
         }).First();
         executorMethod.AddParameter(new () {
             Name = "handler",
-            ParameterKind = CodeParameterKind.ResponseHandler,
+            Kind = CodeParameterKind.ResponseHandler,
             Type = new CodeType {
                 Name = handlerDefaultName,
             }
         }, new () {
             Name = "headers",
-            ParameterKind = CodeParameterKind.Headers,
+            Kind = CodeParameterKind.Headers,
             Type = new CodeType() {
                 Name = headersDefaultName
             }
@@ -370,14 +370,14 @@ public class JavaLanguageRefinerTests {
         const string serializerDefaultName = "ISerializationWriter";
         var serializationMethod = model.AddMethod(new CodeMethod {
             Name = "seriailization",
-            MethodKind = CodeMethodKind.Serializer,
+            Kind = CodeMethodKind.Serializer,
             ReturnType = new CodeType {
                 Name = "string"
             }
         }).First();
         serializationMethod.AddParameter(new CodeParameter {
             Name = "handler",
-            ParameterKind = CodeParameterKind.Serializer,
+            Kind = CodeParameterKind.Serializer,
             Type = new CodeType {
                 Name = serializerDefaultName,
             }
@@ -396,53 +396,53 @@ public class JavaLanguageRefinerTests {
     public void AddsMethodsOverloads() {
         var builder = root.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.RequestBuilder
+            Kind = CodeClassKind.RequestBuilder
         }).First();
         var executor = builder.AddMethod(new CodeMethod {
             Name = "executor",
-            MethodKind = CodeMethodKind.RequestExecutor,
+            Kind = CodeMethodKind.RequestExecutor,
             ReturnType = new CodeType {
                 Name = "string"
             }
         }).First();
         executor.AddParameter(new CodeParameter {
             Name = "handler",
-            ParameterKind = CodeParameterKind.ResponseHandler,
+            Kind = CodeParameterKind.ResponseHandler,
             Type = new CodeType {
                 Name = "string"
             }
         });
         executor.AddParameter(new CodeParameter {
             Name = "headers",
-            ParameterKind = CodeParameterKind.Headers,
+            Kind = CodeParameterKind.Headers,
             Type = new CodeType {
                 Name = "string"
             }
         });
         executor.AddParameter(new CodeParameter {
             Name = "query",
-            ParameterKind = CodeParameterKind.QueryParameter,
+            Kind = CodeParameterKind.QueryParameter,
             Type = new CodeType {
                 Name = "string"
             }
         });
         executor.AddParameter(new CodeParameter {
             Name = "body",
-            ParameterKind = CodeParameterKind.RequestBody,
+            Kind = CodeParameterKind.RequestBody,
             Type = new CodeType {
                 Name = "string"
             }
         });
         executor.AddParameter(new CodeParameter {
             Name = "options",
-            ParameterKind = CodeParameterKind.Options,
+            Kind = CodeParameterKind.Options,
             Type = new CodeType {
                 Name = "string"
             }
         });
         var generator = builder.AddMethod(new CodeMethod {
             Name = "generator",
-            MethodKind = CodeMethodKind.RequestGenerator,
+            Kind = CodeMethodKind.RequestGenerator,
             ReturnType = new CodeType {
                 Name = "string"
             }

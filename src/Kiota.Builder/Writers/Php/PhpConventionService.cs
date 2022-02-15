@@ -57,7 +57,7 @@ namespace Kiota.Builder.Writers.Php
 
         public string GetParameterName(CodeParameter parameter)
         {
-            return (parameter.ParameterKind) switch
+            return (parameter.Kind) switch
             {
                 CodeParameterKind.Headers => "$headers",
                 CodeParameterKind.Options => "$options",
@@ -79,7 +79,7 @@ namespace Kiota.Builder.Writers.Php
             
             var typeString = GetTypeString(parameter.Type, parameter);
             var methodTarget = targetElement as CodeMethod;
-            var parameterSuffix = parameter.ParameterKind switch
+            var parameterSuffix = parameter.Kind switch
             {
                 CodeParameterKind.RequestAdapter => $"RequestAdapter {GetParameterName(parameter)}",
                 CodeParameterKind.ResponseHandler => $"ResponseHandler {GetParameterName(parameter)}",

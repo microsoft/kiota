@@ -28,7 +28,7 @@ namespace Kiota.Builder.Writers.Go {
             var headersParam = requestParamSetDefinition?.GetPropertiesOfKind(CodePropertyKind.Headers).FirstOrDefault();
             var optionsParam = requestParamSetDefinition?.GetPropertiesOfKind(CodePropertyKind.Options).FirstOrDefault();
             var requestParams = new RequestProperties(requestOptionsParam, requestBodyParam, queryStringParam, headersParam, optionsParam);
-            switch(codeElement.MethodKind) {
+            switch(codeElement.Kind) {
                 case CodeMethodKind.Serializer:
                     WriteSerializerBody(parentClass, writer, inherits);
                 break;
@@ -162,7 +162,7 @@ namespace Kiota.Builder.Writers.Go {
             if(!string.IsNullOrEmpty(returnType) && code.IsAsync)
                 returnTypeAsyncSuffix = $", {returnTypeAsyncSuffix}";
             var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
-            var methodName = code.MethodKind switch {
+            var methodName = code.Kind switch {
                 CodeMethodKind.Constructor when parentClass.IsOfKind(CodeClassKind.RequestBuilder) => $"New{code.Parent.Name.ToFirstCharacterUpperCase()}Internal", // internal instantiation with url template parameters
                 CodeMethodKind.Getter when (code.AccessedProperty?.IsNameEscaped ?? false) && !string.IsNullOrEmpty(code.AccessedProperty?.SerializationName)
                     => $"Get{code.AccessedProperty.SerializationName.ToFirstCharacterUpperCase()}",

@@ -21,7 +21,7 @@ namespace Kiota.Builder.Writers.Ruby {
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
-            switch(codeElement.MethodKind) {
+            switch(codeElement.Kind) {
                 case CodeMethodKind.Serializer:
                     WriteMethodPrototype(codeElement, writer);
                     WriteSerializerBody(parentClass, writer);
@@ -209,7 +209,7 @@ namespace Kiota.Builder.Writers.Ruby {
         }
         private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer) {
-            var methodName = (code.MethodKind switch {
+            var methodName = (code.Kind switch {
                 (CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor) => $"initialize",
                 (CodeMethodKind.Getter) => $"{code.AccessedProperty?.Name?.ToSnakeCase()}",
                 (CodeMethodKind.Setter) => $"{code.AccessedProperty?.Name?.ToSnakeCase()}",

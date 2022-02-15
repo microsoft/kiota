@@ -59,7 +59,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             var codeMethod = new CodeMethod()
             {
                 Access = AccessModifier.Public,
-                MethodKind = CodeMethodKind.Custom,
+                Kind = CodeMethodKind.Custom,
                 ReturnType = new CodeType()
                 {
                     Name = "void"
@@ -83,15 +83,15 @@ namespace Kiota.Builder.Tests.Writers.Php
             var codeClass = parentClass;
             codeClass.AddProperty(new CodeProperty()
             {
-                PropertyKind = CodePropertyKind.RequestAdapter, Name = "requestAdapter"
+                Kind = CodePropertyKind.RequestAdapter, Name = "requestAdapter"
             });
             codeClass.AddProperty(new CodeProperty()
             {
-                PropertyKind = CodePropertyKind.UrlTemplate, Name = "urlTemplate"
+                Kind = CodePropertyKind.UrlTemplate, Name = "urlTemplate"
             });
             codeClass.AddProperty(new CodeProperty()
             {
-                PropertyKind = CodePropertyKind.PathParameters, Name = "pathParameters"
+                Kind = CodePropertyKind.PathParameters, Name = "pathParameters"
             });
             var codeMethod = new CodeMethod()
             {
@@ -103,11 +103,11 @@ namespace Kiota.Builder.Tests.Writers.Php
                     Name = "returnType"
                 },
                 Description = "This will send a POST request",
-                MethodKind = CodeMethodKind.RequestExecutor
+                Kind = CodeMethodKind.RequestExecutor
             };
             var codeMethodRequestGenerator = new CodeMethod()
             {
-                MethodKind = CodeMethodKind.RequestGenerator,
+                Kind = CodeMethodKind.RequestGenerator,
                 HttpMethod = HttpMethod.Post,
                 Name = "createPostRequestInformation",
                 ReturnType = new CodeType()
@@ -131,7 +131,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         public void WriteSerializer()
         {
             var classHolding = parentClass;
-            classHolding.ClassKind = CodeClassKind.Model;
+            classHolding.Kind = CodeClassKind.Model;
             classHolding.AddProperty(
                 new CodeProperty()
                 {
@@ -141,7 +141,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                     },
                     Name = "name",
                     Access = AccessModifier.Private,
-                    PropertyKind = CodePropertyKind.Custom
+                    Kind = CodePropertyKind.Custom
                 });
             classHolding.AddProperty(
                 new CodeProperty()
@@ -152,12 +152,12 @@ namespace Kiota.Builder.Tests.Writers.Php
                     {
                         Name = "EmailAddress"
                     },
-                    PropertyKind = CodePropertyKind.Custom
+                    Kind = CodePropertyKind.Custom
                 });
             var codeMethod = new CodeMethod()
             {
                 Name = "serialize",
-                MethodKind = CodeMethodKind.Serializer,
+                Kind = CodeMethodKind.Serializer,
                 ReturnType = new CodeType()
                 {
                     Name = "void",
@@ -166,7 +166,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             codeMethod.AddParameter(new CodeParameter()
             {
                 Name = "writer",
-                ParameterKind = CodeParameterKind.Serializer,
+                Kind = CodeParameterKind.Serializer,
                 Type = new CodeType()
                 {
                     Name = "SerializationWriter"
@@ -185,7 +185,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         public void WriteRequestGenerator()
         {
             var methodClass = parentClass;
-            methodClass.ClassKind = CodeClassKind.RequestBuilder;
+            methodClass.Kind = CodeClassKind.RequestBuilder;
             methodClass.AddProperty(
                 new CodeProperty()
                 {
@@ -193,7 +193,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                     Access = AccessModifier.Protected,
                     DefaultValue = "https://graph.microsoft.com/v1.0/",
                     Description = "The URL template",
-                    PropertyKind = CodePropertyKind.UrlTemplate,
+                    Kind = CodePropertyKind.UrlTemplate,
                     Type = new CodeType() {Name = "string"}
                 },
                 new CodeProperty()
@@ -202,7 +202,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                     Access = AccessModifier.Protected,
                     DefaultValue = "[]",
                     Description = "The Path parameters.",
-                    PropertyKind = CodePropertyKind.PathParameters,
+                    Kind = CodePropertyKind.PathParameters,
                     Type = new CodeType() {Name = "array"}
                 },
                 new CodeProperty()
@@ -210,7 +210,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                     Name = "requestAdapter",
                     Access = AccessModifier.Protected,
                     Description = "The request Adapter",
-                    PropertyKind = CodePropertyKind.RequestAdapter,
+                    Kind = CodePropertyKind.RequestAdapter,
                     Type = new CodeType()
                     {
                         IsNullable = false,
@@ -225,14 +225,14 @@ namespace Kiota.Builder.Tests.Writers.Php
                 Description = "This method creates request information for POST request.",
                 HttpMethod = HttpMethod.Post,
                 BaseUrl = "https://graph.microsoft.com/v1.0/",
-                MethodKind = CodeMethodKind.RequestGenerator,
+                Kind = CodeMethodKind.RequestGenerator,
             };
             
             codeMethod.AddParameter(
                 new CodeParameter()
                 {
                     Name = "body",
-                    ParameterKind = CodeParameterKind.RequestBody,
+                    Kind = CodeParameterKind.RequestBody,
                     Type = new CodeType()
                     {
                         Name = "Message",
@@ -243,7 +243,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                 new CodeParameter() 
                 {
                     Name = "headers",
-                    ParameterKind = CodeParameterKind.Headers,
+                    Kind = CodeParameterKind.Headers,
                     Type = new CodeType()
                     {
                         Name = "array"
@@ -253,7 +253,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                 new CodeParameter()
                 {
                     Name = "options",
-                    ParameterKind = CodeParameterKind.Options,
+                    Kind = CodeParameterKind.Options,
                     Type = new CodeType()
                     {
                         Name = "array"
@@ -282,13 +282,13 @@ namespace Kiota.Builder.Tests.Writers.Php
                 new CodeProperty()
                 {
                     Name = "pathParameters",
-                    PropertyKind = CodePropertyKind.PathParameters,
+                    Kind = CodePropertyKind.PathParameters,
                     Type = new CodeType() {Name = "array"}
                 },
                 new CodeProperty()
                 {
                     Name = "requestAdapter",
-                    PropertyKind = CodePropertyKind.RequestAdapter,
+                    Kind = CodePropertyKind.RequestAdapter,
                     Type = new CodeType()
                     {
                         Name = "requestAdapter"
@@ -299,7 +299,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             {
                 Name = "messageById",
                 Access = AccessModifier.Public,
-                MethodKind = CodeMethodKind.IndexerBackwardCompatibility,
+                Kind = CodeMethodKind.IndexerBackwardCompatibility,
                 Description = "Get messages by a specific ID.",
                 OriginalIndexer = new CodeIndexer()
                 {
@@ -314,7 +314,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                 {
                     Name = "messageById",
                     Access = AccessModifier.Public,
-                    MethodKind = CodeMethodKind.IndexerBackwardCompatibility,
+                    Kind = CodeMethodKind.IndexerBackwardCompatibility,
                     ReturnType = new CodeType()
                     {
                         Name = "MessageRequestBuilder"
@@ -327,7 +327,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                     TypeDefinition = new CodeClass()
                     {
                         Name = "MessageRequestBuilder",
-                        ClassKind = CodeClassKind.RequestBuilder,
+                        Kind = CodeClassKind.RequestBuilder,
                     }
                 }
             };
@@ -356,20 +356,20 @@ namespace Kiota.Builder.Tests.Writers.Php
         public void WriteDeserializer()
         {
             var currentClass = parentClass;
-            currentClass.ClassKind = CodeClassKind.Model;
+            currentClass.Kind = CodeClassKind.Model;
             currentClass.AddProperty(
                 new CodeProperty()
                 {
                     Name = "name",
                     Access = AccessModifier.Private,
-                    PropertyKind = CodePropertyKind.Custom,
+                    Kind = CodePropertyKind.Custom,
                     Type = new CodeType() {Name = "string"}
                 }
             );
             var deserializerMethod = new CodeMethod()
             {
                 Name = "getDeserializationFields",
-                MethodKind = CodeMethodKind.Deserializer,
+                Kind = CodeMethodKind.Deserializer,
                 Description = "Just some random method",
                 ReturnType = new CodeType()
                 {
@@ -390,7 +390,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         public void WriteDeserializerMergeWhenHasParent()
         {
             var currentClass = parentClass;
-            currentClass.ClassKind = CodeClassKind.Model;
+            currentClass.Kind = CodeClassKind.Model;
             var declaration = currentClass.StartBlock as CodeClass.Declaration;
             declaration.Inherits = new CodeType() {Name = "Entity", IsExternal = true, IsNullable = false};
             currentClass.AddProperty(
@@ -398,14 +398,14 @@ namespace Kiota.Builder.Tests.Writers.Php
                 {
                     Name = "name",
                     Access = AccessModifier.Private,
-                    PropertyKind = CodePropertyKind.Custom,
+                    Kind = CodePropertyKind.Custom,
                     Type = new CodeType() {Name = "string"}
                 }
             );
             var deserializerMethod = new CodeMethod()
             {
                 Name = "getDeserializationFields",
-                MethodKind = CodeMethodKind.Deserializer,
+                Kind = CodeMethodKind.Deserializer,
                 Description = "Just some random method",
                 ReturnType = new CodeType()
                 {
@@ -431,7 +431,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                 Access = AccessModifier.Public,
                 Description = "The constructor for this class",
                 ReturnType = new CodeType() {Name = "void"},
-                MethodKind = CodeMethodKind.Constructor
+                Kind = CodeMethodKind.Constructor
             };
             var closingClass = parentClass;
             parentClass.AddMethod(constructor);
@@ -453,7 +453,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                     Name = "emailAddress",
                     IsNullable = false
                 },
-                MethodKind = CodeMethodKind.Getter,
+                Kind = CodeMethodKind.Getter,
                 AccessedProperty = new CodeProperty() {Name = "emailAddress", Access = AccessModifier.Private, Type = new CodeType()
                 {
                     Name = "emailAddress"
@@ -475,7 +475,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                 {
                     Name = "void"
                 },
-                MethodKind = CodeMethodKind.Setter,
+                Kind = CodeMethodKind.Setter,
                 AccessedProperty = new CodeProperty() {Name = "emailAddress", Access = AccessModifier.Private, Type = new CodeType()
                 {
                     Name = "emailAddress"
@@ -486,7 +486,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             setter.AddParameter(new CodeParameter()
             {
                 Name = "value",
-                ParameterKind = CodeParameterKind.SetterValue,
+                Kind = CodeParameterKind.SetterValue,
                 Type = new CodeType()
                 {
                     Name = "emailAddress"
@@ -511,12 +511,12 @@ namespace Kiota.Builder.Tests.Writers.Php
                     IsNullable = false
                 },
                 Name = "message",
-                MethodKind = CodeMethodKind.RequestBuilderWithParameters
+                Kind = CodeMethodKind.RequestBuilderWithParameters
             };
             
             codeMethod.AddParameter(new CodeParameter()
             {
-                ParameterKind = CodeParameterKind.PathParameters,
+                Kind = CodeParameterKind.PathParameters,
                 Name = "someParameter",
                 Type = new CodeType()
                 {

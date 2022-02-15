@@ -33,7 +33,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
         var requestParams = new RequestParams(requestBodyParam, queryStringParam, headersParam, optionsParam);
         AddNullChecks(codeElement, writer);
-        switch(codeElement.MethodKind) {
+        switch(codeElement.Kind) {
             case CodeMethodKind.Serializer:
                 WriteSerializerBody(parentClass, codeElement, writer, inherits);
             break;
@@ -333,7 +333,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         var returnTypeAsyncPrefix = code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty;
         var returnTypeAsyncSuffix = code.IsAsync ? ">" : string.Empty;
         var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
-        var methodName = code.MethodKind switch {
+        var methodName = code.Kind switch {
             CodeMethodKind.Getter when (code.AccessedProperty?.IsNameEscaped ?? false) && !string.IsNullOrEmpty(code.AccessedProperty?.SerializationName)
                 => $"get{code.AccessedProperty.SerializationName.ToFirstCharacterUpperCase()}",
             CodeMethodKind.Setter when (code.AccessedProperty?.IsNameEscaped ?? false) && !string.IsNullOrEmpty(code.AccessedProperty?.SerializationName)
@@ -344,7 +344,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             _ => code.Name.ToFirstCharacterLowerCase()
         };
         var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> conventions.GetParameterSignature(p, code)).ToList());
-        var throwableDeclarations = code.MethodKind switch {
+        var throwableDeclarations = code.Kind switch {
             CodeMethodKind.RequestGenerator => "throws URISyntaxException ",
             _ => string.Empty
         };

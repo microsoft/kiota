@@ -43,11 +43,11 @@ public class CodeFunctionWriterTests : IDisposable {
     public void WritesModelFactoryBody() {
         var parentModel = root.AddClass(new CodeClass {
             Name = "parentModel",
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
         }).First();
         var childModel = root.AddClass(new CodeClass {
             Name = "childModel",
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
         }).First();
         (childModel.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
             Name = "parentModel",
@@ -55,7 +55,7 @@ public class CodeFunctionWriterTests : IDisposable {
         };
         var factoryMethod = parentModel.AddMethod(new CodeMethod {
             Name = "factory",
-            MethodKind = CodeMethodKind.Factory,
+            Kind = CodeMethodKind.Factory,
             ReturnType = new CodeType {
                 Name = "parentModel",
                 TypeDefinition = parentModel,
@@ -69,7 +69,7 @@ public class CodeFunctionWriterTests : IDisposable {
         factoryMethod.DiscriminatorPropertyName = "@odata.type";
         factoryMethod.AddParameter(new CodeParameter {
             Name = "parseNode",
-            ParameterKind = CodeParameterKind.ParseNode,
+            Kind = CodeParameterKind.ParseNode,
             Type = new CodeType {
                 Name = "ParseNode",
                 TypeDefinition = new CodeClass {
@@ -96,11 +96,11 @@ public class CodeFunctionWriterTests : IDisposable {
     public void DoesntWriteFactorySwitchOnMissingParameter() {
         var parentModel = root.AddClass(new CodeClass {
             Name = "parentModel",
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
         }).First();
         var childModel = root.AddClass(new CodeClass {
             Name = "childModel",
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
         }).First();
         (childModel.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
             Name = "parentModel",
@@ -108,7 +108,7 @@ public class CodeFunctionWriterTests : IDisposable {
         };
         var factoryMethod = parentModel.AddMethod(new CodeMethod {
             Name = "factory",
-            MethodKind = CodeMethodKind.Factory,
+            Kind = CodeMethodKind.Factory,
             ReturnType = new CodeType {
                 Name = "parentModel",
                 TypeDefinition = parentModel,
@@ -137,11 +137,11 @@ public class CodeFunctionWriterTests : IDisposable {
     public void DoesntWriteFactorySwitchOnEmptyPropertyName() {
         var parentModel = root.AddClass(new CodeClass {
             Name = "parentModel",
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
         }).First();
         var childModel = root.AddClass(new CodeClass {
             Name = "childModel",
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
         }).First();
         (childModel.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
             Name = "parentModel",
@@ -149,7 +149,7 @@ public class CodeFunctionWriterTests : IDisposable {
         };
         var factoryMethod = parentModel.AddMethod(new CodeMethod {
             Name = "factory",
-            MethodKind = CodeMethodKind.Factory,
+            Kind = CodeMethodKind.Factory,
             ReturnType = new CodeType {
                 Name = "parentModel",
                 TypeDefinition = parentModel,
@@ -163,7 +163,7 @@ public class CodeFunctionWriterTests : IDisposable {
         factoryMethod.DiscriminatorPropertyName = string.Empty;
         factoryMethod.AddParameter(new CodeParameter {
             Name = "parseNode",
-            ParameterKind = CodeParameterKind.ParseNode,
+            Kind = CodeParameterKind.ParseNode,
             Type = new CodeType {
                 Name = "ParseNode",
                 TypeDefinition = new CodeClass {
@@ -190,11 +190,11 @@ public class CodeFunctionWriterTests : IDisposable {
     public void DoesntWriteFactorySwitchOnEmptyMappings() {
         var parentModel = root.AddClass(new CodeClass {
             Name = "parentModel",
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
         }).First();
         var factoryMethod = parentModel.AddMethod(new CodeMethod {
             Name = "factory",
-            MethodKind = CodeMethodKind.Factory,
+            Kind = CodeMethodKind.Factory,
             ReturnType = new CodeType {
                 Name = "parentModel",
                 TypeDefinition = parentModel,
@@ -204,7 +204,7 @@ public class CodeFunctionWriterTests : IDisposable {
         factoryMethod.DiscriminatorPropertyName = "@odata.type";
         factoryMethod.AddParameter(new CodeParameter {
             Name = "parseNode",
-            ParameterKind = CodeParameterKind.ParseNode,
+            Kind = CodeParameterKind.ParseNode,
             Type = new CodeType {
                 Name = "ParseNode",
                 TypeDefinition = new CodeClass {

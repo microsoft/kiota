@@ -105,7 +105,7 @@ public class GoRefiner : CommonLanguageRefiner
             currentElement.Parent is CodeClass parentClass) {
                 var parameterSetClass = parentClass.AddInnerClass(new CodeClass{
                     Name = $"{parentClass.Name.ToFirstCharacterUpperCase()}{currentMethod.HttpMethod}Options",
-                    ClassKind = CodeClassKind.ParameterSet,
+                    Kind = CodeClassKind.ParameterSet,
                     Description = $"Options for {currentMethod.Name}",
                 }).First();
                 parameterSetClass.AddProperty(
@@ -114,7 +114,7 @@ public class GoRefiner : CommonLanguageRefiner
                         Type = x.Type,
                         Description = x.Description,
                         Access = AccessModifier.Public,
-                        PropertyKind = x.ParameterKind switch {
+                        Kind = x.Kind switch {
                             CodeParameterKind.RequestBody => CodePropertyKind.RequestBody,
                             CodeParameterKind.QueryParameter => CodePropertyKind.QueryParameter,
                             CodeParameterKind.Headers => CodePropertyKind.Headers,
@@ -140,7 +140,7 @@ public class GoRefiner : CommonLanguageRefiner
                     },
                     Optional = false,
                     Description = "Options for the request",
-                    ParameterKind = CodeParameterKind.ParameterSet,
+                    Kind = CodeParameterKind.ParameterSet,
                 };
                 currentMethod.AddParameter(parameterSetParameter);
                 var generatorMethod = parentClass.GetMethodsOffKind(CodeMethodKind.RequestGenerator)
@@ -160,7 +160,7 @@ public class GoRefiner : CommonLanguageRefiner
             currentClass.AddMethod(new CodeMethod {
                 Name = "IsNil",
                 IsAsync = false,
-                MethodKind = CodeMethodKind.NullCheck,
+                Kind = CodeMethodKind.NullCheck,
                 ReturnType = new CodeType {
                     Name = "boolean",
                     IsExternal = true,
@@ -227,7 +227,7 @@ public class GoRefiner : CommonLanguageRefiner
                     Access = AccessModifier.Public,
                     Description = currentProperty.Description,
                     IsAsync = false,
-                    MethodKind = CodeMethodKind.RequestBuilderBackwardCompatibility,
+                    Kind = CodeMethodKind.RequestBuilderBackwardCompatibility,
                 });
             }
         CrawlTree(currentElement, ReplaceRequestBuilderPropertiesByMethods);

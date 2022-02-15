@@ -39,9 +39,8 @@ namespace Kiota.Builder
         ParseNode
     }
 
-    public class CodeParameter : CodeTerminal, ICloneable, IDocumentedElement
+    public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable, IDocumentedElement
     {
-        public CodeParameterKind ParameterKind {get;set;}= CodeParameterKind.Custom;
         private CodeTypeBase type;
         public CodeTypeBase Type {get => type; set {
             EnsureElementsAreChildren(type);
@@ -54,14 +53,11 @@ namespace Kiota.Builder
         /// The name of the url template parameter this path parameter maps to.
         /// </summary>
         public string UrlTemplateParameterName { get; set; }
-        public bool IsOfKind(params CodeParameterKind[] kinds) {
-            return kinds?.Contains(ParameterKind) ?? false;
-        }
         public object Clone()
         {
             return new CodeParameter {
                 Optional = Optional,
-                ParameterKind = ParameterKind,
+                Kind = Kind,
                 Name = Name.Clone() as string,
                 Type = Type?.Clone() as CodeTypeBase,
                 Description = Description?.Clone() as string,

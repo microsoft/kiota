@@ -34,7 +34,7 @@ namespace Kiota.Builder {
         private static readonly int methodKindWeight = 10;
         protected static int GetMethodKindFactor(CodeElement element) {
             if (element is CodeMethod method)
-                return method.MethodKind switch {
+                return method.Kind switch {
                     CodeMethodKind.ClientConstructor => 1,
                     CodeMethodKind.Constructor => 2,
                     CodeMethodKind.RawUrlConstructor => 3,

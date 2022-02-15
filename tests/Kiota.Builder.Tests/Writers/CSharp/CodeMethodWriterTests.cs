@@ -45,21 +45,21 @@ public class CodeMethodWriterTests : IDisposable {
     private void AddRequestProperties() {
         parentClass.AddProperty(new CodeProperty {
             Name = "RequestAdapter",
-            PropertyKind = CodePropertyKind.RequestAdapter,
+            Kind = CodePropertyKind.RequestAdapter,
         });
         parentClass.AddProperty(new CodeProperty {
             Name = "pathParameters",
-            PropertyKind = CodePropertyKind.PathParameters,
+            Kind = CodePropertyKind.PathParameters,
         });
         parentClass.AddProperty(new CodeProperty {
             Name = "urlTemplate",
-            PropertyKind = CodePropertyKind.UrlTemplate,
+            Kind = CodePropertyKind.UrlTemplate,
         });
     }
     private void AddSerializationProperties() {
         var addData = parentClass.AddProperty(new CodeProperty {
             Name = "additionalData",
-            PropertyKind = CodePropertyKind.AdditionalData,
+            Kind = CodePropertyKind.AdditionalData,
         }).First();
         addData.Type = new CodeType {
             Name = "string"
@@ -108,51 +108,51 @@ public class CodeMethodWriterTests : IDisposable {
         };
         method.AddParameter(new CodeParameter {
             Name = "h",
-            ParameterKind = CodeParameterKind.Headers,
+            Kind = CodeParameterKind.Headers,
             Type = stringType,
         });
         method.AddParameter(new CodeParameter{
             Name = "q",
-            ParameterKind = CodeParameterKind.QueryParameter,
+            Kind = CodeParameterKind.QueryParameter,
             Type = stringType,
         });
         method.AddParameter(new CodeParameter{
             Name = "b",
-            ParameterKind = CodeParameterKind.RequestBody,
+            Kind = CodeParameterKind.RequestBody,
             Type = stringType,
         });
         method.AddParameter(new CodeParameter{
             Name = "r",
-            ParameterKind = CodeParameterKind.ResponseHandler,
+            Kind = CodeParameterKind.ResponseHandler,
             Type = stringType,
         });
         method.AddParameter(new CodeParameter {
             Name = "o",
-            ParameterKind = CodeParameterKind.Options,
+            Kind = CodeParameterKind.Options,
             Type = stringType,
         });
         method.AddParameter(new CodeParameter
         {
             Name = "c",
-            ParameterKind = CodeParameterKind.Cancellation,
+            Kind = CodeParameterKind.Cancellation,
             Type = stringType,
         });
     }
     [Fact]
     public void WritesRequestBuilder() {
-        method.MethodKind = CodeMethodKind.RequestBuilderBackwardCompatibility;
+        method.Kind = CodeMethodKind.RequestBuilderBackwardCompatibility;
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
     [Fact]
     public void WritesRequestBodiesThrowOnNullHttpMethod() {
-        method.MethodKind = CodeMethodKind.RequestExecutor;
+        method.Kind = CodeMethodKind.RequestExecutor;
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
-        method.MethodKind = CodeMethodKind.RequestGenerator;
+        method.Kind = CodeMethodKind.RequestGenerator;
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
     [Fact]
     public void WritesRequestExecutorBody() {
-        method.MethodKind = CodeMethodKind.RequestExecutor;
+        method.Kind = CodeMethodKind.RequestExecutor;
         method.HttpMethod = HttpMethod.Get;
         var error4XX = root.AddClass(new CodeClass{
             Name = "Error4XX",
@@ -182,7 +182,7 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void DoesntCreateDictionaryOnEmptyErrorMapping() {
-        method.MethodKind = CodeMethodKind.RequestExecutor;
+        method.Kind = CodeMethodKind.RequestExecutor;
         method.HttpMethod = HttpMethod.Get;
         AddRequestBodyParameters();
         writer.Write(method);
@@ -193,7 +193,7 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void WritesRequestExecutorBodyForCollections() {
-        method.MethodKind = CodeMethodKind.RequestExecutor;
+        method.Kind = CodeMethodKind.RequestExecutor;
         method.HttpMethod = HttpMethod.Get;
         method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
         AddRequestBodyParameters();
@@ -205,7 +205,7 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void WritesRequestGeneratorBody() {
-        method.MethodKind = CodeMethodKind.RequestGenerator;
+        method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Get;
         AddRequestProperties();
         AddRequestBodyParameters();
@@ -224,7 +224,7 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void WritesInheritedDeSerializerBody() {
-        method.MethodKind = CodeMethodKind.Deserializer;
+        method.Kind = CodeMethodKind.Deserializer;
         AddSerializationProperties();
         AddInheritanceClass();
         writer.Write(method);
@@ -234,7 +234,7 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void WritesDeSerializerBody() {
-        method.MethodKind = CodeMethodKind.Deserializer;
+        method.Kind = CodeMethodKind.Deserializer;
         AddSerializationProperties();
         writer.Write(method);
         var result = tw.ToString();
@@ -245,7 +245,7 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void WritesInheritedSerializerBody() {
-        method.MethodKind = CodeMethodKind.Serializer;
+        method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;
         AddSerializationProperties();
         AddInheritanceClass();
@@ -263,7 +263,7 @@ public class CodeMethodWriterTests : IDisposable {
         parameter.Type = new CodeType {
             Name = "string"
         };
-        method.MethodKind = CodeMethodKind.Serializer;
+        method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;
         AddSerializationProperties();
         writer.Write(method);
@@ -388,10 +388,10 @@ public class CodeMethodWriterTests : IDisposable {
     [Fact]
     public void WritesPathParameterRequestBuilder() {
         AddRequestProperties();
-        method.MethodKind = CodeMethodKind.RequestBuilderWithParameters;
+        method.Kind = CodeMethodKind.RequestBuilderWithParameters;
         method.AddParameter(new CodeParameter {
             Name = "pathParam",
-            ParameterKind = CodeParameterKind.Path,
+            Kind = CodeParameterKind.Path,
             Type = new CodeType {
                 Name = "string"
             }
@@ -405,13 +405,13 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void WritesConstructor() {
-        method.MethodKind = CodeMethodKind.Constructor;
+        method.Kind = CodeMethodKind.Constructor;
         var defaultValue = "someVal";
         var propName = "propWithDefaultValue";
         parentClass.AddProperty(new CodeProperty {
             Name = propName,
             DefaultValue = defaultValue,
-            PropertyKind = CodePropertyKind.UrlTemplate,
+            Kind = CodePropertyKind.UrlTemplate,
         });
         writer.Write(method);
         var result = tw.ToString();
@@ -420,10 +420,10 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void WritesApiConstructor() {
-        method.MethodKind = CodeMethodKind.ClientConstructor;
+        method.Kind = CodeMethodKind.ClientConstructor;
         var coreProp = parentClass.AddProperty(new CodeProperty {
             Name = "core",
-            PropertyKind = CodePropertyKind.RequestAdapter,
+            Kind = CodePropertyKind.RequestAdapter,
         }).First();
         coreProp.Type = new CodeType {
             Name = "RequestAdapter",
@@ -431,7 +431,7 @@ public class CodeMethodWriterTests : IDisposable {
         };
         method.AddParameter(new CodeParameter {
             Name = "core",
-            ParameterKind = CodeParameterKind.RequestAdapter,
+            Kind = CodeParameterKind.RequestAdapter,
             Type = coreProp.Type,
         });
         method.DeserializerModules = new() {"com.microsoft.kiota.serialization.Deserializer"};
@@ -444,10 +444,10 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void WritesApiConstructorWithBackingStore() {
-        method.MethodKind = CodeMethodKind.ClientConstructor;
+        method.Kind = CodeMethodKind.ClientConstructor;
         var coreProp = parentClass.AddProperty(new CodeProperty {
             Name = "core",
-            PropertyKind = CodePropertyKind.RequestAdapter,
+            Kind = CodePropertyKind.RequestAdapter,
         }).First();
         coreProp.Type = new CodeType {
             Name = "RequestAdapter",
@@ -455,12 +455,12 @@ public class CodeMethodWriterTests : IDisposable {
         };
         method.AddParameter(new CodeParameter {
             Name = "core",
-            ParameterKind = CodeParameterKind.RequestAdapter,
+            Kind = CodeParameterKind.RequestAdapter,
             Type = coreProp.Type,
         });
         var backingStoreParam = new CodeParameter {
             Name = "backingStore",
-            ParameterKind = CodeParameterKind.BackingStore,
+            Kind = CodeParameterKind.BackingStore,
         };
         backingStoreParam.Type = new CodeType {
             Name = "IBackingStore",
@@ -475,12 +475,12 @@ public class CodeMethodWriterTests : IDisposable {
     }
     [Fact]
     public void ThrowsOnGetter() {
-        method.MethodKind = CodeMethodKind.Getter;
+        method.Kind = CodeMethodKind.Getter;
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
     [Fact]
     public void ThrowsOnSetter() {
-        method.MethodKind = CodeMethodKind.Setter;
+        method.Kind = CodeMethodKind.Setter;
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
 }    

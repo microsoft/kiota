@@ -39,10 +39,9 @@ public enum HttpMethod {
     Trace
 }
 
-public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
+public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement
 {
     public HttpMethod? HttpMethod {get;set;}
-    public CodeMethodKind MethodKind {get;set;} = CodeMethodKind.Custom;
     public string ContentType { get; set; }
     public AccessModifier Access {get;set;} = AccessModifier.Public;
     private CodeTypeBase returnType;
@@ -66,11 +65,7 @@ public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
     public bool IsStatic {get;set;} = false;
     public bool IsAsync {get;set;} = true;
     public string Description {get; set;}
-    /// <summary>
-    /// The property this method accesses to when it's a getter or setter.
-    /// </summary>
-    public CodeProperty AccessedProperty { get; set;
-    }
+    
     /// <summary>
     /// The combination of the path and query parameters for the current URL.
     /// Only use this property if the language you are generating for doesn't support fluent API style (e.g. Shell/CLI)
@@ -91,9 +86,10 @@ public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
         else if (PathAndQueryParameters is List<CodeParameter> cast)
             cast.AddRange(parameters);
     }
-    public bool IsOfKind(params CodeMethodKind[] kinds) {
-        return kinds?.Contains(MethodKind) ?? false;
-    }
+    /// <summary>
+    /// The property this method accesses to when it's a getter or setter.
+    /// </summary>
+    public CodeProperty AccessedProperty { get; set; }
     public bool IsAccessor { 
         get => IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter);
     }
@@ -147,7 +143,7 @@ public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
     public object Clone()
     {
         var method = new CodeMethod {
-            MethodKind = MethodKind,
+            Kind = Kind,
             ReturnType = ReturnType?.Clone() as CodeTypeBase,
             Name = Name.Clone() as string,
             HttpMethod = HttpMethod,

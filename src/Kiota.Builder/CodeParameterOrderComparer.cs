@@ -11,7 +11,7 @@ namespace Kiota.Builder {
                 (null, _) => -1,
                 (_, null) => 1,
                 _ => x.Optional.CompareTo(y.Optional) * optionalWeight +
-                    getKindOrderHint(x.ParameterKind).CompareTo(getKindOrderHint(y.ParameterKind)) * kindWeight,
+                    getKindOrderHint(x.Kind).CompareTo(getKindOrderHint(y.Kind)) * kindWeight,
             };
         }
         private static int getKindOrderHint(CodeParameterKind kind) {

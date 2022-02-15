@@ -95,7 +95,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected static void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, bool removeProperty, bool parameterAsOptional) {
         if(!(propertyKindsToAddAccessors?.Any() ?? true)) return;
         if(current is CodeProperty currentProperty &&
-            propertyKindsToAddAccessors.Contains(currentProperty.PropertyKind) &&
+            propertyKindsToAddAccessors.Contains(currentProperty.Kind) &&
             current.Parent is CodeClass parentClass &&
             !parentClass.IsOfKind(CodeClassKind.QueryParameters)) {
             if(removeProperty && currentProperty.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.AdditionalData)) // we never want to remove backing stores
@@ -113,7 +113,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Name = $"{GetterPrefix}{accessorName}",
                 Access = AccessModifier.Public,
                 IsAsync = false,
-                MethodKind = CodeMethodKind.Getter,
+                Kind = CodeMethodKind.Getter,
                 ReturnType = currentProperty.Type.Clone() as CodeTypeBase,
                 Description = $"Gets the {propertyOriginalName} property value. {currentProperty.Description}",
                 AccessedProperty = currentProperty,
@@ -123,7 +123,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     Name = $"{SetterPrefix}{accessorName}",
                     Access = AccessModifier.Public,
                     IsAsync = false,
-                    MethodKind = CodeMethodKind.Setter,
+                    Kind = CodeMethodKind.Setter,
                     Description = $"Sets the {propertyOriginalName} property value. {currentProperty.Description}",
                     AccessedProperty = currentProperty,
                     ReturnType = new CodeType {
@@ -134,7 +134,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 
                 setter.AddParameter(new CodeParameter {
                     Name = "value",
-                    ParameterKind = CodeParameterKind.SetterValue,
+                    Kind = CodeParameterKind.SetterValue,
                     Description = $"Value to set for the {current.Name} property.",
                     Optional = parameterAsOptional,
                     Type = currentProperty.Type.Clone() as CodeTypeBase,
@@ -151,7 +151,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             !currentClass.Methods.Any(x => x.IsOfKind(CodeMethodKind.ClientConstructor)))
             currentClass.AddMethod(new CodeMethod {
                 Name = "constructor",
-                MethodKind = CodeMethodKind.Constructor,
+                Kind = CodeMethodKind.Constructor,
                 ReturnType = new CodeType {
                     Name = "void"
                 },
@@ -328,7 +328,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if(codeUnionType.Types.All(x => x.TypeDefinition is CodeClass targetClass && targetClass.IsOfKind(CodeClassKind.Model) ||
                                 x.TypeDefinition is CodeEnum)) {
             KiotaBuilder.AddSerializationMembers(newClass, true, usesBackingStore);
-            newClass.ClassKind = CodeClassKind.Model;
+            newClass.Kind = CodeClassKind.Model;
         }
         return new CodeType {
             Name = newClass.Name,
@@ -374,7 +374,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 IsAsync = false,
                 IsStatic = false,
                 Access = AccessModifier.Public,
-                MethodKind = CodeMethodKind.IndexerBackwardCompatibility,
+                Kind = CodeMethodKind.IndexerBackwardCompatibility,
                 Name = currentIndexer.PathSegment + methodNameSuffix,
                 Description = currentIndexer.Description,
                 ReturnType = new CodeType {
@@ -387,7 +387,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             var parameter = new CodeParameter {
                 Name = "id",
                 Optional = false,
-                ParameterKind = CodeParameterKind.Custom,
+                Kind = CodeParameterKind.Custom,
                 Description = "Unique identifier of the item",
                 Type = new CodeType {
                     Name = "String",
@@ -511,7 +511,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             currentElement.Parent is CodeClass parentClass &&
             parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
             var overloadCtor = currentMethod.Clone() as CodeMethod;
-            overloadCtor.MethodKind = CodeMethodKind.RawUrlConstructor;
+            overloadCtor.Kind = CodeMethodKind.RawUrlConstructor;
             overloadCtor.OriginalMethod = currentMethod;
             overloadCtor.RemoveParametersByKind(CodeParameterKind.PathParameters, CodeParameterKind.Path);
             overloadCtor.AddParameter(new CodeParameter {
@@ -519,7 +519,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Type = new CodeType { Name = "string", IsExternal = true },
                 Optional = false,
                 Description = "The raw URL to use for the request builder.",
-                ParameterKind = CodeParameterKind.RawUrl,
+                Kind = CodeParameterKind.RawUrl,
             });
             parentClass.AddMethod(overloadCtor);
         }

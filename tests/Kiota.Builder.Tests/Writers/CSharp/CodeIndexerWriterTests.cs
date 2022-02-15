@@ -34,13 +34,13 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             parentClass.SetIndexer(indexer);
             parentClass.AddProperty(new() {
                 Name = "pathParameters",
-                PropertyKind = CodePropertyKind.PathParameters,
+                Kind = CodePropertyKind.PathParameters,
                 Type = new CodeType {
                     Name = "string"
                 }
             }, new() {
                 Name = "requestAdapter",
-                PropertyKind = CodePropertyKind.RequestAdapter,
+                Kind = CodePropertyKind.RequestAdapter,
                 Type = new CodeType {
                     Name = "string"
                 }

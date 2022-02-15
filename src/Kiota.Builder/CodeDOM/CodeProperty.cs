@@ -37,9 +37,8 @@ namespace Kiota.Builder
         ResponseHandler,
     }
 
-    public class CodeProperty : CodeTerminal, IDocumentedElement
+    public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedElement
     {
-        public CodePropertyKind PropertyKind {get;set;} = CodePropertyKind.Custom;
         public bool ReadOnly {get;set;} = false;
         public AccessModifier Access {get;set;} = AccessModifier.Public;
         private CodeTypeBase type;
@@ -52,8 +51,5 @@ namespace Kiota.Builder
         public string SerializationName { get; set; }
         public string NamePrefix { get; set; }
         public bool IsNameEscaped { get; set; }
-        public bool IsOfKind(params CodePropertyKind[] kinds) {
-            return kinds?.Contains(PropertyKind) ?? false;
-        }
     }
 }

@@ -18,7 +18,7 @@ public enum CodeClassKind {
 /// <summary>
 /// CodeClass represents an instance of a Class to be generated in source code
 /// </summary>
-public class CodeClass : CodeBlock, IDocumentedElement, ITypeDefinition
+public class CodeClass : ProprietableBlock<CodeClassKind>, ITypeDefinition
 {
     private string name;
     public CodeClass():base()
@@ -26,11 +26,9 @@ public class CodeClass : CodeBlock, IDocumentedElement, ITypeDefinition
         StartBlock = new Declaration() { Parent = this};
         EndBlock = new End() { Parent = this };
     }
-    public CodeClassKind ClassKind { get; set; } = CodeClassKind.Custom;
 
     public bool IsErrorDefinition { get; set; }
 
-    public string Description {get; set;}
     /// <summary>
     /// Name of Class
     /// </summary>
@@ -52,34 +50,6 @@ public class CodeClass : CodeBlock, IDocumentedElement, ITypeDefinition
             throw new InvalidOperationException("this class already has an indexer, remove it first");
         AddRange(indexer);
     }
-
-    public IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties)
-    {
-        if(properties == null || properties.Any(x => x == null))
-            throw new ArgumentNullException(nameof(properties));
-        if(!properties.Any())
-            throw new ArgumentOutOfRangeException(nameof(properties));
-        return AddRange(properties);
-    }
-    public CodeProperty GetPropertyOfKind(CodePropertyKind kind) =>
-    Properties.FirstOrDefault(x => x.IsOfKind(kind));
-    public IEnumerable<CodeProperty> Properties => InnerChildElements.Values.OfType<CodeProperty>();
-    public IEnumerable<CodeMethod> Methods => InnerChildElements.Values.OfType<CodeMethod>();
-
-    public bool ContainsMember(string name)
-    {
-        return InnerChildElements.ContainsKey(name);
-    }
-
-    public IEnumerable<CodeMethod> AddMethod(params CodeMethod[] methods)
-    {
-        if(methods == null || methods.Any(x => x == null))
-            throw new ArgumentNullException(nameof(methods));
-        if(!methods.Any())
-            throw new ArgumentOutOfRangeException(nameof(methods));
-        return AddRange(methods);
-    }
-
     public IEnumerable<CodeClass> AddInnerClass(params CodeClass[] codeClasses)
     {
         if(codeClasses == null || codeClasses.Any(x => x == null))
@@ -102,26 +72,13 @@ public class CodeClass : CodeBlock, IDocumentedElement, ITypeDefinition
         else
             return parentClass.GetGreatestGrandparent(startClassToSkip);
     }
-
-    public bool IsOfKind(params CodeClassKind[] kinds) {
-        return kinds?.Contains(ClassKind) ?? false;
-    }
-
-    public class Declaration : BlockDeclaration
+    public class Declaration : ProprietableBlockDeclaration
     {
         private CodeType inherits;
         public CodeType Inherits { get => inherits; set {
             EnsureElementsAreChildren(value);
             inherits = value;
         } }
-        private readonly List<CodeType> implements = new ();
-        public void AddImplements(params CodeType[] types) {
-            if(types == null || types.Any(x => x == null))
-                throw new ArgumentNullException(nameof(types));
-            EnsureElementsAreChildren(types);
-            implements.AddRange(types);
-        }
-        public IEnumerable<CodeType> Implements => implements;
     }
 
     public class End : BlockEnd

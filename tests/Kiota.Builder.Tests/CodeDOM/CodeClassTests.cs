@@ -25,7 +25,7 @@ namespace Kiota.Builder.Tests {
             };
             root.AddClass(codeClass);
             Assert.False(codeClass.IsOfKind(CodeClassKind.Model));
-            codeClass.ClassKind = CodeClassKind.RequestBuilder;
+            codeClass.Kind = CodeClassKind.RequestBuilder;
             Assert.True(codeClass.IsOfKind(CodeClassKind.RequestBuilder));
             Assert.True(codeClass.IsOfKind(CodeClassKind.RequestBuilder, CodeClassKind.QueryParameters));
             Assert.False(codeClass.IsOfKind(CodeClassKind.QueryParameters));

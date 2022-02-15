@@ -27,7 +27,7 @@ namespace Kiota.Builder.Writers.Php
             WriteMethodPhpDocs(codeElement, writer, orNullReturn);
             WriteMethodsAndParameters(codeElement, writer, orNullReturn, codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor));
 
-            switch (codeElement.MethodKind)
+            switch (codeElement.Kind)
             {
                     case CodeMethodKind.Constructor: 
                         WriteConstructorBody(parentClass, codeElement, writer, inherits);
@@ -74,7 +74,7 @@ namespace Kiota.Builder.Writers.Php
                                                                             CodePropertyKind.UrlTemplate,
                                                                             CodePropertyKind.PathParameters)
                                             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
-                                            .OrderByDescending(x => x.PropertyKind)
+                                            .OrderByDescending(x => x.Kind)
                                             .ThenBy(x => x.Name))
             {
                 var isPathSegment = propWithDefault.IsOfKind(CodePropertyKind.PathParameters);
@@ -138,7 +138,7 @@ namespace Kiota.Builder.Writers.Php
 
         private string GetDocCommentReturnType(CodeMethod codeMethod, CodeProperty accessedProperty)
         {
-            return codeMethod.MethodKind switch
+            return codeMethod.Kind switch
             {
                 CodeMethodKind.Deserializer => "array<string, callable>",
                 CodeMethodKind.Getter when accessedProperty.IsOfKind(CodePropertyKind.AdditionalData) => "array<string, mixed>",
@@ -149,7 +149,7 @@ namespace Kiota.Builder.Writers.Php
 
         private string GetParameterDocString(CodeMethod codeMethod, CodeParameter x, bool isSetterForAdditionalData = false)
         {
-            return codeMethod.MethodKind switch
+            return codeMethod.Kind switch
             {
                 CodeMethodKind.Setter => $"{conventions.DocCommentPrefix} @param {(isSetterForAdditionalData ? "array<string,mixed> $value": conventions.GetParameterDocNullable(x, x))} {x?.Description}",
                 _ => $"{conventions.DocCommentPrefix}@param {conventions.GetParameterDocNullable(x, x)} {x.Description}"
@@ -164,13 +164,13 @@ namespace Kiota.Builder.Writers.Php
                                                                 .Select(x => conventions.GetParameterSignature(x, codeMethod))
                                                                 .ToList());
 
-            var methodName = codeMethod.MethodKind switch
+            var methodName = codeMethod.Kind switch
             {
                 CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor => "__construct",
                 CodeMethodKind.Getter or CodeMethodKind.Setter => codeMethod.AccessedProperty?.Name?.ToFirstCharacterUpperCase(),
                 _ => codeMethod.Name.ToFirstCharacterLowerCase()
             };
-            var methodPrefix = codeMethod.MethodKind switch
+            var methodPrefix = codeMethod.Kind switch
             {
                 CodeMethodKind.Getter => "get",
                 CodeMethodKind.Setter => "set",
@@ -203,7 +203,7 @@ namespace Kiota.Builder.Writers.Php
         private void WriteSerializerBody(CodeMethod codeMethod, CodeClass parentClass, LanguageWriter writer, bool inherits)
         {
             var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();
-            var writerParameter = codeMethod.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.Serializer);
+            var writerParameter = codeMethod.Parameters.FirstOrDefault(x => x.Kind == CodeParameterKind.Serializer);
             var writerParameterName = conventions.GetParameterName(writerParameter);
             if(inherits)
                 writer.WriteLine($"parent::serialize({writerParameterName});");

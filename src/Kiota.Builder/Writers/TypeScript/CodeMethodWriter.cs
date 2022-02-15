@@ -31,7 +31,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
         var requestParams = new RequestParams(requestBodyParam, queryStringParam, headersParam, optionsParam);
         WriteDefensiveStatements(codeElement, writer);
-        switch(codeElement.MethodKind) {
+        switch(codeElement.Kind) {
             case CodeMethodKind.IndexerBackwardCompatibility:
                 WriteIndexerBody(codeElement, parentClass, returnType, writer);
                 break;
@@ -125,7 +125,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         };
         foreach(var propWithDefault in parentClass.GetPropertiesOfKind(propertiesWithDefaultValues.ToArray())
                                         .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
-                                        .OrderByDescending(x => x.PropertyKind)
+                                        .OrderByDescending(x => x.Kind)
                                         .ThenBy(x => x.Name)) {
             writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
         }
@@ -301,19 +301,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     internal static void WriteMethodPrototypeInternal(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid, TypeScriptConventionService pConventions, bool isFunction) {
         var accessModifier = isFunction ? string.Empty : pConventions.GetAccessModifier(code.Access);
         var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor);
-        var methodName = (code.MethodKind switch {
+        var methodName = (code.Kind switch {
             _ when code.IsAccessor => code.AccessedProperty?.Name,
             _ when isConstructor => "constructor",
             _ => code.Name,
         })?.ToFirstCharacterLowerCase();
-        var asyncPrefix = code.IsAsync && code.MethodKind != CodeMethodKind.RequestExecutor ? " async ": string.Empty;
+        var asyncPrefix = code.IsAsync && code.Kind != CodeMethodKind.RequestExecutor ? " async ": string.Empty;
         var staticPrefix = code.IsStatic && !isFunction ? "static " : string.Empty;
         var functionPrefix = isFunction ? "export function " : " ";
         var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> pConventions.GetParameterSignature(p, code)).ToList());
         var asyncReturnTypePrefix = code.IsAsync ? "Promise<": string.Empty;
         var asyncReturnTypeSuffix = code.IsAsync ? ">": string.Empty;
         var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? " | undefined" : string.Empty;
-        var accessorPrefix = code.MethodKind switch {
+        var accessorPrefix = code.Kind switch {
                 CodeMethodKind.Getter => "get ",
                 CodeMethodKind.Setter => "set ",
                 _ => string.Empty

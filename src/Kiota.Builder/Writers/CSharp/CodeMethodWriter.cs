@@ -41,7 +41,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
         var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
         var requestParams = new RequestParams(requestBodyParam, queryStringParam, headersParam, optionsParam);
-        switch (codeElement.MethodKind)
+        switch (codeElement.Kind)
         {
             case CodeMethodKind.Serializer:
                 WriteSerializerBody(inherits, codeElement, parentClass, writer);
@@ -109,9 +109,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         foreach (var propWithDefault in parentClass
                                         .Properties
                                         .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
-                                        .OrderByDescending(x => x.PropertyKind)
-                                        .ThenBy(x => x.Name))
-        {
+                                        .OrderByDescending(x => x.Kind)
+                                        .ThenBy(x => x.Name)) {
             writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterUpperCase()} = {propWithDefault.DefaultValue};");
         }
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))

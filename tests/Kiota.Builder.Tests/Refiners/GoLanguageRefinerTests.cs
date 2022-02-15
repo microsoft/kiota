@@ -10,7 +10,7 @@ public class GoLanguageRefinerTests {
     public void AddsExceptionInheritanceOnErrorClasses() {
         var model = root.AddClass(new CodeClass {
             Name = "somemodel",
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
@@ -24,7 +24,7 @@ public class GoLanguageRefinerTests {
     public void FailsExceptionInheritanceOnErrorClassesWhichAlreadyInherit() {
         var model = root.AddClass(new CodeClass {
             Name = "somemodel",
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
         var declaration = model.StartBlock as CodeClass.Declaration;
@@ -39,21 +39,21 @@ public class GoLanguageRefinerTests {
         var models = main.AddNamespace($"{main.Name}.models");
         models.AddClass(new CodeClass {
             Name = "somemodel",
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
         }); // so move to models namespace finds the models namespace
         var requestBuilder = main.AddClass(new CodeClass {
             Name = "somerequestbuilder",
-            ClassKind = CodeClassKind.RequestBuilder,
+            Kind = CodeClassKind.RequestBuilder,
         }).First();
         var subNS = models.AddNamespace($"{models.Name}.subns"); // otherwise the import gets trimmed
         var errorClass = subNS.AddClass(new CodeClass {
             Name = "Error4XX",
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
         var requestExecutor = requestBuilder.AddMethod(new CodeMethod {
             Name = "get",
-            MethodKind = CodeMethodKind.RequestExecutor,
+            Kind = CodeMethodKind.RequestExecutor,
             ReturnType = new CodeType {
                 Name = "string"
             },
@@ -72,11 +72,11 @@ public class GoLanguageRefinerTests {
     public void AddsUsingsForDiscriminatorTypes() {
         var parentModel = root.AddClass(new CodeClass {
             Name = "parentModel",
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
         }).First();
         var childModel = root.AddClass(new CodeClass {
             Name = "childModel",
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
         }).First();
         (childModel.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
             Name = "parentModel",
@@ -84,7 +84,7 @@ public class GoLanguageRefinerTests {
         };
         var factoryMethod = parentModel.AddMethod(new CodeMethod {
             Name = "factory",
-            MethodKind = CodeMethodKind.Factory,
+            Kind = CodeMethodKind.Factory,
             ReturnType = new CodeType {
                 Name = "parentModel",
                 TypeDefinition = parentModel,
@@ -104,11 +104,11 @@ public class GoLanguageRefinerTests {
     public void AddsUsingsForFactoryMethods() {
         var parentModel = root.AddClass(new CodeClass {
             Name = "parentModel",
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
         }).First();
         var childModel = root.AddClass(new CodeClass {
             Name = "childModel",
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
         }).First();
         (childModel.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
             Name = "parentModel",
@@ -116,7 +116,7 @@ public class GoLanguageRefinerTests {
         };
         var factoryMethod = parentModel.AddMethod(new CodeMethod {
             Name = "factory",
-            MethodKind = CodeMethodKind.Factory,
+            Kind = CodeMethodKind.Factory,
             ReturnType = new CodeType {
                 Name = "parentModel",
                 TypeDefinition = parentModel,
@@ -128,11 +128,11 @@ public class GoLanguageRefinerTests {
                     });
         var requestBuilderClass = root.AddClass(new CodeClass {
             Name = "somerequestbuilder",
-            ClassKind = CodeClassKind.RequestBuilder,
+            Kind = CodeClassKind.RequestBuilder,
         }).First();
         var requestExecutor = requestBuilderClass.AddMethod(new CodeMethod {
             Name = "get",
-            MethodKind = CodeMethodKind.RequestExecutor,
+            Kind = CodeMethodKind.RequestExecutor,
             ReturnType = new CodeType {
                 Name = parentModel.Name,
                 TypeDefinition = parentModel,
@@ -149,12 +149,12 @@ public class GoLanguageRefinerTests {
         var model = root.AddClass(new CodeClass
         {
             Name = "model",
-            ClassKind = CodeClassKind.RequestBuilder
+            Kind = CodeClassKind.RequestBuilder
         }).First();
         var method = model.AddMethod(new CodeMethod
         {
             Name = "getMethod",
-            MethodKind = CodeMethodKind.RequestExecutor,
+            Kind = CodeMethodKind.RequestExecutor,
             ReturnType = new CodeType
             {
                 Name = "string"
@@ -164,7 +164,7 @@ public class GoLanguageRefinerTests {
         {
             Name = "cancelletionToken",
             Optional = true,
-            ParameterKind = CodeParameterKind.Cancellation,
+            Kind = CodeParameterKind.Cancellation,
             Description = "Cancellation token to use when cancelling requests",
             Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
         };
@@ -177,7 +177,7 @@ public class GoLanguageRefinerTests {
     public void ReplacesDateTimeOffsetByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var method = model.AddMethod(new CodeMethod {
             Name = "method",
@@ -193,7 +193,7 @@ public class GoLanguageRefinerTests {
     public void ReplacesDateOnlyByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var method = model.AddMethod(new CodeMethod {
             Name = "method",
@@ -209,7 +209,7 @@ public class GoLanguageRefinerTests {
     public void ReplacesTimeOnlyByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var method = model.AddMethod(new CodeMethod {
             Name = "method",
@@ -225,7 +225,7 @@ public class GoLanguageRefinerTests {
     public void ReplacesDurationByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var method = model.AddMethod(new CodeMethod {
             Name = "method",
@@ -244,7 +244,7 @@ public class GoLanguageRefinerTests {
     public void DoesNotEscapePublicPropertiesReservedKeywordsForQueryParameters() {
         var model = root.AddClass(new CodeClass {
             Name = "SomeClass",
-            ClassKind = CodeClassKind.QueryParameters
+            Kind = CodeClassKind.QueryParameters
         }).First();
         var property = model.AddProperty(new CodeProperty {
             Name = "select",
@@ -259,7 +259,7 @@ public class GoLanguageRefinerTests {
     public void EscapesPublicPropertiesReservedKeywordsForModels() {
         var model = root.AddClass(new CodeClass {
             Name = "SomeClass",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var property = model.AddProperty(new CodeProperty {
             Name = "select",
@@ -274,11 +274,11 @@ public class GoLanguageRefinerTests {
     public void ReplacesRequestBuilderPropertiesByMethods() {
         var model = root.AddClass(new CodeClass {
             Name = "someModel",
-            ClassKind = CodeClassKind.RequestBuilder
+            Kind = CodeClassKind.RequestBuilder
         }).First();
         var rb = model.AddProperty(new CodeProperty {
             Name = "someProperty",
-            PropertyKind = CodePropertyKind.RequestBuilder,
+            Kind = CodePropertyKind.RequestBuilder,
         }).First();
         rb.Type = new CodeType {
             Name = "someType",
@@ -305,23 +305,23 @@ public class GoLanguageRefinerTests {
         const string addiationalDataDefaultName = "new Dictionary<string, object>()";
         var model = root.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         model.AddProperty(new () {
             Name = "core",
-            PropertyKind = CodePropertyKind.RequestAdapter,
+            Kind = CodePropertyKind.RequestAdapter,
             Type = new CodeType {
                 Name = requestAdapterDefaultName
             }
         }, new () {
             Name = "someDate",
-            PropertyKind = CodePropertyKind.Custom,
+            Kind = CodePropertyKind.Custom,
             Type = new CodeType {
                 Name = dateTimeOffsetDefaultName,
             }
         }, new () {
             Name = "additionalData",
-            PropertyKind = CodePropertyKind.AdditionalData,
+            Kind = CodePropertyKind.AdditionalData,
             Type = new CodeType {
                 Name = addiationalDataDefaultName
             }
@@ -330,7 +330,7 @@ public class GoLanguageRefinerTests {
         const string headersDefaultName = "IDictionary<string, string>";
         var executorMethod = model.AddMethod(new CodeMethod {
             Name = "executor",
-            MethodKind = CodeMethodKind.RequestExecutor,
+            Kind = CodeMethodKind.RequestExecutor,
             ReturnType = new CodeType {
                 Name = "string"
             }
@@ -339,17 +339,17 @@ public class GoLanguageRefinerTests {
             ReturnType = new CodeType {
                 Name = deserializeDefaultName,
             },
-            MethodKind = CodeMethodKind.Deserializer
+            Kind = CodeMethodKind.Deserializer
         }).First();
         executorMethod.AddParameter(new () {
             Name = "handler",
-            ParameterKind = CodeParameterKind.ResponseHandler,
+            Kind = CodeParameterKind.ResponseHandler,
             Type = new CodeType {
                 Name = handlerDefaultName,
             }
         }, new () {
             Name = "headers",
-            ParameterKind = CodeParameterKind.Headers,
+            Kind = CodeParameterKind.Headers,
             Type = new CodeType {
                 Name = headersDefaultName
             }
@@ -357,28 +357,28 @@ public class GoLanguageRefinerTests {
         const string serializerDefaultName = "ISerializationWriter";
         var serializationMethod = model.AddMethod(new CodeMethod {
             Name = "seriailization",
-            MethodKind = CodeMethodKind.Serializer,
+            Kind = CodeMethodKind.Serializer,
             ReturnType = new CodeType {
                 Name = "string"
             }
         }).First();
         serializationMethod.AddParameter(new CodeParameter {
             Name = "handler",
-            ParameterKind = CodeParameterKind.Serializer,
+            Kind = CodeParameterKind.Serializer,
             Type = new CodeType {
                 Name = serializerDefaultName,
             }
         });
         var constructorMethod = model.AddMethod(new CodeMethod {
             Name = "constructor",
-            MethodKind = CodeMethodKind.Constructor,
+            Kind = CodeMethodKind.Constructor,
             ReturnType = new CodeType {
                 Name = "void"
             }
         }).First();
         var rawUrlParam = new CodeParameter {
             Name = "rawUrl",
-            ParameterKind = CodeParameterKind.RawUrl,
+            Kind = CodeParameterKind.RawUrl,
             Type = new CodeType {
                 Name = "string",
                 IsNullable = true,
@@ -392,7 +392,7 @@ public class GoLanguageRefinerTests {
                 Name = "string",
                 IsExternal = true
             },
-            PropertyKind = CodePropertyKind.PathParameters,
+            Kind = CodePropertyKind.PathParameters,
             DefaultValue = "wrongDefaultValue"
         }).First();
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);

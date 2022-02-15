@@ -102,7 +102,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             {
                 Name = "get",
                 Access = AccessModifier.Public,
-                MethodKind = CodeMethodKind.RequestExecutor,
+                Kind = CodeMethodKind.RequestExecutor,
                 HttpMethod = HttpMethod.Get,
                 ReturnType = new CodeType
                 {
@@ -129,7 +129,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             {
                 currentClass.Inherits = new CodeType()
                 {
-                    TypeDefinition = new CodeClass() {Name = "Model", ClassKind = CodeClassKind.Custom}
+                    TypeDefinition = new CodeClass() {Name = "Model", Kind = CodeClassKind.Custom}
                 };
             }
 
