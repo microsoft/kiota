@@ -42,24 +42,6 @@ func TestCompressionHandlerAddsContentEncodingHeader(t *testing.T) {
 	assert.Equal(t, contentTypeHeader, "gzip")
 }
 
-func TestCompressionHandlerCompressesRequestBody(t *testing.T) {
-	postBody, _ := json.Marshal(map[string]string{"name": "Test", "email": "Test@Test.com"})
-	var compressedBody []byte
-
-	testServer := httptest.NewServer(nethttp.HandlerFunc(func(res nethttp.ResponseWriter, req *nethttp.Request) {
-		compressedBody, _ = io.ReadAll(req.Body)
-		res.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(res, `{}`)
-	}))
-	defer testServer.Close()
-
-	client := getDefaultClientWithoutMiddleware()
-	client.Transport = NewCustomTransport(NewCompressionHandler())
-	client.Post(testServer.URL, "application/json", bytes.NewBuffer(postBody))
-
-	assert.Greater(t, len(postBody), len(compressedBody))
-}
-
 func TestCompressionHandlerRetriesRequest(t *testing.T) {
 	postBody, _ := json.Marshal(map[string]string{"name": "Test", "email": "Test@Test.com"})
 	status := 415
