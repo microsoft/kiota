@@ -78,12 +78,10 @@ class PhpLeagueAccessTokenProvider implements AccessTokenProvider
             return new FulfilledPromise(null);
         }
         try {
-            if ($this->cachedToken) {
-                if ($this->cachedToken->hasExpired()) {
-                    $this->cachedToken = $this->oauthProvider->getAccessToken('refresh_token',
-                        array_merge($this->tokenRequestContext->getParams(), ['refresh_token' => $this->cachedToken->getRefreshToken()])
-                    );
-                }
+            if ($this->cachedToken && $this->cachedToken->getExpires() && $this->cachedToken->hasExpired() && $this->cachedToken->getRefreshToken()) {
+                $this->cachedToken = $this->oauthProvider->getAccessToken('refresh_token',
+                    array_merge($this->tokenRequestContext->getParams(), ['refresh_token' => $this->cachedToken->getRefreshToken()])
+                );
             } else {
                 $params = array_merge($this->tokenRequestContext->getParams(), ['scope' => implode(',', $this->scopes)]);
                 $this->cachedToken = $this->oauthProvider->getAccessToken($this->tokenRequestContext->getGrantType(), $params);

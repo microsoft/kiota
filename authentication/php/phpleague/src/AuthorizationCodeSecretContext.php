@@ -9,16 +9,16 @@
 namespace Microsoft\Kiota\Authentication;
 
 /**
- * Class ClientCredentialSecretContext
+ * Class AuthorizationCodeSecretContext
  *
- * Parameters for the Client Credentials OAuth 2.0 flow
+ * Request params for the token request of the authorization_code flow using a secret
  *
  * @package Microsoft\Kiota\Authentication
  * @copyright 2022 Microsoft Corporation
  * @license https://opensource.org/licenses/MIT MIT License
  * @link https://developer.microsoft.com/graph
  */
-class ClientCredentialSecretContext implements TokenRequestContext
+class AuthorizationCodeSecretContext implements TokenRequestContext
 {
     /**
      * @var string Tenant Id
@@ -33,54 +33,55 @@ class ClientCredentialSecretContext implements TokenRequestContext
      */
     private string $clientSecret;
     /**
-     * @var array<string, string> Key-value pairs of additional OAuth 2.0 parameters
+     * @var string Code from the authorization step
+     */
+    private string $authCode;
+    /**
+     * @var string Same redirectUri used to acquire the authorization code
+     */
+    private string $redirectUri;
+    /**
+     * @var array Extra params to add to the request
      */
     private array $additionalParams;
 
-    /**
-     * Creates a new instance
-     * @param string $tenantId
-     * @param string $clientId
-     * @param string $clientSecret
-     * @param array<string, string> $additionalParams extra OAuth 2.0 parameters for client credentials flow
-     */
-    public function __construct(string $tenantId, string $clientId, string $clientSecret, array $additionalParams = [])
+    public function __construct(string $tenantId, string $clientId, string $clientSecret, string $authCode, string $redirectUri, array $additionalParams = [])
     {
-        if (!$tenantId || !$clientId || !$clientSecret) {
+        if (!$tenantId || !$clientId || !$clientSecret || !$authCode || !$redirectUri) {
             throw new \InvalidArgumentException("Params cannot be empty");
         }
         $this->tenantId = $tenantId;
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
+        $this->authCode = $authCode;
+        $this->redirectUri = $redirectUri;
         $this->additionalParams = $additionalParams;
     }
 
     /**
-     * Request body parameters for client_credentials flow
-     *
-     * @return array<string, string>
+     * @inheritDoc
      */
     public function getParams(): array
     {
         return array_merge($this->additionalParams, [
             'client_id' => $this->clientId,
             'client_secret' => $this->clientSecret,
-            'grant_type' => $this->getGrantType(),
+            'code' => $this->authCode,
+            'redirect_uri' => $this->redirectUri,
+            'grant_type' => $this->getGrantType()
         ]);
     }
 
     /**
-     * Returns the Grant type
-     * @return string
+     * @inheritDoc
      */
     public function getGrantType(): string
     {
-        return 'client_credentials';
+        return 'authorization_code';
     }
 
     /**
-     * Returns the tenant Id
-     * @return string
+     * @inheritDoc
      */
     public function getTenantId(): string
     {

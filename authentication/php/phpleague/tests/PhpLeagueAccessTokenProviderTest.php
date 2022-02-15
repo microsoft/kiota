@@ -41,6 +41,65 @@ class PhpLeagueAccessTokenProviderTest extends TestCase
         $tokenProvider->getAuthorizationTokenAsync('https://example.com/users')->wait();
     }
 
+    public function testGetAuthorizationCodeCachesInMemory(): void
+    {
+        $requestContext = new ClientCredentialSecretContext('tenantId', 'clientId', 'clientSecret');
+        $tokenProvider = new PhpLeagueAccessTokenProvider($requestContext, ['https://graph.microsoft.com/.default']);
+        $mockResponses = [
+            new Response(200, [], json_encode(['access_token' => 'abc', 'expires_in' => 5])),
+            new Response(200, [], json_encode(['access_token' => 'xyz', 'expires_in' => 5]))
+        ];
+        $tokenProvider->getOauthProvider()->setHttpClient($this->getMockHttpClient($mockResponses));
+        $this->assertEquals('abc', $tokenProvider->getAuthorizationTokenAsync('https://example.com')->wait());
+        // Second call happens before token expires. We should get the existing access token
+        $this->assertEquals('abc', $tokenProvider->getAuthorizationTokenAsync('https://example.com')->wait());
+    }
+
+    public function testGetAuthorizationCodeRefreshesTokenIfExpired(): void
+    {
+        $requestContext = new ClientCredentialSecretContext('tenantId', 'clientId', 'clientSecret');
+        $tokenProvider = new PhpLeagueAccessTokenProvider($requestContext, ['https://graph.microsoft.com/.default']);
+        $mockResponses = [
+            new Response(200, [], json_encode(['access_token' => 'abc', 'expires_in' => 1, 'refresh_token' => 'refresh'])),
+            function (Request $request) {
+                $requestBodyMap = $this->formUrlEncodedBodyToMap($request->getBody()->getContents());
+                $this->assertArrayHasKey('refresh_token', $requestBodyMap);
+                $this->assertEquals('refresh', $requestBodyMap['refresh_token']);
+                return new Response(200, [], json_encode(['access_token' => 'xyz', 'expires_in' => 1]));
+            },
+        ];
+        $tokenProvider->getOauthProvider()->setHttpClient($this->getMockHttpClient($mockResponses));
+        $this->assertEquals('abc', $tokenProvider->getAuthorizationTokenAsync('https://example.com')->wait());
+        sleep(2);
+        // Second call happens when token has already expired
+        $this->assertEquals('xyz', $tokenProvider->getAuthorizationTokenAsync('https://example.com')->wait());
+    }
+
+    public function testGetAuthorizationCodeFetchesNewTokenIfNoRefreshTokenExists(): void
+    {
+        $requestContext = new ClientCredentialSecretContext('tenantId', 'clientId', 'clientSecret');
+        $tokenProvider = new PhpLeagueAccessTokenProvider($requestContext, ['https://graph.microsoft.com/.default']);
+        $mockResponses = [
+            new Response(200, [], json_encode(['access_token' => 'abc', 'expires_in' => 1])),
+            function (Request $request) {
+                $requestBodyMap = $this->formUrlEncodedBodyToMap($request->getBody()->getContents());
+                $expectedBody = [
+                    'client_id' => 'clientId',
+                    'client_secret' => 'clientSecret',
+                    'grant_type' => 'client_credentials',
+                    'scope' => rawurlencode('https://graph.microsoft.com/.default')
+                ];
+                $this->assertEquals($expectedBody, $requestBodyMap);
+                return new Response(200, [], json_encode(['access_token' => 'xyz', 'expires_in' => 1]));
+            },
+        ];
+        $tokenProvider->getOauthProvider()->setHttpClient($this->getMockHttpClient($mockResponses));
+        $this->assertEquals('abc', $tokenProvider->getAuthorizationTokenAsync('https://example.com')->wait());
+        sleep(2);
+        // Second call happens when token has already expired
+        $this->assertEquals('xyz', $tokenProvider->getAuthorizationTokenAsync('https://example.com')->wait());
+    }
+
     private function getMockHttpClient(array $mockResponses): Client
     {
         return new Client(['handler' => new MockHandler($mockResponses)]);
