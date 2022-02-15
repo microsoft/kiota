@@ -93,7 +93,7 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// </summary>
         /// <param name="factory">The factory to use to create the model object.</param>
         /// <returns>The collection of model objects values.</returns>
-        IEnumerable<T> GetCollectionOfObjectValues<T>(ParsableFactory factory) where T : IParsable;
+        IEnumerable<T> GetCollectionOfObjectValues<T>(ParsableFactory<T> factory) where T : IParsable;
         /// <summary>
         /// Gets the enum value of the node.
         /// </summary>
@@ -104,7 +104,7 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// </summary>
         /// <param name="factory">The factory to use to create the model object.</param>
         /// <returns>The model object value of the node.</returns>
-        T GetObjectValue<T>(ParsableFactory factory) where T : IParsable;
+        T GetObjectValue<T>(ParsableFactory<T> factory) where T : IParsable;
         /// <summary>
         /// Callback called before the node is deserialized.
         /// </summary>
