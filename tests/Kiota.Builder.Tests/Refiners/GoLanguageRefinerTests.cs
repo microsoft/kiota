@@ -97,8 +97,8 @@ public class GoLanguageRefinerTests {
         var parentModelDeclaration = parentModel.StartBlock as CodeClass.Declaration;
         Assert.Empty(parentModelDeclaration.Usings);
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Equal(childModel, parentModelDeclaration.Usings.First(x => x.Name.Equals("childModel", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
-        Assert.Null(parentModelDeclaration.Usings.FirstOrDefault(x => x.Name.Equals("factory", StringComparison.OrdinalIgnoreCase)));
+        Assert.Equal(childModel, parentModelDeclaration.Usings.First(x => x.Declaration.Name.Equals("childModel", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
+        Assert.Null(parentModelDeclaration.Usings.FirstOrDefault(x => x.Declaration.Name.Equals("factory", StringComparison.OrdinalIgnoreCase)));
     }
     [Fact]
     public void AddsUsingsForFactoryMethods() {
@@ -141,8 +141,7 @@ public class GoLanguageRefinerTests {
         var requestBuilderDeclaration = requestBuilderClass.StartBlock as CodeClass.Declaration;
         Assert.Empty(requestBuilderDeclaration.Usings);
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Equal(factoryMethod, requestBuilderDeclaration.Usings.First(x => x.Name.Equals("factory", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
-        Assert.Null(requestBuilderDeclaration.Usings.FirstOrDefault(x => x.Name.Equals("childModel", StringComparison.OrdinalIgnoreCase)));
+        Assert.Equal(factoryMethod, requestBuilderDeclaration.Usings.First(x => x.Declaration.Name.Equals("factory", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
     }
     [Fact]
     public void DoesNotKeepCancellationParametersInRequestExecutors()
