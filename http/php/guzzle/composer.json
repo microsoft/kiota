@@ -6,7 +6,10 @@
 		{
 			"type": "path",
 			"url": "../../../abstractions/php",
-			"only": ["microsoft/kiota-abstractions"]
+			"only": ["microsoft/kiota-abstractions"],
+			"options": {
+				"symlink": false
+			}
 		}
 	],
 	"require": {
