@@ -41,6 +41,10 @@ Make sure you [install the pre-requisites first](https://microsoft.github.io/kio
 
 Selecting the language you want to generate an SDK for in the Visual Studio Debug tab and hitting **F5** will automatically build, start, and attach the debugging process to Kiota.
 
+### Samples
+
+You can find samples of clients generated with Kiota in the [Kiota samples](https://github.com/microsoft/kiota-samples) repository.
+
 ## Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
