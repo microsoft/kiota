@@ -11,12 +11,12 @@ public class ShellRefinerTests {
     public void AddsUsingsForCommandTypesUsedInCommandBuilder() {
         var requestBuilder = root.AddClass(new CodeClass {
             Name = "somerequestbuilder",
-            ClassKind = CodeClassKind.RequestBuilder,
+            Kind = CodeClassKind.RequestBuilder,
         }).First();
         var subNS = root.AddNamespace($"{root.Name}.subns"); // otherwise the import gets trimmed
         var commandBuilder = requestBuilder.AddMethod(new CodeMethod {
             Name = "GetCommand",
-            MethodKind = CodeMethodKind.CommandBuilder,
+            Kind = CodeMethodKind.CommandBuilder,
             ReturnType = new CodeType {
                 Name = "Command",
                 IsExternal = true
@@ -33,13 +33,13 @@ public class ShellRefinerTests {
     public void CreatesCommandBuilders() {
         var requestBuilder = root.AddClass(new CodeClass {
             Name = "somerequestbuilder",
-            ClassKind = CodeClassKind.RequestBuilder,
+            Kind = CodeClassKind.RequestBuilder,
         }).First();
         var subNS = root.AddNamespace($"{root.Name}.subns"); // otherwise the import gets trimmed
         // Add nav props
         requestBuilder.AddProperty(new CodeProperty {
             Name = "User",
-            PropertyKind = CodePropertyKind.RequestBuilder
+            Kind = CodePropertyKind.RequestBuilder
         });
 
         // Add indexer
@@ -56,14 +56,14 @@ public class ShellRefinerTests {
             ReturnType = new CodeType {
                 Name = "User"
             },
-            MethodKind = CodeMethodKind.RequestExecutor,
+            Kind = CodeMethodKind.RequestExecutor,
             HttpMethod = HttpMethod.Get
         });
 
         // Add client constructor
         requestBuilder.AddMethod(new CodeMethod {
             Name = "constructor",
-            MethodKind = CodeMethodKind.ClientConstructor,
+            Kind = CodeMethodKind.ClientConstructor,
             ReturnType = new CodeType {
                 Name = "void"
             },

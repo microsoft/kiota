@@ -648,7 +648,7 @@ public class KiotaBuilder
                 Name = x.Name.TrimStart('$').SanitizePathParameterName(),
                 Type = GetQueryParameterType(x.Schema),
                 Description = x.Description,
-                ParameterKind = x.In == ParameterLocation.Path ? CodeParameterKind.Path : CodeParameterKind.QueryParameter,
+                Kind = x.In == ParameterLocation.Path ? CodeParameterKind.Path : CodeParameterKind.QueryParameter,
                 Optional = !x.Required
             })
             .Union(operation
@@ -659,7 +659,7 @@ public class KiotaBuilder
                         Name = x.Name.TrimStart('$').SanitizePathParameterName(),
                         Type = GetQueryParameterType(x.Schema),
                         Description = x.Description,
-                        ParameterKind = x.In == ParameterLocation.Path ? CodeParameterKind.Path : CodeParameterKind.QueryParameter,
+                        Kind = x.In == ParameterLocation.Path ? CodeParameterKind.Path : CodeParameterKind.QueryParameter,
                         Optional = !x.Required
                     }))
             .ToArray();
@@ -903,7 +903,7 @@ public class KiotaBuilder
         }
         var className = currentNode.GetClassName(schema: discriminatorSchema);
         var shouldInherit = discriminatorSchema.AllOf.Any(x => currentSchema.Reference.Id.Equals(x.Reference?.Id, StringComparison.OrdinalIgnoreCase));
-        var codeClass = AddModelDeclarationIfDoesntExit(currentNode, discriminatorSchema, className, currentNamespace, shouldInherit ? currentClass : null);
+        var codeClass = AddModelDeclarationIfDoesntExist(currentNode, discriminatorSchema, className, currentNamespace, shouldInherit ? currentClass : null);
         return new CodeType {
             Name = codeClass.Name,
             TypeDefinition = codeClass,

@@ -69,7 +69,7 @@ namespace Kiota.Builder.Refiners
                         Name = "BuildRootCommand",
                         Description = clientConstructor.Description,
                         IsAsync = false,
-                        MethodKind = CodeMethodKind.CommandBuilder,
+                        Kind = CodeMethodKind.CommandBuilder,
                         ReturnType = new CodeType { Name = "Command", IsExternal = true },
                         OriginalMethod = clientConstructor,
                     };
@@ -95,7 +95,7 @@ namespace Kiota.Builder.Refiners
                 clone.Name = $"Build{cmdName}Command";
                 clone.Description = requestMethod.Description;
                 clone.ReturnType = CreateCommandType();
-                clone.MethodKind = CodeMethodKind.CommandBuilder;
+                clone.Kind = CodeMethodKind.CommandBuilder;
                 clone.OriginalMethod = requestMethod;
                 clone.SimpleName = cmdName;
                 clone.ClearParameters();
@@ -112,7 +112,7 @@ namespace Kiota.Builder.Refiners
                 {
                     Name = "BuildCommand",
                     IsAsync = false,
-                    MethodKind = CodeMethodKind.CommandBuilder,
+                    Kind = CodeMethodKind.CommandBuilder,
                     OriginalIndexer = indexer
                 };
 
@@ -139,7 +139,7 @@ namespace Kiota.Builder.Refiners
             {
                 IsAsync = false,
                 Name = $"Build{navProperty.Name.ToFirstCharacterUpperCase()}Command",
-                MethodKind = CodeMethodKind.CommandBuilder
+                Kind = CodeMethodKind.CommandBuilder
             };
             codeMethod.ReturnType = CreateCommandType();
             codeMethod.AccessedProperty = navProperty;
