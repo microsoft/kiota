@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -697,7 +697,7 @@ public class KiotaBuilder
     }
     private CodeType CreateModelDeclarationAndType(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeNamespace codeNamespace, string classNameSuffix = "", OpenApiResponse response = default) {
         var className = currentNode.GetClassName(operation: operation, suffix: classNameSuffix, response: response, schema: schema);
-        var codeDeclaration = AddModelDeclarationIfDoesntExit(currentNode, schema, className, codeNamespace);
+        var codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, schema, className, codeNamespace);
         return new CodeType {
             TypeDefinition = codeDeclaration,
             Name = className,
@@ -714,7 +714,7 @@ public class KiotaBuilder
             if(shortestNamespace == null)
                 shortestNamespace = rootNamespace.AddNamespace(shortestNamespaceName);
             className = currentSchema.GetSchemaTitle() ?? currentNode.GetClassName(operation: operation, schema: schema);
-            codeDeclaration = AddModelDeclarationIfDoesntExit(currentNode, currentSchema, className, shortestNamespace, codeDeclaration as CodeClass, true);
+            codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, currentSchema, className, shortestNamespace, codeDeclaration as CodeClass, !currentSchema.IsReferencedSchema());
         }
 
         return new CodeType {
@@ -749,7 +749,7 @@ public class KiotaBuilder
             if(shortestNamespace == null)
                 shortestNamespace = rootNamespace.AddNamespace(shortestNamespaceName);
             var className = currentSchema.GetSchemaTitle();
-            var codeDeclaration = AddModelDeclarationIfDoesntExit(currentNode, currentSchema, className, shortestNamespace);
+            var codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, currentSchema, className, shortestNamespace);
             unionType.AddType(new CodeType {
                 TypeDefinition = codeDeclaration,
                 Name = className,
@@ -774,8 +774,11 @@ public class KiotaBuilder
         } else if (schema.IsArray()) {
             // collections at root
             var type = GetPrimitiveType(schema?.Items, string.Empty);
-            if(type == null)
-                type = CreateModelDeclarationAndType(currentNode, schema?.Items, operation, codeNamespace);
+            if (type == null)
+            {
+                var targetNamespace = schema?.Items == null ? codeNamespace : GetShortestNamespace(codeNamespace, schema.Items);
+                type = CreateModelDeclarationAndType(currentNode, schema?.Items, operation, targetNamespace);
+            }
             type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
             return type;
         } else if(!string.IsNullOrEmpty(schema.Type))
@@ -791,7 +794,7 @@ public class KiotaBuilder
         else if (currentNode.DoesNodeBelongToItemSubnamespace()) return currentNamespace.EnsureItemNamespace();
         else return currentNamespace;
     }
-    private CodeElement AddModelDeclarationIfDoesntExit(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeClass inheritsFrom = null, bool checkInAllNamespaces = false) {
+    private CodeElement AddModelDeclarationIfDoesntExist(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeClass inheritsFrom = null, bool checkInAllNamespaces = false) {
         var existingDeclaration = GetExistingDeclaration(checkInAllNamespaces, currentNamespace, currentNode, declarationName);
         if(existingDeclaration == null) // we can find it in the components
         {
@@ -820,7 +823,7 @@ public class KiotaBuilder
             var parentSchema = referencedAllOfs.FirstOrDefault();
             if(parentSchema != null) {
                 var parentClassNamespace = GetShortestNamespace(currentNamespace, parentSchema);
-                inheritsFrom = AddModelDeclarationIfDoesntExit(currentNode, parentSchema, parentSchema.GetSchemaTitle(), parentClassNamespace, null, true) as CodeClass;
+                inheritsFrom = AddModelDeclarationIfDoesntExist(currentNode, parentSchema, parentSchema.GetSchemaTitle(), parentClassNamespace, null, !parentSchema.IsReferencedSchema()) as CodeClass;
             }
         }
         var newClass = currentNamespace.AddClass(new CodeClass {
@@ -851,7 +854,7 @@ public class KiotaBuilder
                                         var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertyDefinitionSchema.Reference?.Id);
                                         var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns : 
                                                                 (rootNamespace.FindNamespaceByName(shortestNamespaceName) ?? rootNamespace.AddNamespace(shortestNamespaceName));
-                                        definition = AddModelDeclarationIfDoesntExit(currentNode, propertyDefinitionSchema, className, targetNamespace, null, true);
+                                        definition = AddModelDeclarationIfDoesntExist(currentNode, propertyDefinitionSchema, className, targetNamespace, null, !propertyDefinitionSchema.IsReferencedSchema());
                                     }
                                     return CreateProperty(x.Key, className ?? x.Value.Type, typeSchema: x.Value, typeDefinition: definition);
                                 })
