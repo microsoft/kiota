@@ -131,6 +131,7 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
             requestInfo.Content?.Dispose();
             if(responseHandler == null)
             {
+                await ThrowFailedResponse(response, errorMapping);
                 var modelType = typeof(ModelType);
                 if(modelType == typeof(Stream))
                 {
@@ -138,7 +139,6 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
                 }
                 else
                 {
-                    await ThrowFailedResponse(response, errorMapping);
                     var rootNode = await GetRootParseNode(response);
                     object result;
                     if(modelType == typeof(bool))
@@ -187,10 +187,12 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
         public async Task SendNoContentAsync(RequestInformation requestInfo, IResponseHandler responseHandler = null, Dictionary<string, Func<IParsable>> errorMapping = default, CancellationToken cancellationToken = default)
         {
             var response = await GetHttpResponseMessage(requestInfo, cancellationToken);
-            await ThrowFailedResponse(response, errorMapping);
             requestInfo.Content?.Dispose();
             if(responseHandler == null)
+            {
+                await ThrowFailedResponse(response, errorMapping);
                 response.Dispose();
+            }
             else
                 await responseHandler.HandleResponseAsync<HttpResponseMessage, object>(response, errorMapping);
         }
