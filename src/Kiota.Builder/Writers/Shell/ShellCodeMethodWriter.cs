@@ -317,7 +317,8 @@ namespace Kiota.Builder.Writers.Shell
                                                 .Methods
                                                 .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod);
             var requestBodyParam = requestParams.requestBody;
-            if (requestBodyParam != null) {
+            if (requestBodyParam != null)
+            {
                 var requestBodyParamType = requestBodyParam?.Type as CodeType;
                 if (requestBodyParamType?.TypeDefinition is CodeClass)
                 {
@@ -329,23 +330,38 @@ namespace Kiota.Builder.Writers.Shell
                     if (requestBodyParamType.IsCollection)
                     {
                         writer.WriteLine($"var model = parseNode.GetCollectionOfObjectValues<{typeString}>();");
-                    } else
+                    }
+                    else
                     {
                         writer.WriteLine($"var model = parseNode.GetObjectValue<{typeString}>();");
                     }
 
                     requestBodyParam.Name = "model";
-                } else if (conventions.StreamTypeName.Equals(requestBodyParamType?.Name, StringComparison.OrdinalIgnoreCase))
+                }
+                else if (conventions.StreamTypeName.Equals(requestBodyParamType?.Name, StringComparison.OrdinalIgnoreCase))
                 {
                     var name = requestBodyParam.Name;
                     requestBodyParam.Name = "stream";
                     writer.WriteLine($"using var {requestBodyParam.Name} = {name}.OpenRead();");
                 }
             }
-            
+
             var parametersList = new CodeParameter[] { requestParams.requestBody, requestParams.queryString, requestParams.headers, requestParams.options }
                                 .Select(x => x?.Name).Where(x => x != null).DefaultIfEmpty().Aggregate((x, y) => $"{x}, {y}");
             var separator = string.IsNullOrWhiteSpace(parametersList) ? "" : ", ";
+            WriteRequestInformation(writer, generatorMethod, parametersList, separator);
+
+            var requestMethod = "SendPrimitiveAsync<Stream>";
+            if (isVoid)
+            {
+                requestMethod = "SendNoContentAsync";
+            }
+
+            writer.WriteLine($"{(isVoid ? string.Empty : "var response = ")}await RequestAdapter.{requestMethod}(requestInfo);");
+        }
+
+        private static void WriteRequestInformation(LanguageWriter writer, CodeMethod generatorMethod, string parametersList, string separator)
+        {
             writer.WriteLine($"var requestInfo = {generatorMethod?.Name}({parametersList}{separator}q => {{");
             if (generatorMethod?.PathAndQueryParameters != null)
             {
@@ -376,14 +392,6 @@ namespace Kiota.Builder.Writers.Shell
             {
                 writer.WriteLine("});");
             }
-
-            var requestMethod = "SendPrimitiveAsync<Stream>";
-            if (isVoid)
-            {
-                requestMethod = "SendNoContentAsync";
-            }
-
-            writer.WriteLine($"{(isVoid ? string.Empty : "var response = ")}await RequestAdapter.{requestMethod}(requestInfo);");
         }
 
         /// <summary>

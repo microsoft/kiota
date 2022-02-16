@@ -54,45 +54,11 @@ namespace Kiota.Builder.Refiners
                 // Build command for indexers
                 var indexers = currentClass.GetChildElements().OfType<CodeIndexer>();
                 var classHasIndexers = indexers.Any();
-                foreach (var indexer in indexers)
-                {
-                    var method = new CodeMethod
-                    {
-                        Name = "BuildCommand",
-                        IsAsync = false,
-                        MethodKind = CodeMethodKind.CommandBuilder,
-                        OriginalIndexer = indexer
-                    };
-
-                    // ReturnType setter assigns the parent
-                    method.ReturnType = CreateCommandType();
-                    method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
-                    currentClass.AddMethod(method);
-                    currentClass.RemoveChildElement(indexer);
-                }
+                CreateCommandBuildersFromIndexers(currentClass, indexers);
 
                 // Clone executors & convert to build command
-                var requestMethods = currentClass.GetChildElements().OfType<CodeMethod>().Where(e => e.IsOfKind(CodeMethodKind.RequestExecutor));
-                foreach (var requestMethod in requestMethods)
-                {
-                    CodeMethod clone = requestMethod.Clone() as CodeMethod;
-                    var cmdName = clone.HttpMethod switch {
-                        HttpMethod.Get when classHasIndexers =>"List",
-                        HttpMethod.Post when classHasIndexers => "Create",
-                        _ => clone.Name,
-                    };
-
-                    clone.IsAsync = false;
-                    clone.Name = $"Build{cmdName}Command";
-                    clone.Description = requestMethod.Description;
-                    clone.ReturnType = CreateCommandType();
-                    clone.MethodKind = CodeMethodKind.CommandBuilder;
-                    clone.OriginalMethod = requestMethod;
-                    clone.SimpleName = cmdName;
-                    clone.ClearParameters();
-                    currentClass.AddMethod(clone);
-                    currentClass.RemoveChildElement(requestMethod);
-                }
+                var requestExecutors = currentClass.GetChildElements().OfType<CodeMethod>().Where(e => e.IsOfKind(CodeMethodKind.RequestExecutor));
+                CreateCommandBuildersFromRequestExecutors(currentClass, classHasIndexers, requestExecutors);
 
                 // Build root command
                 var clientConstructor = currentClass.GetChildElements().OfType<CodeMethod>().FirstOrDefault(m => m.MethodKind == CodeMethodKind.ClientConstructor);
@@ -111,6 +77,51 @@ namespace Kiota.Builder.Refiners
                 }
             }
             CrawlTree(currentElement, CreateCommandBuilders);
+        }
+
+        private static void CreateCommandBuildersFromRequestExecutors(CodeClass currentClass, bool classHasIndexers, IEnumerable<CodeMethod> requestMethods)
+        {
+            foreach (var requestMethod in requestMethods)
+            {
+                CodeMethod clone = requestMethod.Clone() as CodeMethod;
+                var cmdName = clone.HttpMethod switch
+                {
+                    HttpMethod.Get when classHasIndexers => "List",
+                    HttpMethod.Post when classHasIndexers => "Create",
+                    _ => clone.Name,
+                };
+
+                clone.IsAsync = false;
+                clone.Name = $"Build{cmdName}Command";
+                clone.Description = requestMethod.Description;
+                clone.ReturnType = CreateCommandType();
+                clone.MethodKind = CodeMethodKind.CommandBuilder;
+                clone.OriginalMethod = requestMethod;
+                clone.SimpleName = cmdName;
+                clone.ClearParameters();
+                currentClass.AddMethod(clone);
+                currentClass.RemoveChildElement(requestMethod);
+            }
+        }
+
+        private static void CreateCommandBuildersFromIndexers(CodeClass currentClass, IEnumerable<CodeIndexer> indexers)
+        {
+            foreach (var indexer in indexers)
+            {
+                var method = new CodeMethod
+                {
+                    Name = "BuildCommand",
+                    IsAsync = false,
+                    MethodKind = CodeMethodKind.CommandBuilder,
+                    OriginalIndexer = indexer
+                };
+
+                // ReturnType setter assigns the parent
+                method.ReturnType = CreateCommandType();
+                method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
+                currentClass.AddMethod(method);
+                currentClass.RemoveChildElement(indexer);
+            }
         }
 
         private static CodeType CreateCommandType()
