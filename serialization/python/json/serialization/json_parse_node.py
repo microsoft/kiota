@@ -222,7 +222,7 @@ class JsonParseNode(ParseNode, Generic[T, U]):
         base64_string = self.get_string_value()
         if not base64_string:
             return None
-        base64_bytes = base64_string.encode("ascii")
+        base64_bytes = base64_string.encode("utf-8")
         return base64.b64decode(base64_bytes)
 
     def get_on_before_assign_field_values(self) -> Optional[Callable[[Parsable], None]]:

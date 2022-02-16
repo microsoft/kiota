@@ -1,7 +1,7 @@
 import json
 from io import BytesIO
 
-from kiota.abstractions import ParseNode, ParseNodeFactory
+from kiota.abstractions.serialization import ParseNode, ParseNodeFactory
 
 from .json_parse_node import JsonParseNode
 
@@ -9,6 +9,7 @@ from .json_parse_node import JsonParseNode
 class JsonParseNodeFactory(ParseNodeFactory):
     """Factory that is used to create JsonParseNodes.
     """
+
     def get_valid_content_type(self) -> str:
         """Returns the content type this factory's parse nodes can deserialize
         Returns:
@@ -16,12 +17,11 @@ class JsonParseNodeFactory(ParseNodeFactory):
         """
         return 'application/json'
 
-    def get_root_parse_node(self, content_type: str,
-                            content: BytesIO) -> ParseNode:
+    def get_root_parse_node(self, content_type: str, content: bytes) -> ParseNode:
         """Creates a ParseNode from the given binary stream and content type
         Args:
             content_type (str): The content type of the binary stream
-            content (BytesIO): The array buffer to read from
+            content (bytes): The array buffer to read from
         Returns:
             ParseNode: A ParseNode that can deserialize the given binary stream
         """
@@ -34,6 +34,6 @@ class JsonParseNodeFactory(ParseNodeFactory):
         if not content:
             raise TypeError("Content cannot be null")
 
-        content_as_str = content.decode()
+        content_as_str = content.decode('utf-8')
         content_as_json = json.loads(content_as_str)
         return JsonParseNode(content_as_json)
