@@ -23,7 +23,9 @@
         "php": "^7.4 | ^8.0",
         "league/oauth2-client": "^2.6.1",
         "php-http/promise": "^1.1.0",
-        "microsoft/kiota-abstractions": "@dev"
+        "microsoft/kiota-abstractions": "@dev",
+        "firebase/php-jwt": "^v6.0.0",
+        "ramsey/uuid": "^4.2.3"
     },
 	"require-dev": {
 		"phpunit/phpunit": "^9.5.13",

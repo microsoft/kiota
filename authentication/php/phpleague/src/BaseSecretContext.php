@@ -9,61 +9,43 @@
 namespace Microsoft\Kiota\Authentication;
 
 /**
- * Class ResourceOwnerPasswordCredentialSecretContext
+ * Class BaseSecretContext
  *
- * Params for the Resource Owner Password Credentials flow
+ * Defines common functionality for all secret-based auth flows
  *
  * @package Microsoft\Kiota\Authentication
  * @copyright 2022 Microsoft Corporation
  * @license https://opensource.org/licenses/MIT MIT License
  * @link https://developer.microsoft.com/graph
  */
-class ResourceOwnerPasswordCredentialSecretContext implements TokenRequestContext
+class BaseSecretContext implements TokenRequestContext
 {
     /**
-     * @var string
+     * @var string Tenant Id
      */
     private string $tenantId;
     /**
-     * @var string
+     * @var string Client Id
      */
     private string $clientId;
     /**
-     * @var string
+     * @var string Client Secret
      */
     private string $clientSecret;
-    /**
-     * @var string
-     */
-    private string $username;
-    /**
-     * @var string
-     */
-    private string $password;
-    /**
-     * @var array
-     */
-    private array $additionalParams;
 
     /**
      * @param string $tenantId
      * @param string $clientId
      * @param string $clientSecret
-     * @param string $username
-     * @param string $password
-     * @param array $additionalParams
      */
-    public function __construct(string $tenantId, string $clientId, string $clientSecret, string $username, string $password, array $additionalParams = [])
+    public function __construct(string $tenantId, string $clientId, string $clientSecret)
     {
-        if (!$tenantId || !$clientId || !$clientSecret || !$username || !$password) {
-            throw new \InvalidArgumentException("Params cannot be empty");
+        if (!$tenantId || !$clientId || !$clientSecret) {
+            throw new \InvalidArgumentException("TenantId, clientId and clientSecret cannot be empty");
         }
         $this->tenantId = $tenantId;
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
-        $this->username = $username;
-        $this->password = $password;
-        $this->additionalParams = $additionalParams;
     }
 
     /**
@@ -71,18 +53,12 @@ class ResourceOwnerPasswordCredentialSecretContext implements TokenRequestContex
      */
     public function getParams(): array
     {
-        return array_merge($this->additionalParams, [
+        return [
             'client_id' => $this->clientId,
-            'client_secret' => $this->clientSecret,
-            'username' => $this->username,
-            'password' => $this->password,
-            'grant_type' => $this->getGrantType()
-        ]);
+            'client_secret' => $this->clientSecret
+        ];
     }
 
-    /**
-     * @inheritDoc
-     */
     public function getRefreshTokenParams(string $refreshToken): array
     {
         return [
@@ -93,17 +69,11 @@ class ResourceOwnerPasswordCredentialSecretContext implements TokenRequestContex
         ];
     }
 
-    /**
-     * @inheritDoc
-     */
     public function getGrantType(): string
     {
-        return 'password';
+        return '';
     }
 
-    /**
-     * @inheritDoc
-     */
     public function getTenantId(): string
     {
         return $this->tenantId;

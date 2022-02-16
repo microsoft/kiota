@@ -9,29 +9,17 @@
 namespace Microsoft\Kiota\Authentication;
 
 /**
- * Class OnBehalfOfSecretContext
+ * Class OnBehalfOfContext
  *
- * Token request parameters for the on_behalf_of flow
+ * Token request parameters for the on_behalf_of flow using a secret
  *
  * @package Microsoft\Kiota\Authentication
  * @copyright 2022 Microsoft Corporation
  * @license https://opensource.org/licenses/MIT MIT License
  * @link https://developer.microsoft.com/graph
  */
-class OnBehalfOfSecretContext implements TokenRequestContext
+class OnBehalfOfContext extends BaseSecretContext
 {
-    /**
-     * @var string
-     */
-    private string $tenantId;
-    /**
-     * @var string
-     */
-    private string $clientId;
-    /**
-     * @var string
-     */
-    private string $clientSecret;
     /**
      * @var string
      */
@@ -50,14 +38,12 @@ class OnBehalfOfSecretContext implements TokenRequestContext
      */
     public function __construct(string $tenantId, string $clientId, string $clientSecret, string $assertion, array $additionalParams = [])
     {
-        if (!$tenantId || !$clientId || !$clientSecret || !$assertion) {
-            throw new \InvalidArgumentException("Params cannot be empty");
+        if (!$assertion) {
+            throw new \InvalidArgumentException("Assertion cannot be empty");
         }
-        $this->tenantId = $tenantId;
-        $this->clientId = $clientId;
-        $this->clientSecret = $clientSecret;
         $this->assertion = $assertion;
         $this->additionalParams = $additionalParams;
+        parent::__construct($tenantId, $clientId, $clientSecret);
     }
 
     /**
@@ -65,9 +51,7 @@ class OnBehalfOfSecretContext implements TokenRequestContext
      */
     public function getParams(): array
     {
-        return array_merge($this->additionalParams, [
-            'client_id' => $this->clientId,
-            'client_secret' => $this->clientSecret,
+        return array_merge($this->additionalParams, parent::getParams(), [
             'assertion' => $this->assertion,
             'grant_type' => $this->getGrantType(),
             'requested_token_use' => 'on_behalf_of'
@@ -77,29 +61,8 @@ class OnBehalfOfSecretContext implements TokenRequestContext
     /**
      * @inheritDoc
      */
-    public function getRefreshTokenParams(string $refreshToken): array
-    {
-        return [
-            'client_id' => $this->clientId,
-            'client_secret' => $this->clientSecret,
-            'refresh_token' => $refreshToken,
-            'grant_type' => 'refresh_token'
-        ];
-    }
-
-    /**
-     * @inheritDoc
-     */
     public function getGrantType(): string
     {
         return 'urn:ietf:params:oauth:grant-type:jwt-bearer';
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getTenantId(): string
-    {
-        return $this->tenantId;
     }
 }

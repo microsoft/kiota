@@ -9,7 +9,7 @@
 namespace Microsoft\Kiota\Authentication;
 
 /**
- * Class AuthorizationCodeSecretContext
+ * Class AuthorizationCodeContext
  *
  * Request params for the token request of the authorization_code flow using a secret
  *
@@ -18,20 +18,8 @@ namespace Microsoft\Kiota\Authentication;
  * @license https://opensource.org/licenses/MIT MIT License
  * @link https://developer.microsoft.com/graph
  */
-class AuthorizationCodeSecretContext implements TokenRequestContext
+class AuthorizationCodeContext extends BaseSecretContext
 {
-    /**
-     * @var string Tenant Id
-     */
-    private string $tenantId;
-    /**
-     * @var string Client Id
-     */
-    private string $clientId;
-    /**
-     * @var string Client Secret
-     */
-    private string $clientSecret;
     /**
      * @var string Code from the authorization step
      */
@@ -55,15 +43,13 @@ class AuthorizationCodeSecretContext implements TokenRequestContext
      */
     public function __construct(string $tenantId, string $clientId, string $clientSecret, string $authCode, string $redirectUri, array $additionalParams = [])
     {
-        if (!$tenantId || !$clientId || !$clientSecret || !$authCode || !$redirectUri) {
-            throw new \InvalidArgumentException("Params cannot be empty");
+        if (!$authCode || !$redirectUri) {
+            throw new \InvalidArgumentException("Auth code and redirectUri cannot be empty");
         }
-        $this->tenantId = $tenantId;
-        $this->clientId = $clientId;
-        $this->clientSecret = $clientSecret;
         $this->authCode = $authCode;
         $this->redirectUri = $redirectUri;
         $this->additionalParams = $additionalParams;
+        parent::__construct($tenantId, $clientId, $clientSecret);
     }
 
     /**
@@ -71,9 +57,7 @@ class AuthorizationCodeSecretContext implements TokenRequestContext
      */
     public function getParams(): array
     {
-        return array_merge($this->additionalParams, [
-            'client_id' => $this->clientId,
-            'client_secret' => $this->clientSecret,
+        return array_merge($this->additionalParams, parent::getParams(), [
             'code' => $this->authCode,
             'redirect_uri' => $this->redirectUri,
             'grant_type' => $this->getGrantType()
@@ -83,29 +67,8 @@ class AuthorizationCodeSecretContext implements TokenRequestContext
     /**
      * @inheritDoc
      */
-    public function getRefreshTokenParams(string $refreshToken): array
-    {
-        return [
-            'client_id' => $this->clientId,
-            'client_secret' => $this->clientSecret,
-            'refresh_token' => $refreshToken,
-            'grant_type' => 'refresh_token'
-        ];
-    }
-
-    /**
-     * @inheritDoc
-     */
     public function getGrantType(): string
     {
         return 'authorization_code';
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getTenantId(): string
-    {
-        return $this->tenantId;
     }
 }

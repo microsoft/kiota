@@ -9,29 +9,17 @@
 namespace Microsoft\Kiota\Authentication;
 
 /**
- * Class ClientCredentialSecretContext
+ * Class ClientCredentialContext
  *
- * Parameters for the Client Credentials OAuth 2.0 flow
+ * Parameters for the client_credentials OAuth 2.0 flow using a secret
  *
  * @package Microsoft\Kiota\Authentication
  * @copyright 2022 Microsoft Corporation
  * @license https://opensource.org/licenses/MIT MIT License
  * @link https://developer.microsoft.com/graph
  */
-class ClientCredentialSecretContext implements TokenRequestContext
+class ClientCredentialContext extends BaseSecretContext
 {
-    /**
-     * @var string Tenant Id
-     */
-    private string $tenantId;
-    /**
-     * @var string Client Id
-     */
-    private string $clientId;
-    /**
-     * @var string Client Secret
-     */
-    private string $clientSecret;
     /**
      * @var array<string, string> Key-value pairs of additional OAuth 2.0 parameters
      */
@@ -46,13 +34,8 @@ class ClientCredentialSecretContext implements TokenRequestContext
      */
     public function __construct(string $tenantId, string $clientId, string $clientSecret, array $additionalParams = [])
     {
-        if (!$tenantId || !$clientId || !$clientSecret) {
-            throw new \InvalidArgumentException("Params cannot be empty");
-        }
-        $this->tenantId = $tenantId;
-        $this->clientId = $clientId;
-        $this->clientSecret = $clientSecret;
         $this->additionalParams = $additionalParams;
+        parent::__construct($tenantId, $clientId, $clientSecret);
     }
 
     /**
@@ -62,24 +45,8 @@ class ClientCredentialSecretContext implements TokenRequestContext
      */
     public function getParams(): array
     {
-        return array_merge($this->additionalParams, [
-            'client_id' => $this->clientId,
-            'client_secret' => $this->clientSecret,
+        return array_merge($this->additionalParams, parent::getParams(), [
             'grant_type' => $this->getGrantType(),
-        ]);
-    }
-
-    /**
-     * Request body parameters for a refresh token request
-     *
-     * @param string $refreshToken
-     * @return array<string, string>
-     */
-    public function getRefreshTokenParams(string $refreshToken): array
-    {
-        return array_merge($this->getParams(), [
-            'refresh_token' => $refreshToken,
-            'grant_type' => 'refresh_token'
         ]);
     }
 
@@ -90,14 +57,5 @@ class ClientCredentialSecretContext implements TokenRequestContext
     public function getGrantType(): string
     {
         return 'client_credentials';
-    }
-
-    /**
-     * Returns the tenant Id
-     * @return string
-     */
-    public function getTenantId(): string
-    {
-        return $this->tenantId;
     }
 }

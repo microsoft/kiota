@@ -6,7 +6,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
-use Microsoft\Kiota\Authentication\ClientCredentialSecretContext;
+use Microsoft\Kiota\Authentication\ClientCredentialContext;
 use Microsoft\Kiota\Authentication\PhpLeagueAccessTokenProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -15,12 +15,12 @@ class PhpLeagueAccessTokenProviderTest extends TestCase
     public function testPassingEmptyScopesThrowsException(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $tokenProvider = new PhpLeagueAccessTokenProvider(new ClientCredentialSecretContext('', '', ''), []);
+        $tokenProvider = new PhpLeagueAccessTokenProvider(new ClientCredentialContext('', '', ''), []);
     }
 
     public function testClientCredentialsSecretFlow(): void
     {
-        $requestContext = new ClientCredentialSecretContext('tenantId', 'clientId', 'clientSecret');
+        $requestContext = new ClientCredentialContext('tenantId', 'clientId', 'clientSecret');
         $tokenProvider = new PhpLeagueAccessTokenProvider($requestContext, ['https://graph.microsoft.com/.default']);
         $mockResponses = [
             function (Request $request) {
@@ -43,7 +43,7 @@ class PhpLeagueAccessTokenProviderTest extends TestCase
 
     public function testGetAuthorizationCodeCachesInMemory(): void
     {
-        $requestContext = new ClientCredentialSecretContext('tenantId', 'clientId', 'clientSecret');
+        $requestContext = new ClientCredentialContext('tenantId', 'clientId', 'clientSecret');
         $tokenProvider = new PhpLeagueAccessTokenProvider($requestContext, ['https://graph.microsoft.com/.default']);
         $mockResponses = [
             new Response(200, [], json_encode(['access_token' => 'abc', 'expires_in' => 5])),
@@ -57,7 +57,7 @@ class PhpLeagueAccessTokenProviderTest extends TestCase
 
     public function testGetAuthorizationCodeRefreshesTokenIfExpired(): void
     {
-        $requestContext = new ClientCredentialSecretContext('tenantId', 'clientId', 'clientSecret');
+        $requestContext = new ClientCredentialContext('tenantId', 'clientId', 'clientSecret');
         $tokenProvider = new PhpLeagueAccessTokenProvider($requestContext, ['https://graph.microsoft.com/.default']);
         $mockResponses = [
             new Response(200, [], json_encode(['access_token' => 'abc', 'expires_in' => 1, 'refresh_token' => 'refresh'])),
@@ -77,7 +77,7 @@ class PhpLeagueAccessTokenProviderTest extends TestCase
 
     public function testGetAuthorizationCodeFetchesNewTokenIfNoRefreshTokenExists(): void
     {
-        $requestContext = new ClientCredentialSecretContext('tenantId', 'clientId', 'clientSecret');
+        $requestContext = new ClientCredentialContext('tenantId', 'clientId', 'clientSecret');
         $tokenProvider = new PhpLeagueAccessTokenProvider($requestContext, ['https://graph.microsoft.com/.default']);
         $mockResponses = [
             new Response(200, [], json_encode(['access_token' => 'abc', 'expires_in' => 1])),
