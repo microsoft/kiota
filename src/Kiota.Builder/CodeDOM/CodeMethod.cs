@@ -20,6 +20,7 @@ public enum CodeMethodKind
     RequestBuilderWithParameters,
     RawUrlConstructor,
     NullCheck,
+    CommandBuilder,
 }
 public enum HttpMethod {
     Get,
@@ -48,6 +49,11 @@ public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
     public void RemoveParametersByKind(params CodeParameterKind[] kinds) {
         parameters.RemoveAll(p => p.IsOfKind(kinds));
     }
+
+    public void ClearParameters()
+    {
+        parameters.Clear();
+    }
     public IEnumerable<CodeParameter> Parameters { get => parameters; }
     public bool IsStatic {get;set;} = false;
     public bool IsAsync {get;set;} = true;
@@ -55,7 +61,28 @@ public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
     /// <summary>
     /// The property this method accesses to when it's a getter or setter.
     /// </summary>
-    public CodeProperty AccessedProperty { get; set; }
+    public CodeProperty AccessedProperty { get; set;
+    }
+    /// <summary>
+    /// The combination of the path and query parameters for the current URL.
+    /// Only use this property if the language you are generating for doesn't support fluent API style (e.g. Shell/CLI)
+    /// </summary>
+    public IEnumerable<CodeParameter> PathAndQueryParameters
+    {
+        get; private set;
+    }
+    public void AddPathOrQueryParameter(params CodeParameter[] parameters)
+    {
+        if (parameters == null || !parameters.Any()) return;
+        foreach (var parameter in parameters)
+        {
+            EnsureElementsAreChildren(parameter);
+        }
+        if (PathAndQueryParameters == null)
+            PathAndQueryParameters = new List<CodeParameter>(parameters);
+        else if (PathAndQueryParameters is List<CodeParameter> cast)
+            cast.AddRange(parameters);
+    }
     public bool IsOfKind(params CodeMethodKind[] kinds) {
         return kinds?.Contains(MethodKind) ?? false;
     }
@@ -83,7 +110,15 @@ public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
     /// The base url for every request read from the servers property on the description.
     /// Only provided for constructor on Api client
     /// </summary>
-    public string BaseUrl { get; set; }
+    public string BaseUrl { get; set;
+    }
+
+    /// <summary>
+    /// This is currently used for CommandBuilder methods to get the original name without the Build prefix & Command suffix.
+    /// Avoids regex operations
+    /// </summary>
+    public string SimpleName { get; set; } = String.Empty;
+
     /// <summary>
     /// Mapping of the error code and response types for this method.
     /// </summary>

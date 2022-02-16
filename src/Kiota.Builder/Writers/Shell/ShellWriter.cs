@@ -1,19 +1,24 @@
-﻿namespace Kiota.Builder.Writers.CSharp
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Kiota.Builder.Writers.CSharp;
+
+namespace Kiota.Builder.Writers.Shell
 {
-    public class CSharpWriter : LanguageWriter
+    class ShellWriter : CSharpWriter
     {
-        public CSharpWriter(string rootPath, string clientNamespaceName)
+        public ShellWriter(string rootPath, string clientNamespaceName) : base(rootPath, clientNamespaceName)
         {
-            PathSegmenter = new CSharpPathSegmenter(rootPath, clientNamespaceName);
             var conventionService = new CSharpConventionService();
             AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeClassEndWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeIndexerWriter(conventionService));
-            AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new ShellCodeMethodWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeTypeWriter(conventionService));
-
         }
     }
 }

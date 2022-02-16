@@ -109,3 +109,10 @@ updates:
   open-pull-requests-limit: 10
   labels:
     - TypeScript
+- package-ecosystem: nuget
+  directory: "/cli/commons"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  labels:
+    - CLI

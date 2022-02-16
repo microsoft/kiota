@@ -6,12 +6,12 @@ namespace Kiota.Builder.Writers.TypeScript
         {
             PathSegmenter = new TypeScriptPathSegmenter(rootPath,clientNamespaceName);
             var conventionService = new TypeScriptConventionService(null);
-            AddCodeElementWriter(new CodeClassDeclarationWriter(conventionService, clientNamespaceName));
-            AddCodeElementWriter(new CodeClassEndWriter());
-            AddCodeElementWriter(new CodeEnumWriter(conventionService));
-            AddCodeElementWriter(new CodeMethodWriter(conventionService));
-            AddCodeElementWriter(new CodePropertyWriter(conventionService));
-            AddCodeElementWriter(new CodeTypeWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService, clientNamespaceName));
+            AddOrReplaceCodeElementWriter(new CodeClassEndWriter());
+            AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeTypeWriter(conventionService));
         }
     }
 }

@@ -626,9 +626,39 @@ public class KiotaBuilder
             Description = operation.Description ?? operation.Summary,
             ReturnType = new CodeType { Name = "RequestInformation", IsNullable = false, IsExternal = true},
         };
+        if (config.Language == GenerationLanguage.Shell)
+            SetPathAndQueryParameters(generatorMethod, currentNode, operation);
         parentClass.AddMethod(generatorMethod);
         AddRequestBuilderMethodParameters(currentNode, operation, parameterClass, generatorMethod);
         logger.LogTrace("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
+    }
+    private static void SetPathAndQueryParameters(CodeMethod target, OpenApiUrlTreeNode currentNode, OpenApiOperation operation)
+    {
+        var pathAndQueryParameters = currentNode
+            .PathItems[Constants.DefaultOpenApiLabel]
+            .Parameters
+            .Where(x => x.In == ParameterLocation.Path || x.In == ParameterLocation.Query)
+            .Select(x => new CodeParameter
+            {
+                Name = x.Name.TrimStart('$').SanitizePathParameterName(),
+                Type = GetQueryParameterType(x.Schema),
+                Description = x.Description,
+                ParameterKind = x.In == ParameterLocation.Path ? CodeParameterKind.Path : CodeParameterKind.QueryParameter,
+                Optional = !x.Required
+            })
+            .Union(operation
+                    .Parameters
+                    .Where(x => x.In == ParameterLocation.Path || x.In == ParameterLocation.Query)
+                    .Select(x => new CodeParameter
+                    {
+                        Name = x.Name.TrimStart('$').SanitizePathParameterName(),
+                        Type = GetQueryParameterType(x.Schema),
+                        Description = x.Description,
+                        ParameterKind = x.In == ParameterLocation.Path ? CodeParameterKind.Path : CodeParameterKind.QueryParameter,
+                        Optional = !x.Required
+                    }))
+            .ToArray();
+        target.AddPathOrQueryParameter(pathAndQueryParameters);
     }
     private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeClass parameterClass, CodeMethod method) {
         var nonBinaryRequestBody = operation.RequestBody?.Content?.FirstOrDefault(x => !RequestBodyBinaryContentType.Equals(x.Key, StringComparison.OrdinalIgnoreCase));
@@ -982,6 +1012,13 @@ public class KiotaBuilder
             return parameterClass;
         } else return null;
     }
+    private static CodeType GetQueryParameterType(OpenApiSchema schema) =>
+        new()
+        {
+            IsExternal = true,
+            Name = schema.Items?.Type ?? schema.Type,
+            CollectionKind = schema.IsArray() ? CodeType.CodeTypeCollectionKind.Array : default,
+        };
 
     private static string FixQueryParameterIdentifier(OpenApiParameter parameter)
     {
