@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where request body would get dropped by the compression handler in Go
 - Fixed an issue where multiple api clients could run into racing conditions in Go.
 - Fixed a bug where empty additional data in Go would lead to invalid JSON payloads during serialization.
 - Fixed a bug where Go serialization would write empty arrays for nil values.
