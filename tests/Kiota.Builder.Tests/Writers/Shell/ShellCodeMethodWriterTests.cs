@@ -254,7 +254,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("command.AddOption(qOption);", result);
         Assert.Contains("command.AddOption(outputOption);", result);
         Assert.Contains("var requestInfo = CreateGetRequestInformation", result);
-        Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo);", result);
+        Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("return command;", result);
     }
 
@@ -301,7 +301,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("command.AddOption(bodyOption);", result);
         Assert.Contains("command.AddOption(outputOption);", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
-        Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo);", result);
+        Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("return command;", result);
     }
 
@@ -347,7 +347,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var fileOption = new Option<FileInfo>(\"--file\");", result);
         Assert.Contains("command.AddOption(fileOption);", result);
         Assert.Contains("var requestInfo = CreateGetRequestInformation", result);
-        Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo);", result);
+        Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("return command;", result);
     }
 
@@ -396,7 +396,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("bodyOption.IsRequired = true;", result);
         Assert.Contains("command.AddOption(bodyOption);", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
-        Assert.Contains("await RequestAdapter.SendNoContentAsync(requestInfo);", result);
+        Assert.Contains("await RequestAdapter.SendNoContentAsync(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("console.WriteLine(\"Success\");", result);
         Assert.Contains("return command;", result);
     }
