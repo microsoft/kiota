@@ -6,7 +6,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
-use Microsoft\Kiota\Authentication\ClientCredentialContext;
+use Microsoft\Kiota\Authentication\Oauth\ClientCredentialContext;
 use Microsoft\Kiota\Authentication\PhpLeagueAccessTokenProvider;
 use PHPUnit\Framework\TestCase;
 

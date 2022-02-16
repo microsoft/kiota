@@ -6,9 +6,7 @@
  */
 
 
-namespace Microsoft\Kiota\Authentication;
-
-use League\OAuth2\Client\Grant\AbstractGrant;
+namespace Microsoft\Kiota\Authentication\Oauth;
 
 /**
  * Interface TokenRequestContext

@@ -6,7 +6,7 @@
  */
 
 
-namespace Microsoft\Kiota\Authentication;
+namespace Microsoft\Kiota\Authentication\Oauth;
 
 
 use League\OAuth2\Client\Grant\AbstractGrant;
@@ -26,7 +26,7 @@ class OnBehalfOfGrant extends AbstractGrant
 
     protected function getName(): string
     {
-        return 'urn:ietf:params:oauth:grant-type:jwt-bearer';
+        return 'urn:ietf:params:Oauth:grant-type:jwt-bearer';
     }
 
     protected function getRequiredRequestParameters(): array

@@ -6,7 +6,7 @@
  */
 
 
-namespace Microsoft\Kiota\Authentication;
+namespace Microsoft\Kiota\Authentication\Oauth;
 
 /**
  * Class OnBehalfOfContext
@@ -63,6 +63,6 @@ class OnBehalfOfContext extends BaseSecretContext
      */
     public function getGrantType(): string
     {
-        return 'urn:ietf:params:oauth:grant-type:jwt-bearer';
+        return 'urn:ietf:params:Oauth:grant-type:jwt-bearer';
     }
 }

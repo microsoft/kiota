@@ -6,30 +6,30 @@
  */
 
 
-namespace Microsoft\Kiota\Authentication;
+namespace Microsoft\Kiota\Authentication\Oauth;
 
 /**
- * Class AuthorizationCodeContext
+ * Class UsernamePasswordContext
  *
- * Request params for the token request of the authorization_code flow using a secret
+ * Params for the Resource Owner Password Credentials flow using a secret
  *
  * @package Microsoft\Kiota\Authentication
  * @copyright 2022 Microsoft Corporation
  * @license https://opensource.org/licenses/MIT MIT License
  * @link https://developer.microsoft.com/graph
  */
-class AuthorizationCodeContext extends BaseSecretContext
+class UsernamePasswordContext extends BaseSecretContext
 {
     /**
-     * @var string Code from the authorization step
+     * @var string
      */
-    private string $authCode;
+    private string $username;
     /**
-     * @var string Same redirectUri used to acquire the authorization code
+     * @var string
      */
-    private string $redirectUri;
+    private string $password;
     /**
-     * @var array Extra params to add to the request
+     * @var array
      */
     private array $additionalParams;
 
@@ -37,17 +37,17 @@ class AuthorizationCodeContext extends BaseSecretContext
      * @param string $tenantId
      * @param string $clientId
      * @param string $clientSecret
-     * @param string $authCode
-     * @param string $redirectUri
+     * @param string $username
+     * @param string $password
      * @param array $additionalParams
      */
-    public function __construct(string $tenantId, string $clientId, string $clientSecret, string $authCode, string $redirectUri, array $additionalParams = [])
+    public function __construct(string $tenantId, string $clientId, string $clientSecret, string $username, string $password, array $additionalParams = [])
     {
-        if (!$authCode || !$redirectUri) {
-            throw new \InvalidArgumentException("Auth code and redirectUri cannot be empty");
+        if (!$username || !$password) {
+            throw new \InvalidArgumentException("Username and password cannot be empty");
         }
-        $this->authCode = $authCode;
-        $this->redirectUri = $redirectUri;
+        $this->username = $username;
+        $this->password = $password;
         $this->additionalParams = $additionalParams;
         parent::__construct($tenantId, $clientId, $clientSecret);
     }
@@ -58,8 +58,8 @@ class AuthorizationCodeContext extends BaseSecretContext
     public function getParams(): array
     {
         return array_merge($this->additionalParams, parent::getParams(), [
-            'code' => $this->authCode,
-            'redirect_uri' => $this->redirectUri,
+            'username' => $this->username,
+            'password' => $this->password,
             'grant_type' => $this->getGrantType()
         ]);
     }
@@ -69,6 +69,6 @@ class AuthorizationCodeContext extends BaseSecretContext
      */
     public function getGrantType(): string
     {
-        return 'authorization_code';
+        return 'password';
     }
 }

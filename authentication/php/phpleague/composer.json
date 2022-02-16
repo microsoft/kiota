@@ -25,7 +25,8 @@
         "php-http/promise": "^1.1.0",
         "microsoft/kiota-abstractions": "@dev",
         "firebase/php-jwt": "^v6.0.0",
-        "ramsey/uuid": "^4.2.3"
+        "ramsey/uuid": "^4.2.3",
+        "ext-openssl": "*"
     },
 	"require-dev": {
 		"phpunit/phpunit": "^9.5.13",

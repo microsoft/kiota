@@ -6,36 +6,33 @@
  */
 
 
-namespace Microsoft\Kiota\Authentication;
+namespace Microsoft\Kiota\Authentication\Oauth;
 
 /**
- * Class ClientCredentialContext
+ * Class ClientCredentialCertificateContext
  *
- * Parameters for the client_credentials OAuth 2.0 flow using a secret
+ * client_credentials flow using certificate
  *
- * @package Microsoft\Kiota\Authentication
+ * @package Microsoft\Kiota\Authentication\Oauth
  * @copyright 2022 Microsoft Corporation
  * @license https://opensource.org/licenses/MIT MIT License
  * @link https://developer.microsoft.com/graph
  */
-class ClientCredentialContext extends BaseSecretContext
+class ClientCredentialCertificateContext extends BaseCertificateContext
 {
-    /**
-     * @var array<string, string> Key-value pairs of additional OAuth 2.0 parameters
-     */
     private array $additionalParams;
 
     /**
-     * Creates a new instance
      * @param string $tenantId
      * @param string $clientId
-     * @param string $clientSecret
-     * @param array<string, string> $additionalParams extra OAuth 2.0 parameters for client credentials flow
+     * @param string $certificatePath
+     * @param string $certificatePassphrase
+     * @param array $additionalParams
      */
-    public function __construct(string $tenantId, string $clientId, string $clientSecret, array $additionalParams = [])
+    public function __construct(string $tenantId, string $clientId, string $certificatePath, string $certificatePassphrase = '', array $additionalParams = [])
     {
         $this->additionalParams = $additionalParams;
-        parent::__construct($tenantId, $clientId, $clientSecret);
+        parent::__construct($tenantId, $clientId, $certificatePath, $certificatePassphrase);
     }
 
     /**

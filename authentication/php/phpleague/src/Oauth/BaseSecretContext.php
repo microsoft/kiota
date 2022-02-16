@@ -6,7 +6,7 @@
  */
 
 
-namespace Microsoft\Kiota\Authentication;
+namespace Microsoft\Kiota\Authentication\Oauth;
 
 /**
  * Class BaseSecretContext
