@@ -100,7 +100,7 @@ namespace Kiota.Builder.Refiners
                 {
                     var rootMethod = new CodeMethod
                     {
-                        Name = "BuildCommand",
+                        Name = "BuildRootCommand",
                         Description = clientConstructor.Description,
                         IsAsync = false,
                         MethodKind = CodeMethodKind.CommandBuilder,

@@ -60,6 +60,17 @@ public class ShellRefinerTests {
             HttpMethod = HttpMethod.Get
         });
 
+        // Add client constructor
+        requestBuilder.AddMethod(new CodeMethod {
+            Name = "constructor",
+            MethodKind = CodeMethodKind.ClientConstructor,
+            ReturnType = new CodeType {
+                Name = "void"
+            },
+            DeserializerModules = new() {"com.microsoft.kiota.serialization.Deserializer"},
+            SerializerModules = new() {"com.microsoft.kiota.serialization.Serializer"}
+        });
+
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Shell }, root);
 
         var methods = root.GetChildElements().OfType<CodeClass>().SelectMany(c => c.GetChildElements().OfType<CodeMethod>());
@@ -68,5 +79,6 @@ public class ShellRefinerTests {
         Assert.Contains("BuildCommand", methodNames);
         Assert.Contains("BuildUserCommand", methodNames);
         Assert.Contains("BuildListCommand", methodNames);
+        Assert.Contains("BuildRootCommand", methodNames);
     }
 }
