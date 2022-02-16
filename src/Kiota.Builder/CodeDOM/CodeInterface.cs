@@ -9,13 +9,13 @@ public class CodeInterface : ProprietableBlock<CodeInterfaceKind>, ITypeDefiniti
 {
     public CodeInterface():base()
     {
-        StartBlock = new Declaration() { Parent = this};
-        EndBlock = new End() { Parent = this };
+        StartBlock = new InterfaceDeclaration() { Parent = this};
+        EndBlock = new InterfaceEnd() { Parent = this };
     }
-    public class End : BlockEnd
+    public class InterfaceEnd : BlockEnd
     {
     }
-    public class Declaration : ProprietableBlockDeclaration
+    public class InterfaceDeclaration : ProprietableBlockDeclaration
     {
     }
 }

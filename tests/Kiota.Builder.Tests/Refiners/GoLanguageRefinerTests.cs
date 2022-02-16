@@ -15,7 +15,7 @@ public class GoLanguageRefinerTests {
         }).First();
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
 
-        var declaration = model.StartBlock as CodeClass.Declaration;
+        var declaration = model.StartBlock as CodeClass.ClassDeclaration;
 
         Assert.Contains("ApiError", declaration.Usings.Select(x => x.Name));
         Assert.Equal("ApiError", declaration.Inherits.Name);
@@ -27,7 +27,7 @@ public class GoLanguageRefinerTests {
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        var declaration = model.StartBlock as CodeClass.Declaration;
+        var declaration = model.StartBlock as CodeClass.ClassDeclaration;
         declaration.Inherits = new CodeType {
             Name = "SomeOtherModel"
         };
@@ -64,7 +64,7 @@ public class GoLanguageRefinerTests {
                     });
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
 
-        var declaration = requestBuilder.StartBlock as CodeClass.Declaration;
+        var declaration = requestBuilder.StartBlock as CodeClass.ClassDeclaration;
 
         Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
     }
@@ -78,7 +78,7 @@ public class GoLanguageRefinerTests {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
+        (childModel.StartBlock as CodeClass.ClassDeclaration).Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -94,7 +94,7 @@ public class GoLanguageRefinerTests {
                         Name = "childModel",
                         TypeDefinition = childModel,
                     });
-        var parentModelDeclaration = parentModel.StartBlock as CodeClass.Declaration;
+        var parentModelDeclaration = parentModel.StartBlock as CodeClass.ClassDeclaration;
         Assert.Empty(parentModelDeclaration.Usings);
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         Assert.Equal(childModel, parentModelDeclaration.Usings.First(x => x.Declaration.Name.Equals("childModel", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
@@ -110,7 +110,7 @@ public class GoLanguageRefinerTests {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
+        (childModel.StartBlock as CodeClass.ClassDeclaration).Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -138,7 +138,7 @@ public class GoLanguageRefinerTests {
                 TypeDefinition = parentModel,
             },
         }).First();
-        var requestBuilderDeclaration = requestBuilderClass.StartBlock as CodeClass.Declaration;
+        var requestBuilderDeclaration = requestBuilderClass.StartBlock as CodeClass.ClassDeclaration;
         Assert.Empty(requestBuilderDeclaration.Usings);
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         Assert.Equal(factoryMethod, requestBuilderDeclaration.Usings.First(x => x.Declaration.Name.Equals("factory", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);

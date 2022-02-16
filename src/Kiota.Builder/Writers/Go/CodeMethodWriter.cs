@@ -16,7 +16,7 @@ namespace Kiota.Builder.Writers.Go {
             if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
             
             var parentClass = codeElement.Parent as CodeClass;
-            var inherits = parentClass.StartBlock is CodeClass.Declaration declaration && declaration.Inherits != null && !parentClass.IsErrorDefinition;
+            var inherits = parentClass.StartBlock is CodeClass.ClassDeclaration declaration && declaration.Inherits != null && !parentClass.IsErrorDefinition;
             var returnType = conventions.GetTypeString(codeElement.ReturnType, parentClass);
             WriteMethodPrototype(codeElement, writer, returnType, parentClass);
             writer.IncreaseIndent();
@@ -137,7 +137,7 @@ namespace Kiota.Builder.Writers.Go {
         private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer, bool inherits) {
             var additionalDataProperty = parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData);
             var shouldDeclareErrorVar = !inherits;
-            if(parentClass.StartBlock is CodeClass.Declaration declaration &&
+            if(parentClass.StartBlock is CodeClass.ClassDeclaration declaration &&
                 inherits) {
                 writer.WriteLine($"err := m.{declaration.Inherits.Name.ToFirstCharacterUpperCase()}.Serialize(writer)");
                 WriteReturnError(writer);
@@ -244,7 +244,7 @@ namespace Kiota.Builder.Writers.Go {
         }
         private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
             writer.WriteLine($"m := &{parentClass.Name.ToFirstCharacterUpperCase()}{{");
-            if(parentClass.StartBlock is CodeClass.Declaration declaration &&
+            if(parentClass.StartBlock is CodeClass.ClassDeclaration declaration &&
                 (inherits || parentClass.IsErrorDefinition)) {
                 writer.IncreaseIndent();
                 var parentClassName = declaration.Inherits.Name.ToFirstCharacterUpperCase();
@@ -309,7 +309,7 @@ namespace Kiota.Builder.Writers.Go {
         }
         private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits) {
             var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
-            if(parentClass.StartBlock is CodeClass.Declaration declaration &&
+            if(parentClass.StartBlock is CodeClass.ClassDeclaration declaration &&
                 inherits)
                 writer.WriteLine($"res := m.{declaration.Inherits.Name.ToFirstCharacterUpperCase()}.{codeElement.Name.ToFirstCharacterUpperCase()}()");
             else

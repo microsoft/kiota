@@ -3,11 +3,11 @@ using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Go {
-    public class CodeClassDeclarationWriter : BaseElementWriter<CodeClass.Declaration, GoConventionService>
+    public class CodeClassDeclarationWriter : BaseElementWriter<CodeClass.ClassDeclaration, GoConventionService>
     {
         public CodeClassDeclarationWriter(GoConventionService conventionService) : base(conventionService) {}
 
-        public override void WriteCodeElement(CodeClass.Declaration codeElement, LanguageWriter writer)
+        public override void WriteCodeElement(CodeClass.ClassDeclaration codeElement, LanguageWriter writer)
         {
             if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
             if(writer == null) throw new ArgumentNullException(nameof(writer));

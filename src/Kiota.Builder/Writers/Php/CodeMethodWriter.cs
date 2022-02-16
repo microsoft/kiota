@@ -16,7 +16,7 @@ namespace Kiota.Builder.Writers.Php
 
             var parentClass = codeElement.Parent as CodeClass;
             var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
-            var inherits = (parentClass?.StartBlock as CodeClass.Declaration)?.Inherits != null;
+            var inherits = (parentClass?.StartBlock as CodeClass.ClassDeclaration)?.Inherits != null;
             var orNullReturn = codeElement.ReturnType.IsNullable ? new[]{"?", "|null"} : new[] {string.Empty, string.Empty};
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
@@ -282,7 +282,7 @@ namespace Kiota.Builder.Writers.Php
             writer.WriteLine($"return {RequestInfoVarName};");
         }
         private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer) {
-            var inherits = (parentClass.StartBlock as CodeClass.Declaration)?.Inherits != null;
+            var inherits = (parentClass.StartBlock as CodeClass.ClassDeclaration)?.Inherits != null;
             var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
             writer.WriteLine($"return {(inherits ? "array_merge(parent::getFieldDeserializers()," : string.Empty)} [");
             if(fieldToSerialize.Any()) {

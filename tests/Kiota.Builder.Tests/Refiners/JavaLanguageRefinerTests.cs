@@ -15,7 +15,7 @@ public class JavaLanguageRefinerTests {
         }).First();
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
 
-        var declaration = model.StartBlock as CodeClass.Declaration;
+        var declaration = model.StartBlock as CodeClass.ClassDeclaration;
 
         Assert.Contains("ApiException", declaration.Usings.Select(x => x.Name));
         Assert.Equal("ApiException", declaration.Inherits.Name);
@@ -27,7 +27,7 @@ public class JavaLanguageRefinerTests {
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        var declaration = model.StartBlock as CodeClass.Declaration;
+        var declaration = model.StartBlock as CodeClass.ClassDeclaration;
         declaration.Inherits = new CodeType {
             Name = "SomeOtherModel"
         };
@@ -58,7 +58,7 @@ public class JavaLanguageRefinerTests {
                     });
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
 
-        var declaration = requestBuilder.StartBlock as CodeClass.Declaration;
+        var declaration = requestBuilder.StartBlock as CodeClass.ClassDeclaration;
 
         Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
     }
@@ -307,7 +307,7 @@ public class JavaLanguageRefinerTests {
             }
         });
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
-        Assert.NotEmpty((model.StartBlock as CodeClass.Declaration).Usings.Where(x => "EnumSet".Equals(x.Name)));
+        Assert.NotEmpty((model.StartBlock as CodeClass.ClassDeclaration).Usings.Where(x => "EnumSet".Equals(x.Name)));
     }
     [Fact]
     public void CorrectsCoreType() {

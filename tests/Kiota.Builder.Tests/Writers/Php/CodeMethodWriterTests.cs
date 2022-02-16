@@ -391,7 +391,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         {
             var currentClass = parentClass;
             currentClass.Kind = CodeClassKind.Model;
-            var declaration = currentClass.StartBlock as CodeClass.Declaration;
+            var declaration = currentClass.StartBlock as CodeClass.ClassDeclaration;
             declaration.Inherits = new CodeType() {Name = "Entity", IsExternal = true, IsNullable = false};
             currentClass.AddProperty(
                 new CodeProperty()

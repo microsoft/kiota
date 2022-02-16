@@ -90,11 +90,11 @@ namespace Kiota.Builder.Writers
                     case CodeIndexer i:
                         ((ICodeElementWriter<CodeIndexer>) elementWriter).WriteCodeElement(i, this);
                         break;
-                    case CodeClass.Declaration d:
-                        ((ICodeElementWriter<CodeClass.Declaration>) elementWriter).WriteCodeElement(d, this);
+                    case CodeClass.ClassDeclaration d:
+                        ((ICodeElementWriter<CodeClass.ClassDeclaration>) elementWriter).WriteCodeElement(d, this);
                         break;
-                    case CodeClass.End i:
-                        ((ICodeElementWriter<CodeClass.End>) elementWriter).WriteCodeElement(i, this);
+                    case CodeClass.ClassEnd i:
+                        ((ICodeElementWriter<CodeClass.ClassEnd>) elementWriter).WriteCodeElement(i, this);
                         break;
                     case CodeEnum e:
                         ((ICodeElementWriter<CodeEnum>) elementWriter).WriteCodeElement(e, this);

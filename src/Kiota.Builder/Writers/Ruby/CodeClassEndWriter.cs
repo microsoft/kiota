@@ -1,8 +1,8 @@
 namespace Kiota.Builder.Writers.Ruby {
-    public class CodeClassEndWriter : BaseElementWriter<CodeClass.End, RubyConventionService>
+    public class CodeClassEndWriter : BaseElementWriter<CodeClass.ClassEnd, RubyConventionService>
     {
         public CodeClassEndWriter(RubyConventionService conventionService):base(conventionService){}
-        public override void WriteCodeElement(CodeClass.End codeElement, LanguageWriter writer)
+        public override void WriteCodeElement(CodeClass.ClassEnd codeElement, LanguageWriter writer)
         {
             const string end = "end";
             writer.DecreaseIndent();

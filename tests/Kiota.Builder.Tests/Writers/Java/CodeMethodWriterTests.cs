@@ -102,7 +102,7 @@ public class CodeMethodWriterTests : IDisposable {
         };
     }
     private void AddInheritanceClass() {
-        (parentClass.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
+        (parentClass.StartBlock as CodeClass.ClassDeclaration).Inherits = new CodeType {
             Name = "someParentClass"
         };
     }

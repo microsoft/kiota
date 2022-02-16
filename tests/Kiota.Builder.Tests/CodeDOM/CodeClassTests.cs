@@ -117,10 +117,10 @@ namespace Kiota.Builder.Tests {
             var childClass = child.AddClass(new CodeClass {
                 Name = "child"
             }).First();
-            (childClass.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
+            (childClass.StartBlock as CodeClass.ClassDeclaration).Inherits = new CodeType {
                 TypeDefinition = parent,
             };
-            (parent.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
+            (parent.StartBlock as CodeClass.ClassDeclaration).Inherits = new CodeType {
                 TypeDefinition = grandParent,
             };
             Assert.Equal(grandParent, parent.GetParentClass());

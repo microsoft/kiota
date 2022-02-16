@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
 using static Kiota.Builder.CodeClass;
+using static Kiota.Builder.CodeInterface;
 
 namespace Kiota.Builder.Refiners;
 public abstract class CommonLanguageRefiner : ILanguageRefiner
@@ -23,7 +24,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if(generatedCode is CodeMethod currentMethod &&
             currentMethod.IsOfKind(CodeMethodKind.ClientConstructor) &&
             currentMethod.Parent is CodeClass currentClass &&
-            currentClass.StartBlock is CodeClass.Declaration declaration) {
+            currentClass.StartBlock is CodeClass.ClassDeclaration declaration) {
                 var cumulatedSymbols = currentMethod.DeserializerModules
                                                     .Union(currentMethod.SerializerModules)
                                                     .Union(serializationWriterFactoryInterfaceAndRegistrationFullName)
@@ -71,7 +72,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     internal const string SetterPrefix = "set-";
     protected static void CorrectCoreTypesForBackingStore(CodeElement currentElement, string defaultPropertyValue) {
         if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder)
-            && currentClass.StartBlock is CodeClass.Declaration currentDeclaration) {
+            && currentClass.StartBlock is CodeClass.ClassDeclaration currentDeclaration) {
             var backedModelImplements = currentDeclaration.Implements.FirstOrDefault(x => "IBackedModel".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
             if(backedModelImplements != null)
                 backedModelImplements.Name = backedModelImplements.Name[1..]; //removing the "I"
@@ -83,7 +84,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         CrawlTree(currentElement, (x) => CorrectCoreTypesForBackingStore(x, defaultPropertyValue));
     }
     private static bool DoesAnyParentHaveAPropertyWithDefaultValue(CodeClass current) {
-        if(current.StartBlock is Declaration currentDeclaration &&
+        if(current.StartBlock is ClassDeclaration currentDeclaration &&
             currentDeclaration.Inherits?.TypeDefinition is CodeClass parentClass) {
                 if(parentClass.Properties.Any(x => !string.IsNullOrEmpty(x.DefaultValue)))
                     return true;
@@ -166,7 +167,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if(current is CodeClass currentClass && 
             isNotInExceptions &&
             shouldReplace &&
-            currentClass.StartBlock is Declaration currentDeclaration)
+            currentClass.StartBlock is ClassDeclaration currentDeclaration)
             ReplaceReservedCodeUsings(currentDeclaration, provider, replacement);
         else if(current is CodeNamespace currentNamespace &&
             isNotInExceptions &&
@@ -209,7 +210,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions, shouldReplaceCallback));
     }
-    private static void ReplaceReservedCodeUsings(Declaration currentDeclaration, IReservedNamesProvider provider, Func<string, string> replacement)
+    private static void ReplaceReservedCodeUsings(ClassDeclaration currentDeclaration, IReservedNamesProvider provider, Func<string, string> replacement)
     {
         currentDeclaration.Usings
                         .Select(x => x.Declaration)
@@ -415,7 +416,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     currentClass.AddInnerClass(innerClass);
                 }
                 if(!string.IsNullOrEmpty(queryParametersBaseClassName))
-                    (innerClass.StartBlock as Declaration).Inherits = new CodeType { Name = queryParametersBaseClassName, IsExternal = true };
+                    (innerClass.StartBlock as ClassDeclaration).Inherits = new CodeType { Name = queryParametersBaseClassName, IsExternal = true };
             }
         }
         CrawlTree(current, x => AddInnerClasses(x, prefixClassNameWithParentName, queryParametersBaseClassName));
@@ -426,7 +427,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
     protected static void AddPropertiesAndMethodTypesImports(CodeElement current, bool includeParentNamespaces, bool includeCurrentNamespace, bool compareOnDeclaration) {
         if(current is CodeClass currentClass &&
-            currentClass.StartBlock is Declaration currentClassDeclaration) {
+            currentClass.StartBlock is ClassDeclaration currentClassDeclaration) {
             var currentClassNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
             var currentClassChildren = currentClass.GetChildElements(true);
             var inheritTypes = currentClassDeclaration.Inherits?.AllTypes ?? Enumerable.Empty<CodeType>();
@@ -535,7 +536,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         if(currentElement is CodeClass currentClass &&
             currentClass.IsOfKind(CodeClassKind.Model) &&
-            currentClass.StartBlock is CodeClass.Declaration declaration) {
+            currentClass.StartBlock is CodeClass.ClassDeclaration declaration) {
             declaration.AddImplements(new CodeType {
                 IsExternal = true,
                 Name = className
@@ -557,7 +558,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected static void AddParentClassToErrorClasses(CodeElement currentElement, string parentClassName, string parentClassNamespace) {
         if(currentElement is CodeClass currentClass &&
             currentClass.IsErrorDefinition &&
-            currentClass.StartBlock is CodeClass.Declaration declaration) {
+            currentClass.StartBlock is CodeClass.ClassDeclaration declaration) {
             if(declaration.Inherits != null)
                 throw new InvalidOperationException("This error class already inherits from another class. Update the description to remove that inheritance.");
             declaration.Inherits = new CodeType {
@@ -576,7 +577,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected static void AddDiscriminatorMappingsUsingsToParentClasses(CodeElement currentElement, string parseNodeInterfaceName, bool addFactoryMethodImport = false, bool addUsings = true) {
         if(currentElement is CodeMethod currentMethod &&
             currentMethod.Parent is CodeClass parentClass &&
-            parentClass.StartBlock is CodeClass.Declaration declaration) {
+            parentClass.StartBlock is CodeClass.ClassDeclaration declaration) {
                 if(currentMethod.IsOfKind(CodeMethodKind.Factory) &&
                     currentMethod.DiscriminatorMappings != null) {
                         if(addUsings)
@@ -674,5 +675,73 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     TypeDefinition = staticMethod,
                 }
             });
+    }
+    protected static CodeNamespace DuplicateNamespaceStructure(CodeNamespace source, string appendix) {
+        if (source?.Parent is not CodeNamespace parent)
+            return null;// workaround for unit tests that don't have such a complex structure
+        var target = parent.AddNamespace(source?.Name + appendix);
+        DuplicateNamespaceStructureInternal(source, target);
+        return target;
+    }
+    private static void DuplicateNamespaceStructureInternal(CodeNamespace source, CodeNamespace target) {
+        foreach(var nsToCopy in source.GetChildElements(true).OfType<CodeNamespace>()) {
+            var copyValue = target.AddNamespace(target.Name + nsToCopy.Name[source.Name.Length..]);
+            DuplicateNamespaceStructureInternal(nsToCopy, copyValue);
+        }
+    }
+    protected static void CopyModelClassesAsInterfaces(CodeNamespace modelsNS, CodeNamespace interfaceNS, Func<CodeClass, string> interfaceNamingCallback) {
+        var childItems = modelsNS.GetChildElements(true);
+        foreach(var modelClass in childItems
+                                        .OfType<CodeClass>()
+                                        .Where(x => x.IsOfKind(CodeClassKind.Model))) {
+            var inter = CopyClassAsInterface(modelClass, interfaceNS, interfaceNamingCallback);
+
+        }
+        var interfaceChildNSs = interfaceNS.GetChildElements(true).OfType<CodeNamespace>();
+        foreach (var subModelsNS in childItems
+                                           .OfType<CodeNamespace>()) {
+            var subInterfaceNS = interfaceChildNSs.FirstOrDefault(x => x.Name.EndsWith(subModelsNS.Name.Split(new char[] {'.', '/'}).Last(), StringComparison.OrdinalIgnoreCase));
+            CopyModelClassesAsInterfaces(subModelsNS, subInterfaceNS, interfaceNamingCallback);
+        }
+    }
+    private static CodeInterface CopyClassAsInterface(CodeClass modelClass, CodeNamespace interfaceNS, Func<CodeClass, string> interfaceNamingCallback) {
+        var interfaceName = interfaceNamingCallback.Invoke(modelClass);
+        var existing = interfaceNS.FindChildByName<CodeInterface>(interfaceName);
+        if(existing != null)
+            return existing;
+        var inter = interfaceNS.AddInterface(new CodeInterface {
+                    Name = interfaceName,
+                    Kind = CodeInterfaceKind.Model,
+        }).First();
+        modelClass.AddUsing(new CodeUsing {
+            Name = inter.Name,
+            Declaration = new CodeType {
+                Name = inter.Name,
+                TypeDefinition = inter,
+            }
+        });
+        if(modelClass.StartBlock is ClassDeclaration classDeclaration) {
+            classDeclaration.AddImplements(new CodeType {
+                Name = interfaceName,
+                TypeDefinition = inter,
+            });
+            if(classDeclaration.Inherits != null &&
+                classDeclaration.Inherits.TypeDefinition is CodeClass baseClass &&
+                inter.StartBlock is InterfaceDeclaration interfaceDeclaration) {
+                    var parentInterface = CopyClassAsInterface(baseClass, interfaceNS, interfaceNamingCallback);
+                    interfaceDeclaration.AddImplements(new CodeType {
+                        Name = parentInterface.Name,
+                        TypeDefinition = parentInterface,
+                    });
+                }
+            }
+        foreach(var method in modelClass.GetChildElements(true).OfType<CodeMethod>()) {
+            var interfaceMethod = inter.AddMethod(method.Clone() as CodeMethod).First();
+            //TODO methods return type and parameters (original and copy)
+        }
+        //TODO properties on original class
+
+        //TODO remove usings for original classes (method, properties, parameters)
+        return inter;
     }
 }

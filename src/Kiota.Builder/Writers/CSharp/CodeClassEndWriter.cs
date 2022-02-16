@@ -1,8 +1,8 @@
 namespace Kiota.Builder.Writers.CSharp {
-    public class CodeClassEndWriter : BaseElementWriter<CodeClass.End, CSharpConventionService>
+    public class CodeClassEndWriter : BaseElementWriter<CodeClass.ClassEnd, CSharpConventionService>
     {
         public CodeClassEndWriter(CSharpConventionService conventionService):base(conventionService){}
-        public override void WriteCodeElement(CodeClass.End codeElement, LanguageWriter writer)
+        public override void WriteCodeElement(CodeClass.ClassEnd codeElement, LanguageWriter writer)
         {
             writer.DecreaseIndent();
             writer.WriteLine("}");

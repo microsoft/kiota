@@ -16,7 +16,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
 
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
         var parentClass = codeElement.Parent as CodeClass;
-        var inherits = parentClass.StartBlock is CodeClass.Declaration declaration && declaration.Inherits != null && !parentClass.IsErrorDefinition;
+        var inherits = parentClass.StartBlock is CodeClass.ClassDeclaration declaration && declaration.Inherits != null && !parentClass.IsErrorDefinition;
         var isVoid = conventions.VoidTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
         WriteMethodDocumentation(codeElement, writer);
         WriteMethodPrototype(codeElement, writer, returnType, inherits, isVoid);

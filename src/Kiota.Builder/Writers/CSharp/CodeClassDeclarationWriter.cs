@@ -4,10 +4,10 @@ using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.CSharp {
-    public class CodeClassDeclarationWriter : BaseElementWriter<CodeClass.Declaration, CSharpConventionService>
+    public class CodeClassDeclarationWriter : BaseElementWriter<CodeClass.ClassDeclaration, CSharpConventionService>
     {
         public CodeClassDeclarationWriter(CSharpConventionService conventionService): base(conventionService) { }
-        public override void WriteCodeElement(CodeClass.Declaration codeElement, LanguageWriter writer)
+        public override void WriteCodeElement(CodeClass.ClassDeclaration codeElement, LanguageWriter writer)
         {
             if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
             if(writer == null) throw new ArgumentNullException(nameof(writer));

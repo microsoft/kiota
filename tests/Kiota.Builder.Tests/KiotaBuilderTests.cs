@@ -387,7 +387,7 @@ public class KiotaBuilderTests
         Assert.NotNull(resourceClass);
         Assert.NotNull(derivedResourceClass);
         Assert.NotNull(derivedResourceClass.StartBlock);
-        Assert.Equal((derivedResourceClass.StartBlock as CodeClass.Declaration).Inherits.TypeDefinition, resourceClass);
+        Assert.Equal((derivedResourceClass.StartBlock as CodeClass.ClassDeclaration).Inherits.TypeDefinition, resourceClass);
         Assert.NotNull(derivedResourceInfoClass);
         Assert.NotNull(responseClass);
     }

@@ -23,8 +23,8 @@ public class CodeClass : ProprietableBlock<CodeClassKind>, ITypeDefinition
     private string name;
     public CodeClass():base()
     {
-        StartBlock = new Declaration() { Parent = this};
-        EndBlock = new End() { Parent = this };
+        StartBlock = new ClassDeclaration() { Parent = this};
+        EndBlock = new ClassEnd() { Parent = this };
     }
 
     public bool IsErrorDefinition { get; set; }
@@ -59,7 +59,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind>, ITypeDefinition
         return AddRange(codeClasses);
     }
     public CodeClass GetParentClass() {
-        if(StartBlock is Declaration declaration)
+        if(StartBlock is ClassDeclaration declaration)
             return declaration.Inherits?.TypeDefinition as CodeClass;
         else return null;
     }
@@ -72,7 +72,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind>, ITypeDefinition
         else
             return parentClass.GetGreatestGrandparent(startClassToSkip);
     }
-    public class Declaration : ProprietableBlockDeclaration
+    public class ClassDeclaration : ProprietableBlockDeclaration
     {
         private CodeType inherits;
         public CodeType Inherits { get => inherits; set {
@@ -81,7 +81,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind>, ITypeDefinition
         } }
     }
 
-    public class End : BlockEnd
+    public class ClassEnd : BlockEnd
     {
     }
 }

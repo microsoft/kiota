@@ -97,6 +97,10 @@ public class GoRefiner : CommonLanguageRefiner
             "ParseNode",
             true
         );
+        var modelInterfacesNamespace = DuplicateNamespaceStructure(
+            generatedCode.FindNamespaceByName(_configuration.ModelsNamespaceName),
+            "/interfaces"
+        );
     }
     private static void ReplaceExecutorAndGeneratorParametersByParameterSets(CodeElement currentElement) {
         if (currentElement is CodeMethod currentMethod &&

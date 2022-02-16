@@ -32,7 +32,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         
         [Fact]
         public void ClosesNonNestedClasses() {
-            codeElementWriter.WriteCodeElement(parentClass.EndBlock as CodeClass.End, writer);
+            codeElementWriter.WriteCodeElement(parentClass.EndBlock as CodeClass.ClassEnd, writer);
             var result = tw.ToString();
             Assert.Equal(1, result.Count(x => x == '}'));
         }

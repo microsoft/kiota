@@ -30,7 +30,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
         }
         [Fact]
         public void WritesSimpleDeclaration() {
-            codeElementWriter.WriteCodeElement(parentClass.StartBlock as CodeClass.Declaration, writer);
+            codeElementWriter.WriteCodeElement(parentClass.StartBlock as CodeClass.ClassDeclaration, writer);
             var result = tw.ToString();
             Assert.Contains("type", result);
             Assert.Contains("struct", result);
@@ -38,7 +38,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
         }
         [Fact]
         public void WritesInheritance() {
-            var declaration = parentClass.StartBlock as CodeClass.Declaration;
+            var declaration = parentClass.StartBlock as CodeClass.ClassDeclaration;
             declaration.Inherits = new (){
                 Name = "someParent"
             };
@@ -48,7 +48,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
         }
         [Fact]
         public void WritesImports() {
-            var declaration = parentClass.StartBlock as CodeClass.Declaration;
+            var declaration = parentClass.StartBlock as CodeClass.ClassDeclaration;
             declaration.AddUsings(new () {
                 Name = "Objects",
                 Declaration = new() {

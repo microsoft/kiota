@@ -33,13 +33,13 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             var child = parentClass.AddInnerClass(new CodeClass {
                 Name = "child"
             }).First();
-            codeElementWriter.WriteCodeElement(child.EndBlock as CodeClass.End, writer);
+            codeElementWriter.WriteCodeElement(child.EndBlock as CodeClass.ClassEnd, writer);
             var result = tw.ToString();
             Assert.Single(Regex.Matches(result, ".*end.*"));
         }
         [Fact]
         public void ClosesNonNestedClasses() {
-            codeElementWriter.WriteCodeElement(parentClass.EndBlock as CodeClass.End, writer);
+            codeElementWriter.WriteCodeElement(parentClass.EndBlock as CodeClass.ClassEnd, writer);
             var result = tw.ToString();
             Assert.Equal(2, Regex.Matches(result, ".*end.*").Count);
         }

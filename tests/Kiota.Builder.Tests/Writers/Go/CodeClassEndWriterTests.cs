@@ -31,13 +31,13 @@ namespace Kiota.Builder.Writers.Go.Tests {
             var child = parentClass.AddInnerClass(new CodeClass {
                 Name = "child"
             }).First();
-            codeElementWriter.WriteCodeElement(child.EndBlock as CodeClass.End, writer);
+            codeElementWriter.WriteCodeElement(child.EndBlock as CodeClass.ClassEnd, writer);
             var result = tw.ToString();
             Assert.Equal(1, result.Count(x => x == '}'));
         }
         [Fact]
         public void ClosesNonNestedClasses() {
-            codeElementWriter.WriteCodeElement(parentClass.EndBlock as CodeClass.End, writer);
+            codeElementWriter.WriteCodeElement(parentClass.EndBlock as CodeClass.ClassEnd, writer);
             var result = tw.ToString();
             Assert.Equal(1, result.Count(x => x == '}'));
         }

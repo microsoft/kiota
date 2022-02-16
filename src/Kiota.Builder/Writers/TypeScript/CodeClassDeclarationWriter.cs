@@ -3,13 +3,13 @@ using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.TypeScript {
-    public class CodeClassDeclarationWriter : BaseElementWriter<CodeClass.Declaration, TypeScriptConventionService>
+    public class CodeClassDeclarationWriter : BaseElementWriter<CodeClass.ClassDeclaration, TypeScriptConventionService>
     {
         private readonly CodeUsingWriter _codeUsingWriter;
         public CodeClassDeclarationWriter(TypeScriptConventionService conventionService, string clientNamespaceName) : base(conventionService){
             _codeUsingWriter = new (clientNamespaceName);
         }
-        public override void WriteCodeElement(CodeClass.Declaration codeElement, LanguageWriter writer)
+        public override void WriteCodeElement(CodeClass.ClassDeclaration codeElement, LanguageWriter writer)
         {
             if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
             if(writer == null) throw new ArgumentNullException(nameof(writer));
