@@ -301,4 +301,100 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo);", result);
         Assert.Contains("return command;", result);
     }
+
+    [Fact]
+    public void WritesExecutableCommandForGetStreamRequest()
+    {
+
+        method.MethodKind = CodeMethodKind.CommandBuilder;
+        method.SimpleName = "User";
+        method.HttpMethod = HttpMethod.Get;
+        var streamType = new CodeType
+        {
+            Name = "stream",
+        };
+        var generatorMethod = new CodeMethod
+        {
+            MethodKind = CodeMethodKind.RequestGenerator,
+            Name = "CreateGetRequestInformation",
+            HttpMethod = method.HttpMethod
+        };
+        method.OriginalMethod = new CodeMethod
+        {
+            MethodKind = CodeMethodKind.RequestExecutor,
+            HttpMethod = method.HttpMethod,
+            ReturnType = streamType,
+            Parent = method.Parent
+        };
+        var codeClass = method.Parent as CodeClass;
+        codeClass.AddMethod(generatorMethod);
+
+        AddRequestProperties();
+        AddRequestBodyParameters(method.OriginalMethod);
+        AddPathAndQueryParameters(generatorMethod);
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("var command = new Command(\"user\");", result);
+        Assert.Contains("var qOption = new Option<string>(\"-q\")", result);
+        Assert.Contains("qOption.IsRequired = true;", result);
+        Assert.Contains("command.AddOption(qOption);", result);
+        Assert.Contains("command.AddOption(outputOption);", result);
+        Assert.Contains("var fileOption = new Option<FileInfo>(\"--file\");", result);
+        Assert.Contains("command.AddOption(fileOption);", result);
+        Assert.Contains("var requestInfo = CreateGetRequestInformation", result);
+        Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo);", result);
+        Assert.Contains("return command;", result);
+    }
+
+    [Fact]
+    public void WritesExecutableCommandForPostVoidRequest() {
+        
+        method.MethodKind = CodeMethodKind.CommandBuilder;
+        method.SimpleName = "User";
+        method.HttpMethod = HttpMethod.Post;
+        var stringType = new CodeType {
+            Name = "string",
+        };
+        var voidType = new CodeType {
+            Name = "void",
+        };
+        var generatorMethod = new CodeMethod {
+            MethodKind = CodeMethodKind.RequestGenerator,
+            Name = "CreatePostRequestInformation",
+            HttpMethod = method.HttpMethod
+        };
+        method.OriginalMethod = new CodeMethod {
+            MethodKind = CodeMethodKind.RequestExecutor,
+            HttpMethod = method.HttpMethod,
+            ReturnType = voidType,
+            Parent = method.Parent
+        };
+        method.OriginalMethod.AddParameter(new CodeParameter{
+            Name = "body",
+            ParameterKind = CodeParameterKind.RequestBody,
+            Type = stringType,
+        });
+        var codeClass = method.Parent as CodeClass;
+        codeClass.AddMethod(generatorMethod);
+
+        AddRequestProperties();
+        AddPathAndQueryParameters(generatorMethod);
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("var command = new Command(\"user\");", result);
+        Assert.Contains("var qOption = new Option<string>(\"-q\")", result);
+        Assert.Contains("qOption.IsRequired = true;", result);
+        Assert.Contains("command.AddOption(qOption);", result);
+        Assert.Contains("var bodyOption = new Option<string>(\"--body\")", result);
+        Assert.Contains("bodyOption.IsRequired = true;", result);
+        Assert.Contains("command.AddOption(bodyOption);", result);
+        Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
+        Assert.Contains("await RequestAdapter.SendNoContentAsync(requestInfo);", result);
+        Assert.Contains("console.WriteLine(\"Success\");", result);
+        Assert.Contains("return command;", result);
+    }
 }

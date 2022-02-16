@@ -152,7 +152,5 @@ namespace Kiota.Builder.Refiners
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
                 "System.Text",  "Encoding"),
         };
-
-
     }
 }
