@@ -75,14 +75,18 @@ class PhpLeagueAccessTokenProvider implements AccessTokenProvider
             return new FulfilledPromise(null);
         }
         try {
-            if ($this->cachedToken && $this->cachedToken->getExpires() && $this->cachedToken->hasExpired() && $this->cachedToken->getRefreshToken()) {
-                $this->cachedToken = $this->oauthProvider->getAccessToken('refresh_token',
-                    array_merge($this->tokenRequestContext->getParams(), ['refresh_token' => $this->cachedToken->getRefreshToken()])
-                );
-            } else {
-                $params = array_merge($this->tokenRequestContext->getParams(), ['scope' => implode(',', $this->scopes)]);
-                $this->cachedToken = $this->oauthProvider->getAccessToken($this->tokenRequestContext->getGrantType(), $params);
+            $params = array_merge($this->tokenRequestContext->getParams(), ['scope' => implode(',', $this->scopes)]);
+            if ($this->cachedToken) {
+                if ($this->cachedToken->getExpires() && $this->cachedToken->hasExpired()) {
+                    if ($this->cachedToken->getRefreshToken()) {
+                        $this->cachedToken = $this->oauthProvider->getAccessToken('refresh_token', $this->tokenRequestContext->getRefreshTokenParams($this->cachedToken->getRefreshToken()));
+                    } else {
+                        $this->cachedToken = $this->oauthProvider->getAccessToken($this->tokenRequestContext->getGrantType(), $params);
+                    }
+                }
+                return new FulfilledPromise($this->cachedToken->getToken());
             }
+            $this->cachedToken = $this->oauthProvider->getAccessToken($this->tokenRequestContext->getGrantType(), $params);
             return new FulfilledPromise($this->cachedToken->getToken());
         } catch (\Exception $ex) {
             return new RejectedPromise($ex);

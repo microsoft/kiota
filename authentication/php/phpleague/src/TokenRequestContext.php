@@ -21,9 +21,18 @@ interface TokenRequestContext
 {
     /**
      * Return dictionary with OAuth 2.0 request parameters to be passed to PHP League's OAuth provider
+     *
      * @return array<string, string>
      */
     public function getParams(): array;
+
+    /**
+     * Returns subset of parameters to be used for refresh_token requests
+     *
+     * @param string $refreshToken refresh token in currently cached token
+     * @return array<string, string>
+     */
+    public function getRefreshTokenParams(string $refreshToken): array;
 
     /**
      * @return string Grant type

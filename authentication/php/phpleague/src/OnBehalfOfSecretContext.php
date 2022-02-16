@@ -77,6 +77,19 @@ class OnBehalfOfSecretContext implements TokenRequestContext
     /**
      * @inheritDoc
      */
+    public function getRefreshTokenParams(string $refreshToken): array
+    {
+        return [
+            'client_id' => $this->clientId,
+            'client_secret' => $this->clientSecret,
+            'refresh_token' => $refreshToken,
+            'grant_type' => 'refresh_token'
+        ];
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function getGrantType(): string
     {
         return 'urn:ietf:params:oauth:grant-type:jwt-bearer';

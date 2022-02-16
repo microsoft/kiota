@@ -70,6 +70,20 @@ class ClientCredentialSecretContext implements TokenRequestContext
     }
 
     /**
+     * Request body parameters for a refresh token request
+     *
+     * @param string $refreshToken
+     * @return array<string, string>
+     */
+    public function getRefreshTokenParams(string $refreshToken): array
+    {
+        return array_merge($this->getParams(), [
+            'refresh_token' => $refreshToken,
+            'grant_type' => 'refresh_token'
+        ]);
+    }
+
+    /**
      * Returns the Grant type
      * @return string
      */
