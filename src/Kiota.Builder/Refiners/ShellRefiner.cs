@@ -76,18 +76,11 @@ namespace Kiota.Builder.Refiners
                 foreach (var requestMethod in requestMethods)
                 {
                     CodeMethod clone = requestMethod.Clone() as CodeMethod;
-                    var cmdName = clone.Name;
-                    if (classHasIndexers)
-                    {
-                        switch (clone.HttpMethod) {
-                            case HttpMethod.Get:
-                                cmdName = "List";
-                                break;
-                            case HttpMethod.Post:
-                                cmdName = "Create";
-                                break;
-                        }
-                    }
+                    var cmdName = clone.HttpMethod switch {
+                        HttpMethod.Get when classHasIndexers =>"List",
+                        HttpMethod.Post when classHasIndexers => "Create",
+                        _ => clone.Name,
+                    };
 
                     clone.IsAsync = false;
                     clone.Name = $"Build{cmdName}Command";
