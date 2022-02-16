@@ -197,7 +197,8 @@ namespace Kiota.Builder.Writers.Shell
                 optionBuilder.Append($"-{NormalizeToOption(option.Name)}\"");
                 if (option.DefaultValue != null)
                 {
-                    optionBuilder.Append($", getDefaultValue: ()=> {option.DefaultValue}");
+                    var defaultValue = optionType == "string" ? $"\"{option.DefaultValue}\"" : option.DefaultValue;
+                    optionBuilder.Append($", getDefaultValue: ()=> {defaultValue}");
                 }
 
                 if (!string.IsNullOrEmpty(option.Description))

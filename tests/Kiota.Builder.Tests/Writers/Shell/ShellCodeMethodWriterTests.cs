@@ -112,6 +112,8 @@ public class ShellCodeMethodWriterTests : IDisposable
             Name = "q",
             ParameterKind = CodeParameterKind.QueryParameter,
             Type = stringType,
+            DefaultValue = "test",
+            Description = "The q option"
         });
         method.AddPathOrQueryParameter(new CodeParameter {
             Name = "p",
@@ -246,7 +248,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         var result = tw.ToString();
 
         Assert.Contains("var command = new Command(\"user\");", result);
-        Assert.Contains("var qOption = new Option<string>(\"-q\")", result);
+        Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
         Assert.Contains("qOption.IsRequired = true;", result);
         Assert.Contains("command.AddOption(qOption);", result);
         Assert.Contains("command.AddOption(outputOption);", result);
