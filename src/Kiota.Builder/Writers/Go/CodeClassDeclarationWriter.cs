@@ -9,7 +9,9 @@ namespace Kiota.Builder.Writers.Go {
 
         public override void WriteCodeElement(CodeClass.Declaration codeElement, LanguageWriter writer)
         {
-            var ns = codeElement?.Parent?.Parent as CodeNamespace;
+            if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
+            if(writer == null) throw new ArgumentNullException(nameof(writer));
+            var ns = codeElement.Parent?.Parent as CodeNamespace;
             if (ns != null)
                 writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().Replace("-", string.Empty)}");
             var importSegments = codeElement

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Php
@@ -10,6 +11,8 @@ namespace Kiota.Builder.Writers.Php
 
         public override void WriteCodeElement(CodeClass.Declaration codeElement, LanguageWriter writer)
         {
+            if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
+            if(writer == null) throw new ArgumentNullException(nameof(writer));
             conventions.WritePhpDocumentStart(writer);
             conventions.WriteNamespaceAndImports(codeElement, writer);
             if (codeElement != null)

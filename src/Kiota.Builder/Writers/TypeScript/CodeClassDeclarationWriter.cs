@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.TypeScript {
@@ -10,6 +11,8 @@ namespace Kiota.Builder.Writers.TypeScript {
         }
         public override void WriteCodeElement(CodeClass.Declaration codeElement, LanguageWriter writer)
         {
+            if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
+            if(writer == null) throw new ArgumentNullException(nameof(writer));
             var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
             _codeUsingWriter.WriteCodeElement(codeElement.Usings, parentNamespace, writer);
             

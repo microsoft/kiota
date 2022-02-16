@@ -9,6 +9,8 @@ namespace Kiota.Builder.Writers.CSharp {
         public CodeClassDeclarationWriter(CSharpConventionService conventionService): base(conventionService) { }
         public override void WriteCodeElement(CodeClass.Declaration codeElement, LanguageWriter writer)
         {
+            if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
+            if(writer == null) throw new ArgumentNullException(nameof(writer));
             codeElement.Usings
                     .Where(x => (x.Declaration?.IsExternal ?? true) || !x.Declaration.Name.Equals(codeElement.Name, StringComparison.OrdinalIgnoreCase)) // needed for circular requests patterns like message folder
                     .Select(x => x.Declaration?.IsExternal ?? false ?
@@ -18,7 +20,7 @@ namespace Kiota.Builder.Writers.CSharp {
                     .OrderBy(x => x)
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
-            if(codeElement?.Parent?.Parent is CodeNamespace) {
+            if(codeElement.Parent?.Parent is CodeNamespace) {
                 writer.WriteLine($"namespace {codeElement.Parent.Parent.Name} {{");
                 writer.IncreaseIndent();
             }
