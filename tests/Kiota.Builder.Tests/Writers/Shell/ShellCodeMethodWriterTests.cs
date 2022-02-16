@@ -293,8 +293,8 @@ public class ShellCodeMethodWriterTests : IDisposable
         var result = tw.ToString();
 
         Assert.Contains("var command = new Command(\"user\");", result);
-        Assert.Contains("var qOption = new Option<string>(\"-q\")", result);
-        Assert.Contains("qOption.IsRequired = true;", result);
+        Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
+        Assert.Contains("qOption.IsRequired = false;", result);
         Assert.Contains("command.AddOption(qOption);", result);
         Assert.Contains("var bodyOption = new Option<string>(\"--body\")", result);
         Assert.Contains("bodyOption.IsRequired = true;", result);
@@ -340,8 +340,8 @@ public class ShellCodeMethodWriterTests : IDisposable
         var result = tw.ToString();
 
         Assert.Contains("var command = new Command(\"user\");", result);
-        Assert.Contains("var qOption = new Option<string>(\"-q\")", result);
-        Assert.Contains("qOption.IsRequired = true;", result);
+        Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
+        Assert.Contains("qOption.IsRequired = false;", result);
         Assert.Contains("command.AddOption(qOption);", result);
         Assert.Contains("command.AddOption(outputOption);", result);
         Assert.Contains("var fileOption = new Option<FileInfo>(\"--file\");", result);
@@ -389,8 +389,8 @@ public class ShellCodeMethodWriterTests : IDisposable
         var result = tw.ToString();
 
         Assert.Contains("var command = new Command(\"user\");", result);
-        Assert.Contains("var qOption = new Option<string>(\"-q\")", result);
-        Assert.Contains("qOption.IsRequired = true;", result);
+        Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
+        Assert.Contains("qOption.IsRequired = false;", result);
         Assert.Contains("command.AddOption(qOption);", result);
         Assert.Contains("var bodyOption = new Option<string>(\"--body\")", result);
         Assert.Contains("bodyOption.IsRequired = true;", result);
