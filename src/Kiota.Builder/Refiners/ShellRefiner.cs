@@ -61,7 +61,7 @@ namespace Kiota.Builder.Refiners
                 CreateCommandBuildersFromRequestExecutors(currentClass, classHasIndexers, requestExecutors);
 
                 // Build root command
-                var clientConstructor = currentClass.GetChildElements().OfType<CodeMethod>().FirstOrDefault(m => m.MethodKind == CodeMethodKind.ClientConstructor);
+                var clientConstructor = currentClass.GetChildElements().OfType<CodeMethod>().FirstOrDefault(m => m.IsOfKind(CodeMethodKind.ClientConstructor));
                 if (clientConstructor != null)
                 {
                     var rootMethod = new CodeMethod
