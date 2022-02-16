@@ -46,7 +46,7 @@ jobs:
         with:
           name: drop
           path: |
-            ${{ env.relativePath }}/src/bin/Release/*.nupkg
+            ${{ env.relativePath }}/src/Microsoft.Kiota.Cli.Commons/bin/Release/*.nupkg
   deploy:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     environment:
