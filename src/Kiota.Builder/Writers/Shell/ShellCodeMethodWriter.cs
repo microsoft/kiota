@@ -14,6 +14,8 @@ namespace Kiota.Builder.Writers.Shell
         private static Regex camelCaseRegex = new Regex("(?<=[a-z])([A-Z])", RegexOptions.Compiled);
         private static Regex identifierRegex = new Regex("(?:[-_\\.]([a-zA-Z]))", RegexOptions.Compiled);
         private static Regex uppercaseRegex = new Regex("([A-Z])", RegexOptions.Compiled);
+        private const string cancellationTokenParamType = "CancellationToken";
+        private const string cancellationTokenParamName = "cancellationToken";
         private const string consoleParamType = "IConsole";
         private const string consoleParamName = "console";
         private const string fileParamType = "FileInfo";
@@ -125,6 +127,11 @@ namespace Kiota.Builder.Writers.Shell
             // Add console param
             paramTypes.Add(consoleParamType);
             paramNames.Add(consoleParamName);
+
+            // Add CancellationToken param
+            paramTypes.Add(cancellationTokenParamType);
+            paramNames.Add(cancellationTokenParamName);
+
             var zipped = paramTypes.Zip(paramNames);
             var projected = zipped.Select((x, y) => $"{x.First} {x.Second}");
             var handlerParams = string.Join(", ", projected);
@@ -351,13 +358,26 @@ namespace Kiota.Builder.Writers.Shell
             var separator = string.IsNullOrWhiteSpace(parametersList) ? "" : ", ";
             WriteRequestInformation(writer, generatorMethod, parametersList, separator);
 
+            var errorMappingVarName = "default";
+            if (codeElement.ErrorMappings.Any())
+            {
+                errorMappingVarName = "errorMapping";
+                writer.WriteLine($"var {errorMappingVarName} = new Dictionary<string, Func<IParsable>> {{");
+                writer.IncreaseIndent();
+                foreach (var errorMapping in codeElement.ErrorMappings)
+                {
+                    writer.WriteLine($"{{\"{errorMapping.Key.ToUpperInvariant()}\", () => new {errorMapping.Value.Name.ToFirstCharacterUpperCase()}()}},");
+                }
+                writer.CloseBlock("};");
+            }
+
             var requestMethod = "SendPrimitiveAsync<Stream>";
             if (isVoid)
             {
                 requestMethod = "SendNoContentAsync";
             }
 
-            writer.WriteLine($"{(isVoid ? string.Empty : "var response = ")}await RequestAdapter.{requestMethod}(requestInfo);");
+            writer.WriteLine($"{(isVoid ? string.Empty : "var response = ")}await RequestAdapter.{requestMethod}(requestInfo, errorMapping: {errorMappingVarName}, cancellationToken: {cancellationTokenParamName});");
         }
 
         private static void WriteRequestInformation(LanguageWriter writer, CodeMethod generatorMethod, string parametersList, string separator)
