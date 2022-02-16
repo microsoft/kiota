@@ -30,9 +30,9 @@ class PhpLeagueAccessTokenProviderTest extends TestCase
                     'client_id' => 'clientId',
                     'client_secret' => 'clientSecret',
                     'grant_type' => 'client_credentials',
-                    'scope' => rawurlencode('https://graph.microsoft.com/.default')
+                    'scope' => 'https://graph.microsoft.com/.default'
                 ];
-                $requestBodyMap = $this->formUrlEncodedBodyToMap($request->getBody()->getContents());
+                parse_str($request->getBody()->getContents(), $requestBodyMap);
                 $this->assertEquals($expectedBody, $requestBodyMap);
                 return new Response(200, [], json_encode(['access_token' => 'abc']));
             }
@@ -62,7 +62,7 @@ class PhpLeagueAccessTokenProviderTest extends TestCase
         $mockResponses = [
             new Response(200, [], json_encode(['access_token' => 'abc', 'expires_in' => 1, 'refresh_token' => 'refresh'])),
             function (Request $request) {
-                $requestBodyMap = $this->formUrlEncodedBodyToMap($request->getBody()->getContents());
+                parse_str($request->getBody()->getContents(), $requestBodyMap);
                 $this->assertArrayHasKey('refresh_token', $requestBodyMap);
                 $this->assertEquals('refresh', $requestBodyMap['refresh_token']);
                 return new Response(200, [], json_encode(['access_token' => 'xyz', 'expires_in' => 1]));
@@ -82,12 +82,12 @@ class PhpLeagueAccessTokenProviderTest extends TestCase
         $mockResponses = [
             new Response(200, [], json_encode(['access_token' => 'abc', 'expires_in' => 1])),
             function (Request $request) {
-                $requestBodyMap = $this->formUrlEncodedBodyToMap($request->getBody()->getContents());
+                parse_str($request->getBody()->getContents(), $requestBodyMap);
                 $expectedBody = [
                     'client_id' => 'clientId',
                     'client_secret' => 'clientSecret',
                     'grant_type' => 'client_credentials',
-                    'scope' => rawurlencode('https://graph.microsoft.com/.default')
+                    'scope' => 'https://graph.microsoft.com/.default'
                 ];
                 $this->assertEquals($expectedBody, $requestBodyMap);
                 return new Response(200, [], json_encode(['access_token' => 'xyz', 'expires_in' => 1]));
@@ -103,15 +103,5 @@ class PhpLeagueAccessTokenProviderTest extends TestCase
     private function getMockHttpClient(array $mockResponses): Client
     {
         return new Client(['handler' => new MockHandler($mockResponses)]);
-    }
-
-    private function formUrlEncodedBodyToMap(string $body): array
-    {
-        $result = [];
-        foreach (explode('&', $body) as $item) {
-            $pair = explode('=', $item);
-            $result[$pair[0]] = $pair[1];
-        }
-        return $result;
     }
 }
