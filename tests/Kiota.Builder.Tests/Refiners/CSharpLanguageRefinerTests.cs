@@ -15,7 +15,7 @@ public class CSharpLanguageRefinerTests {
         }).First();
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
         
-        var declaration = model.StartBlock as CodeClass.ClassDeclaration;
+        var declaration = model.StartBlock as ClassDeclaration;
 
         Assert.Contains("ApiException", declaration.Usings.Select(x => x.Name));
         Assert.Equal("ApiException", declaration.Inherits.Name);
@@ -27,7 +27,7 @@ public class CSharpLanguageRefinerTests {
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        var declaration = model.StartBlock as CodeClass.ClassDeclaration;
+        var declaration = model.StartBlock as ClassDeclaration;
         declaration.Inherits = new CodeType {
             Name = "SomeOtherModel"
         };
@@ -58,7 +58,7 @@ public class CSharpLanguageRefinerTests {
                     });
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
         
-        var declaration = requestBuilder.StartBlock as CodeClass.ClassDeclaration;
+        var declaration = requestBuilder.StartBlock as ClassDeclaration;
 
         Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
     }

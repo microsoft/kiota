@@ -103,7 +103,7 @@ public class CodeMethodWriterTests : IDisposable {
         };
     }
     private void AddInheritanceClass() {
-        (parentClass.StartBlock as CodeClass.ClassDeclaration).Inherits = new CodeType {
+        (parentClass.StartBlock as ClassDeclaration).Inherits = new CodeType {
             Name = "someParentClass"
         };
     }
@@ -219,7 +219,7 @@ public class CodeMethodWriterTests : IDisposable {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as CodeClass.ClassDeclaration).Inherits = new CodeType {
+        (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -272,7 +272,7 @@ public class CodeMethodWriterTests : IDisposable {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as CodeClass.ClassDeclaration).Inherits = new CodeType {
+        (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -313,7 +313,7 @@ public class CodeMethodWriterTests : IDisposable {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as CodeClass.ClassDeclaration).Inherits = new CodeType {
+        (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };

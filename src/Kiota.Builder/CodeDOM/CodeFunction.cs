@@ -6,7 +6,7 @@ namespace Kiota.Builder;
 /// <summary>
 /// Represents global functions for languages that support both local functions to classes and global functions like TypeScript for instance.
 /// </summary>
-public class CodeFunction : CodeBlock
+public class CodeFunction : CodeBlock<BlockDeclaration, BlockEnd>
 {
     public override string Name
     {

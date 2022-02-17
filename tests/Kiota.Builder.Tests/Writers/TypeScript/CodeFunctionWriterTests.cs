@@ -49,7 +49,7 @@ public class CodeFunctionWriterTests : IDisposable {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as CodeClass.ClassDeclaration).Inherits = new CodeType {
+        (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -102,7 +102,7 @@ public class CodeFunctionWriterTests : IDisposable {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as CodeClass.ClassDeclaration).Inherits = new CodeType {
+        (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -143,7 +143,7 @@ public class CodeFunctionWriterTests : IDisposable {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as CodeClass.ClassDeclaration).Inherits = new CodeType {
+        (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };

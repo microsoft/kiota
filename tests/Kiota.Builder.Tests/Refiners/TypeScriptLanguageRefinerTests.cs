@@ -25,7 +25,7 @@ public class TypeScriptLanguageRefinerTests {
         }).First();
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
-        var declaration = model.StartBlock as CodeClass.ClassDeclaration;
+        var declaration = model.StartBlock as ClassDeclaration;
 
         Assert.Contains("ApiError", declaration.Usings.Select(x => x.Name));
         Assert.Equal("ApiError", declaration.Inherits.Name);
@@ -37,7 +37,7 @@ public class TypeScriptLanguageRefinerTests {
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        var declaration = model.StartBlock as CodeClass.ClassDeclaration;
+        var declaration = model.StartBlock as ClassDeclaration;
         declaration.Inherits = new CodeType {
             Name = "SomeOtherModel"
         };
@@ -68,7 +68,7 @@ public class TypeScriptLanguageRefinerTests {
                     });
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
-        var declaration = requestBuilder.StartBlock as CodeClass.ClassDeclaration;
+        var declaration = requestBuilder.StartBlock as ClassDeclaration;
 
         Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
     }
@@ -82,7 +82,7 @@ public class TypeScriptLanguageRefinerTests {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as CodeClass.ClassDeclaration).Inherits = new CodeType {
+        (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };

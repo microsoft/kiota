@@ -13,7 +13,7 @@ namespace Kiota.Builder.Writers.Shell
         {
             var conventionService = new CSharpConventionService();
             AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
-            AddOrReplaceCodeElementWriter(new CodeClassEndWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeBlockEndWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeIndexerWriter(conventionService));
             AddOrReplaceCodeElementWriter(new ShellCodeMethodWriter(conventionService));

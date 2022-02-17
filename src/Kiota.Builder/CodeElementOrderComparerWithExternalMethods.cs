@@ -3,9 +3,9 @@ namespace Kiota.Builder {
         protected override int GetTypeFactor(CodeElement element) {
             return element switch {
                 CodeUsing => 1,
-                CodeClass.ClassDeclaration => 2,
+                ClassDeclaration => 2,
                 CodeProperty => 3,
-                CodeClass.ClassEnd => 4,
+                BlockEnd => 4,
                 CodeClass => 5,
                 CodeIndexer => 6,
                 CodeMethod => 7,

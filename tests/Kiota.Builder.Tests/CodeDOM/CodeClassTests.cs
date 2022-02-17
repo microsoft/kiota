@@ -14,7 +14,6 @@ namespace Kiota.Builder.Tests {
             Assert.False(codeClass.IsOfKind((CodeClassKind[])null));
             Assert.False(codeClass.IsOfKind(Array.Empty<CodeClassKind>()));
 
-            codeClass.StartBlock = new CodeBlock.BlockDeclaration();
             Assert.Null(codeClass.GetParentClass());
         }
         [Fact]
@@ -117,10 +116,10 @@ namespace Kiota.Builder.Tests {
             var childClass = child.AddClass(new CodeClass {
                 Name = "child"
             }).First();
-            (childClass.StartBlock as CodeClass.ClassDeclaration).Inherits = new CodeType {
+            (childClass.StartBlock as ClassDeclaration).Inherits = new CodeType {
                 TypeDefinition = parent,
             };
-            (parent.StartBlock as CodeClass.ClassDeclaration).Inherits = new CodeType {
+            (parent.StartBlock as ClassDeclaration).Inherits = new CodeType {
                 TypeDefinition = grandParent,
             };
             Assert.Equal(grandParent, parent.GetParentClass());

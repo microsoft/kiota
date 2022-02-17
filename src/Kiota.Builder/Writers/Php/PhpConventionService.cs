@@ -149,7 +149,7 @@ namespace Kiota.Builder.Writers.Php
         {
             writer.WriteLines("<?php", string.Empty);
         }
-        public void WriteNamespaceAndImports(CodeClass.ClassDeclaration codeElement, LanguageWriter writer)
+        public void WriteNamespaceAndImports(ClassDeclaration codeElement, LanguageWriter writer)
         {
             bool hasUse = false;
             if (codeElement?.Parent?.Parent is CodeNamespace codeNamespace)

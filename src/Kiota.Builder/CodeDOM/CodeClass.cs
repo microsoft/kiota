@@ -18,14 +18,9 @@ public enum CodeClassKind {
 /// <summary>
 /// CodeClass represents an instance of a Class to be generated in source code
 /// </summary>
-public class CodeClass : ProprietableBlock<CodeClassKind>, ITypeDefinition
+public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITypeDefinition
 {
     private string name;
-    public CodeClass():base()
-    {
-        StartBlock = new ClassDeclaration() { Parent = this};
-        EndBlock = new ClassEnd() { Parent = this };
-    }
 
     public bool IsErrorDefinition { get; set; }
 
@@ -72,16 +67,13 @@ public class CodeClass : ProprietableBlock<CodeClassKind>, ITypeDefinition
         else
             return parentClass.GetGreatestGrandparent(startClassToSkip);
     }
-    public class ClassDeclaration : ProprietableBlockDeclaration
-    {
-        private CodeType inherits;
-        public CodeType Inherits { get => inherits; set {
-            EnsureElementsAreChildren(value);
-            inherits = value;
-        } }
-    }
-
-    public class ClassEnd : BlockEnd
-    {
-    }
 }
+public class ClassDeclaration : ProprietableBlockDeclaration
+{
+    private CodeType inherits;
+    public CodeType Inherits { get => inherits; set {
+        EnsureElementsAreChildren(value);
+        inherits = value;
+    } }
+}
+

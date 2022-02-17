@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Kiota.Builder;
 
-public abstract class ProprietableBlock<T> : CodeBlock, IDocumentedElement where T : Enum
+public abstract class ProprietableBlock<T, U> : CodeBlock<U, BlockEnd>, IDocumentedElement where T : Enum where U : ProprietableBlockDeclaration, new()
 {
     public string Description {get; set;}
     public IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties)
@@ -35,17 +35,19 @@ public abstract class ProprietableBlock<T> : CodeBlock, IDocumentedElement where
             throw new ArgumentOutOfRangeException(nameof(methods));
         return AddRange(methods);
     }
-    public abstract class ProprietableBlockDeclaration : BlockDeclaration
-    {
-        private readonly List<CodeType> implements = new ();
-        public void AddImplements(params CodeType[] types) {
-            if(types == null || types.Any(x => x == null))
-                throw new ArgumentNullException(nameof(types));
-            EnsureElementsAreChildren(types);
-            implements.AddRange(types);
-        }
-        public IEnumerable<CodeType> Implements => implements;
+    
+}
+
+public class ProprietableBlockDeclaration : BlockDeclaration
+{
+    private readonly List<CodeType> implements = new ();
+    public void AddImplements(params CodeType[] types) {
+        if(types == null || types.Any(x => x == null))
+            throw new ArgumentNullException(nameof(types));
+        EnsureElementsAreChildren(types);
+        implements.AddRange(types);
     }
+    public IEnumerable<CodeType> Implements => implements;
 }
 
 

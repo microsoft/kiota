@@ -22,12 +22,12 @@ namespace Kiota.Builder {
         protected virtual int GetTypeFactor(CodeElement element) {
             return element switch {
                 CodeUsing => 1,
-                CodeClass.ClassDeclaration => 2,
+                ClassDeclaration => 2,
                 CodeProperty => 3,
                 CodeIndexer => 4,
                 CodeMethod => 5,
                 CodeClass => 6,
-                CodeClass.ClassEnd => 7,
+                BlockEnd => 7,
                 _ => 0,
             };
         }

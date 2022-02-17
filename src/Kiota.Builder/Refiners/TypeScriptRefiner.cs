@@ -68,7 +68,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
     private static void AliasUsingsWithSameSymbol(CodeElement currentElement) {
         if(currentElement is CodeClass currentClass &&
-            currentClass.StartBlock is CodeClass.ClassDeclaration currentDeclaration &&
+            currentClass.StartBlock is ClassDeclaration currentDeclaration &&
             currentDeclaration.Usings.Any(x => !x.IsExternal)) {
                 var duplicatedSymbolsUsings = currentDeclaration.Usings.Where(x => !x.IsExternal)
                                                                         .Distinct(usingComparer)

@@ -100,7 +100,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 Name = "model",
                 Kind = CodeClassKind.Model
             }).First();
-            var declaration = model.StartBlock as CodeClass.ClassDeclaration;
+            var declaration = model.StartBlock as ClassDeclaration;
             declaration.Inherits = new (){
                 Name = "someInterface"
             };
@@ -117,7 +117,7 @@ namespace Kiota.Builder.Refiners.Tests {
                 Name = "entity",
                 Kind = CodeClassKind.Model
             }).First();
-            var declaration = model.StartBlock as CodeClass.ClassDeclaration;
+            var declaration = model.StartBlock as ClassDeclaration;
             declaration.Inherits = new (){
                 Name = "entity"
             };
@@ -126,7 +126,7 @@ namespace Kiota.Builder.Refiners.Tests {
         }
         [Fact]
         public void AddNamespaceModuleImports() {
-            var declaration = parentClass.StartBlock as CodeClass.ClassDeclaration;
+            var declaration = parentClass.StartBlock as ClassDeclaration;
             var subNS = graphNS.AddNamespace($"{graphNS.Name}.messages");
             var messageClassDef = new CodeClass {
                 Name = "Message",

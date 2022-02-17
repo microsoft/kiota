@@ -30,13 +30,13 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         }
         [Fact]
         public void WritesSimpleDeclaration() {
-            codeElementWriter.WriteCodeElement(parentClass.StartBlock as CodeClass.ClassDeclaration, writer);
+            codeElementWriter.WriteCodeElement(parentClass.StartBlock as ClassDeclaration, writer);
             var result = tw.ToString();
             Assert.Contains("export class", result);
         }
         [Fact]
         public void WritesImplementation() {
-            var declaration = parentClass.StartBlock as CodeClass.ClassDeclaration;
+            var declaration = parentClass.StartBlock as ClassDeclaration;
             declaration.AddImplements(new CodeType {
                 Name = "someInterface"
             });
@@ -46,7 +46,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         }
         [Fact]
         public void WritesInheritance() {
-            var declaration = parentClass.StartBlock as CodeClass.ClassDeclaration;
+            var declaration = parentClass.StartBlock as ClassDeclaration;
             declaration.Inherits = new () {
                 Name = "someInterface"
             };
@@ -56,7 +56,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         }
         [Fact]
         public void WritesImports() {
-            var declaration = parentClass.StartBlock as CodeClass.ClassDeclaration;
+            var declaration = parentClass.StartBlock as ClassDeclaration;
             declaration.AddUsings(new CodeUsing {
                 Name = "Objects",
                 Declaration = new () {

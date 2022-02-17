@@ -24,7 +24,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if(generatedCode is CodeMethod currentMethod &&
             currentMethod.IsOfKind(CodeMethodKind.ClientConstructor) &&
             currentMethod.Parent is CodeClass currentClass &&
-            currentClass.StartBlock is CodeClass.ClassDeclaration declaration) {
+            currentClass.StartBlock is ClassDeclaration declaration) {
                 var cumulatedSymbols = currentMethod.DeserializerModules
                                                     .Union(currentMethod.SerializerModules)
                                                     .Union(serializationWriterFactoryInterfaceAndRegistrationFullName)
@@ -72,7 +72,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     internal const string SetterPrefix = "set-";
     protected static void CorrectCoreTypesForBackingStore(CodeElement currentElement, string defaultPropertyValue) {
         if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder)
-            && currentClass.StartBlock is CodeClass.ClassDeclaration currentDeclaration) {
+            && currentClass.StartBlock is ClassDeclaration currentDeclaration) {
             var backedModelImplements = currentDeclaration.Implements.FirstOrDefault(x => "IBackedModel".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
             if(backedModelImplements != null)
                 backedModelImplements.Name = backedModelImplements.Name[1..]; //removing the "I"
@@ -258,7 +258,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                         .SelectMany(x => usingSelector(x))
                         .ToArray();
         if(usingsToAdd.Any()) {
-                var parentBlock = current.GetImmediateParentOfType<CodeBlock>();
+                var parentBlock = current.GetImmediateParentOfType<IBlock>();
                 var targetBlock = parentBlock.Parent is CodeClass parentClassParent ? parentClassParent : parentBlock;
                 targetBlock.AddUsing(usingsToAdd);
             }
@@ -536,7 +536,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         if(currentElement is CodeClass currentClass &&
             currentClass.IsOfKind(CodeClassKind.Model) &&
-            currentClass.StartBlock is CodeClass.ClassDeclaration declaration) {
+            currentClass.StartBlock is ClassDeclaration declaration) {
             declaration.AddImplements(new CodeType {
                 IsExternal = true,
                 Name = className
@@ -558,7 +558,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected static void AddParentClassToErrorClasses(CodeElement currentElement, string parentClassName, string parentClassNamespace) {
         if(currentElement is CodeClass currentClass &&
             currentClass.IsErrorDefinition &&
-            currentClass.StartBlock is CodeClass.ClassDeclaration declaration) {
+            currentClass.StartBlock is ClassDeclaration declaration) {
             if(declaration.Inherits != null)
                 throw new InvalidOperationException("This error class already inherits from another class. Update the description to remove that inheritance.");
             declaration.Inherits = new CodeType {
@@ -577,7 +577,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected static void AddDiscriminatorMappingsUsingsToParentClasses(CodeElement currentElement, string parseNodeInterfaceName, bool addFactoryMethodImport = false, bool addUsings = true) {
         if(currentElement is CodeMethod currentMethod &&
             currentMethod.Parent is CodeClass parentClass &&
-            parentClass.StartBlock is CodeClass.ClassDeclaration declaration) {
+            parentClass.StartBlock is ClassDeclaration declaration) {
                 if(currentMethod.IsOfKind(CodeMethodKind.Factory) &&
                     currentMethod.DiscriminatorMappings != null) {
                         if(addUsings)

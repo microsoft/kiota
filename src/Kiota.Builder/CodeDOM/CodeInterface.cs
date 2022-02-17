@@ -5,17 +5,9 @@ public enum CodeInterfaceKind {
     Model,
 }
 
-public class CodeInterface : ProprietableBlock<CodeInterfaceKind>, ITypeDefinition
+public class CodeInterface : ProprietableBlock<CodeInterfaceKind, InterfaceDeclaration>, ITypeDefinition
 {
-    public CodeInterface():base()
-    {
-        StartBlock = new InterfaceDeclaration() { Parent = this};
-        EndBlock = new InterfaceEnd() { Parent = this };
-    }
-    public class InterfaceEnd : BlockEnd
-    {
-    }
-    public class InterfaceDeclaration : ProprietableBlockDeclaration
-    {
-    }
+}
+public class InterfaceDeclaration : ProprietableBlockDeclaration
+{
 }

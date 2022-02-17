@@ -7,7 +7,7 @@ namespace Kiota.Builder
     /// <summary>
     /// 
     /// </summary>
-    public class CodeNamespace : CodeBlock
+    public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
     {
         private CodeNamespace():base() {}
         public static CodeNamespace InitRootNamespace() {

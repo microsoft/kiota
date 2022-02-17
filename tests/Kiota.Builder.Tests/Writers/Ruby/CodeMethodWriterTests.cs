@@ -111,7 +111,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             };
         }
         private void AddInheritanceClass() {
-            (parentClass.StartBlock as CodeClass.ClassDeclaration).Inherits = new CodeType {
+            (parentClass.StartBlock as ClassDeclaration).Inherits = new CodeType {
                 Name = "someParentClass"
             };
         }

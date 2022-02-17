@@ -90,11 +90,11 @@ namespace Kiota.Builder.Writers
                     case CodeIndexer i:
                         ((ICodeElementWriter<CodeIndexer>) elementWriter).WriteCodeElement(i, this);
                         break;
-                    case CodeClass.ClassDeclaration d:
-                        ((ICodeElementWriter<CodeClass.ClassDeclaration>) elementWriter).WriteCodeElement(d, this);
+                    case ClassDeclaration d:
+                        ((ICodeElementWriter<ClassDeclaration>) elementWriter).WriteCodeElement(d, this);
                         break;
-                    case CodeClass.ClassEnd i:
-                        ((ICodeElementWriter<CodeClass.ClassEnd>) elementWriter).WriteCodeElement(i, this);
+                    case BlockEnd i:
+                        ((ICodeElementWriter<BlockEnd>) elementWriter).WriteCodeElement(i, this);
                         break;
                     case CodeEnum e:
                         ((ICodeElementWriter<CodeEnum>) elementWriter).WriteCodeElement(e, this);
@@ -115,7 +115,7 @@ namespace Kiota.Builder.Writers
                         ((ICodeElementWriter<CodeInterface>) elementWriter).WriteCodeElement(itf, this);
                         break;
                 }
-            else if(!(code is CodeClass) && !(code is CodeNamespace.BlockDeclaration) && !(code is CodeNamespace.BlockEnd))
+            else if(!(code is CodeClass) && !(code is BlockDeclaration) && !(code is BlockEnd))
                 throw new InvalidOperationException($"Dispatcher missing for type {code.GetType()}");
         }
         protected void AddOrReplaceCodeElementWriter<T>(ICodeElementWriter<T> writer) where T: CodeElement {

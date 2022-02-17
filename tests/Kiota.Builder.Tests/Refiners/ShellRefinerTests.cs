@@ -24,7 +24,7 @@ public class ShellRefinerTests {
         }).First();
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Shell }, root);
         
-        var declaration = requestBuilder.StartBlock as CodeClass.ClassDeclaration;
+        var declaration = requestBuilder.StartBlock as ClassDeclaration;
 
         Assert.Contains("System.CommandLine", declaration.Usings.Select(x => x.Declaration?.Name));
     }

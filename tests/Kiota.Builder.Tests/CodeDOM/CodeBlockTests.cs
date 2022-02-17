@@ -14,7 +14,7 @@ namespace Kiota.Builder.Tests {
             child.AddRange();
             Assert.Empty(child.GetChildElements(true));
         }
-        class NeverBlock : CodeBlock
+        class NeverBlock : CodeBlock<BlockDeclaration, BlockEnd>
         {
             public void AddRange() {
                 base.AddRange((CodeClass[]) null);
