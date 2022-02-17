@@ -697,12 +697,16 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             var inter = CopyClassAsInterface(modelClass, interfaceNS, interfaceNamingCallback);
 
         }
-        var interfaceChildNSs = interfaceNS.GetChildElements(true).OfType<CodeNamespace>();
         foreach (var subModelsNS in childItems
                                            .OfType<CodeNamespace>()) {
-            var subInterfaceNS = interfaceChildNSs.FirstOrDefault(x => x.Name.EndsWith(subModelsNS.Name.Split(new char[] {'.', '/'}).Last(), StringComparison.OrdinalIgnoreCase));
+            var subInterfaceNS = FindCorrespondingInterfaceNamespace(subModelsNS, interfaceNS);
             CopyModelClassesAsInterfaces(subModelsNS, subInterfaceNS, interfaceNamingCallback);
         }
+    }
+    private static CodeNamespace FindCorrespondingInterfaceNamespace(CodeNamespace classNS, CodeNamespace interfaceNS) {
+        //TODO this is no good as we could have multiple namespaces with the same name, we need to compose stuff
+        var subInterfaceNS = interfaceNS.FindNamespaceByName(classNS.Name.Split(new char[] {'.', '/'}).Last());
+        return subInterfaceNS;
     }
     private static CodeInterface CopyClassAsInterface(CodeClass modelClass, CodeNamespace interfaceNS, Func<CodeClass, string> interfaceNamingCallback) {
         var interfaceName = interfaceNamingCallback.Invoke(modelClass);
@@ -720,6 +724,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 TypeDefinition = inter,
             }
         });
+        var usingsToRemove = new List<string>();
         if(modelClass.StartBlock is ClassDeclaration classDeclaration) {
             classDeclaration.AddImplements(new CodeType {
                 Name = interfaceName,
@@ -734,14 +739,28 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                         TypeDefinition = parentInterface,
                     });
                 }
-            }
-        foreach(var method in modelClass.GetChildElements(true).OfType<CodeMethod>()) {
+        }
+        var classModelChildItems = modelClass.GetChildElements(true);
+        foreach(var method in classModelChildItems.OfType<CodeMethod>()) {
             var interfaceMethod = inter.AddMethod(method.Clone() as CodeMethod).First();
             //TODO methods return type and parameters (original and copy)
         }
-        //TODO properties on original class
+        foreach(var mProp in classModelChildItems.OfType<CodeProperty>())
+            if (mProp.Type is CodeType propertyType &&
+                !propertyType.IsExternal &&
+                propertyType.TypeDefinition is CodeClass propertyClass) {
+                    var targetInterfaceNS = FindCorrespondingInterfaceNamespace(propertyClass.GetImmediateParentOfType<CodeNamespace>(), interfaceNS);
+                    var propertyInterfaceType = CopyClassAsInterface(propertyClass, targetInterfaceNS, interfaceNamingCallback);
+                    propertyType.Name = propertyInterfaceType.Name;
+                    propertyType.TypeDefinition = propertyInterfaceType;
+                    modelClass.AddUsing(new CodeUsing {
+                        Name = propertyInterfaceType.Name,
+                        Declaration = propertyType
+                    });
+                    usingsToRemove.Add(propertyClass.Name);
+                }
 
-        //TODO remove usings for original classes (method, properties, parameters)
+        modelClass.RemoveUsingsByDeclarationName(usingsToRemove.ToArray());
         return inter;
     }
 }

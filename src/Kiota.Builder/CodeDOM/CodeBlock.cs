@@ -33,6 +33,7 @@ namespace Kiota.Builder
                 InnerChildElements.Remove(element.Name);
             }
         }
+        public void RemoveUsingsByDeclarationName(params string[] names) => StartBlock.RemoveUsingsByDeclarationName(names);
         public void AddUsing(params CodeUsing[] codeUsings) => StartBlock.AddUsings(codeUsings);
         public IEnumerable<CodeUsing> Usings => StartBlock.Usings;
         protected IEnumerable<T> AddRange<T>(params T[] elements) where T : CodeElement {
@@ -111,10 +112,11 @@ namespace Kiota.Builder
                 EnsureElementsAreChildren(codeUsings);
                 usings.AddRange(codeUsings);
             }
-            public void RemoveUsingsByDeclarationName(string name) {
-                if(string.IsNullOrEmpty(name))
-                    throw new ArgumentNullException(nameof(name));
-                usings.RemoveAll(x => name.Equals(x.Declaration?.Name, StringComparison.OrdinalIgnoreCase));
+            public void RemoveUsingsByDeclarationName(params string[] names) {
+                if(names == null || names.Any(x => string.IsNullOrEmpty(x)))
+                    throw new ArgumentNullException(nameof(names));
+                var namesAsHashset = names.ToHashSet(StringComparer.OrdinalIgnoreCase);
+                usings.RemoveAll(x => namesAsHashset.Contains(x.Declaration?.Name));
             }
         }
 

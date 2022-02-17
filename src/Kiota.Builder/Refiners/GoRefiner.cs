@@ -99,7 +99,7 @@ public class GoRefiner : CommonLanguageRefiner
         );
         var modelInterfacesNamespace = DuplicateNamespaceStructure(
             generatedCode.FindNamespaceByName(_configuration.ModelsNamespaceName),
-            "/interfaces"
+            _configuration.ModelsInterfacesNamespaceName
         );
     }
     private static void ReplaceExecutorAndGeneratorParametersByParameterSets(CodeElement currentElement) {
