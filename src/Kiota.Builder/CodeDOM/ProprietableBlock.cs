@@ -4,8 +4,29 @@ using System.Linq;
 
 namespace Kiota.Builder;
 
-public abstract class ProprietableBlock<T, U> : CodeBlock<U, BlockEnd>, IDocumentedElement where T : Enum where U : ProprietableBlockDeclaration, new()
+/// <summary>
+/// Marker interface for type testing
+/// </summary>
+public interface IProprietableBlock {}
+
+/// <summary>
+/// Represents a block of code that can have properties and methods
+/// </summary>
+public abstract class ProprietableBlock<T, U> : CodeBlock<U, BlockEnd>, IDocumentedElement, IProprietableBlock where T : Enum where U : ProprietableBlockDeclaration, new()
 {
+    private string name;
+    /// <summary>
+    /// Name of Class
+    /// </summary>
+    public override string Name
+    {
+        get => name;
+        set
+        {
+            name = value;
+            StartBlock.Name = name;
+        }
+    }
     public string Description {get; set;}
     public IEnumerable<CodeProperty> AddProperty(params CodeProperty[] properties)
     {

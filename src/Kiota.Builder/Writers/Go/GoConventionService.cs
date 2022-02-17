@@ -25,10 +25,14 @@ public class GoConventionService : CommonLanguageConventionService
         return $"{parameter.Name.ToFirstCharacterLowerCase()} {GetTypeString(parameter.Type, targetElement)}";
     }
     private static readonly char dot = '.';
-    public string GetImportedStaticMethodName(CodeTypeBase code, CodeElement targetElement, string methodPrefix = "New", string methodSuffix = "") {
+    public string GetImportedStaticMethodName(CodeTypeBase code, CodeElement targetElement, string methodPrefix = "New", string methodSuffix = "", string trimEnd = "") {
         var typeString = GetTypeString(code, targetElement, false, false)?.Split(dot);
         var importSymbol = typeString == null || typeString.Length < 2 ? string.Empty : typeString.First() + dot;
-        return $"{importSymbol}{methodPrefix}{typeString.Last().ToFirstCharacterUpperCase()}{methodSuffix}";
+        var methodName = typeString.Last().ToFirstCharacterUpperCase();
+        if(!string.IsNullOrEmpty(trimEnd) && methodName.EndsWith(trimEnd, StringComparison.OrdinalIgnoreCase)) {
+            methodName = methodName[0..^trimEnd.Length];
+        }
+        return $"{importSymbol}{methodPrefix}{methodName}{methodSuffix}";
     }
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true) =>
         GetTypeString(code, targetElement, includeCollectionInformation, true);

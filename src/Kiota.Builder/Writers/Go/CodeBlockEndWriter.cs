@@ -3,8 +3,8 @@ namespace Kiota.Builder.Writers.Go {
     {
         public void WriteCodeElement(BlockEnd codeElement, LanguageWriter writer)
         {
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
+            if(codeElement.Parent is CodeNamespace || codeElement.Parent is CodeEnum) return;
+            writer.CloseBlock();
         }
     }
 }

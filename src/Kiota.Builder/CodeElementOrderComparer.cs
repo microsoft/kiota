@@ -23,11 +23,12 @@ namespace Kiota.Builder {
             return element switch {
                 CodeUsing => 1,
                 ClassDeclaration => 2,
-                CodeProperty => 3,
-                CodeIndexer => 4,
-                CodeMethod => 5,
-                CodeClass => 6,
-                BlockEnd => 7,
+                InterfaceDeclaration => 3,
+                CodeProperty => 4,
+                CodeIndexer => 5,
+                CodeMethod => 6,
+                CodeClass => 7,
+                BlockEnd => 8,
                 _ => 0,
             };
         }

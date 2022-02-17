@@ -20,23 +20,7 @@ public enum CodeClassKind {
 /// </summary>
 public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITypeDefinition
 {
-    private string name;
-
     public bool IsErrorDefinition { get; set; }
-
-    /// <summary>
-    /// Name of Class
-    /// </summary>
-    public override string Name
-    {
-        get => name;
-        set
-        {
-            name = value;
-            StartBlock.Name = name;
-        }
-    }
-
     public void SetIndexer(CodeIndexer indexer)
     {
         if(indexer == null)

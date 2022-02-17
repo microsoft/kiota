@@ -111,11 +111,14 @@ namespace Kiota.Builder.Writers
                     case CodeFunction n:
                         ((ICodeElementWriter<CodeFunction>) elementWriter).WriteCodeElement(n, this);
                         break;
-                    case CodeInterface itf:
-                        ((ICodeElementWriter<CodeInterface>) elementWriter).WriteCodeElement(itf, this);
+                    case InterfaceDeclaration itfd:
+                        ((ICodeElementWriter<InterfaceDeclaration>) elementWriter).WriteCodeElement(itfd, this);
                         break;
                 }
-            else if(!(code is CodeClass) && !(code is BlockDeclaration) && !(code is BlockEnd))
+            else if(code is not CodeClass && 
+                    code is not BlockDeclaration &&
+                    code is not BlockEnd &&
+                    code is not CodeInterface)
                 throw new InvalidOperationException($"Dispatcher missing for type {code.GetType()}");
         }
         protected void AddOrReplaceCodeElementWriter<T>(ICodeElementWriter<T> writer) where T: CodeElement {

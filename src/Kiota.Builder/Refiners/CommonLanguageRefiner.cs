@@ -716,13 +716,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     Name = interfaceName,
                     Kind = CodeInterfaceKind.Model,
         }).First();
-        modelClass.AddUsing(new CodeUsing {
-            Name = inter.Name,
-            Declaration = new CodeType {
-                Name = inter.Name,
-                TypeDefinition = inter,
-            }
-        });
         var usingsToRemove = new List<string>();
         if(modelClass.StartBlock is ClassDeclaration classDeclaration) {
             classDeclaration.AddImplements(new CodeType {
@@ -766,6 +759,13 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 }
 
         modelClass.RemoveUsingsByDeclarationName(usingsToRemove.ToArray());
+        var externalTypesOnInter = inter.Methods.Select(x => x.ReturnType).OfType<CodeType>().Where(x => x.IsExternal)
+                                    .Union(inter.Methods.SelectMany(x => x.Parameters).Select(x => x.Type).OfType<CodeType>().Where(x => x.IsExternal))
+                                    .Select(x => x.Name)
+                                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        inter.AddUsing(modelClass.Usings.Where(x => x.IsExternal && externalTypesOnInter.Contains(x.Name)).ToArray());
         return inter;
     }
     private static CodeUsing ReplaceTypeByInterfaceType(CodeClass sourceClass, CodeType originalType, GenerationConfiguration config, List<string> usingsToRemove, Func<CodeClass, string> interfaceNamingCallback) {
@@ -775,8 +775,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         originalType.TypeDefinition = propertyInterfaceType;
         usingsToRemove.Add(sourceClass.Name);
         return new CodeUsing {
-            Name = propertyInterfaceType.Name,
-            Declaration = originalType
+            Name = propertyInterfaceType.Parent.Name,
+            Declaration = new CodeType {
+                Name = propertyInterfaceType.Name,
+                TypeDefinition = propertyInterfaceType,
+            }
         };
     }
 }
