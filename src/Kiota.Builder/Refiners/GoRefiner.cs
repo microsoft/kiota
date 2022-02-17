@@ -11,6 +11,7 @@ public class GoRefiner : CommonLanguageRefiner
     public GoRefiner(GenerationConfiguration configuration) : base(configuration) {}
     public override void Refine(CodeNamespace generatedCode)
     {
+        _configuration.NamespaceNameSeparator = "/";
         AddInnerClasses(
             generatedCode,
             true,
@@ -100,6 +101,12 @@ public class GoRefiner : CommonLanguageRefiner
         var modelInterfacesNamespace = DuplicateNamespaceStructure(
             generatedCode.FindNamespaceByName(_configuration.ModelsNamespaceName),
             _configuration.ModelsInterfacesNamespaceName
+        );
+        CopyModelClassesAsInterfaces(
+            generatedCode,
+            modelInterfacesNamespace,
+            _configuration,
+            x => $"{x.Name}able"
         );
     }
     private static void ReplaceExecutorAndGeneratorParametersByParameterSets(CodeElement currentElement) {
