@@ -8,17 +8,17 @@ from .office_location import OfficeLocation
 T = TypeVar('T')
 
 class User(Parsable):
-    _id: Optional[str]
-    _display_name: Optional[str]
-    _office_location: Optional[OfficeLocation]
-    _updated_at: Optional[datetime]
-    _birthday: Optional[date]
-    _business_phones: Optional[List[str]]
-    _mobile_phone: Optional[str]
-    _is_active: bool
-    _age: Optional[int]
-    _gpa: Optional[float]
-    _additional_data: Optional[Dict[str, Any]] = {}
+    _id: Optional[str] = None
+    _display_name: Optional[str] = None
+    _office_location: Optional[OfficeLocation] = None
+    _updated_at: Optional[datetime] = None
+    _birthday: Optional[date] = None
+    _business_phones: Optional[List[str]] = None
+    _mobile_phone: Optional[str] = None
+    _is_active: Optional[bool] = None
+    _age: Optional[int] = None
+    _gpa: Optional[float] = None
+    _additional_data: Optional[Dict[str, Any]] = None
     
 
     def get_id(self):

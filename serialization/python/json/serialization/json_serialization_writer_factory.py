@@ -1,13 +1,14 @@
 from pickletools import read_string1
 
-from kiota.abstractions import SerializationWriter, SerializationWriterFactory
+from kiota.abstractions.serialization import SerializationWriter, SerializationWriterFactory
 
 from .json_serialization_writer import JsonSerializationWriter
 
 
-class JSONSerializationWriterFactory(SerializationWriterFactory):
+class JsonSerializationWriterFactory(SerializationWriterFactory):
     """A factory that creates JsonSerializationWriter instances.
     """
+
     def get_valid_content_type(self) -> str:
         """Gets the content type this factory creates serialization writers for.
         Returns:
@@ -15,8 +16,7 @@ class JSONSerializationWriterFactory(SerializationWriterFactory):
         """
         return 'application/json'
 
-    def get_serialization_writer(self,
-                                 content_type: str) -> SerializationWriter:
+    def get_serialization_writer(self, content_type: str) -> SerializationWriter:
         """Creates a new SerializationWriter instance for the given content type.
         Args:
             content_type (str): the content type to create a serialization writer for.

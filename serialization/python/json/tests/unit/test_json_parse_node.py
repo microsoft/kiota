@@ -1,11 +1,10 @@
 from datetime import date, time, datetime, timedelta
 import json
 import pytest
-
 from uuid import UUID
 
 from serialization.json_parse_node import JsonParseNode
-from ..helpers.user import User, OfficeLocation
+from ..helpers import User, OfficeLocation
 
 @pytest.fixture
 def sample_user_json():

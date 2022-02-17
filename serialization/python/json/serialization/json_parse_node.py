@@ -256,6 +256,9 @@ class JsonParseNode(ParseNode, Generic[T, U]):
         self.on_after_assign_field_values = value
 
     def _assign_field_values(self, item: U) -> None:
+        if not item.get_additional_data():
+            item.set_additional_data({})
+            
         fields = item.get_field_deserializers()
         object_dict = json.loads(self._json_node)
         for key, val in object_dict.items():
