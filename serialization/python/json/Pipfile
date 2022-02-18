@@ -20,3 +20,4 @@ yapf = {version="0.31.0", index="pypi"}
 isort = {version="5.10.1", index="pypi"}
 pytest = {version="7.0.1", index="pypi"}
 pytest-cov = {version="3.0.0", index="pypi"}
+types-python-dateutil = {version="*", index="pypi"}
