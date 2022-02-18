@@ -192,7 +192,8 @@ public class GoRefiner : CommonLanguageRefiner
                 targetNamespace = FindFirstModelSubnamepaceWithClasses(rootModels);
             }
             if(currentNamespace != targetNamespace &&
-                !string.IsNullOrEmpty(currentNamespace.Name) &&
+                !string.IsNullOrEmpty(currentNamespace?.Name) &&
+                !string.IsNullOrEmpty(targetNamespace?.Name) &&
                 currentNamespace.Name.Contains(targetNamespace.Name, StringComparison.OrdinalIgnoreCase)) {
                 foreach (var codeClass in currentNamespace.Classes)
                 {

@@ -13,12 +13,11 @@ public class GoLanguageRefinerTests {
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
+        root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
 
-        var declaration = model.StartBlock as ClassDeclaration;
-
-        Assert.Contains("ApiError", declaration.Usings.Select(x => x.Name));
-        Assert.Equal("ApiError", declaration.Inherits.Name);
+        Assert.Contains("ApiError", model.StartBlock.Usings.Select(x => x.Name));
+        Assert.Equal("ApiError", model.StartBlock.Inherits.Name);
     }
     [Fact]
     public void FailsExceptionInheritanceOnErrorClassesWhichAlreadyInherit() {
@@ -27,8 +26,7 @@ public class GoLanguageRefinerTests {
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        var declaration = model.StartBlock as ClassDeclaration;
-        declaration.Inherits = new CodeType {
+        model.StartBlock.Inherits = new CodeType {
             Name = "SomeOtherModel"
         };
         Assert.Throws<InvalidOperationException>(() => ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root));
@@ -64,9 +62,7 @@ public class GoLanguageRefinerTests {
                     });
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
 
-        var declaration = requestBuilder.StartBlock as ClassDeclaration;
-
-        Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
+        Assert.Contains("Error4XX", requestBuilder.StartBlock.Usings.Select(x => x.Declaration?.Name));
     }
     [Fact]
     public void AddsUsingsForDiscriminatorTypes() {
@@ -94,11 +90,11 @@ public class GoLanguageRefinerTests {
                         Name = "childModel",
                         TypeDefinition = childModel,
                     });
-        var parentModelDeclaration = parentModel.StartBlock as ClassDeclaration;
-        Assert.Empty(parentModelDeclaration.Usings);
+        Assert.Empty(parentModel.StartBlock.Usings);
+        root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Equal(childModel, parentModelDeclaration.Usings.First(x => x.Declaration.Name.Equals("childModel", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
-        Assert.Null(parentModelDeclaration.Usings.FirstOrDefault(x => x.Declaration.Name.Equals("factory", StringComparison.OrdinalIgnoreCase)));
+        Assert.Equal(childModel, parentModel.StartBlock.Usings.First(x => x.Declaration.Name.Equals("childModel", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
+        Assert.Null(parentModel.StartBlock.Usings.FirstOrDefault(x => x.Declaration.Name.Equals("factory", StringComparison.OrdinalIgnoreCase)));
     }
     [Fact]
     public void AddsUsingsForFactoryMethods() {
@@ -110,7 +106,7 @@ public class GoLanguageRefinerTests {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
+        childModel.StartBlock.Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
@@ -138,10 +134,10 @@ public class GoLanguageRefinerTests {
                 TypeDefinition = parentModel,
             },
         }).First();
-        var requestBuilderDeclaration = requestBuilderClass.StartBlock as ClassDeclaration;
-        Assert.Empty(requestBuilderDeclaration.Usings);
+        Assert.Empty(requestBuilderClass.StartBlock.Usings);
+        root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
-        Assert.Equal(factoryMethod, requestBuilderDeclaration.Usings.First(x => x.Declaration.Name.Equals("factory", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
+        Assert.Equal(factoryMethod, requestBuilderClass.StartBlock.Usings.First(x => x.Declaration.Name.Equals("factory", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
     }
     [Fact]
     public void DoesNotKeepCancellationParametersInRequestExecutors()
@@ -185,6 +181,7 @@ public class GoLanguageRefinerTests {
                 Name = "DateTimeOffset"
             },
         }).First();
+        root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("Time", method.ReturnType.Name);
@@ -201,6 +198,7 @@ public class GoLanguageRefinerTests {
                 Name = "DateOnly"
             },
         }).First();
+        root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("DateOnly", method.ReturnType.Name);
@@ -217,6 +215,7 @@ public class GoLanguageRefinerTests {
                 Name = "TimeOnly"
             },
         }).First();
+        root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("TimeOnly", method.ReturnType.Name);
@@ -233,6 +232,7 @@ public class GoLanguageRefinerTests {
                 Name = "TimeSpan"
             },
         }).First();
+        root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("ISODuration", method.ReturnType.Name);
@@ -266,6 +266,7 @@ public class GoLanguageRefinerTests {
             Type = new CodeType { Name = "string" },
             Access = AccessModifier.Public,
         }).First();
+        root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         Assert.Equal("select_escaped", property.Name);
         Assert.True(property.IsNameEscaped);
@@ -302,7 +303,7 @@ public class GoLanguageRefinerTests {
         const string factoryDefaultName = "ISerializationWriterFactory";
         const string deserializeDefaultName = "IDictionary<string, Action<Model, IParseNode>>";
         const string dateTimeOffsetDefaultName = "DateTimeOffset";
-        const string addiationalDataDefaultName = "new Dictionary<string, object>()";
+        const string additionalDataDefaultName = "new Dictionary<string, object>()";
         var model = root.AddClass(new CodeClass {
             Name = "model",
             Kind = CodeClassKind.Model
@@ -323,7 +324,7 @@ public class GoLanguageRefinerTests {
             Name = "additionalData",
             Kind = CodePropertyKind.AdditionalData,
             Type = new CodeType {
-                Name = addiationalDataDefaultName
+                Name = additionalDataDefaultName
             }
         });
         const string handlerDefaultName = "IResponseHandler";
@@ -395,11 +396,12 @@ public class GoLanguageRefinerTests {
             Kind = CodePropertyKind.PathParameters,
             DefaultValue = "wrongDefaultValue"
         }).First();
+        root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         Assert.Empty(model.Properties.Where(x => requestAdapterDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => factoryDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Properties.Where(x => addiationalDataDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.Properties.Where(x => additionalDataDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Methods.Where(x => deserializeDefaultName.Equals(x.ReturnType.Name)));
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => handlerDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => headersDefaultName.Equals(x.Type.Name)));

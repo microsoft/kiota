@@ -821,6 +821,7 @@ public class CodeMethodWriterTests : IDisposable {
             Access = AccessModifier.Public,
             Kind = CodePropertyKind.Custom,
         });
+        root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         var getter = model.Methods.First(x => x.IsOfKind(CodeMethodKind.Getter));
         var setter = model.Methods.First(x => x.IsOfKind(CodeMethodKind.Setter));
