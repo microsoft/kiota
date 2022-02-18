@@ -33,8 +33,13 @@ namespace Kiota.Builder.Refiners {
             DisambiguatePropertiesWithClassNames(generatedCode);
             AddConstructorsForDefaultValues(generatedCode, false);
             AddSerializationModulesImport(generatedCode);
+            AddParentClassToErrorClasses(
+                generatedCode,
+                "ApiException",
+                "Microsoft.Kiota.Abstractions"
+            );
         }
-        private static void DisambiguatePropertiesWithClassNames(CodeElement currentElement) {
+        protected static void DisambiguatePropertiesWithClassNames(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass) {
                 var sameNameProperty = currentClass.Properties
                                                 .FirstOrDefault(x => x.Name.Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase));
@@ -47,7 +52,7 @@ namespace Kiota.Builder.Refiners {
             }
             CrawlTree(currentElement, DisambiguatePropertiesWithClassNames);
         }
-        private static void MakeEnumPropertiesNullable(CodeElement currentElement) {
+        protected static void MakeEnumPropertiesNullable(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model))
                 currentClass.Properties
                             .Where(x => x.Type is CodeType propType && propType.TypeDefinition is CodeEnum)
@@ -56,7 +61,7 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(currentElement, MakeEnumPropertiesNullable);
         }
         
-        private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
+        protected static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
                 "Microsoft.Kiota.Abstractions", "IRequestAdapter"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
@@ -89,21 +94,21 @@ namespace Kiota.Builder.Refiners {
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
                 "Microsoft.Kiota.Abstractions.Store",  "IBackingStore", "IBackedModel", "BackingStoreFactorySingleton" ),
         };
-        private static void CapitalizeNamespacesFirstLetters(CodeElement current) {
+        protected static void CapitalizeNamespacesFirstLetters(CodeElement current) {
             if(current is CodeNamespace currentNamespace)
                 currentNamespace.Name = currentNamespace.Name?.Split('.')?.Select(x => x.ToFirstCharacterUpperCase())?.Aggregate((x, y) => $"{x}.{y}");
             CrawlTree(current, CapitalizeNamespacesFirstLetters);
         }
-        private static void AddAsyncSuffix(CodeElement currentElement) {
+        protected static void AddAsyncSuffix(CodeElement currentElement) {
             if(currentElement is CodeMethod currentMethod && currentMethod.IsAsync)
                 currentMethod.Name += "Async";
             CrawlTree(currentElement, AddAsyncSuffix);
         }
-        private static void CorrectPropertyType(CodeProperty currentProperty)
+        protected static void CorrectPropertyType(CodeProperty currentProperty)
         {
             CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
         }
-        private static void CorrectMethodType(CodeMethod currentMethod)
+        protected static void CorrectMethodType(CodeMethod currentMethod)
         {
             CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                                     .Select(x => x.Type)

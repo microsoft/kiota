@@ -6,12 +6,12 @@ namespace Kiota.Builder.Writers.Java
         {
             PathSegmenter = new JavaPathSegmenter(rootPath, clientNamespaceName);
             var conventionService = new JavaConventionService();
-            AddCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
-            AddCodeElementWriter(new CodeClassEndWriter());
-            AddCodeElementWriter(new CodeEnumWriter(conventionService));
-            AddCodeElementWriter(new CodeMethodWriter(conventionService));
-            AddCodeElementWriter(new CodePropertyWriter(conventionService));
-            AddCodeElementWriter(new CodeTypeWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeClassEndWriter());
+            AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeTypeWriter(conventionService));
         }
     }
 }

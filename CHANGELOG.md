@@ -16,9 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adds Python abstractions library. #925
 - Adds hostname and protocol validation in authentication. #1051
 - Adds Azure Identity Authentication Provider for Python. #1108
+- Adds JSON Serialization library for Python. #1186
 
 ### Changed
 
+- Fixed a bug where request body would get dropped by the compression handler in Go
 - Fixed an issue where multiple api clients could run into racing conditions in Go.
 - Fixed a bug where empty additional data in Go would lead to invalid JSON payloads during serialization.
 - Fixed a bug where Go serialization would write empty arrays for nil values.
@@ -29,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modified the TypeScript RequestInformation content data type to ArrayBuffer.
 - Updated PHP abstractions to make property keys and values nullable in `SerializationWriter.php`.
 - Fixed an issue where enum collections parsing would fail in Go.
+- Breaking. Kiota clients generate error types and throw when the target API returns a failed response (dotnet, go, java, typescript). #1100
 
 ## [0.0.15] - 2021-12-17
 

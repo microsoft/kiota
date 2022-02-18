@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Xunit;
 
@@ -14,6 +15,67 @@ public class TypeScriptLanguageRefinerTests {
         };
         graphNS.AddClass(parentClass);
     }
+#region commonrefiner
+    [Fact]
+    public void AddsExceptionInheritanceOnErrorClasses() {
+        var model = root.AddClass(new CodeClass {
+            Name = "somemodel",
+            ClassKind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+
+        var declaration = model.StartBlock as CodeClass.Declaration;
+
+        Assert.Contains("ApiError", declaration.Usings.Select(x => x.Name));
+        Assert.Equal("ApiError", declaration.Inherits.Name);
+    }
+    [Fact]
+    public void FailsExceptionInheritanceOnErrorClassesWhichAlreadyInherit() {
+        var model = root.AddClass(new CodeClass {
+            Name = "somemodel",
+            ClassKind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+        var declaration = model.StartBlock as CodeClass.Declaration;
+        declaration.Inherits = new CodeType {
+            Name = "SomeOtherModel"
+        };
+        Assert.Throws<InvalidOperationException>(() => ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root));
+    }
+    [Fact]
+    public void AddsUsingsForErrorTypesForRequestExecutor() {
+        var requestBuilder = root.AddClass(new CodeClass {
+            Name = "somerequestbuilder",
+            ClassKind = CodeClassKind.RequestBuilder,
+        }).First();
+        var subNS = root.AddNamespace($"{root.Name}.subns"); // otherwise the import gets trimmed
+        var errorClass = subNS.AddClass(new CodeClass {
+            Name = "Error4XX",
+            ClassKind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+        var requestExecutor = requestBuilder.AddMethod(new CodeMethod {
+            Name = "get",
+            MethodKind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType {
+                Name = "string"
+            },
+            ErrorMappings = new () {
+                { "4XX", new CodeType {
+                        Name = "Error4XX",
+                        TypeDefinition = errorClass,
+                    } 
+                },
+            },
+        }).First();
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+
+        var declaration = requestBuilder.StartBlock as CodeClass.Declaration;
+
+        Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
+    }
+#endregion
 #region typescript
     private const string HttpCoreDefaultName = "IRequestAdapter";
     private const string FactoryDefaultName = "ISerializationWriterFactory";
