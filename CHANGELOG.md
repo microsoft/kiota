@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adds Python abstractions library. #925
 - Adds hostname and protocol validation in authentication. #1051
 - Adds Azure Identity Authentication Provider for Python. #1108
+- Adds JSON Serialization library for Python. #1186
 
 ### Changed
 
