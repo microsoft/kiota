@@ -39,7 +39,7 @@ jobs:
         working-directory: ${{ env.relativePath }}
       - name: Lint with Pylint
         run: |
-          pipenv run pylint serialization --disable=W --rcfile=.pylintrc
+          pipenv run pylint serialization_json --disable=W --rcfile=.pylintrc
         working-directory: ${{ env.relativePath }}
       - name: Static type checking with Mypy
         run: |
