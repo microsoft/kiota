@@ -4,7 +4,7 @@ import pytest
 from dateutil import parser
 from kiota.abstractions.serialization import Parsable, SerializationWriter
 
-from serialization.json_serialization_writer import JsonSerializationWriter
+from serialization_json.json_serialization_writer import JsonSerializationWriter
 
 from ..helpers import OfficeLocation, User
 
