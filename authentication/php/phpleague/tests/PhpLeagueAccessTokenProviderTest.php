@@ -120,7 +120,7 @@ class PhpLeagueAccessTokenProviderTest extends TestCase
         $clientId = 'clientId';
         $clientSecret = 'clientSecret';
         $certificatePath = __DIR__. DIRECTORY_SEPARATOR .'sample_cert.pem';
-        $privateKeyPath = __DIR__ . DIRECTORY_SEPARATOR;
+        $privateKeyPath = __DIR__ . DIRECTORY_SEPARATOR . 'sample_private_key.pem';
         $privateKeyPassphrase = 'pass';
         $authCode = '123';
         $redirectUri = 'http://localhost:1234';

@@ -36,7 +36,7 @@ class BaseCertificateContext implements TokenRequestContext
     /**
      * @param string $tenantId
      * @param string $clientId
-     * @param string|null $certificatePath PEM file containing the certificate
+     * @param string $certificatePath PEM file containing the certificate
      * @param string $privateKeyPath PEM file containing the certificate's private key
      * @param string $privateKeyPassphrase password protecting the private key
      */
