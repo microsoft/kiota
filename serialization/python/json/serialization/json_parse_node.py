@@ -170,7 +170,7 @@ class JsonParseNode(ParseNode, Generic[T, U]):
         """
         return list(
             map(
-                lambda x: JsonParseNode(json.dumps(x)).get_object_value(class_type),
+                lambda x: JsonParseNode(json.dumps(x)).get_object_value(class_type),  # type: ignore
                 json.loads(self._json_node)
             )
         )
@@ -196,7 +196,7 @@ class JsonParseNode(ParseNode, Generic[T, U]):
         raw_key = self.get_string_value()
         if raw_key:
             try:
-                return enum_class[raw_key]
+                return enum_class[raw_key]  # type: ignore
             except KeyError:
                 raise Exception(f'Invalid key: {raw_key} for enum {enum_class._name_}.')
         return None
@@ -258,7 +258,7 @@ class JsonParseNode(ParseNode, Generic[T, U]):
     def _assign_field_values(self, item: U) -> None:
         if not item.get_additional_data():
             item.set_additional_data({})
-            
+
         fields = item.get_field_deserializers()
         object_dict = json.loads(self._json_node)
         for key, val in object_dict.items():
