@@ -338,24 +338,29 @@ namespace Kiota.Builder.Writers.Go {
             WriteReturnError(writer);
             writer.WriteLine("if val != nil {");
             writer.IncreaseIndent();
-            var valueArgument = property.Type.AllTypes.First().TypeDefinition switch {
-                CodeClass or CodeEnum when !property.Type.IsCollection => $"val.(*{propertyTypeImportName})",
-                _ when property.Type.IsCollection => "res",
-                _ => "val",
+            var (valueArgument, pointerSymbol, dereference) = (property.Type.AllTypes.First().TypeDefinition, property.Type.IsCollection) switch {
+                (CodeClass, false) or (CodeEnum, false) => ($"val.(*{propertyTypeImportName})", string.Empty, true),
+                (CodeClass, true) or (CodeEnum, true) => ("res", "*", true),
+                (CodeInterface, false) => ($"val.({propertyTypeImportName})", string.Empty, false),
+                (CodeInterface, true) => ("res", string.Empty, false),
+                (_, true) => ("res", "*", true),
+                _ => ("val", string.Empty, true),
             };
             if(property.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None)
-                WriteCollectionCast(propertyTypeImportName, "val", "res", writer);
+                WriteCollectionCast(propertyTypeImportName, "val", "res", writer, pointerSymbol, dereference);
             var setterName = property.IsNameEscaped && !string.IsNullOrEmpty(property.SerializationName) ? property.SerializationName : property.Name;
             writer.WriteLine($"m.Set{setterName.ToFirstCharacterUpperCase()}({valueArgument})");
             writer.CloseBlock();
             writer.WriteLine("return nil");
             writer.CloseBlock();
         }
-        private static void WriteCollectionCast(string propertyTypeImportName, string sourceVarName, string targetVarName, LanguageWriter writer) {
+        private static void WriteCollectionCast(string propertyTypeImportName, string sourceVarName, string targetVarName, LanguageWriter writer, string pointerSymbol = "*", bool dereference = true) {
             writer.WriteLines($"{targetVarName} := make([]{propertyTypeImportName}, len({sourceVarName}))",
                                 $"for i, v := range {sourceVarName} {{");
             writer.IncreaseIndent();
-            writer.WriteLine($"{targetVarName}[i] = *(v.(*{propertyTypeImportName}))");
+            var derefPrefix = dereference ? "*(" : string.Empty;
+            var derefSuffix = dereference ? ")" : string.Empty;
+            writer.WriteLine($"{targetVarName}[i] = {derefPrefix}v.({pointerSymbol}{propertyTypeImportName}){derefSuffix}");
             writer.CloseBlock();
         }
         private void WriteRequestExecutorBody(CodeMethod codeElement, RequestProperties requestParams, string returnType, CodeClass parentClass, LanguageWriter writer) {
@@ -517,7 +522,8 @@ namespace Kiota.Builder.Writers.Go {
             serializationKey = $"\"{serializationKey}\"";
             var errorPrefix = $"err {errorVarDeclaration(shouldDeclareErrorVar)}= writer.";
             var isEnum = propType is CodeType eType && eType.TypeDefinition is CodeEnum;
-            var isClass = propType is CodeType cType && cType.TypeDefinition is CodeClass;
+            var isComplexType = propType is CodeType cType && (cType.TypeDefinition is CodeClass || cType.TypeDefinition is CodeInterface);
+            var isInterface = propType is CodeType iType && iType.TypeDefinition is CodeInterface;
             if(isEnum || propType.IsCollection)
                 writer.WriteLine($"if {valueGet} != nil {{");
             else
@@ -525,13 +531,16 @@ namespace Kiota.Builder.Writers.Go {
             writer.IncreaseIndent();
             if(isEnum && !propType.IsCollection)
                 writer.WriteLine($"cast := (*{valueGet}).String()");
-            else if(isClass && propType.IsCollection) {
+            else if(isComplexType && propType.IsCollection) {
                 var parsableSymbol = GetConversionHelperMethodImport(parentBlock, "Parsable");
                 writer.WriteLines($"cast := make([]{parsableSymbol}, len({valueGet}))",
                                 $"for i, v := range {valueGet} {{");
                 writer.IncreaseIndent();
-                writer.WriteLines($"temp := v", // temporary creating a new reference to avoid pointers to the same object
-                    $"cast[i] = {parsableSymbol}(&temp)");
+                if(isInterface)
+                    writer.WriteLine($"cast[i] = v.({parsableSymbol})");
+                else
+                    writer.WriteLines($"temp := v", // temporary creating a new reference to avoid pointers to the same object
+                        $"cast[i] = {parsableSymbol}(&temp)");
                 writer.CloseBlock();
             }
             var collectionPrefix = propType.IsCollection ? "CollectionOf" : string.Empty;
@@ -540,13 +549,13 @@ namespace Kiota.Builder.Writers.Go {
                                     .Split('.')
                                     .Last()
                                     .ToFirstCharacterUpperCase();
-            var reference = (isEnum, isClass, propType.IsCollection) switch {
+            var reference = (isEnum, isComplexType, propType.IsCollection) switch {
                 (true, false, false) => $"&cast",
                 (true, false, true) => $"{conventions.GetTypeString(propType, parentBlock, false, false).Replace(propertyTypeName, "Serialize" + propertyTypeName)}({valueGet})", //importSymbol.SerializeEnumName
                 (false, true, true) => $"cast",
                 (_, _, _) => valueGet,
             };
-            if(isClass)
+            if(isComplexType)
                 propertyTypeName = "Object";
             else if(isEnum)
                 propertyTypeName = "String";

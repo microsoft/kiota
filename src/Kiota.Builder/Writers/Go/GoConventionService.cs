@@ -47,6 +47,7 @@ public class GoConventionService : CommonLanguageConventionService
             var typeName = TranslateType(currentType, true);
             var nullableSymbol = addPointerSymbol && 
                                 currentType.IsNullable &&
+                                currentType.TypeDefinition is not CodeInterface &&
                                 currentType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None &&
                                 !IsScalarType(currentType.Name) ? "*"
                                 : string.Empty;
@@ -107,18 +108,19 @@ public class GoConventionService : CommonLanguageConventionService
         if(currentBaseType == null || IsPrimitiveType(currentBaseType.Name)) return string.Empty;
         var targetNamespace = targetElement.GetImmediateParentOfType<CodeNamespace>();
         if(currentBaseType is CodeType currentType) {
-            if(currentType.TypeDefinition is CodeClass currentClassDefinition &&
-                currentClassDefinition.Parent is CodeNamespace classNS &&
-                targetNamespace != classNS)
-                    return classNS.GetNamespaceImportSymbol();
+            if(currentType.TypeDefinition is IProprietableBlock currentTypDefinition &&
+                currentTypDefinition.Parent is CodeNamespace typeDefNS &&
+                targetNamespace != typeDefNS)
+                    return typeDefNS.GetNamespaceImportSymbol();
             else if(currentType.TypeDefinition is CodeEnum currentEnumDefinition &&
                 currentEnumDefinition.Parent is CodeNamespace enumNS &&
                 targetNamespace != enumNS)
                     return enumNS.GetNamespaceImportSymbol();
             else if(currentType.TypeDefinition is null &&
-                    targetElement is CodeClass targetClass) {
-                        var symbolUsing = (targetClass.Parent is CodeClass parentClass ? parentClass : targetClass)
-                                                        .StartBlock
+                    targetElement is IProprietableBlock targetTypeDef) {
+                        var symbolUsing = ((targetTypeDef.Parent as CodeClass)?.StartBlock as BlockDeclaration ?? 
+                                            (targetTypeDef as CodeClass)?.StartBlock as BlockDeclaration ??
+                                            (targetTypeDef as CodeInterface)?.StartBlock as BlockDeclaration)
                                                         .Usings
                                                         .FirstOrDefault(x => currentBaseType.Name.Equals(x.Name, StringComparison.OrdinalIgnoreCase));
                         return symbolUsing == null ? string.Empty : symbolUsing.Declaration.Name.GetNamespaceImportSymbol();

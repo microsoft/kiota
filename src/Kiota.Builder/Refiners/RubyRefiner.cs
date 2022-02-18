@@ -12,7 +12,7 @@ namespace Kiota.Builder.Refiners {
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "_by_id");
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             RemoveCancellationParameter(generatedCode);
-            AddParsableInheritanceForModelClasses(generatedCode, "MicrosoftKiotaAbstractions::Parsable");
+            AddParsableImplementsForModelClasses(generatedCode, "MicrosoftKiotaAbstractions::Parsable");
             AddInheritedAndMethodTypesImports(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectCoreType(generatedCode, null, CorrectPropertyType);

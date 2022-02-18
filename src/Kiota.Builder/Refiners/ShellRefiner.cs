@@ -19,7 +19,7 @@ namespace Kiota.Builder.Refiners
             ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddInnerClasses(generatedCode, false);
-            AddParsableInheritanceForModelClasses(generatedCode, "IParsable");
+            AddParsableImplementsForModelClasses(generatedCode, "IParsable");
             CapitalizeNamespacesFirstLetters(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");
             MakeEnumPropertiesNullable(generatedCode);

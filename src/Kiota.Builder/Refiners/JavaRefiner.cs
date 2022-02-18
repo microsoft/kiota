@@ -20,7 +20,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         AddDefaultImports(generatedCode, defaultUsingEvaluators);
         CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
         PatchHeaderParametersType(generatedCode, "Map<String, String>");
-        AddParsableInheritanceForModelClasses(generatedCode, "Parsable");
+        AddParsableImplementsForModelClasses(generatedCode, "Parsable");
         ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
         AddEnumSetImport(generatedCode);
         AddGetterAndSetterMethods(generatedCode, new() {

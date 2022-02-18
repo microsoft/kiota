@@ -25,7 +25,7 @@ namespace Kiota.Builder.Refiners
                 CodePropertyKind.BackingStore
             }, _configuration.UsesBackingStore, true);
             ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Graph{reservedWord.ToFirstCharacterUpperCase()}");
-            AddParsableInheritanceForModelClasses(generatedCode, "Parsable");
+            AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
         }

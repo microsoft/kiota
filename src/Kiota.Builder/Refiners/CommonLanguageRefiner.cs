@@ -531,7 +531,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         CrawlTree(currentElement, RemoveCancellationParameter);
     }
     
-    protected static void AddParsableInheritanceForModelClasses(CodeElement currentElement, string className) {
+    protected static void AddParsableImplementsForModelClasses(CodeElement currentElement, string className) {
         if(string.IsNullOrEmpty(className)) throw new ArgumentNullException(nameof(className));
 
         if(currentElement is CodeClass currentClass &&
@@ -542,7 +542,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Name = className
             });
         }
-        CrawlTree(currentElement, c => AddParsableInheritanceForModelClasses(c, className));
+        CrawlTree(currentElement, c => AddParsableImplementsForModelClasses(c, className));
     }
     protected static void CorrectDateTypes(CodeClass parentClass, Dictionary<string, (string, CodeUsing)> dateTypesReplacements, params CodeTypeBase[] types) {
         if(parentClass == null)
@@ -718,35 +718,67 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }).First();
         var usingsToRemove = new List<string>();
         if(modelClass.StartBlock is ClassDeclaration classDeclaration) {
+            if(classDeclaration.Inherits != null) {
+                if (classDeclaration.Inherits.TypeDefinition is CodeClass baseClass) {
+                        var parentInterface = CopyClassAsInterface(baseClass, interfaceNS, config, interfaceNamingCallback);
+                        inter.StartBlock.AddImplements(new CodeType {
+                            Name = parentInterface.Name,
+                            TypeDefinition = parentInterface,
+                        });
+                }
+            } else if (classDeclaration.Implements.Any()) {
+                var originalImplements = classDeclaration.Implements.ToArray();
+                inter.StartBlock.AddImplements(originalImplements
+                                                            .Select(x => x.Clone() as CodeType)
+                                                            .ToArray());
+                classDeclaration.RemoveImplements(originalImplements);
+            }
             classDeclaration.AddImplements(new CodeType {
                 Name = interfaceName,
                 TypeDefinition = inter,
             });
-            if(classDeclaration.Inherits != null &&
-                classDeclaration.Inherits.TypeDefinition is CodeClass baseClass &&
-                inter.StartBlock is InterfaceDeclaration interfaceDeclaration) {
-                    var parentInterface = CopyClassAsInterface(baseClass, interfaceNS, config, interfaceNamingCallback);
-                    interfaceDeclaration.AddImplements(new CodeType {
-                        Name = parentInterface.Name,
-                        TypeDefinition = parentInterface,
-                    });
-                }
         }
         var classModelChildItems = modelClass.GetChildElements(true);
         foreach(var method in classModelChildItems.OfType<CodeMethod>()
                                                     .Where(x => x.IsOfKind(CodeMethodKind.Getter, 
                                                                         CodeMethodKind.Setter,
-                                                                        CodeMethodKind.Factory))) {
+                                                                        CodeMethodKind.Factory) &&
+                                                                !(x.AccessedProperty?.IsOfKind(CodePropertyKind.AdditionalData) ?? false))) {
             if(method.ReturnType is CodeType methodReturnType &&
-                !methodReturnType.IsExternal &&
-                methodReturnType.TypeDefinition is CodeClass methodTypeClass)
-                    modelClass.AddUsing(ReplaceTypeByInterfaceType(methodTypeClass, methodReturnType, config, usingsToRemove, interfaceNamingCallback));
+                !methodReturnType.IsExternal) {
+                if (methodReturnType.TypeDefinition is CodeClass methodTypeClass) {
+                    var resultType = ReplaceTypeByInterfaceType(methodTypeClass, methodReturnType, config, usingsToRemove, interfaceNamingCallback);
+                    modelClass.AddUsing(resultType);
+                    if(resultType.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>() != interfaceNS)
+                        inter.AddUsing(resultType.Clone() as CodeUsing);
+
+                } else if (methodReturnType.TypeDefinition is CodeEnum methodEnumType)
+                    inter.AddUsing(new CodeUsing {
+                        Name = methodEnumType.Parent.Name,
+                        Declaration = new CodeType {
+                            Name = methodEnumType.Name,
+                            TypeDefinition = methodEnumType,
+                        }
+                    });
+            }
 
             foreach(var parameter in method.Parameters)
                 if(parameter.Type is CodeType parameterType &&
-                    !parameterType.IsExternal &&
-                    parameterType.TypeDefinition is CodeClass parameterTypeClass)
-                        modelClass.AddUsing(ReplaceTypeByInterfaceType(parameterTypeClass, parameterType, config, usingsToRemove, interfaceNamingCallback));
+                    !parameterType.IsExternal) {
+                    if(parameterType.TypeDefinition is CodeClass parameterTypeClass) {
+                        var resultType = ReplaceTypeByInterfaceType(parameterTypeClass, parameterType, config, usingsToRemove, interfaceNamingCallback);
+                        modelClass.AddUsing(resultType);
+                        if(resultType.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>() != interfaceNS)
+                            inter.AddUsing(resultType.Clone() as CodeUsing);
+                    } else if(parameterType.TypeDefinition is CodeEnum parameterEnumType)
+                        inter.AddUsing(new CodeUsing {
+                            Name = parameterEnumType.Parent.Name,
+                            Declaration = new CodeType {
+                                Name = parameterEnumType.Name,
+                                TypeDefinition = parameterEnumType,
+                            }
+                        });
+                }
 
             if(!method.IsStatic)
                 inter.AddMethod(method.Clone() as CodeMethod);
@@ -760,6 +792,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         modelClass.RemoveUsingsByDeclarationName(usingsToRemove.ToArray());
         var externalTypesOnInter = inter.Methods.Select(x => x.ReturnType).OfType<CodeType>().Where(x => x.IsExternal)
+                                    .Union(inter.StartBlock.Implements.Where(x => x.IsExternal))
                                     .Union(inter.Methods.SelectMany(x => x.Parameters).Select(x => x.Type).OfType<CodeType>().Where(x => x.IsExternal))
                                     .Select(x => x.Name)
                                     .Distinct(StringComparer.OrdinalIgnoreCase)

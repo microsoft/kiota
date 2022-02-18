@@ -7,7 +7,7 @@ namespace Kiota.Builder;
 /// <summary>
 /// Marker interface for type testing
 /// </summary>
-public interface IProprietableBlock {}
+public interface IProprietableBlock : ICodeElement {}
 
 /// <summary>
 /// Represents a block of code that can have properties and methods
@@ -67,6 +67,12 @@ public class ProprietableBlockDeclaration : BlockDeclaration
             throw new ArgumentNullException(nameof(types));
         EnsureElementsAreChildren(types);
         implements.AddRange(types);
+    }
+    public void RemoveImplements(params CodeType[] types) {
+        if(types == null || types.Any(x => x == null))
+            throw new ArgumentNullException(nameof(types));
+        foreach(var type in types)
+            implements.Remove(type);
     }
     public IEnumerable<CodeType> Implements => implements;
 }

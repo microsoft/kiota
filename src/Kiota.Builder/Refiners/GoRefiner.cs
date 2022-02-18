@@ -98,6 +98,10 @@ public class GoRefiner : CommonLanguageRefiner
             "ParseNode",
             true
         );
+        AddParsableImplementsForModelClasses(
+            generatedCode,
+            "Parsable"
+        );
         var modelInterfacesNamespace = DuplicateNamespaceStructure(
             generatedCode.FindNamespaceByName(_configuration.ModelsNamespaceName),
             _configuration.ModelsInterfacesNamespaceName
@@ -274,6 +278,8 @@ public class GoRefiner : CommonLanguageRefiner
             "github.com/microsoft/kiota/abstractions/go/serialization", "SerializationWriter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
             "github.com/microsoft/kiota/abstractions/go/serialization", "ParseNode", "Parsable"),
+        new (x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
+            "github.com/microsoft/kiota/abstractions/go/serialization", "Parsable"),
         new (x => x is CodeEnum num, "ToUpper", "strings"),
     };//TODO add backing store types once we have them defined
     private static void CorrectMethodType(CodeMethod currentMethod) {

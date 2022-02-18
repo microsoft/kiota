@@ -16,7 +16,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
         AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
         AliasUsingsWithSameSymbol(generatedCode);
-        AddParsableInheritanceForModelClasses(generatedCode, "Parsable");
+        AddParsableImplementsForModelClasses(generatedCode, "Parsable");
         ReplaceBinaryByNativeType(generatedCode, "ArrayBuffer", null);
         ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
         AddGetterAndSetterMethods(generatedCode, new() {
