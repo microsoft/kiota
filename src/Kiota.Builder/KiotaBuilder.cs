@@ -866,10 +866,8 @@ public class KiotaBuilder
             Kind = CodeClassKind.Model,
             Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel)
         }).First();
-        if(inheritsFrom != null) {
-            var declaration = newClass.StartBlock as ClassDeclaration;
-            declaration.Inherits = new CodeType { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
-        }
+        if(inheritsFrom != null)
+            newClass.StartBlock.Inherits = new CodeType { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
         var factoryMethod = newClass.AddMethod(new CodeMethod {
             Name = "CreateFromDiscriminatorValue",
             ReturnType = new CodeType { TypeDefinition = newClass, Name = newClass.Name, IsNullable = false },
@@ -1011,7 +1009,7 @@ public class KiotaBuilder
                 },
             };
             model.AddProperty(backingStoreProperty);
-            (model.StartBlock as ClassDeclaration).AddImplements(new CodeType {
+            model.StartBlock.AddImplements(new CodeType {
                 Name = BackedModelInterface,
                 IsExternal = true,
             });

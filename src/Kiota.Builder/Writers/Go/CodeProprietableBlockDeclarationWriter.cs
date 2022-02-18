@@ -6,7 +6,7 @@ namespace Kiota.Builder.Writers.Go;
 public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWriter<T, GoConventionService> 
     where T : ProprietableBlockDeclaration
 {
-    public CodeProprietableBlockDeclarationWriter(GoConventionService conventionService) : base(conventionService) {}
+    protected CodeProprietableBlockDeclarationWriter(GoConventionService conventionService) : base(conventionService) {}
 
     public override void WriteCodeElement(T codeElement, LanguageWriter writer)
     {

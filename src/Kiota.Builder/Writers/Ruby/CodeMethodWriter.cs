@@ -17,7 +17,7 @@ namespace Kiota.Builder.Writers.Ruby {
             var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
             WriteMethodDocumentation(codeElement, writer);
             var parentClass = codeElement.Parent as CodeClass;
-            var inherits = (parentClass.StartBlock as ClassDeclaration).Inherits != null;
+            var inherits = parentClass.StartBlock.Inherits != null;
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
             var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
@@ -131,7 +131,7 @@ namespace Kiota.Builder.Writers.Ruby {
             conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, $"return {prefix}");
         }
         private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer) {
-            if((parentClass.StartBlock as ClassDeclaration).Inherits != null)
+            if(parentClass.StartBlock.Inherits != null)
                 writer.WriteLine("return super.merge({");
             else
                 writer.WriteLine($"return {{");
@@ -140,7 +140,7 @@ namespace Kiota.Builder.Writers.Ruby {
                 writer.WriteLine($"\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\" => lambda {{|o, n| o.{otherProp.Name.ToSnakeCase()} = n.{GetDeserializationMethodName(otherProp.Type)} }},");
             }
             writer.DecreaseIndent();
-            if((parentClass.StartBlock as ClassDeclaration).Inherits != null)
+            if(parentClass.StartBlock.Inherits != null)
                 writer.WriteLine("})");
             else
                 writer.WriteLine("}");
@@ -199,7 +199,7 @@ namespace Kiota.Builder.Writers.Ruby {
         private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"@{property.Name.ToSnakeCase()}";
         private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer) {
             var additionalDataProperty = parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData);
-            if((parentClass.StartBlock as ClassDeclaration).Inherits != null)
+            if(parentClass.StartBlock.Inherits != null)
                 writer.WriteLine("super");
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
                 writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", @{otherProp.Name.ToSnakeCase()})");
@@ -210,9 +210,9 @@ namespace Kiota.Builder.Writers.Ruby {
         private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
         private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer) {
             var methodName = (code.Kind switch {
-                (CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor) => $"initialize",
-                (CodeMethodKind.Getter) => $"{code.AccessedProperty?.Name?.ToSnakeCase()}",
-                (CodeMethodKind.Setter) => $"{code.AccessedProperty?.Name?.ToSnakeCase()}",
+                CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor => $"initialize",
+                CodeMethodKind.Getter => $"{code.AccessedProperty?.Name?.ToSnakeCase()}",
+                CodeMethodKind.Setter => $"{code.AccessedProperty?.Name?.ToSnakeCase()}",
                 _ => code.Name.ToSnakeCase()
             });
             var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> conventions.GetParameterSignature(p, code).ToSnakeCase()).ToList());

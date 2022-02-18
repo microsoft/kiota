@@ -416,7 +416,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     currentClass.AddInnerClass(innerClass);
                 }
                 if(!string.IsNullOrEmpty(queryParametersBaseClassName))
-                    (innerClass.StartBlock as ClassDeclaration).Inherits = new CodeType { Name = queryParametersBaseClassName, IsExternal = true };
+                    innerClass.StartBlock.Inherits = new CodeType { Name = queryParametersBaseClassName, IsExternal = true };
             }
         }
         CrawlTree(current, x => AddInnerClasses(x, prefixClassNameWithParentName, queryParametersBaseClassName));
@@ -693,10 +693,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         var childItems = modelsNS.GetChildElements(true);
         foreach(var modelClass in childItems
                                         .OfType<CodeClass>()
-                                        .Where(x => x.IsOfKind(CodeClassKind.Model))) {
-            var inter = CopyClassAsInterface(modelClass, interfaceNS, config, interfaceNamingCallback);
-
-        }
+                                        .Where(x => x.IsOfKind(CodeClassKind.Model)))
+            CopyClassAsInterface(modelClass, interfaceNS, config, interfaceNamingCallback);
         foreach (var subModelsNS in childItems
                                            .OfType<CodeNamespace>()) {
             var subInterfaceNS = FindCorrespondingInterfaceNamespace(subModelsNS, config);
