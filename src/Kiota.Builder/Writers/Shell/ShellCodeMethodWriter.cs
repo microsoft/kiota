@@ -16,8 +16,6 @@ namespace Kiota.Builder.Writers.Shell
         private static Regex uppercaseRegex = new Regex("([A-Z])", RegexOptions.Compiled);
         private const string cancellationTokenParamType = "CancellationToken";
         private const string cancellationTokenParamName = "cancellationToken";
-        private const string consoleParamType = "IConsole";
-        private const string consoleParamName = "console";
         private const string fileParamType = "FileInfo";
         private const string fileParamName = "file";
         private const string outputFormatParamType = "FormatterType";
@@ -124,10 +122,6 @@ namespace Kiota.Builder.Writers.Shell
             paramTypes.Add(outputFormatterFactoryParamType);
             paramNames.Add(outputFormatterFactoryParamName);
 
-            // Add console param
-            paramTypes.Add(consoleParamType);
-            paramNames.Add(consoleParamName);
-
             // Add CancellationToken param
             paramTypes.Add(cancellationTokenParamType);
             paramNames.Add(cancellationTokenParamName);
@@ -141,7 +135,7 @@ namespace Kiota.Builder.Writers.Shell
             // Get request generator method. To call it + get path & query parameters see WriteRequestExecutorBody in CSharp
             if (isHandlerVoid)
             {
-                writer.WriteLine($"{consoleParamName}.WriteLine(\"Success\");");
+                writer.WriteLine($"Console.WriteLine(\"Success\");");
             }
             else
             {
@@ -152,19 +146,19 @@ namespace Kiota.Builder.Writers.Shell
                 writer.WriteLine($"var {formatterVar} = {outputFormatterFactoryParamName}.GetFormatter({outputFormatParamName});");
                 if (typeString != "Stream")
                 {
-                    writer.WriteLine($"{formatterVar}.WriteOutput(response, {consoleParamName});");
+                    writer.WriteLine($"{formatterVar}.WriteOutput(response);");
                 }
                 else
                 {
                     writer.WriteLine($"if ({fileParamName} == null) {{");
                     writer.IncreaseIndent();
-                    writer.WriteLine($"{formatterVar}.WriteOutput(response, {consoleParamName});");
+                    writer.WriteLine($"{formatterVar}.WriteOutput(response);");
                     writer.CloseBlock();
                     writer.WriteLine("else {");
                     writer.IncreaseIndent();
                     writer.WriteLine($"using var writeStream = {fileParamName}.OpenWrite();");
                     writer.WriteLine("await response.CopyToAsync(writeStream);");
-                    writer.WriteLine($"{consoleParamName}.WriteLine($\"Content written to {{{fileParamName}.FullName}}.\");");
+                    writer.WriteLine($"Console.WriteLine($\"Content written to {{{fileParamName}.FullName}}.\");");
                     writer.CloseBlock();
                 }
             }

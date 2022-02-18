@@ -397,7 +397,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("command.AddOption(bodyOption);", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
         Assert.Contains("await RequestAdapter.SendNoContentAsync(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
-        Assert.Contains("console.WriteLine(\"Success\");", result);
+        Assert.Contains("Console.WriteLine(\"Success\");", result);
         Assert.Contains("return command;", result);
     }
 }
