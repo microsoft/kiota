@@ -34,17 +34,18 @@ class OnBehalfOfCertificateContext extends BaseCertificateContext
      * @param string $clientId
      * @param string $assertion
      * @param string $certificatePath
-     * @param string $certificatePassphrase
-     * @param array $additionalParams<string, string>
+     * @param string $privateKeyPath
+     * @param string $privateKeyPassphrase
+     * @param array $additionalParams <string, string>
      */
-    public function __construct(string $tenantId, string $clientId, string $assertion, string $certificatePath, string $certificatePassphrase = '', array $additionalParams = [])
+    public function __construct(string $tenantId, string $clientId, string $assertion, string $certificatePath, string $privateKeyPath, string $privateKeyPassphrase = '', array $additionalParams = [])
     {
         if (!$assertion) {
             throw new \InvalidArgumentException("Assertion cannot be empty");
         }
         $this->assertion = $assertion;
         $this->additionalParams = $additionalParams;
-        parent::__construct($tenantId, $clientId, $certificatePath, $certificatePassphrase);
+        parent::__construct($tenantId, $clientId, $certificatePath, $privateKeyPath, $privateKeyPassphrase);
     }
 
     /**

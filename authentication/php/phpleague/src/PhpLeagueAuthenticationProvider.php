@@ -10,6 +10,7 @@ namespace Microsoft\Kiota\Authentication;
 
 
 use Microsoft\Kiota\Abstractions\Authentication\BaseBearerTokenAuthenticationProvider;
+use Microsoft\Kiota\Authentication\Oauth\TokenRequestContext;
 
 /**
  * Class PhpLeagueAuthenticationProvider

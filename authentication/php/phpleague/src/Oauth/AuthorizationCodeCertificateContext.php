@@ -30,10 +30,11 @@ class AuthorizationCodeCertificateContext extends BaseCertificateContext
      * @param string $authCode
      * @param string $redirectUri
      * @param string $certificatePath
-     * @param string $certificatePassphrase
+     * @param string $privateKeyPath
+     * @param string $privateKeyPassphrase
      * @param array $additionalParams
      */
-    public function __construct(string $tenantId, string $clientId, string $authCode, string $redirectUri, string $certificatePath, string $certificatePassphrase = '', array $additionalParams = [])
+    public function __construct(string $tenantId, string $clientId, string $authCode, string $redirectUri, string $certificatePath, string $privateKeyPath, string $privateKeyPassphrase = '', array $additionalParams = [])
     {
         if (!$authCode || !$redirectUri) {
             throw new \InvalidArgumentException("Auth code and redirectUri cannot be empty");
@@ -41,7 +42,7 @@ class AuthorizationCodeCertificateContext extends BaseCertificateContext
         $this->authCode = $authCode;
         $this->redirectUri = $redirectUri;
         $this->additionalParams = $additionalParams;
-        parent::__construct($tenantId, $clientId, $certificatePath, $certificatePassphrase);
+        parent::__construct($tenantId, $clientId, $certificatePath, $privateKeyPath, $privateKeyPassphrase);
     }
 
     /**

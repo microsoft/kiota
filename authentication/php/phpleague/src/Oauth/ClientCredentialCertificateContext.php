@@ -26,13 +26,19 @@ class ClientCredentialCertificateContext extends BaseCertificateContext
      * @param string $tenantId
      * @param string $clientId
      * @param string $certificatePath
-     * @param string $certificatePassphrase
+     * @param string $privateKeyPath
+     * @param string $privateKeyPassphrase
      * @param array $additionalParams
      */
-    public function __construct(string $tenantId, string $clientId, string $certificatePath, string $certificatePassphrase = '', array $additionalParams = [])
+    public function __construct(string $tenantId,
+                                string $clientId,
+                                string $certificatePath,
+                                string $privateKeyPath,
+                                string $privateKeyPassphrase = '',
+                                array $additionalParams = [])
     {
         $this->additionalParams = $additionalParams;
-        parent::__construct($tenantId, $clientId, $certificatePath, $certificatePassphrase);
+        parent::__construct($tenantId, $clientId, $certificatePath, $privateKeyPath, $privateKeyPassphrase);
     }
 
     /**

@@ -58,7 +58,6 @@ class PhpLeagueAccessTokenProvider implements AccessTokenProvider
      */
     public function __construct(TokenRequestContext $tokenRequestContext, array $scopes, array $allowedHosts = [])
     {
-
         $this->tokenRequestContext = $tokenRequestContext;
         if (empty($scopes)) {
             throw new \InvalidArgumentException("Scopes cannot be empty");
