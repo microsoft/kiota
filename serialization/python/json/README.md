@@ -6,7 +6,7 @@
 
 - [] coverage code
 - [x] analyzers
-- [] unit test project
+- [x] unit test project
 - [x] docs comments
 
 ## Using the Serialization JSON Library
