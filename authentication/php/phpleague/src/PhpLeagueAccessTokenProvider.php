@@ -126,7 +126,7 @@ class PhpLeagueAccessTokenProvider implements AccessTokenProvider
 
         $this->oauthProvider = new GenericProvider([
             'urlAccessToken' => "https://login.microsoftonline.com/{$this->tokenRequestContext->getTenantId()}/oauth2/v2.0/token",
-            'urlAuthorize' => '', // required to instantiate Generic Provider
+            'urlAuthorize' => "https://login.microsoftonline.com/{$this->tokenRequestContext->getTenantId()}/oauth2/v2.0/authorize",
             'urlResourceOwnerDetails' => '' // required to instantiate Generic Provider
         ], [
             'grantFactory' => $grantFactory

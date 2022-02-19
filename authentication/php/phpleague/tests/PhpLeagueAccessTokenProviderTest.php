@@ -2,19 +2,16 @@
 
 namespace Microsoft\Kiota\Authentication\Test;
 
-use Firebase\JWT\JWT;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
-use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use Microsoft\Kiota\Authentication\Oauth\AuthorizationCodeCertificateContext;
 use Microsoft\Kiota\Authentication\Oauth\AuthorizationCodeContext;
 use Microsoft\Kiota\Authentication\Oauth\ClientCredentialCertificateContext;
 use Microsoft\Kiota\Authentication\Oauth\ClientCredentialContext;
 use Microsoft\Kiota\Authentication\Oauth\OnBehalfOfCertificateContext;
 use Microsoft\Kiota\Authentication\Oauth\OnBehalfOfContext;
-use Microsoft\Kiota\Authentication\Oauth\UsernamePasswordContext;
 use Microsoft\Kiota\Authentication\PhpLeagueAccessTokenProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -125,8 +122,6 @@ class PhpLeagueAccessTokenProviderTest extends TestCase
         $authCode = '123';
         $redirectUri = 'http://localhost:1234';
         $assertion = 'jwtToken';
-        $username = 'username';
-        $password = 'password';
 
         return [
             new ClientCredentialContext($tenantId, $clientId, $clientSecret),
@@ -135,7 +130,6 @@ class PhpLeagueAccessTokenProviderTest extends TestCase
             new AuthorizationCodeCertificateContext($tenantId, $clientId, $authCode, $redirectUri, $certificatePath, $privateKeyPath, $privateKeyPassphrase),
             new OnBehalfOfContext($tenantId, $clientId, $tenantId, $assertion),
             new OnBehalfOfCertificateContext($tenantId, $clientId, $assertion, $certificatePath, $privateKeyPath, $privateKeyPassphrase),
-            new UsernamePasswordContext($tenantId, $clientId, $clientSecret, $username, $password)
         ];
     }
 }
