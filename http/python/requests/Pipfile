@@ -1,0 +1,23 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[[source]]
+url = "https://test.pypi.org/simple/"
+verify_ssl = true
+name = "testpypi"
+
+[packages]
+requests = {version="2.27.1", index="pypi"}
+kiota-abstractions = {version="*", index="testpypi"}
+
+
+[dev-packages]
+flit = {version="3.5.1", index="pypi"}
+pylint = {version="2.12.2", index="pypi"}
+mypy = {version="0.910", index="pypi"}
+yapf = {version="0.31.0", index="pypi"}
+isort = {version="5.10.1", index="pypi"}
+pytest = {version="7.0.1", index="pypi"}
+pytest-cov = {version="3.0.0", index="pypi"}
