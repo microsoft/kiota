@@ -1,0 +1,2 @@
+* eol=lf
+*.{png,jpg,jpeg,gif,webp,woff,woff2} -text

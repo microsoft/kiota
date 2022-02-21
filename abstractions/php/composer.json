@@ -3,7 +3,6 @@
     "description": "Abstractions for Kiota",
     "type": "library",
     "license": "MIT",
-    "version": "1.0.28",
     "authors": [
       {
         "name": "Microsoft Graph Client Tooling",
@@ -14,13 +13,13 @@
     "minimum-stability": "stable",
     "autoload": {
         "psr-4": {
-          "Microsoft\\Kiota\\Abstractions\\": "./src"
+          "Microsoft\\Kiota\\Abstractions\\": "src/"
         }
     },
   "autoload-dev": {
     "psr-4": {
-      "Microsoft\\Kiota\\Abstractions\\": "./src",
-      "Microsoft\\Kiota\\Abstractions\\Tests\\": "./tests"
+      "Microsoft\\Kiota\\Abstractions\\": "src/",
+      "Microsoft\\Kiota\\Abstractions\\Tests\\": "tests/"
     }
   },
   "require": {
