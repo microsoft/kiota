@@ -17,6 +17,16 @@ use PHPUnit\Framework\TestCase;
 
 class PhpLeagueAccessTokenProviderTest extends TestCase
 {
+    private PhpLeagueAccessTokenProvider $defaultTokenProvider;
+
+    protected function setUp(): void
+    {
+        $this->defaultTokenProvider = new PhpLeagueAccessTokenProvider(
+            new ClientCredentialContext('tenantId', 'clientId', 'clientSecret'),
+            ['https://graph.microsoft.com/.default']
+        );
+    }
+
     public function testPassingEmptyScopesThrowsException(): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -105,6 +115,11 @@ class PhpLeagueAccessTokenProviderTest extends TestCase
             // Second call happens when token has already expired
             $this->assertEquals('xyz', $tokenProvider->getAuthorizationTokenAsync('https://example.com')->wait());
         }
+    }
+
+    public function testGetAuthTokenWithInsecureUrlDoesntReturnAccessToken(): void
+    {
+        $this->assertNull($this->defaultTokenProvider->getAuthorizationTokenAsync('http://example.com')->wait());
     }
 
     private function getMockHttpClient(array $mockResponses): Client

@@ -73,7 +73,8 @@ class PhpLeagueAccessTokenProvider implements AccessTokenProvider
      */
     public function getAuthorizationTokenAsync(string $url): Promise
     {
-        if (!$this->getAllowedHostsValidator()->isUrlHostValid($url)) {
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+        if ($scheme !== 'https' || !$this->getAllowedHostsValidator()->isUrlHostValid($url)) {
             return new FulfilledPromise(null);
         }
         try {
