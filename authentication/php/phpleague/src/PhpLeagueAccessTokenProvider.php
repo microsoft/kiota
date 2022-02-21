@@ -13,6 +13,7 @@ use Http\Promise\FulfilledPromise;
 use Http\Promise\Promise;
 use Http\Promise\RejectedPromise;
 use League\OAuth2\Client\Grant\GrantFactory;
+use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\GenericProvider;
 use League\OAuth2\Client\Token\AccessToken;
 use Microsoft\Kiota\Abstractions\Authentication\AccessTokenProvider;
@@ -108,9 +109,9 @@ class PhpLeagueAccessTokenProvider implements AccessTokenProvider
     /**
      * Returns the underlying OAuth provider
      *
-     * @return GenericProvider
+     * @return AbstractProvider
      */
-    public function getOauthProvider(): GenericProvider
+    public function getOauthProvider(): AbstractProvider
     {
         return $this->oauthProvider;
     }
@@ -127,7 +128,8 @@ class PhpLeagueAccessTokenProvider implements AccessTokenProvider
         $this->oauthProvider = new GenericProvider([
             'urlAccessToken' => "https://login.microsoftonline.com/{$this->tokenRequestContext->getTenantId()}/oauth2/v2.0/token",
             'urlAuthorize' => "https://login.microsoftonline.com/{$this->tokenRequestContext->getTenantId()}/oauth2/v2.0/authorize",
-            'urlResourceOwnerDetails' => '' // required to instantiate Generic Provider
+            'urlResourceOwnerDetails' => 'https://graph.microsoft.com/oidc/userinfo',
+            'accessTokenResourceOwnerId' => 'id_token'
         ], [
             'grantFactory' => $grantFactory
         ]);

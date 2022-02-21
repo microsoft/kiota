@@ -25,13 +25,24 @@ use Microsoft\Kiota\Authentication\Oauth\TokenRequestContext;
 class PhpLeagueAuthenticationProvider extends BaseBearerTokenAuthenticationProvider
 {
     /**
+     * @var PhpLeagueAccessTokenProvider
+     */
+    private PhpLeagueAccessTokenProvider $accessTokenProvider;
+
+    /**
      * @param TokenRequestContext $tokenRequestContext
      * @param array $scopes
      * @param array $allowedHosts
      */
     public function __construct(TokenRequestContext $tokenRequestContext, array $scopes, array $allowedHosts = [])
     {
-        parent::__construct(new PhpLeagueAccessTokenProvider($tokenRequestContext, $scopes, $allowedHosts));
+        $this->accessTokenProvider = new PhpLeagueAccessTokenProvider($tokenRequestContext, $scopes, $allowedHosts);
+        parent::__construct($this->accessTokenProvider);
+    }
+
+    public function getAccessTokenProvider(): PhpLeagueAccessTokenProvider
+    {
+        return $this->accessTokenProvider;
     }
 
 }
