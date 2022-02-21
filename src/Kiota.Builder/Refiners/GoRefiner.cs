@@ -102,13 +102,8 @@ public class GoRefiner : CommonLanguageRefiner
             generatedCode,
             "Parsable"
         );
-        var modelInterfacesNamespace = DuplicateNamespaceStructure(
-            generatedCode.FindNamespaceByName(_configuration.ModelsNamespaceName),
-            _configuration.ModelsInterfacesNamespaceName
-        );
         CopyModelClassesAsInterfaces(
             generatedCode,
-            modelInterfacesNamespace,
             _configuration,
             x => $"{x.Name}able"
         );

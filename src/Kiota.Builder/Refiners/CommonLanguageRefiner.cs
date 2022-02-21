@@ -676,41 +676,23 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 }
             });
     }
-    protected static CodeNamespace DuplicateNamespaceStructure(CodeNamespace source, string appendix) {
-        if (source?.Parent is not CodeNamespace parent)
-            return null;// workaround for unit tests that don't have such a complex structure
-        var target = parent.AddNamespace(source?.Name + appendix);
-        DuplicateNamespaceStructureInternal(source, target);
-        return target;
-    }
-    private static void DuplicateNamespaceStructureInternal(CodeNamespace source, CodeNamespace target) {
-        foreach(var nsToCopy in source.GetChildElements(true).OfType<CodeNamespace>()) {
-            var copyValue = target.AddNamespace(target.Name + nsToCopy.Name[source.Name.Length..]);
-            DuplicateNamespaceStructureInternal(nsToCopy, copyValue);
-        }
-    }
-    protected static void CopyModelClassesAsInterfaces(CodeNamespace modelsNS, CodeNamespace interfaceNS, GenerationConfiguration config, Func<CodeClass, string> interfaceNamingCallback) {
+    protected static void CopyModelClassesAsInterfaces(CodeNamespace modelsNS, GenerationConfiguration config, Func<CodeClass, string> interfaceNamingCallback) {
         var childItems = modelsNS.GetChildElements(true);
         foreach(var modelClass in childItems
                                         .OfType<CodeClass>()
                                         .Where(x => x.IsOfKind(CodeClassKind.Model)))
-            CopyClassAsInterface(modelClass, interfaceNS, config, interfaceNamingCallback);
+            CopyClassAsInterface(modelClass, config, interfaceNamingCallback);
         foreach (var subModelsNS in childItems
-                                           .OfType<CodeNamespace>()) {
-            var subInterfaceNS = FindCorrespondingInterfaceNamespace(subModelsNS, config);
-            CopyModelClassesAsInterfaces(subModelsNS, subInterfaceNS, config, interfaceNamingCallback);
-        }
+                                           .OfType<CodeNamespace>())
+            CopyModelClassesAsInterfaces(subModelsNS, config, interfaceNamingCallback);
     }
-    private static CodeNamespace FindCorrespondingInterfaceNamespace(CodeNamespace sourceClassNS, GenerationConfiguration configuration) {
-        var targetNSName = sourceClassNS.Name.Replace(configuration.ModelsNamespaceName, configuration.ModelsInterfacesNamespaceName);
-        return sourceClassNS.FindNamespaceByName(targetNSName);
-    }
-    private static CodeInterface CopyClassAsInterface(CodeClass modelClass, CodeNamespace interfaceNS, GenerationConfiguration config, Func<CodeClass, string> interfaceNamingCallback) {
+    private static CodeInterface CopyClassAsInterface(CodeClass modelClass, GenerationConfiguration config, Func<CodeClass, string> interfaceNamingCallback) {
         var interfaceName = interfaceNamingCallback.Invoke(modelClass);
-        var existing = interfaceNS.FindChildByName<CodeInterface>(interfaceName);
+        var targetNS = modelClass.GetImmediateParentOfType<CodeNamespace>();
+        var existing = targetNS.FindChildByName<CodeInterface>(interfaceName);
         if(existing != null)
             return existing;
-        var inter = interfaceNS.AddInterface(new CodeInterface {
+        var inter = targetNS.AddInterface(new CodeInterface {
                     Name = interfaceName,
                     Kind = CodeInterfaceKind.Model,
         }).First();
@@ -718,7 +700,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if(modelClass.StartBlock is ClassDeclaration classDeclaration) {
             if(classDeclaration.Inherits != null) {
                 if (classDeclaration.Inherits.TypeDefinition is CodeClass baseClass) {
-                        var parentInterface = CopyClassAsInterface(baseClass, interfaceNS, config, interfaceNamingCallback);
+                        var parentInterface = CopyClassAsInterface(baseClass, config, interfaceNamingCallback);
                         inter.StartBlock.AddImplements(new CodeType {
                             Name = parentInterface.Name,
                             TypeDefinition = parentInterface,
@@ -747,9 +729,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 if (methodReturnType.TypeDefinition is CodeClass methodTypeClass) {
                     var resultType = ReplaceTypeByInterfaceType(methodTypeClass, methodReturnType, config, usingsToRemove, interfaceNamingCallback);
                     modelClass.AddUsing(resultType);
-                    if(resultType.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>() != interfaceNS)
+                    if(resultType.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>() != targetNS)
                         inter.AddUsing(resultType.Clone() as CodeUsing);
-
                 } else if (methodReturnType.TypeDefinition is CodeEnum methodEnumType)
                     inter.AddUsing(new CodeUsing {
                         Name = methodEnumType.Parent.Name,
@@ -766,7 +747,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     if(parameterType.TypeDefinition is CodeClass parameterTypeClass) {
                         var resultType = ReplaceTypeByInterfaceType(parameterTypeClass, parameterType, config, usingsToRemove, interfaceNamingCallback);
                         modelClass.AddUsing(resultType);
-                        if(resultType.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>() != interfaceNS)
+                        if(resultType.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>() != targetNS)
                             inter.AddUsing(resultType.Clone() as CodeUsing);
                     } else if(parameterType.TypeDefinition is CodeEnum parameterEnumType)
                         inter.AddUsing(new CodeUsing {
@@ -800,8 +781,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         return inter;
     }
     private static CodeUsing ReplaceTypeByInterfaceType(CodeClass sourceClass, CodeType originalType, GenerationConfiguration config, List<string> usingsToRemove, Func<CodeClass, string> interfaceNamingCallback) {
-        var targetInterfaceNS = FindCorrespondingInterfaceNamespace(sourceClass.GetImmediateParentOfType<CodeNamespace>(), config);
-        var propertyInterfaceType = CopyClassAsInterface(sourceClass, targetInterfaceNS, config, interfaceNamingCallback);
+        var propertyInterfaceType = CopyClassAsInterface(sourceClass, config, interfaceNamingCallback);
         originalType.Name = propertyInterfaceType.Name;
         originalType.TypeDefinition = propertyInterfaceType;
         usingsToRemove.Add(sourceClass.Name);
