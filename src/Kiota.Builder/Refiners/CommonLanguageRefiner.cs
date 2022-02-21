@@ -676,15 +676,44 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 }
             });
     }
-    protected static void CopyModelClassesAsInterfaces(CodeNamespace modelsNS, GenerationConfiguration config, Func<CodeClass, string> interfaceNamingCallback) {
-        var childItems = modelsNS.GetChildElements(true);
-        foreach(var modelClass in childItems
-                                        .OfType<CodeClass>()
-                                        .Where(x => x.IsOfKind(CodeClassKind.Model)))
-            CopyClassAsInterface(modelClass, config, interfaceNamingCallback);
-        foreach (var subModelsNS in childItems
-                                           .OfType<CodeNamespace>())
-            CopyModelClassesAsInterfaces(subModelsNS, config, interfaceNamingCallback);
+    protected static void CopyModelClassesAsInterfaces(CodeElement currentElement, GenerationConfiguration config, Func<CodeClass, string> interfaceNamingCallback) {
+        if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model))
+            CopyClassAsInterface(currentClass, config, interfaceNamingCallback);
+        else if (currentElement is CodeProperty codeProperty &&
+                codeProperty.IsOfKind(CodePropertyKind.RequestBody) &&
+                codeProperty.Type is CodeType type &&
+                type.TypeDefinition is CodeClass modelClass &&
+                modelClass.IsOfKind(CodeClassKind.Model))
+        {
+            SetTypeAndAddUsing(CopyClassAsInterface(modelClass, config, interfaceNamingCallback), type, codeProperty);
+        } else if (currentElement is CodeMethod codeMethod &&
+                codeMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
+                codeMethod.ReturnType is CodeType returnType &&
+                returnType.TypeDefinition is CodeClass returnClass &&
+                returnClass.IsOfKind(CodeClassKind.Model))
+        {
+            SetTypeAndAddUsing(CopyClassAsInterface(returnClass, config, interfaceNamingCallback), returnType, codeMethod);
+        }
+        
+        CrawlTree(currentElement, x => CopyModelClassesAsInterfaces(x, config, interfaceNamingCallback));
+    }
+    private static void SetTypeAndAddUsing(CodeInterface inter, CodeType elemType, CodeElement targetElement) {
+        elemType.Name = inter.Name;
+        elemType.TypeDefinition = inter;
+        var interNS = inter.GetImmediateParentOfType<CodeNamespace>();
+        if(interNS != targetElement.GetImmediateParentOfType<CodeNamespace>())
+        {
+            var targetClass = targetElement.GetImmediateParentOfType<CodeClass>();
+            if(targetClass.Parent is CodeClass parentClass)
+                targetClass = parentClass;
+            targetClass.AddUsing(new CodeUsing {
+                Name = interNS.Name,
+                Declaration = new CodeType {
+                    Name = inter.Name,
+                    TypeDefinition = inter,
+                },
+            });
+        }
     }
     private static CodeInterface CopyClassAsInterface(CodeClass modelClass, GenerationConfiguration config, Func<CodeClass, string> interfaceNamingCallback) {
         var interfaceName = interfaceNamingCallback.Invoke(modelClass);

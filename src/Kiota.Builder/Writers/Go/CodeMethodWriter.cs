@@ -404,7 +404,8 @@ namespace Kiota.Builder.Writers.Go {
             var valueVarName = string.Empty;
             if(codeElement.ReturnType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None) {
                 var propertyTypeImportName = conventions.GetTypeString(codeElement.ReturnType, parentClass, false, false);
-                WriteCollectionCast(propertyTypeImportName, "res", "val", writer);
+                var isInterface = codeElement.ReturnType.AllTypes.First().TypeDefinition is CodeInterface;
+                WriteCollectionCast(propertyTypeImportName, "res", "val", writer, isInterface ? string.Empty : "*", !isInterface);
                 valueVarName = "val, ";
             }
             var resultReturnCast = isVoid switch {
