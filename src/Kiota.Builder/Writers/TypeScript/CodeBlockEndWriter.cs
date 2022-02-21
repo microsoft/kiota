@@ -3,8 +3,7 @@ namespace Kiota.Builder.Writers.TypeScript {
     {
         public void WriteCodeElement(BlockEnd codeElement, LanguageWriter writer)
         {
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
+            writer.CloseBlock();
         }
     }
 }
