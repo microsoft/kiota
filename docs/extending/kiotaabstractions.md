@@ -23,19 +23,23 @@ public interface IRequestAdapter
 
     Task<ModelType> SendAsync<ModelType>(
         RequestInformation requestInfo,
-        IResponseHandler responseHandler = default) where ModelType : IParsable;
+        IResponseHandler responseHandler = default,
+        Dictionary<string, Func<IParsable>> errorMappings = default) where ModelType : IParsable;
 
     Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(
         RequestInformation requestInfo,
-        IResponseHandler responseHandler = default) where ModelType : IParsable;
+        IResponseHandler responseHandler = default,
+        Dictionary<string, Func<IParsable>> errorMappings = default) where ModelType : IParsable;
 
     Task<ModelType> SendPrimitiveAsync<ModelType>(
         RequestInformation requestInfo,
-        IResponseHandler responseHandler = default);
+        IResponseHandler responseHandler = default,
+        Dictionary<string, Func<IParsable>> errorMappings = default);
 
     Task SendNoContentAsync(
         RequestInformation requestInfo,
-        IResponseHandler responseHandler = default);
+        IResponseHandler responseHandler = default,
+        Dictionary<string, Func<IParsable>> errorMappings = default);
 }
 ```
 
@@ -69,9 +73,22 @@ When passed to the execution method from the fluent style API, this allows core 
 ```csharp
 public interface IResponseHandler
 {
-    Task<ModelType> HandleResponseAsync<NativeResponseType, ModelType>(NativeResponseType response);
+    Task<ModelType> HandleResponseAsync<NativeResponseType, ModelType>(NativeResponseType response, Dictionary<string, Func<IParsable>> errorMappings);
 }
 ```
+
+### Failed responses handling
+
+A Kiota API client will handle failed http responses (status code ∈ [400, 600[) as an exception/error. If error types are described for the operation, Kiota will generate those and attempt to deserialize a failed response to an instance of the corresponding error type with the following sequence:
+
+1. If the response is successful, deserialize it to the expected model, otherwise move to the next step.
+1. If an error factory is registered for the corresponding code (e.g. 403), deserialize to that type and throw, otherwise move to the next step.
+1. If an error factory is registered for the error class (e.g. 4XX or 5XX), deserialize to that type and throw, otherwise move to the next step.
+1. Throw the generic **ApiException** type defined in the abstractions.
+
+Additionally all generated error types inherit from the **ApiException** type defined in the abstractions to enable cross cutting implementations and returning an error when no error types are defined for an operation. This type inherits itself from **Exception** (or the native error type on the platform).
+
+> Note: if a response handler is passed, the error detection logic is bypassed to allow the caller to implement whichever custom handling they desire.
 
 ## Serialization
 

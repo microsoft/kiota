@@ -1,4 +1,4 @@
-namespace Kiota.Builder.Refiners
+﻿namespace Kiota.Builder.Refiners
 {
     public interface ILanguageRefiner
     {
@@ -23,6 +23,9 @@ namespace Kiota.Builder.Refiners
                     break;
                 case GenerationLanguage.Go:
                     new GoRefiner(config).Refine(generatedCode);
+                    break;
+                case GenerationLanguage.Shell:
+                    new ShellRefiner(config).Refine(generatedCode);
                     break;
                 default:
                     break; //Do nothing
