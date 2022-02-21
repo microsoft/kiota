@@ -90,7 +90,7 @@ public class CodeFunctionWriterTests : IDisposable {
         Assert.Contains("case \"ns.childmodel\":", result);
         Assert.Contains("return new ChildModel();", result);
         Assert.Contains("return new ParentModel();", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
     public void DoesntWriteFactorySwitchOnMissingParameter() {
@@ -131,7 +131,7 @@ public class CodeFunctionWriterTests : IDisposable {
         Assert.DoesNotContain("case \"ns.childmodel\":", result);
         Assert.DoesNotContain("return new ChildModel();", result);
         Assert.Contains("return new ParentModel();", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
     public void DoesntWriteFactorySwitchOnEmptyPropertyName() {
@@ -184,7 +184,7 @@ public class CodeFunctionWriterTests : IDisposable {
         Assert.DoesNotContain("case \"ns.childmodel\":", result);
         Assert.DoesNotContain("return new ChildModel();", result);
         Assert.Contains("return new ParentModel();", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
     public void DoesntWriteFactorySwitchOnEmptyMappings() {
@@ -225,6 +225,6 @@ public class CodeFunctionWriterTests : IDisposable {
         Assert.DoesNotContain("case \"ns.childmodel\":", result);
         Assert.DoesNotContain("return new ChildModel();", result);
         Assert.Contains("return new ParentModel();", result);
-        AssertExtensions.CurlyBracesAreClosed(result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
 }

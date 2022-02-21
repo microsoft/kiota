@@ -25,7 +25,6 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         writer.IncreaseIndent();
         CodeMethodWriter.WriteDefensiveStatements(codeElement.OriginalLocalMethod, writer);
         WriteFactoryMethodBody(codeElement, returnType, writer);
-        writer.CloseBlock();
     }
 
     private static void WriteFactoryMethodBody(CodeFunction codeElement, string returnType, LanguageWriter writer)

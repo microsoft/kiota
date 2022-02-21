@@ -49,7 +49,7 @@ namespace Kiota.Builder.Writers
 
         public string GetIndent()
         {
-            return indentString.Substring(0, Math.Max(0, currentIndent));
+            return indentString[..Math.Max(0, currentIndent)];
         }
         public static string NewLine { get => Environment.NewLine;}
         /// <summary>

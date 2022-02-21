@@ -14,8 +14,6 @@ namespace Kiota.Builder.Writers.TypeScript {
             writer.WriteLine($"export enum {codeElement.Name.ToFirstCharacterUpperCase()} {{");
             writer.IncreaseIndent();
             codeElement.Options.ToList().ForEach(x => writer.WriteLine($"{x.ToFirstCharacterUpperCase()} = \"{x}\","));
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
         }
     }
 }

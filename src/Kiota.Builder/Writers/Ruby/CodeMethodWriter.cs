@@ -67,8 +67,7 @@ namespace Kiota.Builder.Writers.Ruby {
                     writer.WriteLine("return nil;");
                 break;
             }
-            writer.DecreaseIndent();
-            writer.WriteLine("end");
+            writer.CloseBlock("end");
         }
         private void WriteRequestBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
         {

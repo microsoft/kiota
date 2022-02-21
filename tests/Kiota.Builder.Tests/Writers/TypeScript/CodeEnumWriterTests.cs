@@ -33,7 +33,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             var result = tw.ToString();
             Assert.Contains($"export enum", result);
             Assert.Contains(optionName, result);
-            AssertExtensions.CurlyBracesAreClosed(result);
+            AssertExtensions.CurlyBracesAreClosed(result, 1);
         }
         [Fact]
         public void DoesntWriteAnythingOnNoOption() {

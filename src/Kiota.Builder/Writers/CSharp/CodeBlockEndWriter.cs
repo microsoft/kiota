@@ -4,11 +4,9 @@ namespace Kiota.Builder.Writers.CSharp {
         public CodeBlockEndWriter(CSharpConventionService conventionService):base(conventionService){}
         public override void WriteCodeElement(BlockEnd codeElement, LanguageWriter writer)
         {
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
-            if(codeElement?.Parent?.Parent is CodeNamespace) {
-                writer.DecreaseIndent();
-                writer.WriteLine("}");
+            writer.CloseBlock();
+            if(codeElement?.Parent is CodeClass codeClass && codeClass.Parent is CodeNamespace) {
+                writer.CloseBlock();
             }
         }
     }

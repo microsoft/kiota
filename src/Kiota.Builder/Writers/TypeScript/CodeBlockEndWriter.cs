@@ -3,6 +3,7 @@ namespace Kiota.Builder.Writers.TypeScript {
     {
         public void WriteCodeElement(BlockEnd codeElement, LanguageWriter writer)
         {
+            if(codeElement.Parent is CodeNamespace) return;
             writer.CloseBlock();
         }
     }
