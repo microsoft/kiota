@@ -42,7 +42,6 @@ class JsonSerializationWriter implements SerializationWriter
 
     /**
      * @inheritDoc
-     * @throws \JsonException
      */
     public function writeStringValue(?string $key, ?string $value): void {
         if (!empty($key)) {
@@ -340,6 +339,10 @@ class JsonSerializationWriter implements SerializationWriter
                     $this->writeEnumValue($key, $value);
                 } else if(is_subclass_of($type, DateTimeInterface::class)){
                     $this->writeDateTimeValue($key, $value);
+                } else if(is_a($value, StreamInterface::class) || is_subclass_of($type, StreamInterface::class)) {
+                    $this->writeStringValue($key, $value->getContents());
+                } else {
+                   throw new RuntimeException("Could not serialize the object of type {$type}");
                 }
                 break;
         }

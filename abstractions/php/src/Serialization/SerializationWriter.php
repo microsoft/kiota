@@ -128,6 +128,14 @@ interface SerializationWriter {
      * @return void
      */
     public function writeCollectionOfNonParsableObjectValues(?string $key, ?array $value): void;
+    
+    /**
+    * Try to write a value with any type.
+    * @param string|null $key The key for the value.
+    * @param mixed|null $value.
+    **/
+    public function writeAnyValue(?string $key, $value): void;
+    
     /**
      * Sets the callback called before the objects gets serialized.
      * @param callable|null $value the callback called before the objects gets serialized.
