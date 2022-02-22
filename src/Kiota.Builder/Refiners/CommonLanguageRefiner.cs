@@ -108,7 +108,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                         .ToFirstCharacterLowerCase();
             var accessorName = (currentProperty.IsNameEscaped && !isSerializationNameNullOrEmpty ? currentProperty.SerializationName : current.Name)
                                 .ToFirstCharacterUpperCase();
-            parentClass.AddMethod(new CodeMethod {
+            currentProperty.Getter = parentClass.AddMethod(new CodeMethod {
                 Name = $"{getterPrefix}{accessorName}",
                 Access = AccessModifier.Public,
                 IsAsync = false,
@@ -116,7 +116,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 ReturnType = currentProperty.Type.Clone() as CodeTypeBase,
                 Description = $"Gets the {propertyOriginalName} property value. {currentProperty.Description}",
                 AccessedProperty = currentProperty,
-            });
+            }).First();
             if(!currentProperty.ReadOnly) {
                 var setter = parentClass.AddMethod(new CodeMethod {
                     Name = $"{setterPrefix}{accessorName}",
@@ -131,6 +131,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                         IsExternal = true,
                     },
                 }).First();
+                currentProperty.Setter = setter;
                 
                 setter.AddParameter(new CodeParameter {
                     Name = "value",

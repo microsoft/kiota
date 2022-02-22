@@ -42,6 +42,8 @@ namespace Kiota.Builder
         public bool ReadOnly {get;set;} = false;
         public AccessModifier Access {get;set;} = AccessModifier.Public;
         private CodeTypeBase type;
+        public CodeMethod Getter {get; set;}
+        public CodeMethod Setter {get; set;}
         public CodeTypeBase Type {get => type ;set {
             EnsureElementsAreChildren(value);
             type = value;
