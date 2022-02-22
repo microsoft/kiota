@@ -32,8 +32,13 @@ public class CodeMethodWriterTests : IDisposable {
         method = new CodeMethod {
             Name = MethodName,
         };
+        var model = root.AddClass(new CodeClass {
+            Name = ReturnTypeName,
+            Kind = CodeClassKind.Model
+        }).First();
         method.ReturnType = new CodeType {
-            Name = ReturnTypeName
+            Name = ReturnTypeName,
+            TypeDefinition = model,
         };
         parentClass.AddMethod(method);
     }
@@ -170,11 +175,12 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("var requestInfo", result);
-        Assert.Contains("var errorMapping = new Dictionary<string, Func<IParsable>>", result);
-        Assert.Contains("{\"4XX\", () => new Error4XX()},", result);
-        Assert.Contains("{\"5XX\", () => new Error5XX()},", result);
-        Assert.Contains("{\"403\", () => new Error403()},", result);
+        Assert.Contains("var errorMapping = new Dictionary<string, ParsableFactory<IParsable>>", result);
+        Assert.Contains("{\"4XX\", Error4XX.CreateFromDiscriminatorValue},", result);
+        Assert.Contains("{\"5XX\", Error5XX.CreateFromDiscriminatorValue},", result);
+        Assert.Contains("{\"403\", Error403.CreateFromDiscriminatorValue},", result);
         Assert.Contains("SendAsync", result);
+        Assert.Contains($"{ReturnTypeName}.CreateFromDiscriminatorValue", result);
         Assert.Contains(AsyncKeyword, result);
         Assert.Contains("await", result);
         Assert.Contains("cancellationToken", result);
@@ -237,7 +243,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("var mappingValue = mappingValueNode?.GetStringValue()", result);
         Assert.Contains("return mappingValue switch {", result);
         Assert.Contains("\"ns.childmodel\" => new ChildModel()", result);
-        Assert.Contains("return new ParentModel()", result);
+        Assert.Contains("_ => new ParentModel()", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]

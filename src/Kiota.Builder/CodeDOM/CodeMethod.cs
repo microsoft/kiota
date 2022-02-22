@@ -93,9 +93,6 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public bool IsAccessor { 
         get => IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter);
     }
-    public bool IsSerializationMethod {
-        get => IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer);
-    }
     public List<string> SerializerModules { get; set; }
     public List<string> DeserializerModules { get; set; }
     /// <summary>
