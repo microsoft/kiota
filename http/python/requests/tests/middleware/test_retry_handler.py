@@ -63,8 +63,7 @@ def test_should_retry_valid():
     responses.add(responses.GET, BASE_URL, status=503)
     response = requests.get(BASE_URL)
 
-    options = RetryHandlerOptions()
-    retry_handler = RetryHandler(RetryHandlerOptions())
+    retry_handler = RetryHandler()
     assert retry_handler.should_retry(response)
 
 
@@ -76,7 +75,7 @@ def test_should_retry_invalid():
     responses.add(responses.GET, BASE_URL, status=502)
     response = requests.get(BASE_URL)
 
-    retry_handler = RetryHandler(RetryHandlerOptions())
+    retry_handler = RetryHandler()
 
     assert not retry_handler.should_retry(response)
 
@@ -90,7 +89,7 @@ def test_is_request_payload_buffered_valid():
     responses.add(responses.GET, BASE_URL, status=429)
     response = requests.get(BASE_URL)
 
-    retry_handler = RetryHandler(RetryHandlerOptions())
+    retry_handler = RetryHandler()
 
     assert retry_handler._is_request_payload_buffered(response)
 
@@ -104,7 +103,7 @@ def test_is_request_payload_buffered_invalid():
     responses.add(responses.POST, BASE_URL, status=429)
     response = requests.post(BASE_URL, headers={'Content-Type': "application/octet-stream"})
 
-    retry_handler = RetryHandler(RetryHandlerOptions())
+    retry_handler = RetryHandler()
 
     assert not retry_handler._is_request_payload_buffered(response)
 
@@ -113,7 +112,7 @@ def test_check_retry_valid():
     """
     Test that a retry is valid if the maximum number of retries has not been reached
     """
-    retry_handler = RetryHandler(RetryHandlerOptions())
+    retry_handler = RetryHandler()
 
     assert retry_handler.check_retry_valid(0)
 
@@ -137,7 +136,7 @@ def test_get_retry_after():
     responses.add(responses.GET, BASE_URL, headers={'Retry-After': "120"}, status=503)
     response = requests.get(BASE_URL)
 
-    retry_handler = RetryHandler(RetryHandlerOptions())
+    retry_handler = RetryHandler()
 
     assert retry_handler._get_retry_after(response) == 120
 
@@ -150,7 +149,7 @@ def test_get_retry_after_no_header():
     responses.add(responses.GET, BASE_URL, status=503)
     response = requests.get(BASE_URL)
 
-    retry_handler = RetryHandler(RetryHandlerOptions())
+    retry_handler = RetryHandler()
 
     assert retry_handler._get_retry_after(response) is None
 
@@ -165,7 +164,7 @@ def test_get_retry_after_http_date():
     responses.add(responses.GET, BASE_URL, headers={'retry-after': f'{http_date}'}, status=503)
     response = requests.get(BASE_URL)
 
-    retry_handler = RetryHandler(RetryHandlerOptions())
+    retry_handler = RetryHandler()
     assert retry_handler._get_retry_after(response) < 120
     
 def test_disable_retries():
