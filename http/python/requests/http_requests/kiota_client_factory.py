@@ -3,9 +3,11 @@ import requests
 
 from typing import Dict, List
 
-from .middleware import BaseMiddleware, MiddlewarePipeline, RetryHandler, TelemetryHandler
+from .middleware import MiddlewarePipeline, RetryHandler
 
 class KiotaClientFactory:
+    DEFAULT_CONNECTION_TIMEOUT: int = 30
+    DEFAULT_REQUEST_TIMEOUT: int = 100
     
     def create_with_default_middleware(self) -> requests.Session:
         """Constructs native HTTP Client(requests.Session) instances configured with a default 
@@ -16,16 +18,16 @@ class KiotaClientFactory:
         """
         session = requests.Session()
         self._set_default_timeout(session)
-        self._register_default_middleware(session)
-        return self.session
+        return self._register_default_middleware(session)
+        
     
     def _set_default_timeout(self, session: requests.Session) -> None:
         """Helper method to set a default timeout for the session
         Reference: https://github.com/psf/requests/issues/2011
         """
-        self.session.request = functools.partial(self.session.request, timeout=self.timeout)
+        session.request = functools.partial(session.request, timeout=(self.DEFAULT_CONNECTION_TIMEOUT, self.DEFAULT_REQUEST_TIMEOUT))
 
-    def _register_default_middleware(self) -> None:
+    def _register_default_middleware(self, session: requests.Session) -> requests.Session:
         """
         Helper method that constructs a middleware_pipeline with the specified middleware
         """
@@ -36,7 +38,9 @@ class KiotaClientFactory:
             
         for middleware in middlewares:
             middleware_pipeline.add_middleware(middleware)
-        self.session.mount('https://', middleware_pipeline)
+            
+        session.mount('https://', middleware_pipeline)
+        return session
         
         
     
