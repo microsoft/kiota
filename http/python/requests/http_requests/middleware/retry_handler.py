@@ -89,8 +89,6 @@ class RetryHandler(BaseMiddleware):
         if not self._is_request_payload_buffered(response):
             return False
         val =  self.max_retries and (response.status_code in self.retry_on_status_codes)
-        print(self.max_retries)
-        print(val)
         return val
 
     def _is_method_retryable(self, request):

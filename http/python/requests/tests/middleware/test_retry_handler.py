@@ -64,7 +64,6 @@ def test_should_retry_valid():
     response = requests.get(BASE_URL)
 
     options = RetryHandlerOptions()
-    print(f'{options.max_retry} fucked up option')
     retry_handler = RetryHandler(RetryHandlerOptions())
     assert retry_handler.should_retry(response)
 
