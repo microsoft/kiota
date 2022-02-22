@@ -22,7 +22,7 @@ class InMemoryBackingStore implements BackingStore
      * @return mixed
      */
     public function get(string $key) {
-        $wrapper =  $this->store[$key] ?? null;
+        $wrapper =  (array)($this->store[$key] ?? null);
         return $this->getValueFromWrapper($wrapper);
     }
 
@@ -48,6 +48,7 @@ class InMemoryBackingStore implements BackingStore
         $result = [];
 
         foreach ($this->store as $key => $value) {
+            $value = (array)$value;
             $val = $this->getValueFromWrapper($value);
 
             if ($val === null) {
@@ -119,7 +120,7 @@ class InMemoryBackingStore implements BackingStore
         $result = [];
 
         foreach ($this->store as $key => $val) {
-            if ($val[1] === null && $val[0]) {
+            if (is_array($val) && $val[1] === null && $val[0]) {
                 $result []= $key;
             }
         }
@@ -131,7 +132,7 @@ class InMemoryBackingStore implements BackingStore
      * @return mixed|null
      */
     public function getValueFromWrapper(?array $wrapper) {
-        if ($wrapper === null) {
+        if (!is_array($wrapper)) {
             return null;
         }
         $hasChangedValue = $wrapper[0];
