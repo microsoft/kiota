@@ -39,6 +39,7 @@ namespace Kiota.Builder
         }
         public IEnumerable<CodeNamespace> Namespaces => InnerChildElements.Values.OfType<CodeNamespace>();
         public IEnumerable<CodeClass> Classes => InnerChildElements.Values.OfType<CodeClass>();
+        public IEnumerable<CodeEnum> Enum => InnerChildElements.Values.OfType<CodeEnum>();
         public CodeNamespace FindNamespaceByName(string nsName) {
             if(string.IsNullOrEmpty(nsName)) throw new ArgumentNullException(nameof(nsName));
             if(nsName.Equals(Name)) return this;

@@ -351,6 +351,25 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, MoveClassesWithNamespaceNamesUnderNamespace);
     }
+
+    protected static void MoveEnumsWithNamespaceNamesUnderNamespace(CodeElement currentElement)
+    {
+        if (currentElement is CodeEnum currentClass &&
+            !string.IsNullOrEmpty(currentClass.Name) &&
+            currentClass.Parent is CodeNamespace parentNamespace)
+        {
+            var childNamespaceWithClassName = parentNamespace.GetChildElements(true)
+                                                            .OfType<CodeNamespace>()
+                                                            .FirstOrDefault(x => x.Name
+                                                                                .EndsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase));
+            if (childNamespaceWithClassName != null)
+            {
+                parentNamespace.RemoveChildElement(currentClass);
+                childNamespaceWithClassName.AddEnum(currentClass);
+            }
+        }
+        CrawlTree(currentElement, MoveEnumsWithNamespaceNamesUnderNamespace);
+    }
     protected static void ReplaceIndexersByMethodsWithParameter(CodeElement currentElement, CodeNamespace rootNamespace, bool parameterNullable, string methodNameSuffix = default) {
         if(currentElement is CodeIndexer currentIndexer &&
             currentElement.Parent is CodeClass currentParentClass) {

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -35,10 +35,15 @@ namespace Kiota.Builder.Writers {
             else {
                 var importPath = GetImportRelativePathFromNamespaces(currentNamespace, 
                                                         typeDef.GetImmediateParentOfType<CodeNamespace>());
-                if(string.IsNullOrEmpty(importPath))
-                    importPath+= codeUsing.Name;
+                if (importPath == "./")
+                {
+                    importPath += "index";
+                }
                 else
-                    importPath+= codeUsing.Declaration.Name.ToFirstCharacterLowerCase();
+                if (string.IsNullOrEmpty(importPath))
+                    importPath+= codeUsing.Name;
+                //else
+                //    importPath+= codeUsing.Declaration.Name.ToFirstCharacterLowerCase();
                 return (importSymbol, codeUsing.Alias, importPath);
             }
         }

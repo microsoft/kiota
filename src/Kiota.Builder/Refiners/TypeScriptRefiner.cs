@@ -18,7 +18,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
         CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
         AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
-        AliasUsingsWithSameSymbol(generatedCode);
+        AliasUsingsWithSameSymbol(generatedCode);                                                   
         AddParsableInheritanceForModelClasses(generatedCode, "Parsable");
         ReplaceBinaryByNativeType(generatedCode, "ArrayBuffer", null);
         ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
@@ -29,7 +29,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         AddConstructorsForDefaultValues(generatedCode, true);
         ReplaceDefaultSerializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory");
         ReplaceDefaultDeserializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonParseNodeFactory");
-        AddSerializationModulesImport(generatedCode,
+        AddSerializationModulesImport(generatedCode,                             
             new[] { $"{AbstractionsPackageName}.registerDefaultSerializer", 
                     $"{AbstractionsPackageName}.enableBackingStoreForSerializationWriterFactory",
                     $"{AbstractionsPackageName}.SerializationWriterFactoryRegistry"},
@@ -37,8 +37,16 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     $"{AbstractionsPackageName}.ParseNodeFactoryRegistry" });
 
 
-        AddIndexModels(generatedCode);
-    }
+      //  AddIndexModels(generatedCode);
+        AddParentClassToErrorClasses(
+               generatedCode,
+               "ApiError",
+               "@microsoft/kiota-abstractions"
+       );
+        MoveEnumsWithNamespaceNamesUnderNamespace(generatedCode);
+
+
+}
 
     private static void MoveAllModelsToTopLevel(CodeElement currentElement, CodeNamespace targetNamespace = null)
     {
@@ -140,11 +148,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         
         CrawlTree(codeElement, c => GenerateModelsIndex(c,parentSet, orderedList));
 
-        AddParentClassToErrorClasses(
-                generatedCode,
-                "ApiError",
-                "@microsoft/kiota-abstractions"
-        );
+   
     }
     private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
     private static void AliasUsingsWithSameSymbol(CodeElement currentElement) {

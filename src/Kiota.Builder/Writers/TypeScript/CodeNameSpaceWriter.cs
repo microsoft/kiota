@@ -21,15 +21,18 @@ namespace Kiota.Builder.Writers.TypeScript
                 writer.WriteLine($"export * from './{c.ToFirstCharacterUpperCase()}'");
 
             }
-            // enum
-            //if (codeElement.) {
-            //    foreach (var e in classes)
-            //    {
 
-            //        writer.WriteLine($"export * from ./{c.Name.ToFirstCharacterUpperCase()}");
 
-            //    } 
-            //}
+            var enums = codeElement.Enum;
+            if (enums != null && enums.Any())
+            {
+                foreach (var e in enums)
+                {
+
+                    writer.WriteLine($"export * from './{e.Name.ToFirstCharacterUpperCase()}'");
+
+                }
+            }
         }
 
         private static List<string> SortClasses(List<CodeClass> classes)
