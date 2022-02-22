@@ -74,12 +74,33 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 break;
             case CodeMethodKind.RequestBuilderBackwardCompatibility:
                 throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
+            case CodeMethodKind.NullCheck:
+                throw new InvalidOperationException("NullChecks are not required in Java");
+            case CodeMethodKind.Factory:
+                WriteFactoryMethodBody(codeElement, writer);
+                break;
             default:
                 writer.WriteLine("return null;");
             break;
         }
-        writer.DecreaseIndent();
-        writer.WriteLine("}");
+        writer.CloseBlock();
+    }
+    private static void WriteFactoryMethodBody(CodeMethod codeElement, LanguageWriter writer){
+        var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
+        if(codeElement.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
+            writer.WriteLines($"final ParseNode mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode(\"{codeElement.DiscriminatorPropertyName}\");",
+                                "if (mappingValueNode != null) {");
+            writer.IncreaseIndent();
+            writer.WriteLines($"final String mappingValue = mappingValueNode.getStringValue();");
+            writer.WriteLine("switch (mappingValue) {");
+            writer.IncreaseIndent();
+            foreach(var mappedType in codeElement.DiscriminatorMappings) {
+                writer.WriteLine($"case \"{mappedType.Key}\": return new {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()}();");
+            }
+            writer.CloseBlock();
+            writer.CloseBlock();
+        }
+        writer.WriteLine($"return new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}();");
     }
     private void WriteRequestBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
     {
