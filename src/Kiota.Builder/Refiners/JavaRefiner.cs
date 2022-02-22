@@ -42,6 +42,11 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "ApiException",
                 "com.microsoft.kiota"
         );
+        AddDiscriminatorMappingsUsingsToParentClasses(
+            generatedCode,
+            "ParseNode",
+            addUsings: false
+        );
     }
     private static void SetSetterParametersToNullable(CodeElement currentElement, params Tuple<CodeMethodKind, CodePropertyKind>[] accessorPairs) {
         if(currentElement is CodeMethod method &&
