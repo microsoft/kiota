@@ -80,8 +80,9 @@ class RetryHandlerOptions(RequestOption):
         Disable retries by setting retry_total to zero.
         retry_total takes precedence over all other counts.
         """
-        cls.max_retry = 0
-        return cls
+        instance = cls()
+        instance.max_retry = 0
+        return instance
     
     def get_key():
         pass
