@@ -38,6 +38,11 @@ namespace Kiota.Builder.Refiners {
                 "ApiException",
                 "Microsoft.Kiota.Abstractions"
             );
+            AddDiscriminatorMappingsUsingsToParentClasses(
+                generatedCode,
+                "IParseNode",
+                addUsings: false
+            );
         }
         protected static void DisambiguatePropertiesWithClassNames(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass) {
