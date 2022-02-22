@@ -180,6 +180,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 !returnType.IsExternal &&
                 provider.ReservedNames.Contains(returnType.Name))
                 returnType.Name = replacement.Invoke(returnType.Name);
+            if(currentMethod.ErrorMappings.Values.Select(x => x.Name).Any(x => provider.ReservedNames.Contains(x)))
+                ReplaceErrorMappingNames(currentMethod, provider, replacement);
             ReplaceReservedParameterNamesTypes(currentMethod, provider, replacement);
         } else if (current is CodeProperty currentProperty &&
                 isNotInExceptions &&
@@ -224,6 +226,12 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                                             replacement.Invoke(x) :
                                                             x)
                                             .Aggregate((x, y) => $"{x}.{y}");
+    }
+    private static void ReplaceErrorMappingNames(CodeMethod currentMethod, IReservedNamesProvider provider, Func<string, string> replacement)
+    {
+        currentMethod.ErrorMappings.Values.Where(x => provider.ReservedNames.Contains(x.Name))
+                                        .ToList()
+                                        .ForEach(x => x.Name = replacement.Invoke(x.Name));
     }
     private static void ReplaceReservedParameterNamesTypes(CodeMethod currentMethod, IReservedNamesProvider provider, Func<string, string> replacement)
     {
@@ -440,11 +448,17 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                 .OfType<CodeIndexer>()
                                 .Select(x => x.ReturnType)
                                 .Distinct();
+            var errorTypes = currentClassChildren
+                                .OfType<CodeMethod>()
+                                .Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor))
+                                .SelectMany(x => x.ErrorMappings.Values)
+                                .Distinct();
             var usingsToAdd = propertiesTypes
                                 .Union(methodsParametersTypes)
                                 .Union(methodsReturnTypes)
                                 .Union(indexerTypes)
                                 .Union(inheritTypes)
+                                .Union(errorTypes)
                                 .Where(x => x != null)
                                 .SelectMany(x => x?.AllTypes?.Select(y => new Tuple<CodeType, CodeNamespace>(y, y?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())))
                                 .Where(x => x.Item2 != null && (includeCurrentNamespace || x.Item2 != currentClassNamespace))
@@ -540,5 +554,24 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             if(replacement.Item2 != null)
                 parentClass.AddUsing(replacement.Item2.Clone() as CodeUsing);
         }
+    }
+    protected static void AddParentClassToErrorClasses(CodeElement currentElement, string parentClassName, string parentClassNamespace) {
+        if(currentElement is CodeClass currentClass &&
+            currentClass.IsErrorDefinition &&
+            currentClass.StartBlock is CodeClass.Declaration declaration) {
+            if(declaration.Inherits != null)
+                throw new InvalidOperationException("This error class already inherits from another class. Update the description to remove that inheritance.");
+            declaration.Inherits = new CodeType {
+                Name = parentClassName,
+            };
+            declaration.AddUsings(new CodeUsing {
+                Name = parentClassName,
+                Declaration = new CodeType {
+                    Name = parentClassNamespace,
+                    IsExternal = true,
+                }
+            });
+        }
+        CrawlTree(currentElement, x => AddParentClassToErrorClasses(x, parentClassName, parentClassNamespace));
     }
 }

@@ -62,8 +62,10 @@ namespace Kiota.Builder.Extensions {
         ///<summary>
         /// Returns the class name for the node with more or less precision depending on the provided arguments
         ///</summary>
-        public static string GetClassName(this OpenApiUrlTreeNode currentNode, string suffix = default, string prefix = default, OpenApiOperation operation = default) {
-            var rawClassName = (operation?.GetResponseSchema()?.Reference?.GetClassName() ?? 
+        public static string GetClassName(this OpenApiUrlTreeNode currentNode, string suffix = default, string prefix = default, OpenApiOperation operation = default, OpenApiResponse response = default, OpenApiSchema schema = default) {
+            var rawClassName = (schema?.Reference?.GetClassName() ??
+                                response?.GetResponseSchema()?.Reference?.GetClassName() ??
+                                operation?.GetResponseSchema()?.Reference?.GetClassName() ?? 
                                 CleanupParametersFromPath(currentNode.Segment)?.ReplaceValueIdentifier())
                                 .TrimEnd(requestParametersEndChar)
                                 .TrimStart(requestParametersChar)
@@ -118,8 +120,12 @@ namespace Kiota.Builder.Extensions {
             if(string.IsNullOrEmpty(original) || !original.Contains('{')) return original;
             var parameters = pathParamMatcher.Matches(original);
             foreach(var value in parameters.Select(x => x.Value))
-                original = original.Replace(value, value.Replace('-', '_'));
+                original = original.SanitizePathParameterName();
             return original;
+        }
+        public static string SanitizePathParameterName(this string original) {
+            if(string.IsNullOrEmpty(original)) return original;
+            return original.Replace('-', '_');
         }
     }
 }

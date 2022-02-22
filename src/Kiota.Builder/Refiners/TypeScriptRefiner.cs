@@ -140,6 +140,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         
         CrawlTree(codeElement, c => GenerateModelsIndex(c,parentSet, orderedList));
 
+        AddParentClassToErrorClasses(
+                generatedCode,
+                "ApiError",
+                "@microsoft/kiota-abstractions"
+        );
     }
     private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
     private static void AliasUsingsWithSameSymbol(CodeElement currentElement) {

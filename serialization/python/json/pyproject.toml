@@ -1,0 +1,31 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "kiota-serialization-json"
+authors = [{name = "Microsoft", email = "graphtooling+python@microsoft.com"}]
+license = {file = "LICENSE"}
+readme = "README.md"
+classifiers = ["License :: OSI Approved :: MIT License"]
+dynamic = ["version", "description"]
+
+[project.urls]
+Home = "https://github.com/microsoft/kiota#readme"
+
+[tool.flit.module]
+name = "serialization_json"
+
+[tool.mypy]
+warn_unused_configs = true
+files = "serialization"
+ignore_missing_imports = true
+
+[tool.yapf]
+based_on_style = "pep8"
+dedent_closing_brackets = true
+each_dict_entry_on_separate_line = true
+column_limit = 100
+
+[tool.isort]
+profile = "hug"

@@ -23,7 +23,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         WriteMethodPrototype(codeElement, writer, returnType, isVoid);
         writer.IncreaseIndent();
         var parentClass = codeElement.Parent as CodeClass;
-        var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
+        var inherits = parentClass.StartBlock is CodeClass.Declaration declaration && declaration.Inherits != null && !parentClass.IsErrorDefinition;
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
         var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
         var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
@@ -39,7 +39,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 WriteIndexerBody(codeElement, parentClass, returnType, writer);
                 break;
             case CodeMethodKind.Deserializer:
-                WriteDeserializerBody(codeElement, parentClass, writer);
+                WriteDeserializerBody(codeElement, parentClass, writer, inherits);
                 break;
             case CodeMethodKind.Serializer:
                 WriteSerializerBody(inherits, parentClass, writer);
@@ -105,8 +105,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 writer.WriteLine($"{methodName}({module});");
     }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
-        if(inherits)
+        if(inherits || parentClass.IsErrorDefinition)
             writer.WriteLine("super();");
+        if(parentClass.IsErrorDefinition && parentClass.StartBlock is CodeClass.Declaration declaration)
+            writer.WriteLine($"Object.setPrototypeOf(this, {declaration.Inherits.Name.ToFirstCharacterUpperCase()}.prototype);");
         var propertiesWithDefaultValues = new List<CodePropertyKind> {
             CodePropertyKind.AdditionalData,
             CodePropertyKind.BackingStore,
@@ -176,8 +178,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var promiseSuffix = codeElement.IsAsync ? ")" : string.Empty;
         writer.WriteLine($"return {promisePrefix}{(codeElement.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{promiseSuffix};");
     }
-    private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
-        var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
+    private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits) {
         writer.WriteLine($"return new Map<string, (item: T, node: {localConventions.ParseNodeInterfaceName}) => void>([{(inherits ? $"...super.{codeElement.Name.ToFirstCharacterLowerCase()}()," : string.Empty)}");
         writer.IncreaseIndent();
         var parentClassName = parentClass.Name.ToFirstCharacterUpperCase();
@@ -208,7 +209,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var returnTypeWithoutCollectionSymbol = GetReturnTypeWithoutCollectionSymbol(codeElement, returnType);
         var genericTypeForSendMethod = GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnTypeWithoutCollectionSymbol);
         var newFactoryParameter = GetTypeFactory(isVoid, isStream, returnTypeWithoutCollectionSymbol);
-        writer.WriteLine($"return this.requestAdapter?.{genericTypeForSendMethod}(requestInfo,{newFactoryParameter} responseHandler) ?? Promise.reject(new Error('http core is null'));");
+        var errorMappingVarName = "undefined";
+        if(codeElement.ErrorMappings.Any()) {
+            errorMappingVarName = "errorMapping";
+            writer.WriteLine($"const {errorMappingVarName}: Record<string, new () => Parsable> = {{");
+            writer.IncreaseIndent();
+            foreach(var errorMapping in codeElement.ErrorMappings) {
+                writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {errorMapping.Value.Name.ToFirstCharacterUpperCase()},");
+            }
+            writer.CloseBlock("};");
+        }
+        writer.WriteLine($"return this.requestAdapter?.{genericTypeForSendMethod}(requestInfo,{newFactoryParameter} responseHandler, {errorMappingVarName}) ?? Promise.reject(new Error('http core is null'));");
     }
     private string GetReturnTypeWithoutCollectionSymbol(CodeMethod codeElement, string fullTypeName) {
         if(!codeElement.ReturnType.IsCollection) return fullTypeName;

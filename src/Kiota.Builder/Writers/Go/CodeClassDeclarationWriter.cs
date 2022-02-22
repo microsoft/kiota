@@ -33,11 +33,12 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLines(")", string.Empty);
             }
             var className = codeElement.Name.ToFirstCharacterUpperCase();
-            conventions.WriteShortDescription($"{className} {(codeElement.Parent as CodeClass).Description.ToFirstCharacterLowerCase()}", writer);
+            var currentClass = codeElement.Parent as CodeClass;
+            conventions.WriteShortDescription($"{className} {currentClass.Description.ToFirstCharacterLowerCase()}", writer);
             writer.WriteLine($"type {className} struct {{");
             writer.IncreaseIndent();
             if(codeElement.Inherits?.AllTypes?.Any() ?? false) {
-                var parentTypeName = conventions.GetTypeString(codeElement.Inherits.AllTypes.First(), codeElement.Parent.Parent, true, false);
+                var parentTypeName = conventions.GetTypeString(codeElement.Inherits.AllTypes.First(), currentClass, true, false);
                 writer.WriteLine($"{parentTypeName}");
             }
         }
