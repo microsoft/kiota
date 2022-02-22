@@ -180,10 +180,10 @@ public class CodeMethodWriterTests : IDisposable {
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("final RequestInformation requestInfo", result);
-        Assert.Contains("final HashMap<String, Class<? extends Parsable>> errorMapping = new HashMap<String, Class<? extends Parsable>>", result);
-        Assert.Contains("put(\"4XX\", Error4XX.class);", result);
-        Assert.Contains("put(\"5XX\", Error5XX.class);", result);
-        Assert.Contains("put(\"403\", Error403.class);", result);
+        Assert.Contains("final HashMap<String, ParsableFactory<? extends Parsable>> errorMapping = new HashMap<>", result);
+        Assert.Contains("put(\"4XX\", Error4XX::createFromDiscriminatorValue);", result);
+        Assert.Contains("put(\"5XX\", Error5XX::createFromDiscriminatorValue);", result);
+        Assert.Contains("put(\"403\", Error403::createFromDiscriminatorValue);", result);
         Assert.Contains("sendAsync", result);
         Assert.Contains("CompletableFuture.failedFuture(ex)", result);
         AssertExtensions.CurlyBracesAreClosed(result);

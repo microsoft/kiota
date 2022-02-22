@@ -340,7 +340,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         if(inherits)
             writer.WriteLine("super.serialize(writer);");
         foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom))
-            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", this.{otherProp.Getter.Name}());");
+            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", this.{otherProp.Getter?.Name ?? "get" + otherProp.Name.ToFirstCharacterLowerCase()}());");
         if(additionalDataProperty != null)
             writer.WriteLine($"writer.writeAdditionalData(this.get{additionalDataProperty.Name.ToFirstCharacterUpperCase()}());");
     }

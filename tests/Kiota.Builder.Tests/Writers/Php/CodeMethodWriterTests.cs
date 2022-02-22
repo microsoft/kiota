@@ -447,6 +447,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         {
             var getter = new CodeMethod()
             {
+                Name = "getEmailAddress",
                 Description = "This method gets the emailAddress",
                 ReturnType = new CodeType()
                 {
@@ -471,6 +472,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         {
             var setter = new CodeMethod()
             {
+                Name = "setEmailAddress",
                 ReturnType = new CodeType()
                 {
                     Name = "void"

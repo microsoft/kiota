@@ -109,7 +109,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             var accessorName = (currentProperty.IsNameEscaped && !isSerializationNameNullOrEmpty ? currentProperty.SerializationName : current.Name)
                                 .ToFirstCharacterUpperCase();
             currentProperty.Getter = parentClass.AddMethod(new CodeMethod {
-                Name = $"{getterPrefix}{accessorName}",
+                Name = $"get-{accessorName}",
                 Access = AccessModifier.Public,
                 IsAsync = false,
                 Kind = CodeMethodKind.Getter,
@@ -117,9 +117,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 Description = $"Gets the {propertyOriginalName} property value. {currentProperty.Description}",
                 AccessedProperty = currentProperty,
             }).First();
+            currentProperty.Getter.Name = $"{getterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
             if(!currentProperty.ReadOnly) {
                 var setter = parentClass.AddMethod(new CodeMethod {
-                    Name = $"{setterPrefix}{accessorName}",
+                    Name = $"set-{accessorName}",
                     Access = AccessModifier.Public,
                     IsAsync = false,
                     Kind = CodeMethodKind.Setter,
@@ -131,6 +132,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                         IsExternal = true,
                     },
                 }).First();
+                setter.Name = $"{setterPrefix}{accessorName}"; // so we don't get an exception for duplicate names when no prefix
                 currentProperty.Setter = setter;
                 
                 setter.AddParameter(new CodeParameter {

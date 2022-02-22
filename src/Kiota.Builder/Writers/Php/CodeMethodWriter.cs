@@ -167,7 +167,6 @@ namespace Kiota.Builder.Writers.Php
             var methodName = codeMethod.Kind switch
             {
                 CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor => "__construct",
-                CodeMethodKind.Getter or CodeMethodKind.Setter => codeMethod.AccessedProperty?.Name?.ToFirstCharacterUpperCase(),
                 _ => codeMethod.Name.ToFirstCharacterLowerCase()
             };
             if(codeMethod.IsOfKind(CodeMethodKind.Deserializer))
