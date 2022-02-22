@@ -21,7 +21,7 @@ class ApiClientBuilder {
      * @param string $factoryClass the class of the factory to be registered.
      */
     public static function registerDefaultSerializer(string $factoryClass): void {
-        if (is_subclass_of($factoryClass, SerializationWriterFactory::class)) {
+        if (!is_subclass_of($factoryClass, SerializationWriterFactory::class)) {
              throw new InvalidArgumentException('The class passed must be a subclass of SerializationWriterFactory::class');
         }
         try {
@@ -41,7 +41,7 @@ class ApiClientBuilder {
      * @param string $factoryClass the class of the factory to be registered.
      */
     public static function registerDefaultDeserializer(string $factoryClass): void {
-        if (is_subclass_of($factoryClass, ParseNodeFactory::class)) {
+        if (!is_subclass_of($factoryClass, ParseNodeFactory::class)) {
              throw new InvalidArgumentException('The class passed must be a subclass of ParseNodeFactory::class');
         }
         try {
