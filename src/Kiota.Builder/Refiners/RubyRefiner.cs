@@ -16,11 +16,16 @@ namespace Kiota.Builder.Refiners {
             AddInheritedAndMethodTypesImports(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectCoreType(generatedCode, null, CorrectPropertyType);
-            AddGetterAndSetterMethods(generatedCode, new() {
-                                                    CodePropertyKind.Custom,
-                                                    CodePropertyKind.AdditionalData,
-                                                    CodePropertyKind.BackingStore,
-                                                }, _configuration.UsesBackingStore, true);
+            AddGetterAndSetterMethods(generatedCode,
+                new() {
+                    CodePropertyKind.Custom,
+                    CodePropertyKind.AdditionalData,
+                    CodePropertyKind.BackingStore,
+                },
+                _configuration.UsesBackingStore,
+                true,
+                string.Empty,
+                string.Empty);
             ReplaceReservedNames(generatedCode, new RubyReservedNamesProvider(), x => $"{x}_escaped");
             AddNamespaceModuleImports(generatedCode , _configuration.ClientNamespaceName);
             FixInheritedEntityType(generatedCode);

@@ -68,8 +68,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         return false;
     }
-    internal const string GetterPrefix = "get-";
-    internal const string SetterPrefix = "set-";
     protected static void CorrectCoreTypesForBackingStore(CodeElement currentElement, string defaultPropertyValue) {
         if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder)
             && currentClass.StartBlock is ClassDeclaration currentDeclaration) {
@@ -93,7 +91,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         } else
             return false;
     }
-    protected static void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, bool removeProperty, bool parameterAsOptional) {
+    protected static void AddGetterAndSetterMethods(CodeElement current, HashSet<CodePropertyKind> propertyKindsToAddAccessors, bool removeProperty, bool parameterAsOptional, string getterPrefix, string setterPrefix) {
         if(!(propertyKindsToAddAccessors?.Any() ?? true)) return;
         if(current is CodeProperty currentProperty &&
             propertyKindsToAddAccessors.Contains(currentProperty.Kind) &&
@@ -111,7 +109,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             var accessorName = (currentProperty.IsNameEscaped && !isSerializationNameNullOrEmpty ? currentProperty.SerializationName : current.Name)
                                 .ToFirstCharacterUpperCase();
             parentClass.AddMethod(new CodeMethod {
-                Name = $"{GetterPrefix}{accessorName}",
+                Name = $"{getterPrefix}{accessorName}",
                 Access = AccessModifier.Public,
                 IsAsync = false,
                 Kind = CodeMethodKind.Getter,
@@ -121,7 +119,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             });
             if(!currentProperty.ReadOnly) {
                 var setter = parentClass.AddMethod(new CodeMethod {
-                    Name = $"{SetterPrefix}{accessorName}",
+                    Name = $"{setterPrefix}{accessorName}",
                     Access = AccessModifier.Public,
                     IsAsync = false,
                     Kind = CodeMethodKind.Setter,
@@ -130,6 +128,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     ReturnType = new CodeType {
                         Name = "void",
                         IsNullable = false,
+                        IsExternal = true,
                     },
                 }).First();
                 
@@ -142,7 +141,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 });
             }
         }
-        CrawlTree(current, x => AddGetterAndSetterMethods(x, propertyKindsToAddAccessors, removeProperty, parameterAsOptional));
+        CrawlTree(current, x => AddGetterAndSetterMethods(x, propertyKindsToAddAccessors, removeProperty, parameterAsOptional, getterPrefix, setterPrefix));
     }
     protected static void AddConstructorsForDefaultValues(CodeElement current, bool addIfInherited) {
         if(current is CodeClass currentClass &&
@@ -181,6 +180,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 !returnType.IsExternal &&
                 provider.ReservedNames.Contains(returnType.Name))
                 returnType.Name = replacement.Invoke(returnType.Name);
+            if(provider.ReservedNames.Contains(currentMethod.Name))
+                currentMethod.Name = replacement.Invoke(currentMethod.Name);
             if(currentMethod.ErrorMappings.Values.Select(x => x.Name).Any(x => provider.ReservedNames.Contains(x)))
                 ReplaceMappingNames(currentMethod.ErrorMappings, provider, replacement);
             if(currentMethod.DiscriminatorMappings.Values.Select(x => x.Name).Any(x => provider.ReservedNames.Contains(x)))

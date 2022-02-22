@@ -68,7 +68,9 @@ public class GoRefiner : CommonLanguageRefiner
                 CodePropertyKind.Custom,
                 CodePropertyKind.BackingStore }, 
             _configuration.UsesBackingStore,
-            false);
+            false,
+            "Get",
+            "Set");
         AddConstructorsForDefaultValues(
             generatedCode,
             true);

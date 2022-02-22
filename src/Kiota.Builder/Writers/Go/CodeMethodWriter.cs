@@ -167,12 +167,6 @@ namespace Kiota.Builder.Writers.Go {
             var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
             var methodName = code.Kind switch {
                 CodeMethodKind.Constructor when parentBlock is CodeClass parentClass && parentClass.IsOfKind(CodeClassKind.RequestBuilder) => $"New{code.Parent.Name.ToFirstCharacterUpperCase()}Internal", // internal instantiation with url template parameters
-                CodeMethodKind.Getter when (code.AccessedProperty?.IsNameEscaped ?? false) && !string.IsNullOrEmpty(code.AccessedProperty?.SerializationName)
-                    => $"Get{code.AccessedProperty.SerializationName.ToFirstCharacterUpperCase()}",
-                CodeMethodKind.Setter when (code.AccessedProperty?.IsNameEscaped ?? false) && !string.IsNullOrEmpty(code.AccessedProperty?.SerializationName)
-                    => $"Set{code.AccessedProperty.SerializationName.ToFirstCharacterUpperCase()}",
-                CodeMethodKind.Getter => $"Get{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
-                CodeMethodKind.Setter => $"Set{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
                 CodeMethodKind.Factory => $"Create{parentBlock.Name.ToFirstCharacterUpperCase()}FromDiscriminatorValue",
                 _ when isConstructor => $"New{code.Parent.Name.ToFirstCharacterUpperCase()}",
                 _ when code.Access == AccessModifier.Public => code.Name.ToFirstCharacterUpperCase(),

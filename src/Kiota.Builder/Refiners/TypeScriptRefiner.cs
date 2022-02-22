@@ -19,10 +19,15 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         AddParsableImplementsForModelClasses(generatedCode, "Parsable");
         ReplaceBinaryByNativeType(generatedCode, "ArrayBuffer", null);
         ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
-        AddGetterAndSetterMethods(generatedCode, new() {
-                                                CodePropertyKind.Custom,
-                                                CodePropertyKind.AdditionalData,
-                                            }, _configuration.UsesBackingStore, false);
+        AddGetterAndSetterMethods(generatedCode,
+            new() {
+                CodePropertyKind.Custom,
+                CodePropertyKind.AdditionalData,
+            },
+            _configuration.UsesBackingStore,
+            false,
+            string.Empty,
+            string.Empty);
         AddConstructorsForDefaultValues(generatedCode, true);
         ReplaceDefaultSerializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory");
         ReplaceDefaultDeserializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonParseNodeFactory");

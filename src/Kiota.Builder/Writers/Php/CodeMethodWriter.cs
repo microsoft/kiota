@@ -170,12 +170,6 @@ namespace Kiota.Builder.Writers.Php
                 CodeMethodKind.Getter or CodeMethodKind.Setter => codeMethod.AccessedProperty?.Name?.ToFirstCharacterUpperCase(),
                 _ => codeMethod.Name.ToFirstCharacterLowerCase()
             };
-            var methodPrefix = codeMethod.Kind switch
-            {
-                CodeMethodKind.Getter => "get",
-                CodeMethodKind.Setter => "set",
-                _ => string.Empty
-            };
             if(codeMethod.IsOfKind(CodeMethodKind.Deserializer))
             {
                 writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function getFieldDeserializers(): array {{");
@@ -185,7 +179,7 @@ namespace Kiota.Builder.Writers.Php
 
             if (codeMethod.IsOfKind(CodeMethodKind.Getter) && codeMethod.AccessedProperty.IsOfKind(CodePropertyKind.AdditionalData))
             {
-                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodPrefix}{methodName}(): array {{");
+                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodName}(): array {{");
                 writer.IncreaseIndent();
                 return;
             }
@@ -195,7 +189,7 @@ namespace Kiota.Builder.Writers.Php
             var returnValue = isConstructor
                 ? string.Empty
                 : $": {optionalCharacterReturn}{conventions.GetTypeString(codeMethod.ReturnType, codeMethod)}";
-            writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodPrefix}{methodName}({methodParameters}){returnValue} {{");
+            writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodName}({methodParameters}){returnValue} {{");
             writer.IncreaseIndent();
             
         }

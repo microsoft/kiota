@@ -15,19 +15,25 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         RemoveCancellationParameter(generatedCode);
         ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
         AddRawUrlConstructorOverload(generatedCode);
+        CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
+        ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
+        AddGetterAndSetterMethods(generatedCode,
+            new() {
+                CodePropertyKind.Custom,
+                CodePropertyKind.AdditionalData,
+                CodePropertyKind.BackingStore,
+            },
+            _configuration.UsesBackingStore,
+            true,
+            "get",
+            "set"
+        );
         ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
         AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
         AddDefaultImports(generatedCode, defaultUsingEvaluators);
-        CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
         PatchHeaderParametersType(generatedCode, "Map<String, String>");
         AddParsableImplementsForModelClasses(generatedCode, "Parsable");
-        ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
         AddEnumSetImport(generatedCode);
-        AddGetterAndSetterMethods(generatedCode, new() {
-                                                CodePropertyKind.Custom,
-                                                CodePropertyKind.AdditionalData,
-                                                CodePropertyKind.BackingStore,
-                                            }, _configuration.UsesBackingStore, true);
         SetSetterParametersToNullable(generatedCode, new Tuple<CodeMethodKind, CodePropertyKind>(CodeMethodKind.Setter, CodePropertyKind.AdditionalData));
         AddConstructorsForDefaultValues(generatedCode, true);
         CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
@@ -96,7 +102,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
             "com.microsoft.kiota.serialization", "ParseNode"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            "com.microsoft.kiota.serialization", "Parsable"),
+            "com.microsoft.kiota.serialization", "Parsable", "ParsableFactory"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
             "java.util.function", "BiConsumer"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),

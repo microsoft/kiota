@@ -27,6 +27,7 @@ namespace Kiota.Builder.Refiners {
             "finally",
             "float",
             "for",
+            "getclass",
             "goto",
             "if",
             "implements",
