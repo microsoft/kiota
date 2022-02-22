@@ -13,7 +13,7 @@ namespace Kiota.Builder
         /// A single parameter to be provided by the SDK user which will contain query parameters, request body, options, etc.
         /// Only used for languages that do not support overloads or optional parameters like go.
         /// </summary>
-        ParameterSet,
+        ParameterSet
     }
     /// <summary>
     /// CodeClass represents an instance of a Class to be generated in source code

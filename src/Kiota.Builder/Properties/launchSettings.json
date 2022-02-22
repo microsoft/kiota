@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Kiota.Builder": {
+      "commandName": "Project",
+      "commandLineArgs": "-d https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Drive.yml  -o C:\\Work\\Projects\\SDKS\\kiota-typescript\\packages\\testSample\\src\\drive--language typescript -c GraphServiceClient -n MicrosoftGraph"
+    }
+  }
+}

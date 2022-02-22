@@ -22,9 +22,12 @@ namespace Kiota.Builder {
         private static readonly HashSet<GenerationLanguage> BarreledLanguages = new () {
             GenerationLanguage.Ruby,
             // TODO: add typescript once we have a barrel writer for it
+           GenerationLanguage.TypeScript
         };
         private static readonly HashSet<GenerationLanguage> BarreledLanguagesWithConstantFileName = new () {
             //TODO: add typescript once we have a barrel writer for it
+
+          GenerationLanguage.TypeScript
         };
     }
 }

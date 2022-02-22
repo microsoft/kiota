@@ -1,4 +1,4 @@
-namespace Kiota.Builder.Writers.TypeScript
+﻿namespace Kiota.Builder.Writers.TypeScript
 {
     public class TypeScriptWriter : LanguageWriter
     {
@@ -12,6 +12,7 @@ namespace Kiota.Builder.Writers.TypeScript
             AddCodeElementWriter(new CodeMethodWriter(conventionService));
             AddCodeElementWriter(new CodePropertyWriter(conventionService));
             AddCodeElementWriter(new CodeTypeWriter(conventionService));
+            AddCodeElementWriter(new CodeNameSpaceWriter(conventionService));
         }
     }
 }

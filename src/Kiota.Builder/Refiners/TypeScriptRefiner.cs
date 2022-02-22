@@ -2,6 +2,9 @@
 using System;
 using Kiota.Builder.Extensions;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Data;
+using Kiota.Builder.Writers.Go;
 
 namespace Kiota.Builder.Refiners;
 public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
@@ -32,6 +35,111 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     $"{AbstractionsPackageName}.SerializationWriterFactoryRegistry"},
             new[] { $"{AbstractionsPackageName}.registerDefaultDeserializer",
                     $"{AbstractionsPackageName}.ParseNodeFactoryRegistry" });
+
+
+        AddIndexModels(generatedCode);
+    }
+
+    private static void MoveAllModelsToTopLevel(CodeElement currentElement, CodeNamespace targetNamespace = null)
+    {
+        if (currentElement is CodeNamespace currentNamespace)
+        {
+            if (targetNamespace == null)
+            {
+                var rootModels = FindRootModelsNamespace(currentNamespace);
+                targetNamespace = FindFirstModelSubnamepaceWithClasses(rootModels);
+            }
+            if (currentNamespace != targetNamespace &&
+                !string.IsNullOrEmpty(currentNamespace.Name) &&
+                currentNamespace.Name.Contains(targetNamespace.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                foreach (var codeClass in currentNamespace.Classes)
+                {
+                    currentNamespace.RemoveChildElement(codeClass);
+                    targetNamespace.AddClass(codeClass);
+                }
+            }
+            CrawlTree(currentElement, x => MoveAllModelsToTopLevel(x, targetNamespace));
+        }
+    }
+
+    private static CodeNamespace FindRootModelsNamespace(CodeNamespace currentNamespace)
+    {
+        if (currentNamespace != null)
+        {
+            if (!string.IsNullOrEmpty(currentNamespace.Name) &&
+                currentNamespace.Name.EndsWith("Models", StringComparison.OrdinalIgnoreCase))
+                return currentNamespace;
+            else
+                foreach (var subNS in currentNamespace.Namespaces)
+                {
+                    var result = FindRootModelsNamespace(subNS);
+                    if (result != null)
+                        return result;
+                }
+        }
+        return null;
+    }
+
+    private static CodeNamespace FindFirstModelSubnamepaceWithClasses(CodeNamespace currentNamespace)
+    {
+        if (currentNamespace != null)
+        {
+            if (currentNamespace.Classes.Any()) return currentNamespace;
+            else
+                foreach (var subNS in currentNamespace.Namespaces)
+                {
+                    var result = FindFirstModelSubnamepaceWithClasses(subNS);
+                    if (result != null) return result;
+                }
+        }
+        return null;
+    }
+
+    private static void AddIndexModels(CodeElement codeElement)
+    {
+        var orderedList = new List<string>();
+        var set = new HashSet<string>();
+
+        GenerateModelsIndex(codeElement, set, orderedList);
+    
+    }
+
+
+
+    private static void GenerateModelsIndex(CodeElement codeElement, HashSet<string> parentSet, List<string> orderedList)
+    {
+       
+        if (codeElement is CodeClass @class && @class.IsOfKind(CodeClassKind.Model))
+        {
+
+            var usings = @class.StartBlock as CodeClass.Declaration;
+            var testc = usings.Inherits;
+          //  var declaration = usings.
+            if (@class.Parent != null)
+            {
+                if (!parentSet.Contains(codeElement.Name))
+                {
+                    parentSet.Add(codeElement.Name);
+
+                    if (!parentSet.Contains(codeElement.Parent.Name))
+                    {
+                        orderedList.Insert(0, codeElement.Parent.Name);
+                        parentSet.Add(codeElement.Parent.Name);
+                    }
+                    orderedList.Add(codeElement.Name);
+                }
+
+            }
+
+           // var usings = @class.StartBlock.Usings;
+
+            //  usings.Select(us => {us.Name })
+        }
+        
+        
+        CrawlTree(codeElement, c => GenerateModelsIndex(c,parentSet, orderedList));
+
     }
     private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
     private static void AliasUsingsWithSameSymbol(CodeElement currentElement) {
