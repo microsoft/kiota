@@ -130,6 +130,17 @@ namespace Microsoft.Kiota.Serialization.Json
         }
 
         /// <summary>
+        /// Write the decimal value
+        /// </summary>
+        /// <param name="key">The key of the json node</param>
+        /// <param name="value">The decimal value</param>
+        public void WriteDecimalValue(string key, decimal? value)
+        {
+            if(!string.IsNullOrEmpty(key) && value.HasValue) writer.WritePropertyName(key);
+            if(value.HasValue) writer.WriteNumberValue(value.Value);
+        }
+
+        /// <summary>
         /// Write the Guid value
         /// </summary>
         /// <param name="key">The key of the json node</param>

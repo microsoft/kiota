@@ -66,6 +66,12 @@ namespace Microsoft.Kiota.Serialization.Json
         public double? GetDoubleValue() => _jsonNode.GetDouble();
 
         /// <summary>
+        /// Get the decimal value from the json node
+        /// </summary>
+        /// <returns>A decimal value</returns>
+        public decimal? GetDecimalValue() => _jsonNode.GetDecimal();
+
+        /// <summary>
         /// Get the guid value from the json node
         /// </summary>
         /// <returns>A guid value</returns>

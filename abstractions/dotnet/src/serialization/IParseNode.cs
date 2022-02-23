@@ -49,6 +49,11 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// <returns>The double value of the node.</returns>
         double? GetDoubleValue();
         /// <summary>
+        /// Gets the decimal value of the node.
+        /// </summary>
+        /// <returns>The decimal value of the node.</returns>
+        decimal? GetDecimalValue();
+        /// <summary>
         /// Gets the GUID value of the node.
         /// </summary>
         /// <returns>The GUID value of the node.</returns>

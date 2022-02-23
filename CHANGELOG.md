@@ -33,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated PHP abstractions to make property keys and values nullable in `SerializationWriter.php`.
 - Fixed an issue where enum collections parsing would fail in Go.
 - Breaking. Kiota clients generate error types and throw when the target API returns a failed response (dotnet, go, java, typescript). #1100
+- Fixed missing methods for serializing/deserializing decimal values in dotnet #1252
+- Modified RequestBuilder types are suffixed with the ItemRequestBuilder if they belong to an item namespace to fix name collisions #1252
+- Modified the use of fully qualified name of types in dotnet to ensure the target type and current element are not in the same namespace #1252.
 
 ## [0.0.15] - 2021-12-17
 
