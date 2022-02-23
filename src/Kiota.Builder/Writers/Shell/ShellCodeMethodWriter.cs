@@ -136,6 +136,18 @@ namespace Kiota.Builder.Writers.Shell
                 var (paramType, paramName) = zipped[i];
                 writer.WriteLine($"var {paramName} = ({paramType}) parameters[{i}];");
             }
+            var pathParams = parametersList.Where(p => p.IsOfKind(CodeParameterKind.Path));
+            var pathParamsProp = (codeElement.Parent as CodeClass)?.GetPropertyOfKind(CodePropertyKind.PathParameters);
+            if (pathParamsProp != null && pathParams.Any())
+            {
+                var pathParamsPropName = pathParamsProp.Name.ToFirstCharacterUpperCase();
+                writer.WriteLine($"{pathParamsPropName}.Clear();");
+                foreach (var p in pathParams)
+                {
+                    writer.WriteLine($"{pathParamsPropName}.Add(\"{p.Name}\", {NormalizeToIdentifier(p.Name)});");
+                }
+            }
+
             WriteCommandHandlerBody(originalMethod, requestParams, isHandlerVoid, returnType, writer);
             // Get request generator method. To call it + get path & query parameters see WriteRequestExecutorBody in CSharp
             if (isHandlerVoid)
