@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -107,7 +107,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 "integer" => "int",
                 "boolean" => "bool",
                 "int64" => "long",
-                "string" or "float" or "double" or "object" or "void" => type.Name.ToLowerInvariant(),// little casing hack
+                "string" or "float" or "double" or "object" or "void" or "decimal" => type.Name.ToLowerInvariant(),// little casing hack
                 "binary" => "byte[]",
                 _ => type.Name?.ToFirstCharacterUpperCase() ?? "object",
             };
