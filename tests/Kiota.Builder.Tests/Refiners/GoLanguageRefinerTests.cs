@@ -6,7 +6,59 @@ namespace Kiota.Builder.Refiners.Tests;
 public class GoLanguageRefinerTests {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
     #region CommonLangRefinerTests
-     [Fact]
+    [Fact]
+    public void ReplacesModelsByInterfaces() {
+        var model = root.AddClass(new CodeClass {
+            Name = "somemodel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var requestBuilder = root.AddClass(new CodeClass {
+            Name = "somerequestbuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+
+        var executorMethod = requestBuilder.AddMethod(new CodeMethod {
+            Name = "Execute",
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType {
+                Name = model.Name,
+                TypeDefinition = model,
+            },
+        }).First();
+        var executorParameter = new CodeParameter {
+            Name = "requestBody",
+            Kind = CodeParameterKind.RequestBody,
+            Type = new CodeType {
+                Name = model.Name,
+                TypeDefinition = model,
+            },
+        };
+        executorMethod.AddParameter(executorParameter);
+        var property = model.AddProperty(new CodeProperty{
+            Name = "someProp",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType {
+                Name = model.Name,
+                TypeDefinition = model,
+            },
+        }).First();
+        Assert.Empty(root.GetChildElements(true).OfType<CodeInterface>());
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        Assert.Single(root.GetChildElements(true).OfType<CodeInterface>());
+        var inter = root.GetChildElements(true).OfType<CodeInterface>().First();
+
+        Assert.NotEqual(model.Name, inter.Name);
+        var propertyType = property.Type as CodeType;
+        Assert.NotNull(propertyType);
+        Assert.Equal(inter, propertyType.TypeDefinition);
+        var executorParameterType = executorParameter.Type as CodeType;
+        Assert.NotNull(executorParameterType);
+        Assert.Equal(inter, executorParameterType.TypeDefinition);
+        var executorMethodReturnType = executorMethod.ReturnType as CodeType;
+        Assert.NotNull(executorMethodReturnType);
+        Assert.Equal(inter, executorMethodReturnType.TypeDefinition);
+    }
+    [Fact]
     public void AddsExceptionInheritanceOnErrorClasses() {
         var model = root.AddClass(new CodeClass {
             Name = "somemodel",
