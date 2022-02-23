@@ -150,6 +150,14 @@ namespace Kiota.Builder.Writers.Shell
 
             WriteCommandHandlerBody(originalMethod, requestParams, isHandlerVoid, returnType, writer);
             // Get request generator method. To call it + get path & query parameters see WriteRequestExecutorBody in CSharp
+            WriteCommandHandlerBodyOutput(writer, originalMethod, isHandlerVoid);
+            writer.DecreaseIndent();
+            writer.WriteLine($"}}, new CollectionBinding({string.Join(", ", availableOptions)}));");
+            writer.WriteLine("return command;");
+        }
+
+        private void WriteCommandHandlerBodyOutput(LanguageWriter writer, CodeMethod originalMethod, bool isHandlerVoid)
+        {
             if (isHandlerVoid)
             {
                 writer.WriteLine($"Console.WriteLine(\"Success\");");
@@ -179,9 +187,6 @@ namespace Kiota.Builder.Writers.Shell
                     writer.CloseBlock();
                 }
             }
-            writer.DecreaseIndent();
-            writer.WriteLine($"}}, new CollectionBinding({string.Join(", ", availableOptions)}));");
-            writer.WriteLine("return command;");
         }
 
         private List<string> WriteExecutableCommandOptions(LanguageWriter writer, List<CodeParameter> parametersList)
