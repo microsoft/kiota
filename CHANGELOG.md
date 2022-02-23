@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [0.0.16] - 2022-02-23
+
+### Added
+
 - Added the ability to configure the underlying transport in Go. #1003
 - Added additional date time (date, time, duration) types in the generation process. #1017
 - PHP Request Adapter (includes middleware) #1048, #918, #1024, #1025
