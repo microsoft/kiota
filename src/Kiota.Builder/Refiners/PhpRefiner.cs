@@ -22,6 +22,8 @@ namespace Kiota.Builder.Refiners
             MakeModelPropertiesNullable(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
+            ReplaceDefaultSerializationModules(generatedCode, "Microsoft\\Kiota\\Serialization\\Json\\JsonSerializationWriterFactory");
+            ReplaceDefaultDeserializationModules(generatedCode, "Microsoft\\Kiota\\Serialization\\Json\\JsonParseNodeFactory");
             AliasUsingWithSameSymbol(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             AddGetterAndSetterMethods(generatedCode,new()
@@ -162,7 +164,6 @@ namespace Kiota.Builder.Refiners
                         .Where(x => x.Declaration
                             .Name
                             .Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase)));
-                var rand = new Random();
                 foreach (var usingElement in duplicatedSymbolsUsings)
                 {
                     var declaration = usingElement.Declaration.TypeDefinition?.Name;

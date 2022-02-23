@@ -436,7 +436,7 @@ namespace Kiota.Builder.Writers.Php
         private static void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, string methodName) {
             if(serializationModules != null)
                 foreach(var module in serializationModules)
-                    writer.WriteLine($"ApiClientBuilder::{methodName}(\\{module.ReplaceDotsWithSlashInNamespaces()}::class);");
+                    writer.WriteLine($"ApiClientBuilder::{methodName}(\\{module}::class);");
         }
     }
 }
