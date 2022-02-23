@@ -17,6 +17,62 @@ public class TypeScriptLanguageRefinerTests {
     }
 #region commonrefiner
     [Fact]
+    public void AddStaticMethodsUsingsForDeserializer() {
+        var model = graphNS.AddClass(new CodeClass {
+            Name = "somemodel",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+
+        model.AddMethod(new CodeMethod {
+            Name = "Deserialize",
+            Kind = CodeMethodKind.Deserializer,
+            IsAsync = false,
+            ReturnType = new CodeType {
+                Name = "void",
+                IsExternal = true,
+            },
+        });
+
+        var subNs = graphNS.AddNamespace($"{graphNS.Name}.subns");
+
+        var propertyModel = subNs.AddClass(new CodeClass {
+            Name = "somepropertyModel",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+
+        propertyModel.AddMethod(new CodeMethod {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            IsAsync = false,
+            IsStatic = true,
+            ReturnType = new CodeType {
+                Name = "void",
+                IsExternal = true,
+            },
+        });
+
+        model.AddProperty(new CodeProperty {
+            Name = "someProperty",
+            Type = new CodeType {
+                Name = "somepropertyModel",
+                TypeDefinition = propertyModel,
+            },
+        });
+
+        Assert.Empty(graphNS.GetChildElements(true).OfType<CodeFunction>());
+        Assert.Single(model.GetChildElements(true).OfType<CodeMethod>());
+
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, graphNS);
+        Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().Where(x => x.IsOfKind(CodeMethodKind.Factory)));
+        Assert.Single(subNs.GetChildElements(true).OfType<CodeFunction>());
+
+        var function = subNs.GetChildElements(true).OfType<CodeFunction>().First();
+        Assert.Single(model.Usings.Where(x => !x.IsExternal && x.Declaration.TypeDefinition == function));
+
+    }
+    [Fact]
     public void AddsExceptionInheritanceOnErrorClasses() {
         var model = root.AddClass(new CodeClass {
             Name = "somemodel",
@@ -25,7 +81,7 @@ public class TypeScriptLanguageRefinerTests {
         }).First();
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
-        var declaration = model.StartBlock as ClassDeclaration;
+        var declaration = model.StartBlock;
 
         Assert.Contains("ApiError", declaration.Usings.Select(x => x.Name));
         Assert.Equal("ApiError", declaration.Inherits.Name);
@@ -37,7 +93,7 @@ public class TypeScriptLanguageRefinerTests {
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        var declaration = model.StartBlock as ClassDeclaration;
+        var declaration = model.StartBlock;
         declaration.Inherits = new CodeType {
             Name = "SomeOtherModel"
         };
@@ -68,7 +124,7 @@ public class TypeScriptLanguageRefinerTests {
                     });
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
 
-        var declaration = requestBuilder.StartBlock as ClassDeclaration;
+        var declaration = requestBuilder.StartBlock;
 
         Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
     }
@@ -82,7 +138,7 @@ public class TypeScriptLanguageRefinerTests {
             Name = "childModel",
             Kind = CodeClassKind.Model,
         }).First();
-        (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
+        (childModel.StartBlock).Inherits = new CodeType {
             Name = "parentModel",
             TypeDefinition = parentModel,
         };
