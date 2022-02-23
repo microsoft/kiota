@@ -136,7 +136,7 @@ namespace Kiota.Builder.Writers.Shell
                 var (paramType, paramName) = zipped[i];
                 writer.WriteLine($"var {paramName} = ({paramType}) parameters[{i}];");
             }
-            var pathParams = parametersList.Where(p => p.IsOfKind(CodeParameterKind.Path));
+            var pathParams = parametersList.Where(p => p.IsOfKind(CodeParameterKind.Path)).Select(p => p.Name);
             var pathParamsProp = (codeElement.Parent as CodeClass)?.GetPropertyOfKind(CodePropertyKind.PathParameters);
             if (pathParamsProp != null && pathParams.Any())
             {
@@ -144,7 +144,7 @@ namespace Kiota.Builder.Writers.Shell
                 writer.WriteLine($"{pathParamsPropName}.Clear();");
                 foreach (var p in pathParams)
                 {
-                    writer.WriteLine($"{pathParamsPropName}.Add(\"{p.Name}\", {NormalizeToIdentifier(p.Name)});");
+                    writer.WriteLine($"{pathParamsPropName}.Add(\"{p}\", {NormalizeToIdentifier(p)});");
                 }
             }
 
