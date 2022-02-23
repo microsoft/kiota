@@ -118,7 +118,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             
             Assert.Contains("use Http\\Promise\\Promise;", result);
             Assert.Contains("use Http\\Promise\\RejectedPromise;", result);
-            Assert.Contains("use \\Exception;", result);
+            Assert.Contains("use Exception;", result);
         }
 
         [Fact]

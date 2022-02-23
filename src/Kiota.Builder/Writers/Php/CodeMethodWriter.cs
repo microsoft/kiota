@@ -126,7 +126,7 @@ namespace Kiota.Builder.Writers.Php
 
             writer.WriteLine(conventions.DocCommentStart);
             var isVoidable = "void".Equals(conventions.GetTypeString(codeMethod.ReturnType, codeMethod),
-                StringComparison.OrdinalIgnoreCase);
+                StringComparison.OrdinalIgnoreCase) && !codeMethod.IsOfKind(CodeMethodKind.RequestExecutor);
             if(hasMethodDescription){
                 writer.WriteLine(
                     $"{conventions.DocCommentPrefix}{methodDescription}");
@@ -142,9 +142,9 @@ namespace Kiota.Builder.Writers.Php
             var returnDocString = GetDocCommentReturnType(codeMethod, accessedProperty);
             if (!isVoidable)
             {
-                writer.WriteLines(
-                    $"{conventions.DocCommentPrefix}@return {returnDocString}{orNullReturn[1]}"
-                    );
+                writer.WriteLine((codeMethod.MethodKind == CodeMethodKind.RequestExecutor)
+                    ? $"{conventions.DocCommentPrefix}@return Promise"
+                    : $"{conventions.DocCommentPrefix}@return {returnDocString}{orNullReturn[1]}");
             }
             writer.WriteLine(conventions.DocCommentEnd);
         }
@@ -220,7 +220,7 @@ namespace Kiota.Builder.Writers.Php
             else
             {
                 writer.WriteLine(
-                    $"{conventions.GetAccessModifier(codeMethod.Access)} function {methodPrefix}{methodName}({methodParameters}){returnValue} {{");
+                    $"{conventions.GetAccessModifier(codeMethod.Access)} function {methodPrefix}{methodName}({methodParameters}){(!codeMethod.IsOfKind(CodeMethodKind.RequestExecutor) ? $"{returnValue}" : ": Promise")} {{");
             }
 
             writer.IncreaseIndent();
@@ -334,8 +334,8 @@ namespace Kiota.Builder.Writers.Php
                                 $"{RequestInfoVarName}->urlTemplate = {GetPropertyCall(urlTemplateProperty, "''")};",
                                 $"{RequestInfoVarName}->pathParameters = {GetPropertyCall(pathParametersProperty, "''")};",
                                 $"{RequestInfoVarName}->httpMethod = HttpMethod::{codeElement?.HttpMethod?.ToString().ToUpperInvariant()};");
-            if(requestParams.headers != null)
-                writer.WriteLine($"{RequestInfoVarName}->setHeadersFromRawObject({conventions.GetParameterName(requestParams.headers)});");
+            //TODO: Fix this if(requestParams.headers != null)
+            // writer.WriteLine($"{RequestInfoVarName}->setHeadersFromRawObject({conventions.GetParameterName(requestParams.headers)});");
             if (requestParams.queryString != null)
             {
                 writer.WriteLine($"if ({conventions.GetParameterName(requestParams.queryString)} !== null) {{");
@@ -354,8 +354,16 @@ namespace Kiota.Builder.Writers.Php
                     writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {spreadOperator}{conventions.GetParameterName(requestParams.requestBody)});");
                 }
             }
-            if(requestParams.options != null)
+
+            if (requestParams.options != null)
+            {
+                writer.WriteLine($"if ({conventions.GetParameterName(requestParams.options)} !== null) {{");
+                writer.IncreaseIndent();
                 writer.WriteLine($"{RequestInfoVarName}->addRequestOptions(...$options);");
+                writer.DecreaseIndent();
+                writer.WriteLine("}");
+            }
+
             writer.WriteLine($"return {RequestInfoVarName};");
         }
         private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer, CodeMethod method) {
@@ -399,10 +407,16 @@ namespace Kiota.Builder.Writers.Php
             {
                 joinedParams = string.Join(", ", callParams);
             }
+            
+            var returnType = conventions.TranslateType(codeElement.ReturnType);
+            var returnVoidOrString = returnType.Equals("void", StringComparison.OrdinalIgnoreCase) || returnType.Equals("string", StringComparison.OrdinalIgnoreCase);
             writer.WriteLine($"$requestInfo = $this->{generatorMethodName}({joinedParams});");
             writer.WriteLine("try {");
             writer.IncreaseIndent();
-            writer.WriteLine($"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->sendAsync({RequestInfoVarName}, get_class($body), $responseHandler);");
+            if(codeElement.Parameters.Any(x => x.IsOfKind(CodeParameterKind.ResponseHandler)))
+                writer.WriteLine($"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->sendAsync({RequestInfoVarName}, {(!returnVoidOrString ? $"{returnType}::class": "''")}, $responseHandler);");
+            else
+                writer.WriteLine($"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->sendAsync({RequestInfoVarName}, {(!returnVoidOrString ? $"{returnType}::class": "''")}, null);");
             writer.DecreaseIndent();
             writer.WriteLine("} catch(Exception $ex) {");
             writer.IncreaseIndent();
@@ -422,7 +436,7 @@ namespace Kiota.Builder.Writers.Php
         private static void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, string methodName) {
             if(serializationModules != null)
                 foreach(var module in serializationModules)
-                    writer.WriteLine($"ApiClientBuilder::{methodName}({module}::class);");
+                    writer.WriteLine($"ApiClientBuilder::{methodName}(\\{module.ReplaceDotsWithSlashInNamespaces()}::class);");
         }
     }
 }

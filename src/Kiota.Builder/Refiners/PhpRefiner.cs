@@ -16,6 +16,7 @@ namespace Kiota.Builder.Refiners
             ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Escaped{reservedWord.ToFirstCharacterUpperCase()}");
             AddConstructorsForDefaultValues(generatedCode, true);
             RemoveCancellationParameter(generatedCode);
+            ConvertUnionTypesToWrapper(generatedCode, false);
             CorrectParameterType(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             MakeModelPropertiesNullable(generatedCode);
@@ -94,7 +95,8 @@ namespace Kiota.Builder.Refiners
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor), "", "Exception"),
             new (x => x is CodeEnum, "Microsoft\\Kiota\\Abstractions\\", "Enum"),
             new(x => x is CodeProperty property && property.Type.Name.Equals("DateTime", StringComparison.OrdinalIgnoreCase), "", "DateTime"),
-            new(x => x is CodeProperty property && property.Type.Name.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase), "", "DateTime")
+            new(x => x is CodeProperty property && property.Type.Name.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase), "", "DateTime"),
+            new(x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor), "Microsoft\\Kiota\\Abstractions", "ApiClientBuilder")
         };
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter)) {
@@ -133,7 +135,7 @@ namespace Kiota.Builder.Refiners
                 method.ReturnType.Name = "array";
             } else if (method.IsOfKind(CodeMethodKind.RequestExecutor))
             {
-                method.ReturnType = new CodeType() {Name = "Promise", IsExternal = true, IsNullable = false};
+                method.ReturnType = new CodeType() {Name = method.ReturnType.Name, IsExternal = true, IsNullable = false};
             }
         }
         private static void CorrectParameterType(CodeElement codeElement)
