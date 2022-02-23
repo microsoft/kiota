@@ -3,26 +3,26 @@ using System.IO;
 using Xunit;
 
 namespace Kiota.Builder.Writers.Go.Tests;
-public class CodeClassDeclarationWriterTests : IDisposable
+public class CodeInterfaceDeclarationWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
     private readonly StringWriter tw;
     private readonly LanguageWriter writer;
-    private readonly CodeClassDeclarationWriter codeElementWriter;
-    private readonly CodeClass parentClass;
+    private readonly CodeInterfaceDeclarationWriter codeElementWriter;
+    private readonly CodeInterface parentInterface;
     private readonly CodeNamespace root;
 
-    public CodeClassDeclarationWriterTests() {
-        codeElementWriter = new CodeClassDeclarationWriter(new GoConventionService());
+    public CodeInterfaceDeclarationWriterTests() {
+        codeElementWriter = new CodeInterfaceDeclarationWriter(new GoConventionService());
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, DefaultPath, DefaultName);
         tw = new StringWriter();
         writer.SetTextWriter(tw);
         root = CodeNamespace.InitRootNamespace();
-        parentClass = new () {
+        parentInterface = new () {
             Name = "parentClass"
         };
-        root.AddClass(parentClass);
+        root.AddInterface(parentInterface);
     }
     public void Dispose() {
         tw?.Dispose();
@@ -30,25 +30,26 @@ public class CodeClassDeclarationWriterTests : IDisposable
     }
     [Fact]
     public void WritesSimpleDeclaration() {
-        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        codeElementWriter.WriteCodeElement(parentInterface.StartBlock, writer);
         var result = tw.ToString();
         Assert.Contains("type", result);
-        Assert.Contains("struct", result);
+        Assert.Contains("interface", result);
+        Assert.DoesNotContain("struct", result);
         Assert.Contains("package", result);
     }
     [Fact]
     public void WritesInheritance() {
-        var declaration = parentClass.StartBlock;
-        declaration.Inherits = new (){
+        var declaration = parentInterface.StartBlock;
+        declaration.AddImplements(new CodeType{
             Name = "someParent"
-        };
+        });
         codeElementWriter.WriteCodeElement(declaration, writer);
         var result = tw.ToString();
         Assert.Contains("SomeParent", result);
     }
     [Fact]
     public void WritesImports() {
-        var declaration = parentClass.StartBlock;
+        var declaration = parentInterface.StartBlock;
         declaration.AddUsings(new () {
             Name = "Objects",
             Declaration = new() {
