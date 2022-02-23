@@ -136,8 +136,28 @@ namespace Kiota.Builder.Writers.Shell
                 var (paramType, paramName) = zipped[i];
                 writer.WriteLine($"var {paramName} = ({paramType}) parameters[{i}];");
             }
+            var pathParams = parametersList.Where(p => p.IsOfKind(CodeParameterKind.Path)).Select(p => p.Name);
+            var pathParamsProp = (codeElement.Parent as CodeClass)?.GetPropertyOfKind(CodePropertyKind.PathParameters);
+            if (pathParamsProp != null && pathParams.Any())
+            {
+                var pathParamsPropName = pathParamsProp.Name.ToFirstCharacterUpperCase();
+                writer.WriteLine($"{pathParamsPropName}.Clear();");
+                foreach (var p in pathParams)
+                {
+                    writer.WriteLine($"{pathParamsPropName}.Add(\"{p}\", {NormalizeToIdentifier(p)});");
+                }
+            }
+
             WriteCommandHandlerBody(originalMethod, requestParams, isHandlerVoid, returnType, writer);
             // Get request generator method. To call it + get path & query parameters see WriteRequestExecutorBody in CSharp
+            WriteCommandHandlerBodyOutput(writer, originalMethod, isHandlerVoid);
+            writer.DecreaseIndent();
+            writer.WriteLine($"}}, new CollectionBinding({string.Join(", ", availableOptions)}));");
+            writer.WriteLine("return command;");
+        }
+
+        private void WriteCommandHandlerBodyOutput(LanguageWriter writer, CodeMethod originalMethod, bool isHandlerVoid)
+        {
             if (isHandlerVoid)
             {
                 writer.WriteLine($"Console.WriteLine(\"Success\");");
@@ -167,9 +187,6 @@ namespace Kiota.Builder.Writers.Shell
                     writer.CloseBlock();
                 }
             }
-            writer.DecreaseIndent();
-            writer.WriteLine($"}}, new CollectionBinding({string.Join(", ", availableOptions)}));");
-            writer.WriteLine("return command;");
         }
 
         private List<string> WriteExecutableCommandOptions(LanguageWriter writer, List<CodeParameter> parametersList)
