@@ -44,7 +44,7 @@ In addition to all the described properties, a model will contain a set of defau
 
 The Factory method (static) is used by the Parse Node implementation to get the base or derived instance according to the discriminator value. If an operation describes returning a Person model, and the Person model has discriminator information (mapping + property name), and the response payload contains one of the mapped value (e.g. Employee), the deserialization process will deserialize the the derived Employee type instead of the base Person type. This way SDK users can take advantage of the properties that are defined on this specialized model.
 
-```CSharp
+```csharp
 public static new Person CreateFromDiscriminatorValue(IParseNode parseNode) {
     _ = parseNode ?? throw new ArgumentNullException(nameof(parseNode));
     var mappingValueNode = parseNode.GetChildNode("@odata.type");
