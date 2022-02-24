@@ -36,11 +36,11 @@ jobs:
           distribution: 'adopt'
           java-version: 11
       - name: Setup .NET 5 # At the moment the scanner requires dotnet 5 https://www.nuget.org/packages/dotnet-sonarscanner
-        uses: actions/setup-dotnet@v1.9.0
+        uses: actions/setup-dotnet@v1.9.1
         with:
           dotnet-version: 5.0.x
       - name: Setup .NET 6
-        uses: actions/setup-dotnet@v1.9.0
+        uses: actions/setup-dotnet@v1.9.1
         with:
           dotnet-version: 6.0.x
       - uses: actions/checkout@v2.4.0
