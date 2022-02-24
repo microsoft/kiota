@@ -50,6 +50,12 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// <param name="value">The double value to be written.</param>
         void WriteDoubleValue(string key, double? value);
         /// <summary>
+        /// Writes the specified decimal value to the stream with an optional given key.
+        /// </summary>
+        /// <param name="key">The key to be used for the written value. May be null.</param>
+        /// <param name="value">The decimal value to be written.</param>
+        void WriteDecimalValue(string key, decimal? value);
+        /// <summary>
         /// Writes the specified Guid value to the stream with an optional given key.
         /// </summary>
         /// <param name="key">The key to be used for the written value. May be null.</param>

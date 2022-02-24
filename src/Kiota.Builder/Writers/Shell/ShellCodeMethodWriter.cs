@@ -121,18 +121,43 @@ namespace Kiota.Builder.Writers.Shell
             // Add output formatter factory param
             paramTypes.Add(outputFormatterFactoryParamType);
             paramNames.Add(outputFormatterFactoryParamName);
+            availableOptions.Add($"new TypeBinding(typeof({outputFormatterFactoryParamType}))");
 
             // Add CancellationToken param
             paramTypes.Add(cancellationTokenParamType);
             paramNames.Add(cancellationTokenParamName);
+            availableOptions.Add($"new TypeBinding(typeof({cancellationTokenParamType}))");
 
-            var zipped = paramTypes.Zip(paramNames);
-            var projected = zipped.Select((x, y) => $"{x.First} {x.Second}");
-            var handlerParams = string.Join(", ", projected);
-            writer.WriteLine($"command.SetHandler(async ({handlerParams}) => {{");
+            var zipped = paramTypes.Zip(paramNames).ToArray();
+            writer.WriteLine($"command.SetHandler(async (object[] parameters) => {{");
             writer.IncreaseIndent();
+            for (int i = 0; i < availableOptions.Count; i++)
+            {
+                var (paramType, paramName) = zipped[i];
+                writer.WriteLine($"var {paramName} = ({paramType}) parameters[{i}];");
+            }
+            var pathParams = parametersList.Where(p => p.IsOfKind(CodeParameterKind.Path)).Select(p => p.Name);
+            var pathParamsProp = (codeElement.Parent as CodeClass)?.GetPropertyOfKind(CodePropertyKind.PathParameters);
+            if (pathParamsProp != null && pathParams.Any())
+            {
+                var pathParamsPropName = pathParamsProp.Name.ToFirstCharacterUpperCase();
+                writer.WriteLine($"{pathParamsPropName}.Clear();");
+                foreach (var p in pathParams)
+                {
+                    writer.WriteLine($"{pathParamsPropName}.Add(\"{p}\", {NormalizeToIdentifier(p)});");
+                }
+            }
+
             WriteCommandHandlerBody(originalMethod, requestParams, isHandlerVoid, returnType, writer);
             // Get request generator method. To call it + get path & query parameters see WriteRequestExecutorBody in CSharp
+            WriteCommandHandlerBodyOutput(writer, originalMethod, isHandlerVoid);
+            writer.DecreaseIndent();
+            writer.WriteLine($"}}, new CollectionBinding({string.Join(", ", availableOptions)}));");
+            writer.WriteLine("return command;");
+        }
+
+        private void WriteCommandHandlerBodyOutput(LanguageWriter writer, CodeMethod originalMethod, bool isHandlerVoid)
+        {
             if (isHandlerVoid)
             {
                 writer.WriteLine($"Console.WriteLine(\"Success\");");
@@ -162,14 +187,6 @@ namespace Kiota.Builder.Writers.Shell
                     writer.CloseBlock();
                 }
             }
-            writer.DecreaseIndent();
-            var delimiter = "";
-            if (availableOptions.Any())
-            {
-                delimiter = ", ";
-            }
-            writer.WriteLine($"}}{delimiter}{string.Join(", ", availableOptions)});");
-            writer.WriteLine("return command;");
         }
 
         private List<string> WriteExecutableCommandOptions(LanguageWriter writer, List<CodeParameter> parametersList)

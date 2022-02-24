@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -213,6 +213,7 @@ public class KiotaBuilder
         logger.LogTrace("{timestamp}ms: Files written to {path}", stopwatch.ElapsedMilliseconds, config.OutputPath);
     }
     private static readonly string requestBuilderSuffix = "RequestBuilder";
+    private static readonly string itemRequestBuilderSuffix = "ItemRequestBuilder";
     private static readonly string voidType = "void";
     private static readonly string coreInterfaceType = "IRequestAdapter";
     private static readonly string requestAdapterParameterName = "requestAdapter";
@@ -234,7 +235,7 @@ public class KiotaBuilder
         else
         {
             var targetNS = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNamespace.EnsureItemNamespace() : currentNamespace;
-            var className = currentNode.GetClassName(requestBuilderSuffix);
+            var className = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNode.GetClassName(itemRequestBuilderSuffix) :currentNode.GetClassName(requestBuilderSuffix);
             codeClass = targetNS.AddClass(new CodeClass {
                 Name = className, 
                 ClassKind = CodeClassKind.RequestBuilder,
@@ -248,7 +249,7 @@ public class KiotaBuilder
         foreach (var child in currentNode.Children)
         {
             var propIdentifier = child.Value.GetClassName();
-            var propType = propIdentifier + requestBuilderSuffix;
+            var propType = child.Value.DoesNodeBelongToItemSubnamespace() ? propIdentifier + itemRequestBuilderSuffix : propIdentifier + requestBuilderSuffix;
             if (child.Value.IsPathSegmentWithSingleSimpleParameter())
             {
                 var prop = CreateIndexer($"{propIdentifier}-indexer", propType, child.Value, currentNode);
