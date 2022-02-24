@@ -226,7 +226,7 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
         Objects.requireNonNull(requestInfo);
         requestInfo.pathParameters.put("baseurl", getBaseUrl());
     }
-    private Request getRequestFromRequestInformation(@Nonnull final RequestInformation requestInfo) throws URISyntaxException, MalformedURLException {
+    public Request getRequestFromRequestInformation(@Nonnull final RequestInformation requestInfo) throws URISyntaxException, MalformedURLException {
         final RequestBody body = requestInfo.content == null ? null :
                                 new RequestBody() {
                                     @Override
