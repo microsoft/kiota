@@ -870,6 +870,7 @@ public class KiotaBuilder
             newClass.StartBlock.Inherits = new CodeType { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
         var factoryMethod = newClass.AddMethod(new CodeMethod {
             Name = "CreateFromDiscriminatorValue",
+            Description = "Creates a new instance of the appropriate class based on discriminator value",
             ReturnType = new CodeType { TypeDefinition = newClass, Name = newClass.Name, IsNullable = false },
             Kind = CodeMethodKind.Factory,
             IsStatic = true,
@@ -878,6 +879,7 @@ public class KiotaBuilder
         factoryMethod.AddParameter(new CodeParameter {
             Name = "parseNode",
             Kind = CodeParameterKind.ParseNode,
+            Description = "The parse node to use to read the discriminator value and create the object",
             Optional = false,
             Type = new CodeType { Name = ParseNodeInterface, IsExternal = true },
         });

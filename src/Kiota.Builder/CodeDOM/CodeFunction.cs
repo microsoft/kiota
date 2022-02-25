@@ -21,12 +21,13 @@ public class CodeFunction : CodeBlock<BlockDeclaration, BlockEnd>
     }
     public CodeMethod OriginalLocalMethod
     {
-        get => GetChildElements().OfType<CodeMethod>().FirstOrDefault();
+        get; private set;
     }
     public CodeFunction(CodeMethod method)
     {
         if (method == null) throw new ArgumentNullException(nameof(method));
         if (!method.IsStatic) throw new InvalidOperationException("The original method must be static");
-        AddRange(method);
+        EnsureElementsAreChildren(method);
+        OriginalLocalMethod = method;
     }
 }

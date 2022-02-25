@@ -17,7 +17,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
         if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
         if(codeElement.OriginalLocalMethod == null) throw new InvalidOperationException($"{nameof(codeElement.OriginalLocalMethod)} should not be null");
         if(writer == null) throw new ArgumentNullException(nameof(writer));
-        if(!(codeElement.Parent is CodeNamespace)) throw new InvalidOperationException("the parent of a method should be a namespace");
+        if(codeElement.Parent is not CodeNamespace) throw new InvalidOperationException("the parent of a function should be a namespace");
 
         var returnType = conventions.GetTypeString(codeElement.OriginalLocalMethod.ReturnType, codeElement);
         _codeUsingWriter.WriteCodeElement(codeElement.StartBlock.Usings, codeElement.GetImmediateParentOfType<CodeNamespace>(), writer);
