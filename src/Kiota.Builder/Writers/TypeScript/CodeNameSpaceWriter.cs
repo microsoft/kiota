@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Reflection.Metadata;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
 
@@ -73,7 +74,9 @@ namespace Kiota.Builder.Writers.TypeScript
             foreach (var @class in classes)
             {
                 var usings = @class.StartBlock as CodeClass.Declaration;
-                var inheritsFrom = usings?.Inherits?.Name;
+                var inheritsFrom = usings?.Inherits?.TypeDefinition.Parent.Name == @class.Parent.Name ?  usings.Inherits.Name: null;
+                
+                var name = usings.Inherits?.Parent;
                 if (inheritsFrom != null)    
                 {
                     childParent.Add(@class.Name, inheritsFrom);
