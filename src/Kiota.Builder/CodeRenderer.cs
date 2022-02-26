@@ -42,9 +42,14 @@ namespace Kiota.Builder
                     {
                         var namespaceNameLastSegment = codeNamespace.Name.Split('.').Last().ToLowerInvariant();
                         // if the module already has a class with the same name, it's going to be declared automatically
-                        if (_configuration.ShouldWriteBarrelsIfClassExists ||
-                            codeNamespace.FindChildByName<CodeClass>(namespaceNameLastSegment, false) == null)
+                        if (_configuration.ShouldWriteBarrelsIfClassExists && _configuration.setCodeRenderingCondition(codeNamespace))
+                            //verify what this does
+                        //codeNamespace.FindChildByName<CodeClass>(namespaceNameLastSegment, false) == null)
+                         
+                        {
                             await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(root, codeNamespace));
+                        }
+                     
                     }
                     await RenderCodeNamespaceToFilePerClassAsync(writer, codeNamespace);
                 }

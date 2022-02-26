@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Kiota.Builder {
     public class GenerationConfiguration {
@@ -29,5 +30,8 @@ namespace Kiota.Builder {
 
           GenerationLanguage.TypeScript
         };
+
+        public Func<CodeNamespace, bool>  setCodeRenderingCondition;
+  
     }
 }
