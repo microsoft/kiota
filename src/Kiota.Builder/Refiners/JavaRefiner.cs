@@ -234,12 +234,9 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (currentElement is CodeNamespace codeNamespace)
         {
             if (!string.IsNullOrEmpty(codeNamespace.Name))
-                codeNamespace.Name = codeNamespace.Name.ToLower();
+                codeNamespace.Name = codeNamespace.Name.ToLowerInvariant();
 
-            foreach(var codeElement in codeNamespace.GetChildElements())
-            {
-                LowerCaseNamespaceNames(codeElement);
-            }
+            CrawlTree(currentElement, LowerCaseNamespaceNames);
         }
     }
 }
