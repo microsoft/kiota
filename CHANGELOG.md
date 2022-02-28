@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug in enabling backing store for parse node factory by passing ParseNodeFactoryRegistry to method call  #1289
 - Fixed errors in python serialization due to to responses as json instead of json strings #1290
 - Added python version 3.10 to testing matrix #1290 
+- Fixed bug with inconsistent Java namespace and directory name casing #1267
 
 ## [0.0.16] - 2022-02-23
 
@@ -75,7 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug in Go where empty collections would not be serialized.
 - Fixes a bug where generation would fail because of empty usings.
 - Fixes a bug where Java and Go escaped model properties would not serialize properly.
-- Fixes a bug where null values would not be added to additionalData if there was no matching property in dotnet. 
+- Fixes a bug where null values would not be added to additionalData if there was no matching property in dotnet.
 - Fixes a bug where deserialzation of enums would throw an ArgumentExcpetion if the member didn't exist in dotnet.
 
 ## [0.0.14] - 2021-11-08
