@@ -9,9 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for global error handling in python abstractions #1289
+
 ### Changed
 
 - Fixed a bug where the Go http client configuration would impact non-kiota requests.
+- Fixed bug where installing python abstractions failed due to missing dependencies  #1289
+- Modified python test matrix to include python 3.10  #1289
+- Added return statement to AnonymousAuthenticationProvider in python abstractions  #1289
+- Fixed bug in enabling backing store for parse node factory by passing ParseNodeFactoryRegistry to method call  #1289
 
 ## [0.0.16] - 2022-02-23
 
@@ -27,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adds JSON Serialization library for Python. #1186
 - Adds PHP League Authentication Provider for PHP #1201
 - Added Shell language support #738
+
 
 ### Changed
 
