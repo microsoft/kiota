@@ -161,6 +161,8 @@ class JsonParseNode(ParseNode, Generic[T, U]):
                 return current_parse_node.get_time_value()
             raise Exception(f"Encountered an unknown type during deserialization {generic_type}")
 
+        if isinstance(self._json_node, str):
+            return list(map(func, json.loads(self._json_node)))
         return list(map(func, list(self._json_node)))
 
     def get_collection_of_object_values(self, class_type: Type[U]) -> List[U]:
@@ -201,7 +203,7 @@ class JsonParseNode(ParseNode, Generic[T, U]):
                 raise Exception(f'Invalid key: {raw_key} for enum {enum_class._name_}.')
         return None
 
-    def get_object_value(self, class_type: Type[U]) -> U:
+    def get_object_value(self, class_type: Callable[[], U]) -> U:
         """Gets the model object value of the node
         Returns:
             Parsable: The model object value of the node
