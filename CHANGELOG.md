@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adds JSON Serialization library for Python. #1186
 - Adds PHP League Authentication Provider for PHP #1201
 - Added Shell language support #738
+- Added support for global error handling in python abstractions #1289
 
 ### Changed
 
@@ -43,6 +44,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed missing methods for serializing/deserializing decimal values in dotnet #1252
 - Modified RequestBuilder types are suffixed with the ItemRequestBuilder if they belong to an item namespace to fix name collisions #1252
 - Modified the use of fully qualified name of types in dotnet to ensure the target type and current element are not in the same namespace #1252.
+- Fixed bug where installing python abstractions failed due to missing dependencies
+- Modified python test matrix to include python 3.10
+- Added return statement to AnonymousAuthenticationProvider in python abstractions
+- Fixed bug in enabling backing store for parse node factory by passing ParseNodeFactoryRegistry to method call
 
 ## [0.0.15] - 2021-12-17
 
