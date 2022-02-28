@@ -94,34 +94,16 @@ namespace Kiota.Builder.Writers.Shell
             var paramNames = parametersList.Select(x => NormalizeToIdentifier(x.Name)).ToList();
             var isHandlerVoid = conventions.VoidTypeName.Equals(originalMethod.ReturnType.Name, StringComparison.OrdinalIgnoreCase);
             var returnType = conventions.GetTypeString(originalMethod.ReturnType, originalMethod);
-            if (conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
-            {
-                var fileOptionName = "fileOption";
-                writer.WriteLine($"var {fileOptionName} = new Option<{fileParamType}>(\"--{fileParamName}\");");
-                writer.WriteLine($"command.AddOption({fileOptionName});");
-                paramTypes.Add(fileParamType);
-                paramNames.Add(fileParamName);
-                availableOptions.Add(fileOptionName);
-            }
 
-            // Add output type param
+            AddCustomCommandOptions(writer, ref availableOptions, ref paramTypes, ref paramNames, returnType, isHandlerVoid);
+
             if (!isHandlerVoid)
             {
-                var outputOptionName = "outputOption";
-                writer.WriteLine($"var {outputOptionName} = new Option<{outputFormatParamType}>(\"--{outputFormatParamName}\", () => FormatterType.JSON){{");
-                writer.IncreaseIndent();
-                writer.WriteLine("IsRequired = true");
-                writer.CloseBlock("};");
-                writer.WriteLine($"command.AddOption({outputOptionName});");
-                paramTypes.Add(outputFormatParamType);
-                paramNames.Add(outputFormatParamName);
-                availableOptions.Add(outputOptionName);
+                // Add output formatter factory param
+                paramTypes.Add(outputFormatterFactoryParamType);
+                paramNames.Add(outputFormatterFactoryParamName);
+                availableOptions.Add($"new TypeBinding(typeof({outputFormatterFactoryParamType}))");
             }
-
-            // Add output formatter factory param
-            paramTypes.Add(outputFormatterFactoryParamType);
-            paramNames.Add(outputFormatterFactoryParamName);
-            availableOptions.Add($"new TypeBinding(typeof({outputFormatterFactoryParamType}))");
 
             // Add CancellationToken param
             paramTypes.Add(cancellationTokenParamType);
@@ -154,6 +136,42 @@ namespace Kiota.Builder.Writers.Shell
             writer.DecreaseIndent();
             writer.WriteLine($"}}, new CollectionBinding({string.Join(", ", availableOptions)}));");
             writer.WriteLine("return command;");
+        }
+
+        private void AddCustomCommandOptions(LanguageWriter writer, ref List<string> availableOptions, ref List<string> paramTypes, ref List<string> paramNames, string returnType, bool isHandlerVoid)
+        {
+            if (conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
+            {
+                var fileOptionName = "fileOption";
+                writer.WriteLine($"var {fileOptionName} = new Option<{fileParamType}>(\"--{fileParamName}\");");
+                writer.WriteLine($"command.AddOption({fileOptionName});");
+                paramTypes.Add(fileParamType);
+                paramNames.Add(fileParamName);
+                availableOptions.Add(fileOptionName);
+            } 
+            else if (!isHandlerVoid)
+            {
+                // Add output type param
+                var outputOptionName = "outputOption";
+                writer.WriteLine($"var {outputOptionName} = new Option<{outputFormatParamType}>(\"--{outputFormatParamName}\", () => FormatterType.JSON){{");
+                writer.IncreaseIndent();
+                writer.WriteLine("IsRequired = true");
+                writer.CloseBlock("};");
+                writer.WriteLine($"command.AddOption({outputOptionName});");
+                paramTypes.Add(outputFormatParamType);
+                paramNames.Add(outputFormatParamName);
+                availableOptions.Add(outputOptionName);
+
+                // Add output filter param
+                var outputFilterOptionName = "query";
+                var outputFilterOptionParamName = "outputFilterOption";
+                var outputFilterOptionParamType = "string";
+                writer.WriteLine($"var {outputFilterOptionParamName} = new Option<{outputFilterOptionParamType}>(\"--{outputFilterOptionName}\");");
+                writer.WriteLine($"command.AddOption({outputFilterOptionParamName});");
+                paramNames.Add(outputFilterOptionParamName);
+                paramTypes.Add(outputFilterOptionParamType);
+                availableOptions.Add(outputFilterOptionParamName);
+            }
         }
 
         private void WriteCommandHandlerBodyOutput(LanguageWriter writer, CodeMethod originalMethod, bool isHandlerVoid)
