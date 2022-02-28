@@ -58,7 +58,7 @@ class JsonSerializationWriterTest extends TestCase
      */
     public function testWriteCollectionOfNonParsableObjectValues(): void{
         $this->jsonSerializationWriter = new JsonSerializationWriter();
-        $this->jsonSerializationWriter->writeCollectionOfNonParsableObjectValues("stops", [1,2,3,4,5]);
+        $this->jsonSerializationWriter->writeCollectionOfPrimitiveValues("stops", [1,2,3,4,5]);
         $expected = '"stops":[1,2,3,4,5]';
         $actual = $this->jsonSerializationWriter->getSerializedContent()->getContents();
         $this->jsonSerializationWriter = new JsonSerializationWriter();

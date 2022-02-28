@@ -13,6 +13,7 @@ use Microsoft\Kiota\Abstractions\Types\Byte;
 use Microsoft\Kiota\Abstractions\Types\Date;
 use Microsoft\Kiota\Abstractions\Types\Time;
 use Psr\Http\Message\StreamInterface;
+use RuntimeException;
 
 /**
  * @method onBeforeObjectSerialization(?Parsable $value);
@@ -279,7 +280,6 @@ class JsonSerializationWriter implements SerializationWriter
     /**
      * @param string|null $key
      * @param mixed $value
-     * @throws \JsonException
      */
     public function writeAnyValue(?string $key, $value): void{
         $type = get_debug_type($value);
@@ -328,7 +328,7 @@ class JsonSerializationWriter implements SerializationWriter
                     if (is_subclass_of($value[0], Parsable::class)) {
                         $this->writeCollectionOfObjectValues($key, $value);
                     } else{
-                        $this->writeCollectionOfNonParsableObjectValues($key, $value);
+                        $this->writeCollectionOfPrimitiveValues($key, $value);
                     }
                 }
                 break;
@@ -350,7 +350,7 @@ class JsonSerializationWriter implements SerializationWriter
 
     /**
      * @param string|null $key
-     * @param mixed $value
+     * @param mixed|null $value
      */
     public function writeNonParsableObjectValue(?string $key, $value): void{
         if(!empty($key)) {
@@ -388,7 +388,7 @@ class JsonSerializationWriter implements SerializationWriter
      * @param array<mixed> $values
      * @return void
      */
-    public function writeCollectionOfNonParsableObjectValues(?string $key, array $values): void {
+    public function writeCollectionOfPrimitiveValues(?string $key, ?array $values): void {
         if (!empty($key)) {
             $this->writePropertyName($key);
         }

@@ -127,7 +127,7 @@ interface SerializationWriter {
      * @param array<mixed>|null $value
      * @return void
      */
-    public function writeCollectionOfNonParsableObjectValues(?string $key, ?array $value): void;
+    public function writeCollectionOfPrimitiveValues(?string $key, ?array $value): void;
     
     /**
     * Try to write a value with any type.
