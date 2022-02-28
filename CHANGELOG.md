@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where the Go http client configuration would impact non-kiota requests.
+
 ## [0.0.16] - 2022-02-23
 
 ### Added
