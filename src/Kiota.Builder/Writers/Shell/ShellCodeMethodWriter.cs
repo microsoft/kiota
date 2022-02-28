@@ -186,16 +186,18 @@ namespace Kiota.Builder.Writers.Shell
                 var typeString = conventions.GetTypeString(type, originalMethod);
                 var formatterVar = "formatter";
 
-                writer.WriteLine($"var {formatterVar} = {outputFormatterFactoryParamName}.GetFormatter({outputFormatParamName});");
                 if (typeString != "Stream")
                 {
+                    writer.WriteLine($"var {formatterVar} = {outputFormatterFactoryParamName}.GetFormatter({outputFormatParamName});");
                     writer.WriteLine($"{formatterVar}.WriteOutput(response);");
                 }
                 else
                 {
                     writer.WriteLine($"if ({fileParamName} == null) {{");
                     writer.IncreaseIndent();
-                    writer.WriteLine($"{formatterVar}.WriteOutput(response);");
+                    writer.WriteLine("using var reader = new StreamReader(response);");
+                    writer.WriteLine("var strContent = reader.ReadToEnd();");
+                    writer.WriteLine("Console.WriteLine(\"strContent\");");
                     writer.CloseBlock();
                     writer.WriteLine("else {");
                     writer.IncreaseIndent();
