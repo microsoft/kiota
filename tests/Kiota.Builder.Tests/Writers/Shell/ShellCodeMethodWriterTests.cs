@@ -350,7 +350,6 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
         Assert.Contains("qOption.IsRequired = false;", result);
         Assert.Contains("command.AddOption(qOption);", result);
-        Assert.Contains("command.AddOption(outputOption);", result);
         Assert.Contains("var fileOption = new Option<FileInfo>(\"--file\");", result);
         Assert.Contains("command.AddOption(fileOption);", result);
         Assert.Contains("command.SetHandler(async (object[] parameters) => {", result);
