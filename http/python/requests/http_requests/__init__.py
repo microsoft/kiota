@@ -1,5 +1,5 @@
 """
-Kiota http request adapter implementation with requests
+Kiota http request adapter implementation for requests library
 """
 from ._version import VERSION
 

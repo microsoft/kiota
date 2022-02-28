@@ -14,7 +14,7 @@ dynamic = ["version", "description"]
 Home = "https://github.com/microsoft/kiota#readme"
 
 [tool.flit.module]
-name = "http"
+name = "http_requests"
 
 [tool.mypy]
 warn_unused_configs = true
