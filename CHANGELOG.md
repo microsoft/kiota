@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added support for global error handling in python abstractions #1289
+- Added a HTTPRequestAdapter for python Requests library #1251
 
 ### Changed
 
