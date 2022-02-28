@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modified python test matrix to include python 3.10  #1289
 - Added return statement to AnonymousAuthenticationProvider in python abstractions  #1289
 - Fixed bug in enabling backing store for parse node factory by passing ParseNodeFactoryRegistry to method call  #1289
+- Fixed errors in python serialization due to to responses as json instead of json strings #1290
+- Added python version 3.10 to testing matrix #1290 
 - Fixed bug with inconsistent Java namespace and directory name casing #1267
 
 ## [0.0.16] - 2022-02-23
