@@ -1,17 +1,17 @@
+from abc import ABC, abstractmethod
+
 from ..request_information import RequestInformation
-from .authentication_provider import AuthenticationProvider
 
 
-class AnonymousAuthenticationProvider(AuthenticationProvider):
-    """This authentication provider does not perform any authentication
-
-    Args:
-        AuthenticationProvider (ABC): The abstract base class that this class implements
+class AuthenticationProvider(ABC):
     """
+    Base class for providing authentication information for a request.
+    """
+    @abstractmethod
     async def authenticate_request(self, request: RequestInformation) -> None:
-        """Authenticates the provided request information
+        """Authenticates the application request
 
         Args:
-            request (RequestInformation): Request information object
+            request (RequestInformation): The request to authenticate
         """
-        pass
+        return
