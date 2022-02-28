@@ -2,7 +2,7 @@
   "profiles": {
     "kiota": {
       "commandName": "Project",
-      "commandLineArgs": "-d https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml --language typescript -o C:\\Work\\Projects\\graph-javascript\\msgraph-sdk-javascript\\packages\\serviceLib\\src\\mail -c GraphServiceClient -n MicrosoftGraph"
+      "commandLineArgs": "--openapi C:\\src\\msgraph-sdk-powershell\\openApiDocs\\v1.0\\mail.yml -o C:\\Users\\darrmi\\source\\github\\darrelmiller\\OpenApiClient\\Generated -c GraphClient --loglevel Information"
     }
   }
 }

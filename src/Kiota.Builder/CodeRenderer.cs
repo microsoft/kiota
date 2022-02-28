@@ -43,7 +43,7 @@ namespace Kiota.Builder
                         var namespaceNameLastSegment = codeNamespace.Name.Split('.').Last().ToLowerInvariant();
                         // if the module already has a class with the same name, it's going to be declared automatically
                         if (_configuration.ShouldWriteBarrelsIfClassExists && _configuration.setCodeRenderingCondition(codeNamespace))
-                            //verify what this does
+                         // TODO : Verify and plug the following condition in the language specific index rendering condition 
                         //codeNamespace.FindChildByName<CodeClass>(namespaceNameLastSegment, false) == null)
                          
                         {

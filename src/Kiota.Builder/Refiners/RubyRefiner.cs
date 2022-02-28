@@ -37,10 +37,10 @@ namespace Kiota.Builder.Refiners {
         {
             configuration.setCodeRenderingCondition = RenderNamespace;
         }
-
+        // TODO : Update this condition
         public static bool RenderNamespace(CodeNamespace codeNamespace)
         {
-            return (codeNamespace.Classes.Any() || codeNamespace.Enum.Any());
+            return (codeNamespace.Classes.Any() || codeNamespace.Enums.Any());
         }
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {

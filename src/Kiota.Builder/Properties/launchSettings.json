@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "Kiota.Builder": {
-      "commandName": "Project",
-      "commandLineArgs": "-d https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml --language typescript -o C:\\Work\\Projects\\graph-javascript\\msgraph-sdk-javascript\\packages\\serviceLib\\src\\mail-c GraphServiceClient -n MicrosoftGraph"
-    }
-  }
-}
