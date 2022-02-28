@@ -32,7 +32,7 @@ class RequestAdapter(ABC):
     async def send_async(
         self, request_info: RequestInformation, type: ModelType,
         response_handler: Optional[ResponseHandler],
-        error_map: Dict[str, Optional[Callable[[], Parsable]]] 
+        error_map: Dict[str, Optional[Callable[[], Parsable]]]
     ) -> ModelType:
         """Excutes the HTTP request specified by the given RequestInformation and returns the
         deserialized response model.
@@ -42,7 +42,8 @@ class RequestAdapter(ABC):
             type (ModelType): the class of the response model to deserialize the response into.
             response_handler (Optional[ResponseHandler]): The response handler to use for the HTTP
             request instead of the default handler.
-            error_map (Dict[str, Optional[Callable[[], Parsable]]]): the error dict to use in case of a failed request.
+            error_map (Dict[str, Optional[Callable[[], Parsable]]]): the error dict to use in case
+            of a failed request.
 
         Returns:
             ModelType: the deserialized response model.
@@ -119,8 +120,7 @@ class RequestAdapter(ABC):
 
     @abstractmethod
     async def send_no_response_content_async(
-        self, request_info: RequestInformation,
-        response_handler: Optional[ResponseHandler],
+        self, request_info: RequestInformation, response_handler: Optional[ResponseHandler],
         error_map: Dict[str, Optional[Callable[[], Parsable]]]
     ) -> None:
         """Excutes the HTTP request specified by the given RequestInformation and returns the

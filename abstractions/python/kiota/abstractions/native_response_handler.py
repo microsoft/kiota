@@ -12,13 +12,15 @@ class NativeResponseHandler(ResponseHandler):
     """
     # Native response object as returned by the core service
     value: Any
-    
-    # The error mappings for the response to use when deserializing failed responses bodies. 
-    # Where an error code like 401 applies specifically to that status code, a class code like 
+
+    # The error mappings for the response to use when deserializing failed responses bodies.
+    # Where an error code like 401 applies specifically to that status code, a class code like
     # 4XX applies to all status codes within the range if a specific error code is not present.
     error_map: Dict[str, Optional[Callable[[], Parsable]]]
 
-    async def handle_response_async(self, response: NativeResponseType, error_map: Dict[str, Optional[Callable[[], Parsable]]]) -> ModelType:
+    async def handle_response_async(
+        self, response: NativeResponseType, error_map: Dict[str, Optional[Callable[[], Parsable]]]
+    ) -> ModelType:
         self.value = response
         self.error_map = error_map
         return cast(ModelType, None)

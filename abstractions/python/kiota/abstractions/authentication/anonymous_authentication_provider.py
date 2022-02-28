@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from ..request_information import RequestInformation
 
 
-class AuthenticationProvider(ABC):
+class AnonymousAuthenticationProvider(ABC):
     """
     Base class for providing authentication information for a request.
     """
