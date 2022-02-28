@@ -1,16 +1,18 @@
 import ssl
-from requests.adapters import HTTPAdapter
-from typing import List
-from urllib3 import PoolManager
-from typing import List, Optional
+from typing import Optional
 
 from kiota.abstractions.request_option import RequestOption
-        
+from urllib3 import PoolManager
+
+from requests.adapters import HTTPAdapter
+
+
 class MiddlewarePipeline(HTTPAdapter):
     """MiddlewarePipeline, entry point of middleware
     The pipeline is implemented as a linked-list, read more about
     it here https://buffered.dev/middleware-python-requests/
     """
+
     def __init__(self):
         super().__init__()
         self._current_middleware = None
@@ -40,6 +42,7 @@ class BaseMiddleware(HTTPAdapter):
     """Base class for middleware. Handles moving a Request to the next middleware in the pipeline.
     If the current middleware is the last one in the pipeline, it makes a network request
     """
+
     def __init__(self):
         super().__init__()
         self.next = None

@@ -1,24 +1,16 @@
 import pytest
 import requests
 import responses
-from requests import Session
-from requests.adapters import HTTPAdapter
 from responses import matchers
 from asyncmock import AsyncMock
 
 from kiota.abstractions.authentication import AnonymousAuthenticationProvider
-# from kiota.abstractions.serialization import Parsable, ParseNode, ParseNodeFactory, ParseNodeFactoryRegistry, SerializationWriterFactoryRegistry, SerializationWriterFactory
-# from kiota.abstractions.store import BackingStoreFactory, BackingStoreFactorySingleton
-# from kiota.abstractions.api_client_builder import enable_backing_store_for_serialization_writer_factory, enable_backing_store_for_parse_node_factory
-# from kiota.abstractions.request_adapter import Responsetype, RequestAdapter
 from kiota.abstractions.request_information import RequestInformation
-# from kiota.abstractions.response_handler import ResponseHandler
 
 from serialization_json.json_parse_node import JsonParseNode
 from serialization_json.json_parse_node_factory import JsonParseNodeFactory
 from serialization_json.json_serialization_writer_factory import JsonSerializationWriterFactory
 
-from http_requests import KiotaClient
 from http_requests.requests_request_adapter import RequestsRequestAdapter
 
 from .helpers import OfficeLocation, User

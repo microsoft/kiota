@@ -2,9 +2,11 @@ import datetime
 import random
 import time
 from email.utils import parsedate_to_datetime
-from typing import Set
+from typing import FrozenSet, Set
+
 from .middleware import BaseMiddleware
 from .options import RetryHandlerOptions
+
 
 class RetryHandler(BaseMiddleware):
     """
@@ -37,12 +39,12 @@ class RetryHandler(BaseMiddleware):
 
     def __init__(self, options: RetryHandlerOptions = RetryHandlerOptions()) -> None:
         super().__init__()
-        self.max_retries: int = options.max_retry
+        self.max_retries: int = options.max_retry  #type: ignore
         self.backoff_factor: float = options.backoff_factor
         self.backoff_max: int = options.backoff_max
-        self.timeout: int = options.retry_time_limit
-        self.retry_on_status_codes: Set[int]= options.retry_on_status_codes
-        self.allowed_methods: Set[str] = options.allowed_methods 
+        self.timeout: float = options.retry_time_limit
+        self.retry_on_status_codes: Set[int] = options.retry_on_status_codes
+        self.allowed_methods: FrozenSet[str] = options.allowed_methods
         self.respect_retry_after_header: bool = options.respect_retry_after_header
 
     def send(self, request, **kwargs):
@@ -56,7 +58,7 @@ class RetryHandler(BaseMiddleware):
         while retry_valid:
             start_time = time.time()
             if retry_count > 0:
-                request.headers.update({'retry-attempt': '{}'.format(retry_count)})
+                request.headers.update({'retry-attempt': f'{retry_count}'})
             response = super().send(request, **kwargs)
             # Check if the request needs to be retried based on the response method
             # and status code
@@ -88,7 +90,7 @@ class RetryHandler(BaseMiddleware):
             return False
         if not self._is_request_payload_buffered(response):
             return False
-        val =  self.max_retries and (response.status_code in self.retry_on_status_codes)
+        val = self.max_retries and (response.status_code in self.retry_on_status_codes)
         return val
 
     def _is_method_retryable(self, request):
