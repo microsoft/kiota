@@ -24,10 +24,11 @@ The following table provides an overview of the languages supported by Kiota and
 | CSharp | [✔](https://github.com/microsoft/kiota/projects/5) | [✔](./abstractions/dotnet)     | [JSON](./serialization/dotnet/json)                             | [Anonymous](./abstractions/dotnet/src/authentication/AnonymousAuthenticationProvider.cs), [Azure](./authentication/dotnet/azure) | [✔](./http/dotnet/httpclient) | [link](https://microsoft.github.io/kiota/get-started/dotnet) |
 | Go | [✔](https://github.com/microsoft/kiota/projects/8) | [✔](./abstractions/go)         | [JSON](./serialization/go/json)                                 | [Anonymous](./abstractions/go/authentication/anonymous_authentication_provider.go), [Azure](./authentication/go/azure) | [✔](./http/go/nethttp) | [link](https://microsoft.github.io/kiota/get-started/go) |
 | Java | [✔](https://github.com/microsoft/kiota/projects/7) | [✔](./abstractions/java)       | [JSON](./serialization/java/json)                               | [Anonymous](./abstractions/java/lib/src/main/java/com/microsoft/kiota/authentication/AnonymousAuthenticationProvider.java), [Azure](./authentication/java/azure) | [✔](./http/java/okhttp) | [link](https://microsoft.github.io/kiota/get-started/java) |
-| PHP | [✔](https://github.com/microsoft/kiota/projects/4) | [✔](./abstractions/php)          | [JSON](./serialization/php/json)                                | [Anonymous](./abstractions/php/src/Authentication/AnonymousAuthenticationProvider.php), [▶ Azure](https://github.com/microsoft/kiota/issues/787) | [✔](./http/php/guzzle) |  |
-| Python | [❌](https://github.com/microsoft/kiota/projects/3) | ❌                              | ❌                                                               | ❌ | ❌ |  |
+| PHP | [✔](https://github.com/microsoft/kiota/projects/4) | [✔](./abstractions/php)          | [JSON](./serialization/php/json)                                | [Anonymous](./abstractions/php/src/Authentication/AnonymousAuthenticationProvider.php), [✔️ PHP League](./authentication/php/phpleague) | [✔](./http/php/guzzle) |  |
+| Python | [▶](https://github.com/microsoft/kiota/projects/3) | [✔](./abstractions/python)  | [JSON](./serialization/python/json) | [Anonymous](./abstractions/python/kiota/abstractions/authentication/anonymous_authentication_provider.py), [Azure](./authentication/python/azure) | ❌ |  |
 | Ruby | [✔](https://github.com/microsoft/kiota/projects/6) | [✔](./abstractions/ruby)       | [JSON](./serialization/ruby/json/microsoft_kiota_serialization) | [Anonymous](./abstractions/ruby/microsoft_kiota_abstractions/lib/microsoft_kiota_abstractions/authentication/anonymous_authentication_provider.rb), [❌ Azure](https://github.com/microsoft/kiota/issues/421) | [✔](./http/ruby/nethttp/microsoft_kiota_nethttplibrary)| [link](https://microsoft.github.io/kiota/get-started/ruby)  |
 | TypeScript/JavaScript | [✔](https://github.com/microsoft/kiota/projects/2) | [✔](./abstractions/typescript) | [JSON](./serialization/typescript/json)                         | [Anonymous](./abstractions/typescript/src/authentication/anonymousAuthenticationProvider.ts), [Azure](./authentication/typescript/azure) | [✔](./http/typescript/fetch) | [link](https://microsoft.github.io/kiota/get-started/typescript) |
+| Shell | [✔](https://github.com/microsoft/kiota/projects/10) | [✔](./abstractions/dotnet), [✔](./cli/commonc) | [JSON](./serialization/dotnet/json) | [Anonymous](./abstractions/dotnet/src/authentication/AnonymousAuthenticationProvider.cs), [Azure](./authentication/dotnet/azure) | [✔](./http/dotnet/httpclient) | [link](https://microsoft.github.io/kiota/get-started/dotnet) |
 
 > Legend: ✔ -> in preview, ❌ -> not started, ▶ -> in progress.
 
@@ -40,6 +41,10 @@ Parameters are documented [here](https://microsoft.github.io/kiota/using).
 Make sure you [install the pre-requisites first](https://microsoft.github.io/kiota/contributing). If you are using Visual Studio Code as your IDE, the **launch.json** file already contains the configuration to run Kiota. By default this configuration will use the `openApiDocs/v1.0/Mail.yml` under the [PowerShell repository](https://github.com/microsoftgraph/msgraph-sdk-powershell) as the OpenAPI to generate an SDK for. By default this configuration will output the generated files in a graphdotnetv4|graphjavav4|graphtypescriptv4 folder located in the parent folder this repository is cloned in.
 
 Selecting the language you want to generate an SDK for in the Visual Studio Debug tab and hitting **F5** will automatically build, start, and attach the debugging process to Kiota.
+
+### Samples
+
+You can find samples of clients generated with Kiota in the [Kiota samples](https://github.com/microsoft/kiota-samples) repository.
 
 ## Contributing
 

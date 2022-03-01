@@ -66,6 +66,12 @@ namespace Microsoft.Kiota.Serialization.Json
         public double? GetDoubleValue() => _jsonNode.GetDouble();
 
         /// <summary>
+        /// Get the decimal value from the json node
+        /// </summary>
+        /// <returns>A decimal value</returns>
+        public decimal? GetDecimalValue() => _jsonNode.GetDecimal();
+
+        /// <summary>
         /// Get the guid value from the json node
         /// </summary>
         /// <returns>A guid value</returns>
@@ -256,11 +262,29 @@ namespace Microsoft.Kiota.Serialization.Json
         public T GetObjectValue<T>() where T : IParsable
         {
             var item = (T)(typeof(T).GetConstructor(new Type[] { }).Invoke(new object[] { }));
+            return GetObjectValueInternal(item);
+        }
+        private T GetObjectValueInternal<T>(T item) where T : IParsable
+        {
             var fieldDeserializers = item.GetFieldDeserializers<T>();
             OnBeforeAssignFieldValues?.Invoke(item);
             AssignFieldValues(item, fieldDeserializers);
             OnAfterAssignFieldValues?.Invoke(item);
             return item;
+        }
+        /// <summary>
+        /// Gets the resulting error from the node.
+        /// </summary>
+        /// <returns>The error object value of the node.</returns>
+        /// <param name="factory">The error factory.</param>
+        public IParsable GetErrorValue(Func<IParsable> factory)
+        {
+            if (factory == null) throw new ArgumentNullException(nameof(factory));
+
+            var instance = factory.Invoke();
+            if (instance == null) throw new InvalidOperationException("factory returned null");
+
+            return GetObjectValueInternal(instance);
         }
         private void AssignFieldValues<T>(T item, IDictionary<string, Action<T, IParseNode>> fieldDeserializers) where T : IParsable
         {

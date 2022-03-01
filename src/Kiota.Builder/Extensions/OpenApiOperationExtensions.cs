@@ -17,5 +17,15 @@ namespace Kiota.Builder.Extensions {
 
             return schemas.FirstOrDefault();
         }
+        public static OpenApiSchema GetResponseSchema(this OpenApiResponse response)
+        {
+            // For the moment assume application/json
+            var schemas = response.Content
+                                .Where(c => c.Key == "application/json")
+                                .Select(co => co.Value.Schema)
+                                .Where(s => s is not null);
+
+            return schemas.FirstOrDefault();
+        }
     }
 }

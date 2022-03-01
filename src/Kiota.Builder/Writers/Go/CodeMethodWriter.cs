@@ -16,7 +16,7 @@ namespace Kiota.Builder.Writers.Go {
             if(!(codeElement.Parent is CodeClass)) throw new InvalidOperationException("the parent of a method should be a class");
             
             var parentClass = codeElement.Parent as CodeClass;
-            var inherits = (parentClass.StartBlock as CodeClass.Declaration).Inherits != null;
+            var inherits = parentClass.StartBlock is CodeClass.Declaration declaration && declaration.Inherits != null && !parentClass.IsErrorDefinition;
             var returnType = conventions.GetTypeString(codeElement.ReturnType, parentClass);
             WriteMethodPrototype(codeElement, writer, returnType, parentClass);
             writer.IncreaseIndent();
@@ -30,10 +30,10 @@ namespace Kiota.Builder.Writers.Go {
             var requestParams = new RequestProperties(requestOptionsParam, requestBodyParam, queryStringParam, headersParam, optionsParam);
             switch(codeElement.MethodKind) {
                 case CodeMethodKind.Serializer:
-                    WriteSerializerBody(parentClass, writer);
+                    WriteSerializerBody(parentClass, writer, inherits);
                 break;
                 case CodeMethodKind.Deserializer:
-                    WriteDeserializerBody(codeElement, parentClass, writer);
+                    WriteDeserializerBody(codeElement, parentClass, writer, inherits);
                 break;
                 case CodeMethodKind.IndexerBackwardCompatibility:
                     WriteIndexerBody(codeElement, parentClass, writer, returnType);
@@ -101,14 +101,13 @@ namespace Kiota.Builder.Writers.Go {
             var importSymbol = conventions.GetTypeString(codeElement.ReturnType, parentClass);
             conventions.AddRequestBuilderBody(parentClass, importSymbol, writer, pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
         }
-        private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer) {
+        private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer, bool inherits) {
             var additionalDataProperty = parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData);
-            var shouldDeclareErrorVar = true;
+            var shouldDeclareErrorVar = !inherits;
             if(parentClass.StartBlock is CodeClass.Declaration declaration &&
-                declaration.Inherits != null) {
+                inherits) {
                 writer.WriteLine($"err := m.{declaration.Inherits.Name.ToFirstCharacterUpperCase()}.Serialize(writer)");
                 WriteReturnError(writer);
-                shouldDeclareErrorVar = false;
             }
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
                 var accessorName = otherProp.IsNameEscaped && !string.IsNullOrEmpty(otherProp.SerializationName) ? otherProp.SerializationName : otherProp.Name.ToFirstCharacterLowerCase();
@@ -211,13 +210,11 @@ namespace Kiota.Builder.Writers.Go {
         }
         private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
             writer.WriteLine($"m := &{parentClass.Name.ToFirstCharacterUpperCase()}{{");
-            if(inherits &&
-                parentClass.StartBlock is CodeClass.Declaration declaration) {
+            if(parentClass.StartBlock is CodeClass.Declaration declaration &&
+                (inherits || parentClass.IsErrorDefinition)) {
                 writer.IncreaseIndent();
                 var parentClassName = declaration.Inherits.Name.ToFirstCharacterUpperCase();
-                var parentClassFullSymbol = conventions.GetTypeString(declaration.Inherits, parentClass, false, false);
-                var moduleName = parentClassFullSymbol.Contains(dot) ? $"{parentClassFullSymbol.Split(dot).First()}." : string.Empty;
-                writer.WriteLine($"{parentClassName}: *{moduleName}New{parentClassName}(),");
+                writer.WriteLine($"{parentClassName}: *{conventions.GetImportedStaticMethodName(declaration.Inherits, parentClass)}(),");
                 writer.DecreaseIndent();
             }
             writer.CloseBlock(decreaseIndent: false);
@@ -276,10 +273,10 @@ namespace Kiota.Builder.Writers.Go {
                 (idParameter.Type, codeElement.OriginalIndexer.ParameterName, "id"));
             conventions.AddRequestBuilderBody(parentClass, returnType, writer, urlTemplateVarName: conventions.TempDictionaryVarName);
         }
-        private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer) {
+        private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits) {
             var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
             if(parentClass.StartBlock is CodeClass.Declaration declaration &&
-                declaration.Inherits != null)
+                inherits)
                 writer.WriteLine($"res := m.{declaration.Inherits.Name.ToFirstCharacterUpperCase()}.{codeElement.Name.ToFirstCharacterUpperCase()}()");
             else
                 writer.WriteLine($"res := make({codeElement.ReturnType.Name})");
@@ -301,11 +298,8 @@ namespace Kiota.Builder.Writers.Go {
             WriteReturnError(writer);
             writer.WriteLine("if val != nil {");
             writer.IncreaseIndent();
-            if (!property.Type.IsCollection && property.Type.AllTypes.First().TypeDefinition is CodeEnum)
-                writer.WriteLine($"cast := val.({propertyTypeImportName})");
             var valueArgument = property.Type.AllTypes.First().TypeDefinition switch {
-                CodeClass when !property.Type.IsCollection => $"val.(*{propertyTypeImportName})",
-                CodeEnum when !property.Type.IsCollection => $"&cast",
+                CodeClass or CodeEnum when !property.Type.IsCollection => $"val.(*{propertyTypeImportName})",
                 _ when property.Type.IsCollection => "res",
                 _ => "val",
             };
@@ -343,20 +337,25 @@ namespace Kiota.Builder.Writers.Go {
             WriteGeneratorMethodCall(codeElement, requestParams, writer, $"{RequestInfoVarName}, err := ");
             WriteReturnError(writer, returnType);
             var parsableImportSymbol = GetConversionHelperMethodImport(codeElement.Parent as CodeClass, "Parsable");
-            var typeString = conventions.GetTypeString(codeElement.ReturnType, codeElement.Parent, false, false)?.Split(dot);
-            var importSymbol = typeString == null || typeString.Length < 2 ? string.Empty : typeString.First() + dot;
             var constructorFunction = returnType switch {
                 _ when isVoid => string.Empty,
                 _ when isPrimitive || isBinary => $"\"{returnType.TrimCollectionAndPointerSymbols()}\", ",
-                _ => $"func () {parsableImportSymbol} {{ return {importSymbol}New{typeString.Last()}() }}, ",
+                _ => $"func () {parsableImportSymbol} {{ return {conventions.GetImportedStaticMethodName(codeElement.ReturnType, codeElement.Parent)}() }}, ",
             };
+            var errorMappingVarName = "nil";
+            if(codeElement.ErrorMappings.Any()) {
+                errorMappingVarName = "errorMapping";
+                writer.WriteLine($"{errorMappingVarName} := {conventions.AbstractionsHash}.ErrorMappings {{");
+                writer.IncreaseIndent();
+                foreach(var errorMapping in codeElement.ErrorMappings) {
+                    writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": func() {parsableImportSymbol} {{ return {conventions.GetImportedStaticMethodName(errorMapping.Value, codeElement.Parent)}() }},");
+                }
+                writer.CloseBlock();
+            }
             var assignmentPrefix = isVoid ?
                         "err =" :
                         "res, err :=";
-            if(responseHandlerParam != null)
-                writer.WriteLine($"{assignmentPrefix} m.requestAdapter.{sendMethodName}(*{RequestInfoVarName}, {constructorFunction}{responseHandlerParam.Name})");
-            else
-                writer.WriteLine($"{assignmentPrefix} m.requestAdapter.{sendMethodName}(*{RequestInfoVarName}, {constructorFunction}nil)");
+            writer.WriteLine($"{assignmentPrefix} m.requestAdapter.{sendMethodName}(*{RequestInfoVarName}, {constructorFunction}{responseHandlerParam?.Name ?? "nil"}, {errorMappingVarName})");
             WriteReturnError(writer, returnType);
             var valueVarName = string.Empty;
             if(codeElement.ReturnType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None) {
@@ -451,16 +450,15 @@ namespace Kiota.Builder.Writers.Go {
             var propertyTypeName = conventions.GetTypeString(propType, parentClass, false, false);
             var propertyTypeNameWithoutImportSymbol = conventions.TranslateType(propType, false);
             if(propType is CodeType currentType) {
-                var importSymbol = propertyTypeName.Contains(dot) ? $"{propertyTypeName.Split(dot).First().TrimCollectionAndPointerSymbols()}." : string.Empty;
                 if(isCollection)
                     if(currentType.TypeDefinition == null)
                         return $"n.GetCollectionOfPrimitiveValues(\"{propertyTypeName.ToFirstCharacterLowerCase()}\")";
                     else if (currentType.TypeDefinition is CodeEnum)
-                        return $"n.GetCollectionOfEnumValues({importSymbol}Parse{propertyTypeNameWithoutImportSymbol.ToFirstCharacterUpperCase()})";
+                        return $"n.GetCollectionOfEnumValues({conventions.GetImportedStaticMethodName(propType, parentClass, "Parse")})";
                     else
                         return $"n.GetCollectionOfObjectValues({GetTypeFactory(propType, parentClass, propertyTypeNameWithoutImportSymbol)})";
                 else if (currentType.TypeDefinition is CodeEnum currentEnum) {
-                    return $"n.GetEnum{(currentEnum.Flags ? "Set" : string.Empty)}Value({importSymbol}Parse{propertyTypeNameWithoutImportSymbol.ToFirstCharacterUpperCase()})";
+                    return $"n.GetEnum{(currentEnum.Flags ? "Set" : string.Empty)}Value({conventions.GetImportedStaticMethodName(propType, parentClass, "Parse")})";
                 }
             }
             return propertyTypeNameWithoutImportSymbol switch {
@@ -471,13 +469,10 @@ namespace Kiota.Builder.Writers.Go {
                 _ => $"n.GetObjectValue({GetTypeFactory(propType, parentClass, propertyTypeNameWithoutImportSymbol)})",
             };
         }
-        private static readonly char dot = '.';
         private string GetTypeFactory(CodeTypeBase propTypeBase, CodeClass parentClass, string propertyTypeName) {
             if(propTypeBase is CodeType propType) {
-                var importSymbol = conventions.GetTypeString(propType, parentClass, false, false);
-                var importNS = importSymbol.Contains(dot) ? importSymbol.Split(dot).First() + dot : string.Empty;
                 var parsableSymbol = GetConversionHelperMethodImport(parentClass, "Parsable");
-                return $"func () {parsableSymbol} {{ return {importNS}New{propertyTypeName.ToFirstCharacterUpperCase()}() }}";
+                return $"func () {parsableSymbol} {{ return {conventions.GetImportedStaticMethodName(propType, parentClass)}() }}";
             } else return GetTypeFactory(propTypeBase.AllTypes.First(), parentClass, propertyTypeName);
         }
         private void WriteSerializationMethodCall(CodeTypeBase propType, CodeClass parentClass, string serializationKey, string valueGet, bool shouldDeclareErrorVar, LanguageWriter writer) {
@@ -491,7 +486,7 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLine("{");// so the err var scope is limited
             writer.IncreaseIndent();
             if(isEnum && !propType.IsCollection)
-                writer.WriteLine($"cast := {valueGet}.String()");
+                writer.WriteLine($"cast := (*{valueGet}).String()");
             else if(isClass && propType.IsCollection) {
                 var parsableSymbol = GetConversionHelperMethodImport(parentClass, "Parsable");
                 writer.WriteLines($"cast := make([]{parsableSymbol}, len({valueGet}))",

@@ -12,6 +12,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         private readonly LanguageWriter writer;
         private readonly CodeMethod method;
         private readonly CodeClass parentClass;
+        private readonly CodeNamespace root;
         private const string MethodName = "methodName";
         private const string ReturnTypeName = "Somecustomtype";
         private const string MethodDescription = "some description";
@@ -22,7 +23,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
-            var root = CodeNamespace.InitRootNamespace();
+            root = CodeNamespace.InitRootNamespace();
             parentClass = new CodeClass {
                 Name = "parentClass"
             };
@@ -149,12 +150,41 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         public void WritesRequestExecutorBody() {
             method.MethodKind = CodeMethodKind.RequestExecutor;
             method.HttpMethod = HttpMethod.Get;
+            var error4XX = root.AddClass(new CodeClass{
+                Name = "Error4XX",
+            }).First();
+            var error5XX = root.AddClass(new CodeClass{
+                Name = "Error5XX",
+            }).First();
+            var error401 = root.AddClass(new CodeClass{
+                Name = "Error401",
+            }).First();
+            method.ErrorMappings = new () {
+                {"4XX", new CodeType {Name = "Error4XX", TypeDefinition = error4XX}},
+                {"5XX", new CodeType {Name = "Error5XX", TypeDefinition = error5XX}},
+                {"403", new CodeType {Name = "Error403", TypeDefinition = error401}},
+            };
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("const requestInfo", result);
+            Assert.Contains("const errorMapping: Record<string, new () => Parsable> =", result);
+            Assert.Contains("\"4XX\": Error4XX,", result);
+            Assert.Contains("\"5XX\": Error5XX,", result);
+            Assert.Contains("\"403\": Error403,", result);
             Assert.Contains("sendAsync", result);
             Assert.Contains("Promise.reject", result);
+            AssertExtensions.CurlyBracesAreClosed(result);
+        }
+        [Fact]
+        public void DoesntCreateDictionaryOnEmptyErrorMapping() {
+            method.MethodKind = CodeMethodKind.RequestExecutor;
+            method.HttpMethod = HttpMethod.Get;
+            AddRequestBodyParameters();
+            writer.Write(method);
+            var result = tw.ToString();
+            Assert.DoesNotContain("const errorMapping: Record<string, new () => Parsable> =", result);
+            Assert.Contains("undefined", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]

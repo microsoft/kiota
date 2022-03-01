@@ -9,14 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for global error handling in python abstractions #1289
+
+### Changed
+
+- Fixed a bug where the Go http client configuration would impact non-kiota requests.
+- Fixed bug where installing python abstractions failed due to missing dependencies  #1289
+- Modified python test matrix to include python 3.10  #1289
+- Added return statement to AnonymousAuthenticationProvider in python abstractions  #1289
+- Fixed bug in enabling backing store for parse node factory by passing ParseNodeFactoryRegistry to method call  #1289
+- Fixed errors in python serialization due to to responses as json instead of json strings #1290
+- Added python version 3.10 to testing matrix #1290 
+- Fixed bug with inconsistent Java namespace and directory name casing #1267
+
+## [0.0.16] - 2022-02-23
+
+### Added
+
 - Added the ability to configure the underlying transport in Go. #1003
 - Added additional date time (date, time, duration) types in the generation process. #1017
 - PHP Request Adapter (includes middleware) #1048, #918, #1024, #1025
 - Added support for PHP Json Serialization.
-- Update PHP abstractions to make property keys and values nullable in `SerializationWriter.php`.
+- Adds Python abstractions library. #925
+- Adds hostname and protocol validation in authentication. #1051
+- Adds Azure Identity Authentication Provider for Python. #1108
+- Adds JSON Serialization library for Python. #1186
+- Adds PHP League Authentication Provider for PHP #1201
+- Added Shell language support #738
+
 
 ### Changed
 
+- Fixed a bug where request body would get dropped by the compression handler in Go
 - Fixed an issue where multiple api clients could run into racing conditions in Go.
 - Fixed a bug where empty additional data in Go would lead to invalid JSON payloads during serialization.
 - Fixed a bug where Go serialization would write empty arrays for nil values.
@@ -25,6 +49,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modified the TypeScript RequestInformation query and path paramaters data type from Map to Record Type.
 - Modified TypeScript RequestInformation headers and options to Record type.
 - Modified the TypeScript RequestInformation content data type to ArrayBuffer.
+- Updated PHP abstractions to make property keys and values nullable in `SerializationWriter.php`.
+- Fixed an issue where enum collections parsing would fail in Go.
+- Breaking. Kiota clients generate error types and throw when the target API returns a failed response (dotnet, go, java, typescript). #1100
+- Fixed missing methods for serializing/deserializing decimal values in dotnet #1252
+- Modified RequestBuilder types are suffixed with the ItemRequestBuilder if they belong to an item namespace to fix name collisions #1252
+- Modified the use of fully qualified name of types in dotnet to ensure the target type and current element are not in the same namespace #1252.
 
 ## [0.0.15] - 2021-12-17
 
@@ -46,7 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug in Go where empty collections would not be serialized.
 - Fixes a bug where generation would fail because of empty usings.
 - Fixes a bug where Java and Go escaped model properties would not serialize properly.
-- Fixes a bug where null values would not be added to additionalData if there was no matching property in dotnet. 
+- Fixes a bug where null values would not be added to additionalData if there was no matching property in dotnet.
 - Fixes a bug where deserialzation of enums would throw an ArgumentExcpetion if the member didn't exist in dotnet.
 
 ## [0.0.14] - 2021-11-08

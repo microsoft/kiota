@@ -18,5 +18,6 @@
     "cSpell.words": [
         "npmrc",
         "serializers"
-    ]
+    ],
+    "java.configuration.updateBuildConfiguration": "automatic"
 }

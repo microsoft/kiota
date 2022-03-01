@@ -49,6 +49,11 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// <returns>The double value of the node.</returns>
         double? GetDoubleValue();
         /// <summary>
+        /// Gets the decimal value of the node.
+        /// </summary>
+        /// <returns>The decimal value of the node.</returns>
+        decimal? GetDecimalValue();
+        /// <summary>
         /// Gets the GUID value of the node.
         /// </summary>
         /// <returns>The GUID value of the node.</returns>
@@ -98,6 +103,12 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// </summary>
         /// <returns>The model object value of the node.</returns>
         T GetObjectValue<T>() where T : IParsable;
+        /// <summary>
+        /// Gets the resulting error from the node.
+        /// </summary>
+        /// <returns>The error object value of the node.</returns>
+        /// <param name="factory">The error factory.</param>
+        IParsable GetErrorValue(Func<IParsable> factory);
         /// <summary>
         /// Callback called before the node is deserialized.
         /// </summary>

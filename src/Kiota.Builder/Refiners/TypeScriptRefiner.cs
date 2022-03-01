@@ -32,6 +32,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     $"{AbstractionsPackageName}.SerializationWriterFactoryRegistry"},
             new[] { $"{AbstractionsPackageName}.registerDefaultDeserializer",
                     $"{AbstractionsPackageName}.ParseNodeFactoryRegistry" });
+        AddParentClassToErrorClasses(
+                generatedCode,
+                "ApiError",
+                "@microsoft/kiota-abstractions"
+        );
     }
     private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
     private static void AliasUsingsWithSameSymbol(CodeElement currentElement) {

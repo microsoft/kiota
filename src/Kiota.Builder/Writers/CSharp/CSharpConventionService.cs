@@ -90,11 +90,15 @@ namespace Kiota.Builder.Writers.CSharp {
         private string TranslateTypeAndAvoidUsingNamespaceSegmentNames(CodeType currentType, CodeElement targetElement)
         {
             var typeName = TranslateType(currentType);
-            if(currentType.TypeDefinition != null &&
-                GetNamesInUseByNamespaceSegments(targetElement).Contains(typeName))
+            if (currentType.TypeDefinition != null && GetNamesInUseByNamespaceSegments(targetElement).Contains(typeName) && !DoesTypeExistsInSameNamesSpaceAsTarget(currentType,targetElement))
                 return $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
             else
                 return typeName;
+        }
+
+        private static bool DoesTypeExistsInSameNamesSpaceAsTarget(CodeType currentType, CodeElement targetElement)
+        {
+            return currentType?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>()?.Name.Equals(targetElement?.GetImmediateParentOfType<CodeNamespace>()?.Name) ?? false;
         }
         public override string TranslateType(CodeType type)
         {
@@ -103,7 +107,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 "integer" => "int",
                 "boolean" => "bool",
                 "int64" => "long",
-                "string" or "float" or "double" or "object" or "void" => type.Name.ToLowerInvariant(),// little casing hack
+                "string" or "float" or "double" or "object" or "void" or "decimal" => type.Name.ToLowerInvariant(),// little casing hack
                 "binary" => "byte[]",
                 _ => type.Name?.ToFirstCharacterUpperCase() ?? "object",
             };

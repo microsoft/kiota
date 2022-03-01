@@ -3,6 +3,9 @@
 // ------------------------------------------------------------------------------
 
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System;
+using Microsoft.Kiota.Abstractions.Serialization;
 
 namespace Microsoft.Kiota.Abstractions
 {
@@ -17,13 +20,15 @@ namespace Microsoft.Kiota.Abstractions
         public object Value;
 
         /// <summary>
-        /// Handles the response of type <typeparam name="NativeResponseType"/>and return an instance of <typeparam name="ModelType"/>
+        /// The error mappings for the response to use when deserializing failed responses bodies. Where an error code like 401 applies specifically to that status code, a class code like 4XX applies to all status codes within the range if an the specific error code is not present.
         /// </summary>
-        /// <param name="response">The response to be handled</param>
-        /// <returns></returns>
-        public Task<ModelType> HandleResponseAsync<NativeResponseType, ModelType>(NativeResponseType response)
+        public Dictionary<string, Func<IParsable>> ErrorMappings { get; set; }
+
+        /// <inheritdoc />
+        public Task<ModelType> HandleResponseAsync<NativeResponseType, ModelType>(NativeResponseType response, Dictionary<string, Func<IParsable>> errorMappings)
         {
             Value = response;
+            ErrorMappings = errorMappings;
             return Task.FromResult(default(ModelType));
         }
     }

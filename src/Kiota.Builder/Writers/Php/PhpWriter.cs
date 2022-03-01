@@ -6,11 +6,11 @@
         {
             PathSegmenter = new PhpPathSegmenter(rootPath, clientNamespaceName);
             var conventionService = new PhpConventionService();
-            AddCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
-            AddCodeElementWriter(new CodePropertyWriter(conventionService));
-            AddCodeElementWriter(new CodeMethodWriter(conventionService));
-            AddCodeElementWriter(new CodeClassEndWriter());
-            AddCodeElementWriter(new CodeEnumWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeClassEndWriter());
+            AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
         }
     }
 }
