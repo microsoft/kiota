@@ -285,7 +285,7 @@ namespace Kiota.Builder.Writers.Php
             };
         }
         
-        private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method, CodeProperty property) {
+        private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method) {
             var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
             var propertyType = conventions.GetTypeString(propType, method, false);
             if(propType is CodeType currentType) {
@@ -341,7 +341,7 @@ namespace Kiota.Builder.Writers.Php
                                 $"{RequestInfoVarName}->httpMethod = HttpMethod::{codeElement?.HttpMethod?.ToString().ToUpperInvariant()};");
             if (requestParams.headers != null)
             {
-                writer.WriteLine($"if ({conventions.GetParameterName(requestParams.queryString)} !== null) {{");
+                writer.WriteLine($"if ({conventions.GetParameterName(requestParams.headers)} !== null) {{");
                 writer.IncreaseIndent();
                 writer.WriteLine($"{RequestInfoVarName}->headers = array_merge({RequestInfoVarName}->headers, {conventions.GetParameterName(requestParams.headers)});");
                 writer.DecreaseIndent();
@@ -387,7 +387,7 @@ namespace Kiota.Builder.Writers.Php
                 fieldToSerialize
                     .OrderBy(x => x.Name)
                     .Select(x => 
-                        $"'{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}' => function (self $o, ParseNode $n) {{ $o->set{x.Name.ToFirstCharacterUpperCase()}({GetDeserializationMethodName(x.Type, method, x)}); }},")
+                        $"'{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}' => function (self $o, ParseNode $n) {{ $o->set{x.Name.ToFirstCharacterUpperCase()}({GetDeserializationMethodName(x.Type, method)}); }},")
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
                 writer.DecreaseIndent();
