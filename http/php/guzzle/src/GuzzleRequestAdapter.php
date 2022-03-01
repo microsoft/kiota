@@ -254,6 +254,7 @@ class GuzzleRequestAdapter implements RequestAdapter
      */
     private function getHttpResponseMessage(RequestInformation $requestInformation): Promise
     {
+        $requestInformation->pathParameters['baseurl'] = $this->getBaseUrl();
         $request = $this->authenticationProvider->authenticateRequest($requestInformation);
         return $request->then(
             function ($result) use ($requestInformation) {
