@@ -99,7 +99,7 @@ class JsonParseNode implements ParseNode
             throw new InvalidArgumentException("Invalid type $type provided.");
         }
         /** @var Parsable $result */
-        $result = new ($type);
+        $result = new $type();
         if($this->onBeforeAssignFieldValues !== null) {
             $this->onBeforeAssignFieldValues($result);
         }
