@@ -42,7 +42,7 @@
     "@types/mocha": "^9.1.0",
     "@types/node": "^17.0.21",
     "@types/sinon": "^10.0.11",
-    "@typescript-eslint/eslint-plugin": "^5.12.1",
+    "@typescript-eslint/eslint-plugin": "^5.13.0",
     "@typescript-eslint/parser": "^5.12.1",
     "chai": "^4.2.0",
     "eslint": "^8.10.0",
