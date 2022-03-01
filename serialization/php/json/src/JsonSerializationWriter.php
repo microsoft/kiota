@@ -393,12 +393,14 @@ class JsonSerializationWriter implements SerializationWriter
             $this->writePropertyName($key);
         }
         $this->writer []= '[';
-        foreach ($values as $value){
-            $this->writeAnyValue(null, $value);
-            $this->writer [] = self::PROPERTY_SEPARATOR;
-        }
-        if (count($values) > 0){
-            array_pop($this->writer);
+        if($values !== null) {
+            foreach ($values as $value) {
+                $this->writeAnyValue(null, $value);
+                $this->writer [] = self::PROPERTY_SEPARATOR;
+            }
+            if (count($values) > 0) {
+                array_pop($this->writer);
+            }
         }
         $this->writer []= ']';
         if ($key !== null) {

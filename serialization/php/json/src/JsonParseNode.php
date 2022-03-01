@@ -73,7 +73,7 @@ class JsonParseNode implements ParseNode
     }
 
     /**
-     * @return array<Parsable>
+     * @return array<Parsable|null>|null
      * @throws Exception
      */
     public function getCollectionOfObjectValues(string $type): ?array {
