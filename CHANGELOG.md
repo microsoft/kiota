@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed errors in python serialization due to to responses as json instead of json strings #1290
 - Added python version 3.10 to testing matrix #1290 
 - Fixed bug with inconsistent Java namespace and directory name casing #1267
+- Fixed typeOf string check in JsonParseNode Typescript.
 
 ## [0.0.16] - 2022-02-23
 
