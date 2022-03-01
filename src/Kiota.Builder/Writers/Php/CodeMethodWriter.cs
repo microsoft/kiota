@@ -339,8 +339,15 @@ namespace Kiota.Builder.Writers.Php
                                 $"{RequestInfoVarName}->urlTemplate = {GetPropertyCall(urlTemplateProperty, "''")};",
                                 $"{RequestInfoVarName}->pathParameters = {GetPropertyCall(pathParametersProperty, "''")};",
                                 $"{RequestInfoVarName}->httpMethod = HttpMethod::{codeElement?.HttpMethod?.ToString().ToUpperInvariant()};");
-            //TODO: Fix this if(requestParams.headers != null)
-            // writer.WriteLine($"{RequestInfoVarName}->setHeadersFromRawObject({conventions.GetParameterName(requestParams.headers)});");
+            if (requestParams.headers != null)
+            {
+                writer.WriteLine($"if ({conventions.GetParameterName(requestParams.queryString)} !== null) {{");
+                writer.IncreaseIndent();
+                writer.WriteLine($"{RequestInfoVarName}->headers = array_merge({RequestInfoVarName}->headers, {conventions.GetParameterName(requestParams.headers)});");
+                writer.DecreaseIndent();
+                writer.WriteLine("}");
+            }
+
             if (requestParams.queryString != null)
             {
                 writer.WriteLine($"if ({conventions.GetParameterName(requestParams.queryString)} !== null) {{");
