@@ -285,7 +285,7 @@ namespace Kiota.Builder.Writers.Go {
             if(property != null) {
                 var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
                 if(!string.IsNullOrEmpty(variableName))
-                    writer.WriteLine($"m.{property.Name.ToFirstCharacterLowerCase()} = {parameter.Name};");
+                    writer.WriteLine($"m.{property.Name.ToFirstCharacterLowerCase()} = {variableName};");
                 else if(parameter != null)
                     writer.WriteLine($"m.{property.Name.ToFirstCharacterLowerCase()} = {parameter.Name};");
             }
