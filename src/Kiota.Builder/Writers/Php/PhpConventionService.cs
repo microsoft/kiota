@@ -232,7 +232,7 @@ namespace Kiota.Builder.Writers.Php
 
         private static string MakeNamespaceAliasVariable(string name)
         {
-            var parts = name.Split('\\', '.');
+            var parts = name.Split(new[]{'\\', '.'}, StringSplitOptions.RemoveEmptyEntries);
             return string.Join(string.Empty, parts.Select(x => x.ToFirstCharacterUpperCase()).ToArray());
         }
     }

@@ -169,7 +169,7 @@ namespace Kiota.Builder.Refiners
                     var declaration = usingElement.Declaration.TypeDefinition?.Name;
                     if (string.IsNullOrEmpty(declaration)) continue;
                     var replacement = string.Join(string.Empty, usingElement.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name
-                        .Split('\\', '.')
+                        .Split(new[]{'\\', '.'}, StringSplitOptions.RemoveEmptyEntries)
                         .Select(x => x.ToFirstCharacterUpperCase())
                         .ToArray());
                     usingElement.Alias = $"{replacement}{declaration.ToFirstCharacterUpperCase()}";
