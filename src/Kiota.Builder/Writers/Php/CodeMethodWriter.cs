@@ -270,11 +270,16 @@ namespace Kiota.Builder.Writers.Php
                 "string" or "guid" => "writeStringValue",
                 "enum" => "writeEnumValue",
                 "bool" => "writeBooleanValue",
-                "float" or "double" => "writeFloatValue",
-                "boolean" or "date" or "time" or "datetime" =>
-                    $"write{propertyType.ToFirstCharacterUpperCase()}Value",
+                "float" => "writeFloatValue",
+                "double" => "writeFloatValue",
+                "boolean" => "writeBooleanValue", 
+                "date" => "writeDateValue", 
+                "time" => "writeTimeValue",
+                "datetime" => "writeDateTimeValue",
                 "datetimeoffset" => "writeDateTimeValue",
-                "duration" or "timespan" or "dateinterval" => "writeDateIntervalValue",
+                "duration" => "writeDateIntervalValue",
+                "timespan" => "writeDateIntervalValue",
+                "dateinterval" => "writeDateIntervalValue",
                 "int" => "writeIntegerValue",
                 _ => "writeAnyValue"
             };
