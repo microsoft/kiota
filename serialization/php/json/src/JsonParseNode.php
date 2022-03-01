@@ -138,7 +138,7 @@ class JsonParseNode implements ParseNode
         if (!is_subclass_of($targetEnum, Enum::class)) {
             throw new InvalidArgumentException('Invalid enum provided.');
         }
-        return new ($targetEnum)($this->jsonNode);
+        return new $targetEnum($this->jsonNode);
     }
 
     /**
