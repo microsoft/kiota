@@ -68,7 +68,7 @@ def enable_backing_store_for_parse_node_factory(original: ParseNodeFactory) -> P
         enable_backing_store_for_parse_node_registry(original)
     else:
         result = BackingStoreParseNodeFactory(original)
-    enable_backing_store_for_parse_node_registry
+    enable_backing_store_for_parse_node_registry(ParseNodeFactoryRegistry())
     return result
 
 

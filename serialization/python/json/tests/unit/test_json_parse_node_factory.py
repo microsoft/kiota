@@ -33,13 +33,6 @@ def test_get_root_parse_node_unsupported_content_type(sample_json_string):
         root = factory.get_root_parse_node('application/xml', sample_json_string_bytes)
 
 
-def test_get_root_parse_node_invalid_json():
-    with pytest.raises(json.JSONDecodeError) as e_info:
-        factory = JsonParseNodeFactory()
-        sample_string_bytes = 'Not Json'.encode('utf-8')
-        root = factory.get_root_parse_node('application/json', sample_string_bytes)
-
-
 def test_get_root_parse_node_empty_json():
     with pytest.raises(TypeError) as e_info:
         factory = JsonParseNodeFactory()
