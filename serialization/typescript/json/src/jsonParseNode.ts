@@ -29,7 +29,7 @@ export class JsonParseNode implements ParseNode {
       const currentParseNode = new JsonParseNode(x);
       if (x instanceof Boolean) {
         return currentParseNode.getBooleanValue() as unknown as T;
-      } else if (x instanceof String) {
+      } else if (x instanceof String || typeof x === "string") {
         return currentParseNode.getStringValue() as unknown as T;
       } else if (x instanceof Number) {
         return currentParseNode.getNumberValue() as unknown as T;
