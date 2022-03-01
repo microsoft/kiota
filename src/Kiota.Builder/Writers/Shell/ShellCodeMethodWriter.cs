@@ -18,6 +18,10 @@ namespace Kiota.Builder.Writers.Shell
         private const string cancellationTokenParamName = "cancellationToken";
         private const string fileParamType = "FileInfo";
         private const string fileParamName = "file";
+        private const string outputFilterParamType = "IOutputFilter";
+        private const string outputFilterParamName = "outputFilter";
+        private const string outputFilterQueryParamType = "string";
+        private const string outputFilterQueryParamName = "query";
         private const string outputFormatParamType = "FormatterType";
         private const string outputFormatParamName = "output";
         private const string outputFormatterFactoryParamType = "IOutputFormatterFactory";
@@ -97,8 +101,13 @@ namespace Kiota.Builder.Writers.Shell
 
             AddCustomCommandOptions(writer, ref availableOptions, ref paramTypes, ref paramNames, returnType, isHandlerVoid);
 
-            if (!isHandlerVoid)
+            if (!isHandlerVoid && !conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
             {
+                // Add output filter param
+                paramNames.Add(outputFilterParamName);
+                paramTypes.Add(outputFilterParamType);
+                availableOptions.Add($"new TypeBinding(typeof({outputFilterParamType}))");
+
                 // Add output formatter factory param
                 paramTypes.Add(outputFormatterFactoryParamType);
                 paramNames.Add(outputFormatterFactoryParamName);
@@ -162,15 +171,13 @@ namespace Kiota.Builder.Writers.Shell
                 paramNames.Add(outputFormatParamName);
                 availableOptions.Add(outputOptionName);
 
-                // Add output filter param
-                var outputFilterOptionName = "query";
-                var outputFilterOptionParamName = "outputFilterOption";
-                var outputFilterOptionParamType = "string";
-                writer.WriteLine($"var {outputFilterOptionParamName} = new Option<{outputFilterOptionParamType}>(\"--{outputFilterOptionName}\");");
-                writer.WriteLine($"command.AddOption({outputFilterOptionParamName});");
-                paramNames.Add(outputFilterOptionParamName);
-                paramTypes.Add(outputFilterOptionParamType);
-                availableOptions.Add(outputFilterOptionParamName);
+                // Add output filter query param
+                var outputFilterQueryOptionName = $"{outputFilterQueryParamName}Option";
+                writer.WriteLine($"var {outputFilterQueryOptionName} = new Option<{outputFilterQueryParamType}>(\"--{outputFilterQueryParamName}\");");
+                writer.WriteLine($"command.AddOption({outputFilterQueryOptionName});");
+                paramNames.Add(outputFilterQueryParamName);
+                paramTypes.Add(outputFilterQueryParamType);
+                availableOptions.Add(outputFilterQueryOptionName);
             }
         }
 
@@ -189,6 +196,7 @@ namespace Kiota.Builder.Writers.Shell
                 if (typeString != "Stream")
                 {
                     writer.WriteLine($"var {formatterVar} = {outputFormatterFactoryParamName}.GetFormatter({outputFormatParamName});");
+                    writer.WriteLine($"response = {outputFilterParamName}?.FilterOutput(response, {outputFilterQueryParamName}) ?? response;");
                     writer.WriteLine($"{formatterVar}.WriteOutput(response);");
                 }
                 else
