@@ -123,7 +123,7 @@ class RequestInformation {
             $writer = $requestAdapter->getSerializationWriterFactory()->getSerializationWriter($contentType);
             $this->headers[self::$contentTypeHeader] = $contentType;
 
-            if (count($this->headers) === 1) {
+            if (count($values) === 1) {
                 $writer->writeObjectValue(null, $values[0]);
             } else {
                 $writer->writeCollectionOfObjectValues(null, $values);
