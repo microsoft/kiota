@@ -14,7 +14,7 @@ jobs:
     env:
       relativePath: ./authentication/typescript/azure
     steps:
-      - uses: actions/checkout@v2.4.0
+      - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           always-auth: true
