@@ -270,17 +270,11 @@ namespace Kiota.Builder.Writers.Php
                 "string" or "guid" => "writeStringValue",
                 "enum" or "float" or "date" or "time" => $"write{lowerCaseProp.ToFirstCharacterUpperCase()}Value",
                 "bool" or "boolean" => "writeBooleanValue",
-                "float" => "writeFloatValue",
-                "double" => "writeFloatValue",
-                "boolean" => "writeBooleanValue", 
-                "date" => "writeDateValue", 
-                "time" => "writeTimeValue",
+                "double" or "decimal" => "writeFloatValue",
                 "datetime" or "datetimeoffset" => "writeDateTimeValue",
-                "datetimeoffset" => "writeDateTimeValue",
                 "duration" or "timespan" or "dateinterval" => "writeDateIntervalValue",
-                "timespan" => "writeDateIntervalValue",
-                "dateinterval" => "writeDateIntervalValue",
-                "int" => "writeIntegerValue",
+                "int" or "number" => "writeIntegerValue",
+                "streaminterface" => "writeBinaryContent",
                 _ => "writeAnyValue"
             };
         }
@@ -291,7 +285,7 @@ namespace Kiota.Builder.Writers.Php
             if(propType is CodeType currentType) {
                 if(isCollection)
                     if(currentType.TypeDefinition is null or CodeEnum)
-                        return $"$n->getCollectionOfPrimitiveValues()";
+                        return "$n->getCollectionOfPrimitiveValues()";
                     else if (currentType.TypeDefinition is CodeEnum enumType)
                         return $"$n->getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)";
                     else
@@ -303,8 +297,11 @@ namespace Kiota.Builder.Writers.Php
             var lowerCaseType = propertyType.ToLower();
             return lowerCaseType switch
             {
-                "int" => $"$n->getIntegerValue()",
+                "int" => "$n->getIntegerValue()",
                 "bool" => "$n->getBooleanValue()",
+                "number" => "$n->getIntegerValue()",
+                "decimal" or "double" => "$n->getFloatValue()",
+                "streaminterface" => "$n->getBinaryContent()",
                 _ when conventions.PrimitiveTypes.Contains(lowerCaseType) => $"$n->get{propertyType.ToFirstCharacterUpperCase()}Value()",
                 _ => $"$n->getObjectValue({propertyType.ToFirstCharacterUpperCase()}::class)",
             };
