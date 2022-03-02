@@ -38,9 +38,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         return AddRange(codeClasses);
     }
     public CodeClass GetParentClass() {
-        if(StartBlock is ClassDeclaration declaration)
-            return declaration.Inherits?.TypeDefinition as CodeClass;
-        else return null;
+        return StartBlock.Inherits?.TypeDefinition as CodeClass;
     }
     
     public CodeClass GetGreatestGrandparent(CodeClass startClassToSkip = null) {

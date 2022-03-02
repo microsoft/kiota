@@ -26,7 +26,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         WriteMethodPrototype(codeElement, writer, returnType);
         writer.IncreaseIndent();
         var parentClass = codeElement.Parent as CodeClass;
-        var inherits = parentClass.StartBlock is ClassDeclaration declaration && declaration.Inherits != null && !parentClass.IsErrorDefinition;
+        var inherits = parentClass.StartBlock.Inherits != null && !parentClass.IsErrorDefinition;
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
         var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
         var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
