@@ -275,7 +275,7 @@ namespace Kiota.Builder.Writers.Php
                 "boolean" => "writeBooleanValue", 
                 "date" => "writeDateValue", 
                 "time" => "writeTimeValue",
-                "datetime" => "writeDateTimeValue",
+                "datetime" or "datetimeoffset" => "writeDateTimeValue",
                 "datetimeoffset" => "writeDateTimeValue",
                 "duration" => "writeDateIntervalValue",
                 "timespan" => "writeDateIntervalValue",
