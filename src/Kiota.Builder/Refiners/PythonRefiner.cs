@@ -15,13 +15,15 @@ namespace Kiota.Builder.Refiners {
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.__instance.createBackingStore()");
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
             AliasUsingsWithSameSymbol(generatedCode);
-            AddParsableInheritanceForModelClasses(generatedCode, "Parsable");
+            AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             ReplaceBinaryByNativeType(generatedCode, "BytesIO", "io", true);
             ReplaceReservedNames(generatedCode, new PythonReservedNamesProvider(), x => $"{x}_escaped");
             AddGetterAndSetterMethods(generatedCode, new() {
                                                     CodePropertyKind.Custom,
                                                     CodePropertyKind.AdditionalData,
-                                                }, _configuration.UsesBackingStore, true);
+                                                }, _configuration.UsesBackingStore, true,
+                                                "get_",
+                                                "set_");
             AddConstructorsForDefaultValues(generatedCode, true);
             ReplaceDefaultSerializationModules(generatedCode, "kiota-serialization-json.JsonSerializationWriterFactory");
             ReplaceDefaultDeserializationModules(generatedCode, "kiota-serialization-json.JsonParseNodeFactory");
@@ -33,14 +35,14 @@ namespace Kiota.Builder.Refiners {
         private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
         private static void AliasUsingsWithSameSymbol(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass &&
-                currentClass.StartBlock is CodeClass.Declaration currentDeclaration &&
-                currentDeclaration.Usings.Any(x => !x.IsExternal)) {
-                    var duplicatedSymbolsUsings = currentDeclaration.Usings.Where(x => !x.IsExternal)
+                currentClass.StartBlock != null &&
+                currentClass.StartBlock.Usings.Any(x => !x.IsExternal)) {
+                    var duplicatedSymbolsUsings = currentClass.StartBlock.Usings.Where(x => !x.IsExternal)
                                                                             .Distinct(usingComparer)
                                                                             .GroupBy(x => x.Declaration.Name, StringComparer.OrdinalIgnoreCase)
                                                                             .Where(x => x.Count() > 1)
                                                                             .SelectMany(x => x)
-                                                                            .Union(currentDeclaration
+                                                                            .Union(currentClass.StartBlock
                                                                                     .Usings
                                                                                     .Where(x => !x.IsExternal)
                                                                                     .Where(x => x.Declaration
