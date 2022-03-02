@@ -268,7 +268,7 @@ namespace Kiota.Builder.Writers.Php
             return lowerCaseProp switch
             {
                 "string" or "guid" => "writeStringValue",
-                "enum" => "writeEnumValue",
+                "enum" or "float" or "date" or "time" => $"write{lowerCaseProp.ToFirstCharacterUpperCase()}Value",
                 "bool" or "boolean" => "writeBooleanValue",
                 "float" => "writeFloatValue",
                 "double" => "writeFloatValue",
