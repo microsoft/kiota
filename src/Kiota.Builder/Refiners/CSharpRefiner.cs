@@ -79,6 +79,8 @@ namespace Kiota.Builder.Refiners {
                 "Microsoft.Kiota.Abstractions.Serialization", "IParseNode"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
                 "Microsoft.Kiota.Abstractions.Serialization", "IParsable"),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
+                "Microsoft.Kiota.Abstractions.Serialization", "IAdditionalDataHolder"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
                 "Microsoft.Kiota.Abstractions.Serialization", "IParsable"),
             new (x => x is CodeClass || x is CodeEnum,
