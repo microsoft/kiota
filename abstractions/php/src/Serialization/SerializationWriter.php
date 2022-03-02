@@ -135,6 +135,14 @@ interface SerializationWriter {
     * @param mixed|null $value.
     **/
     public function writeAnyValue(?string $key, $value): void;
+
+    /**
+     * Write a binary stream.
+     * @param string|null $key
+     * @param StreamInterface|null $value
+     * @return void
+     */
+    public function writeBinaryContent(?string $key, ?StreamInterface $value): void;
     
     /**
      * Sets the callback called before the objects gets serialized.

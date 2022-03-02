@@ -71,7 +71,11 @@ class JsonSerializationWriter implements SerializationWriter
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
-        $this->writePropertyValue($key, $value);
+        if ($value !== null) {
+            $this->writePropertyValue($key, $value);
+        } else  {
+            $this->writePropertyValue($key, 'null');
+        }
     }
 
     /**
@@ -81,7 +85,11 @@ class JsonSerializationWriter implements SerializationWriter
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
-        $this->writePropertyValue($key, $value);
+        if ($value !== null) {
+            $this->writePropertyValue($key, $value);
+        } else {
+            $this->writePropertyValue($key, 'null');
+        }
     }
 
     /**
@@ -110,6 +118,18 @@ class JsonSerializationWriter implements SerializationWriter
         if ($value !== null) {
             $valueString = (string)$value;
             $this->writePropertyValue($key, "\"{$valueString}\"");
+        } else {
+            $this->writePropertyValue($key, 'null');
+        }
+    }
+
+    public function writeBinaryContent(?string $key, ?StreamInterface $value): void {
+        if (!empty($key)) {
+            $this->writePropertyName($key);
+        }
+
+        if ($value !== null) {
+            $this->writePropertyValue($key, "\"{$value->getContents()}\"");
         } else {
             $this->writePropertyValue($key, 'null');
         }
@@ -392,8 +412,8 @@ class JsonSerializationWriter implements SerializationWriter
         if (!empty($key)) {
             $this->writePropertyName($key);
         }
-        $this->writer []= '[';
-        if($values !== null) {
+        if ($values !== null) {
+            $this->writer [] = '[';
             foreach ($values as $value) {
                 $this->writeAnyValue(null, $value);
                 $this->writer [] = self::PROPERTY_SEPARATOR;
