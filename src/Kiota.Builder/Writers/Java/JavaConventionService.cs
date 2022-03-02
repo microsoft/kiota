@@ -59,7 +59,7 @@ public class JavaConventionService : CommonLanguageConventionService
         var targetClass = targetElement as CodeClass ?? targetElement.GetImmediateParentOfType<CodeClass>();
         if (targetClass.Parent is CodeClass parentClass) 
             targetClass = parentClass;
-        return (targetClass.StartBlock as CodeClass.Declaration)
+        return targetClass.StartBlock
                         ?.Usings
                         ?.Where(x => !x.IsExternal && symbol.Equals(x.Declaration.TypeDefinition.Name, StringComparison.OrdinalIgnoreCase))
                         ?.Distinct(usingDeclarationComparer)

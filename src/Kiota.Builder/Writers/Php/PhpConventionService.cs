@@ -57,7 +57,7 @@ namespace Kiota.Builder.Writers.Php
 
         public string GetParameterName(CodeParameter parameter)
         {
-            return (parameter.ParameterKind) switch
+            return (parameter.Kind) switch
             {
                 CodeParameterKind.Headers => "$headers",
                 CodeParameterKind.Options => "$options",
@@ -79,7 +79,7 @@ namespace Kiota.Builder.Writers.Php
             
             var typeString = GetTypeString(parameter.Type, parameter);
             var methodTarget = targetElement as CodeMethod;
-            var parameterSuffix = parameter.ParameterKind switch
+            var parameterSuffix = parameter.Kind switch
             {
                 CodeParameterKind.RequestAdapter => $"RequestAdapter {GetParameterName(parameter)}",
                 CodeParameterKind.ResponseHandler => $"ResponseHandler {GetParameterName(parameter)}",
@@ -149,7 +149,7 @@ namespace Kiota.Builder.Writers.Php
         {
             writer.WriteLines("<?php", string.Empty);
         }
-        public void WriteNamespaceAndImports(CodeClass.Declaration codeElement, LanguageWriter writer)
+        public void WriteNamespaceAndImports(ClassDeclaration codeElement, LanguageWriter writer)
         {
             bool hasUse = false;
             if (codeElement?.Parent?.Parent is CodeNamespace codeNamespace)

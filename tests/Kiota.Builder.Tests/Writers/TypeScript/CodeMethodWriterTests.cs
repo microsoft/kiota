@@ -44,24 +44,24 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         private void AddRequestProperties() {
             parentClass.AddProperty(new CodeProperty {
                 Name = "requestAdapter",
-                PropertyKind = CodePropertyKind.RequestAdapter,
+                Kind = CodePropertyKind.RequestAdapter,
             });
             parentClass.AddProperty(new CodeProperty {
                 Name = "pathParameters",
-                PropertyKind = CodePropertyKind.PathParameters,
+                Kind = CodePropertyKind.PathParameters,
                 Type = new CodeType {
                     Name = "string"
                 },
             });
             parentClass.AddProperty(new CodeProperty {
                 Name = "urlTemplate",
-                PropertyKind = CodePropertyKind.UrlTemplate,
+                Kind = CodePropertyKind.UrlTemplate,
             });
         }
         private void AddSerializationProperties() {
             var addData = parentClass.AddProperty(new CodeProperty {
                 Name = "additionalData",
-                PropertyKind = CodePropertyKind.AdditionalData,
+                Kind = CodePropertyKind.AdditionalData,
             }).First();
             addData.Type = new CodeType {
                 Name = "string"
@@ -100,7 +100,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             };
         }
         private void AddInheritanceClass() {
-            (parentClass.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
+            (parentClass.StartBlock as ClassDeclaration).Inherits = new CodeType {
                 Name = "someParentClass"
             };
         }
@@ -110,45 +110,45 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             };
             method.AddParameter(new CodeParameter {
                 Name = "h",
-                ParameterKind = CodeParameterKind.Headers,
+                Kind = CodeParameterKind.Headers,
                 Type = stringType,
             });
             method.AddParameter(new CodeParameter{
                 Name = "q",
-                ParameterKind = CodeParameterKind.QueryParameter,
+                Kind = CodeParameterKind.QueryParameter,
                 Type = stringType,
             });
             method.AddParameter(new CodeParameter{
                 Name = "b",
-                ParameterKind = CodeParameterKind.RequestBody,
+                Kind = CodeParameterKind.RequestBody,
                 Type = stringType,
             });
             method.AddParameter(new CodeParameter{
                 Name = "r",
-                ParameterKind = CodeParameterKind.ResponseHandler,
+                Kind = CodeParameterKind.ResponseHandler,
                 Type = stringType,
             });
             method.AddParameter(new CodeParameter {
                 Name = "o",
-                ParameterKind = CodeParameterKind.Options,
+                Kind = CodeParameterKind.Options,
                 Type = stringType,
             });
         }
         [Fact]
         public void WritesRequestBuilder() {
-            method.MethodKind = CodeMethodKind.RequestBuilderBackwardCompatibility;
+            method.Kind = CodeMethodKind.RequestBuilderBackwardCompatibility;
             Assert.Throws<InvalidOperationException>(() => writer.Write(method));
         }
         [Fact]
         public void WritesRequestBodiesThrowOnNullHttpMethod() {
-            method.MethodKind = CodeMethodKind.RequestExecutor;
+            method.Kind = CodeMethodKind.RequestExecutor;
             Assert.Throws<InvalidOperationException>(() => writer.Write(method));
-            method.MethodKind = CodeMethodKind.RequestGenerator;
+            method.Kind = CodeMethodKind.RequestGenerator;
             Assert.Throws<InvalidOperationException>(() => writer.Write(method));
         }
         [Fact]
         public void WritesRequestExecutorBody() {
-            method.MethodKind = CodeMethodKind.RequestExecutor;
+            method.Kind = CodeMethodKind.RequestExecutor;
             method.HttpMethod = HttpMethod.Get;
             var error4XX = root.AddClass(new CodeClass{
                 Name = "Error4XX",
@@ -159,26 +159,65 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             var error401 = root.AddClass(new CodeClass{
                 Name = "Error401",
             }).First();
-            method.ErrorMappings = new () {
-                {"4XX", new CodeType {Name = "Error4XX", TypeDefinition = error4XX}},
-                {"5XX", new CodeType {Name = "Error5XX", TypeDefinition = error5XX}},
-                {"403", new CodeType {Name = "Error403", TypeDefinition = error401}},
-            };
+            method.ErrorMappings.TryAdd("4XX", new CodeType {Name = "Error4XX", TypeDefinition = error4XX});
+            method.ErrorMappings.TryAdd("5XX", new CodeType {Name = "Error5XX", TypeDefinition = error5XX});
+            method.ErrorMappings.TryAdd("403", new CodeType {Name = "Error403", TypeDefinition = error401});
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("const requestInfo", result);
-            Assert.Contains("const errorMapping: Record<string, new () => Parsable> =", result);
-            Assert.Contains("\"4XX\": Error4XX,", result);
-            Assert.Contains("\"5XX\": Error5XX,", result);
-            Assert.Contains("\"403\": Error403,", result);
+            Assert.Contains("const errorMapping: Record<string, ParsableFactory<Parsable>> =", result);
+            Assert.Contains("\"4XX\": createError4XXFromDiscriminatorValue,", result);
+            Assert.Contains("\"5XX\": createError5XXFromDiscriminatorValue,", result);
+            Assert.Contains("\"403\": createError403FromDiscriminatorValue,", result);
             Assert.Contains("sendAsync", result);
             Assert.Contains("Promise.reject", result);
             AssertExtensions.CurlyBracesAreClosed(result);
         }
         [Fact]
+        public void WritesModelFactoryBodyThrowsIfMethodAndNotFactory() {
+            var parentModel = root.AddClass(new CodeClass {
+                Name = "parentModel",
+                Kind = CodeClassKind.Model,
+            }).First();
+            var childModel = root.AddClass(new CodeClass {
+                Name = "childModel",
+                Kind = CodeClassKind.Model,
+            }).First();
+            (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
+                Name = "parentModel",
+                TypeDefinition = parentModel,
+            };
+            var factoryMethod = parentModel.AddMethod(new CodeMethod {
+                Name = "factory",
+                Kind = CodeMethodKind.Factory,
+                ReturnType = new CodeType {
+                    Name = "parentModel",
+                    TypeDefinition = parentModel,
+                },
+            }).First();
+            factoryMethod.DiscriminatorMappings.TryAdd("ns.childmodel", new CodeType {
+                            Name = "childModel",
+                            TypeDefinition = childModel,
+                        });
+            factoryMethod.DiscriminatorPropertyName = "@odata.type";
+            factoryMethod.AddParameter(new CodeParameter {
+                Name = "parseNode",
+                Kind = CodeParameterKind.ParseNode,
+                Type = new CodeType {
+                    Name = "ParseNode",
+                    TypeDefinition = new CodeClass {
+                        Name = "ParseNode",
+                    },
+                    IsExternal = true,
+                },
+                Optional = false,
+            });
+            Assert.Throws<InvalidOperationException>(() => writer.Write(factoryMethod));
+        }
+        [Fact]
         public void DoesntCreateDictionaryOnEmptyErrorMapping() {
-            method.MethodKind = CodeMethodKind.RequestExecutor;
+            method.Kind = CodeMethodKind.RequestExecutor;
             method.HttpMethod = HttpMethod.Get;
             AddRequestBodyParameters();
             writer.Write(method);
@@ -189,7 +228,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         }
         [Fact]
         public void WritesRequestExecutorBodyForCollections() {
-            method.MethodKind = CodeMethodKind.RequestExecutor;
+            method.Kind = CodeMethodKind.RequestExecutor;
             method.HttpMethod = HttpMethod.Get;
             method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
             AddRequestBodyParameters();
@@ -200,7 +239,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         }
         [Fact]
         public void WritesRequestGeneratorBody() {
-            method.MethodKind = CodeMethodKind.RequestGenerator;
+            method.Kind = CodeMethodKind.RequestGenerator;
             method.HttpMethod = HttpMethod.Get;
             AddRequestProperties();
             AddRequestBodyParameters();
@@ -219,7 +258,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         }
         [Fact]
         public void WritesInheritedDeSerializerBody() {
-            method.MethodKind = CodeMethodKind.Deserializer;
+            method.Kind = CodeMethodKind.Deserializer;
             method.IsAsync = false;
             AddSerializationProperties();
             AddInheritanceClass();
@@ -237,7 +276,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             parameter.Type = new CodeType {
                 Name = "string"
             };
-            method.MethodKind = CodeMethodKind.Deserializer;
+            method.Kind = CodeMethodKind.Deserializer;
             method.IsAsync = false;
             AddSerializationProperties();
             writer.Write(method);
@@ -250,7 +289,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         }
         [Fact]
         public void WritesInheritedSerializerBody() {
-            method.MethodKind = CodeMethodKind.Serializer;
+            method.Kind = CodeMethodKind.Serializer;
             method.IsAsync = false;
             AddSerializationProperties();
             AddInheritanceClass();
@@ -268,7 +307,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             parameter.Type = new CodeType {
                 Name = "string"
             };
-            method.MethodKind = CodeMethodKind.Serializer;
+            method.Kind = CodeMethodKind.Serializer;
             method.IsAsync = false;
             AddSerializationProperties();
             writer.Write(method);
@@ -396,7 +435,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         [Fact]
         public void WritesIndexer() {
             AddRequestProperties();
-            method.MethodKind = CodeMethodKind.IndexerBackwardCompatibility;
+            method.Kind = CodeMethodKind.IndexerBackwardCompatibility;
             method.OriginalIndexer = new () {
                 Name = "indx",
                 ParameterName = "id",
@@ -415,10 +454,10 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         [Fact]
         public void WritesPathParameterRequestBuilder() {
             AddRequestProperties();
-            method.MethodKind = CodeMethodKind.RequestBuilderWithParameters;
+            method.Kind = CodeMethodKind.RequestBuilderWithParameters;
             method.AddParameter(new CodeParameter {
                 Name = "pathParam",
-                ParameterKind = CodeParameterKind.Path,
+                Kind = CodeParameterKind.Path,
                 Type = new CodeType {
                     Name = "string"
                 }
@@ -434,7 +473,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         public void WritesGetterToBackingStore() {
             parentClass.AddBackingStoreProperty();
             method.AddAccessedProperty();
-            method.MethodKind = CodeMethodKind.Getter;
+            method.Kind = CodeMethodKind.Getter;
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("this.backingStore.get(\"someProperty\")", result);
@@ -449,7 +488,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             };
             var defaultValue = "someDefaultValue";
             method.AccessedProperty.DefaultValue = defaultValue; 
-            method.MethodKind = CodeMethodKind.Getter;
+            method.Kind = CodeMethodKind.Getter;
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("if(!value)", result);
@@ -459,7 +498,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         public void WritesSetterToBackingStore() {
             parentClass.AddBackingStoreProperty();
             method.AddAccessedProperty();
-            method.MethodKind = CodeMethodKind.Setter;
+            method.Kind = CodeMethodKind.Setter;
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("this.backingStore.set(\"someProperty\", value)", result);
@@ -467,7 +506,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         [Fact]
         public void WritesGetterToField() {
             method.AddAccessedProperty();
-            method.MethodKind = CodeMethodKind.Getter;
+            method.Kind = CodeMethodKind.Getter;
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("this.someProperty", result);
@@ -475,27 +514,27 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         [Fact]
         public void WritesSetterToField() {
             method.AddAccessedProperty();
-            method.MethodKind = CodeMethodKind.Setter;
+            method.Kind = CodeMethodKind.Setter;
             writer.Write(method);
             var result = tw.ToString();
             Assert.Contains("this.someProperty = value", result);
         }
         [Fact]
         public void WritesConstructor() {
-            method.MethodKind = CodeMethodKind.Constructor;
+            method.Kind = CodeMethodKind.Constructor;
             method.IsAsync = false;
             var defaultValue = "someVal";
             var propName = "propWithDefaultValue";
-            parentClass.ClassKind = CodeClassKind.RequestBuilder;
+            parentClass.Kind = CodeClassKind.RequestBuilder;
             parentClass.AddProperty(new CodeProperty {
                 Name = propName,
                 DefaultValue = defaultValue,
-                PropertyKind = CodePropertyKind.UrlTemplate,
+                Kind = CodePropertyKind.UrlTemplate,
             });
             AddRequestProperties();
             method.AddParameter(new CodeParameter {
                 Name = "pathParameters",
-                ParameterKind = CodeParameterKind.PathParameters,
+                Kind = CodeParameterKind.PathParameters,
                 Type = new CodeType {
                     Name = "Map<string,string>"
                 }
@@ -507,11 +546,11 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         }
         [Fact]
         public void WritesApiConstructor() {
-            method.MethodKind = CodeMethodKind.ClientConstructor;
+            method.Kind = CodeMethodKind.ClientConstructor;
             method.IsAsync = false;
             var coreProp = parentClass.AddProperty(new CodeProperty {
                 Name = "core",
-                PropertyKind = CodePropertyKind.RequestAdapter,
+                Kind = CodePropertyKind.RequestAdapter,
             }).First();
             coreProp.Type = new CodeType {
                 Name = "HttpCore",
@@ -519,7 +558,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             };
             method.AddParameter(new CodeParameter {
                 Name = "core",
-                ParameterKind = CodeParameterKind.RequestAdapter,
+                Kind = CodeParameterKind.RequestAdapter,
                 Type = coreProp.Type,
             });
             method.DeserializerModules = new() {"com.microsoft.kiota.serialization.Deserializer"};
@@ -532,10 +571,10 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         }
         [Fact]
         public void WritesApiConstructorWithBackingStore() {
-            method.MethodKind = CodeMethodKind.ClientConstructor;
+            method.Kind = CodeMethodKind.ClientConstructor;
             var coreProp = parentClass.AddProperty(new CodeProperty {
                 Name = "core",
-                PropertyKind = CodePropertyKind.RequestAdapter,
+                Kind = CodePropertyKind.RequestAdapter,
             }).First();
             coreProp.Type = new CodeType {
                 Name = "HttpCore",
@@ -543,12 +582,12 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             };
             method.AddParameter(new CodeParameter {
                 Name = "core",
-                ParameterKind = CodeParameterKind.RequestAdapter,
+                Kind = CodeParameterKind.RequestAdapter,
                 Type = coreProp.Type,
             });
             var backingStoreParam = new CodeParameter {
                 Name = "backingStore",
-                ParameterKind = CodeParameterKind.BackingStore,
+                Kind = CodeParameterKind.BackingStore,
             };
             backingStoreParam.Type = new CodeType {
                 Name = "BackingStore",

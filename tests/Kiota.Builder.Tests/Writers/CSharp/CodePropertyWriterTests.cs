@@ -30,10 +30,10 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             };
             parentClass.AddProperty(property, new() {
                 Name = "pathParameters",
-                PropertyKind = CodePropertyKind.PathParameters,
+                Kind = CodePropertyKind.PathParameters,
             }, new() {
                 Name = "requestAdapter",
-                PropertyKind = CodePropertyKind.RequestAdapter,
+                Kind = CodePropertyKind.RequestAdapter,
             });
         }
         public void Dispose() {
@@ -42,7 +42,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         }
         [Fact]
         public void WritesRequestBuilder() {
-            property.PropertyKind = CodePropertyKind.RequestBuilder;
+            property.Kind = CodePropertyKind.RequestBuilder;
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains("get =>", result);
@@ -52,7 +52,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         }
         [Fact]
         public void WritesCustomProperty() {
-            property.PropertyKind = CodePropertyKind.Custom;
+            property.Kind = CodePropertyKind.Custom;
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains($"{TypeName} {PropertyName}", result);
@@ -60,7 +60,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         }
         [Fact]
         public void WritesPrivateSetter() {
-            property.PropertyKind = CodePropertyKind.Custom;
+            property.Kind = CodePropertyKind.Custom;
             property.ReadOnly = true;
             writer.Write(property);
             var result = tw.ToString();
@@ -69,7 +69,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         [Fact]
         public void MapsCustomPropertiesToBackingStore() {
             parentClass.AddBackingStoreProperty();
-            property.PropertyKind = CodePropertyKind.Custom;
+            property.Kind = CodePropertyKind.Custom;
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains("get { return BackingStore?.Get<Somecustomtype>(nameof(PropertyName)); }", result);
@@ -78,7 +78,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         [Fact]
         public void MapsAdditionalDataPropertiesToBackingStore() {
             parentClass.AddBackingStoreProperty();
-            property.PropertyKind = CodePropertyKind.AdditionalData;
+            property.Kind = CodePropertyKind.AdditionalData;
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains("get { return BackingStore?.Get<Somecustomtype>(nameof(PropertyName)); }", result);

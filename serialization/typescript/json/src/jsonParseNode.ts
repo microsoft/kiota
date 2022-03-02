@@ -2,6 +2,7 @@ import {
   DateOnly,
   Duration,
   Parsable,
+  ParsableFactory,
   ParseNode,
   TimeOnly,
   toFirstCharacterUpper,
@@ -27,11 +28,12 @@ export class JsonParseNode implements ParseNode {
   public getCollectionOfPrimitiveValues = <T>(): T[] | undefined => {
     return (this._jsonNode as unknown[]).map((x) => {
       const currentParseNode = new JsonParseNode(x);
-      if (x instanceof Boolean) {
+      const typeOfX = typeof x;
+      if (typeOfX === "boolean") {
         return currentParseNode.getBooleanValue() as unknown as T;
-      } else if (x instanceof String || typeof x === "string") {
+      } else if (typeOfX === "string") {
         return currentParseNode.getStringValue() as unknown as T;
-      } else if (x instanceof Number) {
+      } else if (typeOfX === "number") {
         return currentParseNode.getNumberValue() as unknown as T;
       } else if (x instanceof Date) {
         return currentParseNode.getDateValue() as unknown as T;
@@ -49,14 +51,14 @@ export class JsonParseNode implements ParseNode {
     });
   };
   public getCollectionOfObjectValues = <T extends Parsable>(
-    type: new () => T
+    type: ParsableFactory<T>
   ): T[] | undefined => {
     return (this._jsonNode as unknown[])
       .map((x) => new JsonParseNode(x))
       .map((x) => x.getObjectValue<T>(type));
   };
-  public getObjectValue = <T extends Parsable>(type: new () => T): T => {
-    const result = new type();
+  public getObjectValue = <T extends Parsable>(type: ParsableFactory<T>): T => {
+    const result = type(this);
     this.onBeforeAssignFieldValues && this.onBeforeAssignFieldValues(result);
     this.assignFieldValues(result);
     this.onAfterAssignFieldValues && this.onAfterAssignFieldValues(result);

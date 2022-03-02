@@ -114,10 +114,11 @@ public interface ParseNode {
     <T> List<T> getCollectionOfPrimitiveValues(@Nonnull final Class<T> targetClass);
     /**
      * Gets the collection of object values of the node.
+     * @param factory the factory to use to create the model object.
      * @return the collection of object values of the node.
      */
     @Nonnull
-    <T extends Parsable> List<T> getCollectionOfObjectValues(@Nonnull final Class<T> targetClass);
+    <T extends Parsable> List<T> getCollectionOfObjectValues(@Nonnull final ParsableFactory<T> factory);
     /**
      * Gets the collection of Enum values of the node.
      * @return the collection of Enum values of the node.
@@ -126,10 +127,11 @@ public interface ParseNode {
     <T extends Enum<T>> List<T> getCollectionOfEnumValues(@Nonnull final Class<T> targetEnum);
     /**
      * Gets the model object value of the node.
+     * @param factory the factory to use to create the model object.
      * @return the model object value of the node.
      */
     @Nonnull
-    <T extends Parsable> T getObjectValue(@Nonnull final Class<T> targetClass);
+    <T extends Parsable> T getObjectValue(@Nonnull final ParsableFactory<T> factory);
     /**
      * Gets the callback called before the node is deserialized.
      * @return the callback called before the node is deserialized.

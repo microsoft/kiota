@@ -9,7 +9,7 @@
             AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));
-            AddOrReplaceCodeElementWriter(new CodeClassEndWriter());
+            AddOrReplaceCodeElementWriter(new CodeBlockEndWriter());
             AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
         }
     }

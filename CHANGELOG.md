@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Adds support for downcast of types during deserialization according to the discriminator information in the description (CSharp/Go/Java/TypeScript). [#646](https://github.com/microsoft/kiota/issues/646)
+- Adds support for generating interfaces for models in Go. [#646](https://github.com/microsoft/kiota/issues/646)
+- Adds support for generating functions (as opposed to methods or static methods) in the generator (used in TypeScript for discriminator factories). [#646](https://github.com/microsoft/kiota/issues/646)
 - Added support for global error handling in python abstractions #1289
 - Added a HTTPRequestAdapter for python Requests library #1251
 

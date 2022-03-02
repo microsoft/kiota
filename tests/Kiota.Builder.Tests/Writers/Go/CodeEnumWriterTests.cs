@@ -57,7 +57,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
         }
         [Fact]
         public void WritesUsing() {
-            currentEnum.AddUsings(new CodeUsing {
+            currentEnum.AddUsing(new CodeUsing {
                 Name = "using1",
             });
             currentEnum.Options.Add("o");

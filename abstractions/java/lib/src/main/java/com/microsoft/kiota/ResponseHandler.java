@@ -7,6 +7,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.microsoft.kiota.serialization.Parsable;
+import com.microsoft.kiota.serialization.ParsableFactory;
 
 /** Defines the contract for a response handler. */
 public interface ResponseHandler {
@@ -19,5 +20,5 @@ public interface ResponseHandler {
      * @return A CompletableFuture that represents the asynchronous operation and contains the deserialized response.
      */
     @Nonnull
-    <NativeResponseType, ModelType> CompletableFuture<ModelType> handleResponseAsync(@Nonnull final NativeResponseType response, @Nullable final HashMap<String, Class<? extends Parsable>> errorMappings);
+    <NativeResponseType, ModelType> CompletableFuture<ModelType> handleResponseAsync(@Nonnull final NativeResponseType response, @Nullable final HashMap<String, ParsableFactory<? extends Parsable>> errorMappings);
 }

@@ -17,7 +17,7 @@ namespace Kiota.Builder.Tests {
                 Name = "prop",
             };
             Assert.False(property.IsOfKind(CodePropertyKind.BackingStore));
-            property.PropertyKind = CodePropertyKind.RequestBuilder;
+            property.Kind = CodePropertyKind.RequestBuilder;
             Assert.True(property.IsOfKind(CodePropertyKind.RequestBuilder));
             Assert.True(property.IsOfKind(CodePropertyKind.RequestBuilder, CodePropertyKind.BackingStore));
             Assert.False(property.IsOfKind(CodePropertyKind.BackingStore));
