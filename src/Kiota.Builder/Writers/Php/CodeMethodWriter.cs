@@ -16,7 +16,7 @@ namespace Kiota.Builder.Writers.Php
 
             var parentClass = codeElement.Parent as CodeClass;
             var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
-            var inherits = (parentClass?.StartBlock as CodeClass.Declaration)?.Inherits != null;
+            var inherits = parentClass?.StartBlock?.Inherits != null;
             var orNullReturn = codeElement.ReturnType.IsNullable ? new[]{"?", "|null"} : new[] {string.Empty, string.Empty};
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
             var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
@@ -27,7 +27,7 @@ namespace Kiota.Builder.Writers.Php
             WriteMethodPhpDocs(codeElement, writer, orNullReturn);
             WriteMethodsAndParameters(codeElement, writer, orNullReturn, codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor));
 
-            switch (codeElement.MethodKind)
+            switch (codeElement.Kind)
             {
                     case CodeMethodKind.Constructor: 
                         WriteConstructorBody(parentClass, codeElement, writer, inherits);
@@ -74,7 +74,7 @@ namespace Kiota.Builder.Writers.Php
                                                                             CodePropertyKind.UrlTemplate,
                                                                             CodePropertyKind.PathParameters)
                                             .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
-                                            .OrderByDescending(x => x.PropertyKind)
+                                            .OrderByDescending(x => x.Kind)
                                             .ThenBy(x => x.Name))
             {
                 var isPathSegment = propWithDefault.IsOfKind(CodePropertyKind.PathParameters);
@@ -142,7 +142,7 @@ namespace Kiota.Builder.Writers.Php
             var returnDocString = GetDocCommentReturnType(codeMethod, accessedProperty);
             if (!isVoidable)
             {
-                writer.WriteLine((codeMethod.MethodKind == CodeMethodKind.RequestExecutor)
+                writer.WriteLine((codeMethod.Kind == CodeMethodKind.RequestExecutor)
                     ? $"{conventions.DocCommentPrefix}@return Promise"
                     : $"{conventions.DocCommentPrefix}@return {returnDocString}{orNullReturn[1]}");
             }
@@ -151,7 +151,7 @@ namespace Kiota.Builder.Writers.Php
 
         private string GetDocCommentReturnType(CodeMethod codeMethod, CodeProperty accessedProperty)
         {
-            return codeMethod.MethodKind switch
+            return codeMethod.Kind switch
             {
                 CodeMethodKind.Deserializer => "array<string, callable>",
                 CodeMethodKind.Getter when accessedProperty.IsOfKind(CodePropertyKind.AdditionalData) => "array<string, mixed>",
@@ -162,28 +162,25 @@ namespace Kiota.Builder.Writers.Php
 
         private string GetParameterDocString(CodeMethod codeMethod, CodeParameter x, bool isSetterForAdditionalData = false)
         {
-            return codeMethod.MethodKind switch
+            return codeMethod.Kind switch
             {
                 CodeMethodKind.Setter => $"{conventions.DocCommentPrefix} @param {(isSetterForAdditionalData ? "array<string,mixed> $value": conventions.GetParameterDocNullable(x, x))} {x?.Description}",
                 _ => $"{conventions.DocCommentPrefix}@param {conventions.GetParameterDocNullable(x, x)} {x.Description}"
             };
         }
         
+        private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
         private void WriteMethodsAndParameters(CodeMethod codeMethod, LanguageWriter writer, IReadOnlyList<string> orNullReturn, bool isConstructor = false)
         {
-            var methodParameters = string.Join(", ", codeMethod.Parameters.Select(x => conventions.GetParameterSignature(x, codeMethod)).ToList());
+            var methodParameters = string.Join(", ", codeMethod.Parameters
+                                                                .OrderBy(x => x, parameterOrderComparer)
+                                                                .Select(x => conventions.GetParameterSignature(x, codeMethod))
+                                                                .ToList());
 
-            var methodName = codeMethod.MethodKind switch
+            var methodName = codeMethod.Kind switch
             {
-                (CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor) => "__construct",
-                (CodeMethodKind.Getter or CodeMethodKind.Setter) => codeMethod.AccessedProperty?.Name?.ToFirstCharacterUpperCase(),
+                CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor => "__construct",
                 _ => codeMethod.Name.ToFirstCharacterLowerCase()
-            };
-            var methodPrefix = codeMethod.MethodKind switch
-            {
-                CodeMethodKind.Getter => "get",
-                CodeMethodKind.Setter => "set",
-                _ => string.Empty
             };
             if(codeMethod.IsOfKind(CodeMethodKind.Deserializer))
             {
@@ -194,7 +191,7 @@ namespace Kiota.Builder.Writers.Php
 
             if (codeMethod.IsOfKind(CodeMethodKind.Getter) && codeMethod.AccessedProperty.IsOfKind(CodePropertyKind.AdditionalData))
             {
-                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodPrefix}{methodName}(): array {{");
+                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodName}(): array {{");
                 writer.IncreaseIndent();
                 return;
             }
@@ -205,7 +202,7 @@ namespace Kiota.Builder.Writers.Php
                 ? string.Empty
                 : $": {optionalCharacterReturn}{conventions.GetTypeString(codeMethod.ReturnType, codeMethod)}";
             var pathParametersParam = codeMethod.Parameters.OfKind(CodeParameterKind.PathParameters);
-            var requestAdapterParam = codeMethod.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.RequestAdapter);
+            var requestAdapterParam = codeMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter);
             if (isConstructor && codeMethod?.Parent is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder))
             {
                 var pathParameters = codeMethod.Parameters
@@ -220,7 +217,7 @@ namespace Kiota.Builder.Writers.Php
             else
             {
                 writer.WriteLine(
-                    $"{conventions.GetAccessModifier(codeMethod.Access)} function {methodPrefix}{methodName}({methodParameters}){(!codeMethod.IsOfKind(CodeMethodKind.RequestExecutor) ? $"{returnValue}" : ": Promise")} {{");
+                    $"{conventions.GetAccessModifier(codeMethod.Access)} function {methodName}({methodParameters}){(!codeMethod.IsOfKind(CodeMethodKind.RequestExecutor) ? $"{returnValue}" : ": Promise")} {{");
             }
 
             writer.IncreaseIndent();
@@ -230,7 +227,7 @@ namespace Kiota.Builder.Writers.Php
         private void WriteSerializerBody(CodeMethod codeMethod, CodeClass parentClass, LanguageWriter writer, bool inherits)
         {
             var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();
-            var writerParameter = codeMethod.Parameters.FirstOrDefault(x => x.ParameterKind == CodeParameterKind.Serializer);
+            var writerParameter = codeMethod.Parameters.FirstOrDefault(x => x.Kind == CodeParameterKind.Serializer);
             var writerParameterName = conventions.GetParameterName(writerParameter);
             if(inherits)
                 writer.WriteLine($"parent::serialize({writerParameterName});");
@@ -376,7 +373,7 @@ namespace Kiota.Builder.Writers.Php
             writer.WriteLine($"return {RequestInfoVarName};");
         }
         private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer, CodeMethod method) {
-            var inherits = (parentClass.StartBlock as CodeClass.Declaration)?.Inherits != null;
+            var inherits = parentClass.StartBlock?.Inherits != null;
             var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
             writer.WriteLine($"return {(inherits ? "array_merge(parent::getFieldDeserializers()," : string.Empty)} [");
             if(fieldToSerialize.Any()) {

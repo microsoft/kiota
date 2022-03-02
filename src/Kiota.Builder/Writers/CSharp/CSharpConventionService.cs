@@ -89,8 +89,15 @@ namespace Kiota.Builder.Writers.CSharp {
         }
         private string TranslateTypeAndAvoidUsingNamespaceSegmentNames(CodeType currentType, CodeElement targetElement)
         {
+            var parentElements = new List<string>();
+            if(targetElement.Parent is CodeClass parentClass)
+                parentElements.AddRange(parentClass.Methods.Select(x => x.Name).Union(parentClass.Properties.Select(x => x.Name)));
+            var parentElementsHash = new HashSet<string>(parentElements, StringComparer.OrdinalIgnoreCase);
             var typeName = TranslateType(currentType);
-            if (currentType.TypeDefinition != null && GetNamesInUseByNamespaceSegments(targetElement).Contains(typeName) && !DoesTypeExistsInSameNamesSpaceAsTarget(currentType,targetElement))
+            if(currentType.TypeDefinition != null &&
+                GetNamesInUseByNamespaceSegments(targetElement).Contains(typeName) &&
+                !DoesTypeExistsInSameNamesSpaceAsTarget(currentType,targetElement) ||
+                parentElementsHash.Contains(typeName))
                 return $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
             else
                 return typeName;

@@ -3,7 +3,7 @@ namespace Kiota.Builder.Tests {
         public static void AddBackingStoreProperty(this CodeClass codeClass) {
             codeClass?.AddProperty(new CodeProperty {
                 Name = "backingStore",
-                PropertyKind = CodePropertyKind.BackingStore
+                Kind = CodePropertyKind.BackingStore
             });
         }
         public static void AddAccessedProperty(this CodeMethod codeMethod) {

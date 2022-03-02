@@ -11,7 +11,7 @@ namespace Kiota.Builder.Writers.Java {
             conventions.WriteShortDescription(codeElement.Description, writer);
             var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
             var parentClass = codeElement.Parent as CodeClass;
-            switch(codeElement.PropertyKind) {
+            switch(codeElement.Kind) {
                 case CodePropertyKind.RequestBuilder:
                     writer.WriteLine("@javax.annotation.Nonnull");
                     writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {returnType} {codeElement.Name.ToFirstCharacterLowerCase()}() {{");

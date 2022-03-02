@@ -3,10 +3,10 @@ using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Java {
-    public class CodeClassDeclarationWriter : BaseElementWriter<CodeClass.Declaration, JavaConventionService>
+    public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, JavaConventionService>
     {
         public CodeClassDeclarationWriter(JavaConventionService conventionService) : base(conventionService){}
-        public override void WriteCodeElement(CodeClass.Declaration codeElement, LanguageWriter writer)
+        public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
         {
             if(codeElement?.Parent?.Parent is CodeNamespace ns) {
                 writer.WriteLine($"package {ns.Name};");

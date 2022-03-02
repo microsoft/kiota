@@ -16,13 +16,18 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
         AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
         AliasUsingsWithSameSymbol(generatedCode);
-        AddParsableInheritanceForModelClasses(generatedCode, "Parsable");
+        AddParsableImplementsForModelClasses(generatedCode, "Parsable");
         ReplaceBinaryByNativeType(generatedCode, "ArrayBuffer", null);
         ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
-        AddGetterAndSetterMethods(generatedCode, new() {
-                                                CodePropertyKind.Custom,
-                                                CodePropertyKind.AdditionalData,
-                                            }, _configuration.UsesBackingStore, false);
+        AddGetterAndSetterMethods(generatedCode,
+            new() {
+                CodePropertyKind.Custom,
+                CodePropertyKind.AdditionalData,
+            },
+            _configuration.UsesBackingStore,
+            false,
+            string.Empty,
+            string.Empty);
         AddConstructorsForDefaultValues(generatedCode, true);
         ReplaceDefaultSerializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory");
         ReplaceDefaultDeserializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonParseNodeFactory");
@@ -37,11 +42,38 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "ApiError",
                 "@microsoft/kiota-abstractions"
         );
+        AddDiscriminatorMappingsUsingsToParentClasses(
+            generatedCode,
+            "ParseNode",
+            addUsings: false
+        );
+        Func<string, string> factoryNameCallbackFromTypeName = x => $"create{x.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
+        ReplaceLocalMethodsByGlobalFunctions(
+            generatedCode,
+            x => factoryNameCallbackFromTypeName(x.Parent.Name),
+            x => new List<CodeUsing>(x.DiscriminatorMappings
+                                    .Select(y => y.Value)
+                                    .OfType<CodeType>()
+                                    .Select(y => new CodeUsing { Name = y.Name, Declaration = y })) {
+                    new() { Name = "ParseNode", Declaration = new() { Name = AbstractionsPackageName, IsExternal = true } },
+                    new() { Name = x.Parent.Parent.Name, Declaration = new() { Name = x.Parent.Name, TypeDefinition = x.Parent } },
+                }.ToArray(),
+            CodeMethodKind.Factory
+        );
+        Func<CodeType, string> factoryNameCallbackFromType = x => factoryNameCallbackFromTypeName(x.Name);
+        AddStaticMethodsUsingsForDeserializer(
+            generatedCode,
+            factoryNameCallbackFromType
+        );
+        AddStaticMethodsUsingsForRequestExecutor(
+            generatedCode,
+            factoryNameCallbackFromType
+        );
     }
     private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
     private static void AliasUsingsWithSameSymbol(CodeElement currentElement) {
         if(currentElement is CodeClass currentClass &&
-            currentClass.StartBlock is CodeClass.Declaration currentDeclaration &&
+            currentClass.StartBlock is ClassDeclaration currentDeclaration &&
             currentDeclaration.Usings.Any(x => !x.IsExternal)) {
                 var duplicatedSymbolsUsings = currentDeclaration.Usings.Where(x => !x.IsExternal)
                                                                         .Distinct(usingComparer)
@@ -76,12 +108,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             AbstractionsPackageName, "ResponseHandler"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             AbstractionsPackageName, "SerializationWriter"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
             AbstractionsPackageName, "ParseNode"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.IndexerBackwardCompatibility),
             AbstractionsPackageName, "getPathParameters"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            AbstractionsPackageName, "Parsable"),
+            AbstractionsPackageName, "Parsable", "ParsableFactory"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
             AbstractionsPackageName, "Parsable"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&

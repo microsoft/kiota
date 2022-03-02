@@ -146,14 +146,17 @@ func (n *JsonParseNode) GetChildNode(index string) (absser.ParseNode, error) {
 }
 
 // GetObjectValue returns the Parsable value from the node.
-func (n *JsonParseNode) GetObjectValue(ctor func() absser.Parsable) (absser.Parsable, error) {
+func (n *JsonParseNode) GetObjectValue(ctor absser.ParsableFactory) (absser.Parsable, error) {
 	if ctor == nil {
 		return nil, errors.New("constructor is nil")
 	}
 	if n == nil || n.value == nil {
 		return nil, nil
 	}
-	result := ctor()
+	result, err := ctor(n)
+	if err != nil {
+		return nil, err
+	}
 	//TODO on before when implementing backing store
 	properties, ok := n.value.(map[string]*JsonParseNode)
 	if !ok {
@@ -180,7 +183,7 @@ func (n *JsonParseNode) GetObjectValue(ctor func() absser.Parsable) (absser.Pars
 }
 
 // GetCollectionOfObjectValues returns the collection of Parsable values from the node.
-func (n *JsonParseNode) GetCollectionOfObjectValues(ctor func() absser.Parsable) ([]absser.Parsable, error) {
+func (n *JsonParseNode) GetCollectionOfObjectValues(ctor absser.ParsableFactory) ([]absser.Parsable, error) {
 	if n == nil || n.value == nil {
 		return nil, nil
 	}

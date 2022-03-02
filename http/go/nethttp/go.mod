@@ -3,7 +3,7 @@ module github.com/microsoft/kiota/http/go/nethttp
 go 1.17
 
 require (
-	github.com/microsoft/kiota/abstractions/go v0.0.0-20220210185149-93a92d579e1e
+	github.com/microsoft/kiota/abstractions/go v0.0.0-20220302123028-4b9132ed532c
 	github.com/stretchr/testify v1.7.0
 )
 

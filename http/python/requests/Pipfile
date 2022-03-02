@@ -1,0 +1,30 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[[source]]
+url = "https://test.pypi.org/simple/"
+verify_ssl = true
+name = "testpypi"
+
+[packages]
+requests = {version="2.27.1", index="pypi"}
+kiota-abstractions = {version="*", index="testpypi"}
+uritemplate = {version="4.1.1", index="pypi"}
+python-dateutil = {version="2.8.2", index="pypi"}
+
+[dev-packages]
+flit = {version="3.5.1", index="pypi"}
+pylint = {version="2.12.2", index="pypi"}
+mypy = {version="0.910", index="pypi"}
+yapf = {version="0.31.0", index="pypi"}
+isort = {version="5.10.1", index="pypi"}
+pytest = {version="7.0.1", index="pypi"}
+pytest-asyncio = {version="0.18.1", index="pypi"}
+pytest-cov = {version="3.0.0", index="pypi"}
+pytest-mock = {version="3.7.0", index="pypi"}
+asyncmock = {version="0.4.2", index="pypi"}
+responses = {version="0.18.0", index="pypi"}
+types-requests = {version="*", index="pypi"}
+kiota-serialization-json = {version="*", index="testpypi"}

@@ -16,7 +16,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 writer.WriteLine($"namespace {codeNamespace.Name} {{");
                 writer.IncreaseIndent();
             }
-            if(codeElement.Flags)
+            if (codeElement.Flags)
                 writer.WriteLine("[Flags]");
             conventions.WriteShortDescription(codeElement.Description, writer);
             writer.WriteLine($"public enum {codeElement.Name.ToFirstCharacterUpperCase()} {{"); //TODO docs
@@ -25,13 +25,8 @@ namespace Kiota.Builder.Writers.CSharp {
                             .Select(x => x.ToFirstCharacterUpperCase())
                             .Select((x, idx) => $"{x}{(codeElement.Flags ? " = " + GetEnumFlag(idx) : string.Empty)},")
                             .ToArray());
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
-            if(codeNamespace != null) {
-                writer.DecreaseIndent();
-                writer.WriteLine("}");
-            }
-            
+            if(codeNamespace != null)
+                writer.CloseBlock();
         }
         private readonly Func<int, string> GetEnumFlag = (idx) => 
             (idx == 0 ? 1 : Math.Pow(2, idx)).ToString();

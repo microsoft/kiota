@@ -32,10 +32,10 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             };
             EmptyClass.AddProperty(emptyProperty, new() {
                 Name = "pathParameters",
-                PropertyKind = CodePropertyKind.PathParameters,
+                Kind = CodePropertyKind.PathParameters,
             }, new() {
                 Name = "requestAdapter",
-                PropertyKind = CodePropertyKind.RequestAdapter,
+                Kind = CodePropertyKind.RequestAdapter,
             });
             
             var root = CodeNamespace.InitRootNamespace();
@@ -53,10 +53,10 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             };
             parentClass.AddProperty(property, new() {
                 Name = "pathParameters",
-                PropertyKind = CodePropertyKind.PathParameters,
+                Kind = CodePropertyKind.PathParameters,
             }, new() {
                 Name = "requestAdapter",
-                PropertyKind = CodePropertyKind.RequestAdapter,
+                Kind = CodePropertyKind.RequestAdapter,
             });
         }
         public void Dispose() {
@@ -65,7 +65,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         }
         [Fact]
         public void WritesRequestBuilder() {
-            property.PropertyKind = CodePropertyKind.RequestBuilder;
+            property.Kind = CodePropertyKind.RequestBuilder;
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains($"def {PropertyName.ToSnakeCase()}", result);
@@ -75,7 +75,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         }
         [Fact]
         public void WritesRequestBuilderWithoutNamespace() {
-            emptyProperty.PropertyKind = CodePropertyKind.RequestBuilder;
+            emptyProperty.Kind = CodePropertyKind.RequestBuilder;
             writer.Write(emptyProperty);
             var result = tw.ToString();
             Assert.Contains($"def {PropertyName.ToSnakeCase()}", result);
@@ -86,7 +86,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
         }
         [Fact]
         public void WritesCustomProperty() {
-            property.PropertyKind = CodePropertyKind.Custom;
+            property.Kind = CodePropertyKind.Custom;
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains($"@{PropertyName.ToSnakeCase()}", result);

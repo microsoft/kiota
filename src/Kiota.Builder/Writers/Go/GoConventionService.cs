@@ -25,10 +25,14 @@ public class GoConventionService : CommonLanguageConventionService
         return $"{parameter.Name.ToFirstCharacterLowerCase()} {GetTypeString(parameter.Type, targetElement)}";
     }
     private static readonly char dot = '.';
-    public string GetImportedStaticMethodName(CodeTypeBase code, CodeElement targetElement, string methodPrefix = "New") {
+    public string GetImportedStaticMethodName(CodeTypeBase code, CodeElement targetElement, string methodPrefix = "New", string methodSuffix = "", string trimEnd = "") {
         var typeString = GetTypeString(code, targetElement, false, false)?.Split(dot);
         var importSymbol = typeString == null || typeString.Length < 2 ? string.Empty : typeString.First() + dot;
-        return $"{importSymbol}{methodPrefix}{typeString.Last().ToFirstCharacterUpperCase()}";
+        var methodName = typeString.Last().ToFirstCharacterUpperCase();
+        if(!string.IsNullOrEmpty(trimEnd) && methodName.EndsWith(trimEnd, StringComparison.OrdinalIgnoreCase)) {
+            methodName = methodName[0..^trimEnd.Length];
+        }
+        return $"{importSymbol}{methodPrefix}{methodName}{methodSuffix}";
     }
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true) =>
         GetTypeString(code, targetElement, includeCollectionInformation, true);
@@ -43,6 +47,7 @@ public class GoConventionService : CommonLanguageConventionService
             var typeName = TranslateType(currentType, true);
             var nullableSymbol = addPointerSymbol && 
                                 currentType.IsNullable &&
+                                currentType.TypeDefinition is not CodeInterface &&
                                 currentType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None &&
                                 !IsScalarType(currentType.Name) ? "*"
                                 : string.Empty;
@@ -103,18 +108,19 @@ public class GoConventionService : CommonLanguageConventionService
         if(currentBaseType == null || IsPrimitiveType(currentBaseType.Name)) return string.Empty;
         var targetNamespace = targetElement.GetImmediateParentOfType<CodeNamespace>();
         if(currentBaseType is CodeType currentType) {
-            if(currentType.TypeDefinition is CodeClass currentClassDefinition &&
-                currentClassDefinition.Parent is CodeNamespace classNS &&
-                targetNamespace != classNS)
-                    return classNS.GetNamespaceImportSymbol();
+            if(currentType.TypeDefinition is IProprietableBlock currentTypDefinition &&
+                currentTypDefinition.Parent is CodeNamespace typeDefNS &&
+                targetNamespace != typeDefNS)
+                    return typeDefNS.GetNamespaceImportSymbol();
             else if(currentType.TypeDefinition is CodeEnum currentEnumDefinition &&
                 currentEnumDefinition.Parent is CodeNamespace enumNS &&
                 targetNamespace != enumNS)
                     return enumNS.GetNamespaceImportSymbol();
             else if(currentType.TypeDefinition is null &&
-                    targetElement is CodeClass targetClass) {
-                        var symbolUsing = (targetClass.Parent is CodeClass parentClass ? parentClass : targetClass)
-                                                        .StartBlock
+                    targetElement is IProprietableBlock targetTypeDef) {
+                        var symbolUsing = ((targetTypeDef.Parent as CodeClass)?.StartBlock as BlockDeclaration ?? 
+                                            (targetTypeDef as CodeClass)?.StartBlock as BlockDeclaration ??
+                                            (targetTypeDef as CodeInterface)?.StartBlock as BlockDeclaration)
                                                         .Usings
                                                         .FirstOrDefault(x => currentBaseType.Name.Equals(x.Name, StringComparison.OrdinalIgnoreCase));
                         return symbolUsing == null ? string.Empty : symbolUsing.Declaration.Name.GetNamespaceImportSymbol();

@@ -22,19 +22,20 @@ namespace Kiota.Builder {
         protected virtual int GetTypeFactor(CodeElement element) {
             return element switch {
                 CodeUsing => 1,
-                CodeClass.Declaration => 2,
-                CodeProperty => 3,
-                CodeIndexer => 4,
-                CodeMethod => 5,
-                CodeClass => 6,
-                CodeClass.End => 7,
+                ClassDeclaration => 2,
+                InterfaceDeclaration => 3,
+                CodeProperty => 4,
+                CodeIndexer => 5,
+                CodeMethod => 6,
+                CodeClass => 7,
+                BlockEnd => 8,
                 _ => 0,
             };
         }
         private static readonly int methodKindWeight = 10;
         protected static int GetMethodKindFactor(CodeElement element) {
             if (element is CodeMethod method)
-                return method.MethodKind switch {
+                return method.Kind switch {
                     CodeMethodKind.ClientConstructor => 1,
                     CodeMethodKind.Constructor => 2,
                     CodeMethodKind.RawUrlConstructor => 3,

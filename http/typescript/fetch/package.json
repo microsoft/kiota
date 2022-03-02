@@ -1,6 +1,6 @@
 {
     "name": "@microsoft/kiota-http-fetchlibrary",
-    "version": "1.0.16",
+    "version": "1.0.17",
     "description": "Kiota request adapter implementation with fetch",
     "main": "dist/cjs/index.js",
     "module": "dist/es/index.js",
@@ -34,15 +34,15 @@
         "registry": "https://npm.pkg.github.com"
     },
     "dependencies": {
-        "@microsoft/kiota-abstractions": "^1.0.29",
+        "@microsoft/kiota-abstractions": "^1.0.30",
         "cross-fetch": "^3.1.5",
         "tslib": "^2.3.1"
     },
     "devDependencies": {
         "@types/node": "^17.0.21",
-        "typescript": "^4.5.5",
-        "@typescript-eslint/eslint-plugin": "^5.12.1",
-        "@typescript-eslint/parser": "^5.12.1",
+        "typescript": "^4.6.2",
+        "@typescript-eslint/eslint-plugin": "^5.13.0",
+        "@typescript-eslint/parser": "^5.13.0",
         "eslint": "^8.10.0",
         "eslint-config-prettier": "^8.4.0",
         "eslint-plugin-prettier": "^4.0.0",
