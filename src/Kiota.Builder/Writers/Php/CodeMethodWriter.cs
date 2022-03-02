@@ -269,7 +269,7 @@ namespace Kiota.Builder.Writers.Php
             {
                 "string" or "guid" => "writeStringValue",
                 "enum" => "writeEnumValue",
-                "bool" => "writeBooleanValue",
+                "bool" or "boolean" => "writeBooleanValue",
                 "float" => "writeFloatValue",
                 "double" => "writeFloatValue",
                 "boolean" => "writeBooleanValue", 
