@@ -155,8 +155,9 @@ namespace Microsoft.Kiota.Serialization.Json
         /// <summary>
         /// Get the collection of type <typeparam name="T"/>from the json node
         /// </summary>
+        /// <param name="factory">The factory to use to create the model object.</param>
         /// <returns>A collection of objects</returns>
-        public IEnumerable<T> GetCollectionOfObjectValues<T>() where T : IParsable
+        public IEnumerable<T> GetCollectionOfObjectValues<T>(ParsableFactory<T> factory) where T : IParsable
         {
             var enumerator = _jsonNode.EnumerateArray();
             while(enumerator.MoveNext())
@@ -166,7 +167,7 @@ namespace Microsoft.Kiota.Serialization.Json
                     OnAfterAssignFieldValues = OnAfterAssignFieldValues,
                     OnBeforeAssignFieldValues = OnBeforeAssignFieldValues
                 };
-                yield return currentParseNode.GetObjectValue<T>();
+                yield return currentParseNode.GetObjectValue<T>(factory);
             }
         }
         /// <summary>
@@ -258,33 +259,16 @@ namespace Microsoft.Kiota.Serialization.Json
         /// <summary>
         /// Get the object of type <typeparam name="T"/>from the json node
         /// </summary>
+        /// <param name="factory">The factory to use to create the model object.</param>
         /// <returns>A object of the specified type</returns>
-        public T GetObjectValue<T>() where T : IParsable
+        public T GetObjectValue<T>(ParsableFactory<T> factory) where T : IParsable
         {
-            var item = (T)(typeof(T).GetConstructor(new Type[] { }).Invoke(new object[] { }));
-            return GetObjectValueInternal(item);
-        }
-        private T GetObjectValueInternal<T>(T item) where T : IParsable
-        {
+            var item = factory(this);
             var fieldDeserializers = item.GetFieldDeserializers<T>();
             OnBeforeAssignFieldValues?.Invoke(item);
             AssignFieldValues(item, fieldDeserializers);
             OnAfterAssignFieldValues?.Invoke(item);
             return item;
-        }
-        /// <summary>
-        /// Gets the resulting error from the node.
-        /// </summary>
-        /// <returns>The error object value of the node.</returns>
-        /// <param name="factory">The error factory.</param>
-        public IParsable GetErrorValue(Func<IParsable> factory)
-        {
-            if (factory == null) throw new ArgumentNullException(nameof(factory));
-
-            var instance = factory.Invoke();
-            if (instance == null) throw new InvalidOperationException("factory returned null");
-
-            return GetObjectValueInternal(instance);
         }
         private void AssignFieldValues<T>(T item, IDictionary<string, Action<T, IParseNode>> fieldDeserializers) where T : IParsable
         {

@@ -204,12 +204,12 @@ components:
 
 ## Heterogenous collection
 
-## Filtered collection
+Kiota SDKs will automatically downcast heterogenous collection items (or single properties) to the target type if a discriminator is present in the description and if the response payload contains a matching mapping entry. This way SDK users can easily access the other properties available on the specialized type.
 
 ```yaml
 openapi: 3.0.3
 info:
-  title: Hetreogenous collection
+  title: Heterogenous collection
   version: 1.0.0
 servers:
   - url: https://example.org/
@@ -277,8 +277,9 @@ components:
 ```
 
 ```csharp
-   IEnunmerable<Session> sessions = await apiClient.Sessions.GetAsync(); 
-   List<Presentation> presentations = sessions.Where(s => s.GetType() == typeOf(Presentation)).ToList();
+   IEnumerable<Session> sessions = await apiClient.Sessions.GetAsync(); 
+   List<Presentation> presentations = sessions.OfType<Presentation>().ToList();
+   // OfType is a native method that filters a collection based on the item type returning a subset
 ```
 
 ## Explicit Error Response

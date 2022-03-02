@@ -7,7 +7,7 @@ namespace Kiota.Builder.Writers.Java
             PathSegmenter = new JavaPathSegmenter(rootPath, clientNamespaceName);
             var conventionService = new JavaConventionService();
             AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
-            AddOrReplaceCodeElementWriter(new CodeClassEndWriter());
+            AddOrReplaceCodeElementWriter(new CodeBlockEndWriter());
             AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));

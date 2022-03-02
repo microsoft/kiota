@@ -26,14 +26,17 @@ namespace Kiota.Builder.Refiners
             ReplaceDefaultDeserializationModules(generatedCode, "Microsoft\\Kiota\\Serialization\\Json\\JsonParseNodeFactory");
             AliasUsingWithSameSymbol(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
-            AddGetterAndSetterMethods(generatedCode,new()
-            {
-                CodePropertyKind.Custom,
-                CodePropertyKind.AdditionalData,
-                CodePropertyKind.BackingStore
-            }, _configuration.UsesBackingStore, true);
-            
-            AddParsableInheritanceForModelClasses(generatedCode, "Parsable");
+            AddGetterAndSetterMethods(generatedCode,
+                new() {
+                    CodePropertyKind.Custom,
+                    CodePropertyKind.AdditionalData,
+                    CodePropertyKind.BackingStore
+                },
+                _configuration.UsesBackingStore,
+                true,
+                "get",
+                "set");
+            AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
         }
@@ -152,13 +155,13 @@ namespace Kiota.Builder.Refiners
         }
 
         private static void AliasUsingWithSameSymbol(CodeElement currentElement) {
-            if(currentElement is CodeClass {StartBlock: CodeClass.Declaration currentDeclaration} currentClass && currentDeclaration.Usings.Any(x => !x.IsExternal)) {
-                var duplicatedSymbolsUsings = currentDeclaration.Usings
+            if(currentElement is CodeClass currentClass && currentClass.StartBlock != null && currentClass.StartBlock.Usings.Any(x => !x.IsExternal)) {
+                var duplicatedSymbolsUsings = currentClass.StartBlock.Usings
                     .Distinct(usingComparer)
                     .GroupBy(x => x.Declaration.Name, StringComparer.OrdinalIgnoreCase)
                     .Where(x => x.Count() > 1)
                     .SelectMany(x => x)
-                    .Union(currentDeclaration
+                    .Union(currentClass.StartBlock
                         .Usings
                         .Where(x => !x.IsExternal)
                         .Where(x => x.Declaration

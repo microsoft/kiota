@@ -22,6 +22,14 @@ public interface IParsable
 }
 ```
 
+## Parsable Factory
+
+Parsable Factory defines the structure for models factories creating parsable objects according or their derived types to the discriminator value present in the payload.
+
+```CSharp
+public delegate T ParsableFactory<T>(IParseNode node) where T : IParsable;
+```
+
 ## Parse Node
 
 The parse node interface defines members that are required to be implemented by a deserialization library. It mostly acts as an abstractions and mapping layer between the methods models' GetFieldDeserializers will call and the library in use to deserialize the payload. It heavily relies on recurrence programming design and the implementing class will be instantiated by a corresponding factory.

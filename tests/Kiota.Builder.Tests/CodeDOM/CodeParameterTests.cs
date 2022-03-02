@@ -17,7 +17,7 @@ namespace Kiota.Builder.Tests {
                 Name = "class",
             };
             Assert.False(parameter.IsOfKind(CodeParameterKind.Headers));
-            parameter.ParameterKind = CodeParameterKind.RequestAdapter;
+            parameter.Kind = CodeParameterKind.RequestAdapter;
             Assert.True(parameter.IsOfKind(CodeParameterKind.RequestAdapter));
             Assert.True(parameter.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.Headers));
             Assert.False(parameter.IsOfKind(CodeParameterKind.Headers));

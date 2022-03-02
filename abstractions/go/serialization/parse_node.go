@@ -11,13 +11,13 @@ type ParseNode interface {
 	// GetChildNode returns a new parse node for the given identifier.
 	GetChildNode(index string) (ParseNode, error)
 	// GetCollectionOfObjectValues returns the collection of Parsable values from the node.
-	GetCollectionOfObjectValues(ctor func() Parsable) ([]Parsable, error)
+	GetCollectionOfObjectValues(ctor ParsableFactory) ([]Parsable, error)
 	// GetCollectionOfPrimitiveValues returns the collection of primitive values from the node.
 	GetCollectionOfPrimitiveValues(targetType string) ([]interface{}, error)
 	// GetCollectionOfEnumValues returns the collection of Enum values from the node.
 	GetCollectionOfEnumValues(parser func(string) (interface{}, error)) ([]interface{}, error)
 	// GetObjectValue returns the Parsable value from the node.
-	GetObjectValue(ctor func() Parsable) (Parsable, error)
+	GetObjectValue(ctor ParsableFactory) (Parsable, error)
 	// GetStringValue returns a String value from the nodes.
 	GetStringValue() (*string, error)
 	// GetBoolValue returns a Bool value from the nodes.

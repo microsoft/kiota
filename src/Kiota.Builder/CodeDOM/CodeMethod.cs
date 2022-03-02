@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -21,6 +22,10 @@ public enum CodeMethodKind
     RawUrlConstructor,
     NullCheck,
     CommandBuilder,
+    /// <summary>
+    /// The method to be used during deserialization with the discriminator property to get a new instance of the target type.
+    /// </summary>
+    Factory,
 }
 public enum HttpMethod {
     Get,
@@ -34,10 +39,9 @@ public enum HttpMethod {
     Trace
 }
 
-public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
+public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement
 {
     public HttpMethod? HttpMethod {get;set;}
-    public CodeMethodKind MethodKind {get;set;} = CodeMethodKind.Custom;
     public string ContentType { get; set; }
     public AccessModifier Access {get;set;} = AccessModifier.Public;
     private CodeTypeBase returnType;
@@ -45,24 +49,23 @@ public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
         EnsureElementsAreChildren(value);
         returnType = value;
     }}
-    private readonly List<CodeParameter> parameters = new ();
+    private readonly ConcurrentDictionary<string, CodeParameter> parameters = new ();
     public void RemoveParametersByKind(params CodeParameterKind[] kinds) {
-        parameters.RemoveAll(p => p.IsOfKind(kinds));
+        parameters.Where(p => p.Value.IsOfKind(kinds))
+                            .Select(x => x.Key)
+                            .ToList()
+                            .ForEach(x => parameters.Remove(x, out var _));
     }
 
     public void ClearParameters()
     {
         parameters.Clear();
     }
-    public IEnumerable<CodeParameter> Parameters { get => parameters; }
+    public IEnumerable<CodeParameter> Parameters { get => parameters.Values; }
     public bool IsStatic {get;set;} = false;
     public bool IsAsync {get;set;} = true;
     public string Description {get; set;}
-    /// <summary>
-    /// The property this method accesses to when it's a getter or setter.
-    /// </summary>
-    public CodeProperty AccessedProperty { get; set;
-    }
+    
     /// <summary>
     /// The combination of the path and query parameters for the current URL.
     /// Only use this property if the language you are generating for doesn't support fluent API style (e.g. Shell/CLI)
@@ -83,14 +86,12 @@ public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
         else if (PathAndQueryParameters is List<CodeParameter> cast)
             cast.AddRange(parameters);
     }
-    public bool IsOfKind(params CodeMethodKind[] kinds) {
-        return kinds?.Contains(MethodKind) ?? false;
-    }
+    /// <summary>
+    /// The property this method accesses to when it's a getter or setter.
+    /// </summary>
+    public CodeProperty AccessedProperty { get; set; }
     public bool IsAccessor { 
         get => IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter);
-    }
-    public bool IsSerializationMethod {
-        get => IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer);
     }
     public List<string> SerializerModules { get; set; }
     public List<string> DeserializerModules { get; set; }
@@ -122,12 +123,24 @@ public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
     /// <summary>
     /// Mapping of the error code and response types for this method.
     /// </summary>
-    public Dictionary<string, CodeTypeBase> ErrorMappings { get; set; } = new ();
+    public ConcurrentDictionary<string, CodeTypeBase> ErrorMappings { get; set; } = new ();
+    /// <summary>
+    /// Gets/Sets the discriminator values for the class where the key is the value as represented in the payload.
+    /// </summary>
+    public ConcurrentDictionary<string, CodeTypeBase> DiscriminatorMappings { get; set; } = new();
+    /// <summary>
+    /// Gets/Sets the name of the property to use for discrimination during deserialization.
+    /// </summary>
+    public string DiscriminatorPropertyName { get; set; } 
+
+    public bool ShouldWriteDiscriminatorSwitch { get {
+        return !string.IsNullOrEmpty(DiscriminatorPropertyName) && DiscriminatorMappings.Any();
+    } }
 
     public object Clone()
     {
         var method = new CodeMethod {
-            MethodKind = MethodKind,
+            Kind = Kind,
             ReturnType = ReturnType?.Clone() as CodeTypeBase,
             Name = Name.Clone() as string,
             HttpMethod = HttpMethod,
@@ -143,7 +156,9 @@ public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
             OriginalMethod = OriginalMethod,
             Parent = Parent,
             OriginalIndexer = OriginalIndexer,
-            ErrorMappings = ErrorMappings == null ? null : new (ErrorMappings)
+            ErrorMappings = ErrorMappings == null ? null : new (ErrorMappings),
+            DiscriminatorMappings = DiscriminatorMappings == null ? null : new (DiscriminatorMappings),
+            DiscriminatorPropertyName = DiscriminatorPropertyName?.Clone() as string
         };
         if(Parameters?.Any() ?? false)
             method.AddParameter(Parameters.Select(x => x.Clone() as CodeParameter).ToArray());
@@ -157,6 +172,6 @@ public class CodeMethod : CodeTerminal, ICloneable, IDocumentedElement
         if(!methodParameters.Any())
             throw new ArgumentOutOfRangeException(nameof(methodParameters));
         EnsureElementsAreChildren(methodParameters);
-        parameters.AddRange(methodParameters);
+        methodParameters.ToList().ForEach(x => parameters.TryAdd(x.Name, x));
     }
 }

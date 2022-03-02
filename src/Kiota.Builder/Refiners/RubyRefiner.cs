@@ -12,15 +12,20 @@ namespace Kiota.Builder.Refiners {
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "_by_id");
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             RemoveCancellationParameter(generatedCode);
-            AddParsableInheritanceForModelClasses(generatedCode, "MicrosoftKiotaAbstractions::Parsable");
+            AddParsableImplementsForModelClasses(generatedCode, "MicrosoftKiotaAbstractions::Parsable");
             AddInheritedAndMethodTypesImports(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             CorrectCoreType(generatedCode, null, CorrectPropertyType);
-            AddGetterAndSetterMethods(generatedCode, new() {
-                                                    CodePropertyKind.Custom,
-                                                    CodePropertyKind.AdditionalData,
-                                                    CodePropertyKind.BackingStore,
-                                                }, _configuration.UsesBackingStore, true);
+            AddGetterAndSetterMethods(generatedCode,
+                new() {
+                    CodePropertyKind.Custom,
+                    CodePropertyKind.AdditionalData,
+                    CodePropertyKind.BackingStore,
+                },
+                _configuration.UsesBackingStore,
+                true,
+                string.Empty,
+                string.Empty);
             ReplaceReservedNames(generatedCode, new RubyReservedNamesProvider(), x => $"{x}_escaped");
             AddNamespaceModuleImports(generatedCode , _configuration.ClientNamespaceName);
             FixInheritedEntityType(generatedCode);
@@ -61,7 +66,7 @@ namespace Kiota.Builder.Refiners {
         };
         protected static void AddInheritedAndMethodTypesImports(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
-                && currentClass.StartBlock is CodeClass.Declaration declaration && declaration.Inherits != null) {
+                && currentClass.StartBlock is ClassDeclaration declaration && declaration.Inherits != null) {
                 currentClass.AddUsing(new CodeUsing { Name = declaration.Inherits.Name, Declaration = declaration.Inherits});
             }
             CrawlTree(currentElement, (x) => AddInheritedAndMethodTypesImports(x));
@@ -71,7 +76,7 @@ namespace Kiota.Builder.Refiners {
 
             var nameSpaceName = string.IsNullOrEmpty(prefix) ? FetchEntityNamespace(currentElement).NormalizeNameSpaceName("::") : prefix; 
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
-                && currentClass.StartBlock is CodeClass.Declaration declaration && declaration.Inherits != null 
+                && currentClass.StartBlock is ClassDeclaration declaration && declaration.Inherits != null 
                 && "entity".Equals(declaration.Inherits.Name, StringComparison.OrdinalIgnoreCase)) {
                 declaration.Inherits.Name = prefix + declaration.Inherits.Name.ToFirstCharacterUpperCase();
             }

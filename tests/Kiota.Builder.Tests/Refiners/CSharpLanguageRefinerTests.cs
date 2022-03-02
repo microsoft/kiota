@@ -10,12 +10,12 @@ public class CSharpLanguageRefinerTests {
     public void AddsExceptionInheritanceOnErrorClasses() {
         var model = root.AddClass(new CodeClass {
             Name = "somemodel",
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
         
-        var declaration = model.StartBlock as CodeClass.Declaration;
+        var declaration = model.StartBlock as ClassDeclaration;
 
         Assert.Contains("ApiException", declaration.Usings.Select(x => x.Name));
         Assert.Equal("ApiException", declaration.Inherits.Name);
@@ -24,10 +24,10 @@ public class CSharpLanguageRefinerTests {
     public void FailsExceptionInheritanceOnErrorClassesWhichAlreadyInherit() {
         var model = root.AddClass(new CodeClass {
             Name = "somemodel",
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        var declaration = model.StartBlock as CodeClass.Declaration;
+        var declaration = model.StartBlock as ClassDeclaration;
         declaration.Inherits = new CodeType {
             Name = "SomeOtherModel"
         };
@@ -37,31 +37,28 @@ public class CSharpLanguageRefinerTests {
     public void AddsUsingsForErrorTypesForRequestExecutor() {
         var requestBuilder = root.AddClass(new CodeClass {
             Name = "somerequestbuilder",
-            ClassKind = CodeClassKind.RequestBuilder,
+            Kind = CodeClassKind.RequestBuilder,
         }).First();
         var subNS = root.AddNamespace($"{root.Name}.subns"); // otherwise the import gets trimmed
         var errorClass = subNS.AddClass(new CodeClass {
             Name = "Error4XX",
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
         var requestExecutor = requestBuilder.AddMethod(new CodeMethod {
             Name = "get",
-            MethodKind = CodeMethodKind.RequestExecutor,
+            Kind = CodeMethodKind.RequestExecutor,
             ReturnType = new CodeType {
                 Name = "string"
             },
-            ErrorMappings = new () {
-                { "4XX", new CodeType {
+        }).First();
+        requestExecutor.ErrorMappings.TryAdd("4XX", new CodeType {
                         Name = "Error4XX",
                         TypeDefinition = errorClass,
-                    } 
-                },
-            },
-        }).First();
+                    });
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
         
-        var declaration = requestBuilder.StartBlock as CodeClass.Declaration;
+        var declaration = requestBuilder.StartBlock as ClassDeclaration;
 
         Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
     }
@@ -70,7 +67,7 @@ public class CSharpLanguageRefinerTests {
         // Arrange
         var model = root.AddClass(new CodeClass {
             Name = "break", // this a keyword
-            ClassKind = CodeClassKind.Model,
+            Kind = CodeClassKind.Model,
         }).First();
         var property = model.AddProperty(new CodeProperty
         {
@@ -92,7 +89,7 @@ public class CSharpLanguageRefinerTests {
     public void ConvertsUnionTypesToWrapper() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var union = new CodeUnionType {
             Name = "union",
@@ -104,7 +101,7 @@ public class CSharpLanguageRefinerTests {
         });
         var property = model.AddProperty(new CodeProperty {
             Name = "deserialize",
-            PropertyKind = CodePropertyKind.Custom,
+            Kind = CodePropertyKind.Custom,
             Type = union.Clone() as CodeTypeBase,
         }).First();
         var method = model.AddMethod(new CodeMethod {
@@ -133,7 +130,7 @@ public class CSharpLanguageRefinerTests {
         var modelNS = graphNS.AddNamespace("graph.model");
         var model = graphNS.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
         Assert.Single(root.GetChildElements(true));
@@ -147,12 +144,12 @@ public class CSharpLanguageRefinerTests {
         var model = root.AddClass(new CodeClass
         {
             Name = "model",
-            ClassKind = CodeClassKind.RequestBuilder
+            Kind = CodeClassKind.RequestBuilder
         }).First();
         var method = model.AddMethod(new CodeMethod
         {
             Name = "getMethod",
-            MethodKind = CodeMethodKind.RequestExecutor,
+            Kind = CodeMethodKind.RequestExecutor,
             ReturnType = new CodeType { 
                 Name = "string"
             }
@@ -161,7 +158,7 @@ public class CSharpLanguageRefinerTests {
         {
             Name = "cancelletionToken",
             Optional = true,
-            ParameterKind = CodeParameterKind.Cancellation,
+            Kind = CodeParameterKind.Cancellation,
             Description = "Cancellation token to use when cancelling requests",
             Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
         };
@@ -176,7 +173,7 @@ public class CSharpLanguageRefinerTests {
     public void DisambiguatePropertiesWithClassNames() {
         var model = root.AddClass(new CodeClass {
             Name = "Model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var propToAdd = model.AddProperty(new CodeProperty{
             Name = "model",
@@ -193,7 +190,7 @@ public class CSharpLanguageRefinerTests {
         var serializationName = "serializationName";
         var model = root.AddClass(new CodeClass {
             Name = "Model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var propToAdd = model.AddProperty(new CodeProperty{
             Name = "model",
@@ -211,7 +208,7 @@ public class CSharpLanguageRefinerTests {
         var model = root.AddClass(new CodeClass
         {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var method = model.AddMethod(new CodeMethod
         {
@@ -231,7 +228,7 @@ public class CSharpLanguageRefinerTests {
         var model = root.AddClass(new CodeClass
         {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var method = model.AddMethod(new CodeMethod
         {

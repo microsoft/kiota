@@ -15,7 +15,7 @@ jobs:
       relativePath: ./abstractions/dotnet
       solutionName: Microsoft.Kiota.Abstractions.sln
     steps:
-      - uses: actions/checkout@v2.4.0
+      - uses: actions/checkout@v3
       - name: Setup .NET
         uses: actions/setup-dotnet@v2
         with:

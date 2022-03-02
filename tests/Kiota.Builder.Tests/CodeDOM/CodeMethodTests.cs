@@ -18,7 +18,7 @@ namespace Kiota.Builder.Tests {
                 Name = "class",
             };
             Assert.False(method.IsOfKind(CodeMethodKind.Constructor));
-            method.MethodKind = CodeMethodKind.Deserializer;
+            method.Kind = CodeMethodKind.Deserializer;
             Assert.True(method.IsOfKind(CodeMethodKind.Deserializer));
             Assert.True(method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Getter));
             Assert.False(method.IsOfKind(CodeMethodKind.Getter));
@@ -58,7 +58,7 @@ namespace Kiota.Builder.Tests {
             };
             method.AddParameter(new CodeParameter {
                 Name = "param1",
-                ParameterKind = CodeParameterKind.Custom,
+                Kind = CodeParameterKind.Custom,
             });
             Assert.NotNull(method.Parameters.OfKind(CodeParameterKind.Custom));
             Assert.Null(method.Parameters.OfKind(CodeParameterKind.RequestBody));

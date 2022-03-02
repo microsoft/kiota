@@ -16,13 +16,13 @@ namespace Kiota.Builder.Refiners.Tests
             var model = root.AddClass(new CodeClass()
             {
                 Name = "userRequestBuilder",
-                ClassKind = CodeClassKind.RequestBuilder
+                Kind = CodeClassKind.RequestBuilder
             }).First();
 
             var requestBuilder = model.AddProperty(new CodeProperty()
             {
                 Name = "breaks", 
-                PropertyKind = CodePropertyKind.RequestBuilder,
+                Kind = CodePropertyKind.RequestBuilder,
                 Type = new CodeType()
                 {
                     Name = "string"
@@ -39,13 +39,13 @@ namespace Kiota.Builder.Refiners.Tests
             var model = root.AddClass(new CodeClass()
             {
                 Name = "userRequestBuilder",
-                ClassKind = CodeClassKind.RequestBuilder
+                Kind = CodeClassKind.RequestBuilder
             }).First();
 
             var property = model.AddProperty(new CodeProperty()
             {
                 Name = "continue", 
-                PropertyKind = CodePropertyKind.RequestBuilder,
+                Kind = CodePropertyKind.RequestBuilder,
                 Type = new CodeType()
                 {
                     Name = "string"
@@ -61,7 +61,7 @@ namespace Kiota.Builder.Refiners.Tests
         {
             var model = root.AddClass(new CodeClass () {
                 Name = "model",
-                ClassKind = CodeClassKind.Model
+                Kind = CodeClassKind.Model
             }).First();
             var method = model.AddMethod(new CodeMethod() {
                 Name = "method"
@@ -77,11 +77,11 @@ namespace Kiota.Builder.Refiners.Tests
         public void AddsDefaultImports() {
             var model = root.AddClass(new CodeClass () {
                 Name = "model",
-                ClassKind = CodeClassKind.Model
+                Kind = CodeClassKind.Model
             }).First();
             var requestBuilder = root.AddClass(new CodeClass() {
                 Name = "rb",
-                ClassKind = CodeClassKind.RequestBuilder,
+                Kind = CodeClassKind.RequestBuilder,
             }).First();
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
             Assert.NotEmpty(model.StartBlock.Usings);

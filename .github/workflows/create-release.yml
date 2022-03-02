@@ -15,7 +15,7 @@ jobs:
           - linux-x64
           - osx-x64
     steps:
-      - uses: actions/checkout@v2.4.0
+      - uses: actions/checkout@v3
       - name: Setup .NET
         uses: actions/setup-dotnet@v2
         with:
@@ -38,7 +38,7 @@ jobs:
       name: gh_releases
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2.4.0
+      - uses: actions/checkout@v3
       - uses: actions/download-artifact@v2
         with:
           path: output
