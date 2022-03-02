@@ -7,5 +7,5 @@ import (
 // AuthenticationProvider authenticates the RequestInformation request.
 type AuthenticationProvider interface {
 	// AuthenticateRequest authenticates the provided RequestInformation.
-	AuthenticateRequest(request abs.RequestInformation) error
+	AuthenticateRequest(request *abs.RequestInformation) error
 }

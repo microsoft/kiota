@@ -88,7 +88,7 @@ func (a *NetHttpRequestAdapter) SetBaseUrl(baseUrl string) {
 func (a *NetHttpRequestAdapter) GetBaseUrl() string {
 	return a.baseUrl
 }
-func (a *NetHttpRequestAdapter) getHttpResponseMessage(requestInfo abs.RequestInformation) (*nethttp.Response, error) {
+func (a *NetHttpRequestAdapter) getHttpResponseMessage(requestInfo *abs.RequestInformation) (*nethttp.Response, error) {
 	a.setBaseUrlForRequestInformation(requestInfo)
 	err := a.authenticationProvider.AuthenticateRequest(requestInfo)
 	if err != nil {
@@ -108,10 +108,10 @@ func (a *NetHttpRequestAdapter) getResponsePrimaryContentType(response *nethttp.
 	splat := strings.Split(rawType, ";")
 	return strings.ToLower(splat[0])
 }
-func (a *NetHttpRequestAdapter) setBaseUrlForRequestInformation(requestInfo abs.RequestInformation) {
+func (a *NetHttpRequestAdapter) setBaseUrlForRequestInformation(requestInfo *abs.RequestInformation) {
 	requestInfo.PathParameters["baseurl"] = a.GetBaseUrl()
 }
-func (a *NetHttpRequestAdapter) getRequestFromRequestInformation(requestInfo abs.RequestInformation) (*nethttp.Request, error) {
+func (a *NetHttpRequestAdapter) getRequestFromRequestInformation(requestInfo *abs.RequestInformation) (*nethttp.Request, error) {
 	uri, err := requestInfo.GetUri()
 	if err != nil {
 		return nil, err
@@ -139,7 +139,10 @@ func (a *NetHttpRequestAdapter) getRequestFromRequestInformation(requestInfo abs
 }
 
 // SendAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized response model.
-func (a *NetHttpRequestAdapter) SendAsync(requestInfo abs.RequestInformation, constructor absser.ParsableFactory, responseHandler abs.ResponseHandler, errorMappings abs.ErrorMappings) (absser.Parsable, error) {
+func (a *NetHttpRequestAdapter) SendAsync(requestInfo *abs.RequestInformation, constructor absser.ParsableFactory, responseHandler abs.ResponseHandler, errorMappings abs.ErrorMappings) (absser.Parsable, error) {
+	if requestInfo == nil {
+		return nil, errors.New("requestInfo cannot be nil")
+	}
 	response, err := a.getHttpResponseMessage(requestInfo)
 	if err != nil {
 		return nil, err
@@ -167,7 +170,10 @@ func (a *NetHttpRequestAdapter) SendAsync(requestInfo abs.RequestInformation, co
 }
 
 // SendCollectionAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized response model collection.
-func (a *NetHttpRequestAdapter) SendCollectionAsync(requestInfo abs.RequestInformation, constructor absser.ParsableFactory, responseHandler abs.ResponseHandler, errorMappings abs.ErrorMappings) ([]absser.Parsable, error) {
+func (a *NetHttpRequestAdapter) SendCollectionAsync(requestInfo *abs.RequestInformation, constructor absser.ParsableFactory, responseHandler abs.ResponseHandler, errorMappings abs.ErrorMappings) ([]absser.Parsable, error) {
+	if requestInfo == nil {
+		return nil, errors.New("requestInfo cannot be nil")
+	}
 	response, err := a.getHttpResponseMessage(requestInfo)
 	if err != nil {
 		return nil, err
@@ -195,7 +201,10 @@ func (a *NetHttpRequestAdapter) SendCollectionAsync(requestInfo abs.RequestInfor
 }
 
 // SendPrimitiveAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model.
-func (a *NetHttpRequestAdapter) SendPrimitiveAsync(requestInfo abs.RequestInformation, typeName string, responseHandler abs.ResponseHandler, errorMappings abs.ErrorMappings) (interface{}, error) {
+func (a *NetHttpRequestAdapter) SendPrimitiveAsync(requestInfo *abs.RequestInformation, typeName string, responseHandler abs.ResponseHandler, errorMappings abs.ErrorMappings) (interface{}, error) {
+	if requestInfo == nil {
+		return nil, errors.New("requestInfo cannot be nil")
+	}
 	response, err := a.getHttpResponseMessage(requestInfo)
 	if err != nil {
 		return nil, err
@@ -244,7 +253,10 @@ func (a *NetHttpRequestAdapter) SendPrimitiveAsync(requestInfo abs.RequestInform
 }
 
 // SendPrimitiveCollectionAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model collection.
-func (a *NetHttpRequestAdapter) SendPrimitiveCollectionAsync(requestInfo abs.RequestInformation, typeName string, responseHandler abs.ResponseHandler, errorMappings abs.ErrorMappings) ([]interface{}, error) {
+func (a *NetHttpRequestAdapter) SendPrimitiveCollectionAsync(requestInfo *abs.RequestInformation, typeName string, responseHandler abs.ResponseHandler, errorMappings abs.ErrorMappings) ([]interface{}, error) {
+	if requestInfo == nil {
+		return nil, errors.New("requestInfo cannot be nil")
+	}
 	response, err := a.getHttpResponseMessage(requestInfo)
 	if err != nil {
 		return nil, err
@@ -271,7 +283,10 @@ func (a *NetHttpRequestAdapter) SendPrimitiveCollectionAsync(requestInfo abs.Req
 }
 
 // SendNoContentAsync executes the HTTP request specified by the given RequestInformation with no return content.
-func (a *NetHttpRequestAdapter) SendNoContentAsync(requestInfo abs.RequestInformation, responseHandler abs.ResponseHandler, errorMappings abs.ErrorMappings) error {
+func (a *NetHttpRequestAdapter) SendNoContentAsync(requestInfo *abs.RequestInformation, responseHandler abs.ResponseHandler, errorMappings abs.ErrorMappings) error {
+	if requestInfo == nil {
+		return errors.New("requestInfo cannot be nil")
+	}
 	response, err := a.getHttpResponseMessage(requestInfo)
 	if err != nil {
 		return err
