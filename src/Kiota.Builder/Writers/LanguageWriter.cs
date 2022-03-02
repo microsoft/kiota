@@ -49,7 +49,7 @@ namespace Kiota.Builder.Writers
 
         public string GetIndent()
         {
-            return indentString.Substring(0, Math.Max(0, currentIndent));
+            return indentString[..Math.Max(0, currentIndent)];
         }
         public static string NewLine { get => Environment.NewLine;}
         /// <summary>
@@ -90,11 +90,11 @@ namespace Kiota.Builder.Writers
                     case CodeIndexer i:
                         ((ICodeElementWriter<CodeIndexer>) elementWriter).WriteCodeElement(i, this);
                         break;
-                    case CodeClass.Declaration d:
-                        ((ICodeElementWriter<CodeClass.Declaration>) elementWriter).WriteCodeElement(d, this);
+                    case ClassDeclaration d:
+                        ((ICodeElementWriter<ClassDeclaration>) elementWriter).WriteCodeElement(d, this);
                         break;
-                    case CodeClass.End i:
-                        ((ICodeElementWriter<CodeClass.End>) elementWriter).WriteCodeElement(i, this);
+                    case BlockEnd i:
+                        ((ICodeElementWriter<BlockEnd>) elementWriter).WriteCodeElement(i, this);
                         break;
                     case CodeEnum e:
                         ((ICodeElementWriter<CodeEnum>) elementWriter).WriteCodeElement(e, this);
@@ -108,8 +108,17 @@ namespace Kiota.Builder.Writers
                     case CodeNamespace n:
                         ((ICodeElementWriter<CodeNamespace>) elementWriter).WriteCodeElement(n, this);
                         break;
+                    case CodeFunction n:
+                        ((ICodeElementWriter<CodeFunction>) elementWriter).WriteCodeElement(n, this);
+                        break;
+                    case InterfaceDeclaration itfd:
+                        ((ICodeElementWriter<InterfaceDeclaration>) elementWriter).WriteCodeElement(itfd, this);
+                        break;
                 }
-            else if(!(code is CodeClass) && !(code is CodeNamespace.BlockDeclaration) && !(code is CodeNamespace.BlockEnd))
+            else if(code is not CodeClass && 
+                    code is not BlockDeclaration &&
+                    code is not BlockEnd &&
+                    code is not CodeInterface)
                 throw new InvalidOperationException($"Dispatcher missing for type {code.GetType()}");
         }
         protected void AddOrReplaceCodeElementWriter<T>(ICodeElementWriter<T> writer) where T: CodeElement {

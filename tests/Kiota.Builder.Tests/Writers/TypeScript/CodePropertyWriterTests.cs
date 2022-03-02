@@ -30,10 +30,10 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             };
             parentClass.AddProperty(property, new() {
                 Name = "pathParameters",
-                PropertyKind = CodePropertyKind.PathParameters,
+                Kind = CodePropertyKind.PathParameters,
             }, new() {
                 Name = "requestAdapter",
-                PropertyKind = CodePropertyKind.RequestAdapter,
+                Kind = CodePropertyKind.RequestAdapter,
             });
         }
         public void Dispose() {
@@ -42,7 +42,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         }
         [Fact]
         public void WritesRequestBuilder() {
-            property.PropertyKind = CodePropertyKind.RequestBuilder;
+            property.Kind = CodePropertyKind.RequestBuilder;
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains($"return new {TypeName}", result);
@@ -51,14 +51,14 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         }
         [Fact]
         public void WritesCustomProperty() {
-            property.PropertyKind = CodePropertyKind.Custom;
+            property.Kind = CodePropertyKind.Custom;
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains($"{PropertyName}?: {TypeName} | undefined", result);
         }
         [Fact]
         public void WritesPrivateSetter() {
-            property.PropertyKind = CodePropertyKind.Custom;
+            property.Kind = CodePropertyKind.Custom;
             property.ReadOnly = true;
             writer.Write(property);
             var result = tw.ToString();
@@ -66,7 +66,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         }
         [Fact]
         public void WritesFlagEnums() {
-            property.PropertyKind = CodePropertyKind.Custom;
+            property.Kind = CodePropertyKind.Custom;
             property.Type = new CodeType {
                 Name = "customEnum",
             };

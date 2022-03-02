@@ -43,7 +43,7 @@ namespace Microsoft.Kiota.Serialization.Json.Tests
             using var jsonDocument = JsonDocument.Parse(TestUserJson);
             var jsonParseNode = new JsonParseNode(jsonDocument.RootElement);
             // Act
-            var testEntity = jsonParseNode.GetObjectValue<TestEntity>();
+            var testEntity = jsonParseNode.GetObjectValue<TestEntity>(x => new TestEntity());
             // Assert
             Assert.NotNull(testEntity);
             Assert.Null(testEntity.OfficeLocation);
@@ -66,7 +66,7 @@ namespace Microsoft.Kiota.Serialization.Json.Tests
             using var jsonDocument = JsonDocument.Parse(TestUserCollectionString);
             var jsonParseNode = new JsonParseNode(jsonDocument.RootElement);
             // Act
-            var testEntityCollection = jsonParseNode.GetCollectionOfObjectValues<TestEntity>().ToArray();
+            var testEntityCollection = jsonParseNode.GetCollectionOfObjectValues<TestEntity>(x => new TestEntity()).ToArray();
             // Assert
             Assert.NotEmpty(testEntityCollection);
             Assert.Equal("48d31887-5fad-4d73-a9f5-3c356e68a038", testEntityCollection[0].Id);

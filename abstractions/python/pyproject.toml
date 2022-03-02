@@ -16,6 +16,10 @@ Home = "https://github.com/microsoft/kiota#readme"
 [tool.flit.module]
 name = "kiota"
 
+dependencies = [
+    "uritemplate ==4.1.1",
+]
+
 [mypy]
 warn_unused_configs = true
 files = "kiota.abstractions"

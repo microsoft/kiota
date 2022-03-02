@@ -19,14 +19,18 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
         AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
         AliasUsingsWithSameSymbol(generatedCode);
-        AddParsableInheritanceForModelClasses(generatedCode, "Parsable");
+        AddParsableImplementsForModelClasses(generatedCode, "Parsable");
         ReplaceBinaryByNativeType(generatedCode, "ArrayBuffer", null);
         ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
-        AddGetterAndSetterMethods(generatedCode, new()
-        {
-            CodePropertyKind.Custom,
-            CodePropertyKind.AdditionalData,
-        }, _configuration.UsesBackingStore, false);
+        AddGetterAndSetterMethods(generatedCode,
+            new() {
+                CodePropertyKind.Custom,
+                CodePropertyKind.AdditionalData,
+            },
+            _configuration.UsesBackingStore,
+            false,
+            string.Empty,
+            string.Empty);
         AddConstructorsForDefaultValues(generatedCode, true);
         ReplaceDefaultSerializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory");
         ReplaceDefaultDeserializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonParseNodeFactory");
@@ -39,10 +43,37 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
 
         AddParentClassToErrorClasses(
-               generatedCode,
-               "ApiError",
-               "@microsoft/kiota-abstractions"
-       );
+                generatedCode,
+                "ApiError",
+                "@microsoft/kiota-abstractions"
+        );
+        AddDiscriminatorMappingsUsingsToParentClasses(
+            generatedCode,
+            "ParseNode",
+            addUsings: false
+        );
+        Func<string, string> factoryNameCallbackFromTypeName = x => $"create{x.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
+        ReplaceLocalMethodsByGlobalFunctions(
+            generatedCode,
+            x => factoryNameCallbackFromTypeName(x.Parent.Name),
+            x => new List<CodeUsing>(x.DiscriminatorMappings
+                                    .Select(y => y.Value)
+                                    .OfType<CodeType>()
+                                    .Select(y => new CodeUsing { Name = y.Name, Declaration = y })) {
+                    new() { Name = "ParseNode", Declaration = new() { Name = AbstractionsPackageName, IsExternal = true } },
+                    new() { Name = x.Parent.Parent.Name, Declaration = new() { Name = x.Parent.Name, TypeDefinition = x.Parent } },
+                }.ToArray(),
+            CodeMethodKind.Factory
+        );
+        Func<CodeType, string> factoryNameCallbackFromType = x => factoryNameCallbackFromTypeName(x.Name);
+        AddStaticMethodsUsingsForDeserializer(
+            generatedCode,
+            factoryNameCallbackFromType
+        );
+        AddStaticMethodsUsingsForRequestExecutor(
+            generatedCode,
+            factoryNameCallbackFromType
+        );
         MoveEnumsWithNamespaceNamesUnderNamespace(generatedCode);
         SetNameSpaceRenderingCondition(_configuration);
     }
@@ -71,33 +102,31 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
 
     private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
-    private static void AliasUsingsWithSameSymbol(CodeElement currentElement)
-    {
-        if (currentElement is CodeClass currentClass &&
-            currentClass.StartBlock is CodeClass.Declaration currentDeclaration &&
-            currentDeclaration.Usings.Any(x => !x.IsExternal))
-        {
-            var duplicatedSymbolsUsings = currentDeclaration.Usings.Where(x => !x.IsExternal)
-                                                                    .Distinct(usingComparer)
-                                                                    .GroupBy(x => x.Declaration.Name, StringComparer.OrdinalIgnoreCase)
-                                                                    .Where(x => x.Count() > 1)
-                                                                    .SelectMany(x => x)
-                                                                    .Union(currentDeclaration
-                                                                            .Usings
-                                                                            .Where(x => !x.IsExternal)
-                                                                            .Where(x => x.Declaration
-                                                                                            .Name
-                                                                                            .Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase)));
-            foreach (var usingElement in duplicatedSymbolsUsings)
-                usingElement.Alias = (usingElement.Declaration
-                                                .TypeDefinition
-                                                .GetImmediateParentOfType<CodeNamespace>()
-                                                .Name +
-                                    usingElement.Declaration
-                                                .TypeDefinition
-                                                .Name)
-                                    .GetNamespaceImportSymbol();
-        }
+    private static void AliasUsingsWithSameSymbol(CodeElement currentElement) {
+        if(currentElement is CodeClass currentClass &&
+            currentClass.StartBlock is ClassDeclaration currentDeclaration &&
+            currentDeclaration.Usings.Any(x => !x.IsExternal)) {
+                var duplicatedSymbolsUsings = currentDeclaration.Usings.Where(x => !x.IsExternal)
+                                                                        .Distinct(usingComparer)
+                                                                        .GroupBy(x => x.Declaration.Name, StringComparer.OrdinalIgnoreCase)
+                                                                        .Where(x => x.Count() > 1)
+                                                                        .SelectMany(x => x)
+                                                                        .Union(currentDeclaration
+                                                                                .Usings
+                                                                                .Where(x => !x.IsExternal)
+                                                                                .Where(x => x.Declaration
+                                                                                                .Name
+                                                                                                .Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase)));
+                foreach(var usingElement in duplicatedSymbolsUsings)
+                        usingElement.Alias = (usingElement.Declaration
+                                                        .TypeDefinition
+                                                        .GetImmediateParentOfType<CodeNamespace>()
+                                                        .Name +
+                                            usingElement.Declaration
+                                                        .TypeDefinition
+                                                        .Name)
+                                            .GetNamespaceImportSymbol();
+            }
         CrawlTree(currentElement, AliasUsingsWithSameSymbol);
     }
     private const string AbstractionsPackageName = "@microsoft/kiota-abstractions";
@@ -110,12 +139,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             AbstractionsPackageName, "ResponseHandler"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             AbstractionsPackageName, "SerializationWriter"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
             AbstractionsPackageName, "ParseNode"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.IndexerBackwardCompatibility),
             AbstractionsPackageName, "getPathParameters"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            AbstractionsPackageName, "Parsable"),
+            AbstractionsPackageName, "Parsable", "ParsableFactory"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
             AbstractionsPackageName, "Parsable"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&

@@ -26,14 +26,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         WriteMethodPrototype(codeElement, writer, returnType);
         writer.IncreaseIndent();
         var parentClass = codeElement.Parent as CodeClass;
-        var inherits = parentClass.StartBlock is CodeClass.Declaration declaration && declaration.Inherits != null && !parentClass.IsErrorDefinition;
+        var inherits = parentClass.StartBlock is ClassDeclaration declaration && declaration.Inherits != null && !parentClass.IsErrorDefinition;
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
         var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
         var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
         var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
         var requestParams = new RequestParams(requestBodyParam, queryStringParam, headersParam, optionsParam);
         AddNullChecks(codeElement, writer);
-        switch(codeElement.MethodKind) {
+        switch(codeElement.Kind) {
             case CodeMethodKind.Serializer:
                 WriteSerializerBody(parentClass, codeElement, writer, inherits);
             break;
@@ -74,12 +74,33 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 break;
             case CodeMethodKind.RequestBuilderBackwardCompatibility:
                 throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
+            case CodeMethodKind.NullCheck:
+                throw new InvalidOperationException("NullChecks are not required in Java");
+            case CodeMethodKind.Factory:
+                WriteFactoryMethodBody(codeElement, writer);
+                break;
             default:
                 writer.WriteLine("return null;");
             break;
         }
-        writer.DecreaseIndent();
-        writer.WriteLine("}");
+        writer.CloseBlock();
+    }
+    private static void WriteFactoryMethodBody(CodeMethod codeElement, LanguageWriter writer){
+        var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
+        if(codeElement.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
+            writer.WriteLines($"final ParseNode mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode(\"{codeElement.DiscriminatorPropertyName}\");",
+                                "if (mappingValueNode != null) {");
+            writer.IncreaseIndent();
+            writer.WriteLines($"final String mappingValue = mappingValueNode.getStringValue();");
+            writer.WriteLine("switch (mappingValue) {");
+            writer.IncreaseIndent();
+            foreach(var mappedType in codeElement.DiscriminatorMappings) {
+                writer.WriteLine($"case \"{mappedType.Key}\": return new {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()}();");
+            }
+            writer.CloseBlock();
+            writer.CloseBlock();
+        }
+        writer.WriteLine($"return new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}();");
     }
     private void WriteRequestBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
     {
@@ -213,6 +234,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         }
         writer.WriteLine("}};");
     }
+    private const string FactoryMethodName = "createFromDiscriminatorValue";
     private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer) {
         if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement, false);
@@ -220,21 +242,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         writer.IncreaseIndent();
         WriteGeneratorMethodCall(codeElement, requestParams, writer, $"final RequestInformation {RequestInfoVarName} = ");
         var sendMethodName = GetSendRequestMethodName(codeElement.ReturnType.IsCollection, returnType);
-        var responseHandlerParam = codeElement.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.ResponseHandler));
+        var responseHandlerParam = codeElement.Parameters.OfKind(CodeParameterKind.ResponseHandler);
         var errorMappingVarName = "null";
         if(codeElement.ErrorMappings.Any()) {
             errorMappingVarName = "errorMapping";
-            writer.WriteLine($"final HashMap<String, Class<? extends Parsable>> {errorMappingVarName} = new HashMap<String, Class<? extends Parsable>>({codeElement.ErrorMappings.Count}) {{{{");
+            writer.WriteLine($"final HashMap<String, ParsableFactory<? extends Parsable>> {errorMappingVarName} = new HashMap<>({codeElement.ErrorMappings.Count}) {{{{");
             writer.IncreaseIndent();
             foreach(var errorMapping in codeElement.ErrorMappings) {
-                writer.WriteLine($"put(\"{errorMapping.Key.ToUpperInvariant()}\", {errorMapping.Value.Name.ToFirstCharacterUpperCase()}.class);");
+                writer.WriteLine($"put(\"{errorMapping.Key.ToUpperInvariant()}\", {errorMapping.Value.Name.ToFirstCharacterUpperCase()}::{FactoryMethodName});");
             }
             writer.CloseBlock("}};");
         }
-        if(codeElement.Parameters.Any(x => x.IsOfKind(CodeParameterKind.ResponseHandler)))
-            writer.WriteLine($"return this.requestAdapter.{sendMethodName}({RequestInfoVarName}, {returnType}.class, {responseHandlerParam.Name}, {errorMappingVarName});");
-        else
-            writer.WriteLine($"return this.requestAdapter.{sendMethodName}({RequestInfoVarName}, {returnType}.class, null, {errorMappingVarName});");
+        var factoryParameter = codeElement.ReturnType is CodeType returnCodeType && returnCodeType.TypeDefinition is CodeClass ? $"{returnType}::{FactoryMethodName}" : $"{returnType}.class";
+        writer.WriteLine($"return this.requestAdapter.{sendMethodName}({RequestInfoVarName}, {factoryParameter}, {responseHandlerParam?.Name ?? "null"}, {errorMappingVarName});");
         writer.DecreaseIndent();
         writer.WriteLine("} catch (URISyntaxException ex) {");
         writer.IncreaseIndent();
@@ -319,10 +339,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         var additionalDataProperty = parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData);
         if(inherits)
             writer.WriteLine("super.serialize(writer);");
-        foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
-            var accessorName = otherProp.IsNameEscaped && !string.IsNullOrEmpty(otherProp.SerializationName) ? otherProp.SerializationName : otherProp.Name.ToFirstCharacterLowerCase();
-            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", this.get{accessorName.ToFirstCharacterUpperCase()}());");
-        }
+        foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom))
+            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\", this.{otherProp.Getter?.Name ?? "get" + otherProp.Name.ToFirstCharacterLowerCase()}());");
         if(additionalDataProperty != null)
             writer.WriteLine($"writer.writeAdditionalData(this.get{additionalDataProperty.Name.ToFirstCharacterUpperCase()}());");
     }
@@ -333,18 +351,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         var returnTypeAsyncPrefix = code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty;
         var returnTypeAsyncSuffix = code.IsAsync ? ">" : string.Empty;
         var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
-        var methodName = code.MethodKind switch {
-            CodeMethodKind.Getter when (code.AccessedProperty?.IsNameEscaped ?? false) && !string.IsNullOrEmpty(code.AccessedProperty?.SerializationName)
-                => $"get{code.AccessedProperty.SerializationName.ToFirstCharacterUpperCase()}",
-            CodeMethodKind.Setter when (code.AccessedProperty?.IsNameEscaped ?? false) && !string.IsNullOrEmpty(code.AccessedProperty?.SerializationName)
-                => $"set{code.AccessedProperty.SerializationName.ToFirstCharacterUpperCase()}",
-            CodeMethodKind.Getter => $"get{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
-            CodeMethodKind.Setter => $"set{code.AccessedProperty?.Name?.ToFirstCharacterUpperCase()}",
+        var methodName = code.Kind switch {
             _ when isConstructor => code.Parent.Name.ToFirstCharacterUpperCase(),
             _ => code.Name.ToFirstCharacterLowerCase()
         };
         var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p=> conventions.GetParameterSignature(p, code)).ToList());
-        var throwableDeclarations = code.MethodKind switch {
+        var throwableDeclarations = code.Kind switch {
             CodeMethodKind.RequestGenerator => "throws URISyntaxException ",
             _ => string.Empty
         };
@@ -352,7 +364,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                                             $"Iterable<{returnType.StripArraySuffix()}>" :
                                             returnType;
         var finalReturnType = isConstructor ? string.Empty : $" {returnTypeAsyncPrefix}{collectionCorrectedReturnType}{returnTypeAsyncSuffix}";
-        writer.WriteLine($"{accessModifier}{genericTypeParameterDeclaration}{finalReturnType} {methodName}({parameters}) {throwableDeclarations}{{");
+        var staticModifier = code.IsStatic ? " static" : string.Empty;
+        writer.WriteLine($"{accessModifier}{staticModifier}{genericTypeParameterDeclaration}{finalReturnType} {methodName}({parameters}) {throwableDeclarations}{{");
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer) {
         var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);
@@ -381,7 +394,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 else if (currentType.TypeDefinition is CodeEnum enumType)
                     return $"n.getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}.class)";
                 else
-                    return $"n.getCollectionOfObjectValues({propertyType.ToFirstCharacterUpperCase()}.class)";
+                    return $"n.getCollectionOfObjectValues({propertyType.ToFirstCharacterUpperCase()}::{FactoryMethodName})";
             else if (currentType.TypeDefinition is CodeEnum currentEnum)
                 return $"n.getEnum{(currentEnum.Flags ? "Set" : string.Empty)}Value({propertyType.ToFirstCharacterUpperCase()}.class)";
         }
@@ -389,7 +402,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         {
             "byte[]" => "n.getByteArrayValue()",
             _ when conventions.PrimitiveTypes.Contains(propertyType) => $"n.get{propertyType}Value()",
-            _ => $"n.getObjectValue({propertyType.ToFirstCharacterUpperCase()}.class)",
+            _ => $"n.getObjectValue({propertyType.ToFirstCharacterUpperCase()}::{FactoryMethodName})",
         };
     }
     private string GetSerializationMethodName(CodeTypeBase propType, CodeMethod method) {

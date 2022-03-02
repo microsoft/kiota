@@ -31,24 +31,29 @@ namespace Kiota.Builder.CodeRenderers
         {
             foreach (var codeElement in root.GetChildElements(true))
             {
-                if (codeElement is CodeClass codeClass)
-                    await RenderCodeNamespaceToSingleFileAsync(writer, codeClass, writer.PathSegmenter.GetPath(root, codeClass));
-                else if (codeElement is CodeEnum codeEnum)
-                    await RenderCodeNamespaceToSingleFileAsync(writer, codeEnum, writer.PathSegmenter.GetPath(root, codeEnum));
-                else if (codeElement is CodeNamespace codeNamespace)
+                switch(codeElement) {
+                    case CodeClass:
+                    case CodeEnum:
+                    case CodeFunction:
+                    case CodeInterface:
+                        await RenderCodeNamespaceToSingleFileAsync(writer, codeElement, writer.PathSegmenter.GetPath(root, codeElement));
+                        break;
+                    case CodeNamespace codeNamespace:
+                        await RenderBarrel(writer, root, codeNamespace);
+                        await RenderCodeNamespaceToFilePerClassAsync(writer, codeNamespace);
+                    break;
+                }
+            }
+        }
+        private async Task RenderBarrel(LanguageWriter writer, CodeNamespace root, CodeNamespace codeNamespace) {
+            if (!string.IsNullOrEmpty(codeNamespace.Name) &&
+                !string.IsNullOrEmpty(root.Name) &&
+                _configuration.ShouldWriteNamespaceIndices &&
+                !_configuration.ClientNamespaceName.Contains(codeNamespace.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                if (ShouldRenderNamespaceFile(codeNamespace))
                 {
-                    if (!string.IsNullOrEmpty(codeNamespace.Name) && !string.IsNullOrEmpty(root.Name) &&
-                        _configuration.ShouldWriteNamespaceIndices &&
-                        !_configuration.ClientNamespaceName.Contains(codeNamespace.Name, StringComparison.OrdinalIgnoreCase))
-                    {
-                       
-                        if(ShouldRenderNamespaceFile(codeNamespace))                    
-                        {
-                            await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(root, codeNamespace));
-                        }
-                     
-                    }
-                    await RenderCodeNamespaceToFilePerClassAsync(writer, codeNamespace);
+                    await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(root, codeNamespace));
                 }
             }
         }

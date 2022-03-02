@@ -5,7 +5,8 @@ namespace Kiota.Builder.Writers.Go {
             PathSegmenter = new GoPathSegmenter(rootPath, clientNamespaceName);
             var conventionService = new GoConventionService();
             AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
-            AddOrReplaceCodeElementWriter(new CodeClassEndWriter());
+            AddOrReplaceCodeElementWriter(new CodeInterfaceDeclarationWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeBlockEndWriter());
             AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));

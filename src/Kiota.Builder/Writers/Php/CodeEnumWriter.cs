@@ -46,7 +46,6 @@ namespace Kiota.Builder.Writers.Php
             {
                 writer.WriteLine($"public const {GetEnumValueName(enumProperty)} = '{enumProperty}';");
             }
-            writer.CloseBlock();
         }
         
         private static string GetEnumValueName(string original)

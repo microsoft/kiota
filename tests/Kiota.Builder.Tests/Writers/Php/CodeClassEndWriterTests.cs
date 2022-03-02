@@ -12,10 +12,10 @@ namespace Kiota.Builder.Tests.Writers.Php
         private const string DefaultName = "name";
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
-        private readonly CodeClassEndWriter codeElementWriter;
+        private readonly CodeBlockEndWriter codeElementWriter;
         private readonly CodeClass parentClass;
         public CodeClassEndWriterTests() {
-            codeElementWriter = new CodeClassEndWriter();
+            codeElementWriter = new CodeBlockEndWriter();
             writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.PHP, DefaultPath, DefaultName);
             tw = new StringWriter();
             writer.SetTextWriter(tw);
@@ -32,7 +32,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         
         [Fact]
         public void ClosesNonNestedClasses() {
-            codeElementWriter.WriteCodeElement(parentClass.EndBlock as CodeClass.End, writer);
+            codeElementWriter.WriteCodeElement(parentClass.EndBlock as BlockEnd, writer);
             var result = tw.ToString();
             Assert.Equal(1, result.Count(x => x == '}'));
         }

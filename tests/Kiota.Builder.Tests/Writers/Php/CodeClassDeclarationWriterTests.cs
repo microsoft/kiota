@@ -35,13 +35,13 @@ namespace Kiota.Builder.Tests.Writers.Php
         }
         [Fact]
         public void WritesSimpleDeclaration() {
-            codeElementWriter.WriteCodeElement(parentClass.StartBlock as CodeClass.Declaration, writer);
+            codeElementWriter.WriteCodeElement(parentClass.StartBlock as ClassDeclaration, writer);
             var result = tw.ToString();
             Assert.Contains("class ParentClass", result);
         }
         [Fact]
         public void WritesImplementation() {
-            var declaration = parentClass.StartBlock as CodeClass.Declaration;
+            var declaration = parentClass.StartBlock as ClassDeclaration;
             declaration.AddImplements(new CodeType {
                 Name = "\\Stringable"
             });
@@ -51,7 +51,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         }
         [Fact]
         public void WritesInheritance() {
-            var declaration = parentClass.StartBlock as CodeClass.Declaration;
+            var declaration = parentClass.StartBlock as ClassDeclaration;
             declaration.Inherits = new (){
                 Name = "someInterface"
             };
@@ -61,7 +61,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         }
         [Fact]
         public void WritesImports() {
-            var declaration = parentClass.StartBlock as CodeClass.Declaration;
+            var declaration = parentClass.StartBlock as ClassDeclaration;
             declaration.AddUsings(new () {
                 Name = "Promise",
                 Declaration = new() {
@@ -82,7 +82,7 @@ namespace Kiota.Builder.Tests.Writers.Php
         }
         [Fact]
         public void RemovesImportWithClassName() {
-            var declaration = parentClass.StartBlock as CodeClass.Declaration;
+            var declaration = parentClass.StartBlock as ClassDeclaration;
             declaration.AddUsings(new CodeUsing {
                 Name = "Microsoft\\Graph\\Models",
                 Declaration = new() {
@@ -102,7 +102,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             {
                 Name = "get",
                 Access = AccessModifier.Public,
-                MethodKind = CodeMethodKind.RequestExecutor,
+                Kind = CodeMethodKind.RequestExecutor,
                 HttpMethod = HttpMethod.Get,
                 ReturnType = new CodeType
                 {
@@ -110,7 +110,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                     Parent = declaration
                 }
             });
-            var dec = declaration?.StartBlock as CodeClass.Declaration;
+            var dec = declaration?.StartBlock as ClassDeclaration;
             var namespaces = declaration?.Parent as CodeNamespace;
             _refiner.Refine(namespaces);
             codeElementWriter.WriteCodeElement(dec, writer);
@@ -124,12 +124,12 @@ namespace Kiota.Builder.Tests.Writers.Php
         [Fact]
         public void ExtendABaseClass()
         {
-            var currentClass = parentClass.StartBlock as CodeClass.Declaration;
+            var currentClass = parentClass.StartBlock as ClassDeclaration;
             if (currentClass != null)
             {
                 currentClass.Inherits = new CodeType()
                 {
-                    TypeDefinition = new CodeClass() {Name = "Model", ClassKind = CodeClassKind.Custom}
+                    TypeDefinition = new CodeClass() {Name = "Model", Kind = CodeClassKind.Custom}
                 };
             }
 

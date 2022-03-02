@@ -75,10 +75,8 @@ namespace Kiota.Builder.Writers.TypeScript
              */
             foreach (var @class in classes)
             {
-                var usings = @class.StartBlock as CodeClass.Declaration;
-
                 // Verify if parent class is from the same namespace
-                var inheritsFrom = usings?.Inherits?.TypeDefinition.Parent.Name == @class.Parent.Name ? usings.Inherits.Name : null;
+                var inheritsFrom = @class.StartBlock?.Inherits?.TypeDefinition.Parent.Name == @class.Parent.Name ? @class.StartBlock.Inherits.Name : null;
 
                 if (inheritsFrom != null)
                 {

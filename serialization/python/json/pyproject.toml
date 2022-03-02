@@ -16,6 +16,10 @@ Home = "https://github.com/microsoft/kiota#readme"
 [tool.flit.module]
 name = "serialization_json"
 
+dependencies = [
+    "python-dateutil >=2.8.2",
+]
+
 [tool.mypy]
 warn_unused_configs = true
 files = "serialization"

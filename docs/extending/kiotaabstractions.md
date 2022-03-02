@@ -23,11 +23,13 @@ public interface IRequestAdapter
 
     Task<ModelType> SendAsync<ModelType>(
         RequestInformation requestInfo,
+        ParsableFactory<ModelType> factory,
         IResponseHandler responseHandler = default,
         Dictionary<string, Func<IParsable>> errorMappings = default) where ModelType : IParsable;
 
     Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(
         RequestInformation requestInfo,
+        ParsableFactory<ModelType> factory,
         IResponseHandler responseHandler = default,
         Dictionary<string, Func<IParsable>> errorMappings = default) where ModelType : IParsable;
 
@@ -73,7 +75,7 @@ When passed to the execution method from the fluent style API, this allows core 
 ```csharp
 public interface IResponseHandler
 {
-    Task<ModelType> HandleResponseAsync<NativeResponseType, ModelType>(NativeResponseType response, Dictionary<string, Func<IParsable>> errorMappings);
+    Task<ModelType> HandleResponseAsync<NativeResponseType, ModelType>(NativeResponseType response, Dictionary<string, ParsableFactory<IParsable>> errorMappings);
 }
 ```
 

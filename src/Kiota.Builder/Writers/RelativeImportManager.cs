@@ -31,7 +31,11 @@ namespace Kiota.Builder.Writers
                 return (string.Empty, string.Empty, string.Empty);//it's an external import, add nothing
             var typeDef = codeUsing.Declaration.TypeDefinition;
 
-            var importSymbol = codeUsing.Declaration?.Name?.ToFirstCharacterUpperCase() ?? codeUsing.Name;
+            var importSymbol = codeUsing.Declaration == null ? codeUsing.Name : codeUsing.Declaration.TypeDefinition switch
+            {
+                CodeFunction f => f.Name.ToFirstCharacterLowerCase(),
+                _ => codeUsing.Declaration.TypeDefinition.Name.ToFirstCharacterUpperCase(),
+            };
 
             if (typeDef == null)
                 return (importSymbol, codeUsing.Alias, "./"); // it's relative to the folder, with no declaration (default failsafe)

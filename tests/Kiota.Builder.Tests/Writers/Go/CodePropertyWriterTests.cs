@@ -37,19 +37,19 @@ namespace Kiota.Builder.Writers.Go.Tests {
         }
         [Fact]
         public void WritesRequestBuilder() {
-            property.PropertyKind = CodePropertyKind.RequestBuilder;
+            property.Kind = CodePropertyKind.RequestBuilder;
             Assert.Throws<InvalidOperationException>(() => writer.Write(property));
         }
         [Fact]
         public void WritesCustomProperty() {
-            property.PropertyKind = CodePropertyKind.Custom;
+            property.Kind = CodePropertyKind.Custom;
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains($"{PropertyName.ToFirstCharacterUpperCase()} *{TypeName}", result);
         }
         [Fact(Skip = "flag enum support needs to be added in Go")]
         public void WritesFlagEnums() {
-            property.PropertyKind = CodePropertyKind.Custom;
+            property.Kind = CodePropertyKind.Custom;
             property.Type = new CodeType {
                 Name = "customEnum",
             };
@@ -63,7 +63,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
         }
         [Fact]
         public void WritesNonNull() {
-            property.PropertyKind = CodePropertyKind.Custom;
+            property.Kind = CodePropertyKind.Custom;
             (property.Type as CodeType).IsNullable = false;
             writer.Write(property);
             var result = tw.ToString();
