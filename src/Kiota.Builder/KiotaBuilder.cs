@@ -12,6 +12,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
 using Microsoft.OpenApi.Any;
 using Kiota.Builder.Refiners;
+using Kiota.Builder.CodeRenderers;
 using System.Security;
 using Microsoft.OpenApi.Services;
 
@@ -208,7 +209,8 @@ public class KiotaBuilder
         var languageWriter = LanguageWriter.GetLanguageWriter(language, this.config.OutputPath, this.config.ClientNamespaceName);
         var stopwatch = new Stopwatch();
         stopwatch.Start();
-        await new CodeRenderer(config).RenderCodeNamespaceToFilePerClassAsync(languageWriter, generatedCode);
+        var codeRenderer = CodeRenderer.GetCodeRender(config);
+        await codeRenderer.RenderCodeNamespaceToFilePerClassAsync(languageWriter, generatedCode);
         stopwatch.Stop();
         logger.LogTrace("{timestamp}ms: Files written to {path}", stopwatch.ElapsedMilliseconds, config.OutputPath);
     }

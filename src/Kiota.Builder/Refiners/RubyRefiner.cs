@@ -30,18 +30,8 @@ namespace Kiota.Builder.Refiners {
                                         new [] { "microsoft_kiota_abstractions.ApiClientBuilder",
                                                 "microsoft_kiota_abstractions.SerializationWriterFactoryRegistry" },
                                         new [] { "microsoft_kiota_abstractions.ParseNodeFactoryRegistry" });
-            setNameSpaceRenderingCondition(_configuration);
         }
 
-        private static void setNameSpaceRenderingCondition(GenerationConfiguration configuration)
-        {
-            configuration.setCodeRenderingCondition = RenderNamespace;
-        }
-        // TODO : Update this condition
-        public static bool RenderNamespace(CodeNamespace codeNamespace)
-        {
-            return (codeNamespace.Classes.Any() || codeNamespace.Enums.Any());
-        }
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
                 currentProperty.Type.IsNullable = true;

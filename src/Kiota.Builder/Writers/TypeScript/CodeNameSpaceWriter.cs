@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.TypeScript
 {
@@ -19,7 +20,7 @@ namespace Kiota.Builder.Writers.TypeScript
 
             foreach (var className in sortedClassNames)
             {
-                writer.WriteLine($"export * from './{className}'");
+                writer.WriteLine($"export * from './{className.ToFirstCharacterLowerCase()}'");
             }
 
             var enums = codeElement.Enums;
@@ -27,7 +28,7 @@ namespace Kiota.Builder.Writers.TypeScript
             {
                 foreach (var e in enums)
                 {
-                    writer.WriteLine($"export * from './{e.Name}'");
+                    writer.WriteLine($"export * from './{e.Name.ToFirstCharacterLowerCase}'");
                 }
             }
         }

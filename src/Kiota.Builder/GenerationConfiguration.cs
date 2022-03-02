@@ -30,8 +30,5 @@ namespace Kiota.Builder {
 
           GenerationLanguage.TypeScript
         };
-
-        public Func<CodeNamespace, bool>  setCodeRenderingCondition;
-  
     }
 }

@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Kiota.Builder.Writers;
 
-namespace Kiota.Builder
+namespace Kiota.Builder.CodeRenderers
 {
     /// <summary>
     /// Convert CodeDOM classes to strings or files
@@ -40,12 +41,8 @@ namespace Kiota.Builder
                         _configuration.ShouldWriteNamespaceIndices &&
                         !_configuration.ClientNamespaceName.Contains(codeNamespace.Name, StringComparison.OrdinalIgnoreCase))
                     {
-                        var namespaceNameLastSegment = codeNamespace.Name.Split('.').Last().ToLowerInvariant();
-                        // if the module already has a class with the same name, it's going to be declared automatically
-                        if (_configuration.ShouldWriteBarrelsIfClassExists && _configuration.setCodeRenderingCondition(codeNamespace))
-                         // TODO : Verify and plug the following condition in the language specific index rendering condition 
-                        //codeNamespace.FindChildByName<CodeClass>(namespaceNameLastSegment, false) == null)
-                         
+                       
+                        if(ShouldRenderNamespaceFile(codeNamespace))                    
                         {
                             await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(root, codeNamespace));
                         }
@@ -68,5 +65,25 @@ namespace Kiota.Builder
                 }
 
         }
+
+        public virtual  bool ShouldRenderNamespaceFile(CodeNamespace codeNamespace)
+        {
+            // if the module already has a class with the same name, it's going to be declared automatically
+            var namespaceNameLastSegment = codeNamespace.Name.Split('.').Last().ToLowerInvariant();
+            return (_configuration.ShouldWriteBarrelsIfClassExists || codeNamespace.FindChildByName<CodeClass>(namespaceNameLastSegment, false) == null);
+        }
+
+        public static CodeRenderer GetCodeRender(GenerationConfiguration config)
+        {
+            switch (config.Language)
+            {
+                case GenerationLanguage.TypeScript:
+                    return new TypeScriptCodeRenderer(config);
+                default:
+                    return new CodeRenderer(config);
+               
+            }
+        }
+    
     }
 }
