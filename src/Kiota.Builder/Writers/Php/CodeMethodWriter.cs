@@ -277,7 +277,7 @@ namespace Kiota.Builder.Writers.Php
                 "time" => "writeTimeValue",
                 "datetime" or "datetimeoffset" => "writeDateTimeValue",
                 "datetimeoffset" => "writeDateTimeValue",
-                "duration" => "writeDateIntervalValue",
+                "duration" or "timespan" or "dateinterval" => "writeDateIntervalValue",
                 "timespan" => "writeDateIntervalValue",
                 "dateinterval" => "writeDateIntervalValue",
                 "int" => "writeIntegerValue",
