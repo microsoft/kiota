@@ -19,7 +19,7 @@ namespace Kiota.Builder.Writers.Php
                     break;
                 default:
                     WritePropertyDocComment(codeElement, writer);
-                    writer.WriteLine($"{propertyAccess} {(codeElement.Type.IsNullable ? "?" : string.Empty)}{returnType} ${propertyName} {(codeElement.Type.IsNullable ? "= null" : string.Empty)};");
+                    writer.WriteLine($"{propertyAccess} {(codeElement.Type.IsNullable ? "?" : string.Empty)}{returnType} ${propertyName}{(codeElement.Type.IsNullable ? " = null" : string.Empty)};");
                     break;
             }
             writer.WriteLine("");
