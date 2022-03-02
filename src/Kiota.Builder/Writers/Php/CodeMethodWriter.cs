@@ -245,7 +245,7 @@ namespace Kiota.Builder.Writers.Php
             if(propType is CodeType currentType) {
                 if(isCollection) { 
                     if(currentType.TypeDefinition is null or CodeEnum){
-                        return "writeCollectionOfNonParsableObjectValues";
+                        return "writeCollectionOfPrimitiveValues";
                     }
                     return currentType.TypeDefinition is CodeEnum ? "writeCollectionOfEnumValues" : "writeCollectionOfObjectValues";
                 }
