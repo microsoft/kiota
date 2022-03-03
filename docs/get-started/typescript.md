@@ -51,7 +51,11 @@ npx tsc --init
 Once the package feed is accessible the following packages can be added to the project.
 
 ```shell
-npm install @microsoft/kiota-abstractions @microsoft/kiota-authentication-azure @microsoft/kiota-http-fetchlibrary @microsoft/kiota-serialization-json @azure/identity node-fetch
+npm install @microsoft/kiota-abstractions
+npm install @microsoft/kiota-authentication-azure
+npm install @microsoft/kiota-http-fetchlibrary
+npm install @microsoft/kiota-serialization-json
+npm install @azure/identity node-fetch
 ```
 
 Only the first package, `kiota-abstractions`, is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
