@@ -14,12 +14,14 @@
         "msgraph",
         "okhttp",
         "okhttp3",
+        "okhttplibrary",
         "println",
         "squareup",
         "todoclient"
     ],
     "cSpell.words": [
         "deserialization",
+        "getenv",
         "Kiota",
         "npmrc",
         "openapi",
