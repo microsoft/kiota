@@ -12,6 +12,7 @@ The following instructions register an app and enable [device code flow](https:/
 ## Use PowerShell
 
 ```powershell
+Connect-MgGraph -Scopes "Application.ReadWrite.All"
 $app = New-MgApplication -displayName "NativeGraphApp" -IsFallbackPublicClient
 ```
 

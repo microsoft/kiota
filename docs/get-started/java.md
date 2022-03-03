@@ -68,6 +68,8 @@ implementation 'com.microsoft.kiota.http:kiota-http-okhttplibrary:1.0.15'
 implementation 'com.azure:azure-identity:1.4.4'
 ```
 
+Only the first package, `kiota-abstractions`, is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
+
 ## Generating the SDK
 
 Kiota generates SDKs from OpenAPI documents. Create a file named **getme.yml** and add the contents of the [Sample OpenAPI description](reference-openapi.md).
@@ -75,7 +77,7 @@ Kiota generates SDKs from OpenAPI documents. Create a file named **getme.yml** a
 You can then use the Kiota command line tool to generate the SDK classes.
 
 ```shell
-kiota -l java -c ToDoApiClient -n todoclient.utilities -d https://localhost:7206/openapi/openapi.yaml -o ./utilities/src/main/java/todoclient/utilities
+kiota -l java -d getme.yml -c GetUserApiClient -n getuserclient.apiclient -o ./app/src/main/java/getuserclient/apiclient
 ```
 
 ## Registering an application in Azure AD
@@ -147,3 +149,11 @@ public class App {
 
 - [kiota-samples repository](https://github.com/microsoft/kiota-samples/tree/main/get-started/java) contains the code from this guide.
 - [ToDoItem Sample API](https://github.com/microsoft/kiota-samples/tree/main/sample-api) implements a sample OpenAPI in ASP.NET Core and sample clients in multiple languages.
+
+## Executing the application
+
+When ready to execute the application, execute the following command in your project directory.
+
+```shell
+./gradlew --console plain run
+```
