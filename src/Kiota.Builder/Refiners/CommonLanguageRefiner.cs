@@ -742,7 +742,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                             TypeDefinition = parentInterface,
                         });
                 }
-            } else if (classDeclaration.Implements.Any()) {
+            } 
+            if (classDeclaration.Implements.Any()) {
                 var originalImplements = classDeclaration.Implements.ToArray();
                 inter.StartBlock.AddImplements(originalImplements
                                                             .Select(x => x.Clone() as CodeType)

@@ -57,7 +57,8 @@ public class GoRefiner : CommonLanguageRefiner
         CorrectCoreType(
             generatedCode,
             CorrectMethodType,
-            CorrectPropertyType);
+            CorrectPropertyType,
+            CorrectImplements);
         PatchHeaderParametersType(
             generatedCode,
             "map[string]string");
@@ -278,8 +279,13 @@ public class GoRefiner : CommonLanguageRefiner
             "github.com/microsoft/kiota/abstractions/go/serialization", "ParseNode", "Parsable"),
         new (x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
             "github.com/microsoft/kiota/abstractions/go/serialization", "Parsable"),
+        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
+            "github.com/microsoft/kiota/abstractions/go/serialization", "AdditionalDataHolder"),
         new (x => x is CodeEnum num, "ToUpper", "strings"),
     };//TODO add backing store types once we have them defined
+    private static void CorrectImplements(ProprietableBlockDeclaration block) {
+        block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
+    }
     private static void CorrectMethodType(CodeMethod currentMethod) {
         var parentClass = currentMethod.Parent as CodeClass;
         if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) &&
