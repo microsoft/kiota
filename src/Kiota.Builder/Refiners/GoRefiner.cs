@@ -74,7 +74,8 @@ public class GoRefiner : CommonLanguageRefiner
             "Set");
         AddConstructorsForDefaultValues(
             generatedCode,
-            true);
+            true,
+            true); //forcing add as constructors are required for by factories
         MakeModelPropertiesNullable(
             generatedCode);
         AddErrorImportForEnums(

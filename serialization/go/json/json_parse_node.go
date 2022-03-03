@@ -168,6 +168,10 @@ func (n *JsonParseNode) GetObjectValue(ctor absser.ParsableFactory) (absser.Pars
 		var itemAdditionalData map[string]interface{}
 		if isHolder {
 			itemAdditionalData = itemAsHolder.GetAdditionalData()
+			if itemAdditionalData == nil {
+				itemAdditionalData = make(map[string]interface{})
+				itemAsHolder.SetAdditionalData(itemAdditionalData)
+			}
 		}
 
 		for key, value := range properties {
