@@ -285,7 +285,7 @@ namespace Kiota.Builder.Writers.Go {
             if(property != null) {
                 var parameter = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(parameterKind));
                 if(!string.IsNullOrEmpty(variableName))
-                    writer.WriteLine($"m.{property.Name.ToFirstCharacterLowerCase()} = {parameter.Name};");
+                    writer.WriteLine($"m.{property.Name.ToFirstCharacterLowerCase()} = {variableName};");
                 else if(parameter != null)
                     writer.WriteLine($"m.{property.Name.ToFirstCharacterLowerCase()} = {parameter.Name};");
             }
@@ -393,7 +393,7 @@ namespace Kiota.Builder.Writers.Go {
             var assignmentPrefix = isVoid ?
                         "err =" :
                         "res, err :=";
-            writer.WriteLine($"{assignmentPrefix} m.requestAdapter.{sendMethodName}(*{RequestInfoVarName}, {constructorFunction}{responseHandlerParam?.Name ?? "nil"}, {errorMappingVarName})");
+            writer.WriteLine($"{assignmentPrefix} m.requestAdapter.{sendMethodName}({RequestInfoVarName}, {constructorFunction}{responseHandlerParam?.Name ?? "nil"}, {errorMappingVarName})");
             WriteReturnError(writer, returnType);
             var valueVarName = string.Empty;
             if(codeElement.ReturnType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None) {

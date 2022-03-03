@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug in Go generator where temporary url template parameters would not be used preventing the use of raw urls.
 - Fixed a bug where the Go http client configuration would impact non-kiota requests.
 - Fixed bug where installing python abstractions failed due to missing dependencies  #1289
 - Modified python test matrix to include python 3.10  #1289
