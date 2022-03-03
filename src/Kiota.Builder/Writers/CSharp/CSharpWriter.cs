@@ -7,7 +7,7 @@
             PathSegmenter = new CSharpPathSegmenter(rootPath, clientNamespaceName);
             var conventionService = new CSharpConventionService();
             AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
-            AddOrReplaceCodeElementWriter(new CodeClassEndWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeBlockEndWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeIndexerWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));

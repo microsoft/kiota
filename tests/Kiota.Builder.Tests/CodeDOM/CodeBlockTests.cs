@@ -14,7 +14,7 @@ namespace Kiota.Builder.Tests {
             child.AddRange();
             Assert.Empty(child.GetChildElements(true));
         }
-        class NeverBlock : CodeBlock
+        class NeverBlock : CodeBlock<BlockDeclaration, BlockEnd>
         {
             public void AddRange() {
                 base.AddRange((CodeClass[]) null);
@@ -99,7 +99,7 @@ namespace Kiota.Builder.Tests {
             }).First();
             var method = new CodeMethod {
                 Name = "method",
-                MethodKind = CodeMethodKind.RequestExecutor,
+                Kind = CodeMethodKind.RequestExecutor,
             };
             var overload = method.Clone() as CodeMethod;
             overload.AddParameter(new CodeParameter {
@@ -116,11 +116,11 @@ namespace Kiota.Builder.Tests {
             }).First();
             var property = new CodeProperty {
                 Name = "method",
-                PropertyKind = CodePropertyKind.RequestBuilder,
+                Kind = CodePropertyKind.RequestBuilder,
             };
             var indexer = new CodeMethod {
                 Name = "method",
-                MethodKind = CodeMethodKind.IndexerBackwardCompatibility
+                Kind = CodeMethodKind.IndexerBackwardCompatibility
             };
             codeClass.AddProperty(property);
             codeClass.AddMethod(indexer);

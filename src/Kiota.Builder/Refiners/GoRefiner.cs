@@ -11,6 +11,7 @@ public class GoRefiner : CommonLanguageRefiner
     public GoRefiner(GenerationConfiguration configuration) : base(configuration) {}
     public override void Refine(CodeNamespace generatedCode)
     {
+        _configuration.NamespaceNameSeparator = "/";
         AddInnerClasses(
             generatedCode,
             true,
@@ -67,7 +68,9 @@ public class GoRefiner : CommonLanguageRefiner
                 CodePropertyKind.Custom,
                 CodePropertyKind.BackingStore }, 
             _configuration.UsesBackingStore,
-            false);
+            false,
+            "Get",
+            "Set");
         AddConstructorsForDefaultValues(
             generatedCode,
             true);
@@ -92,6 +95,20 @@ public class GoRefiner : CommonLanguageRefiner
                 "ApiError",
                 "github.com/microsoft/kiota/abstractions/go"
         );
+        AddDiscriminatorMappingsUsingsToParentClasses(
+            generatedCode,
+            "ParseNode",
+            true
+        );
+        AddParsableImplementsForModelClasses(
+            generatedCode,
+            "Parsable"
+        );
+        CopyModelClassesAsInterfaces(
+            generatedCode,
+            _configuration,
+            x => $"{x.Name}able"
+        );
     }
     private static void ReplaceExecutorAndGeneratorParametersByParameterSets(CodeElement currentElement) {
         if (currentElement is CodeMethod currentMethod &&
@@ -100,7 +117,7 @@ public class GoRefiner : CommonLanguageRefiner
             currentElement.Parent is CodeClass parentClass) {
                 var parameterSetClass = parentClass.AddInnerClass(new CodeClass{
                     Name = $"{parentClass.Name.ToFirstCharacterUpperCase()}{currentMethod.HttpMethod}Options",
-                    ClassKind = CodeClassKind.ParameterSet,
+                    Kind = CodeClassKind.ParameterSet,
                     Description = $"Options for {currentMethod.Name}",
                 }).First();
                 parameterSetClass.AddProperty(
@@ -109,7 +126,7 @@ public class GoRefiner : CommonLanguageRefiner
                         Type = x.Type,
                         Description = x.Description,
                         Access = AccessModifier.Public,
-                        PropertyKind = x.ParameterKind switch {
+                        Kind = x.Kind switch {
                             CodeParameterKind.RequestBody => CodePropertyKind.RequestBody,
                             CodeParameterKind.QueryParameter => CodePropertyKind.QueryParameter,
                             CodeParameterKind.Headers => CodePropertyKind.Headers,
@@ -135,7 +152,7 @@ public class GoRefiner : CommonLanguageRefiner
                     },
                     Optional = false,
                     Description = "Options for the request",
-                    ParameterKind = CodeParameterKind.ParameterSet,
+                    Kind = CodeParameterKind.ParameterSet,
                 };
                 currentMethod.AddParameter(parameterSetParameter);
                 var generatorMethod = parentClass.GetMethodsOffKind(CodeMethodKind.RequestGenerator)
@@ -155,7 +172,7 @@ public class GoRefiner : CommonLanguageRefiner
             currentClass.AddMethod(new CodeMethod {
                 Name = "IsNil",
                 IsAsync = false,
-                MethodKind = CodeMethodKind.NullCheck,
+                Kind = CodeMethodKind.NullCheck,
                 ReturnType = new CodeType {
                     Name = "boolean",
                     IsExternal = true,
@@ -172,7 +189,8 @@ public class GoRefiner : CommonLanguageRefiner
                 targetNamespace = FindFirstModelSubnamepaceWithClasses(rootModels);
             }
             if(currentNamespace != targetNamespace &&
-                !string.IsNullOrEmpty(currentNamespace.Name) &&
+                !string.IsNullOrEmpty(currentNamespace?.Name) &&
+                !string.IsNullOrEmpty(targetNamespace?.Name) &&
                 currentNamespace.Name.Contains(targetNamespace.Name, StringComparison.OrdinalIgnoreCase)) {
                 foreach (var codeClass in currentNamespace.Classes)
                 {
@@ -222,14 +240,14 @@ public class GoRefiner : CommonLanguageRefiner
                     Access = AccessModifier.Public,
                     Description = currentProperty.Description,
                     IsAsync = false,
-                    MethodKind = CodeMethodKind.RequestBuilderBackwardCompatibility,
+                    Kind = CodeMethodKind.RequestBuilderBackwardCompatibility,
                 });
             }
         CrawlTree(currentElement, ReplaceRequestBuilderPropertiesByMethods);
     }
     private static void AddErrorImportForEnums(CodeElement currentElement) {
         if(currentElement is CodeEnum currentEnum) {
-            currentEnum.AddUsings(new CodeUsing {
+            currentEnum.AddUsing(new CodeUsing {
                 Name = "errors",
             });
         }
@@ -250,19 +268,15 @@ public class GoRefiner : CommonLanguageRefiner
             "github.com/microsoft/kiota/abstractions/go", "RequestInformation", "HttpMethod", "RequestOption"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
             "github.com/microsoft/kiota/abstractions/go", "ResponseHandler"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor) &&
-                    !conventions.IsScalarType(method.ReturnType.Name) &&
-                    !conventions.IsPrimitiveType(method.ReturnType.Name),
-            "github.com/microsoft/kiota/abstractions/go/serialization", "Parsable"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor) &&
                     method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path) &&
                                             !typeToSkipStrConv.Contains(x.Type.Name)),
             "strconv", "FormatBool"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
             "github.com/microsoft/kiota/abstractions/go/serialization", "SerializationWriter"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
+        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
             "github.com/microsoft/kiota/abstractions/go/serialization", "ParseNode", "Parsable"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor) && method.ErrorMappings.Any(),
+        new (x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
             "github.com/microsoft/kiota/abstractions/go/serialization", "Parsable"),
         new (x => x is CodeEnum num, "ToUpper", "strings"),
     };//TODO add backing store types once we have them defined
@@ -297,8 +311,11 @@ public class GoRefiner : CommonLanguageRefiner
                 .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                 .ToList()
                 .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
-        } else if(currentMethod.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility, CodeMethodKind.RequestBuilderWithParameters, CodeMethodKind.RequestBuilderBackwardCompatibility)) {
+        } else if(currentMethod.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility, CodeMethodKind.RequestBuilderWithParameters, CodeMethodKind.RequestBuilderBackwardCompatibility, CodeMethodKind.Factory)) {
             currentMethod.ReturnType.IsNullable = true;
+            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ParseNode)).ToList().ForEach(x => x.Type.IsNullable = false);
+            if(currentMethod.IsOfKind(CodeMethodKind.Factory))
+                currentMethod.ReturnType = new CodeType { Name = "Parsable", IsNullable = false, IsExternal = true };
         }
         CorrectDateTypes(parentClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)

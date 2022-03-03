@@ -56,3 +56,16 @@ func TestItAddsStringArrayQueryParameters(t *testing.T) {
 	requestInformation.AddQueryParameters(queryParameters)
 	assert.Equal(t, "somefilter,someotherfilter", requestInformation.QueryParameters["Expand"])
 }
+
+func TestItSetsTheRawURL(t *testing.T) {
+	requestInformation := NewRequestInformation()
+	requestInformation.PathParameters[raw_url_key] = "https://someurl.com"
+	requestInformation.UrlTemplate = "https://someotherurl.com{?select}"
+	requestInformation.AddQueryParameters(QueryParameters{
+		Select_escaped: []string{"somefield", "somefield2"},
+	})
+	uri, err := requestInformation.GetUri()
+	assert.Nil(t, err)
+	assert.Equal(t, "https://someurl.com", uri.String())
+	assert.Equal(t, 0, len(requestInformation.QueryParameters))
+}

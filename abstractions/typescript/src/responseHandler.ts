@@ -1,4 +1,4 @@
-import { Parsable } from "./serialization";
+import { Parsable, ParsableFactory } from "./serialization";
 
 /** Defines the contract for a response handler. */
 export interface ResponseHandler {
@@ -12,6 +12,6 @@ export interface ResponseHandler {
    */
   handleResponseAsync<NativeResponseType, ModelType>(
     response: NativeResponseType,
-    errorMappings: Record<string, new () => Parsable> | undefined
+    errorMappings: Record<string, ParsableFactory<Parsable>> | undefined
   ): Promise<ModelType>;
 }

@@ -1,3 +1,4 @@
+import { ParsableFactory } from ".";
 import { DateOnly } from "../dateOnly";
 import { Duration } from "../duration";
 import { TimeOnly } from "../timeOnly";
@@ -63,13 +64,13 @@ export interface ParseNode {
    * @return the collection of object values of the node.
    */
   getCollectionOfObjectValues<T extends Parsable>(
-    type: new () => T
+    type: ParsableFactory<T>
   ): T[] | undefined;
   /**
    * Gets the model object value of the node.
    * @return the model object value of the node.
    */
-  getObjectValue<T extends Parsable>(type: new () => T): T;
+  getObjectValue<T extends Parsable>(type: ParsableFactory<T>): T;
   /**
    * Gets the Enum values of the node.
    * @return the Enum values of the node.

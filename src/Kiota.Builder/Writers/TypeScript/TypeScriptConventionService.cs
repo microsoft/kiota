@@ -68,9 +68,9 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
     }
     private static string GetTypeAlias(CodeType targetType, CodeElement targetElement) {
-        var parentClass = targetElement.GetImmediateParentOfType<CodeClass>();
-        if(parentClass != null && parentClass.StartBlock is CodeClass.Declaration currentDeclaration) {
-            var aliasedUsing = currentDeclaration.Usings
+        var parentBlock = targetElement.GetImmediateParentOfType<IBlock>();
+        if(parentBlock != null) {
+            var aliasedUsing = parentBlock.Usings
                                                 .FirstOrDefault(x => !x.IsExternal &&
                                                                 x.Declaration.TypeDefinition == targetType.TypeDefinition &&
                                                                 !string.IsNullOrEmpty(x.Alias));

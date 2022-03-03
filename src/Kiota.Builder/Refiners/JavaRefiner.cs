@@ -9,25 +9,32 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
     public JavaRefiner(GenerationConfiguration configuration) : base(configuration) {}
     public override void Refine(CodeNamespace generatedCode)
     {
+        LowerCaseNamespaceNames(generatedCode);
         AddInnerClasses(generatedCode, false);
         InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
         ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);
         RemoveCancellationParameter(generatedCode);
         ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
         AddRawUrlConstructorOverload(generatedCode);
+        CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
+        ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
+        AddGetterAndSetterMethods(generatedCode,
+            new() {
+                CodePropertyKind.Custom,
+                CodePropertyKind.AdditionalData,
+                CodePropertyKind.BackingStore,
+            },
+            _configuration.UsesBackingStore,
+            true,
+            "get",
+            "set"
+        );
         ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
         AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
         AddDefaultImports(generatedCode, defaultUsingEvaluators);
-        CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
         PatchHeaderParametersType(generatedCode, "Map<String, String>");
-        AddParsableInheritanceForModelClasses(generatedCode, "Parsable");
-        ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
+        AddParsableImplementsForModelClasses(generatedCode, "Parsable");
         AddEnumSetImport(generatedCode);
-        AddGetterAndSetterMethods(generatedCode, new() {
-                                                CodePropertyKind.Custom,
-                                                CodePropertyKind.AdditionalData,
-                                                CodePropertyKind.BackingStore,
-                                            }, _configuration.UsesBackingStore, true);
         SetSetterParametersToNullable(generatedCode, new Tuple<CodeMethodKind, CodePropertyKind>(CodeMethodKind.Setter, CodePropertyKind.AdditionalData));
         AddConstructorsForDefaultValues(generatedCode, true);
         CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
@@ -42,13 +49,18 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "ApiException",
                 "com.microsoft.kiota"
         );
+        AddDiscriminatorMappingsUsingsToParentClasses(
+            generatedCode,
+            "ParseNode",
+            addUsings: false
+        );
     }
     private static void SetSetterParametersToNullable(CodeElement currentElement, params Tuple<CodeMethodKind, CodePropertyKind>[] accessorPairs) {
         if(currentElement is CodeMethod method &&
-            accessorPairs.Any(x => method.IsOfKind(x.Item1) && (method.AccessedProperty?.IsOfKind(x.Item2) ?? false))) 
+            accessorPairs.Any(x => method.IsOfKind(x.Item1) && (method.AccessedProperty?.IsOfKind(x.Item2) ?? false)))
             foreach(var param in method.Parameters)
                 param.Type.IsNullable = true;
-        CrawlTree(currentElement, element => SetSetterParametersToNullable(element, accessorPairs));   
+        CrawlTree(currentElement, element => SetSetterParametersToNullable(element, accessorPairs));
     }
     private static void AddEnumSetImport(CodeElement currentElement) {
         if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) &&
@@ -63,7 +75,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, AddEnumSetImport);
     }
     private static readonly JavaConventionService conventionService = new();
-    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
+    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] {
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             "com.microsoft.kiota", "RequestAdapter"),
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.PathParameters),
@@ -82,7 +94,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             "com.microsoft.kiota.serialization", "Parsable"),
         new (x => x is CodeMethod method && method.Parameters.Any(x => !x.Optional),
                 "java.util", "Objects"),
-        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor) && 
+        new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor) &&
                     method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.RequestBody) &&
                                         x.Type.Name.Equals(conventionService.StreamTypeName, StringComparison.OrdinalIgnoreCase)),
             "java.io", "InputStream"),
@@ -91,7 +103,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
             "com.microsoft.kiota.serialization", "ParseNode"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            "com.microsoft.kiota.serialization", "Parsable"),
+            "com.microsoft.kiota.serialization", "Parsable", "ParsableFactory"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
             "java.util.function", "BiConsumer"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
@@ -148,7 +160,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 .ToList()
                 .ForEach(x => x.Type.IsNullable = true);
             var urlTplParams = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
-            if(urlTplParams != null) 
+            if(urlTplParams != null)
                 urlTplParams.Type.Name = "HashMap<String, Object>";
         }
         CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
@@ -214,7 +226,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                                             .ToArray());
             }
         }
-        
+
         CrawlTree(currentElement, InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors);
     }
     private static CodeMethod GetMethodClone(CodeMethod currentMethod, params CodeParameterKind[] parameterTypesToExclude) {
@@ -225,5 +237,17 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             return cloneMethod;
         }
         else return null;
+    }
+
+    // Namespaces in Java by convention are all lower case, like:
+    // com.microsoft.kiota.serialization
+    private static void LowerCaseNamespaceNames(CodeElement currentElement) {
+        if (currentElement is CodeNamespace codeNamespace)
+        {
+            if (!string.IsNullOrEmpty(codeNamespace.Name))
+                codeNamespace.Name = codeNamespace.Name.ToLowerInvariant();
+
+            CrawlTree(currentElement, LowerCaseNamespaceNames);
+        }
     }
 }

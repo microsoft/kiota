@@ -15,6 +15,10 @@ github.com/microsoft/kiota/abstractions/go v0.0.0-20220210083802-7aca9e48205a h1
 github.com/microsoft/kiota/abstractions/go v0.0.0-20220210083802-7aca9e48205a/go.mod h1:BUv5PFNuBLFXQlDtarjdgqdqDjee3FgfjrNkfZlA5us=
 github.com/microsoft/kiota/abstractions/go v0.0.0-20220210185149-93a92d579e1e h1:oJHZ9gSwdyjxQrH4SXWyNpWu6uDXCNczAOUMqLxUZlQ=
 github.com/microsoft/kiota/abstractions/go v0.0.0-20220210185149-93a92d579e1e/go.mod h1:BUv5PFNuBLFXQlDtarjdgqdqDjee3FgfjrNkfZlA5us=
+github.com/microsoft/kiota/abstractions/go v0.0.0-20220302123028-4b9132ed532c h1:4Xj+OwZy68ZGBpANUBaRTyoVk+SthajQa/opc94HZ+M=
+github.com/microsoft/kiota/abstractions/go v0.0.0-20220302123028-4b9132ed532c/go.mod h1:BUv5PFNuBLFXQlDtarjdgqdqDjee3FgfjrNkfZlA5us=
+github.com/microsoft/kiota/abstractions/go v0.0.0-20220303111159-de55f78b58f1 h1:KdbImaH5KFucjwwD9B2C26JPq/8y6/D4K6u+TFAkaeA=
+github.com/microsoft/kiota/abstractions/go v0.0.0-20220303111159-de55f78b58f1/go.mod h1:BUv5PFNuBLFXQlDtarjdgqdqDjee3FgfjrNkfZlA5us=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=

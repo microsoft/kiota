@@ -48,7 +48,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             Assert.Contains($"class", result);
             Assert.Contains($"extends Enum", result);
             Assert.Contains($"public const {optionName.ToUpperInvariant()} = '{optionName}'", result);
-            AssertExtensions.CurlyBracesAreClosed(result);
+            AssertExtensions.CurlyBracesAreClosed(result, 1);
             Assert.Contains(optionName, result);
         }
     }

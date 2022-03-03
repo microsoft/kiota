@@ -12,7 +12,7 @@ namespace Kiota.Builder.Writers.Php
             var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
             var propertyName = codeElement.Name.ToFirstCharacterLowerCase();
             var propertyAccess = conventions.GetAccessModifier(codeElement.Access);
-            switch (codeElement.PropertyKind)
+            switch (codeElement.Kind)
             {
                 case CodePropertyKind.RequestBuilder:
                     WriteRequestBuilderBody(codeElement, writer, returnType, propertyAccess, propertyName);

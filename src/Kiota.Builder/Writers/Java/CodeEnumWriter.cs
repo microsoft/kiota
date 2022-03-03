@@ -39,13 +39,9 @@ namespace Kiota.Builder.Writers.Java {
                         .Select(x => $"case \"{x}\": return {x.ToFirstCharacterUpperCase()};")
                         .Aggregate((x, y) => $"{x}{LanguageWriter.NewLine}{writer.GetIndent()}{y}") + LanguageWriter.NewLine);
             writer.WriteLine("default: return null;");
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
-
+            writer.CloseBlock();
+            writer.CloseBlock();
+            writer.CloseBlock();
         }
     }
 }

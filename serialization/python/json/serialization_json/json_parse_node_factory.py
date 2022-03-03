@@ -35,5 +35,4 @@ class JsonParseNodeFactory(ParseNodeFactory):
             raise TypeError("Content cannot be null")
 
         content_as_str = content.decode('utf-8')
-        content_as_json = json.loads(content_as_str)
-        return JsonParseNode(content_as_json)
+        return JsonParseNode(content_as_str)

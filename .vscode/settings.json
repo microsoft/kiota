@@ -16,7 +16,10 @@
         "squareup"
     ],
     "cSpell.words": [
+        "deserialization",
+        "Kiota",
         "npmrc",
+        "openapi",
         "serializers"
     ],
     "java.configuration.updateBuildConfiguration": "automatic"

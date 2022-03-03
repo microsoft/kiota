@@ -4,6 +4,7 @@ package nethttplibrary
 
 import (
 	nethttp "net/http"
+	"time"
 )
 
 // GetDefaultClient creates a new default net/http client with the options configured for the Kiota request adapter
@@ -15,11 +16,13 @@ func GetDefaultClient(middleware ...Middleware) *nethttp.Client {
 
 // used for internal unit testing
 func getDefaultClientWithoutMiddleware() *nethttp.Client {
-	client := nethttp.DefaultClient //TODO add default configuration and new up the client instead of using the default
-	client.CheckRedirect = func(req *nethttp.Request, via []*nethttp.Request) error {
-		return nethttp.ErrUseLastResponse
+	// the default client doesn't come with any other settings than making a new one does, and using the default client impacts behavior for non-kiota requests
+	return &nethttp.Client{
+		CheckRedirect: func(req *nethttp.Request, via []*nethttp.Request) error {
+			return nethttp.ErrUseLastResponse
+		},
+		Timeout: time.Second * 30,
 	}
-	return client
 }
 
 // GetDefaultMiddlewares creates a new default set of middlewares for the Kiota request adapter

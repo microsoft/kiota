@@ -225,7 +225,7 @@ namespace Kiota.Builder.Writers.Shell
                 var type = option.Type as CodeType;
                 var optionName = $"{NormalizeToIdentifier(option.Name)}Option";
                 var optionType = conventions.GetTypeString(option.Type, option);
-                if (option.ParameterKind == CodeParameterKind.RequestBody && type.TypeDefinition is CodeClass) optionType = "string";
+                if (option.Kind == CodeParameterKind.RequestBody && type.TypeDefinition is CodeClass) optionType = "string";
 
                 // Binary body handling
                 if (option.IsOfKind(CodeParameterKind.RequestBody) && conventions.StreamTypeName.Equals(option.Type?.Name, StringComparison.OrdinalIgnoreCase))
@@ -318,9 +318,9 @@ namespace Kiota.Builder.Writers.Shell
 
         private void WriteUnnamedBuildCommand(CodeMethod codeElement, LanguageWriter writer, CodeClass parent, IEnumerable<CodeMethod> classMethods)
         {
-            if (codeElement.OriginalMethod?.MethodKind == CodeMethodKind.ClientConstructor)
+            if (codeElement.OriginalMethod?.Kind == CodeMethodKind.ClientConstructor)
             {
-                var commandBuilderMethods = classMethods.Where(m => m.MethodKind == CodeMethodKind.CommandBuilder && m != codeElement).OrderBy(m => m.Name);
+                var commandBuilderMethods = classMethods.Where(m => m.Kind == CodeMethodKind.CommandBuilder && m != codeElement).OrderBy(m => m.Name);
                 writer.WriteLine($"var command = new RootCommand();");
                 WriteCommandDescription(codeElement, writer);
                 foreach (var method in commandBuilderMethods)

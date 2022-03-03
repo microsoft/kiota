@@ -18,14 +18,18 @@ namespace Kiota.Builder.Refiners
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
-            AddGetterAndSetterMethods(generatedCode,new()
-            {
-                CodePropertyKind.Custom,
-                CodePropertyKind.AdditionalData,
-                CodePropertyKind.BackingStore
-            }, _configuration.UsesBackingStore, true);
+            AddGetterAndSetterMethods(generatedCode,
+                new() {
+                    CodePropertyKind.Custom,
+                    CodePropertyKind.AdditionalData,
+                    CodePropertyKind.BackingStore
+                },
+                _configuration.UsesBackingStore,
+                true,
+                "get",
+                "set");
             ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Graph{reservedWord.ToFirstCharacterUpperCase()}");
-            AddParsableInheritanceForModelClasses(generatedCode, "Parsable");
+            AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
         }

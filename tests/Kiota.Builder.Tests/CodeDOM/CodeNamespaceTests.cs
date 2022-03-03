@@ -94,6 +94,18 @@ namespace Kiota.Builder.Tests
             Assert.Throws<ArgumentNullException>(() => {
                 child.AddUsing(new CodeUsing[] {null});
             });
+            Assert.Throws<ArgumentNullException>(() => {
+                child.AddFunction(null);
+            });
+            Assert.Throws<ArgumentNullException>(() => {
+                child.AddFunction(new CodeFunction[] {null});
+            });
+            Assert.Throws<ArgumentNullException>(() => {
+                child.AddInterface(null);
+            });
+            Assert.Throws<ArgumentNullException>(() => {
+                child.AddInterface(new CodeInterface[] {null});
+            });
         }
     }
 }
