@@ -4,7 +4,7 @@ parent: Get started
 
 # Sample OpenAPI description
 
-The following is a minimal OpenAPI description that describes how to call the `/me` endpoint on Microsoft Graph. This description is used in the following tutorials.
+The following is a minimal OpenAPI description that describes how to call the `/me` endpoint on Microsoft Graph. This description is used in the following guides.
 
 - [Build SDKs for .NET](dotnet.md)
 
