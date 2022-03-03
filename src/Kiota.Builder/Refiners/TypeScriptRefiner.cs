@@ -12,7 +12,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         AddDefaultImports(generatedCode, defaultUsingEvaluators);
         ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
         RemoveCancellationParameter(generatedCode);
-        CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
+        CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
         CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
         AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
         AliasUsingsWithSameSymbol(generatedCode);
@@ -116,12 +116,17 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             AbstractionsPackageName, "Parsable", "ParsableFactory"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
             AbstractionsPackageName, "Parsable"),
+        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
+            AbstractionsPackageName, "AdditionalDataHolder"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&
                     method.Parameters.Any(y => y.IsOfKind(CodeParameterKind.BackingStore)),
             AbstractionsPackageName, "BackingStoreFactory", "BackingStoreFactorySingleton"),
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
             AbstractionsPackageName, "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
     };
+    private static void CorrectImplements(ProprietableBlockDeclaration block) {
+        block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
+    }
     private static void CorrectPropertyType(CodeProperty currentProperty) {
         if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))
             currentProperty.Type.Name = "RequestAdapter";
