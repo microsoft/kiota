@@ -734,28 +734,24 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     Kind = CodeInterfaceKind.Model,
         }).First();
         var usingsToRemove = new List<string>();
-        if(modelClass.StartBlock is ClassDeclaration classDeclaration) {
-            if(classDeclaration.Inherits != null) {
-                if (classDeclaration.Inherits.TypeDefinition is CodeClass baseClass) {
-                        var parentInterface = CopyClassAsInterface(baseClass, config, interfaceNamingCallback);
-                        inter.StartBlock.AddImplements(new CodeType {
-                            Name = parentInterface.Name,
-                            TypeDefinition = parentInterface,
-                        });
-                }
-            } 
-            if (classDeclaration.Implements.Any()) {
-                var originalImplements = classDeclaration.Implements.ToArray();
-                inter.StartBlock.AddImplements(originalImplements
-                                                            .Select(x => x.Clone() as CodeType)
-                                                            .ToArray());
-                classDeclaration.RemoveImplements(originalImplements);
-            }
-            classDeclaration.AddImplements(new CodeType {
-                Name = interfaceName,
-                TypeDefinition = inter,
+        if(modelClass.StartBlock.Inherits?.TypeDefinition is CodeClass baseClass) {
+            var parentInterface = CopyClassAsInterface(baseClass, config, interfaceNamingCallback);
+            inter.StartBlock.AddImplements(new CodeType {
+                Name = parentInterface.Name,
+                TypeDefinition = parentInterface,
             });
         }
+        if (modelClass.StartBlock.Implements.Any()) {
+            var originalImplements = modelClass.StartBlock.Implements.ToArray();
+            inter.StartBlock.AddImplements(originalImplements
+                                                        .Select(x => x.Clone() as CodeType)
+                                                        .ToArray());
+            modelClass.StartBlock.RemoveImplements(originalImplements);
+        }
+        modelClass.StartBlock.AddImplements(new CodeType {
+            Name = interfaceName,
+            TypeDefinition = inter,
+        });
         var classModelChildItems = modelClass.GetChildElements(true);
         foreach(var method in classModelChildItems.OfType<CodeMethod>()
                                                     .Where(x => x.IsOfKind(CodeMethodKind.Getter, 
