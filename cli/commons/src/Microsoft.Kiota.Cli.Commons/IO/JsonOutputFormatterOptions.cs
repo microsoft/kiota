@@ -9,5 +9,5 @@ public class JsonOutputFormatterOptions : OutputFormatterOptions
     /// Gets or sets a value that defines whether JSON should use pretty printing. By
     /// default, JSON is serialized without any extra white space.
     /// </summary>
-    public bool OutputIndented { get; set; } = true
+    public bool OutputIndented { get; set; } = true;
 }
