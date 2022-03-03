@@ -19,15 +19,15 @@ Before you can compile and run the generated files, you will need to make sure t
 Execute the following command in the directory you want to create a new project.
 
 ```shell
-dotnet new console
+dotnet new console -o GetUserClient
 dotnet new gitignore
 ```
 
-> **Note:** in this example the console template is used, but you can use any CSharp template.
+> **Note:** in this example the console template is used, but you can use any C# template.
 
 ## Adding dependencies
 
-If you have not already, you will need to create a nuget.config to enable access to the packages in the GitHub package feed. The article on installing the [Kiota command line](./index.md) tool shows how to do this.
+If you have not already, you will need to create a nuget.config to enable access to the packages in the GitHub package feed. See [Configure NuGet to access GitHub](index.md#configure-nuget-to-access-github) for instructions.
 
 Once the package feed is accessible the following packages can be added to the project.
 
@@ -43,90 +43,55 @@ Only the first package, `Microsoft.Kiota.Abstractions` is required. The other pa
 
 ## Generating the SDK
 
-Kiota generates SDKs from OpenAPI documents. The example below is a minimal OpenAPI description that describes how to call the `/me` endpoint on Microsoft Graph.
-
-Create a file called **openapi.yaml** with the following contents:
-
-```yaml
-openapi: 3.0.3
-info:
-  title: app that calls graph and gets the me profile
-  version: 1.0.0
-paths:
-  /me:
-    get:
-      responses:
-        200:
-          description: Success!
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/microsoft.graph.user"
-components:
-  schemas:
-    microsoft.graph.user:
-      type: object
-      properties:
-        id:
-          type: string
-        displayName:
-          type: string
-```
+Kiota generates SDKs from OpenAPI documents. Create a file named **getme.yml** and add the contents of the [Sample OpenAPI description](reference-openapi.md).
 
 You can then use the Kiota command line tool to generate the SDK classes.
 
 ```shell
-kiota -d openapi.yml -o graphclient -n GraphClient
+kiota -d getme.yml -c GetUserApiClient -n GetUserClient.ApiClient -o ./Client
 ```
 
 ## Creating an application registration
 
 > **Note:** this step is required if your client will be calling APIs that are protected by the Microsoft Identity Platform like Microsoft Graph.
 
-To be able to authenticate against the demo application against Microsoft Graph, you will need to create an application registration.  You can do this via the Azure portal, or if you have [Microsoft Graph PowerShell](https://www.powershellgallery.com/packages/Microsoft.Graph) installed, you can use the following command to create the application.
-
-```powershell
-$app = New-MgApplication -displayName "NativeGraphApp" `
-  -IsFallbackPublicClient `
-  -PublicClient @{ RedirectUris = "http://localhost" }
-```
-
-Record the value of the ClientId property of the $app object as it will be needed in a later step.
+Follow the instructions in [Register an application for Microsoft identity platform authentication](register-app.md) to get an application ID (also know as a client ID).
 
 ## Creating the client application
 
-The final step is to update the program.cs file that was generated as part of the console application to include the code below.
+The final step is to update the **Program.cs** file that was generated as part of the console application to include the code below. Replace `YOUR_CLIENT_ID` with the client ID from your app registration.
 
 ```csharp
-using System;
-using System.Threading.Tasks;
-using GraphClient;
-using Microsoft.Kiota.Abstractions.Authentication;
+using Azure.Identity;
+using GetUserClient.ApiClient;
 using Microsoft.Kiota.Authentication.Azure;
 using Microsoft.Kiota.Http.HttpClientLibrary;
-using Azure.Identity;
 
-namespace GraphApp
+var clientId = "YOUR_CLIENT_ID";
+
+// The auth provider will only authorize requests to
+// the allowed hosts, in this case Microsoft Graph
+var allowedHosts = new [] { "graph.microsoft.com" };
+var graphScopes = new [] { "User.Read" };
+
+var credential = new DeviceCodeCredential((code, cancellation) =>
 {
-    class Program
-    {
-        static async Task Main(string[] args)
-        {
-            var credential = new InteractiveBrowserCredential(
-                "<insert clientId from $app.ClientId>");
-            var authProvider = new AzureIdentityAuthenticationProvider(
-                credential, new string[] {"User.Read"});
-            var requestAdapter = new HttpClientRequestAdapter(authProvider);
-            var apiClient = new ApiClient(requestAdapter);
-            var me = await apiClient.Me.GetAsync();
-            Console.WriteLine(me.DisplayName);
-        }
-    }
-}
+    Console.WriteLine(code.Message);
+    return Task.FromResult(0);
+},
+clientId);
+
+var authProvider = new AzureIdentityAuthenticationProvider(credential, allowedHosts, graphScopes);
+var requestAdapter = new HttpClientRequestAdapter(authProvider);
+var client = new GetUserApiClient(requestAdapter);
+
+var me = await client.Me.GetAsync();
+Console.WriteLine($"Hello {me.DisplayName}, your ID is {me.Id}");
+
 ```
 
 > **Note:**
 >
 > - If the target API doesn't require any authentication, you can use the **AnonymousAuthenticationProvider** instead.
-> - If the target API requires a Authorization bearer \<token> header but doesn't rely on the Microsoft Identity Platform, you can implement your own authentication provider by inheriting from **BaseBearerTokenAuthenticationProvider**.
+> - If the target API requires an `Authorization bearer <token>` header but doesn't rely on the Microsoft identity platform, you can implement your own authentication provider by inheriting from **BaseBearerTokenAuthenticationProvider**.
 > - If the target API requires any other form of authentication schemes, you can implement the **IAuthenticationProvider** interface.
