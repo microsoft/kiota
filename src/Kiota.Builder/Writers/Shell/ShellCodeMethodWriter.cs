@@ -205,7 +205,7 @@ namespace Kiota.Builder.Writers.Shell
                     writer.IncreaseIndent();
                     writer.WriteLine("using var reader = new StreamReader(response);");
                     writer.WriteLine("var strContent = reader.ReadToEnd();");
-                    writer.WriteLine("Console.WriteLine(strContent);");
+                    writer.WriteLine("Console.Write(strContent);");
                     writer.CloseBlock();
                     writer.WriteLine("else {");
                     writer.IncreaseIndent();
