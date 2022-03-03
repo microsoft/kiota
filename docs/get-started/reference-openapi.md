@@ -1,4 +1,5 @@
 ---
+title: Sample OpenAPI
 parent: Get started
 ---
 

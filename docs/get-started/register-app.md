@@ -1,4 +1,5 @@
 ---
+title: Register an app
 parent: Get started
 ---
 
