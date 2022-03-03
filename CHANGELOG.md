@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added support for global error handling in python abstractions #1289
+- Added Shell output filter (JMESPath) support #1291
 
 ### Changed
 
@@ -17,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modified python test matrix to include python 3.10  #1289
 - Added return statement to AnonymousAuthenticationProvider in python abstractions  #1289
 - Fixed bug in enabling backing store for parse node factory by passing ParseNodeFactoryRegistry to method call  #1289
+- Fixed shell stream output getting processed by output formatters when no file path is provided #1291
 
 ## [0.0.16] - 2022-02-23
 
