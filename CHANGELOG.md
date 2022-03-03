@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for global error handling in python abstractions #1289
 - Added a HTTPRequestAdapter for python Requests library #1251
 - Added Shell output filter (JMESPath) support #1291
+- Added output options to Shell output filter #1321
 
 ### Changed
 
