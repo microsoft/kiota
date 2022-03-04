@@ -9,14 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+- Fixed a bug where union wrapper models would lack the discriminator methods
+
+## [0.0.17] - 2022-03-03
+
+### Added
+
 - Adds support for downcast of types during deserialization according to the discriminator information in the description (CSharp/Go/Java/TypeScript). [#646](https://github.com/microsoft/kiota/issues/646)
 - Adds support for generating interfaces for models in Go. [#646](https://github.com/microsoft/kiota/issues/646)
 - Adds support for generating functions (as opposed to methods or static methods) in the generator (used in TypeScript for discriminator factories). [#646](https://github.com/microsoft/kiota/issues/646)
 - Added support for global error handling in python abstractions #1289
 - Added a HTTPRequestAdapter for python Requests library #1251
+- Added Shell output filter (JMESPath) support #1291
+- Added output options to Shell output filter #1321
 
 ### Changed
 
+- Fixed a bug in Go generator where temporary url template parameters would not be used preventing the use of raw urls.
 - Fixed a bug where the Go http client configuration would impact non-kiota requests.
 - Fixed bug where installing python abstractions failed due to missing dependencies  #1289
 - Modified python test matrix to include python 3.10  #1289
@@ -26,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added python version 3.10 to testing matrix #1290 
 - Fixed bug with inconsistent Java namespace and directory name casing #1267
 - Fixed typeOf string check in JsonParseNode Typescript.
+- Fixed shell stream output getting processed by output formatters when no file path is provided #1291
 
 ## [0.0.16] - 2022-02-23
 

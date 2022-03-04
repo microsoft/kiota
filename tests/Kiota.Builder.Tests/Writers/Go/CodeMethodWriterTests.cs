@@ -710,6 +710,7 @@ public class CodeMethodWriterTests : IDisposable {
         var result = tw.ToString();
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
         Assert.Contains($"m.{propName} = {defaultValue}", result);
+        Assert.Contains("m.pathParameters = urlTplParams", result);
         Assert.Contains("make(map[string]string)", result);
     }
     [Fact]
