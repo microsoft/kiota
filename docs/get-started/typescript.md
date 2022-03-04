@@ -50,7 +50,7 @@ npx tsc --init
 
 Once the package feed is accessible the following packages can be added to the project.
 
-```shell
+```bash
 npm install @microsoft/kiota-abstractions
 npm install @microsoft/kiota-authentication-azure
 npm install @microsoft/kiota-http-fetchlibrary
@@ -66,9 +66,7 @@ Kiota generates SDKs from OpenAPI documents. Create a file named **getme.yml** a
 
 You can then use the Kiota command line tool to generate the SDK classes.
 
-You can then use the Kiota command line tool to generate the SDK classes.
-
-```shell
+```bash
 kiota -l typescript -d getme.yml -c GetUserApiClient -o ./client
 ```
 
@@ -130,7 +128,7 @@ GetUser();
 
 When ready to execute the application, execute the following command in your project directory.
 
-```shell
+```bash
 npx ts-node index.ts
 ```
 

@@ -76,7 +76,7 @@ Kiota generates SDKs from OpenAPI documents. Create a file named **getme.yml** a
 
 You can then use the Kiota command line tool to generate the SDK classes.
 
-```shell
+```bash
 kiota -l java -d getme.yml -c GetUserApiClient -n getuserclient.apiclient -o ./app/src/main/java/getuserclient/apiclient
 ```
 
@@ -149,7 +149,7 @@ public class App {
 
 When ready to execute the application, execute the following command in your project directory.
 
-```shell
+```bash
 ./gradlew --console plain run
 ```
 

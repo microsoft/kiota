@@ -18,7 +18,7 @@ Before you can compile and run the generated files, you will need to make sure t
 
 Execute the following command in the directory you want to create a new project.
 
-```shell
+```bash
 dotnet new console -o GetUserClient
 dotnet new gitignore
 ```
@@ -31,7 +31,7 @@ If you have not already, you will need to create a nuget.config to enable access
 
 Once the package feed is accessible the following packages can be added to the project.
 
-```shell
+```bash
 dotnet add package Microsoft.Kiota.Abstractions
 dotnet add package Microsoft.Kiota.Http.HttpClientLibrary
 dotnet add package Microsoft.Kiota.Serialization.Json
@@ -47,7 +47,7 @@ Kiota generates SDKs from OpenAPI documents. Create a file named **getme.yml** a
 
 You can then use the Kiota command line tool to generate the SDK classes.
 
-```shell
+```bash
 kiota -d getme.yml -c GetUserApiClient -n GetUserClient.ApiClient -o ./Client
 ```
 
@@ -100,7 +100,7 @@ Console.WriteLine($"Hello {me.DisplayName}, your ID is {me.Id}");
 
 When ready to execute the application, execute the following command in your project directory.
 
-```shell
+```bash
 dotnet run
 ```
 
