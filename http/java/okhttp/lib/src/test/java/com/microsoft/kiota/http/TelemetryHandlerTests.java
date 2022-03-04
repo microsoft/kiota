@@ -79,8 +79,9 @@ public class TelemetryHandlerTests {
             return request.newBuilder().addHeader("SdkVersion","x.x.x").build();
         };
 
+        RetryHandlerOption retryOptions = new RetryHandlerOption();
 
-        requestInfo.addRequestOptions(telemetryHandlerOption);
+        requestInfo.addRequestOptions(telemetryHandlerOption, retryOptions);
         for(RequestOption option: requestInfo.getRequestOptions()) {
             System.out.println(option.getClass().getName());
         }
