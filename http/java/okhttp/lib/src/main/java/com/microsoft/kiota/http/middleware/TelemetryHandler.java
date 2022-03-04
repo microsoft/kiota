@@ -46,19 +46,21 @@ public class TelemetryHandler implements Interceptor{
     public Response intercept(@Nonnull Chain chain) throws IOException {
         final Request request = chain.request();
 
-        TelemetryHandlerOption telemetryHandlerOption = request.tag(TelemetryHandlerOption.class);
+        //System.out.println(request.tag(TelemetryHandlerOption.class).toString());
+
+        TelemetryHandlerOption telemetryHandlerOption = (com.microsoft.kiota.http.middleware.options.TelemetryHandlerOption)request.tag(java.lang.Object.class);
         if(telemetryHandlerOption == null) {
-            telemetryHandlerOption = this._telemetryHandlerOption; 
-        }
-        
-        //Use the TelemetryConfigurator set by the user to enrich the request as desired.
-        if(telemetryHandlerOption.TelemetryConfigurator != null) {
-            Request enrichedRequest = telemetryHandlerOption.TelemetryConfigurator.apply(request);
-            return chain.proceed(enrichedRequest);
+            telemetryHandlerOption = this._telemetryHandlerOption;
         }
 
-        //Simply forward request if TelemetryConfigurator is set to null intentionally. 
-        return chain.proceed(request);
+        //Simply forward request if TelemetryConfigurator is set to null intentionally.
+        if(telemetryHandlerOption == null) {
+            return chain.proceed(request);
+        }
+
+        //Use the TelemetryConfigurator set by the user to enrich the request as desired.
+        Request enrichedRequest = telemetryHandlerOption.TelemetryConfigurator.apply(request);
+        return chain.proceed(enrichedRequest);
     }
     
 }
