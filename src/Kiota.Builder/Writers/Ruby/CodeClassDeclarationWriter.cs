@@ -5,9 +5,9 @@ using Kiota.Builder.Extensions;
 namespace  Kiota.Builder.Writers.Ruby {
     public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, RubyConventionService>
     {
-        private readonly RelativeImportManager relativeImportManager;
+        private readonly RubyRelativeImportManager relativeImportManager;
         public CodeClassDeclarationWriter(RubyConventionService conventionService, string clientNamespaceName) : base(conventionService){
-            relativeImportManager = new RelativeImportManager(clientNamespaceName, '.');
+            relativeImportManager = new RubyRelativeImportManager(clientNamespaceName, '.');
         }
         
         

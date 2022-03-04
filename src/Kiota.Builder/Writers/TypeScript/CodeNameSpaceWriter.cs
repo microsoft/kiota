@@ -23,14 +23,14 @@ namespace Kiota.Builder.Writers.TypeScript
                 writer.WriteLine($"export * from './{className.ToFirstCharacterLowerCase()}'");
             }
 
-            var enums = codeElement.Enums;
-            if (enums != null && enums.Any())
-            {
-                foreach (var e in enums)
-                {
-                    writer.WriteLine($"export * from './{e.Name.ToFirstCharacterLowerCase}'");
-                }
-            }
+            //var enums = codeElement.Enums;
+            //if (enums != null && enums.Any())
+            //{
+            //    foreach (var e in enums)
+            //    {
+            //        writer.WriteLine($"export * from './{e.Name.ToFirstCharacterLowerCase()}'");
+            //    }
+            //}
         }
 
         /// <summary>
@@ -73,7 +73,7 @@ namespace Kiota.Builder.Writers.TypeScript
             /*
              * 1. Create a dictionary containing all the parent classes.
              */
-            foreach (var @class in classes)
+            foreach (var @class in classes.Where(c => c.IsOfKind(CodeClassKind.Model)))
             {
                 // Verify if parent class is from the same namespace
                 var inheritsFrom = @class.StartBlock?.Inherits?.TypeDefinition.Parent.Name == @class.Parent.Name ? @class.StartBlock.Inherits.Name : null;
@@ -100,7 +100,7 @@ namespace Kiota.Builder.Writers.TypeScript
             /*
              * 3. Print all remaining classes which have not been visted or those do not have any parent/child relationship.
              */
-            foreach (var @class in classes)
+            foreach (var @class in classes.Where(c => c.IsOfKind(CodeClassKind.Model) && !visited.Contains(c.Name) ))
             {
                 if (!visited.Contains(@class.Name))
                 {

@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading;
 
 namespace Kiota.Builder.CodeRenderers
 {
@@ -6,8 +7,11 @@ namespace Kiota.Builder.CodeRenderers
     {
         public TypeScriptCodeRenderer(GenerationConfiguration configuration) : base(configuration) { }
         public override bool ShouldRenderNamespaceFile(CodeNamespace codeNamespace)
+
+
         {
-            return (codeNamespace.Classes.Any() || codeNamespace.Enums.Any());
+            var classes = codeNamespace.Classes;
+            return classes.Any(c => c.IsOfKind(CodeClassKind.Model));
         }
     }
 }
