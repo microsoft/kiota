@@ -273,8 +273,13 @@ namespace Microsoft.Kiota.Serialization.Json
         private void AssignFieldValues<T>(T item, IDictionary<string, Action<T, IParseNode>> fieldDeserializers) where T : IParsable
         {
             if(_jsonNode.ValueKind != JsonValueKind.Object) return;
-            if(item.AdditionalData == null)
-                item.AdditionalData = new Dictionary<string, object>();
+            IDictionary<string, object> itemAdditionalData = null;
+            if(item is IAdditionalDataHolder holder)
+            {
+                if(holder.AdditionalData == null)
+                    holder.AdditionalData = new Dictionary<string, object>();
+                itemAdditionalData = holder.AdditionalData;
+            }
 
             foreach(var fieldValue in _jsonNode.EnumerateObject())
             {
@@ -291,10 +296,14 @@ namespace Microsoft.Kiota.Serialization.Json
                         OnAfterAssignFieldValues = OnAfterAssignFieldValues
                     });
                 }
-                else
+                else if (itemAdditionalData != null)
                 {
                     Debug.WriteLine($"found additional property {fieldValue.Name} to deserialize");
-                    item.AdditionalData.TryAdd(fieldValue.Name, TryGetAnything(fieldValue.Value));
+                    itemAdditionalData.TryAdd(fieldValue.Name, TryGetAnything(fieldValue.Value));
+                }
+                else
+                {
+                    Debug.WriteLine($"found additional property {fieldValue.Name} to deserialize but the model doesn't support additional data");
                 }
             }
         }

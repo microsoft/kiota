@@ -164,11 +164,21 @@ func (n *JsonParseNode) GetObjectValue(ctor absser.ParsableFactory) (absser.Pars
 	}
 	fields := result.GetFieldDeserializers()
 	if len(properties) != 0 {
+		itemAsHolder, isHolder := result.(absser.AdditionalDataHolder)
+		var itemAdditionalData map[string]interface{}
+		if isHolder {
+			itemAdditionalData = itemAsHolder.GetAdditionalData()
+			if itemAdditionalData == nil {
+				itemAdditionalData = make(map[string]interface{})
+				itemAsHolder.SetAdditionalData(itemAdditionalData)
+			}
+		}
+
 		for key, value := range properties {
 			field := fields[key]
 			if field == nil {
-				if value != nil {
-					result.GetAdditionalData()[key] = value.value
+				if value != nil && isHolder {
+					itemAdditionalData[key] = value.value
 				}
 			} else {
 				err := field(result, value)

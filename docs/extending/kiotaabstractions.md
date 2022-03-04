@@ -25,23 +25,23 @@ public interface IRequestAdapter
         RequestInformation requestInfo,
         ParsableFactory<ModelType> factory,
         IResponseHandler responseHandler = default,
-        Dictionary<string, Func<IParsable>> errorMappings = default) where ModelType : IParsable;
+        Dictionary<string, ParsableFactory<IParsable>> errorMappings = default) where ModelType : IParsable;
 
     Task<IEnumerable<ModelType>> SendCollectionAsync<ModelType>(
         RequestInformation requestInfo,
         ParsableFactory<ModelType> factory,
         IResponseHandler responseHandler = default,
-        Dictionary<string, Func<IParsable>> errorMappings = default) where ModelType : IParsable;
+        Dictionary<string, ParsableFactory<IParsable>> errorMappings = default) where ModelType : IParsable;
 
     Task<ModelType> SendPrimitiveAsync<ModelType>(
         RequestInformation requestInfo,
         IResponseHandler responseHandler = default,
-        Dictionary<string, Func<IParsable>> errorMappings = default);
+        Dictionary<string, ParsableFactory<IParsable>> errorMappings = default);
 
     Task SendNoContentAsync(
         RequestInformation requestInfo,
         IResponseHandler responseHandler = default,
-        Dictionary<string, Func<IParsable>> errorMappings = default);
+        Dictionary<string, ParsableFactory<IParsable>> errorMappings = default);
 }
 ```
 
