@@ -26,6 +26,8 @@ namespace Kiota.Builder.Writers.Shell
         private const string outputFormatParamName = "output";
         private const string outputFormatterFactoryParamType = "IOutputFormatterFactory";
         private const string outputFormatterFactoryParamName = "outputFormatterFactory";
+        private const string jsonNoIndentParamType = "bool";
+        private const string jsonNoIndentParamName = "jsonNoIndent";
 
         public ShellCodeMethodWriter(CSharpConventionService conventionService) : base(conventionService)
         {
@@ -178,6 +180,22 @@ namespace Kiota.Builder.Writers.Shell
                 paramNames.Add(outputFilterQueryParamName);
                 paramTypes.Add(outputFilterQueryParamType);
                 availableOptions.Add(outputFilterQueryOptionName);
+
+                // Add JSON no-indent option
+                var jsonNoIndentOptionName = $"{jsonNoIndentParamName}Option";
+                writer.WriteLine($"var {jsonNoIndentOptionName} = new Option<bool>(\"--{NormalizeToOption(jsonNoIndentParamName)}\", r => {{");
+                writer.IncreaseIndent();
+                writer.WriteLine("if (bool.TryParse(r.Tokens.Select(t => t.Value).LastOrDefault(), out var value)) {");
+                writer.IncreaseIndent();
+                writer.WriteLine("return value;");
+                writer.CloseBlock();
+                writer.WriteLine("return true;");
+                writer.DecreaseIndent();
+                writer.WriteLine("}, description: \"Disable indentation for the JSON output formatter.\");");
+                writer.WriteLine($"command.AddOption({jsonNoIndentOptionName});");
+                paramNames.Add(jsonNoIndentParamName);
+                paramTypes.Add(jsonNoIndentParamType);
+                availableOptions.Add(jsonNoIndentOptionName);
             }
         }
 
@@ -195,9 +213,19 @@ namespace Kiota.Builder.Writers.Shell
 
                 if (typeString != "Stream")
                 {
+                    var formatterOptionsVar = "formatterOptions";
                     writer.WriteLine($"var {formatterVar} = {outputFormatterFactoryParamName}.GetFormatter({outputFormatParamName});");
                     writer.WriteLine($"response = {outputFilterParamName}?.FilterOutput(response, {outputFilterQueryParamName}) ?? response;");
-                    writer.WriteLine($"{formatterVar}.WriteOutput(response);");
+                    writer.WriteLine($"OutputFormatterOptions {formatterOptionsVar} = null;");
+                    writer.WriteLine($"if ({outputFormatParamName} == FormatterType.JSON) {{");
+                    writer.IncreaseIndent();
+                    writer.WriteLine($"{formatterOptionsVar} = new JsonOutputFormatterOptions {{ OutputIndented = !{jsonNoIndentParamName}}};");
+                    writer.CloseBlock();
+                    writer.WriteLine($"else if ({outputFormatParamName} == FormatterType.TABLE) {{");
+                    writer.IncreaseIndent();
+                    writer.WriteLine($"{formatterOptionsVar} = new TableOutputFormatterOptions();");
+                    writer.CloseBlock();
+                    writer.WriteLine($"{formatterVar}.WriteOutput(response, {formatterOptionsVar});");
                 }
                 else
                 {
@@ -366,7 +394,7 @@ namespace Kiota.Builder.Writers.Shell
             if (requestBodyParam != null)
             {
                 var requestBodyParamType = requestBodyParam?.Type as CodeType;
-                if (requestBodyParamType?.TypeDefinition is CodeClass)
+                if (requestBodyParamType?.TypeDefinition is CodeClass requestBodyParamTypeDef)
                 {
                     writer.WriteLine($"using var stream = new MemoryStream(Encoding.UTF8.GetBytes({requestBodyParam.Name}));");
                     writer.WriteLine($"var parseNode = ParseNodeFactoryRegistry.DefaultInstance.GetRootParseNode(\"{generatorMethod.ContentType}\", stream);");
@@ -375,11 +403,11 @@ namespace Kiota.Builder.Writers.Shell
 
                     if (requestBodyParamType.IsCollection)
                     {
-                        writer.WriteLine($"var model = parseNode.GetCollectionOfObjectValues<{typeString}>();");
+                        writer.WriteLine($"var model = parseNode.GetCollectionOfObjectValues<{typeString}>({typeString}.CreateFromDiscriminatorValue);");
                     }
                     else
                     {
-                        writer.WriteLine($"var model = parseNode.GetObjectValue<{typeString}>();");
+                        writer.WriteLine($"var model = parseNode.GetObjectValue<{typeString}>({typeString}.CreateFromDiscriminatorValue);");
                     }
 
                     requestBodyParam.Name = "model";
@@ -401,11 +429,11 @@ namespace Kiota.Builder.Writers.Shell
             if (codeElement.ErrorMappings.Any())
             {
                 errorMappingVarName = "errorMapping";
-                writer.WriteLine($"var {errorMappingVarName} = new Dictionary<string, Func<IParsable>> {{");
+                writer.WriteLine($"var {errorMappingVarName} = new Dictionary<string, ParsableFactory<IParsable>> {{");
                 writer.IncreaseIndent();
                 foreach (var errorMapping in codeElement.ErrorMappings)
                 {
-                    writer.WriteLine($"{{\"{errorMapping.Key.ToUpperInvariant()}\", () => new {errorMapping.Value.Name.ToFirstCharacterUpperCase()}()}},");
+                    writer.WriteLine($"{{\"{errorMapping.Key.ToUpperInvariant()}\", {errorMapping.Value.Name.ToFirstCharacterUpperCase()}.CreateFromDiscriminatorValue}},");
                 }
                 writer.CloseBlock("};");
             }
