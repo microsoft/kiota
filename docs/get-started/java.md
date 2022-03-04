@@ -145,11 +145,6 @@ public class App {
 > - If the target API requires an `Authorization bearer <token>` header but doesn't rely on the Microsoft identity platform, you can implement your own authentication provider by inheriting from **BaseBearerTokenAuthenticationProvider**.
 > - If the target API requires any other form of authentication schemes, you can implement the **AuthenticationProvider** interface.
 
-## See also
-
-- [kiota-samples repository](https://github.com/microsoft/kiota-samples/tree/main/get-started/java) contains the code from this guide.
-- [ToDoItem Sample API](https://github.com/microsoft/kiota-samples/tree/main/sample-api) implements a sample OpenAPI in ASP.NET Core and sample clients in multiple languages.
-
 ## Executing the application
 
 When ready to execute the application, execute the following command in your project directory.
@@ -157,3 +152,8 @@ When ready to execute the application, execute the following command in your pro
 ```shell
 ./gradlew --console plain run
 ```
+
+## See also
+
+- [kiota-samples repository](https://github.com/microsoft/kiota-samples/tree/main/get-started/java) contains the code from this guide.
+- [ToDoItem Sample API](https://github.com/microsoft/kiota-samples/tree/main/sample-api) implements a sample OpenAPI in ASP.NET Core and sample clients in multiple languages.
