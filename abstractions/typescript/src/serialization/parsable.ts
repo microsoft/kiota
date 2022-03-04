@@ -9,7 +9,7 @@ export interface Parsable {
    * Gets the deserialization information for this object.
    * @return The deserialization information for this object where each entry is a property key with its deserialization callback.
    */
-  getFieldDeserializers<T>(): Map<string, (item: T, node: ParseNode) => void>;
+  getFieldDeserializers<T>(): Record<string, (item: T, node: ParseNode) => void>;
   /**
    * Writes the objects properties to the current writer.
    * @param writer The writer to write to.
@@ -19,5 +19,5 @@ export interface Parsable {
    * Gets the additional data for this object that did not belong to the properties.
    * @return The additional data for this object.
    */
-  additionalData: Map<string, unknown>;
+  additionalData: Record<string, unknown>;
 }

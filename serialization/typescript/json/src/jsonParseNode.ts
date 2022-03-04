@@ -86,7 +86,7 @@ export class JsonParseNode implements ParseNode {
       if (deserializer) {
         deserializer(item, new JsonParseNode(v));
       } else {
-        item.additionalData.set(k, v);
+        item.additionalData[k] = v;
       }
     });
   };
