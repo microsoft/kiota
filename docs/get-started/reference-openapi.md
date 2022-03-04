@@ -8,6 +8,8 @@ parent: Get started
 The following is a minimal OpenAPI description that describes how to call the `/me` endpoint on Microsoft Graph. This description is used in the following guides.
 
 - [Build SDKs for .NET](dotnet.md)
+- [Build SDKs for Java](java.md)
+- [Build SDKs for TypeScript](typescript.md)
 
 ```yaml
 openapi: 3.0.3
