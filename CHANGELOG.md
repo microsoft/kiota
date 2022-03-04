@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where union wrapper models would lack the discriminator methods
+
 ## [0.0.17] - 2022-03-03
 
 ### Added
