@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- Shell commands will now default to writing indented JSON. This option can be disabled through the CLI option `--json-no-indent` #1326
 
 ## [0.0.17] - 2022-03-03
 
