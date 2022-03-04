@@ -11,6 +11,8 @@ The following instructions register an app and enable [device code flow](https:/
 
 ## Use PowerShell
 
+**Note:** The PowerShell script requires an account with the Application administrator, Cloud application administrator, or Global administrator role. If your account has the Application developer role, you can [register manually](#register-manually).
+
 ```powershell
 Connect-MgGraph -Scopes "Application.ReadWrite.All"
 $app = New-MgApplication -displayName "NativeGraphApp" -IsFallbackPublicClient
