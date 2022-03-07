@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Improved error display #1269
 - Fixed a bug where union wrapper models would lack the discriminator methods
 - Fixed bug working with async azure credentials in Python
 
