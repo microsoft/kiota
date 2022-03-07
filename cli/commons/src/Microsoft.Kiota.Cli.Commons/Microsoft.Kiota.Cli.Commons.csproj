@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryUrl>https://github.com/microsoft/kiota</RepositoryUrl>
-    <Version>0.1.3-preview.1</Version>
+    <Version>0.1.4-preview.1</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     
@@ -15,7 +15,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.CommandLine" Version="2.0.0-beta2.21617.1" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta3.22114.1" />
   </ItemGroup>
 
 </Project>

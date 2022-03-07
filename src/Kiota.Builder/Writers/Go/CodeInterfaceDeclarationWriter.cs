@@ -13,8 +13,8 @@ public class CodeInterfaceDeclarationWriter : CodeProprietableBlockDeclarationWr
         conventions.WriteShortDescription($"{interName} {inter.Description.ToFirstCharacterLowerCase()}", writer);
         writer.WriteLine($"type {interName} interface {{");
         writer.IncreaseIndent();
-        if(codeElement.Implements.Any()) {
-            var parentTypeName = conventions.GetTypeString(codeElement.Implements.First(), inter, true, false);
+        foreach (var implement in codeElement.Implements) {
+            var parentTypeName = conventions.GetTypeString(implement, inter, true, false);
             writer.WriteLine($"{parentTypeName}");
         }
     }

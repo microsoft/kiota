@@ -941,6 +941,7 @@ public class KiotaBuilder
     private const string BackingStoreInterface = "IBackingStore";
     private const string BackedModelInterface = "IBackedModel";
     private const string ParseNodeInterface = "IParseNode";
+    private const string AdditionalHolderInterface = "IAdditionalDataHolder";
     internal static void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties, bool usesBackingStore) {
         var serializationPropsType = $"IDictionary<string, Action<T, {ParseNodeInterface}>>";
         if(!model.ContainsMember(FieldDeserializersMethodName)) {
@@ -993,6 +994,10 @@ public class KiotaBuilder
                 },
             };
             model.AddProperty(additionalDataProp);
+            model.StartBlock.AddImplements(new CodeType {
+                Name = AdditionalHolderInterface,
+                IsExternal = true,
+            });
         }
         if(!model.ContainsMember(BackingStorePropertyName) &&
             usesBackingStore &&
