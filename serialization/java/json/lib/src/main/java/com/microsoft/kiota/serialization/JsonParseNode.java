@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 
 import com.microsoft.kiota.serialization.ParseNode;
 import com.microsoft.kiota.serialization.Parsable;
+import com.microsoft.kiota.serialization.AdditionalDataHolder;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -239,6 +240,10 @@ public class JsonParseNode implements ParseNode {
             if(this.onBeforeAssignFieldValues != null) {
                 this.onBeforeAssignFieldValues.accept(item);
             }
+            Map<String, Object> itemAdditionalData = null;
+            if(item instanceof AdditionalDataHolder) {
+                itemAdditionalData = ((AdditionalDataHolder)item).getAdditionalData();
+            }
             for (final Map.Entry<String, JsonElement> fieldEntry : currentNode.getAsJsonObject().entrySet()) {
                 final String fieldKey = fieldEntry.getKey();
                 final BiConsumer<? super T, ParseNode> fieldDeserializer = fieldDeserializers.get(fieldKey);
@@ -253,8 +258,8 @@ public class JsonParseNode implements ParseNode {
                         this.setOnAfterAssignFieldValues(onAfter);
                     }});
                 }
-                else
-                    item.getAdditionalData().put(fieldKey, this.tryGetAnything(fieldValue));
+                else if (itemAdditionalData != null)
+                    itemAdditionalData.put(fieldKey, this.tryGetAnything(fieldValue));
             }
             if(this.onAfterAssignFieldValues != null) {
                 this.onAfterAssignFieldValues.accept(item);

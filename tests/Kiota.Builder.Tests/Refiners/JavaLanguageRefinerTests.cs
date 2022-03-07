@@ -341,6 +341,11 @@ public class JavaLanguageRefinerTests {
         });
         const string handlerDefaultName = "IResponseHandler";
         const string headersDefaultName = "IDictionary<string, string>";
+        const string additionalDataHolderDefaultName = "IAdditionalDataHolder";
+        model.StartBlock.AddImplements(new CodeType {
+            Name = additionalDataHolderDefaultName,
+            IsExternal = true,
+        });
         var executorMethod = model.AddMethod(new CodeMethod {
             Name = "executor",
             Kind = CodeMethodKind.RequestExecutor,
@@ -391,6 +396,8 @@ public class JavaLanguageRefinerTests {
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => handlerDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => headersDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.StartBlock.Implements.Where(x => additionalDataHolderDefaultName.Equals(x.Name, StringComparison.OrdinalIgnoreCase)));
+        Assert.Equal(additionalDataHolderDefaultName[1..], model.StartBlock.Implements.First().Name);
     }
     [Fact]
     public void AddsMethodsOverloads() {
