@@ -342,10 +342,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if(codeUnionType.Types.All(x => x.TypeDefinition is CodeClass targetClass && targetClass.IsOfKind(CodeClassKind.Model) ||
                                 x.TypeDefinition is CodeEnum)) {
             KiotaBuilder.AddSerializationMembers(newClass, true, usesBackingStore);
-            newClass.Kind = CodeClassKind.Model;
+            if (newClass != null) newClass.Kind = CodeClassKind.Model;
         }
         return new CodeType {
-            Name = newClass.Name,
+            Name = newClass?.Name,
             TypeDefinition = newClass,
             CollectionKind = codeUnionType.CollectionKind,
             IsNullable = codeUnionType.IsNullable,
