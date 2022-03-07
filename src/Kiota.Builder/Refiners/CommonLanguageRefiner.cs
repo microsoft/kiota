@@ -346,7 +346,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             if (newClass != null) newClass.Kind = CodeClassKind.Model;
         }
         // Add the discrimnator function to the wrapper as it will be referenced. 
-        var factoryMethod = newClass.AddMethod(new CodeMethod
+        var factoryMethod = newClass?.AddMethod(new CodeMethod
         {
             Name = "CreateFromDiscriminatorValue",
             ReturnType = new CodeType { TypeDefinition = newClass, Name = newClass.Name, IsNullable = false },
@@ -354,7 +354,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             IsStatic = true,
             IsAsync = false,
         }).First();
-        factoryMethod.AddParameter(new CodeParameter
+        factoryMethod?.AddParameter(new CodeParameter
         {
             Name = "parseNode",
             Kind = CodeParameterKind.ParseNode,
