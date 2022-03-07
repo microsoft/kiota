@@ -16,7 +16,7 @@ namespace Kiota.Builder.Refiners
             ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Escaped{reservedWord.ToFirstCharacterUpperCase()}");
             AddConstructorsForDefaultValues(generatedCode, true);
             RemoveCancellationParameter(generatedCode);
-            ConvertUnionTypesToWrapper(generatedCode, false);
+            ConvertUnionTypesToWrapper(generatedCode, false, false);
             CorrectParameterType(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             MakeModelPropertiesNullable(generatedCode);
