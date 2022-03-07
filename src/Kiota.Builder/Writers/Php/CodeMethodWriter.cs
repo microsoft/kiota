@@ -91,11 +91,12 @@ namespace Kiota.Builder.Writers.Php
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RawUrl, CodePropertyKind.UrlTemplate, writer);
             }
             var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
+            var pathParametersParameter = currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters);
             if (currentMethod.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor) &&
                 parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
                 currentMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path)))
             {
-                writer.WriteLine($"$urlTplParams = $pathParameters;");
+                writer.WriteLine($"$urlTplParams = ${pathParametersParameter.Name};");
                 currentMethod.Parameters.Where(parameter => parameter.IsOfKind(CodeParameterKind.Path)).ToList()
                     .ForEach(parameter =>
                     {

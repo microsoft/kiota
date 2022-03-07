@@ -37,7 +37,7 @@ namespace Kiota.Builder.Writers.Php
 
         public string DocCommentEnd => "*/";
         
-        internal HashSet<string> PrimitiveTypes = new() {"string", "boolean", "integer", "float", "date", "datetime", "time", "dateinterval"};
+        internal HashSet<string> PrimitiveTypes = new(StringComparer.OrdinalIgnoreCase) {"string", "boolean", "integer", "float", "date", "datetime", "time", "dateinterval"};
 
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
         {
