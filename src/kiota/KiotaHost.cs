@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Extensions;
@@ -55,14 +56,14 @@ namespace Kiota {
                 serializerOption,
                 deserializerOption,
             };
-            command.SetHandler<string, GenerationLanguage, string, bool, string, LogLevel, string, List<string>, List<string>>(HandleCommandCall, outputOption, languageOption, descriptionOption, backingStoreOption, classOption, logLevelOption, namespaceOption, serializerOption, deserializerOption);
+            command.SetHandler<string, GenerationLanguage, string, bool, string, LogLevel, string, List<string>, List<string>, CancellationToken>(HandleCommandCall, outputOption, languageOption, descriptionOption, backingStoreOption, classOption, logLevelOption, namespaceOption, serializerOption, deserializerOption);
             return command;
         }
         private void AssignIfNotNullOrEmpty(string input, Action<GenerationConfiguration, string> assignment) {
             if (!string.IsNullOrEmpty(input))
                 assignment.Invoke(Configuration, input);
         }
-        private async Task HandleCommandCall(string output, GenerationLanguage language, string openapi, bool backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer, List<string> deserializer) {
+        private async Task<int> HandleCommandCall(string output, GenerationLanguage language, string openapi, bool backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer, List<string> deserializer, CancellationToken cancellationToken) {
             AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
             AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
             AssignIfNotNullOrEmpty(classname, (c, s) => c.ClientClassName = s);
@@ -92,7 +93,18 @@ namespace Kiota {
 
             logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration));
 
-            await new KiotaBuilder(logger, Configuration).GenerateSDK();
+            try {
+                await new KiotaBuilder(logger, Configuration).GenerateSDK(cancellationToken);
+                return 0;
+            } catch (Exception ex) {
+#if DEBUG
+                logger.LogCritical(ex, "error generating the SDK: {exceptionMessage}", ex.Message);
+                throw; // so debug tools go straight to the source of the exception when attached
+#else
+                logger.LogCritical("error generating the SDK: {exceptionMessage}", ex.Message);
+                return 1;
+#endif
+            }
         }
         private static void AddStringRegexValidator(Option<string> option, string pattern, string parameterName) {
             var validator = new Regex(pattern);
