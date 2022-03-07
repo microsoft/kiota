@@ -1,11 +1,11 @@
-from typing import Dict, List, Optional, Set, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List, Optional, Set
 
 from kiota.abstractions.authentication import BaseBearerTokenAuthenticationProvider
 
+from .azure_identity_access_token_provider import AzureIdentityAccessTokenProvider
+
 if TYPE_CHECKING:
     from azure.core.credentials_async import AsyncTokenCredential
-
-from .azure_identity_access_token_provider import AzureIdentityAccessTokenProvider
 
 
 class AzureIdentityAuthenticationProvider(BaseBearerTokenAuthenticationProvider):
