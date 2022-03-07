@@ -37,7 +37,7 @@ namespace Kiota.Builder.Writers.Php
 
         public string DocCommentEnd => "*/";
         
-        internal HashSet<string> PrimitiveTypes = new(StringComparer.OrdinalIgnoreCase) {"string", "boolean", "integer", "float", "date", "datetime", "time", "dateinterval"};
+        internal HashSet<string> PrimitiveTypes = new(StringComparer.OrdinalIgnoreCase) {"string", "boolean", "integer", "float", "date", "datetime", "time", "dateinterval", "int", "double", "decimal", "bool"};
 
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
         {
@@ -51,7 +51,7 @@ namespace Kiota.Builder.Writers.Php
                     return $"{MakeNamespaceAliasVariable(currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name.ToFirstCharacterUpperCase())}{typeName.ToFirstCharacterUpperCase()}";
                 }
             }
-            return code.IsCollection ? "array" : TranslateType(code);
+            return code is {IsCollection: true} ? "array" : TranslateType(code);
         }
 
         public override string TranslateType(CodeType type)
@@ -88,10 +88,13 @@ namespace Kiota.Builder.Writers.Php
         }
         public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
         {
-            
-            var typeString = GetTypeString(parameter.Type, parameter);
+            if (parameter?.Type == null)
+            {
+                return string.Empty;
+            }
+            var typeString = GetTypeString(parameter?.Type, parameter);
             var methodTarget = targetElement as CodeMethod;
-            var parameterSuffix = parameter.Kind switch
+            var parameterSuffix = parameter?.Kind switch
             {
                 CodeParameterKind.RequestAdapter => $"RequestAdapter {GetParameterName(parameter)}",
                 CodeParameterKind.ResponseHandler => $"ResponseHandler {GetParameterName(parameter)}",
@@ -101,9 +104,9 @@ namespace Kiota.Builder.Writers.Php
                 _ => $"{typeString} {GetParameterName(parameter)}"
 
             };
-            var qualified = parameter.Optional &&
+            var qualified = parameter?.Optional != null && parameter.Optional &&
                             (methodTarget != null && !methodTarget.IsOfKind(CodeMethodKind.Setter));
-            return parameter.Optional ? $"?{parameterSuffix} {(qualified ?  "= null" : string.Empty)}" : parameterSuffix;
+            return parameter?.Optional != null && parameter.Optional ? $"?{parameterSuffix} {(qualified ?  "= null" : string.Empty)}" : parameterSuffix;
         }
         public string GetParameterDocNullable(CodeParameter parameter, CodeElement codeElement)
         {
@@ -145,7 +148,7 @@ namespace Kiota.Builder.Writers.Php
             var codeParameters = pathParameters?.ToList();
             if (pathParameters != null && codeParameters.Any())
             {
-                joined = $", {string.Join(", ", codeParameters.Select(parameter => $"${parameter.Name}"))}";
+                joined = $", {string.Join(", ", codeParameters.Select(parameter => $"${parameter.Name.ToFirstCharacterLowerCase()}"))}";
             }
 
             writer.WriteLines($"return new {returnType}($this->{RemoveDollarSignFromPropertyName(PathParametersPropertyName)}{suffix}, $this->{RemoveDollarSignFromPropertyName(RequestAdapterPropertyName)}{joined});");

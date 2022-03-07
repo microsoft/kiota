@@ -17,6 +17,11 @@ namespace Kiota.Builder.Refiners
             AddConstructorsForDefaultValues(generatedCode, true);
             RemoveCancellationParameter(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode, false, false);
+            AddDiscriminatorMappingsUsingsToParentClasses(
+                generatedCode,
+                "ParseNode",
+                addUsings: false
+            );
             CorrectParameterType(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             MakeModelPropertiesNullable(generatedCode);
@@ -147,9 +152,14 @@ namespace Kiota.Builder.Refiners
         {
             var currentMethod = codeElement as CodeMethod;
             var parameters = currentMethod?.Parameters;
-            parameters?.Where(x => x.IsOfKind(CodeParameterKind.Options, CodeParameterKind.Headers)).ToList().ForEach(x =>
+            var codeParameters = parameters as CodeParameter[] ?? parameters?.ToArray();
+            codeParameters?.Where(x => x.IsOfKind(CodeParameterKind.Options, CodeParameterKind.Headers)).ToList().ForEach(x =>
             {
                 x.Type.Name = "array";
+            });
+            codeParameters?.Where(x => x.IsOfKind(CodeParameterKind.ParseNode)).ToList().ForEach(x =>
+            {
+                x.Type.Name = "ParseNode";
             });
             CrawlTree(codeElement, CorrectParameterType);
         }

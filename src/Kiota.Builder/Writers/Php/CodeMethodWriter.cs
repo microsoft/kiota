@@ -15,7 +15,7 @@ namespace Kiota.Builder.Writers.Php
         {
 
             var parentClass = codeElement.Parent as CodeClass;
-            var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
+            var returnType = codeElement.Kind == CodeMethodKind.Constructor ? "void" : conventions.GetTypeString(codeElement.ReturnType, codeElement);
             var inherits = parentClass?.StartBlock?.Inherits != null;
             var orNullReturn = codeElement.ReturnType.IsNullable ? new[]{"?", "|null"} : new[] {string.Empty, string.Empty};
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
@@ -60,6 +60,9 @@ namespace Kiota.Builder.Writers.Php
                     case CodeMethodKind.RequestExecutor:
                         WriteRequestExecutorBody(codeElement, parentClass, requestParams, writer);
                         break;
+                    case CodeMethodKind.Factory:
+                        WriteFactoryMethodBody(codeElement, writer);
+                        break;
             }
             writer.CloseBlock();
             writer.WriteLine();
@@ -92,17 +95,18 @@ namespace Kiota.Builder.Writers.Php
             }
             var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var pathParametersParameter = currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters);
+            var urlTemplateTempVarName = "$urlTplParams";
             if (currentMethod.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor) &&
                 parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
                 currentMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path)))
             {
-                writer.WriteLine($"$urlTplParams = ${pathParametersParameter.Name};");
+                writer.WriteLine($"{urlTemplateTempVarName} = ${pathParametersParameter.Name};");
                 currentMethod.Parameters.Where(parameter => parameter.IsOfKind(CodeParameterKind.Path)).ToList()
                     .ForEach(parameter =>
                     {
-                        writer.WriteLine($"$urlTplParams['{parameter.Name}'] = ${parameter.Name};");
+                        writer.WriteLine($"{urlTemplateTempVarName}['{parameter.Name}'] = ${parameter.Name.ToFirstCharacterLowerCase()};");
                     });
-                writer.WriteLine($"{GetPropertyCall(pathParametersProperty, "[]")} = array_merge({GetPropertyCall(pathParametersProperty, "[]")}, $urlTplParams);");
+                writer.WriteLine($"{GetPropertyCall(pathParametersProperty, "[]")} = array_merge({GetPropertyCall(pathParametersProperty, "[]")}, {urlTemplateTempVarName});");
             }
         }
         private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer) {
@@ -196,7 +200,7 @@ namespace Kiota.Builder.Writers.Php
                 writer.IncreaseIndent();
                 return;
             }
-            var isVoidable = "void".Equals(conventions.GetTypeString(codeMethod.ReturnType, codeMethod),
+            var isVoidable = "void".Equals(isConstructor ? null : conventions.GetTypeString(codeMethod.ReturnType, codeMethod),
                 StringComparison.OrdinalIgnoreCase);
             var optionalCharacterReturn = isVoidable ? string.Empty : orNullReturn[0];
             var returnValue = isConstructor
@@ -245,7 +249,7 @@ namespace Kiota.Builder.Writers.Php
             var propertyType = conventions.TranslateType(propType);
             if(propType is CodeType currentType) {
                 if(isCollection) { 
-                    if(currentType.TypeDefinition is null or CodeEnum){
+                    if(currentType.TypeDefinition is null){
                         return "writeCollectionOfPrimitiveValues";
                     }
                     return currentType.TypeDefinition is CodeEnum ? "writeCollectionOfEnumValues" : "writeCollectionOfObjectValues";
@@ -416,7 +420,7 @@ namespace Kiota.Builder.Writers.Php
             }
             
             var returnType = conventions.TranslateType(codeElement.ReturnType);
-            var returnVoidOrString = returnType.Equals("void", StringComparison.OrdinalIgnoreCase) || returnType.Equals("string", StringComparison.OrdinalIgnoreCase);
+            var returnVoidOrString = returnType.Equals("void", StringComparison.OrdinalIgnoreCase) || conventions.PrimitiveTypes.Contains(returnType.ToLower());
             writer.WriteLine($"$requestInfo = $this->{generatorMethodName}({joinedParams});");
             writer.WriteLine("try {");
             writer.IncreaseIndent();
@@ -444,6 +448,24 @@ namespace Kiota.Builder.Writers.Php
             if(serializationModules != null)
                 foreach(var module in serializationModules)
                     writer.WriteLine($"ApiClientBuilder::{methodName}(\\{module}::class);");
+        }
+        
+        private static void WriteFactoryMethodBody(CodeMethod codeElement, LanguageWriter writer){
+            var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
+            if(codeElement.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
+                writer.WriteLines($"$mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}::getChildNode(\"{codeElement.DiscriminatorPropertyName}\");",
+                    "if ($mappingValueNode != null) {");
+                writer.IncreaseIndent();
+                writer.WriteLines("$mappingValue = $mappingValueNode->getStringValue();");
+                writer.WriteLine("switch ($mappingValue) {");
+                writer.IncreaseIndent();
+                foreach(var mappedType in codeElement.DiscriminatorMappings) {
+                    writer.WriteLine($"case \"{mappedType.Key}\": return new {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()}();");
+                }
+                writer.CloseBlock();
+                writer.CloseBlock();
+            }
+            writer.WriteLine($"return new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}();");
         }
     }
 }
