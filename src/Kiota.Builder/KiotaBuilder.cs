@@ -144,7 +144,7 @@ public class KiotaBuilder
         stopwatch.Stop();
         if (diag.Errors.Count > 0)
         {
-            logger.LogTrace("{timestamp}ms: Parsed OpenAPI with errors. {count} paths found.", stopwatch.ElapsedMilliseconds, doc.Paths.Count);
+            logger.LogTrace("{timestamp}ms: Parsed OpenAPI with errors. {count} paths found.", stopwatch.ElapsedMilliseconds, doc?.Paths?.Count ?? 0);
             foreach(var parsingError in diag.Errors)
             {
                 logger.LogError("OpenApi Parsing error: {message}", parsingError.ToString());
@@ -152,7 +152,7 @@ public class KiotaBuilder
         }
         else
         {
-            logger.LogTrace("{timestamp}ms: Parsed OpenAPI successfully. {count} paths found.", stopwatch.ElapsedMilliseconds, doc.Paths.Count);
+            logger.LogTrace("{timestamp}ms: Parsed OpenAPI successfully. {count} paths found.", stopwatch.ElapsedMilliseconds, doc?.Paths?.Count ?? 0);
         }
 
         return doc;
