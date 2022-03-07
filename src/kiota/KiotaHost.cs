@@ -90,17 +90,17 @@ namespace Kiota {
                     .SetMinimumLevel(loglevel);
             }).CreateLogger<KiotaBuilder>();
 
-            logger.LogTrace($"configuration: {JsonSerializer.Serialize(Configuration)}");
+            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration));
 
             await new KiotaBuilder(logger, Configuration).GenerateSDK();
         }
         private static void AddStringRegexValidator(Option<string> option, string pattern, string parameterName) {
             var validator = new Regex(pattern);
             option.AddValidator((input) => {
-                if(input.Tokens.Any() &&
-                    !validator.IsMatch(input.Tokens[0].Value))
-                        return $"{input.Tokens[0].Value} is not a valid {parameterName} for the client, the {parameterName} must conform to {pattern}";
-                return null;
+                var value = input.GetValueForOption(option);
+                if(string.IsNullOrEmpty(value) ||
+                    !validator.IsMatch(value))
+                        input.ErrorMessage = $"{value} is not a valid {parameterName} for the client, the {parameterName} must conform to {pattern}";
             });
         }
         private static void AddEnumValidator<T>(Option<T> option, string parameterName) where T: struct, Enum {
@@ -108,9 +108,8 @@ namespace Kiota {
                 if(input.Tokens.Any() &&
                     !Enum.TryParse<T>(input.Tokens[0].Value, true, out var _)) {
                         var validOptionsList = Enum.GetValues<T>().Select(x => x.ToString()).Aggregate((x, y) => x + ", " + y);
-                        return $"{input.Tokens[0].Value} is not a supported generation {parameterName}, supported values are {validOptionsList}";
+                        input.ErrorMessage = $"{input.Tokens[0].Value} is not a supported generation {parameterName}, supported values are {validOptionsList}";
                     }
-                return null;
             });
         }
         private GenerationConfiguration Configuration { get => ConfigurationFactory.Value; }
