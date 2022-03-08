@@ -62,10 +62,10 @@ Edit **./app/build.gradle** to add the following dependencies.
 
 ```groovy
 implementation 'com.microsoft.kiota:kiota-abstractions:1.+'
-implementation 'com.microsoft.kiota.serialization:kiota-serialization-json:1.0.7'
-implementation 'com.microsoft.kiota.authentication:kiota-authentication-azure:1.0.6'
-implementation 'com.microsoft.kiota.http:kiota-http-okhttplibrary:1.0.15'
-implementation 'com.azure:azure-identity:1.4.4'
+implementation 'com.microsoft.kiota.serialization:kiota-serialization-json:1.+'
+implementation 'com.microsoft.kiota.authentication:kiota-authentication-azure:1.+'
+implementation 'com.microsoft.kiota.http:kiota-http-okhttplibrary:1.+'
+implementation 'com.azure:azure-identity:1.+'
 ```
 
 Only the first package, `kiota-abstractions`, is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
