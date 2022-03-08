@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Writers;
 
@@ -16,18 +17,20 @@ namespace Kiota.Builder
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _rendererElementComparer = configuration.ShouldRenderMethodsOutsideOfClasses ? new CodeElementOrderComparerWithExternalMethods() : new CodeElementOrderComparer();
         }
-        public async Task RenderCodeNamespaceToSingleFileAsync(LanguageWriter writer, CodeElement codeElement, string outputFile)
+        public async Task RenderCodeNamespaceToSingleFileAsync(LanguageWriter writer, CodeElement codeElement, string outputFile, CancellationToken cancellationToken)
         {
             using var stream = new FileStream(outputFile, FileMode.Create);
 
             var sw = new StreamWriter(stream);
             writer.SetTextWriter(sw);
             RenderCode(writer, codeElement);
-            await sw.FlushAsync();
+            if(!cancellationToken.IsCancellationRequested)
+                await sw.FlushAsync(); // streamwriter doesn't not have a cancellation token overload https://github.com/dotnet/runtime/issues/64340
         }
         // We created barrells for codenamespaces. Skipping for empty namespaces, ones created for users, and ones with same namspace as class name.
-        public async Task RenderCodeNamespaceToFilePerClassAsync(LanguageWriter writer, CodeNamespace root)
+        public async Task RenderCodeNamespaceToFilePerClassAsync(LanguageWriter writer, CodeNamespace root, CancellationToken cancellationToken)
         {
+            if(cancellationToken.IsCancellationRequested) return;
             foreach (var codeElement in root.GetChildElements(true))
             {
                 switch(codeElement) {
@@ -35,16 +38,16 @@ namespace Kiota.Builder
                     case CodeEnum:
                     case CodeFunction:
                     case CodeInterface:
-                        await RenderCodeNamespaceToSingleFileAsync(writer, codeElement, writer.PathSegmenter.GetPath(root, codeElement));
+                        await RenderCodeNamespaceToSingleFileAsync(writer, codeElement, writer.PathSegmenter.GetPath(root, codeElement), cancellationToken);
                         break;
                     case CodeNamespace codeNamespace:
-                        await RenderBarrel(writer, root, codeNamespace);
-                        await RenderCodeNamespaceToFilePerClassAsync(writer, codeNamespace);
+                        await RenderBarrel(writer, root, codeNamespace, cancellationToken);
+                        await RenderCodeNamespaceToFilePerClassAsync(writer, codeNamespace, cancellationToken);
                     break;
                 }
             }
         }
-        private async Task RenderBarrel(LanguageWriter writer, CodeNamespace root, CodeNamespace codeNamespace) {
+        private async Task RenderBarrel(LanguageWriter writer, CodeNamespace root, CodeNamespace codeNamespace, CancellationToken cancellationToken) {
             if (!string.IsNullOrEmpty(codeNamespace.Name) &&
                 !string.IsNullOrEmpty(root.Name) &&
                 _configuration.ShouldWriteNamespaceIndices &&
@@ -54,7 +57,7 @@ namespace Kiota.Builder
                 // if the module already has a class with the same name, it's going to be declared automatically
                 if (_configuration.ShouldWriteBarrelsIfClassExists ||
                     codeNamespace.FindChildByName<CodeClass>(namespaceNameLastSegment, false) == null)
-                    await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(root, codeNamespace));
+                    await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(root, codeNamespace), cancellationToken);
             }
         }
         private readonly CodeElementOrderComparer _rendererElementComparer;

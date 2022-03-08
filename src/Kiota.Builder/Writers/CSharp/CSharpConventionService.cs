@@ -95,9 +95,9 @@ namespace Kiota.Builder.Writers.CSharp {
             var parentElementsHash = new HashSet<string>(parentElements, StringComparer.OrdinalIgnoreCase);
             var typeName = TranslateType(currentType);
             if(currentType.TypeDefinition != null &&
-                GetNamesInUseByNamespaceSegments(targetElement).Contains(typeName) &&
+                (GetNamesInUseByNamespaceSegments(targetElement).Contains(typeName) &&
                 !DoesTypeExistsInSameNamesSpaceAsTarget(currentType,targetElement) ||
-                parentElementsHash.Contains(typeName))
+                parentElementsHash.Contains(typeName)))
                 return $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
             else
                 return typeName;

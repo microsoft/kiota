@@ -66,8 +66,8 @@ namespace Kiota.Builder.Refiners {
         };
         protected static void AddInheritedAndMethodTypesImports(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
-                && currentClass.StartBlock is ClassDeclaration declaration && declaration.Inherits != null) {
-                currentClass.AddUsing(new CodeUsing { Name = declaration.Inherits.Name, Declaration = declaration.Inherits});
+                && currentClass.StartBlock.Inherits != null) {
+                currentClass.AddUsing(new CodeUsing { Name = currentClass.StartBlock.Inherits.Name, Declaration = currentClass.StartBlock.Inherits});
             }
             CrawlTree(currentElement, (x) => AddInheritedAndMethodTypesImports(x));
         }
@@ -76,9 +76,9 @@ namespace Kiota.Builder.Refiners {
 
             var nameSpaceName = string.IsNullOrEmpty(prefix) ? FetchEntityNamespace(currentElement).NormalizeNameSpaceName("::") : prefix; 
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
-                && currentClass.StartBlock is ClassDeclaration declaration && declaration.Inherits != null 
-                && "entity".Equals(declaration.Inherits.Name, StringComparison.OrdinalIgnoreCase)) {
-                declaration.Inherits.Name = prefix + declaration.Inherits.Name.ToFirstCharacterUpperCase();
+                && currentClass.StartBlock.Inherits != null 
+                && "entity".Equals(currentClass.StartBlock.Inherits.Name, StringComparison.OrdinalIgnoreCase)) {
+                currentClass.StartBlock.Inherits.Name = prefix + currentClass.StartBlock.Inherits.Name.ToFirstCharacterUpperCase();
             }
             CrawlTree(currentElement, (c) => FixInheritedEntityType(c, nameSpaceName));
         }

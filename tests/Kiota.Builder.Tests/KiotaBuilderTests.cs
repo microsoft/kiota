@@ -19,7 +19,7 @@ public class KiotaBuilderTests
         await File.WriteAllLinesAsync(tempFilePath, new string[] {"openapi: 3.0.0", "info:", "  title: \"Todo API\"", "  version: \"1.0.0\""});
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
-        await Assert.ThrowsAsync<InvalidOperationException>(() => builder.GenerateSDK());
+        await Assert.ThrowsAsync<InvalidOperationException>(() => builder.GenerateSDK(new()));
         File.Delete(tempFilePath);
     }
     [Fact]
@@ -28,7 +28,7 @@ public class KiotaBuilderTests
         await File.WriteAllLinesAsync(tempFilePath, new string[] {"swagger: 2.0", "title: \"Todo API\"", "version: \"1.0.0\"", "host: mytodos.doesntexit", "basePath: v2", "schemes:", " - https"," - http"});
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
-        await builder.GenerateSDK();
+        await builder.GenerateSDK(new());
         File.Delete(tempFilePath);
     }
     [Fact]
@@ -721,6 +721,81 @@ public class KiotaBuilderTests
         Assert.Null(codeModel.FindChildByName<CodeClass>("tasks401Error", true));
         Assert.Null(codeModel.FindChildByName<CodeClass>("tasks4XXError", true));
         Assert.Null(codeModel.FindChildByName<CodeClass>("tasks5XXError", true));
+    }
+    [Fact]
+    public void DoesntAddPropertyHolderOnNonAdditionalModels(){
+        var weatherForecastSchema = new OpenApiSchema {
+            Type = "object",
+            AdditionalPropertiesAllowed = false,
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "date", new OpenApiSchema {
+                        Type = "string",
+                        Format = "date-time"
+                    }
+                },
+                {
+                    "temperature", new OpenApiSchema {
+                        Type = "integer",
+                        Format = "int32"
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "weatherForecast",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var forecastResponse = new OpenApiResponse()
+        {
+            Content =
+            {
+                ["application/json"] = new OpenApiMediaType()
+                {
+                    Schema = weatherForecastSchema
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "weatherForecast",
+                Type = ReferenceType.Response
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument() {
+            Paths = new OpenApiPaths() {
+                ["weatherforecast"] = new OpenApiPathItem() {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation() { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = forecastResponse
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new OpenApiComponents() {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "weatherForecast", weatherForecastSchema
+                    }
+                },
+                Responses = new Dictionary<string, OpenApiResponse> {
+                    {
+                        "weatherForecast", forecastResponse
+                    }
+                }
+            },
+        };
+        var node = OpenApiUrlTreeNode.Create(document, "default");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var codeModel = builder.CreateSourceModel(node);
+        var weatherType = codeModel.FindChildByName<CodeClass>("WeatherForecast", true);
+        Assert.NotNull(weatherType);
+        Assert.Empty(weatherType.StartBlock.Implements.Where(x => x.Name.Equals("IAdditionalDataHolder", StringComparison.OrdinalIgnoreCase)));
+        Assert.Empty(weatherType.Properties.Where(x => x.IsOfKind(CodePropertyKind.AdditionalData)));
     }
 
     [Fact]
