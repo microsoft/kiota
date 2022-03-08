@@ -216,15 +216,7 @@ namespace Kiota.Builder.Writers.Shell
                     var formatterOptionsVar = "formatterOptions";
                     writer.WriteLine($"var {formatterVar} = {outputFormatterFactoryParamName}.GetFormatter({outputFormatParamName});");
                     writer.WriteLine($"response = {outputFilterParamName}?.FilterOutput(response, {outputFilterQueryParamName}) ?? response;");
-                    writer.WriteLine($"OutputFormatterOptions {formatterOptionsVar} = null;");
-                    writer.WriteLine($"if ({outputFormatParamName} == FormatterType.JSON) {{");
-                    writer.IncreaseIndent();
-                    writer.WriteLine($"{formatterOptionsVar} = new JsonOutputFormatterOptions {{ OutputIndented = !{jsonNoIndentParamName}}};");
-                    writer.CloseBlock();
-                    writer.WriteLine($"else if ({outputFormatParamName} == FormatterType.TABLE) {{");
-                    writer.IncreaseIndent();
-                    writer.WriteLine($"{formatterOptionsVar} = new TableOutputFormatterOptions();");
-                    writer.CloseBlock();
+                    writer.WriteLine($"var {formatterOptionsVar} = {outputFormatParamName}.GetOutputFormatterOptions(new FormatterOptionsModel(!{jsonNoIndentParamName}));");
                     writer.WriteLine($"{formatterVar}.WriteOutput(response, {formatterOptionsVar});");
                 }
                 else
