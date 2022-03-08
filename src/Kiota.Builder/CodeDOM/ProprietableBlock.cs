@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -61,20 +62,21 @@ public abstract class ProprietableBlock<T, U> : CodeBlock<U, BlockEnd>, IDocumen
 
 public class ProprietableBlockDeclaration : BlockDeclaration
 {
-    private readonly List<CodeType> implements = new ();
+    private readonly ConcurrentDictionary<string, CodeType> implements = new ();
     public void AddImplements(params CodeType[] types) {
         if(types == null || types.Any(x => x == null))
             throw new ArgumentNullException(nameof(types));
         EnsureElementsAreChildren(types);
-        implements.AddRange(types);
+        foreach(var type in types)
+            implements.TryAdd(type.Name,type);
     }
     public void RemoveImplements(params CodeType[] types) {
         if(types == null || types.Any(x => x == null))
             throw new ArgumentNullException(nameof(types));
         foreach(var type in types)
-            implements.Remove(type);
+            implements.Remove(type.Name, out var _);
     }
-    public IEnumerable<CodeType> Implements => implements;
+    public IEnumerable<CodeType> Implements => implements.Values;
 }
 
 
