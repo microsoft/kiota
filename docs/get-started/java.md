@@ -61,7 +61,7 @@ Edit **./app/build.gradle** to add the following dependencies.
 > **Note:** Find current version numbers for Kiota packages at [GitHub](https://github.com/orgs/microsoft/packages?repo_name=kiota&ecosystem=maven).
 
 ```groovy
-implementation 'com.microsoft.kiota:kiota-abstractions:1.0.27'
+implementation 'com.microsoft.kiota:kiota-abstractions:1.+'
 implementation 'com.microsoft.kiota.serialization:kiota-serialization-json:1.0.7'
 implementation 'com.microsoft.kiota.authentication:kiota-authentication-azure:1.0.6'
 implementation 'com.microsoft.kiota.http:kiota-http-okhttplibrary:1.0.15'
