@@ -515,7 +515,7 @@ public class KiotaBuilder
         propertyName = propertyName.ToCamelCase(); //ensure the name is camel cased to strip out any potential '-' characters
         var prop = new CodeProperty
         {
-            Name = propertyName.ToCamelCase(),//ensure the name is camel cased to strip out any potential '-' characters
+            Name = propertyName,
             DefaultValue = defaultValue,
             Kind = kind,
             Description = typeSchema?.Description,
