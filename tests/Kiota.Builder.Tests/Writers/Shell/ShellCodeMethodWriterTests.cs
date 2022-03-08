@@ -251,7 +251,9 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var command = new Command(\"user\");", result);
         Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
         Assert.Contains("qOption.IsRequired = false;", result);
+        Assert.Contains("var jsonNoIndentOption = new Option<bool>(\"--json-no-indent\", r => {", result);
         Assert.Contains("command.AddOption(qOption);", result);
+        Assert.Contains("command.AddOption(jsonNoIndentOption);", result);
         Assert.Contains("command.AddOption(outputOption);", result);
         Assert.Contains("command.SetHandler(async (object[] parameters) => {", result);
         Assert.Contains("var q = (string) parameters[0];", result);
@@ -310,6 +312,49 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("return command;", result);
+    }
+
+    [Fact]
+    public void WritesExecutableCommandForDeleteRequest() {
+        
+        method.Kind = CodeMethodKind.CommandBuilder;
+        method.SimpleName = "User";
+        method.HttpMethod = HttpMethod.Delete;
+        var stringType = new CodeType {
+            Name = "void",
+        };
+        var generatorMethod = new CodeMethod {
+            Kind = CodeMethodKind.RequestGenerator,
+            Name = "CreateDeleteRequestInformation",
+            HttpMethod = method.HttpMethod
+        };
+        method.OriginalMethod = new CodeMethod {
+            Kind = CodeMethodKind.RequestExecutor,
+            HttpMethod = method.HttpMethod,
+            ReturnType = stringType,
+            Parent = method.Parent
+        };
+        var codeClass = method.Parent as CodeClass;
+        codeClass.AddMethod(generatorMethod);
+
+        AddRequestProperties();
+        AddPathAndQueryParameters(generatorMethod);
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("var command = new Command(\"user\");", result);
+        Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
+        Assert.Contains("qOption.IsRequired = false;", result);
+        Assert.Contains("command.AddOption(qOption);", result);
+        Assert.Contains("PathParameters.Clear();", result);
+        Assert.Contains("PathParameters.Add(\"p\", p);", result);
+        Assert.Contains("var requestInfo = CreateDeleteRequestInformation", result);
+        Assert.Contains("await RequestAdapter.SendNoContentAsync(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
+        Assert.Contains("Console.WriteLine(\"Success\");", result);
+        Assert.Contains("return command;", result);
+        Assert.DoesNotContain("command.AddOption(outputOption);", result);
+        Assert.DoesNotContain("var jsonNoIndentOption = new Option<bool>(\"--json-no-indent\", r => {", result);
     }
 
     [Fact]
