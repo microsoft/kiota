@@ -76,7 +76,7 @@ public class ProprietableBlockDeclaration : BlockDeclaration
         foreach(var type in types)
             implements.Remove(type.Name, out var _);
     }
-    public IEnumerable<CodeType> Implements => implements.Values;
+    public IEnumerable<CodeType> Implements => implements.Values.OrderBy(x => x.Name);
 }
 
 
