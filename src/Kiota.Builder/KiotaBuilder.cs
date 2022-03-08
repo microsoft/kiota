@@ -1066,7 +1066,7 @@ public class KiotaBuilder
                     Type = new CodeType
                     {
                         IsExternal = true,
-                        Name = parameter.Schema.Items?.Type ?? parameter.Schema.Type,
+                        Name = parameter.Schema?.Items?.Type ?? parameter.Schema?.Type ?? "string", // since its a query parameter default to string if there is no schema
                         CollectionKind = parameter.Schema.IsArray() ? CodeType.CodeTypeCollectionKind.Array : default,
                     },
                 };
