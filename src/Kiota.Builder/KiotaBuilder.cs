@@ -512,6 +512,7 @@ public class KiotaBuilder
     {
         var propertyName = childIdentifier;
         config.PropertiesPrefixToStrip.ForEach(x => propertyName = propertyName.Replace(x, string.Empty));
+        propertyName = propertyName.ToCamelCase(); //ensure the name is camel cased to strip out any potential '-' characters
         var prop = new CodeProperty
         {
             Name = propertyName.ToCamelCase(),//ensure the name is camel cased to strip out any potential '-' characters
