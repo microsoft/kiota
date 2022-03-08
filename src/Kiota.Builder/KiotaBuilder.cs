@@ -14,6 +14,7 @@ using Microsoft.OpenApi.Any;
 using Kiota.Builder.Refiners;
 using System.Security;
 using Microsoft.OpenApi.Services;
+using System.Threading;
 
 namespace Kiota.Builder;
 
@@ -29,7 +30,7 @@ public class KiotaBuilder
         this.config = config;
     }
 
-    public async Task GenerateSDK()
+    public async Task GenerateSDK(CancellationToken cancellationToken)
     {
         var sw = new Stopwatch();
         // Step 1 - Read input stream
@@ -39,12 +40,16 @@ public class KiotaBuilder
             // doing this verification at the begining to give immediate feedback to the user
             Directory.CreateDirectory(config.OutputPath);
         } catch (Exception ex) {
-            logger.LogError($"Could not open/create output directory {config.OutputPath}, reason: {ex.Message}");
+#if DEBUG
+            logger.LogCritical(ex, "Could not open/create output directory {configOutputPath}, reason: {exMessage}", config.OutputPath, ex.Message);
+#else
+            logger.LogCritical("Could not open/create output directory {configOutputPath}, reason: {exMessage}", config.OutputPath, ex.Message);
+#endif
             return;
         }
         
         sw.Start();
-        using var input = await LoadStream(inputPath);
+        using var input = await LoadStream(inputPath, cancellationToken);
         if(input == null)
             return;
         StopLogAndReset(sw, "step 1 - reading the stream - took");
@@ -73,7 +78,7 @@ public class KiotaBuilder
 
         // Step 6 - Write language source 
         sw.Start();
-        await CreateLanguageSourceFilesAsync(config.Language, generatedCode);
+        await CreateLanguageSourceFilesAsync(config.Language, generatedCode, cancellationToken);
         StopLogAndReset(sw, "step 6 - writing files - took");
     }
     private void SetApiRootUrl() {
@@ -83,12 +88,12 @@ public class KiotaBuilder
     }
     private void StopLogAndReset(Stopwatch sw, string prefix) {
         sw.Stop();
-        logger.LogDebug($"{prefix} {sw.Elapsed}");
+        logger.LogDebug("{prefix} {swElapsed}", prefix, sw.Elapsed);
         sw.Reset();
     }
 
 
-    private async Task<Stream> LoadStream(string inputPath)
+    private async Task<Stream> LoadStream(string inputPath, CancellationToken cancellationToken)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();
@@ -97,9 +102,13 @@ public class KiotaBuilder
         if (inputPath.StartsWith("http"))
             try {
                 using var httpClient = new HttpClient();
-                input = await httpClient.GetStreamAsync(inputPath);
+                input = await httpClient.GetStreamAsync(inputPath, cancellationToken);
             } catch (HttpRequestException ex) {
-                logger.LogError($"Could not download the file at {inputPath}, reason: {ex.Message}");
+#if DEBUG
+                logger.LogCritical(ex, "Could not download the file at {inputPath}, reason: {exMessage}", inputPath, ex.Message);
+#else
+                logger.LogCritical("Could not download the file at {inputPath}, reason: {exMessage}", inputPath, ex.Message);
+#endif
                 return null;
             }
         else
@@ -112,7 +121,11 @@ public class KiotaBuilder
                 ex is UnauthorizedAccessException ||
                 ex is SecurityException ||
                 ex is NotSupportedException) {
-                logger.LogError($"Could not open the file at {inputPath}, reason: {ex.Message}");
+#if DEBUG
+                logger.LogCritical(ex, "Could not open the file at {inputPath}, reason: {exMessage}", inputPath, ex.Message);
+#else
+                logger.LogCritical("Could not open the file at {inputPath}, reason: {exMessage}", inputPath, ex.Message);
+#endif
                 return null;
             }
         stopwatch.Stop();
@@ -131,11 +144,15 @@ public class KiotaBuilder
         stopwatch.Stop();
         if (diag.Errors.Count > 0)
         {
-            logger.LogError($"{stopwatch.ElapsedMilliseconds}ms: OpenApi Parsing errors {string.Join(Environment.NewLine, diag.Errors.Select(e => e.Message))}");
+            logger.LogTrace("{timestamp}ms: Parsed OpenAPI with errors. {count} paths found.", stopwatch.ElapsedMilliseconds, doc?.Paths?.Count ?? 0);
+            foreach(var parsingError in diag.Errors)
+            {
+                logger.LogError("OpenApi Parsing error: {message}", parsingError.ToString());
+            }
         }
         else
         {
-            logger.LogTrace("{timestamp}ms: Parsed OpenAPI successfully. {count} paths found.", stopwatch.ElapsedMilliseconds, doc.Paths.Count);
+            logger.LogTrace("{timestamp}ms: Parsed OpenAPI successfully. {count} paths found.", stopwatch.ElapsedMilliseconds, doc?.Paths?.Count ?? 0);
         }
 
         return doc;
@@ -207,12 +224,12 @@ public class KiotaBuilder
     /// <param name="root">Root node of URI space from the OpenAPI described API</param>
     /// <returns>A CodeNamespace object that contains request builder classes for the Uri Space</returns>
 
-    public async Task CreateLanguageSourceFilesAsync(GenerationLanguage language, CodeNamespace generatedCode)
+    public async Task CreateLanguageSourceFilesAsync(GenerationLanguage language, CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
-        var languageWriter = LanguageWriter.GetLanguageWriter(language, this.config.OutputPath, this.config.ClientNamespaceName);
+        var languageWriter = LanguageWriter.GetLanguageWriter(language, config.OutputPath, config.ClientNamespaceName);
         var stopwatch = new Stopwatch();
         stopwatch.Start();
-        await new CodeRenderer(config).RenderCodeNamespaceToFilePerClassAsync(languageWriter, generatedCode);
+        await new CodeRenderer(config).RenderCodeNamespaceToFilePerClassAsync(languageWriter, generatedCode, cancellationToken);
         stopwatch.Stop();
         logger.LogTrace("{timestamp}ms: Files written to {path}", stopwatch.ElapsedMilliseconds, config.OutputPath);
     }
@@ -420,7 +437,7 @@ public class KiotaBuilder
         var unmappedTypesWithNoName = unmappedTypes.Where(x => string.IsNullOrEmpty(x.Name)).ToList();
         
         unmappedTypesWithNoName.ForEach(x => {
-            logger.LogWarning($"Type with empty name and parent {x.Parent.Name}");
+            logger.LogWarning("Type with empty name and parent {ParentName}", x.Parent.Name);
         });
 
         var unmappedTypesWithName = unmappedTypes.Except(unmappedTypesWithNoName);
@@ -456,7 +473,7 @@ public class KiotaBuilder
                 foreach (var type in x)
                 {
                     type.TypeDefinition = definition;
-                    logger.LogWarning($"Mapped type {type.Name} for {type.Parent.Name} using the fallback approach.");
+                    logger.LogWarning("Mapped type {typeName} for {ParentName} using the fallback approach.", type.Name, type.Parent.Name);
                 }
         });
     }
@@ -597,7 +614,7 @@ public class KiotaBuilder
             if(operation.Responses.Any(x => x.Value.Content.ContainsKey(RequestBodyBinaryContentType)))
                 returnType = "binary";
             else if(!operation.Responses.Any(x => noContentStatusCodes.Contains(x.Key)))
-                logger.LogWarning($"could not find operation return type {operationType} {currentNode.Path}");
+                logger.LogWarning("could not find operation return type {operationType} {currentNodePath}", operationType, currentNode.Path);
             executorMethod.ReturnType = new CodeType { Name = returnType, IsExternal = true, };
         }
 
@@ -898,7 +915,7 @@ public class KiotaBuilder
     private CodeTypeBase GetCodeTypeForMapping(OpenApiUrlTreeNode currentNode, string referenceId, CodeNamespace currentNamespace, CodeClass currentClass, OpenApiSchema currentSchema) {
         var componentKey = referenceId.Replace("#/components/schemas/", string.Empty);
         if(!openApiDocument.Components.Schemas.TryGetValue(componentKey, out var discriminatorSchema)) {
-            logger.LogWarning($"Discriminator {componentKey} not found in the OpenAPI document.");
+            logger.LogWarning("Discriminator {componentKey} not found in the OpenAPI document.", componentKey);
             return null;
         }
         var className = currentNode.GetClassName(schema: discriminatorSchema);

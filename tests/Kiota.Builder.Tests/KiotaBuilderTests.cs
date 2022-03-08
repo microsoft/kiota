@@ -19,7 +19,7 @@ public class KiotaBuilderTests
         await File.WriteAllLinesAsync(tempFilePath, new string[] {"openapi: 3.0.0", "info:", "  title: \"Todo API\"", "  version: \"1.0.0\""});
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
-        await Assert.ThrowsAsync<InvalidOperationException>(() => builder.GenerateSDK());
+        await Assert.ThrowsAsync<InvalidOperationException>(() => builder.GenerateSDK(new()));
         File.Delete(tempFilePath);
     }
     [Fact]
@@ -28,7 +28,7 @@ public class KiotaBuilderTests
         await File.WriteAllLinesAsync(tempFilePath, new string[] {"swagger: 2.0", "title: \"Todo API\"", "version: \"1.0.0\"", "host: mytodos.doesntexit", "basePath: v2", "schemes:", " - https"," - http"});
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
-        await builder.GenerateSDK();
+        await builder.GenerateSDK(new());
         File.Delete(tempFilePath);
     }
     [Fact]
