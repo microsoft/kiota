@@ -3,6 +3,6 @@
 /// <summary>
 /// The table output formatter options
 /// </summary>
-public class TableOutputFormatterOptions : OutputFormatterOptions
+public class TableOutputFormatterOptions : ITableOutputFormatterOptions
 {
 }
