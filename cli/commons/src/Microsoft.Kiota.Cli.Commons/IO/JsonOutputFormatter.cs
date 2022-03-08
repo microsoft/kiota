@@ -10,17 +10,35 @@ namespace Microsoft.Kiota.Cli.Commons.IO;
 /// </summary>
 public class JsonOutputFormatter : IOutputFormatter
 {
+    private readonly IAnsiConsole _ansiConsole;
+
+    /// <summary>
+    /// Creates a new JSON output formatter with a default console
+    /// </summary>
+    public JsonOutputFormatter() : this(AnsiConsole.Console)
+    {
+    }
+
+    /// <summary>
+    /// Creates a new JSON output formatter with the provided console
+    /// </summary>
+    /// <param name="console">The console to use</param>
+    public JsonOutputFormatter(IAnsiConsole console)
+    {
+        this._ansiConsole = console;
+    }
+
     /// <inheritdoc />
     public void WriteOutput(string content, IOutputFormatterOptions options)
     {
         if (options is JsonOutputFormatterOptions jsonOptions && jsonOptions.OutputIndented)
         {
             var result = ProcessJson(content, jsonOptions.OutputIndented);
-            AnsiConsole.WriteLine(result);
+            _ansiConsole.WriteLine(result);
         }
         else
         {
-            AnsiConsole.WriteLine(content);
+            _ansiConsole.WriteLine(content);
         }
     }
 
@@ -32,12 +50,32 @@ public class JsonOutputFormatter : IOutputFormatter
         if (options is JsonOutputFormatterOptions jsonOptions && jsonOptions.OutputIndented)
         {
             var result = ProcessJson(strContent, jsonOptions.OutputIndented);
-            AnsiConsole.WriteLine(result);
+            _ansiConsole.WriteLine(result);
         }
         else
         {
-            AnsiConsole.WriteLine(strContent);
+            _ansiConsole.WriteLine(strContent);
         }
+    }
+
+    /// <inheritdoc />
+    public async Task WriteOutputAsync(Stream content, IOutputFormatterOptions options, CancellationToken cancellationToken = default)
+    {
+        string resultStr;
+
+        if (options is JsonOutputFormatterOptions jsonOptions && jsonOptions.OutputIndented)
+        {
+            using var result = await ProcessJsonAsync(content, jsonOptions.OutputIndented, cancellationToken);
+            using var r = new StreamReader(result);
+            resultStr = await r.ReadToEndAsync();
+        }
+        else
+        {
+            using var reader = new StreamReader(content);
+            resultStr = await reader.ReadToEndAsync();
+        }
+
+        _ansiConsole.WriteLine(resultStr);
     }
 
     /// <summary>
@@ -58,5 +96,32 @@ public class JsonOutputFormatter : IOutputFormatter
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Given a JSON input stream, returns a processed JSON stream with optional indentation
+    /// </summary>
+    /// <param name="input">JSON input stream</param>
+    /// <param name="indent">Whether to return indented output</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    private static async Task<Stream> ProcessJsonAsync(Stream input, bool indent = true, CancellationToken cancellationToken = default)
+    {
+        var buffer = new byte[input.Length];
+        await input.ReadAsync(buffer, cancellationToken);
+
+        try
+        {
+            using var cachedStream = new MemoryStream(buffer);
+            var jsonDoc = await JsonDocument.ParseAsync(cachedStream, default, cancellationToken);
+
+            var outputStream = new MemoryStream();
+            await JsonSerializer.SerializeAsync<object>(outputStream, jsonDoc, cancellationToken: cancellationToken, options: new() { WriteIndented = indent });
+            outputStream.Position = 0;
+            return outputStream;
+        }
+        catch (JsonException)
+        {
+            return new MemoryStream(buffer);
+        }
     }
 }
