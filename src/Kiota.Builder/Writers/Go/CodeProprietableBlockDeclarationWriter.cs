@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using Kiota.Builder.Extensions;
 
@@ -17,7 +17,7 @@ public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWri
             writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().Replace("-", string.Empty)}");
         var importSegments = codeElement
                             .Usings
-                            .Where(x => !x.Declaration.IsExternal && !x.Name.Equals(ns.Name, StringComparison.OrdinalIgnoreCase))
+                            .Where(x => !x.Declaration.IsExternal && !x.Name.Equals(ns?.Name ?? string.Empty, StringComparison.OrdinalIgnoreCase))
                             .Select(x => x.GetInternalNamespaceImport())
                             .Select(x => new Tuple<string, string>(x.GetNamespaceImportSymbol(), x))
                             .Distinct()
