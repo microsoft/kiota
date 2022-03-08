@@ -48,7 +48,7 @@ public class TelemetryHandler implements Interceptor{
 
         //System.out.println(request.tag(TelemetryHandlerOption.class).toString());
 
-        TelemetryHandlerOption telemetryHandlerOption = (com.microsoft.kiota.http.middleware.options.TelemetryHandlerOption)request.tag(java.lang.Object.class);
+        TelemetryHandlerOption telemetryHandlerOption = request.tag(TelemetryHandlerOption.class);
         if(telemetryHandlerOption == null) {
             telemetryHandlerOption = this._telemetryHandlerOption;
         }

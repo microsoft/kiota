@@ -81,9 +81,9 @@ public class TelemetryHandlerTests {
 
         RetryHandlerOption retryOptions = new RetryHandlerOption();
 
-        requestInfo.addRequestOptions(telemetryHandlerOption, retryOptions);
+        requestInfo.addRequestOptions(telemetryHandlerOption);//, retryOptions);
         for(RequestOption option: requestInfo.getRequestOptions()) {
-            System.out.println(option.getClass().getName());
+            System.out.println(option.getClass().getSimpleName());
         }
 
         Request request = requestAdapter.getRequestFromRequestInformation(requestInfo);

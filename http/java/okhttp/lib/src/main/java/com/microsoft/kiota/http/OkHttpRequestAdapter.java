@@ -2,6 +2,7 @@ package com.microsoft.kiota.http;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.StackWalker.Option;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
@@ -19,6 +20,8 @@ import com.microsoft.kiota.RequestInformation;
 import com.microsoft.kiota.RequestOption;
 import com.microsoft.kiota.ResponseHandler;
 import com.microsoft.kiota.authentication.AuthenticationProvider;
+import com.microsoft.kiota.http.middleware.TelemetryHandler;
+import com.microsoft.kiota.http.middleware.options.TelemetryHandlerOption;
 import com.microsoft.kiota.serialization.ParseNodeFactoryRegistry;
 import com.microsoft.kiota.serialization.Parsable;
 import com.microsoft.kiota.serialization.ParseNode;
@@ -28,6 +31,7 @@ import com.microsoft.kiota.serialization.SerializationWriterFactoryRegistry;
 import com.microsoft.kiota.store.BackingStoreFactory;
 import com.microsoft.kiota.store.BackingStoreFactorySingleton;
 
+import kotlin.OptIn;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -253,7 +257,17 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
             requestBuilder.addHeader(header.getKey(), header.getValue());
         }
         for(final RequestOption option : requestInfo.getRequestOptions()) {
-            requestBuilder.tag(option);
+            
+            Class classType;
+            try {
+                classType = Class.forName(option.getClass().getName());
+                option.getClass().cast(classType);
+                requestBuilder.tag(classType, option);    
+                
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+//            requestBuilder.tag(TelemetryHandler.class, (TelemetryHandler) option);
         }
         return requestBuilder.build();
     }
