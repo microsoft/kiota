@@ -1,14 +1,8 @@
-using System;
-using System.CommandLine;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Kiota.Cli.Commons.IO;
-using Moq;
 using Spectre.Console;
-using Spectre.Console.Rendering;
 using Spectre.Console.Testing;
 using Xunit;
 

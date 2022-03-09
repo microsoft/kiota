@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.Text;
 using System.Text.Json;
 using Spectre.Console;
 
@@ -109,8 +108,9 @@ public class JsonOutputFormatter : IOutputFormatter
         }
         catch (JsonException)
         {
-            cache.Position = 0;
-            return cache;
         }
+
+        cache.Position = 0;
+        return cache;
     }
 }
