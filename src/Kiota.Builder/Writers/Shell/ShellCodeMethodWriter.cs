@@ -377,8 +377,6 @@ namespace Kiota.Builder.Writers.Shell
 
         protected virtual void WriteCommandHandlerBody(CodeMethod codeElement, RequestParams requestParams, bool isVoid, string returnType, LanguageWriter writer)
         {
-            if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
-
             var generatorMethod = (codeElement.Parent as CodeClass)
                                                 .Methods
                                                 .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod);
