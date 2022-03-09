@@ -31,7 +31,7 @@ public class JsonOutputFormatter : IOutputFormatter
     /// <inheritdoc />
     public void WriteOutput(string content, IOutputFormatterOptions options)
     {
-        if (options is JsonOutputFormatterOptions jsonOptions && jsonOptions.OutputIndented)
+        if (options is IJsonOutputFormatterOptions jsonOptions && jsonOptions.OutputIndented)
         {
             var result = ProcessJson(content, jsonOptions.OutputIndented);
             _ansiConsole.WriteLine(result);
@@ -47,7 +47,7 @@ public class JsonOutputFormatter : IOutputFormatter
     {
         using var reader = new StreamReader(content);
         var strContent = reader.ReadToEnd();
-        if (options is JsonOutputFormatterOptions jsonOptions && jsonOptions.OutputIndented)
+        if (options is IJsonOutputFormatterOptions jsonOptions && jsonOptions.OutputIndented)
         {
             var result = ProcessJson(strContent, jsonOptions.OutputIndented);
             _ansiConsole.WriteLine(result);
@@ -63,7 +63,7 @@ public class JsonOutputFormatter : IOutputFormatter
     {
         string resultStr;
 
-        if (options is JsonOutputFormatterOptions jsonOptions && jsonOptions.OutputIndented)
+        if (options is IJsonOutputFormatterOptions jsonOptions && jsonOptions.OutputIndented)
         {
             using var result = await ProcessJsonAsync(content, jsonOptions.OutputIndented, cancellationToken);
             using var r = new StreamReader(result);
