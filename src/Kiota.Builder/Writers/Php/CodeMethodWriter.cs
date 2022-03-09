@@ -286,12 +286,13 @@ namespace Kiota.Builder.Writers.Php
             var propertyType = conventions.GetTypeString(propType, method, false);
             if(propType is CodeType currentType) {
                 if(isCollection)
-                    if(currentType.TypeDefinition is null or CodeEnum)
-                        return "$n->getCollectionOfPrimitiveValues()";
-                    else if (currentType.TypeDefinition is CodeEnum enumType)
-                        return $"$n->getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)";
-                    else
-                        return $"$n->getCollectionOfObjectValues({conventions.TranslateType(propType)}::class)";
+                    return currentType.TypeDefinition switch
+                    {
+                        null => "$n->getCollectionOfPrimitiveValues()",
+                        CodeEnum enumType =>
+                            $"$n->getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)",
+                        _ => $"$n->getCollectionOfObjectValues({conventions.TranslateType(propType)}::class)"
+                    };
                 else if (currentType.TypeDefinition is CodeEnum)
                     return $"$n->getEnumValue({propertyType.ToFirstCharacterUpperCase()}::class)";
             }

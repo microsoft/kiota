@@ -489,6 +489,81 @@ namespace Kiota.Builder.Tests.Writers.Php
                         CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
                         Name = "int"
                     }
+                },
+                new CodeProperty
+                {
+                    Name = "archs",
+                    Access = AccessModifier.Private,
+                    Kind = CodePropertyKind.Custom,
+                    Type = new CodeType
+                    {
+                        CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+                        Name = "Arch",
+                        TypeDefinition = new CodeEnum
+                        {
+                            Name = "Arch"
+                        }
+                    }
+                },
+                new CodeProperty
+                {
+                    Name = "age",
+                    Access = AccessModifier.Private,
+                    Kind = CodePropertyKind.Custom,
+                    Type = new CodeType
+                    {
+                        Name = "int"
+                    }
+                },
+                new CodeProperty
+                {
+                    Name = "height",
+                    Access = AccessModifier.Private,
+                    Kind = CodePropertyKind.Custom,
+                    Type = new CodeType
+                    {
+                        Name = "double"
+                    }
+                },
+                new CodeProperty
+                {
+                    Name = "height2",
+                    Access = AccessModifier.Private,
+                    Kind = CodePropertyKind.Custom,
+                    Type = new CodeType
+                    {
+                        Name = "decimal"
+                    }
+                },
+                new CodeProperty
+                {
+                    Name = "story",
+                    Access = AccessModifier.Private,
+                    Kind = CodePropertyKind.Custom,
+                    Type = new CodeType
+                    {
+                        Name = "StreamInterface"
+                    }
+                },
+                new CodeProperty
+                {
+                    Name = "likes",
+                    Access = AccessModifier.Private,
+                    Kind = CodePropertyKind.Custom,
+                    Type = new CodeType
+                    {
+                        Name = "number"
+                    }
+                },
+                new CodeProperty
+                {
+                    Name = "custom",
+                    Access = AccessModifier.Private,
+                    Kind = CodePropertyKind.Custom,
+                    Type = new CodeType
+                    {
+                        Name = "Custom"
+                    }
                 }
             );
             var deserializerMethod = new CodeMethod()
@@ -509,6 +584,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             var result = tw.ToString();
 
             Assert.Contains("'name' => function (self $o, ParseNode $n) { $o->setName($n->getStringValue()); },", result);
+            Assert.Contains("'story' => function (self $o, ParseNode $n) { $o->setStory($n->getBinaryContent()); }", result);
             Assert.Contains(
                 "'years' => function (self $o, ParseNode $n) { $o->setYears($n->getCollectionOfPrimitiveValues())",
                 result);
