@@ -5,9 +5,8 @@ from typing import Any, Dict
 class AdditionalDataHolder(ABC):
     """Defines a contract for models that can hold additional data besides the described properties.
     """
-    @property #type:ignore
     @abstractmethod
-    def additional_data(self) -> Dict[str, Any]:
+    def get_additional_data(self) -> Dict[str, Any]:
         """Stores the additional data for this object that did not belong to the properties.
 
         Returns:
@@ -15,7 +14,6 @@ class AdditionalDataHolder(ABC):
         """
         pass
 
-    @additional_data.setter #type:ignore
     @abstractmethod
-    def additional_data(self, value):
+    def set_additional_data(self, value):
         pass

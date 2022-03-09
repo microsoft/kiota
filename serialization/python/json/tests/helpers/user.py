@@ -1,14 +1,14 @@
 from datetime import date, datetime
 from typing import Any, Callable, Dict, List, Optional, TypeVar
 
-from kiota.abstractions.serialization import Parsable, ParseNode, SerializationWriter
+from kiota.abstractions.serialization import AdditionalDataHolder, Parsable, ParseNode, SerializationWriter
 
 from .office_location import OfficeLocation
 
 T = TypeVar('T')
 
 
-class User(Parsable):
+class User(Parsable, AdditionalDataHolder):
     _id: Optional[str] = None
     _display_name: Optional[str] = None
     _office_location: Optional[OfficeLocation] = None
