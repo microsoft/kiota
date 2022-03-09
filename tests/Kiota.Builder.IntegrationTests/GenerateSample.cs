@@ -28,7 +28,7 @@ namespace Kiota.Builder.integrationtests
                 OutputPath = $".\\Generated\\{language}{backingStoreSuffix}",
                 UsesBackingStore = backingStore,
             };
-            await new KiotaBuilder(logger, configuration).GenerateSDK();
+            await new KiotaBuilder(logger, configuration).GenerateSDK(new());
         }
     }
 }

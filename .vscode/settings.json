@@ -8,15 +8,21 @@
     },
     "cSpell.ignoreWords": [
         "Todos",
+        "azidentity",
+        "getme",
         "gson",
         "kiotaabstractions",
         "msgraph",
         "okhttp",
         "okhttp3",
-        "squareup"
+        "okhttplibrary",
+        "println",
+        "squareup",
+        "todoclient"
     ],
     "cSpell.words": [
         "deserialization",
+        "getenv",
         "Kiota",
         "npmrc",
         "openapi",

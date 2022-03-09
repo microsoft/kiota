@@ -1,9 +1,10 @@
-from typing import Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Dict, List, Optional, Set
 from urllib.parse import urlparse
 
 from kiota.abstractions.authentication import AccessTokenProvider, AllowedHostsValidator
 
-from azure.core.credentials_async import AsyncTokenCredential
+if TYPE_CHECKING:
+    from azure.core.credentials_async import AsyncTokenCredential
 
 
 class AzureIdentityAccessTokenProvider(AccessTokenProvider):
@@ -12,7 +13,7 @@ class AzureIdentityAccessTokenProvider(AccessTokenProvider):
 
     def __init__(
         self,
-        credentials: AsyncTokenCredential,
+        credentials: "AsyncTokenCredential",
         options: Optional[Dict],
         scopes: List[str] = ['https://graph.microsoft.com/.default'],
         allowed_hosts: Set[str] = {
@@ -48,6 +49,7 @@ class AzureIdentityAccessTokenProvider(AccessTokenProvider):
         if self._options:
             result = await self._credentials.get_token(*self._scopes, **self._options)
         result = await self._credentials.get_token(*self._scopes)
+        await self._credentials.close()
         if result and result.token:
             return result.token
         return ""
