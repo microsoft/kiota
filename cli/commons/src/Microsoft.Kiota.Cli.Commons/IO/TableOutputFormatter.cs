@@ -41,14 +41,6 @@ public class TableOutputFormatter : IOutputFormatter
     }
 
     /// <inheritdoc />
-    public void WriteOutput(Stream content, IOutputFormatterOptions options)
-    {
-        using var doc = JsonDocument.Parse(content);
-        var table = ConstructTable(doc);
-        _ansiConsole.Write(table);
-    }
-
-    /// <inheritdoc />
     public async Task WriteOutputAsync(Stream content, IOutputFormatterOptions options, CancellationToken cancellationToken = default) {
         using var doc = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
         var table = await ConstructTableAsync(doc, cancellationToken);
@@ -64,7 +56,7 @@ public class TableOutputFormatter : IOutputFormatter
         var root = GetRootElement(document.RootElement);
         var firstElement = GetFirstElement(root);
 
-        IEnumerable<string> propertyNames = await GetPropertyNamesAsync(firstElement, cancellationToken);
+        IEnumerable<string> propertyNames = GetPropertyNames(firstElement, cancellationToken);
         var table = new Table();
         table.Expand();
 
@@ -123,7 +115,8 @@ public class TableOutputFormatter : IOutputFormatter
         return firstElement;
     }
 
-    private static Task<IEnumerable<string>> GetPropertyNamesAsync(JsonElement firstElement, CancellationToken cancellationToken = default) {
+    private static IEnumerable<string> GetPropertyNames(JsonElement firstElement, CancellationToken cancellationToken = default) {
+        cancellationToken.ThrowIfCancellationRequested();
         IEnumerable<string> propertyNames;
         if (firstElement.ValueKind != JsonValueKind.Object)
         {
@@ -149,26 +142,6 @@ public class TableOutputFormatter : IOutputFormatter
             propertyNames = buffer;
         }
         
-        return Task.FromResult(propertyNames);
-    }
-
-    private static IEnumerable<string> GetPropertyNames(JsonElement firstElement) {
-        IEnumerable<string> propertyNames;
-        if (firstElement.ValueKind != JsonValueKind.Object)
-        {
-            propertyNames = new List<string> { "Value" };
-        }
-        else
-        {
-            var restrictedValueKinds = new JsonValueKind[] {
-                    JsonValueKind.Array,
-                    JsonValueKind.Object
-                };
-            propertyNames = firstElement.EnumerateObject()
-                .Where(p => !restrictedValueKinds.Contains(p.Value.ValueKind))
-                .Select(p => p.Name);
-        }
-
         return propertyNames;
     }
 

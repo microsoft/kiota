@@ -43,22 +43,6 @@ public class JsonOutputFormatter : IOutputFormatter
     }
 
     /// <inheritdoc />
-    public void WriteOutput(Stream content, IOutputFormatterOptions options)
-    {
-        using var reader = new StreamReader(content);
-        var strContent = reader.ReadToEnd();
-        if (options is IJsonOutputFormatterOptions jsonOptions && jsonOptions.OutputIndented)
-        {
-            var result = ProcessJson(strContent, jsonOptions.OutputIndented);
-            _ansiConsole.WriteLine(result);
-        }
-        else
-        {
-            _ansiConsole.WriteLine(strContent);
-        }
-    }
-
-    /// <inheritdoc />
     public async Task WriteOutputAsync(Stream content, IOutputFormatterOptions options, CancellationToken cancellationToken = default)
     {
         string resultStr;
