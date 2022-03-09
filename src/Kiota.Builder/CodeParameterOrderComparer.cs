@@ -33,7 +33,7 @@ public class CodeParameterOrderComparer : IComparer<CodeParameter>
             _ => 15,
         };
     }
-    private static readonly int optionalWeight = 1000;
+    private static readonly int optionalWeight = 10000;
     private static readonly int kindWeight = 100;
     private static readonly int nameWeight = 10;
 }
