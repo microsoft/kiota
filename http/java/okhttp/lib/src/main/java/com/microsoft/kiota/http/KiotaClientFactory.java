@@ -45,7 +45,7 @@ public class KiotaClientFactory {
             new RedirectHandler(),
             new RetryHandler(),
             new TelemetryHandler()
-        }; //TODO add the list of default interceptors when they are ready
-        //DO we want to add Telemetry and Chaos as defaults? 
+        };
+        //DO we want to add Chaos as a default? 
     }
 }
