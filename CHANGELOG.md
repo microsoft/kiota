@@ -8,9 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added default implementations for table and JSON output in CLI commons (Shell) #1326
 
 ### Changed
-- Shell commands will now default to writing indented JSON. This option can be disabled through the CLI option `--json-no-indent` #1326
+- Shell commands will now default to writing indented JSON. This option can be disabled through the CLI option `--json-no-indent` (Shell) #1326
+- Update System.CommandLine version (Shell) #1338
+- Add async writers in output formatters (Shell) #1326
 
 - Improved error display #1269
 - Fixed a bug where union wrapper models would lack the discriminator methods
