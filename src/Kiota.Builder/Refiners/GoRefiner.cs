@@ -35,7 +35,7 @@ public class GoRefiner : CommonLanguageRefiner
         AddRawUrlConstructorOverload(
             generatedCode
         );
-        MoveAllModelsToTopLevel(
+        RemoveModelsThatDependOnSubNamespacesAndTheirDependencies(
             generatedCode
         );
         ReplaceReservedNames(
@@ -108,7 +108,6 @@ public class GoRefiner : CommonLanguageRefiner
         );
         CopyModelClassesAsInterfaces(
             generatedCode,
-            _configuration,
             x => $"{x.Name}able"
         );
     }
@@ -184,24 +183,20 @@ public class GoRefiner : CommonLanguageRefiner
         }
         CrawlTree(currentElement, AddNullCheckMethods);
     }
-    private static void MoveAllModelsToTopLevel(CodeElement currentElement, CodeNamespace targetNamespace = null) {
-        if(currentElement is CodeNamespace currentNamespace) {
-            if(targetNamespace == null) {
-                var rootModels = FindRootModelsNamespace(currentNamespace);
-                targetNamespace = FindFirstModelSubnamepaceWithClasses(rootModels);
-            }
-            if(currentNamespace != targetNamespace &&
-                !string.IsNullOrEmpty(currentNamespace?.Name) &&
-                !string.IsNullOrEmpty(targetNamespace?.Name) &&
-                currentNamespace.Name.Contains(targetNamespace.Name, StringComparison.OrdinalIgnoreCase)) {
-                foreach (var codeClass in currentNamespace.Classes)
-                {
-                    currentNamespace.RemoveChildElement(codeClass);
-                    targetNamespace.AddClass(codeClass);
-                }
-            }
-            CrawlTree(currentElement, x => MoveAllModelsToTopLevel(x, targetNamespace));
-        }
+    private static void RemoveModelsThatDependOnSubNamespacesAndTheirDependencies(CodeElement currentElement){
+        throw new NotImplementedException(); //TODO implement
+        // should result into dropping all models that depend on subnamespaces and their dependencies
+        // if a model has a reference to a namespace bellow itself
+        // this is because Go doesn't know how to trim circular dependencies
+        // the following models should be dropped (they are duplicates anyway)
+        //models\microsoft\graph\call_record.go
+        //models\microsoft\graph\cloud_communications.go
+        //models\microsoft\graph\failure_info.go
+        //models\microsoft\graph\network_info.go
+        //models\microsoft\graph\session.go
+        // and their respective interfaces
+        // foreach model we drop, check other models for properties referencing them, drop, check methods with parameters or return types of those models, drop them
+        CrawlTree(currentElement, RemoveModelsThatDependOnSubNamespacesAndTheirDependencies);
     }
     private static CodeNamespace FindFirstModelSubnamepaceWithClasses(CodeNamespace currentNamespace) {
         if(currentNamespace != null) {
@@ -280,12 +275,14 @@ public class GoRefiner : CommonLanguageRefiner
             "github.com/microsoft/kiota/abstractions/go/serialization", "ParseNode", "Parsable"),
         new (x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
             "github.com/microsoft/kiota/abstractions/go/serialization", "Parsable"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
+        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && 
+                                            (@class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)) ||
+                                            @class.StartBlock.Implements.Any(x => KiotaBuilder.AdditionalHolderInterface.Equals(x.Name, StringComparison.OrdinalIgnoreCase))),
             "github.com/microsoft/kiota/abstractions/go/serialization", "AdditionalDataHolder"),
         new (x => x is CodeEnum num, "ToUpper", "strings"),
     };//TODO add backing store types once we have them defined
     private static void CorrectImplements(ProprietableBlockDeclaration block) {
-        block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
+        block.ReplaceImplementByName(KiotaBuilder.AdditionalHolderInterface, "AdditionalDataHolder");
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {
         var parentClass = currentMethod.Parent as CodeClass;
