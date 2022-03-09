@@ -397,7 +397,7 @@ public class JavaLanguageRefinerTests {
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => headersDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.StartBlock.Implements.Where(x => additionalDataHolderDefaultName.Equals(x.Name, StringComparison.OrdinalIgnoreCase)));
-        Assert.Equal(additionalDataHolderDefaultName[1..], model.StartBlock.Implements.First().Name);
+        Assert.Contains( additionalDataHolderDefaultName[1..], model.StartBlock.Implements.Select(x => x.Name).ToList());
     }
     [Fact]
     public void AddsMethodsOverloads() {

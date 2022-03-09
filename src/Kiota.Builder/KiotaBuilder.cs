@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -512,6 +512,7 @@ public class KiotaBuilder
     {
         var propertyName = childIdentifier;
         config.PropertiesPrefixToStrip.ForEach(x => propertyName = propertyName.Replace(x, string.Empty));
+        propertyName = propertyName.ToCamelCase(); //ensure the name is camel cased to strip out any potential '-' characters
         var prop = new CodeProperty
         {
             Name = propertyName,
@@ -570,6 +571,7 @@ public class KiotaBuilder
         };
     }
     private const string RequestBodyBinaryContentType = "application/octet-stream";
+    private const string RequestBodyPlainTextContentType = "text/plain";
     private static readonly HashSet<string> noContentStatusCodes = new() { "201", "202", "204" };
     private static readonly HashSet<string> errorStatusCodes = new(Enumerable.Range(400, 599).Select(x => x.ToString())
                                                                                  .Concat(new[] { "4XX", "5XX" }), StringComparer.OrdinalIgnoreCase);
@@ -613,6 +615,8 @@ public class KiotaBuilder
             var returnType = voidType;
             if(operation.Responses.Any(x => x.Value.Content.ContainsKey(RequestBodyBinaryContentType)))
                 returnType = "binary";
+            else if (operation.Responses.Any(x => x.Value.Content.ContainsKey(RequestBodyPlainTextContentType)))
+                returnType = "string";
             else if(!operation.Responses.Any(x => noContentStatusCodes.Contains(x.Key)))
                 logger.LogWarning("could not find operation return type {operationType} {currentNodePath}", operationType, currentNode.Path);
             executorMethod.ReturnType = new CodeType { Name = returnType, IsExternal = true, };
@@ -838,8 +842,13 @@ public class KiotaBuilder
         else throw new InvalidOperationException("un handled case, might be object type or array type");
     }
     private CodeElement GetExistingDeclaration(bool checkInAllNamespaces, CodeNamespace currentNamespace, OpenApiUrlTreeNode currentNode, string declarationName) {
-        var searchNameSpace = GetSearchNamespace(checkInAllNamespaces, currentNode, currentNamespace);
-        return searchNameSpace.FindChildByName<ITypeDefinition>(declarationName, checkInAllNamespaces) as CodeElement;
+        var localNameSpace = GetSearchNamespace(false, currentNode, currentNamespace);
+        var localItemSearchItem = localNameSpace.FindChildByName<ITypeDefinition>(declarationName, checkInAllNamespaces) as CodeElement;
+        if (!checkInAllNamespaces || localItemSearchItem != null)
+            return localItemSearchItem; // if we can find an item in the target namespace lets default to that.
+
+        var globalSearchNameSpace = GetSearchNamespace(checkInAllNamespaces, currentNode, currentNamespace);
+        return globalSearchNameSpace.FindChildByName<ITypeDefinition>(declarationName, checkInAllNamespaces) as CodeElement;
     }
     private CodeNamespace GetSearchNamespace(bool checkInAllNamespaces, OpenApiUrlTreeNode currentNode, CodeNamespace currentNamespace) {
         if(checkInAllNamespaces) return rootNamespace;
@@ -1058,7 +1067,7 @@ public class KiotaBuilder
                     Type = new CodeType
                     {
                         IsExternal = true,
-                        Name = parameter.Schema.Items?.Type ?? parameter.Schema.Type,
+                        Name = parameter.Schema?.Items?.Type ?? parameter.Schema?.Type ?? "string", // since its a query parameter default to string if there is no schema
                         CollectionKind = parameter.Schema.IsArray() ? CodeType.CodeTypeCollectionKind.Array : default,
                     },
                 };
