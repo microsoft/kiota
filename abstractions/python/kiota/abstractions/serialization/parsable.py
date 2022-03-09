@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Dict, TypeVar
+from typing import TYPE_CHECKING, Callable, Dict, TypeVar
 
 T = TypeVar('T')
 
@@ -12,15 +12,6 @@ class Parsable(ABC):
     """
     Defines a serializable model object.
     """
-    @abstractmethod
-    def get_additional_data(self) -> Dict[str, Any]:
-        """Gets the additional data for this object that did not belong to the properties
-
-        Returns:
-            Dict[str, Any]: The additional data for this object
-        """
-        pass
-
     @abstractmethod
     def get_field_deserializers(self) -> Dict[str, Callable[[T, 'ParseNode'], None]]:
         """Gets the deserialization information for this object.
