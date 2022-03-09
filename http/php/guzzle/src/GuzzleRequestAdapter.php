@@ -242,8 +242,11 @@ class GuzzleRequestAdapter implements RequestAdapter
         if (!$response->hasHeader(RequestInformation::$contentTypeHeader)) {
             throw new \RuntimeException("No response content type header for deserialization");
         }
-        $contentType = $response->getHeaderLine(RequestInformation::$contentTypeHeader);
-        return $this->parseNodeFactory->getRootParseNode($contentType, $response->getBody());
+        $contentType = explode(';', $response->getHeaderLine(RequestInformation::$contentTypeHeader));
+        if (!$contentType) {
+            throw new \RuntimeException("Missing Content-Type header value");
+        }
+        return $this->parseNodeFactory->getRootParseNode($contentType[0], $response->getBody());
     }
 
     /**
@@ -254,6 +257,7 @@ class GuzzleRequestAdapter implements RequestAdapter
      */
     private function getHttpResponseMessage(RequestInformation $requestInformation): Promise
     {
+        $requestInformation->pathParameters['baseurl'] = $this->getBaseUrl();
         $request = $this->authenticationProvider->authenticateRequest($requestInformation);
         return $request->then(
             function ($result) use ($requestInformation) {

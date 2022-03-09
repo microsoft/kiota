@@ -29,8 +29,8 @@ class RequestInformation {
     public array $queryParameters = [];
     /** @var array<string, mixed>  The Request Headers. */
     public array $headers = [];
-    /** @var StreamInterface $content The Request Body. */
-    public StreamInterface $content;
+    /** @var StreamInterface|null $content The Request Body. */
+    public ?StreamInterface $content = null;
     /** @var array<string,RequestOption> */
     private array $requestOptions = [];
     /** @var string $binaryContentType */
@@ -123,7 +123,7 @@ class RequestInformation {
             $writer = $requestAdapter->getSerializationWriterFactory()->getSerializationWriter($contentType);
             $this->headers[self::$contentTypeHeader] = $contentType;
 
-            if (count($this->headers) === 1) {
+            if (count($values) === 1) {
                 $writer->writeObjectValue(null, $values[0]);
             } else {
                 $writer->writeCollectionOfObjectValues(null, $values);
