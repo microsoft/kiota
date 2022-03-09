@@ -42,9 +42,9 @@ public class KiotaClientFactory {
     @Nonnull
     public static Interceptor[] CreateDefaultInterceptors() {
         return new Interceptor[] {
-            new TelemetryHandler(),
             new RedirectHandler(),
-            new RetryHandler()
+            new RetryHandler(),
+            new TelemetryHandler()
         }; //TODO add the list of default interceptors when they are ready
         //DO we want to add Telemetry and Chaos as defaults? 
     }

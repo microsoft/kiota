@@ -20,7 +20,10 @@ import com.microsoft.kiota.RequestInformation;
 import com.microsoft.kiota.RequestOption;
 import com.microsoft.kiota.ResponseHandler;
 import com.microsoft.kiota.authentication.AuthenticationProvider;
+import com.microsoft.kiota.http.middleware.RetryHandler;
 import com.microsoft.kiota.http.middleware.TelemetryHandler;
+import com.microsoft.kiota.http.middleware.options.RedirectHandlerOption;
+import com.microsoft.kiota.http.middleware.options.RetryHandlerOption;
 import com.microsoft.kiota.http.middleware.options.TelemetryHandlerOption;
 import com.microsoft.kiota.serialization.ParseNodeFactoryRegistry;
 import com.microsoft.kiota.serialization.Parsable;
@@ -256,18 +259,27 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
         for (final Map.Entry<String,String> header : requestInfo.headers.entrySet()) {
             requestBuilder.addHeader(header.getKey(), header.getValue());
         }
+
         for(final RequestOption option : requestInfo.getRequestOptions()) {
-            
-            Class classType;
-            try {
-                classType = Class.forName(option.getClass().getName());
-                option.getClass().cast(classType);
-                requestBuilder.tag(classType, option);    
                 
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-//            requestBuilder.tag(TelemetryHandler.class, (TelemetryHandler) option);
+            switch(option.getClass().getSimpleName()){
+                case "TelemetryHandlerOption":
+                    requestBuilder.tag(TelemetryHandlerOption.class, (TelemetryHandlerOption)option);
+                    break;
+                case "RetryHandlerOption":
+                    requestBuilder.tag(RetryHandlerOption.class, (RetryHandlerOption) option);
+                    break;
+                case "RedirectHandlerOption":
+                    requestBuilder.tag(RedirectHandlerOption.class, (RedirectHandlerOption) option);
+                default:
+                    try {
+                        Class classType = ClassLoader.getSystemClassLoader().loadClass(option.getClass().getName());
+                        requestBuilder.tag(classType, option); 
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    } 
+                    break;
+            }                 
         }
         return requestBuilder.build();
     }
