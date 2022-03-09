@@ -106,14 +106,18 @@ public class JsonOutputFormatter : IOutputFormatter
     /// <param name="cancellationToken">The cancellation token</param>
     private static async Task<Stream> ProcessJsonAsync(Stream input, bool indent = true, CancellationToken cancellationToken = default)
     {
-        var buffer = new byte[input.Length];
-        await input.ReadAsync(buffer, cancellationToken);
+        Stream cache = new MemoryStream();
+        if (!input.CanSeek) {
+            // copy the stream
+            await input.CopyToAsync(cache, cancellationToken);
+            cache.Position = 0;
+        } else {
+            cache = input;
+        }
 
         try
         {
-            using var cachedStream = new MemoryStream(buffer);
-            var jsonDoc = await JsonDocument.ParseAsync(cachedStream, default, cancellationToken);
-
+            var jsonDoc = await JsonDocument.ParseAsync(cache, default, cancellationToken);
             var outputStream = new MemoryStream();
             await JsonSerializer.SerializeAsync<object>(outputStream, jsonDoc, cancellationToken: cancellationToken, options: new() { WriteIndented = indent });
             outputStream.Position = 0;
@@ -121,7 +125,8 @@ public class JsonOutputFormatter : IOutputFormatter
         }
         catch (JsonException)
         {
-            return new MemoryStream(buffer);
+            cache.Position = 0;
+            return cache;
         }
     }
 }
