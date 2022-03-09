@@ -43,8 +43,8 @@ public abstract class ProprietableBlock<T, U> : CodeBlock<U, BlockEnd>, IDocumen
     }
     public CodeProperty GetPropertyOfKind(CodePropertyKind kind) =>
     Properties.FirstOrDefault(x => x.IsOfKind(kind));
-    public IEnumerable<CodeProperty> Properties => InnerChildElements.Values.OfType<CodeProperty>();
-    public IEnumerable<CodeMethod> Methods => InnerChildElements.Values.OfType<CodeMethod>();
+    public IEnumerable<CodeProperty> Properties => InnerChildElements.Values.OfType<CodeProperty>().OrderBy(x => x.Name);
+    public IEnumerable<CodeMethod> Methods => InnerChildElements.Values.OfType<CodeMethod>().OrderBy(x => x.Name);
     public bool ContainsMember(string name)
     {
         return InnerChildElements.ContainsKey(name);
@@ -62,13 +62,29 @@ public abstract class ProprietableBlock<T, U> : CodeBlock<U, BlockEnd>, IDocumen
 
 public class ProprietableBlockDeclaration : BlockDeclaration
 {
-    private readonly ConcurrentDictionary<string, CodeType> implements = new ();
+    private readonly ConcurrentDictionary<string, CodeType> implements = new (StringComparer.OrdinalIgnoreCase);
     public void AddImplements(params CodeType[] types) {
         if(types == null || types.Any(x => x == null))
             throw new ArgumentNullException(nameof(types));
         EnsureElementsAreChildren(types);
         foreach(var type in types)
             implements.TryAdd(type.Name,type);
+    }
+    public CodeType FindImplementByName(string name) {
+        if(string.IsNullOrEmpty(name))
+            throw new ArgumentNullException(nameof(name));
+        return implements.TryGetValue(name, out var type) ? type : null;
+    }
+    public void ReplaceImplementByName(string oldName, string newName) {
+        if(string.IsNullOrEmpty(newName))
+            throw new ArgumentNullException(nameof(newName));
+        var impl = FindImplementByName(oldName);
+        if(impl != null)
+        {
+            RemoveImplements(impl);
+            impl.Name = newName;
+            AddImplements(impl);
+        }
     }
     public void RemoveImplements(params CodeType[] types) {
         if(types == null || types.Any(x => x == null))

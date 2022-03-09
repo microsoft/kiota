@@ -52,7 +52,7 @@ public class CSharpLanguageRefinerTests {
                 Name = "string"
             },
         }).First();
-        requestExecutor.ErrorMappings.TryAdd("4XX", new CodeType {
+        requestExecutor.AddErrorMapping("4XX", new CodeType {
                         Name = "Error4XX",
                         TypeDefinition = errorClass,
                     });

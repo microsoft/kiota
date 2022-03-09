@@ -186,9 +186,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 returnType.Name = replacement.Invoke(returnType.Name);
             if(provider.ReservedNames.Contains(currentMethod.Name))
                 currentMethod.Name = replacement.Invoke(currentMethod.Name);
-            if(currentMethod.ErrorMappings.Values.Select(x => x.Name).Any(x => provider.ReservedNames.Contains(x)))
+            if(currentMethod.ErrorMappings.Select(x => x.Value.Name).Any(x => provider.ReservedNames.Contains(x)))
                 ReplaceMappingNames(currentMethod.ErrorMappings, provider, replacement);
-            if(currentMethod.DiscriminatorMappings.Values.Select(x => x.Name).Any(x => provider.ReservedNames.Contains(x)))
+            if(currentMethod.DiscriminatorMappings.Select(x => x.Value.Name).Any(x => provider.ReservedNames.Contains(x)))
                 ReplaceMappingNames(currentMethod.DiscriminatorMappings, provider, replacement);
             ReplaceReservedParameterNamesTypes(currentMethod, provider, replacement);
         } else if (current is CodeProperty currentProperty &&
@@ -235,11 +235,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                                             x)
                                             .Aggregate((x, y) => $"{x}.{y}");
     }
-    private static void ReplaceMappingNames(IDictionary<string, CodeTypeBase> mappings, IReservedNamesProvider provider, Func<string, string> replacement)
+    private static void ReplaceMappingNames(IEnumerable<KeyValuePair<string, CodeTypeBase>> mappings, IReservedNamesProvider provider, Func<string, string> replacement)
     {
-        mappings.Values.Where(x => provider.ReservedNames.Contains(x.Name))
+        mappings.Where(x => provider.ReservedNames.Contains(x.Value.Name))
                                         .ToList()
-                                        .ForEach(x => x.Name = replacement.Invoke(x.Name));
+                                        .ForEach(x => x.Value.Name = replacement.Invoke(x.Value.Name));
     }
     private static void ReplaceReservedParameterNamesTypes(CodeMethod currentMethod, IReservedNamesProvider provider, Func<string, string> replacement)
     {
@@ -472,7 +472,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             var errorTypes = currentClassChildren
                                 .OfType<CodeMethod>()
                                 .Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor))
-                                .SelectMany(x => x.ErrorMappings.Values)
+                                .SelectMany(x => x.ErrorMappings)
+                                .Select(x => x.Value)
                                 .Distinct();
             var usingsToAdd = propertiesTypes
                                 .Union(methodsParametersTypes)
@@ -559,9 +560,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if(string.IsNullOrEmpty(className)) throw new ArgumentNullException(nameof(className));
 
         if(currentElement is CodeClass currentClass &&
-            currentClass.IsOfKind(CodeClassKind.Model) &&
-            currentClass.StartBlock is ClassDeclaration declaration) {
-            declaration.AddImplements(new CodeType {
+            currentClass.IsOfKind(CodeClassKind.Model)) {
+            currentClass.StartBlock.AddImplements(new CodeType {
                 IsExternal = true,
                 Name = className
             });
@@ -680,7 +680,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             currentMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
             currentMethod.Parent is CodeClass parentClass) {
                 if(currentMethod.ErrorMappings.Any())
-                    currentMethod.ErrorMappings.Values.OfType<CodeType>().ToList().ForEach(x => AddStaticMethodImportToClass(parentClass, x, functionNameCallback));
+                    currentMethod.ErrorMappings.Select(x => x.Value).OfType<CodeType>().ToList().ForEach(x => AddStaticMethodImportToClass(parentClass, x, functionNameCallback));
                 if(currentMethod.ReturnType is CodeType returnType &&
                     returnType.TypeDefinition != null)
                     AddStaticMethodImportToClass(parentClass, returnType, functionNameCallback);
@@ -742,7 +742,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     private static CodeInterface CopyClassAsInterface(CodeClass modelClass, GenerationConfiguration config, Func<CodeClass, string> interfaceNamingCallback) {
         var interfaceName = interfaceNamingCallback.Invoke(modelClass);
         var targetNS = modelClass.GetImmediateParentOfType<CodeNamespace>();
-        var existing = targetNS.FindChildByName<CodeInterface>(interfaceName);
+        var existing = targetNS.FindChildByName<CodeInterface>(interfaceName, false);
         if(existing != null)
             return existing;
         var inter = targetNS.AddInterface(new CodeInterface {
@@ -827,7 +827,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                     .Distinct(StringComparer.OrdinalIgnoreCase)
                                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        inter.AddUsing(modelClass.Usings.Where(x => x.IsExternal && externalTypesOnInter.Contains(x.Name)).ToArray());
+        var usingsToAdd = modelClass.Usings.Where(x => x.IsExternal && externalTypesOnInter.Contains(x.Name)).ToList();
+        if(modelClass.Parent is CodeClass parentClass)
+            usingsToAdd.AddRange(parentClass.Usings.Where(x => x.IsExternal && externalTypesOnInter.Contains(x.Name)));
+        inter.AddUsing(usingsToAdd.ToArray());
         return inter;
     }
     private static CodeUsing ReplaceTypeByInterfaceType(CodeClass sourceClass, CodeType originalType, GenerationConfiguration config, List<string> usingsToRemove, Func<CodeClass, string> interfaceNamingCallback) {

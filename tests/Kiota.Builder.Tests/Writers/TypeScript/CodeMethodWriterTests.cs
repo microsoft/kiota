@@ -159,9 +159,9 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             var error401 = root.AddClass(new CodeClass{
                 Name = "Error401",
             }).First();
-            method.ErrorMappings.TryAdd("4XX", new CodeType {Name = "Error4XX", TypeDefinition = error4XX});
-            method.ErrorMappings.TryAdd("5XX", new CodeType {Name = "Error5XX", TypeDefinition = error5XX});
-            method.ErrorMappings.TryAdd("403", new CodeType {Name = "Error403", TypeDefinition = error401});
+            method.AddErrorMapping("4XX", new CodeType {Name = "Error4XX", TypeDefinition = error4XX});
+            method.AddErrorMapping("5XX", new CodeType {Name = "Error5XX", TypeDefinition = error5XX});
+            method.AddErrorMapping("403", new CodeType {Name = "Error403", TypeDefinition = error401});
             AddRequestBodyParameters();
             writer.Write(method);
             var result = tw.ToString();
@@ -196,7 +196,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
                     TypeDefinition = parentModel,
                 },
             }).First();
-            factoryMethod.DiscriminatorMappings.TryAdd("ns.childmodel", new CodeType {
+            factoryMethod.AddDiscriminatorMapping("ns.childmodel", new CodeType {
                             Name = "childModel",
                             TypeDefinition = childModel,
                         });
