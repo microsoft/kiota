@@ -90,7 +90,7 @@ public class ProprietableBlockDeclaration : BlockDeclaration
         if(types == null || types.Any(x => x == null))
             throw new ArgumentNullException(nameof(types));
         foreach(var type in types)
-            implements.Remove(type.Name, out var _);
+            implements.TryRemove(type.Name, out var _);
     }
     public IEnumerable<CodeType> Implements => implements.Values.OrderBy(x => x.Name);
 }
