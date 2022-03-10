@@ -754,12 +754,22 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                         targetNS.AddInterface(insertValue).First();
         var targetUsingBlock = shouldInsertUnderParentClass ? parentClass.StartBlock as ProprietableBlockDeclaration : inter.StartBlock;
         var usingsToRemove = new List<string>();
+        var usingsToAdd = new List<CodeUsing>();
         if(modelClass.StartBlock.Inherits?.TypeDefinition is CodeClass baseClass) {
             var parentInterface = CopyClassAsInterface(baseClass, interfaceNamingCallback);
             inter.StartBlock.AddImplements(new CodeType {
                 Name = parentInterface.Name,
                 TypeDefinition = parentInterface,
             });
+            var parentInterfaceNS = parentInterface.GetImmediateParentOfType<CodeNamespace>();
+            if(parentInterfaceNS != targetNS)
+                usingsToAdd.Add(new CodeUsing {
+                    Name = parentInterfaceNS.Name,
+                    Declaration = new CodeType {
+                        Name = parentInterface.Name,
+                        TypeDefinition = parentInterface,
+                    },
+                });
         }
         if (modelClass.StartBlock.Implements.Any()) {
             var originalImplements = modelClass.StartBlock.Implements.Where(x => x.TypeDefinition != inter).ToArray();
@@ -831,7 +841,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                     .Distinct(StringComparer.OrdinalIgnoreCase)
                                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        var usingsToAdd = modelClass.Usings.Where(x => x.IsExternal && externalTypesOnInter.Contains(x.Name)).ToList();
+        usingsToAdd.AddRange(modelClass.Usings.Where(x => x.IsExternal && externalTypesOnInter.Contains(x.Name)));
         if(shouldInsertUnderParentClass)
             usingsToAdd.AddRange(parentClass.Usings.Where(x => x.IsExternal && externalTypesOnInter.Contains(x.Name)));
         targetUsingBlock.AddUsings(usingsToAdd.ToArray());
