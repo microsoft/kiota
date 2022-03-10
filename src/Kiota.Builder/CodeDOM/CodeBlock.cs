@@ -111,6 +111,13 @@ public class BlockDeclaration : CodeTerminal
         EnsureElementsAreChildren(codeUsings);
         usings.AddRange(codeUsings);
     }
+    public void RemoveUsings(params CodeUsing[] codeUsings)
+    {
+        if(codeUsings == null || codeUsings.Any(x => x == null))
+            throw new ArgumentNullException(nameof(codeUsings));
+        foreach(var codeUsing in codeUsings)
+            usings.Remove(codeUsing);
+    }
     public void RemoveUsingsByDeclarationName(params string[] names) {
         if(names == null || names.Any(x => string.IsNullOrEmpty(x)))
             throw new ArgumentNullException(nameof(names));

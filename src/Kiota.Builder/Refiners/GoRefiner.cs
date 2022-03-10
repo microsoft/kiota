@@ -35,7 +35,7 @@ public class GoRefiner : CommonLanguageRefiner
         AddRawUrlConstructorOverload(
             generatedCode
         );
-        RemoveModelsThatDependOnSubNamespacesAndTheirDependencies(
+        RemoveModelPropertiesThatDependOnSubNamespaces(
             generatedCode
         );
         ReplaceReservedNames(
@@ -183,20 +183,28 @@ public class GoRefiner : CommonLanguageRefiner
         }
         CrawlTree(currentElement, AddNullCheckMethods);
     }
-    private static void RemoveModelsThatDependOnSubNamespacesAndTheirDependencies(CodeElement currentElement){
-        throw new NotImplementedException(); //TODO implement
-        // should result into dropping all models that depend on subnamespaces and their dependencies
-        // if a model has a reference to a namespace bellow itself
-        // this is because Go doesn't know how to trim circular dependencies
-        // the following models should be dropped (they are duplicates anyway)
-        //models\microsoft\graph\call_record.go
-        //models\microsoft\graph\cloud_communications.go
-        //models\microsoft\graph\failure_info.go
-        //models\microsoft\graph\network_info.go
-        //models\microsoft\graph\session.go
-        // and their respective interfaces
-        // foreach model we drop, check other models for properties referencing them, drop, check methods with parameters or return types of those models, drop them
-        CrawlTree(currentElement, RemoveModelsThatDependOnSubNamespacesAndTheirDependencies);
+    private static void RemoveModelPropertiesThatDependOnSubNamespaces(CodeElement currentElement) {
+        if(currentElement is CodeClass currentClass && 
+            currentClass.IsOfKind(CodeClassKind.Model) &&
+            currentClass.Parent is CodeNamespace currentNamespace) {
+            var propertiesToRemove = currentClass.Properties
+                                                    .Where(x => x.IsOfKind(CodePropertyKind.Custom) &&
+                                                                x.Type is CodeType pType &&
+                                                                !pType.IsExternal &&
+                                                                pType.TypeDefinition != null &&
+                                                                currentNamespace.IsParentOf(pType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>()))
+                                                    .ToArray();
+            if(propertiesToRemove.Any()) {
+                currentClass.RemoveChildElement(propertiesToRemove);
+                var propertiesToRemoveHashSet = propertiesToRemove.ToHashSet();
+                var methodsToRemove = currentClass.Methods
+                                                    .Where(x => x.IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter) &&
+                                                            propertiesToRemoveHashSet.Contains(x.AccessedProperty))
+                                                    .ToArray();
+                currentClass.RemoveChildElement(methodsToRemove);
+            }
+        }
+        CrawlTree(currentElement, RemoveModelPropertiesThatDependOnSubNamespaces);
     }
     private static CodeNamespace FindFirstModelSubnamepaceWithClasses(CodeNamespace currentNamespace) {
         if(currentNamespace != null) {
