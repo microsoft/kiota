@@ -5,11 +5,11 @@ import json
 import re
 from datetime import date, datetime, time, timedelta
 from enum import Enum
-from typing import Any, Callable, Generic, List, Optional, Type, TypeVar
+from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar
 from uuid import UUID
 
 from dateutil import parser
-from kiota.abstractions.serialization import Parsable, ParseNode
+from kiota.abstractions.serialization import AdditionalDataHolder, Parsable, ParseNode
 
 T = TypeVar("T")
 
@@ -258,10 +258,10 @@ class JsonParseNode(ParseNode, Generic[T, U]):
         self.on_after_assign_field_values = value
 
     def _assign_field_values(self, item: U) -> None:
-        if not item.get_additional_data():
-            item.set_additional_data({})
-
         fields = item.get_field_deserializers()
+        item_additional_data: Optional[Dict[str, Any]] = None
+        if isinstance(item, AdditionalDataHolder) and item.get_additional_data():
+            item_additional_data = item.get_additional_data()
         object_dict = json.loads(self._json_node)
         for key, val in object_dict.items():
             snake_case_key = re.sub(r'(?<!^)(?=[A-Z])', '_', key).lower()
@@ -269,4 +269,6 @@ class JsonParseNode(ParseNode, Generic[T, U]):
             if deserializer:
                 deserializer(item, JsonParseNode(val))
             else:
-                item.get_additional_data()[snake_case_key] = val
+                if item_additional_data:
+                    item_additional_data[snake_case_key] = val
+                
