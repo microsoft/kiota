@@ -38,16 +38,17 @@ public class TableOutputFormatter : IOutputFormatter
     /// <inheritdoc />
     public async Task WriteOutputAsync(Stream content, IOutputFormatterOptions options, CancellationToken cancellationToken = default) {
         using var doc = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
-        var table = await ConstructTableAsync(doc, cancellationToken);
+        var table = ConstructTable(doc, cancellationToken);
         _ansiConsole.Write(table);
     }
 
     /// <summary>
-    /// Asynchronously construct a table given a JSON document
+    /// Construct a table given a JSON document
     /// </summary>
     /// <param name="document">The parsed json document</param>
     /// <param name="cancellationToken">The cancellation token</param>
-    public async Task<Table> ConstructTableAsync(JsonDocument document, CancellationToken cancellationToken = default) {
+    public Table ConstructTable(JsonDocument document, CancellationToken cancellationToken = default) {
+        cancellationToken.ThrowIfCancellationRequested();
         var root = GetRootElement(document.RootElement);
         var firstElement = GetFirstElement(root);
 
@@ -80,11 +81,13 @@ public class TableOutputFormatter : IOutputFormatter
         }
         else if (root.ValueKind == JsonValueKind.Object)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var rowCols = GetRowColumns(propertyNames, root);
             table.AddRow(rowCols);
         }
         else
         {
+            cancellationToken.ThrowIfCancellationRequested();
             table.AddRow(GetPropertyValue(root));
         }
 
@@ -138,51 +141,6 @@ public class TableOutputFormatter : IOutputFormatter
         }
         
         return propertyNames;
-    }
-
-    /// <summary>
-    /// Constructs a table given a JSON document
-    /// </summary>
-    /// <param name="document">The parsed JSON document</param>
-    public Table ConstructTable(JsonDocument document)
-    {
-        var root = GetRootElement(document.RootElement);
-        var firstElement = GetFirstElement(root);
-
-        IEnumerable<string> propertyNames = GetPropertyNames(firstElement);
-        var table = new Table();
-        table.Expand();
-
-        foreach (var propertyName in propertyNames)
-            table.AddColumn(propertyName, column =>
-            {
-                if (firstElement.ValueKind == JsonValueKind.Object)
-                {
-                    var hasProp = firstElement.TryGetProperty(propertyName, out var property);
-                    if (property.ValueKind == JsonValueKind.Number)
-                        column.RightAligned().PadLeft(10);
-                }
-            });
-
-        if (root.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var row in root.EnumerateArray())
-            {
-                var rowCols = GetRowColumns(propertyNames, row);
-                table.AddRow(rowCols);
-            }
-        }
-        else if (root.ValueKind == JsonValueKind.Object)
-        {
-            var rowCols = GetRowColumns(propertyNames, root);
-            table.AddRow(rowCols);
-        }
-        else
-        {
-            table.AddRow(GetPropertyValue(root));
-        }
-
-        return table;
     }
 
     private static IEnumerable<IRenderable> GetRowColumns(IEnumerable<string> propertyNames, JsonElement row)
