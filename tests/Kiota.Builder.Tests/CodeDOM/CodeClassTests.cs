@@ -104,6 +104,18 @@ namespace Kiota.Builder.Tests {
             Assert.Equal(3, codeClass.GetChildElements(true).Count());
         }
         [Fact]
+        public void AddsInnerInterface() {
+            var root = CodeNamespace.InitRootNamespace();
+            var child = root.AddNamespace(CodeNamespaceTests.ChildName);
+            var codeClass = child.AddClass(new CodeClass {
+                Name = "class1"
+            }).First();
+            codeClass.AddInnerInterface(new CodeInterface {
+                Name = "subinterface"
+            });
+            Assert.Single(codeClass.GetChildElements(true).OfType<CodeInterface>());
+        }
+        [Fact]
         public void GetsParentAndGrandParent() {
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(CodeNamespaceTests.ChildName);

@@ -198,7 +198,7 @@ public class GoRefiner : CommonLanguageRefiner
                 currentClass.RemoveChildElement(propertiesToRemove);
                 var propertiesToRemoveHashSet = propertiesToRemove.ToHashSet();
                 var methodsToRemove = currentClass.Methods
-                                                    .Where(x => x.IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter) &&
+                                                    .Where(x => x.IsAccessor &&
                                                             propertiesToRemoveHashSet.Contains(x.AccessedProperty))
                                                     .ToArray();
                 currentClass.RemoveChildElement(methodsToRemove);

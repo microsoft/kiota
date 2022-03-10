@@ -462,5 +462,54 @@ public class GoLanguageRefinerTests {
         Assert.Equal("map[string]string", pathParamsProp.Type.Name);
         Assert.False(rawUrlParam.Type.IsNullable);
     }
+    [Fact]
+    public void RemovesPropertyRelyingOnSubModules() {
+        var models = root.AddNamespace("ApiSdk.models");
+        var submodels = models.AddNamespace($"{models.Name}.submodels");
+        var propertyModel = submodels.AddClass(new CodeClass {
+            Name = "propertyModel",
+            Kind = CodeClassKind.Model
+        }).First();
+        var mainModel = models.AddClass(new CodeClass {
+            Name = "mainModel",
+            Kind = CodeClassKind.Model
+        }).First();
+        var property = mainModel.AddProperty(new CodeProperty {
+            Name = "property",
+            Type = new CodeType {
+                Name = "propertyModel",
+                TypeDefinition = propertyModel
+            },
+            Kind = CodePropertyKind.Custom
+        }).First();
+        mainModel.AddMethod(new CodeMethod{
+            Name = $"get{property.Name}",
+            Kind = CodeMethodKind.Getter,
+            ReturnType = new CodeType {
+                Name = "propertyModel",
+                TypeDefinition = propertyModel
+            },
+            AccessedProperty = property
+        });
+        var setter = mainModel.AddMethod(new CodeMethod{
+            Name = $"get{property.Name}",
+            Kind = CodeMethodKind.Getter,
+            ReturnType = new CodeType {
+                Name = "void",
+                IsExternal = true,
+            },
+            AccessedProperty = property
+        }).First();
+        setter.AddParameter(new CodeParameter{
+            Name = "value",
+            Type = new CodeType {
+                Name = "propertyModel",
+                TypeDefinition = propertyModel
+            }
+        });
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        Assert.Empty(mainModel.Properties);
+        Assert.Empty(mainModel.Methods.Where(x => x.IsAccessor));
+    }
     #endregion
 }
