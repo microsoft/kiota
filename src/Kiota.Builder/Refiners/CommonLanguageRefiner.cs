@@ -762,7 +762,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             });
         }
         if (modelClass.StartBlock.Implements.Any()) {
-            var originalImplements = modelClass.StartBlock.Implements.ToArray();
+            var originalImplements = modelClass.StartBlock.Implements.Where(x => x.TypeDefinition != inter).ToArray();
             inter.StartBlock.AddImplements(originalImplements
                                                         .Select(x => x.Clone() as CodeType)
                                                         .ToArray());
