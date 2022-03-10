@@ -743,10 +743,16 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         var existing = targetNS.FindChildByName<CodeInterface>(interfaceName, false);
         if(existing != null)
             return existing;
-        var inter = targetNS.AddInterface(new CodeInterface {
+        var parentClass = modelClass.Parent as CodeClass;
+        var shouldInsertUnderParentClass = parentClass != null;
+        var insertValue = new CodeInterface {
                     Name = interfaceName,
                     Kind = CodeInterfaceKind.Model,
-        }).First();
+        };
+        var inter = shouldInsertUnderParentClass ? 
+                        parentClass.AddInnerInterface(insertValue).First() :
+                        targetNS.AddInterface(insertValue).First();
+        var targetUsingBlock = shouldInsertUnderParentClass ? parentClass.StartBlock as ProprietableBlockDeclaration : inter.StartBlock;
         var usingsToRemove = new List<string>();
         if(modelClass.StartBlock.Inherits?.TypeDefinition is CodeClass baseClass) {
             var parentInterface = CopyClassAsInterface(baseClass, interfaceNamingCallback);
@@ -778,9 +784,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     var resultType = ReplaceTypeByInterfaceType(methodTypeClass, methodReturnType, usingsToRemove, interfaceNamingCallback);
                     modelClass.AddUsing(resultType);
                     if(resultType.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>() != targetNS)
-                        inter.AddUsing(resultType.Clone() as CodeUsing);
+                        targetUsingBlock.AddUsings(resultType.Clone() as CodeUsing);
                 } else if (methodReturnType.TypeDefinition is CodeEnum methodEnumType)
-                    inter.AddUsing(new CodeUsing {
+                    targetUsingBlock.AddUsings(new CodeUsing {
                         Name = methodEnumType.Parent.Name,
                         Declaration = new CodeType {
                             Name = methodEnumType.Name,
@@ -796,9 +802,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                         var resultType = ReplaceTypeByInterfaceType(parameterTypeClass, parameterType, usingsToRemove, interfaceNamingCallback);
                         modelClass.AddUsing(resultType);
                         if(resultType.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>() != targetNS)
-                            inter.AddUsing(resultType.Clone() as CodeUsing);
+                            targetUsingBlock.AddUsings(resultType.Clone() as CodeUsing);
                     } else if(parameterType.TypeDefinition is CodeEnum parameterEnumType)
-                        inter.AddUsing(new CodeUsing {
+                        targetUsingBlock.AddUsings(new CodeUsing {
                             Name = parameterEnumType.Parent.Name,
                             Declaration = new CodeType {
                                 Name = parameterEnumType.Name,
@@ -826,9 +832,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var usingsToAdd = modelClass.Usings.Where(x => x.IsExternal && externalTypesOnInter.Contains(x.Name)).ToList();
-        if(modelClass.Parent is CodeClass parentClass)
+        if(shouldInsertUnderParentClass)
             usingsToAdd.AddRange(parentClass.Usings.Where(x => x.IsExternal && externalTypesOnInter.Contains(x.Name)));
-        inter.AddUsing(usingsToAdd.ToArray());
+        targetUsingBlock.AddUsings(usingsToAdd.ToArray());
         return inter;
     }
     private static CodeUsing ReplaceTypeByInterfaceType(CodeClass sourceClass, CodeType originalType, List<string> usingsToRemove, Func<CodeClass, string> interfaceNamingCallback) {
