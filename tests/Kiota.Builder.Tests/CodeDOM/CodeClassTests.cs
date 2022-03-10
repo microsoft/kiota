@@ -114,6 +114,15 @@ namespace Kiota.Builder.Tests {
                 Name = "subinterface"
             });
             Assert.Single(codeClass.GetChildElements(true).OfType<CodeInterface>());
+            Assert.Throws<ArgumentNullException>(() => {
+                codeClass.AddInnerInterface(null);
+            });
+            Assert.Throws<ArgumentNullException>(() => {
+                codeClass.AddInnerInterface(new CodeInterface[] {null});
+            });
+            Assert.Throws<ArgumentOutOfRangeException>(() => {
+                codeClass.AddInnerInterface(new CodeInterface[] {});
+            });
         }
         [Fact]
         public void GetsParentAndGrandParent() {
