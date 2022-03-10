@@ -448,20 +448,20 @@ namespace Kiota.Builder.Writers.Php
         private static void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, string methodName) {
             if(serializationModules != null)
                 foreach(var module in serializationModules)
-                    writer.WriteLine($"ApiClientBuilder::{methodName}(\\{module}::class);");
+                    writer.WriteLine($"ApiClientBuilder::{methodName}({module}::class);");
         }
         
         private static void WriteFactoryMethodBody(CodeMethod codeElement, LanguageWriter writer){
             var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
             if(codeElement.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
-                writer.WriteLines($"$mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}::getChildNode(\"{codeElement.DiscriminatorPropertyName}\");",
-                    "if ($mappingValueNode != null) {");
+                writer.WriteLines($"$mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterUpperCase()}::getChildNode(\"{codeElement.DiscriminatorPropertyName}\");",
+                    "if ($mappingValueNode !== null) {");
                 writer.IncreaseIndent();
                 writer.WriteLines("$mappingValue = $mappingValueNode->getStringValue();");
                 writer.WriteLine("switch ($mappingValue) {");
                 writer.IncreaseIndent();
                 foreach(var mappedType in codeElement.DiscriminatorMappings) {
-                    writer.WriteLine($"case \"{mappedType.Key}\": return new {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()}();");
+                    writer.WriteLine($"case '{mappedType.Key}': return new {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()}();");
                 }
                 writer.CloseBlock();
                 writer.CloseBlock();

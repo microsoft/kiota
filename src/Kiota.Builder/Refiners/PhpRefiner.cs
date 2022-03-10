@@ -30,6 +30,7 @@ namespace Kiota.Builder.Refiners
             ReplaceDefaultSerializationModules(generatedCode, "Microsoft\\Kiota\\Serialization\\Json\\JsonSerializationWriterFactory");
             ReplaceDefaultDeserializationModules(generatedCode, "Microsoft\\Kiota\\Serialization\\Json\\JsonParseNodeFactory");
             AliasUsingWithSameSymbol(generatedCode);
+            AddSerializationModulesImport(generatedCode, new []{"Microsoft\\Kiota\\Abstractions\\ApiClientBuilder"}, null, '\\');
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             AddGetterAndSetterMethods(generatedCode,
                 new() {

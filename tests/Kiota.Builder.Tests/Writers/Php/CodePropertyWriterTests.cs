@@ -60,6 +60,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             {
                 Name = "message",
                 Access = AccessModifier.Public,
+                Description = "I can get your messages.",
                 Type = new CodeType()
                 {
                     Name = "MessageRequestBuilder"

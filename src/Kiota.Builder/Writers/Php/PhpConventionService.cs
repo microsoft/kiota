@@ -88,10 +88,6 @@ namespace Kiota.Builder.Writers.Php
         }
         public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
         {
-            if (parameter?.Type == null)
-            {
-                return string.Empty;
-            }
             var typeString = GetTypeString(parameter?.Type, parameter);
             var methodTarget = targetElement as CodeMethod;
             var parameterSuffix = parameter?.Kind switch
@@ -114,7 +110,9 @@ namespace Kiota.Builder.Writers.Php
             if (parameter.IsOfKind(CodeParameterKind.PathParameters, CodeParameterKind.Headers))
             {
                 return $"array<string, mixed>{(parameter.Optional ? "|null": string.Empty)} {parameterSignature[1]}";
-            } else if (parameter.IsOfKind(CodeParameterKind.Options))
+            }
+
+            if (parameter.IsOfKind(CodeParameterKind.Options))
             {
                 return $"array<string, RequestOption>|null {parameterSignature[1]}";
             }

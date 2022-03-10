@@ -16,7 +16,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     ///     This method adds the imports for the default serializers and deserializers to the api client class.
     ///     It also updates the module names to replace the fully qualified class name by the class name without the namespace.
     /// </summary>
-    protected void AddSerializationModulesImport(CodeElement generatedCode, string[] serializationWriterFactoryInterfaceAndRegistrationFullName = default, string[] parseNodeFactoryInterfaceAndRegistrationFullName = default) {
+    protected void AddSerializationModulesImport(CodeElement generatedCode, string[] serializationWriterFactoryInterfaceAndRegistrationFullName = default, string[] parseNodeFactoryInterfaceAndRegistrationFullName = default, char separator = '.') {
         if(serializationWriterFactoryInterfaceAndRegistrationFullName == null)
             serializationWriterFactoryInterfaceAndRegistrationFullName = Array.Empty<string>();
         if(parseNodeFactoryInterfaceAndRegistrationFullName == null)
@@ -31,18 +31,18 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                                     .Union(parseNodeFactoryInterfaceAndRegistrationFullName)
                                                     .Where(x => !string.IsNullOrEmpty(x))
                                                     .ToList();
-                currentMethod.DeserializerModules = currentMethod.DeserializerModules.Select(x => x.Split('.').Last()).ToList();
-                currentMethod.SerializerModules = currentMethod.SerializerModules.Select(x => x.Split('.').Last()).ToList();
+                currentMethod.DeserializerModules = currentMethod.DeserializerModules.Select(x => x.Split(separator).Last()).ToList();
+                currentMethod.SerializerModules = currentMethod.SerializerModules.Select(x => x.Split(separator).Last()).ToList();
                 declaration.AddUsings(cumulatedSymbols.Select(x => new CodeUsing {
-                    Name = x.Split('.').Last(),
+                    Name = x.Split(separator).Last(),
                     Declaration = new CodeType {
-                        Name = x.Split('.').SkipLast(1).Aggregate((x, y) => $"{x}.{y}"),
+                        Name = x.Split(separator).SkipLast(1).Aggregate((x, y) => $"{x}{separator}{y}"),
                         IsExternal = true,
                     }
                 }).ToArray());
                 return;
             }
-        CrawlTree(generatedCode, x => AddSerializationModulesImport(x, serializationWriterFactoryInterfaceAndRegistrationFullName, parseNodeFactoryInterfaceAndRegistrationFullName));
+        CrawlTree(generatedCode, x => AddSerializationModulesImport(x, serializationWriterFactoryInterfaceAndRegistrationFullName, parseNodeFactoryInterfaceAndRegistrationFullName, separator));
     }
     protected static void ReplaceDefaultSerializationModules(CodeElement generatedCode, params string[] moduleNames) {
         if(ReplaceSerializationModules(generatedCode, x => x.SerializerModules, "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory", moduleNames))
