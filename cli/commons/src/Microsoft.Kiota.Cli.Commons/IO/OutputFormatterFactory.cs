@@ -1,7 +1,9 @@
 namespace Microsoft.Kiota.Cli.Commons.IO;
 
+/// <inheritdoc />
 public sealed class OutputFormatterFactory : IOutputFormatterFactory
 {
+    /// <inheritdoc />
     public IOutputFormatter GetFormatter(FormatterType formatterType)
     {
         return formatterType switch
@@ -12,10 +14,10 @@ public sealed class OutputFormatterFactory : IOutputFormatterFactory
         };
     }
 
+    /// <inheritdoc />
     public IOutputFormatter GetFormatter(string format)
     {
-        FormatterType type;
-        var success = Enum.TryParse(format, true, out type);
+        var success = Enum.TryParse(format, true, out FormatterType type);
         if (!success)
         {
             throw new NotSupportedException();
