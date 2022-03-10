@@ -28,20 +28,6 @@ public class JsonOutputFormatter : IOutputFormatter
     }
 
     /// <inheritdoc />
-    public void WriteOutput(string content, IOutputFormatterOptions options)
-    {
-        if (options is IJsonOutputFormatterOptions jsonOptions && jsonOptions.OutputIndented)
-        {
-            var result = ProcessJson(content, jsonOptions.OutputIndented);
-            _ansiConsole.WriteLine(result);
-        }
-        else
-        {
-            _ansiConsole.WriteLine(content);
-        }
-    }
-
-    /// <inheritdoc />
     public async Task WriteOutputAsync(Stream content, IOutputFormatterOptions options, CancellationToken cancellationToken = default)
     {
         string resultStr;
@@ -59,26 +45,6 @@ public class JsonOutputFormatter : IOutputFormatter
         }
 
         _ansiConsole.WriteLine(resultStr);
-    }
-
-    /// <summary>
-    /// Given a JSON input string, returns a processed JSON string with optional indentation
-    /// </summary>
-    /// <param name="input">JSON input string</param>
-    /// <param name="indent">Whether to return indented output</param>
-    private static string ProcessJson(string input, bool indent = true)
-    {
-        var result = input;
-        try
-        {
-            var jsonDoc = JsonDocument.Parse(input);
-            result = JsonSerializer.Serialize(jsonDoc, options: new() { WriteIndented = indent });
-        }
-        catch (JsonException)
-        {
-        }
-
-        return result;
     }
 
     /// <summary>

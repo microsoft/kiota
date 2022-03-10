@@ -9,54 +9,6 @@ namespace Microsoft.Kiota.Cli.Commons.Tests.IO;
 
 public class JsonOutputFormatterTest
 {
-    public class WriteOutputFunction_Should
-    {
-        private readonly TestConsole _console;
-
-        private const string NewLine = "\n";
-
-        public WriteOutputFunction_Should()
-        {
-            _console = new TestConsole();
-        }
-
-        [Fact]
-        public void Write_A_Line_With_String_Content()
-        {
-            var formatter = new JsonOutputFormatter(_console);
-            var content = "Test content";
-
-            formatter.WriteOutput(content, new JsonOutputFormatterOptions(true));
-
-            Assert.Equal($"{content}{NewLine}", _console.Output);
-        }
-
-        [Fact]
-        public void Write_Indented_Output_Given_A_Minified_Json_String()
-        {
-            var formatter = new JsonOutputFormatter(_console);
-            var content = "{\"a\": 1, \"b\": \"test\"}";
-            var n = NewLine;
-
-            formatter.WriteOutput(content, new JsonOutputFormatterOptions(true));
-            var expected = $"{{{n}  \"a\": 1,{n}  \"b\": \"test\"{n}}}";
-
-            Assert.Equal($"{expected}{n}", _console.Output);
-        }
-
-        [Fact]
-        public void Write_Minified_Output_Given_A_Minified_Json_String_If_Indentation_Disabled()
-        {
-            var formatter = new JsonOutputFormatter(_console);
-            var content = "{\"a\": 1, \"b\": \"test\"}";
-
-            formatter.WriteOutput(content, new JsonOutputFormatterOptions(false));
-            var expected = $"{content}{NewLine}";
-
-            Assert.Equal(expected, _console.Output);
-        }
-    }
-
     public class WriteOutputAsyncFunction_Should
     {
         private readonly TestConsole _console;

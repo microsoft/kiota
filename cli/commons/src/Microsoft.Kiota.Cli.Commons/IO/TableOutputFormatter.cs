@@ -28,14 +28,6 @@ public class TableOutputFormatter : IOutputFormatter
     }
 
     /// <inheritdoc />
-    public void WriteOutput(string content, IOutputFormatterOptions options)
-    {
-        using var doc = JsonDocument.Parse(content);
-        var table = ConstructTable(doc);
-        _ansiConsole.Write(table);
-    }
-
-    /// <inheritdoc />
     public async Task WriteOutputAsync(Stream content, IOutputFormatterOptions options, CancellationToken cancellationToken = default) {
         using var doc = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
         var table = ConstructTable(doc, cancellationToken);
