@@ -30,7 +30,7 @@ public class TableOutputFormatter : IOutputFormatter
     /// <inheritdoc />
     public async Task WriteOutputAsync(Stream content, IOutputFormatterOptions options, CancellationToken cancellationToken = default) {
         using var doc = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
-        var table = ConstructTable(doc, cancellationToken);
+        var table = ConstructTable(doc);
         _ansiConsole.Write(table);
     }
 
@@ -38,19 +38,17 @@ public class TableOutputFormatter : IOutputFormatter
     /// Construct a table given a JSON document
     /// </summary>
     /// <param name="document">The parsed json document</param>
-    /// <param name="cancellationToken">The cancellation token</param>
-    public Table ConstructTable(JsonDocument document, CancellationToken cancellationToken = default) {
-        cancellationToken.ThrowIfCancellationRequested();
+    /// <returns>A table</returns>
+    public Table ConstructTable(JsonDocument document) {
         var root = GetRootElement(document.RootElement);
         var firstElement = GetFirstElement(root);
 
-        IEnumerable<string> propertyNames = GetPropertyNames(firstElement, cancellationToken);
+        IEnumerable<string> propertyNames = GetPropertyNames(firstElement);
         var table = new Table();
         table.Expand();
 
         foreach (var propertyName in propertyNames)
         {
-            cancellationToken.ThrowIfCancellationRequested();
             table.AddColumn(propertyName, column =>
             {
                 if (firstElement.ValueKind == JsonValueKind.Object)
@@ -66,20 +64,17 @@ public class TableOutputFormatter : IOutputFormatter
         {
             foreach (var row in root.EnumerateArray())
             {
-                cancellationToken.ThrowIfCancellationRequested();
                 var rowCols = GetRowColumns(propertyNames, row);
                 table.AddRow(rowCols);
             }
         }
         else if (root.ValueKind == JsonValueKind.Object)
         {
-            cancellationToken.ThrowIfCancellationRequested();
             var rowCols = GetRowColumns(propertyNames, root);
             table.AddRow(rowCols);
         }
         else
         {
-            cancellationToken.ThrowIfCancellationRequested();
             table.AddRow(GetPropertyValue(root));
         }
 
@@ -105,8 +100,7 @@ public class TableOutputFormatter : IOutputFormatter
         return firstElement;
     }
 
-    private static IEnumerable<string> GetPropertyNames(JsonElement firstElement, CancellationToken cancellationToken = default) {
-        cancellationToken.ThrowIfCancellationRequested();
+    private static IEnumerable<string> GetPropertyNames(JsonElement firstElement) {
         IEnumerable<string> propertyNames;
         if (firstElement.ValueKind != JsonValueKind.Object)
         {
@@ -122,7 +116,6 @@ public class TableOutputFormatter : IOutputFormatter
             var buffer = new List<string>();
             foreach (var property in objectEnumerator)
             {
-                cancellationToken.ThrowIfCancellationRequested();
                 if (restrictedValueKinds.Contains(property.Value.ValueKind)) {
                     continue;
                 }
