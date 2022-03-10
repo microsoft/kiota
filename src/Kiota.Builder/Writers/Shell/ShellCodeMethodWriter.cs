@@ -215,9 +215,9 @@ namespace Kiota.Builder.Writers.Shell
                 {
                     var formatterOptionsVar = "formatterOptions";
                     writer.WriteLine($"var {formatterVar} = {outputFormatterFactoryParamName}.GetFormatter({outputFormatParamName});");
-                    writer.WriteLine($"response = {outputFilterParamName}?.FilterOutput(response, {outputFilterQueryParamName}) ?? response;");
+                    writer.WriteLine($"response = await {outputFilterParamName}?.FilterOutputAsync(response, {outputFilterQueryParamName}, {cancellationTokenParamName}) ?? response;");
                     writer.WriteLine($"var {formatterOptionsVar} = {outputFormatParamName}.GetOutputFormatterOptions(new FormatterOptionsModel(!{jsonNoIndentParamName}));");
-                    writer.WriteLine($"await {formatterVar}.WriteOutputAsync(response, {formatterOptionsVar});");
+                    writer.WriteLine($"await {formatterVar}.WriteOutputAsync(response, {formatterOptionsVar}, {cancellationTokenParamName});");
                 }
                 else
                 {
