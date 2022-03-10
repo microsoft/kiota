@@ -101,7 +101,7 @@ class JsonParseNode implements ParseNode
             throw new InvalidArgumentException("Invalid type $type provided.");
         }
         /** @var Parsable $result */
-        $result = new ($type);
+        $result = new $type();
         if($this->onBeforeAssignFieldValues !== null) {
             $this->onBeforeAssignFieldValues($result);
         }
@@ -140,7 +140,7 @@ class JsonParseNode implements ParseNode
         if (!is_subclass_of($targetEnum, Enum::class)) {
             throw new InvalidArgumentException('Invalid enum provided.');
         }
-        return new ($targetEnum)($this->jsonNode);
+        return new $targetEnum($this->jsonNode);
     }
 
     /**

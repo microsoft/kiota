@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed bugs across request adapter and serialization in PHP #1353
 - Fixed NullReferenceException in Go generator
 - Fixed incorrect mapping when the response type is `text/plain` #1356
 - Fixed a bug in Dotnet.Typescript where properties could have invalid characters #1354
@@ -19,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug working with async azure credentials in Python.
 - Fixed minor issues around PHP Generation, Serialization and Abstractions.
 - Fix Discriminator support for PHP.
+- Move additional data from Parsable into AdditionalDataHolder base class in Python #1360
 
 ## [0.0.17] - 2022-03-03
 
