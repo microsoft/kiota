@@ -13,12 +13,4 @@ public interface IOutputFilter
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>A filtered stream</returns>
     Task<Stream> FilterOutputAsync(Stream content, string query, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Run a filter on string content based on a query. The query format is determined by the implementation
-    /// </summary>
-    /// <param name="content">String content to filter</param>
-    /// <param name="query">Query to run against the content</param>
-    /// <returns>A filtered string</returns>
-    string FilterOutput(string content, string query);
 }

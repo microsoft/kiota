@@ -33,10 +33,4 @@ public class JmesPathOutputFilter : IOutputFilter
         cancellationToken.ThrowIfCancellationRequested();
         return new MemoryStream(bytes);
     }
-
-    /// <inheritdoc />
-    public string FilterOutput(string content, string query) {
-        if (string.IsNullOrEmpty(query)) return content;
-        return jmesPath.Transform(content, query);
-    }
 }
