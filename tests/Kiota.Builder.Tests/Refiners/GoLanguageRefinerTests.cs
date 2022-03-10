@@ -59,6 +59,45 @@ public class GoLanguageRefinerTests {
         Assert.Equal(inter, executorMethodReturnType.TypeDefinition);
     }
     [Fact]
+    public void ReplacesModelsByInnerInterfaces() {
+        var model = root.AddClass(new CodeClass {
+            Name = "somemodel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var requestBuilder = root.AddClass(new CodeClass {
+            Name = "somerequestbuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        var responseModel = requestBuilder.AddInnerClass(new CodeClass {
+                Name = "someresponsemodel",
+                Kind = CodeClassKind.Model,
+        }).First();
+        
+
+        var executorMethod = requestBuilder.AddMethod(new CodeMethod {
+            Name = "Execute",
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType {
+                Name = responseModel.Name,
+                TypeDefinition = responseModel,
+            },
+        }).First();
+        var executorParameter = new CodeParameter {
+            Name = "requestBody",
+            Kind = CodeParameterKind.RequestBody,
+            Type = new CodeType {
+                Name = model.Name,
+                TypeDefinition = model,
+            },
+        };
+        executorMethod.AddParameter(executorParameter);
+        Assert.Empty(root.GetChildElements(true).OfType<CodeInterface>());
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        Assert.Single(root.GetChildElements(true).OfType<CodeInterface>());
+        var responseInter = requestBuilder.GetChildElements(true).OfType<CodeInterface>().LastOrDefault();
+        Assert.NotNull(responseInter);
+    }
+    [Fact]
     public void AddsExceptionInheritanceOnErrorClasses() {
         var model = root.AddClass(new CodeClass {
             Name = "somemodel",
