@@ -160,6 +160,10 @@ public class RetryHandler implements Interceptor{
         return true;
     }
 
+    public RetryHandlerOption getRetryOptions(){
+        return this.mRetryOption;
+    }
+
     @Override
     @Nonnull
     public Response intercept(@Nonnull final Chain chain) throws IOException {

@@ -61,4 +61,8 @@ public class RedirectHandlerOption implements RequestOption {
     public IShouldRedirect shouldRedirect() {
         return this.shouldRedirect;
     }
+
+    public Class<? extends RequestOption> getType() {
+        return RedirectHandlerOption.class;
+    }
 }

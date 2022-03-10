@@ -21,6 +21,7 @@ import com.microsoft.kiota.RequestAdapter;
 import com.microsoft.kiota.RequestInformation;
 import com.microsoft.kiota.authentication.AuthenticationProvider;
 import com.microsoft.kiota.http.middleware.TelemetryHandler;
+import com.microsoft.kiota.http.middleware.options.RetryHandlerOption;
 import com.microsoft.kiota.http.middleware.options.TelemetryHandlerOption;
 
 import okhttp3.*;
@@ -66,7 +67,7 @@ public class TelemetryHandlerTests {
         telemetryHandlerOption.TelemetryConfigurator = (request) -> {
             return request.newBuilder().addHeader("SdkVersion","x.x.x").build();
         };
-        requestInfo.addRequestOptions(telemetryHandlerOption);
+        requestInfo.addRequestOptions(telemetryHandlerOption, new RetryHandlerOption());
 
         Request request = (Request) method.invoke(adapter, requestInfo);
         OkHttpClient client = KiotaClientFactory.Create().build();
@@ -74,6 +75,9 @@ public class TelemetryHandlerTests {
 
         assertTrue(response.request().header("SdkVersion").contains("x.x.x"));
         assertEquals(1, response.request().headers().size());
+        for(int i = 0; i < response.request().headers().size(); i++){
+            System.out.println(response.request().headers().name(i));
+        }
     }
 
     @Test
