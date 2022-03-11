@@ -69,7 +69,7 @@ public class JavaConventionService : CommonLanguageConventionService
         return type.Name switch {
             "int64" => "Long",
             "sbyte" => "Short",
-            "decimal" => "BigDecimal", //TODO add refiners for import
+            "decimal" => "BigDecimal",
             "void" or "boolean" when !type.IsNullable => type.Name, //little casing hack
             "binary" => "byte[]",
             _ => type.Name.ToFirstCharacterUpperCase() ?? "Object",
