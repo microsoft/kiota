@@ -233,6 +233,60 @@ namespace Kiota.Builder.Tests.Writers.Php
                     Name = "int"
                 }
             });
+            classHolding.AddProperty(new CodeProperty
+            {
+                Name = "height2",
+                Access = AccessModifier.Private,
+                Type = new CodeType
+                {
+                    Name = "double"
+                }
+            });
+            classHolding.AddProperty(new CodeProperty
+            {
+                Name = "dateValue",
+                Access = AccessModifier.Private,
+                Type = new CodeType
+                {
+                    Name = "DateTime"
+                }
+            });
+            classHolding.AddProperty(new CodeProperty
+            {
+                Name = "height3",
+                Access = AccessModifier.Private,
+                Type = new CodeType
+                {
+                    Name = "double"
+                }
+            });
+            classHolding.AddProperty(new CodeProperty
+            {
+                Name = "duration",
+                Access = AccessModifier.Private,
+                Type = new CodeType
+                {
+                    Name = "duration"
+                }
+            });
+            classHolding.AddProperty(new CodeProperty
+            {
+                Name = "stream",
+                Access = AccessModifier.Private,
+                Type = new CodeType
+                {
+                    Name = "streaminterface"
+                }
+            });
+            classHolding.AddProperty(new CodeProperty
+            {
+                Name = "other",
+                Access = AccessModifier.Private,
+                Type = new CodeType
+                {
+                    Name = "other"
+                }
+            });
             var codeMethod = new CodeMethod()
             {
                 Name = "serialize",
