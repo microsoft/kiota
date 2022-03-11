@@ -913,7 +913,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                 Name = "childModel",
                 Kind = CodeClassKind.Model,
             }).First();
-            (childModel.StartBlock as ClassDeclaration).Inherits = new CodeType {
+            childModel.StartBlock.Inherits = new CodeType {
                 Name = "parentModel",
                 TypeDefinition = parentModel,
             };
