@@ -1,7 +1,9 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Spectre.Console;
 using Spectre.Console.Rendering;
 
+[assembly: InternalsVisibleTo("Microsoft.Kiota.Cli.Commons.Tests")]
 namespace Microsoft.Kiota.Cli.Commons.IO;
 
 /// <summary>
@@ -39,7 +41,7 @@ public class TableOutputFormatter : IOutputFormatter
     /// </summary>
     /// <param name="document">The parsed json document</param>
     /// <returns>A table</returns>
-    public Table ConstructTable(JsonDocument document) {
+    internal Table ConstructTable(JsonDocument document) {
         var root = GetRootElement(document.RootElement);
         var firstElement = GetFirstElement(root);
 
