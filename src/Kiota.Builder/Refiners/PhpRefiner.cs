@@ -94,7 +94,7 @@ namespace Kiota.Builder.Refiners
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
                 "Microsoft\\Kiota\\Abstractions\\Serialization", "ParseNode"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-                "Microsoft\\Kiota\\Abstractions\\Serialization", "Parsable"),
+                "Microsoft\\Kiota\\Abstractions\\Serialization", "Parsable", "ParsableFactory"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
                 "Microsoft\\Kiota\\Abstractions\\Serialization", "Parsable"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&

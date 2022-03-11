@@ -315,23 +315,24 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     {
         if(codeClass == null) throw new ArgumentNullException(nameof(codeClass));
         if(codeUnionType == null) throw new ArgumentNullException(nameof(codeUnionType));
-        var @namespace = codeClass.Parent as CodeNamespace;
         CodeClass newClass;
+        var description =
+            $"Union type wrapper for classes {codeUnionType.Types.Select(x => x.Name).Aggregate((x, y) => x + ", " + y)}";
         if (!supportsInnerClasses)
         {
-            newClass = @namespace?.AddClass(new CodeClass()
+            var @namespace = codeClass.Parent as CodeNamespace;
+            newClass = @namespace.AddClass(new CodeClass()
             {
                 Name = codeUnionType.Name,
-                Description =
-                    $"Union type wrapper for classes {codeUnionType.Types.Select(x => x.Name).Aggregate((x, y) => x + ", " + y)}"
+                Description = description
             }).Last();
         }
         else {
             newClass = codeClass.AddInnerClass(new CodeClass {
             Name = codeUnionType.Name,
-            Description = $"Union type wrapper for classes {codeUnionType.Types.Select(x => x.Name).Aggregate((x, y) => x + ", " + y)}"}).First();
+            Description = description}).First();
         }
-        newClass?.AddProperty(codeUnionType
+        newClass.AddProperty(codeUnionType
                                 .Types
                                 .Select(x => new CodeProperty {
                                     Name = x.Name,
@@ -339,12 +340,13 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                     Description = $"Union type representation for type {x.Name}"
                                 }).ToArray());
         if(codeUnionType.Types.All(x => x.TypeDefinition is CodeClass targetClass && targetClass.IsOfKind(CodeClassKind.Model) ||
-                                x.TypeDefinition is CodeEnum)) {
+                                x.TypeDefinition is CodeEnum))
+        {
             KiotaBuilder.AddSerializationMembers(newClass, true, usesBackingStore);
-            if (newClass != null) newClass.Kind = CodeClassKind.Model;
+            newClass.Kind = CodeClassKind.Model;
         }
         // Add the discrimnator function to the wrapper as it will be referenced. 
-        var factoryMethod = newClass?.AddMethod(new CodeMethod
+        var factoryMethod = newClass.AddMethod(new CodeMethod
         {
             Name = "CreateFromDiscriminatorValue",
             ReturnType = new CodeType { TypeDefinition = newClass, Name = newClass.Name, IsNullable = false },
@@ -352,7 +354,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             IsStatic = true,
             IsAsync = false,
         }).First();
-        factoryMethod?.AddParameter(new CodeParameter
+        factoryMethod.AddParameter(new CodeParameter
         {
             Name = "parseNode",
             Kind = CodeParameterKind.ParseNode,
@@ -360,7 +362,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             Type = new CodeType { Name = "IParseNode", IsExternal = true },
         });
         return new CodeType {
-            Name = newClass?.Name,
+            Name = newClass.Name,
             TypeDefinition = newClass,
             CollectionKind = codeUnionType.CollectionKind,
             IsNullable = codeUnionType.IsNullable,

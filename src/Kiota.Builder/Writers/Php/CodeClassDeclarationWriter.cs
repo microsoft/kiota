@@ -15,7 +15,7 @@ namespace Kiota.Builder.Writers.Php
             if(writer == null) throw new ArgumentNullException(nameof(writer));
             conventions.WritePhpDocumentStart(writer);
             conventions.WriteNamespaceAndImports(codeElement, writer);
-            var derivation = (codeElement?.Inherits == null ? string.Empty : $" extends {codeElement.Inherits?.Name?.ToFirstCharacterUpperCase()}") +
+            var derivation = (codeElement.Inherits == null ? string.Empty : $" extends {codeElement.Inherits.Name.ToFirstCharacterUpperCase()}") +
                                 (!(codeElement.Implements.Any() && (codeElement.Inherits == null)) ? string.Empty : $" implements {codeElement.Implements.Select(x => x.Name).Aggregate((x,y) => x + ", " + y)}");
             writer.WriteLine($"class {codeElement.Name.Split('.').Last().ToFirstCharacterUpperCase()}{derivation} ");
 
