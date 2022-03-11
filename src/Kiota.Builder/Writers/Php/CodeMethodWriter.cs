@@ -372,8 +372,7 @@ namespace Kiota.Builder.Writers.Php
                 writer.WriteLine($"if ({conventions.GetParameterName(requestParams.options)} !== null) {{");
                 writer.IncreaseIndent();
                 writer.WriteLine($"{RequestInfoVarName}->addRequestOptions(...$options);");
-                writer.DecreaseIndent();
-                writer.WriteLine("}");
+                writer.CloseBlock();
             }
 
             writer.WriteLine($"return {RequestInfoVarName};");
