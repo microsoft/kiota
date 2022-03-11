@@ -320,7 +320,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             $"Union type wrapper for classes {codeUnionType.Types.Select(x => x.Name).Aggregate((x, y) => x + ", " + y)}";
         if (!supportsInnerClasses)
         {
-            var @namespace = codeClass.Parent as CodeNamespace;
+            var @namespace = codeClass.GetImmediateParentOfType<CodeNamespace>();
             newClass = @namespace.AddClass(new CodeClass()
             {
                 Name = codeUnionType.Name,
