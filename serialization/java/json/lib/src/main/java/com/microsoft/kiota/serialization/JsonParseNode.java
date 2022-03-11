@@ -7,6 +7,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
@@ -54,6 +55,15 @@ public class JsonParseNode implements ParseNode {
     }
     public Boolean getBooleanValue() {
         return currentNode.getAsBoolean();
+    }
+    public Byte getByteValue() {
+        return currentNode.getAsByte();
+    }
+    public Short getShortValue() {
+        return currentNode.getAsShort();
+    }
+    public BigDecimal getBigDecimalValue() {
+        return currentNode.getAsBigDecimal();
     }
     public Integer getIntegerValue() {
         return currentNode.getAsInt();
@@ -108,6 +118,12 @@ public class JsonParseNode implements ParseNode {
                             }};
                             if(targetClass == Boolean.class) {
                                 return (T)itemNode.getBooleanValue();
+                            } else if(targetClass == Short.class) {
+                                return (T)itemNode.getShortValue();
+                            } else if(targetClass == Byte.class) {
+                                return (T)itemNode.getByteValue();
+                            } else if(targetClass == BigDecimal.class) {
+                                return (T)itemNode.getBigDecimalValue();
                             } else if(targetClass == String.class) {
                                 return (T)itemNode.getStringValue();
                             } else if(targetClass == Integer.class) {
