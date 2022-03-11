@@ -103,7 +103,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     public override string TranslateType(CodeType type)
     {
         return type.Name switch  {
-            "integer" or "int64" or "float" or "double" => "number",
+            "integer" or "int64" or "float" or "double" or "byte" or "sbyte" => "number",
             "binary" => "string",
             "String" or "Object" or "Boolean" or "Void" or "string" or "object" or "boolean" or "void" => type.Name.ToFirstCharacterLowerCase(), // little casing hack
             _ => type.Name.ToFirstCharacterUpperCase() ?? "object",
