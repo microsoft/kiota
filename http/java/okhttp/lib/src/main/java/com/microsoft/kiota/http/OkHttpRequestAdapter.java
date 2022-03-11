@@ -262,25 +262,6 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
 
         for(final RequestOption option : requestInfo.getRequestOptions()) {
             requestBuilder.tag(option.getType(), option);
-
-            //  switch(option.getClass().getSimpleName()){
-            //      case "TelemetryHandlerOption":
-            //          requestBuilder.tag(TelemetryHandlerOption.class, (TelemetryHandlerOption)option);
-            //          break;
-            //      case "RetryHandlerOption":
-            //          requestBuilder.tag(RetryHandlerOption.class, (RetryHandlerOption) option);
-            //          break;
-            //      case "RedirectHandlerOption":
-            //          requestBuilder.tag(RedirectHandlerOption.class, (RedirectHandlerOption) option);
-            //      default:
-            //          try {
-            //              Class classType = ClassLoader.getSystemClassLoader().loadClass(option.getClass().getName());
-            //              requestBuilder.tag(classType, option);
-            //          } catch (ClassNotFoundException e) {
-            //              e.printStackTrace();
-            //          }
-            //          break;
-            //  }
         }
         return requestBuilder.build();
     }

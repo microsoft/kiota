@@ -89,4 +89,9 @@ public class RetryHandlerOption implements RequestOption{
     public long delay() {
         return mDelay;
     }
+
+    @Override
+    public  Class<? extends RequestOption> getType() {
+        return RetryHandlerOption.class; 
+    }
 }
