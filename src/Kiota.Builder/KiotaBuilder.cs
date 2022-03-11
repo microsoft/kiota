@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -590,7 +590,7 @@ public class KiotaBuilder
             {
                 codeClass.IsErrorDefinition = true;
             }
-            executorMethod.ErrorMappings.TryAdd(errorCode, errorType);
+            executorMethod.AddErrorMapping(errorCode, errorType);
         }
     }
     private void CreateOperationMethods(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
@@ -917,7 +917,7 @@ public class KiotaBuilder
                     .Select(x => (x.Key, GetCodeTypeForMapping(currentNode, x.Value, currentNamespace, newClass, schema)))
                     .Where(x => x.Item2 != null)
                     .ToList()
-                    .ForEach(x => factoryMethod.DiscriminatorMappings.TryAdd(x.Key, x.Item2));
+                    .ForEach(x => factoryMethod.AddDiscriminatorMapping(x.Key, x.Item2));
         CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass);
         return newClass;
     }
@@ -967,7 +967,7 @@ public class KiotaBuilder
     private const string BackingStoreInterface = "IBackingStore";
     private const string BackedModelInterface = "IBackedModel";
     private const string ParseNodeInterface = "IParseNode";
-    private const string AdditionalHolderInterface = "IAdditionalDataHolder";
+    internal const string AdditionalHolderInterface = "IAdditionalDataHolder";
     internal static void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties, bool usesBackingStore) {
         var serializationPropsType = $"IDictionary<string, Action<T, {ParseNodeInterface}>>";
         if(!model.ContainsMember(FieldDeserializersMethodName)) {

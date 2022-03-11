@@ -246,7 +246,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         var errorMappingVarName = "null";
         if(codeElement.ErrorMappings.Any()) {
             errorMappingVarName = "errorMapping";
-            writer.WriteLine($"final HashMap<String, ParsableFactory<? extends Parsable>> {errorMappingVarName} = new HashMap<>({codeElement.ErrorMappings.Count}) {{{{");
+            writer.WriteLine($"final HashMap<String, ParsableFactory<? extends Parsable>> {errorMappingVarName} = new HashMap<>({codeElement.ErrorMappings.Count()}) {{{{");
             writer.IncreaseIndent();
             foreach(var errorMapping in codeElement.ErrorMappings) {
                 writer.WriteLine($"put(\"{errorMapping.Key.ToUpperInvariant()}\", {errorMapping.Value.Name.ToFirstCharacterUpperCase()}::{FactoryMethodName});");

@@ -926,7 +926,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                 },
                 IsStatic = true,
             }).First();
-            factoryMethod.DiscriminatorMappings.TryAdd("childModel", new CodeType {
+            factoryMethod.AddDiscriminatorMapping("childModel", new CodeType {
                 Name = "childModel",
                 TypeDefinition = childModel,
             });

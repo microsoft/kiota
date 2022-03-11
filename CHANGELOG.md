@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed indeterministic parameters ordering #1358
+- Fixed indeterministic error mappings ordering #1358
+- Fixed indeterministic discriminator mapping ordering #1358
+- Fixed race condition when removing child items leading to erratic code generation results #1358
+- Replaced models namespaces flattening by circular properties trimming in Go #1358
+- Fixed a bug where inherited interfaces would be missing imports in Go #1358
+- Fixed a bug where inherited interfaces would be missing imports for the parent #1358
 - Fixed bugs across request adapter and serialization in PHP #1353
 - Fixed NullReferenceException in Go generator
 - Fixed incorrect mapping when the response type is `text/plain` #1356

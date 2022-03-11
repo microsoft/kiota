@@ -606,9 +606,10 @@ public class KiotaBuilderTests
         var executorMethod = codeModel.FindChildByName<CodeMethod>("get", true);
         Assert.NotNull(executorMethod);
         Assert.NotEmpty(executorMethod.ErrorMappings);
-        Assert.Contains("4XX", executorMethod.ErrorMappings.Keys);
-        Assert.Contains("401", executorMethod.ErrorMappings.Keys);
-        Assert.Contains("5XX", executorMethod.ErrorMappings.Keys);
+        var keys = executorMethod.ErrorMappings.Select(x => x.Key).ToHashSet();
+        Assert.Contains("4XX", keys);
+        Assert.Contains("401", keys);
+        Assert.Contains("5XX", keys);
         var errorType401 = codeModel.FindChildByName<CodeClass>("tasks401Error", true);
         Assert.NotNull(errorType401);
         Assert.True(errorType401.IsErrorDefinition);
@@ -710,9 +711,10 @@ public class KiotaBuilderTests
         var executorMethod = codeModel.FindChildByName<CodeMethod>("get", true);
         Assert.NotNull(executorMethod);
         Assert.NotEmpty(executorMethod.ErrorMappings);
-        Assert.Contains("4XX", executorMethod.ErrorMappings.Keys);
-        Assert.Contains("401", executorMethod.ErrorMappings.Keys);
-        Assert.Contains("5XX", executorMethod.ErrorMappings.Keys);
+        var keys = executorMethod.ErrorMappings.Select(x => x.Key).ToHashSet();
+        Assert.Contains("4XX", keys);
+        Assert.Contains("401", keys);
+        Assert.Contains("5XX", keys);
         var errorType = codeModel.FindChildByName<CodeClass>("Error", true);
         Assert.NotNull(errorType);
         Assert.True(errorType.IsErrorDefinition);
@@ -904,9 +906,8 @@ public class KiotaBuilderTests
         var doFactoryMethod = directoryObjectClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
         Assert.NotNull(doFactoryMethod);
         Assert.Empty(doFactoryMethod.DiscriminatorMappings);
-        Assert.True(factoryMethod.DiscriminatorMappings.TryGetValue("#microsoft.graph.directoryObject", out var directoryObjectMappingType));
-        var castType = directoryObjectMappingType as CodeType;
-        Assert.NotNull(castType);
+        if(factoryMethod.GetDiscriminatorMappingValue("#microsoft.graph.directoryObject") is not CodeType castType)
+            throw new InvalidOperationException("Discriminator mapping value is not a CodeType");
         Assert.NotNull(castType.TypeDefinition);
         Assert.Equal(directoryObjectClass, castType.TypeDefinition);
     }

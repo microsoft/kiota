@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
-using static Kiota.Builder.CodeClass;
-using static Kiota.Builder.CodeInterface;
 
 namespace Kiota.Builder.Refiners;
 public abstract class CommonLanguageRefiner : ILanguageRefiner
@@ -186,9 +184,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 returnType.Name = replacement.Invoke(returnType.Name);
             if(provider.ReservedNames.Contains(currentMethod.Name))
                 currentMethod.Name = replacement.Invoke(currentMethod.Name);
-            if(currentMethod.ErrorMappings.Values.Select(x => x.Name).Any(x => provider.ReservedNames.Contains(x)))
+            if(currentMethod.ErrorMappings.Select(x => x.Value.Name).Any(x => provider.ReservedNames.Contains(x)))
                 ReplaceMappingNames(currentMethod.ErrorMappings, provider, replacement);
-            if(currentMethod.DiscriminatorMappings.Values.Select(x => x.Name).Any(x => provider.ReservedNames.Contains(x)))
+            if(currentMethod.DiscriminatorMappings.Select(x => x.Value.Name).Any(x => provider.ReservedNames.Contains(x)))
                 ReplaceMappingNames(currentMethod.DiscriminatorMappings, provider, replacement);
             ReplaceReservedParameterNamesTypes(currentMethod, provider, replacement);
         } else if (current is CodeProperty currentProperty &&
@@ -235,11 +233,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                                             x)
                                             .Aggregate((x, y) => $"{x}.{y}");
     }
-    private static void ReplaceMappingNames(IDictionary<string, CodeTypeBase> mappings, IReservedNamesProvider provider, Func<string, string> replacement)
+    private static void ReplaceMappingNames(IEnumerable<KeyValuePair<string, CodeTypeBase>> mappings, IReservedNamesProvider provider, Func<string, string> replacement)
     {
-        mappings.Values.Where(x => provider.ReservedNames.Contains(x.Name))
+        mappings.Where(x => provider.ReservedNames.Contains(x.Value.Name))
                                         .ToList()
-                                        .ForEach(x => x.Name = replacement.Invoke(x.Name));
+                                        .ForEach(x => x.Value.Name = replacement.Invoke(x.Value.Name));
     }
     private static void ReplaceReservedParameterNamesTypes(CodeMethod currentMethod, IReservedNamesProvider provider, Func<string, string> replacement)
     {
@@ -484,7 +482,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             var errorTypes = currentClassChildren
                                 .OfType<CodeMethod>()
                                 .Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor))
-                                .SelectMany(x => x.ErrorMappings.Values)
+                                .SelectMany(x => x.ErrorMappings)
+                                .Select(x => x.Value)
                                 .Distinct();
             var usingsToAdd = propertiesTypes
                                 .Union(methodsParametersTypes)
@@ -571,9 +570,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if(string.IsNullOrEmpty(className)) throw new ArgumentNullException(nameof(className));
 
         if(currentElement is CodeClass currentClass &&
-            currentClass.IsOfKind(CodeClassKind.Model) &&
-            currentClass.StartBlock is ClassDeclaration declaration) {
-            declaration.AddImplements(new CodeType {
+            currentClass.IsOfKind(CodeClassKind.Model)) {
+            currentClass.StartBlock.AddImplements(new CodeType {
                 IsExternal = true,
                 Name = className
             });
@@ -692,7 +690,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             currentMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
             currentMethod.Parent is CodeClass parentClass) {
                 if(currentMethod.ErrorMappings.Any())
-                    currentMethod.ErrorMappings.Values.OfType<CodeType>().ToList().ForEach(x => AddStaticMethodImportToClass(parentClass, x, functionNameCallback));
+                    currentMethod.ErrorMappings.Select(x => x.Value).OfType<CodeType>().ToList().ForEach(x => AddStaticMethodImportToClass(parentClass, x, functionNameCallback));
                 if(currentMethod.ReturnType is CodeType returnType &&
                     returnType.TypeDefinition != null)
                     AddStaticMethodImportToClass(parentClass, returnType, functionNameCallback);
@@ -712,26 +710,26 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 }
             });
     }
-    protected static void CopyModelClassesAsInterfaces(CodeElement currentElement, GenerationConfiguration config, Func<CodeClass, string> interfaceNamingCallback) {
+    protected static void CopyModelClassesAsInterfaces(CodeElement currentElement, Func<CodeClass, string> interfaceNamingCallback) {
         if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model))
-            CopyClassAsInterface(currentClass, config, interfaceNamingCallback);
+            CopyClassAsInterface(currentClass, interfaceNamingCallback);
         else if (currentElement is CodeProperty codeProperty &&
                 codeProperty.IsOfKind(CodePropertyKind.RequestBody) &&
                 codeProperty.Type is CodeType type &&
                 type.TypeDefinition is CodeClass modelClass &&
                 modelClass.IsOfKind(CodeClassKind.Model))
         {
-            SetTypeAndAddUsing(CopyClassAsInterface(modelClass, config, interfaceNamingCallback), type, codeProperty);
+            SetTypeAndAddUsing(CopyClassAsInterface(modelClass, interfaceNamingCallback), type, codeProperty);
         } else if (currentElement is CodeMethod codeMethod &&
                 codeMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
                 codeMethod.ReturnType is CodeType returnType &&
                 returnType.TypeDefinition is CodeClass returnClass &&
                 returnClass.IsOfKind(CodeClassKind.Model))
         {
-            SetTypeAndAddUsing(CopyClassAsInterface(returnClass, config, interfaceNamingCallback), returnType, codeMethod);
+            SetTypeAndAddUsing(CopyClassAsInterface(returnClass, interfaceNamingCallback), returnType, codeMethod);
         }
         
-        CrawlTree(currentElement, x => CopyModelClassesAsInterfaces(x, config, interfaceNamingCallback));
+        CrawlTree(currentElement, x => CopyModelClassesAsInterfaces(x, interfaceNamingCallback));
     }
     private static void SetTypeAndAddUsing(CodeInterface inter, CodeType elemType, CodeElement targetElement) {
         elemType.Name = inter.Name;
@@ -751,26 +749,42 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             });
         }
     }
-    private static CodeInterface CopyClassAsInterface(CodeClass modelClass, GenerationConfiguration config, Func<CodeClass, string> interfaceNamingCallback) {
+    private static CodeInterface CopyClassAsInterface(CodeClass modelClass, Func<CodeClass, string> interfaceNamingCallback) {
         var interfaceName = interfaceNamingCallback.Invoke(modelClass);
         var targetNS = modelClass.GetImmediateParentOfType<CodeNamespace>();
-        var existing = targetNS.FindChildByName<CodeInterface>(interfaceName);
+        var existing = targetNS.FindChildByName<CodeInterface>(interfaceName, false);
         if(existing != null)
             return existing;
-        var inter = targetNS.AddInterface(new CodeInterface {
+        var parentClass = modelClass.Parent as CodeClass;
+        var shouldInsertUnderParentClass = parentClass != null;
+        var insertValue = new CodeInterface {
                     Name = interfaceName,
                     Kind = CodeInterfaceKind.Model,
-        }).First();
+        };
+        var inter = shouldInsertUnderParentClass ? 
+                        parentClass.AddInnerInterface(insertValue).First() :
+                        targetNS.AddInterface(insertValue).First();
+        var targetUsingBlock = shouldInsertUnderParentClass ? parentClass.StartBlock as ProprietableBlockDeclaration : inter.StartBlock;
         var usingsToRemove = new List<string>();
+        var usingsToAdd = new List<CodeUsing>();
         if(modelClass.StartBlock.Inherits?.TypeDefinition is CodeClass baseClass) {
-            var parentInterface = CopyClassAsInterface(baseClass, config, interfaceNamingCallback);
+            var parentInterface = CopyClassAsInterface(baseClass, interfaceNamingCallback);
             inter.StartBlock.AddImplements(new CodeType {
                 Name = parentInterface.Name,
                 TypeDefinition = parentInterface,
             });
+            var parentInterfaceNS = parentInterface.GetImmediateParentOfType<CodeNamespace>();
+            if(parentInterfaceNS != targetNS)
+                usingsToAdd.Add(new CodeUsing {
+                    Name = parentInterfaceNS.Name,
+                    Declaration = new CodeType {
+                        Name = parentInterface.Name,
+                        TypeDefinition = parentInterface,
+                    },
+                });
         }
         if (modelClass.StartBlock.Implements.Any()) {
-            var originalImplements = modelClass.StartBlock.Implements.ToArray();
+            var originalImplements = modelClass.StartBlock.Implements.Where(x => x.TypeDefinition != inter).ToArray();
             inter.StartBlock.AddImplements(originalImplements
                                                         .Select(x => x.Clone() as CodeType)
                                                         .ToArray());
@@ -789,12 +803,12 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             if(method.ReturnType is CodeType methodReturnType &&
                 !methodReturnType.IsExternal) {
                 if (methodReturnType.TypeDefinition is CodeClass methodTypeClass) {
-                    var resultType = ReplaceTypeByInterfaceType(methodTypeClass, methodReturnType, config, usingsToRemove, interfaceNamingCallback);
+                    var resultType = ReplaceTypeByInterfaceType(methodTypeClass, methodReturnType, usingsToRemove, interfaceNamingCallback);
                     modelClass.AddUsing(resultType);
                     if(resultType.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>() != targetNS)
-                        inter.AddUsing(resultType.Clone() as CodeUsing);
+                        targetUsingBlock.AddUsings(resultType.Clone() as CodeUsing);
                 } else if (methodReturnType.TypeDefinition is CodeEnum methodEnumType)
-                    inter.AddUsing(new CodeUsing {
+                    targetUsingBlock.AddUsings(new CodeUsing {
                         Name = methodEnumType.Parent.Name,
                         Declaration = new CodeType {
                             Name = methodEnumType.Name,
@@ -807,12 +821,12 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 if(parameter.Type is CodeType parameterType &&
                     !parameterType.IsExternal) {
                     if(parameterType.TypeDefinition is CodeClass parameterTypeClass) {
-                        var resultType = ReplaceTypeByInterfaceType(parameterTypeClass, parameterType, config, usingsToRemove, interfaceNamingCallback);
+                        var resultType = ReplaceTypeByInterfaceType(parameterTypeClass, parameterType, usingsToRemove, interfaceNamingCallback);
                         modelClass.AddUsing(resultType);
                         if(resultType.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>() != targetNS)
-                            inter.AddUsing(resultType.Clone() as CodeUsing);
+                            targetUsingBlock.AddUsings(resultType.Clone() as CodeUsing);
                     } else if(parameterType.TypeDefinition is CodeEnum parameterEnumType)
-                        inter.AddUsing(new CodeUsing {
+                        targetUsingBlock.AddUsings(new CodeUsing {
                             Name = parameterEnumType.Parent.Name,
                             Declaration = new CodeType {
                                 Name = parameterEnumType.Name,
@@ -828,7 +842,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             if (mProp.Type is CodeType propertyType &&
                 !propertyType.IsExternal &&
                 propertyType.TypeDefinition is CodeClass propertyClass) {
-                    modelClass.AddUsing(ReplaceTypeByInterfaceType(propertyClass, propertyType, config, usingsToRemove, interfaceNamingCallback));
+                    modelClass.AddUsing(ReplaceTypeByInterfaceType(propertyClass, propertyType, usingsToRemove, interfaceNamingCallback));
                 }
 
         modelClass.RemoveUsingsByDeclarationName(usingsToRemove.ToArray());
@@ -839,11 +853,14 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                     .Distinct(StringComparer.OrdinalIgnoreCase)
                                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        inter.AddUsing(modelClass.Usings.Where(x => x.IsExternal && externalTypesOnInter.Contains(x.Name)).ToArray());
+        usingsToAdd.AddRange(modelClass.Usings.Where(x => x.IsExternal && externalTypesOnInter.Contains(x.Name)));
+        if(shouldInsertUnderParentClass)
+            usingsToAdd.AddRange(parentClass.Usings.Where(x => x.IsExternal && externalTypesOnInter.Contains(x.Name)));
+        targetUsingBlock.AddUsings(usingsToAdd.ToArray());
         return inter;
     }
-    private static CodeUsing ReplaceTypeByInterfaceType(CodeClass sourceClass, CodeType originalType, GenerationConfiguration config, List<string> usingsToRemove, Func<CodeClass, string> interfaceNamingCallback) {
-        var propertyInterfaceType = CopyClassAsInterface(sourceClass, config, interfaceNamingCallback);
+    private static CodeUsing ReplaceTypeByInterfaceType(CodeClass sourceClass, CodeType originalType, List<string> usingsToRemove, Func<CodeClass, string> interfaceNamingCallback) {
+        var propertyInterfaceType = CopyClassAsInterface(sourceClass, interfaceNamingCallback);
         originalType.Name = propertyInterfaceType.Name;
         originalType.TypeDefinition = propertyInterfaceType;
         usingsToRemove.Add(sourceClass.Name);
