@@ -22,6 +22,10 @@ type ParseNode interface {
 	GetStringValue() (*string, error)
 	// GetBoolValue returns a Bool value from the nodes.
 	GetBoolValue() (*bool, error)
+	// GetInt8Value returns a int8 value from the nodes.
+	GetInt8Value() (*int8, error)
+	// GetByteValue returns a Byte value from the nodes.
+	GetByteValue() (*byte, error)
 	// GetFloat32Value returns a Float32 value from the nodes.
 	GetFloat32Value() (*float32, error)
 	// GetFloat64Value returns a Float64 value from the nodes.
