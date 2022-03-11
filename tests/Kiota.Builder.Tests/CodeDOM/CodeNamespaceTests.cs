@@ -107,5 +107,13 @@ namespace Kiota.Builder.Tests
                 child.AddInterface(new CodeInterface[] {null});
             });
         }
+        [Fact]
+        public void IsParentOf() {
+            var root = CodeNamespace.InitRootNamespace();
+            var child = root.AddNamespace(ChildName);
+            var grandchild = child.AddNamespace(ChildName + ".four");
+            Assert.True(child.IsParentOf(grandchild));
+            Assert.False(grandchild.IsParentOf(child));
+        }
     }
 }

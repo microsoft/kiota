@@ -59,6 +59,45 @@ public class GoLanguageRefinerTests {
         Assert.Equal(inter, executorMethodReturnType.TypeDefinition);
     }
     [Fact]
+    public void ReplacesModelsByInnerInterfaces() {
+        var model = root.AddClass(new CodeClass {
+            Name = "somemodel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var requestBuilder = root.AddClass(new CodeClass {
+            Name = "somerequestbuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        var responseModel = requestBuilder.AddInnerClass(new CodeClass {
+                Name = "someresponsemodel",
+                Kind = CodeClassKind.Model,
+        }).First();
+        
+
+        var executorMethod = requestBuilder.AddMethod(new CodeMethod {
+            Name = "Execute",
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType {
+                Name = responseModel.Name,
+                TypeDefinition = responseModel,
+            },
+        }).First();
+        var executorParameter = new CodeParameter {
+            Name = "requestBody",
+            Kind = CodeParameterKind.RequestBody,
+            Type = new CodeType {
+                Name = model.Name,
+                TypeDefinition = model,
+            },
+        };
+        executorMethod.AddParameter(executorParameter);
+        Assert.Empty(root.GetChildElements(true).OfType<CodeInterface>());
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        Assert.Single(root.GetChildElements(true).OfType<CodeInterface>());
+        var responseInter = requestBuilder.GetChildElements(true).OfType<CodeInterface>().LastOrDefault();
+        Assert.NotNull(responseInter);
+    }
+    [Fact]
     public void AddsExceptionInheritanceOnErrorClasses() {
         var model = root.AddClass(new CodeClass {
             Name = "somemodel",
@@ -108,7 +147,7 @@ public class GoLanguageRefinerTests {
                 Name = "string"
             },
         }).First();
-        requestExecutor.ErrorMappings.TryAdd("4XX", new CodeType {
+        requestExecutor.AddErrorMapping("4XX", new CodeType {
                         Name = "Error4XX",
                         TypeDefinition = errorClass,
                     });
@@ -138,7 +177,7 @@ public class GoLanguageRefinerTests {
                 TypeDefinition = parentModel,
             },
         }).First();
-        factoryMethod.DiscriminatorMappings.TryAdd("ns.childmodel", new CodeType {
+        factoryMethod.AddDiscriminatorMapping("ns.childmodel", new CodeType {
                         Name = "childModel",
                         TypeDefinition = childModel,
                     });
@@ -170,7 +209,7 @@ public class GoLanguageRefinerTests {
                 TypeDefinition = parentModel,
             },
         }).First();
-        factoryMethod.DiscriminatorMappings.TryAdd("ns.childmodel", new CodeType {
+        factoryMethod.AddDiscriminatorMapping("ns.childmodel", new CodeType {
                         Name = "childModel",
                         TypeDefinition = childModel,
                     });
@@ -461,6 +500,55 @@ public class GoLanguageRefinerTests {
         Assert.Equal("make(map[string]string)", pathParamsProp.DefaultValue);
         Assert.Equal("map[string]string", pathParamsProp.Type.Name);
         Assert.False(rawUrlParam.Type.IsNullable);
+    }
+    [Fact]
+    public void RemovesPropertyRelyingOnSubModules() {
+        var models = root.AddNamespace("ApiSdk.models");
+        var submodels = models.AddNamespace($"{models.Name}.submodels");
+        var propertyModel = submodels.AddClass(new CodeClass {
+            Name = "propertyModel",
+            Kind = CodeClassKind.Model
+        }).First();
+        var mainModel = models.AddClass(new CodeClass {
+            Name = "mainModel",
+            Kind = CodeClassKind.Model
+        }).First();
+        var property = mainModel.AddProperty(new CodeProperty {
+            Name = "property",
+            Type = new CodeType {
+                Name = "propertyModel",
+                TypeDefinition = propertyModel
+            },
+            Kind = CodePropertyKind.Custom
+        }).First();
+        mainModel.AddMethod(new CodeMethod{
+            Name = $"get{property.Name}",
+            Kind = CodeMethodKind.Getter,
+            ReturnType = new CodeType {
+                Name = "propertyModel",
+                TypeDefinition = propertyModel
+            },
+            AccessedProperty = property
+        });
+        var setter = mainModel.AddMethod(new CodeMethod{
+            Name = $"get{property.Name}",
+            Kind = CodeMethodKind.Getter,
+            ReturnType = new CodeType {
+                Name = "void",
+                IsExternal = true,
+            },
+            AccessedProperty = property
+        }).First();
+        setter.AddParameter(new CodeParameter{
+            Name = "value",
+            Type = new CodeType {
+                Name = "propertyModel",
+                TypeDefinition = propertyModel
+            }
+        });
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        Assert.Empty(mainModel.Properties);
+        Assert.Empty(mainModel.Methods.Where(x => x.IsAccessor));
     }
     #endregion
 }

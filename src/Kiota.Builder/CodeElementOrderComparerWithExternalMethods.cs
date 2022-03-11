@@ -9,8 +9,9 @@ namespace Kiota.Builder {
                 CodeMethod when element.Parent is CodeInterface => 5, //methods are declared inside of interfaces
                 BlockEnd => 6,
                 CodeClass => 7,
-                CodeIndexer => 8,
-                CodeMethod => 9,
+                CodeInterface => 8,
+                CodeIndexer => 9,
+                CodeMethod => 10,
                 _ => 0,
             };
         }

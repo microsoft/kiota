@@ -11,6 +11,14 @@ namespace Kiota.Builder.Tests {
             };
             Assert.False(method.IsOfKind((CodeMethodKind[])null));
             Assert.False(method.IsOfKind(Array.Empty<CodeMethodKind>()));
+            Assert.Throws<ArgumentNullException>(() => method.AddDiscriminatorMapping(null, new CodeType{Name = "class"}));
+            Assert.Throws<ArgumentNullException>(() => method.AddDiscriminatorMapping("oin", null));
+            Assert.Throws<ArgumentNullException>(() => method.GetDiscriminatorMappingValue(null));
+            Assert.Null(method.GetDiscriminatorMappingValue("oin"));
+            Assert.Throws<ArgumentNullException>(() => method.AddErrorMapping(null, new CodeType{Name = "class"}));
+            Assert.Throws<ArgumentNullException>(() => method.AddErrorMapping("oin", null));
+            Assert.Throws<ArgumentNullException>(() => method.GetErrorMappingValue(null));
+            Assert.Null(method.GetErrorMappingValue("oin"));
         }
         [Fact]
         public void IsOfKind() {

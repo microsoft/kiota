@@ -61,7 +61,8 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     {
         parameters.Clear();
     }
-    public IEnumerable<CodeParameter> Parameters { get => parameters.Values; }
+    private readonly CodeParameterOrderComparer parameterOrderComparer = new ();
+    public IEnumerable<CodeParameter> Parameters { get => parameters.Values.OrderBy(x => x, parameterOrderComparer); }
     public bool IsStatic {get;set;} = false;
     public bool IsAsync {get;set;} = true;
     public string Description {get; set;}
@@ -120,14 +121,29 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     /// </summary>
     public string SimpleName { get; set; } = String.Empty;
 
+    private ConcurrentDictionary<string, CodeTypeBase> errorMappings = new();
+    
     /// <summary>
     /// Mapping of the error code and response types for this method.
     /// </summary>
-    public ConcurrentDictionary<string, CodeTypeBase> ErrorMappings { get; set; } = new ();
+    public IOrderedEnumerable<KeyValuePair<string, CodeTypeBase>> ErrorMappings
+    {
+        get
+        {
+            return errorMappings.OrderBy(x => x.Key);
+        }
+    }
+    private ConcurrentDictionary<string, CodeTypeBase> discriminatorMappings = new();
     /// <summary>
     /// Gets/Sets the discriminator values for the class where the key is the value as represented in the payload.
     /// </summary>
-    public ConcurrentDictionary<string, CodeTypeBase> DiscriminatorMappings { get; set; } = new();
+    public IOrderedEnumerable<KeyValuePair<string, CodeTypeBase>> DiscriminatorMappings
+    {
+        get
+        {
+            return discriminatorMappings.OrderBy(x => x.Key);
+        }
+    }
     /// <summary>
     /// Gets/Sets the name of the property to use for discrimination during deserialization.
     /// </summary>
@@ -156,8 +172,8 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             OriginalMethod = OriginalMethod,
             Parent = Parent,
             OriginalIndexer = OriginalIndexer,
-            ErrorMappings = ErrorMappings == null ? null : new (ErrorMappings),
-            DiscriminatorMappings = DiscriminatorMappings == null ? null : new (DiscriminatorMappings),
+            errorMappings = errorMappings == null ? null : new (errorMappings),
+            discriminatorMappings = discriminatorMappings == null ? null : new (discriminatorMappings),
             DiscriminatorPropertyName = DiscriminatorPropertyName?.Clone() as string
         };
         if(Parameters?.Any() ?? false)
@@ -173,5 +189,32 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             throw new ArgumentOutOfRangeException(nameof(methodParameters));
         EnsureElementsAreChildren(methodParameters);
         methodParameters.ToList().ForEach(x => parameters.TryAdd(x.Name, x));
+    }
+    public void AddErrorMapping(string errorCode, CodeTypeBase type)
+    {
+        if(type == null) throw new ArgumentNullException(nameof(type));
+        if(string.IsNullOrEmpty(errorCode)) throw new ArgumentNullException(nameof(errorCode));
+        errorMappings.TryAdd(errorCode, type);
+    }
+
+    public void AddDiscriminatorMapping(string key, CodeTypeBase type)
+    {
+        if(type == null) throw new ArgumentNullException(nameof(type));
+        if(string.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
+        discriminatorMappings.TryAdd(key, type);
+    }
+    public CodeTypeBase GetDiscriminatorMappingValue(string key)
+    {
+        if(string.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
+        if(discriminatorMappings.TryGetValue(key, out var value))
+            return value;
+        return null;
+    }
+    public CodeTypeBase GetErrorMappingValue(string key)
+    {
+        if(string.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
+        if(errorMappings.TryGetValue(key, out var value))
+            return value;
+        return null;
     }
 }

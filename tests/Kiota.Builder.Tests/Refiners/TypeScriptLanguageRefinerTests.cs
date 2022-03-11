@@ -118,7 +118,7 @@ public class TypeScriptLanguageRefinerTests {
                 Name = "string"
             },
         }).First();
-        requestExecutor.ErrorMappings.TryAdd("4XX", new CodeType {
+        requestExecutor.AddErrorMapping("4XX", new CodeType {
                         Name = "Error4XX",
                         TypeDefinition = errorClass,
                     });
@@ -151,7 +151,7 @@ public class TypeScriptLanguageRefinerTests {
             },
             IsStatic = true,
         }).First();
-        factoryMethod.DiscriminatorMappings.TryAdd("ns.childmodel", new CodeType {
+        factoryMethod.AddDiscriminatorMapping("ns.childmodel", new CodeType {
                         Name = "childModel",
                         TypeDefinition = childModel,
                     });

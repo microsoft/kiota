@@ -35,7 +35,7 @@ public class GoRefiner : CommonLanguageRefiner
         AddRawUrlConstructorOverload(
             generatedCode
         );
-        MoveAllModelsToTopLevel(
+        RemoveModelPropertiesThatDependOnSubNamespaces(
             generatedCode
         );
         ReplaceReservedNames(
@@ -108,7 +108,6 @@ public class GoRefiner : CommonLanguageRefiner
         );
         CopyModelClassesAsInterfaces(
             generatedCode,
-            _configuration,
             x => $"{x.Name}able"
         );
     }
@@ -184,24 +183,28 @@ public class GoRefiner : CommonLanguageRefiner
         }
         CrawlTree(currentElement, AddNullCheckMethods);
     }
-    private static void MoveAllModelsToTopLevel(CodeElement currentElement, CodeNamespace targetNamespace = null) {
-        if(currentElement is CodeNamespace currentNamespace) {
-            if(targetNamespace == null) {
-                var rootModels = FindRootModelsNamespace(currentNamespace);
-                targetNamespace = FindFirstModelSubnamepaceWithClasses(rootModels);
+    private static void RemoveModelPropertiesThatDependOnSubNamespaces(CodeElement currentElement) {
+        if(currentElement is CodeClass currentClass && 
+            currentClass.IsOfKind(CodeClassKind.Model) &&
+            currentClass.Parent is CodeNamespace currentNamespace) {
+            var propertiesToRemove = currentClass.Properties
+                                                    .Where(x => x.IsOfKind(CodePropertyKind.Custom) &&
+                                                                x.Type is CodeType pType &&
+                                                                !pType.IsExternal &&
+                                                                pType.TypeDefinition != null &&
+                                                                currentNamespace.IsParentOf(pType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>()))
+                                                    .ToArray();
+            if(propertiesToRemove.Any()) {
+                currentClass.RemoveChildElement(propertiesToRemove);
+                var propertiesToRemoveHashSet = propertiesToRemove.ToHashSet();
+                var methodsToRemove = currentClass.Methods
+                                                    .Where(x => x.IsAccessor &&
+                                                            propertiesToRemoveHashSet.Contains(x.AccessedProperty))
+                                                    .ToArray();
+                currentClass.RemoveChildElement(methodsToRemove);
             }
-            if(currentNamespace != targetNamespace &&
-                !string.IsNullOrEmpty(currentNamespace?.Name) &&
-                !string.IsNullOrEmpty(targetNamespace?.Name) &&
-                currentNamespace.Name.Contains(targetNamespace.Name, StringComparison.OrdinalIgnoreCase)) {
-                foreach (var codeClass in currentNamespace.Classes)
-                {
-                    currentNamespace.RemoveChildElement(codeClass);
-                    targetNamespace.AddClass(codeClass);
-                }
-            }
-            CrawlTree(currentElement, x => MoveAllModelsToTopLevel(x, targetNamespace));
         }
+        CrawlTree(currentElement, RemoveModelPropertiesThatDependOnSubNamespaces);
     }
     private static CodeNamespace FindFirstModelSubnamepaceWithClasses(CodeNamespace currentNamespace) {
         if(currentNamespace != null) {
@@ -280,12 +283,14 @@ public class GoRefiner : CommonLanguageRefiner
             "github.com/microsoft/kiota/abstractions/go/serialization", "ParseNode", "Parsable"),
         new (x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
             "github.com/microsoft/kiota/abstractions/go/serialization", "Parsable"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
+        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && 
+                                            (@class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)) ||
+                                            @class.StartBlock.Implements.Any(x => KiotaBuilder.AdditionalHolderInterface.Equals(x.Name, StringComparison.OrdinalIgnoreCase))),
             "github.com/microsoft/kiota/abstractions/go/serialization", "AdditionalDataHolder"),
         new (x => x is CodeEnum num, "ToUpper", "strings"),
     };//TODO add backing store types once we have them defined
     private static void CorrectImplements(ProprietableBlockDeclaration block) {
-        block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
+        block.ReplaceImplementByName(KiotaBuilder.AdditionalHolderInterface, "AdditionalDataHolder");
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {
         var parentClass = currentMethod.Parent as CodeClass;
