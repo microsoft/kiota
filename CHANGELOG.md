@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where error responses without schema would make generation fail #1272
 - Fixed indeterministic parameters ordering #1358
 - Fixed indeterministic error mappings ordering #1358
 - Fixed indeterministic discriminator mapping ordering #1358

@@ -622,7 +622,66 @@ public class KiotaBuilderTests
         Assert.NotNull(errorType5XX);
         Assert.True(errorType5XX.IsErrorDefinition);
         Assert.NotNull(errorType5XX.FindChildByName<CodeProperty>("serviceErrorId", true));
-
+    }
+    [Fact]
+    public void IgnoresErrorCodesWithNoSchema(){
+        var node = OpenApiUrlTreeNode.Create();
+        node.Attach("tasks", new OpenApiPathItem() {
+            Operations = {
+                [OperationType.Get] = new OpenApiOperation() { 
+                    Responses = new OpenApiResponses
+                    {
+                        ["200"] = new OpenApiResponse()
+                        {
+                            Content =
+                            {
+                                ["application/json"] = new OpenApiMediaType()
+                                {
+                                    Schema = new OpenApiSchema
+                                    {
+                                        Type = "object",
+                                        Properties = new Dictionary<string, OpenApiSchema> {
+                                            {
+                                                "progress", new OpenApiSchema{
+                                                    Type = "string",
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        ["4XX"] = new OpenApiResponse()
+                        {
+                            Content =
+                            {
+                                ["application/json"] = new OpenApiMediaType()
+                            }
+                        },
+                        ["5XX"] = new OpenApiResponse()
+                        {
+                            Content =
+                            {
+                                ["application/json"] = new OpenApiMediaType()
+                            }
+                        },
+                        ["401"] = new OpenApiResponse()
+                        {
+                            Content =
+                            {
+                                ["application/json"] = new OpenApiMediaType()
+                            }
+                        }
+                    }
+                }
+            } 
+        }, "default");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var codeModel = builder.CreateSourceModel(node);
+        var executorMethod = codeModel.FindChildByName<CodeMethod>("get", true);
+        Assert.NotNull(executorMethod);
+        Assert.Empty(executorMethod.ErrorMappings);
     }
     [Fact]
     public void DoesntAddSuffixesToErrorTypesWhenComponents(){
