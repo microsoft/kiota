@@ -8,8 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added default implementations for table and JSON output in CLI commons (Shell) #1326
 
 ### Changed
+- Shell commands will now default to writing indented JSON. This option can be disabled through the CLI option `--json-no-indent` (Shell) #1326
+- Update System.CommandLine version (Shell) #1338
+- Add async writers in output formatters (Shell) #1326
+- Add async filter function in output filters (Shell) #1326
+- BREAKING: Remove synchronous version of WriteOutput that accepts a stream input (Shell) #1326
+- BREAKING: Remove synchronous version of WriteOutput that accepts a string input (Shell) #1326
+- BREAKING: Remove synchronous version of FilterOutput that accepts a string input (Shell) #1326
 
 - Fixed indeterministic parameters ordering #1358
 - Fixed indeterministic error mappings ordering #1358
