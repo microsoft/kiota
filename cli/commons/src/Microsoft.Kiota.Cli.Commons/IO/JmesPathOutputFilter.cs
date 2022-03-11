@@ -30,7 +30,6 @@ public class JmesPathOutputFilter : IOutputFilter
         var filtered = jmesPath.Transform(strContent, query);
         cancellationToken.ThrowIfCancellationRequested();
         var bytes = Encoding.UTF8.GetBytes(filtered);
-        cancellationToken.ThrowIfCancellationRequested();
         return new MemoryStream(bytes);
     }
 }
