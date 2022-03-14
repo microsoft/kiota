@@ -29,6 +29,14 @@ public class KiotaBuilder
         this.logger = logger;
         this.config = config;
     }
+    private void CleanOutputDirectory()
+    {
+        if(config.CleanOutput && Directory.Exists(config.OutputPath))
+        {
+            logger.LogInformation("Cleaning output directory {path}", config.OutputPath);
+            Directory.Delete(config.OutputPath, true);
+        }
+    }
 
     public async Task GenerateSDK(CancellationToken cancellationToken)
     {
@@ -37,6 +45,7 @@ public class KiotaBuilder
         string inputPath = config.OpenAPIFilePath;
 
         try {
+            CleanOutputDirectory();
             // doing this verification at the begining to give immediate feedback to the user
             Directory.CreateDirectory(config.OutputPath);
         } catch (Exception ex) {
