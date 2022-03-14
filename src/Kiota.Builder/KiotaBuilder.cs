@@ -810,12 +810,19 @@ public class KiotaBuilder
         var unionType = new CodeUnionType {
             Name = currentNode.GetClassName(operation: operation, suffix: suffixForInlineSchema, schema: schema),
         };
+        var membersWithNoName = 0;
         foreach(var currentSchema in schemas) {
             var shortestNamespaceName = currentSchema.Reference == null ? currentNode.GetNodeNamespaceFromPath(config.ClientNamespaceName) : GetModelsNamespaceNameFromReferenceId(currentSchema.Reference.Id);
             var shortestNamespace = rootNamespace.FindNamespaceByName(shortestNamespaceName);
             if(shortestNamespace == null)
                 shortestNamespace = rootNamespace.AddNamespace(shortestNamespaceName);
             var className = currentSchema.GetSchemaTitle();
+            if (string.IsNullOrEmpty(className))
+                if(GetPrimitiveType(currentSchema) is CodeType primitiveType && !string.IsNullOrEmpty(primitiveType.Name)) {
+                    unionType.AddType(primitiveType);
+                    continue;
+                } else
+                    className = $"{unionType.Name}Member{++membersWithNoName}";
             var codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, currentSchema, className, shortestNamespace);
             unionType.AddType(new CodeType {
                 TypeDefinition = codeDeclaration,
