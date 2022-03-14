@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where unnecessary namespaces would be added to models generation #1273
+
 ## [0.0.18] - 2022-03-14
 
 ### Added

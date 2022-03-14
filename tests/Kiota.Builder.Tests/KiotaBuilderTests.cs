@@ -1025,4 +1025,114 @@ public class KiotaBuilderTests
         Assert.Equal(expected, method.ReturnType.Name);
         Assert.True(method.ReturnType.AllTypes.First().IsExternal);
     }
+    [Fact]
+    public void DoesntGenerateNamesapacesWhenNotRequired(){
+        var myObjectSchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "name", new OpenApiSchema {
+                        Type = "string"
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument() {
+            Paths = new OpenApiPaths() {
+                ["answer"] = new OpenApiPathItem() {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation() { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new() {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", myObjectSchema
+                    }
+                }
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
+        Assert.NotNull(modelsNS);
+        var myObjectModel = modelsNS.FindChildByName<CodeClass>("Myobject", false);
+        Assert.NotNull(myObjectModel);
+        var modelsSubNS = codeModel.FindNamespaceByName("TestSdk.Models.Myobject");
+        Assert.Null(modelsSubNS);
+    }
+    [Fact]
+    public void GeneratesNamesapacesWhenRequired(){
+        var myObjectSchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "name", new OpenApiSchema {
+                        Type = "string"
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "subns.myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument() {
+            Paths = new OpenApiPaths() {
+                ["answer"] = new OpenApiPathItem() {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation() { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new() {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "subns.myobject", myObjectSchema
+                    }
+                }
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
+        Assert.NotNull(modelsNS);
+        Assert.Null(codeModel.FindChildByName<CodeClass>("Myobject", false));
+        var modelsSubNS = codeModel.FindNamespaceByName("TestSdk.Models.subns");
+        Assert.NotNull(modelsSubNS);
+        Assert.NotNull(modelsSubNS.FindChildByName<CodeClass>("Myobject", false));
+    }
 }
