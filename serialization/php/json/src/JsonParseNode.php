@@ -8,6 +8,7 @@ use Exception;
 use GuzzleHttp\Psr7\Utils;
 use InvalidArgumentException;
 use Microsoft\Kiota\Abstractions\Enum;
+use Microsoft\Kiota\Abstractions\Serialization\AdditionalDataHolder;
 use Microsoft\Kiota\Abstractions\Serialization\Parsable;
 use Microsoft\Kiota\Abstractions\Serialization\ParseNode;
 use Microsoft\Kiota\Abstractions\Types\Byte;
@@ -113,19 +114,25 @@ class JsonParseNode implements ParseNode
     }
 
     /**
-     * @param Parsable $result
+     * @param Parsable|AdditionalDataHolder $result
      * @return void
      */
-    private function assignFieldValues(Parsable $result): void {
-        $fieldDeserializers = $result->getFieldDeserializers();
+    private function assignFieldValues($result): void {
+        $fieldDeserializers = [];
+        if (is_a($result, Parsable::class)){
+            $fieldDeserializers = $result->getFieldDeserializers();
+        }
 
         foreach ($this->jsonNode as $key => $value){
             $deserializer = $fieldDeserializers[$key] ?? null;
 
             if ($deserializer !== null){
                 $deserializer($result, new JsonParseNode($value));
-            } else {
-                $result->getAdditionalData()[$key] = $value;
+            } else if (is_a($result, AdditionalDataHolder::class)) {
+                $data = $result->getAdditionalData();
+                $key = (string)$key;
+                $data[$key] = $value;
+                $result->setAdditionalData($data);
             }
         }
     }

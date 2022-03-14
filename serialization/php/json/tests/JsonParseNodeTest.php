@@ -27,7 +27,7 @@ class JsonParseNodeTest extends TestCase
     private StreamInterface $stream;
 
     protected function setUp(): void {
-        $this->stream = Utils::streamFor('{"name": "Silas Kenneth", "age": 98, "height": 123.122, "maritalStatus": "complicated,single", "address": {"city": "Nairobi", "street": "Luthuli"}}');
+        $this->stream = Utils::streamFor('{"@odata.type":"Missing", "name": "Silas Kenneth", "age": 98, "height": 123.122, "maritalStatus": "complicated,single", "address": {"city": "Nairobi", "street": "Luthuli"}}');
     }
 
     public function testGetIntegerValue(): void {
@@ -172,7 +172,7 @@ class JsonParseNodeTest extends TestCase
         /** @var Address $address */
         $address = $child->getObjectValue(Address::class);
         $this->assertInstanceOf(Address::class, $address);
-        $this->assertEquals((string)'Nairobi', $address->getCity());
+        $this->assertEquals('Nairobi', $address->getCity());
 
     }
 }
