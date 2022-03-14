@@ -5,6 +5,7 @@ namespace Microsoft\Kiota\Serialization\Json;
 use DateInterval;
 use DateTime;
 use Exception;
+use GuzzleHttp\Psr7\Utils;
 use InvalidArgumentException;
 use Microsoft\Kiota\Abstractions\Enum;
 use Microsoft\Kiota\Abstractions\Serialization\Parsable;
@@ -12,6 +13,7 @@ use Microsoft\Kiota\Abstractions\Serialization\ParseNode;
 use Microsoft\Kiota\Abstractions\Types\Byte;
 use Microsoft\Kiota\Abstractions\Types\Date;
 use Microsoft\Kiota\Abstractions\Types\Time;
+use Psr\Http\Message\StreamInterface;
 
 /**
  * @method onBeforeAssignFieldValues(Parsable $result)
@@ -73,7 +75,7 @@ class JsonParseNode implements ParseNode
     }
 
     /**
-     * @return array<Parsable>
+     * @return array<Parsable|null>|null
      * @throws Exception
      */
     public function getCollectionOfObjectValues(string $type): ?array {
@@ -214,6 +216,9 @@ class JsonParseNode implements ParseNode
                 if (is_subclass_of($type, Parsable::class)){
                     return $this->getObjectValue($type);
                 }
+                if (is_subclass_of($type, StreamInterface::class)) {
+                    return $this->getBinaryContent();
+                }
                 throw new InvalidArgumentException("Unable to decode type $type");
         }
 
@@ -256,5 +261,9 @@ class JsonParseNode implements ParseNode
      */
     public function getDateIntervalValue(): ?DateInterval{
         return ($this->jsonNode !== null) ? new DateInterval($this->jsonNode) : null;
+    }
+
+    public function getBinaryContent(): ?StreamInterface {
+        return ($this->jsonNode !== null) ? Utils::streamFor($this->jsonNode) : null;
     }
 }

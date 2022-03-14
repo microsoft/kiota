@@ -123,6 +123,28 @@ interface SerializationWriter {
     public function writeByteValue(?string $key, ?Byte $value): void;
 
     /**
+     * @param string|null $key
+     * @param array<mixed>|null $value
+     * @return void
+     */
+    public function writeCollectionOfPrimitiveValues(?string $key, ?array $value): void;
+    
+    /**
+    * Try to write a value with any type.
+    * @param string|null $key The key for the value.
+    * @param mixed|null $value.
+    **/
+    public function writeAnyValue(?string $key, $value): void;
+
+    /**
+     * Write a binary stream.
+     * @param string|null $key
+     * @param StreamInterface|null $value
+     * @return void
+     */
+    public function writeBinaryContent(?string $key, ?StreamInterface $value): void;
+    
+    /**
      * Sets the callback called before the objects gets serialized.
      * @param callable|null $value the callback called before the objects gets serialized.
      */

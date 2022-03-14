@@ -14,7 +14,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     ///     This method adds the imports for the default serializers and deserializers to the api client class.
     ///     It also updates the module names to replace the fully qualified class name by the class name without the namespace.
     /// </summary>
-    protected void AddSerializationModulesImport(CodeElement generatedCode, string[] serializationWriterFactoryInterfaceAndRegistrationFullName = default, string[] parseNodeFactoryInterfaceAndRegistrationFullName = default) {
+    protected void AddSerializationModulesImport(CodeElement generatedCode, string[] serializationWriterFactoryInterfaceAndRegistrationFullName = default, string[] parseNodeFactoryInterfaceAndRegistrationFullName = default, char separator = '.') {
         if(serializationWriterFactoryInterfaceAndRegistrationFullName == null)
             serializationWriterFactoryInterfaceAndRegistrationFullName = Array.Empty<string>();
         if(parseNodeFactoryInterfaceAndRegistrationFullName == null)
@@ -29,18 +29,18 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                                     .Union(parseNodeFactoryInterfaceAndRegistrationFullName)
                                                     .Where(x => !string.IsNullOrEmpty(x))
                                                     .ToList();
-                currentMethod.DeserializerModules = currentMethod.DeserializerModules.Select(x => x.Split('.').Last()).ToList();
-                currentMethod.SerializerModules = currentMethod.SerializerModules.Select(x => x.Split('.').Last()).ToList();
+                currentMethod.DeserializerModules = currentMethod.DeserializerModules.Select(x => x.Split(separator).Last()).ToList();
+                currentMethod.SerializerModules = currentMethod.SerializerModules.Select(x => x.Split(separator).Last()).ToList();
                 declaration.AddUsings(cumulatedSymbols.Select(x => new CodeUsing {
-                    Name = x.Split('.').Last(),
+                    Name = x.Split(separator).Last(),
                     Declaration = new CodeType {
-                        Name = x.Split('.').SkipLast(1).Aggregate((x, y) => $"{x}.{y}"),
+                        Name = x.Split(separator).SkipLast(1).Aggregate((x, y) => $"{x}{separator}{y}"),
                         IsExternal = true,
                     }
                 }).ToArray());
                 return;
             }
-        CrawlTree(generatedCode, x => AddSerializationModulesImport(x, serializationWriterFactoryInterfaceAndRegistrationFullName, parseNodeFactoryInterfaceAndRegistrationFullName));
+        CrawlTree(generatedCode, x => AddSerializationModulesImport(x, serializationWriterFactoryInterfaceAndRegistrationFullName, parseNodeFactoryInterfaceAndRegistrationFullName, separator));
     }
     protected static void ReplaceDefaultSerializationModules(CodeElement generatedCode, params string[] moduleNames) {
         if(ReplaceSerializationModules(generatedCode, x => x.SerializerModules, "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory", moduleNames))
@@ -295,30 +295,43 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, c => ReplaceBinaryByNativeType(c, symbol, ns, addDeclaration));
     }
-    protected static void ConvertUnionTypesToWrapper(CodeElement currentElement, bool usesBackingStore) {
+    protected static void ConvertUnionTypesToWrapper(CodeElement currentElement, bool usesBackingStore, bool supportInnerClasses = true) {
         var parentClass = currentElement.Parent as CodeClass;
         if(currentElement is CodeMethod currentMethod) {
             if(currentMethod.ReturnType is CodeUnionType currentUnionType)
-                currentMethod.ReturnType = ConvertUnionTypeToWrapper(parentClass, currentUnionType, usesBackingStore);
+                currentMethod.ReturnType = ConvertUnionTypeToWrapper(parentClass, currentUnionType, usesBackingStore, supportInnerClasses);
             if(currentMethod.Parameters.Any(x => x.Type is CodeUnionType))
                 foreach(var currentParameter in currentMethod.Parameters.Where(x => x.Type is CodeUnionType))
-                    currentParameter.Type = ConvertUnionTypeToWrapper(parentClass, currentParameter.Type as CodeUnionType, usesBackingStore);
+                    currentParameter.Type = ConvertUnionTypeToWrapper(parentClass, currentParameter.Type as CodeUnionType, usesBackingStore, supportInnerClasses);
         }
         else if (currentElement is CodeIndexer currentIndexer && currentIndexer.ReturnType is CodeUnionType currentUnionType)
             currentIndexer.ReturnType = ConvertUnionTypeToWrapper(parentClass, currentUnionType, usesBackingStore);
         else if(currentElement is CodeProperty currentProperty && currentProperty.Type is CodeUnionType currentPropUnionType)
-            currentProperty.Type = ConvertUnionTypeToWrapper(parentClass, currentPropUnionType, usesBackingStore);
+            currentProperty.Type = ConvertUnionTypeToWrapper(parentClass, currentPropUnionType, usesBackingStore, supportInnerClasses);
 
-        CrawlTree(currentElement, x => ConvertUnionTypesToWrapper(x, usesBackingStore));
+        CrawlTree(currentElement, x => ConvertUnionTypesToWrapper(x, usesBackingStore, supportInnerClasses));
     }
-    private static CodeTypeBase ConvertUnionTypeToWrapper(CodeClass codeClass, CodeUnionType codeUnionType, bool usesBackingStore)
+    private static CodeTypeBase ConvertUnionTypeToWrapper(CodeClass codeClass, CodeUnionType codeUnionType, bool usesBackingStore, bool supportsInnerClasses = true)
     {
         if(codeClass == null) throw new ArgumentNullException(nameof(codeClass));
         if(codeUnionType == null) throw new ArgumentNullException(nameof(codeUnionType));
-        var newClass = codeClass.AddInnerClass(new CodeClass {
+        CodeClass newClass;
+        var description =
+            $"Union type wrapper for classes {codeUnionType.Types.Select(x => x.Name).Aggregate((x, y) => x + ", " + y)}";
+        if (!supportsInnerClasses)
+        {
+            var @namespace = codeClass.GetImmediateParentOfType<CodeNamespace>();
+            newClass = @namespace.AddClass(new CodeClass()
+            {
+                Name = codeUnionType.Name,
+                Description = description
+            }).Last();
+        }
+        else {
+            newClass = codeClass.AddInnerClass(new CodeClass {
             Name = codeUnionType.Name,
-            Description = $"Union type wrapper for classes {codeUnionType.Types.Select(x => x.Name).Aggregate((x, y) => x + ", " + y)}"
-        }).First();
+            Description = description}).First();
+        }
         newClass.AddProperty(codeUnionType
                                 .Types
                                 .Select(x => new CodeProperty {
@@ -327,7 +340,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                     Description = $"Union type representation for type {x.Name}"
                                 }).ToArray());
         if(codeUnionType.Types.All(x => x.TypeDefinition is CodeClass targetClass && targetClass.IsOfKind(CodeClassKind.Model) ||
-                                x.TypeDefinition is CodeEnum)) {
+                                x.TypeDefinition is CodeEnum))
+        {
             KiotaBuilder.AddSerializationMembers(newClass, true, usesBackingStore);
             newClass.Kind = CodeClassKind.Model;
         }

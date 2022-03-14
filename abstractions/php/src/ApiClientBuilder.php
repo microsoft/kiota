@@ -11,15 +11,19 @@ use Microsoft\Kiota\Abstractions\Store\BackingStoreSerializationWriterProxyFacto
 use ReflectionClass;
 use ReflectionException;
 use RuntimeException;
+use InvalidArgumentException;
 
 class ApiClientBuilder {
     private function __construct(){}
 
     /**
      * Registers the default serializer to the registry.
-     * @param SerializationWriterFactory $factoryClass the class of the factory to be registered.
+     * @param string $factoryClass the class of the factory to be registered.
      */
-    public static function registerDefaultSerializer(SerializationWriterFactory $factoryClass): void {
+    public static function registerDefaultSerializer(string $factoryClass): void {
+        if (!is_subclass_of($factoryClass, SerializationWriterFactory::class)) {
+             throw new InvalidArgumentException('The class passed must be a subclass of SerializationWriterFactory::class');
+        }
         try {
             $reflectionClass = new ReflectionClass($factoryClass);
 
@@ -34,9 +38,12 @@ class ApiClientBuilder {
 
     /**
      * Registers the default deserializer to the registry.
-     * @param ParseNodeFactory $factoryClass the class of the factory to be registered.
+     * @param string $factoryClass the class of the factory to be registered.
      */
-    public static function registerDefaultDeserializer(ParseNodeFactory $factoryClass): void {
+    public static function registerDefaultDeserializer(string $factoryClass): void {
+        if (!is_subclass_of($factoryClass, ParseNodeFactory::class)) {
+             throw new InvalidArgumentException('The class passed must be a subclass of ParseNodeFactory::class');
+        }
         try {
             $reflectionClass = new ReflectionClass($factoryClass);
             /**
