@@ -580,17 +580,19 @@ public class KiotaBuilder
         foreach(var response in operation.Responses.Where(x => errorStatusCodes.Contains(x.Key))) {
             var errorCode = response.Key.ToUpperInvariant();
             var errorSchema = response.Value.GetResponseSchema();
-            var parentElement = string.IsNullOrEmpty(response.Value.Reference?.Id) && string.IsNullOrEmpty(errorSchema?.Reference?.Id)
-                ? executorMethod as CodeElement
-                : modelsNamespace;
-            var errorType = CreateModelDeclarations(currentNode, errorSchema, operation, parentElement, $"{errorCode}Error", response: response.Value);
-            if (errorType is CodeType codeType && 
-                codeType.TypeDefinition is CodeClass codeClass &&
-                !codeClass.IsErrorDefinition)
-            {
-                codeClass.IsErrorDefinition = true;
+            if(errorSchema != null) {
+                var parentElement = string.IsNullOrEmpty(response.Value.Reference?.Id) && string.IsNullOrEmpty(errorSchema?.Reference?.Id)
+                    ? executorMethod as CodeElement
+                    : modelsNamespace;
+                var errorType = CreateModelDeclarations(currentNode, errorSchema, operation, parentElement, $"{errorCode}Error", response: response.Value);
+                if (errorType is CodeType codeType && 
+                    codeType.TypeDefinition is CodeClass codeClass &&
+                    !codeClass.IsErrorDefinition)
+                {
+                    codeClass.IsErrorDefinition = true;
+                }
+                executorMethod.AddErrorMapping(errorCode, errorType);
             }
-            executorMethod.AddErrorMapping(errorCode, errorType);
         }
     }
     private void CreateOperationMethods(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
