@@ -172,7 +172,7 @@ public class RetryHandler implements Interceptor{
 
         // Use should retry pass along with this request
         RetryHandlerOption retryOption = request.tag(RetryHandlerOption.class);
-        retryOption = retryOption != null ? retryOption : mRetryOption;
+        if(retryOption == null) { retryOption = mRetryOption; }
 
         int executionCount = 1;
         while(retryRequest(response, executionCount, request, retryOption)) {

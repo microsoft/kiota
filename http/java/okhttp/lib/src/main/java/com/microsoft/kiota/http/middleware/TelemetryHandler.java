@@ -46,12 +46,8 @@ public class TelemetryHandler implements Interceptor{
     public Response intercept(@Nonnull Chain chain) throws IOException {
         final Request request = chain.request();
 
-        //System.out.println(request.tag(TelemetryHandlerOption.class).toString());
-
         TelemetryHandlerOption telemetryHandlerOption = request.tag(TelemetryHandlerOption.class);
-        if(telemetryHandlerOption == null) {
-            telemetryHandlerOption = this._telemetryHandlerOption;
-        }
+        if(telemetryHandlerOption == null) { telemetryHandlerOption = this._telemetryHandlerOption; }
 
         //Simply forward request if TelemetryConfigurator is set to null intentionally.
         if(telemetryHandlerOption == null) {

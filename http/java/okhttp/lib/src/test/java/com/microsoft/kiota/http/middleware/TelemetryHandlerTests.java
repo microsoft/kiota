@@ -1,4 +1,5 @@
 package com.microsoft.kiota.http.middleware;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 

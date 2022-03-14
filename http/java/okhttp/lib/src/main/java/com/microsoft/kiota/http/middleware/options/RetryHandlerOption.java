@@ -4,6 +4,11 @@ import javax.annotation.Nullable;
 
 import com.microsoft.kiota.RequestOption;
 
+import okhttp3.Request;
+import okhttp3.Response;
+
+import java.util.function.Function;
+
 import javax.annotation.Nonnull;
 
 /**
