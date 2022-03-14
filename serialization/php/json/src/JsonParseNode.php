@@ -122,18 +122,25 @@ class JsonParseNode implements ParseNode
         if (is_a($result, Parsable::class)){
             $fieldDeserializers = $result->getFieldDeserializers();
         }
-
+        $isAdditionalDataHolder = false;
+        $additionalData = [];
+        if (is_a($result, AdditionalDataHolder::class)) {
+            $isAdditionalDataHolder = true;
+            $additionalData = $result->getAdditionalData();
+        }
         foreach ($this->jsonNode as $key => $value){
             $deserializer = $fieldDeserializers[$key] ?? null;
 
             if ($deserializer !== null){
                 $deserializer($result, new JsonParseNode($value));
-            } else if (is_a($result, AdditionalDataHolder::class)) {
-                $data = $result->getAdditionalData();
+            } else {
                 $key = (string)$key;
-                $data[$key] = $value;
-                $result->setAdditionalData($data);
+                $additionalData[$key] = $value;
             }
+        }
+
+        if ( $isAdditionalDataHolder ) {
+            $result->setAdditionalData($additionalData);
         }
     }
 

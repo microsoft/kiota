@@ -8,6 +8,7 @@ use Microsoft\Kiota\Abstractions\Enum;
 use Microsoft\Kiota\Abstractions\Types\Byte;
 use Microsoft\Kiota\Abstractions\Types\Date;
 use Microsoft\Kiota\Abstractions\Types\Time;
+use Psr\Http\Message\StreamInterface;
 
 interface ParseNode {
     /**
@@ -98,6 +99,11 @@ interface ParseNode {
      */
     public function getByteValue(): ?Byte;
 
+    /**
+     * Get a Stream from node.
+     * @return StreamInterface|null
+     */
+    public function getBinaryContent(): ?StreamInterface;
     /**
      * Gets the callback called before the node is deserialized.
      * @return callable the callback called before the node is deserialized.
