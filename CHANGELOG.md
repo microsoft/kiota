@@ -9,10 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [0.0.18] - 2022-03-14
+
+### Added
+
 - Added default implementations for table and JSON output in CLI commons (Shell) #1326
 - Adds missing mapped types (int8, uint8, commonmark, html, ...) #1287
 
 ### Changed
+
 - Add missing method getBinaryContent to the ParseNode interface(PHP).
 - Split the Parsable interface into AdditionalData interface and Parsable interface(PHP) #1324.
 - Shell commands will now default to writing indented JSON. This option can be disabled through the CLI option `--json-no-indent` (Shell) #1326
@@ -22,7 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - BREAKING: Remove synchronous version of WriteOutput that accepts a stream input (Shell) #1326
 - BREAKING: Remove synchronous version of WriteOutput that accepts a string input (Shell) #1326
 - BREAKING: Remove synchronous version of FilterOutput that accepts a string input (Shell) #1326
-
 - Fixed a bug where error responses without schema would make generation fail #1272
 - Fixed indeterministic parameters ordering #1358
 - Fixed indeterministic error mappings ordering #1358
