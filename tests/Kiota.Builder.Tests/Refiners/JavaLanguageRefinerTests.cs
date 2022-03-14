@@ -103,6 +103,9 @@ public class JavaLanguageRefinerTests {
         requestBuilder.AddMethod(new CodeMethod {
             Name = "get",
             Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType {
+                Name = "string",
+            },
         });
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.NotEmpty(model.StartBlock.Usings);

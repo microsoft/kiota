@@ -530,7 +530,7 @@ public class KiotaBuilder
         logger.LogTrace("Creating property {name} of {type}", prop.Name, prop.Type.Name);
         return prop;
     }
-    private static readonly HashSet<string> typeNamesToSkip = new() {"object", "array"};
+    private static readonly HashSet<string> typeNamesToSkip = new(StringComparer.OrdinalIgnoreCase) {"object", "array"};
     private static CodeType GetPrimitiveType(OpenApiSchema typeSchema, string childType = default) {
         var typeNames = new List<string>{typeSchema?.Items?.Type, childType, typeSchema?.Type};
         if(typeSchema?.AnyOf?.Any() ?? false)
@@ -538,33 +538,33 @@ public class KiotaBuilder
         // first value that's not null, and not "object" for primitive collections, the items type matters
         var typeName = typeNames.FirstOrDefault(x => !string.IsNullOrEmpty(x) && !typeNamesToSkip.Contains(x));
         
-        if(string.IsNullOrEmpty(typeName))
-            return null;
-        var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
         var isExternal = false;
         if (typeSchema?.Items?.Enum?.Any() ?? false)
             typeName = childType;
-        else if("string".Equals(typeName, StringComparison.OrdinalIgnoreCase)) {
+        else {
+            var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
+            var primitiveTypeName = (typeName?.ToLowerInvariant(), format?.ToLowerInvariant()) switch {
+                ("string", "base64url") => "binary",
+                ("string", "duration") => "TimeSpan",
+                ("string", "time") => "TimeOnly",
+                ("string", "date") => "DateOnly",
+                ("string", "date-time") => "DateTimeOffset",
+                ("string", _) => "string", // covers commonmark and html
+                ("number", "int32") => "integer",
+                ("number", "int8") => "sbyte",
+                ("number", "uint8") => "byte",
+                ("number", "double" or "float" or "int64" or "decimal") => format.ToLowerInvariant(),
+                ("integer", _) => "integer",
+                ("boolean", _) => "boolean",
+                (_, "byte") => "binary",
+                (_, "binary") => "binary",
+                (_, _) => string.Empty,
+            };
+            if(primitiveTypeName != string.Empty) {
+                typeName = primitiveTypeName;
                 isExternal = true;
-            if("date-time".Equals(format, StringComparison.OrdinalIgnoreCase))
-                typeName = "DateTimeOffset";
-            else if("duration".Equals(format, StringComparison.OrdinalIgnoreCase))
-                typeName = "TimeSpan";
-            else if("date".Equals(format, StringComparison.OrdinalIgnoreCase))
-                typeName = "DateOnly";
-            else if("time".Equals(format, StringComparison.OrdinalIgnoreCase))
-                typeName = "TimeOnly";
-            else if ("base64url".Equals(format, StringComparison.OrdinalIgnoreCase))
-                typeName = "binary";
-        } else if ("double".Equals(format, StringComparison.OrdinalIgnoreCase) || 
-                "float".Equals(format, StringComparison.OrdinalIgnoreCase) ||
-                "int64".Equals(format, StringComparison.OrdinalIgnoreCase) ||
-                "decimal".Equals(format, StringComparison.OrdinalIgnoreCase)) {
-            isExternal = true;
-            typeName = format.ToLowerInvariant();
-        } else if ("boolean".Equals(typeName, StringComparison.OrdinalIgnoreCase) ||
-                    "integer".Equals(typeName, StringComparison.OrdinalIgnoreCase))
-            isExternal = true;
+            }
+        }
         return new CodeType {
             Name = typeName,
             IsExternal = isExternal,
@@ -839,7 +839,7 @@ public class KiotaBuilder
             }
             type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
             return type;
-        } else if(!string.IsNullOrEmpty(schema.Type))
+        } else if(!string.IsNullOrEmpty(schema.Type) || !string.IsNullOrEmpty(schema.Format))
             return GetPrimitiveType(schema, string.Empty);
         else throw new InvalidOperationException("un handled case, might be object type or array type");
     }

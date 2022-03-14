@@ -42,6 +42,18 @@ namespace Microsoft.Kiota.Serialization.Json
         public bool? GetBoolValue() => _jsonNode.GetBoolean();
 
         /// <summary>
+        /// Get the byte value from the json node
+        /// </summary>
+        /// <returns>A byte value</returns>
+        public byte? GetByteValue() => _jsonNode.GetByte();
+
+        /// <summary>
+        /// Get the sbyte value from the json node
+        /// </summary>
+        /// <returns>A sbyte value</returns>
+        public sbyte? GetSbyteValue() => _jsonNode.GetSByte();
+
+        /// <summary>
         /// Get the int value from the json node
         /// </summary>
         /// <returns>A int value</returns>
@@ -197,6 +209,8 @@ namespace Microsoft.Kiota.Serialization.Json
             return Convert.FromBase64String(rawValue);
         }
         private static Type booleanType = typeof(bool?);
+        private static Type byteType = typeof(byte?);
+        private static Type sbyteType = typeof(sbyte?);
         private static Type stringType = typeof(string);
         private static Type intType = typeof(int?);
         private static Type floatType = typeof(float?);
@@ -223,6 +237,10 @@ namespace Microsoft.Kiota.Serialization.Json
                 };
                 if(genericType == booleanType)
                     yield return (T)(object)currentParseNode.GetBoolValue();
+                else if(genericType == byteType)
+                    yield return (T)(object)currentParseNode.GetByteValue();
+                else if(genericType == sbyteType)
+                    yield return (T)(object)currentParseNode.GetSbyteValue();
                 else if(genericType == stringType)
                     yield return (T)(object)currentParseNode.GetStringValue();
                 else if(genericType == intType)

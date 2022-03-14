@@ -20,11 +20,23 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// <param name="value">The string value to be written.</param>
         void WriteStringValue(string key, string value);
         /// <summary>
-        /// Writes the specified byte boolean value to the stream with an optional given key. 
+        /// Writes the specified boolean value to the stream with an optional given key. 
         /// </summary>
         /// <param name="key">The key to be used for the written value. May be null.</param>
         /// <param name="value">The byte boolean value to be written.</param>
         void WriteBoolValue(string key, bool? value);
+        /// <summary>
+        /// Writes the specified byte value to the stream with an optional given key. 
+        /// </summary>
+        /// <param name="key">The key to be used for the written value. May be null.</param>
+        /// <param name="value">The byte value to be written.</param>
+        void WriteByteValue(string key, byte? value);
+        /// <summary>
+        /// Writes the specified sbyte value to the stream with an optional given key. 
+        /// </summary>
+        /// <param name="key">The key to be used for the written value. May be null.</param>
+        /// <param name="value">The sbyte value to be written.</param>
+        void WriteSbyteValue(string key, sbyte? value);
         /// <summary>
         /// Writes the specified byte integer value to the stream with an optional given key.
         /// </summary>

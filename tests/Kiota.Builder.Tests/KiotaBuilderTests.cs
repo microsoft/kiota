@@ -970,5 +970,59 @@ public class KiotaBuilderTests
         Assert.NotNull(castType.TypeDefinition);
         Assert.Equal(directoryObjectClass, castType.TypeDefinition);
     }
-
+    [InlineData("string", "", "string")]// https://spec.openapis.org/registry/format/
+    [InlineData("string", "commonmark", "string")]
+    [InlineData("string", "html", "string")]
+    [InlineData("string", "date-time", "DateTimeOffset")]
+    [InlineData("string", "duration", "TimeSpan")]
+    [InlineData("string", "date", "DateOnly")]
+    [InlineData("string", "time", "TimeOnly")]
+    [InlineData("string", "base64url", "binary")]
+    [InlineData("number", "int32", "integer")]
+    [InlineData("number", "double", "double")]
+    [InlineData("number", "float", "float")]
+    [InlineData("number", "int64", "int64")]
+    [InlineData("number", "decimal", "decimal")]
+    [InlineData("number", "int8", "sbyte")]
+    [InlineData("number", "uint8", "byte")]
+    [InlineData("integer", "", "integer")]
+    [InlineData("boolean", "", "boolean")]
+    [InlineData("", "byte", "binary")]
+    [InlineData("", "binary", "binary")]
+    [Theory]
+    public void MapsPrimitiveFormats(string type, string format, string expected){
+        var document = new OpenApiDocument() {
+            Paths = new OpenApiPaths() {
+                ["primitive"] = new OpenApiPathItem() {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation() { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = new OpenApiSchema {
+                                                Type = type,
+                                                Format = format
+                                            }
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    } 
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var requestBuilder = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilder", true);
+        Assert.NotNull(requestBuilder);
+        var method = requestBuilder.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+        Assert.NotNull(method);
+        Assert.Equal(expected, method.ReturnType.Name);
+        Assert.True(method.ReturnType.AllTypes.First().IsExternal);
+    }
 }

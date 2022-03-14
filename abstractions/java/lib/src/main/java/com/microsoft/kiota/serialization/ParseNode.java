@@ -1,6 +1,7 @@
 package com.microsoft.kiota.serialization;
 
 import java.lang.Enum;
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -36,6 +37,24 @@ public interface ParseNode {
      */
     @Nonnull
     Boolean getBooleanValue();
+    /**
+     * Gets the byte value of the node.
+     * @return the byte value of the node.
+     */
+    @Nonnull
+    Byte getByteValue();
+    /**
+     * Gets the short value of the node.
+     * @return the short value of the node.
+     */
+    @Nonnull
+    Short getShortValue();
+    /**
+     * Gets the BigDecimal value of the node.
+     * @return the BigDecimal value of the node.
+     */
+    @Nonnull
+    BigDecimal getBigDecimalValue();
     /**
      * Gets the Integer value of the node.
      * @return the Integer value of the node.

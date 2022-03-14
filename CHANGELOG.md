@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Added default implementations for table and JSON output in CLI commons (Shell) #1326
+- Adds missing mapped types (int8, uint8, commonmark, html, ...) #1287
 
 ### Changed
 - Shell commands will now default to writing indented JSON. This option can be disabled through the CLI option `--json-no-indent` (Shell) #1326
