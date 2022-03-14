@@ -17,16 +17,4 @@ interface Parsable {
      * @param SerializationWriter $writer The writer to write to.
      */
     public function serialize(SerializationWriter $writer): void;
-
-    /**
-     * Gets the additional data for this object that did not belong to the properties.
-     * @return array<string,mixed>|null The additional data for this object.
-     */
-    public function getAdditionalData(): ?array;
-
-    /**
-     * Sets the additional data for this object that did not belong to the properties.
-     * @param array<string, mixed> $value The additional data for this object.
-     */
-    public function setAdditionalData(array $value): void;
 }

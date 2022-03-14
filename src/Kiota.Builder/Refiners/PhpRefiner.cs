@@ -31,7 +31,7 @@ namespace Kiota.Builder.Refiners
             ReplaceDefaultDeserializationModules(generatedCode, "Microsoft\\Kiota\\Serialization\\Json\\JsonParseNodeFactory");
             AliasUsingWithSameSymbol(generatedCode);
             AddSerializationModulesImport(generatedCode, new []{"Microsoft\\Kiota\\Abstractions\\ApiClientBuilder"}, null, '\\');
-            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
+            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
@@ -89,6 +89,8 @@ namespace Kiota.Builder.Refiners
                 "Microsoft\\Kiota\\Abstractions", "HttpMethod", "RequestInformation", "RequestOption"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
                 "Microsoft\\Kiota\\Abstractions", "ResponseHandler"),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
+                "Microsoft\\Kiota\\Abstractions\\Serialization", "AdditionalDataHolder"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
                 "Microsoft\\Kiota\\Abstractions\\Serialization", "SerializationWriter"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
@@ -163,6 +165,9 @@ namespace Kiota.Builder.Refiners
                 x.Type.Name = "ParseNode";
             });
             CrawlTree(codeElement, CorrectParameterType);
+        }
+        private static void CorrectImplements(ProprietableBlockDeclaration block) {
+            block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
         }
 
         private static void AliasUsingWithSameSymbol(CodeElement currentElement) {

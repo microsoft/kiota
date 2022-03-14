@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adds missing mapped types (int8, uint8, commonmark, html, ...) #1287
 
 ### Changed
+- Add missing method getBinaryContent to the ParseNode interface(PHP).
+- Split the Parsable interface into AdditionalData interface and Parsable interface(PHP) #1324.
 - Shell commands will now default to writing indented JSON. This option can be disabled through the CLI option `--json-no-indent` (Shell) #1326
 - Update System.CommandLine version (Shell) #1338
 - Add async writers in output formatters (Shell) #1326
