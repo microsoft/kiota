@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Adds a `--clean-output` argument to clean the target directory before generation #1357
+
 ### Changed
 
 ## [0.0.18] - 2022-03-14
