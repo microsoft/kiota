@@ -9,7 +9,7 @@ namespace Kiota.Builder.Writers.Go {
         {
             var propertyName = codeElement.Access == AccessModifier.Public ? codeElement.Name.ToFirstCharacterUpperCase() : codeElement.Name.ToFirstCharacterLowerCase();
             var returnType = conventions.GetTypeString(codeElement.Type, codeElement.Parent);
-            switch(codeElement.PropertyKind) {
+            switch(codeElement.Kind) {
                 case CodePropertyKind.RequestBuilder:
                     throw new InvalidOperationException("RequestBuilders are as properties are not supported in Go and should be replaced by methods by the refiner.");
                 default:

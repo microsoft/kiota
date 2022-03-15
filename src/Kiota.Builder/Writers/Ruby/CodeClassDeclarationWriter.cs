@@ -1,8 +1,9 @@
+using System;
 using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace  Kiota.Builder.Writers.Ruby {
-    public class CodeClassDeclarationWriter : BaseElementWriter<CodeClass.Declaration, RubyConventionService>
+    public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, RubyConventionService>
     {
         private readonly RelativeImportManager relativeImportManager;
         public CodeClassDeclarationWriter(RubyConventionService conventionService, string clientNamespaceName) : base(conventionService){
@@ -10,8 +11,10 @@ namespace  Kiota.Builder.Writers.Ruby {
         }
         
         
-        public override void WriteCodeElement(CodeClass.Declaration codeElement, LanguageWriter writer)
+        public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
         {
+            if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
+            if(writer == null) throw new ArgumentNullException(nameof(writer));
             var currentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
             foreach (var codeUsing in codeElement.Usings
                                         .Where(x => x.IsExternal)

@@ -1,58 +1,58 @@
 {
   "name": "@microsoft/kiota-authentication-azure",
-    "version": "1.0.7",
-    "description": "Authentication provider for Kiota using Azure Identity",
-    "main": "dist/cjs/src/index.js",
-    "module": "dist/es/src/index.js",
-    "types": "dist/cjs/src/index.d.ts",
-    "scripts": {
-        "build": "npm run build:cjs && npm run build:esm",
-        "build:cjs": "tsc -p tsconfig.cjs.json",
-        "build:esm": "tsc -p tsconfig.es.json",
-        "test": "echo \"Error: no test specified\" && exit 1",
-        "lint": "eslint . --ext .ts",
-        "lint:fix": "eslint . --ext .ts --fix",
-        "clean": "rm -r ./dist"
-    },
-    "repository": "git://github.com/microsoft/kiota.git",
-    "keywords": [
-        "Kiota",
-        "OpenApi",
-        "Azure",
-        "Authentication",
-        "OAuth"
-    ],
-    "author": "Microsoft",
-    "license": "MIT",
-    "bugs": {
-        "url": "https://github.com/microsoft/kiota/issues"
-    },
-    "homepage": "https://github.com/microsoft/kiota#readme",
-    "publishConfig": {
-        "registry": "https://npm.pkg.github.com"
-    },
-    "dependencies": {
-        "tslib": "^2.3.1",
-        "@azure/core-auth": "^1.3.2",
-        "@microsoft/kiota-abstractions": "^1.0.28"
-    },
-    "devDependencies": {
-        "@types/node": "^17.0.14",
-        "typescript": "^4.5.5",
-        "@types/chai": "^4.3.0",
-        "@types/mocha": "^9.1.0",
-        "@types/sinon": "^10.0.10",
-        "chai": "^4.2.0",
-        "esm": "^3.2.25",
-        "mocha": "^9.2.0",
-        "sinon": "^13.0.1",
-        "@azure/identity": "^2.0.2",
-        "@typescript-eslint/eslint-plugin": "^5.0.0",
-        "@typescript-eslint/parser": "^5.0.0",
-        "eslint": "^8.8.0",
-        "eslint-config-prettier": "^8.3.0",
-        "eslint-plugin-prettier": "^4.0.0",
-        "eslint-plugin-simple-import-sort": "^7.0.0",
-        "prettier": "^2.5.1"
-    }
+  "version": "1.0.7",
+  "description": "Authentication provider for Kiota using Azure Identity",
+  "main": "dist/cjs/src/index.js",
+  "module": "dist/es/src/index.js",
+  "types": "dist/cjs/src/index.d.ts",
+  "scripts": {
+    "build": "npm run build:cjs && npm run build:esm",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build:esm": "tsc -p tsconfig.es.json",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "clean": "rm -r ./dist"
+  },
+  "repository": "git://github.com/microsoft/kiota.git",
+  "keywords": [
+    "Kiota",
+    "OpenApi",
+    "Azure",
+    "Authentication",
+    "OAuth"
+  ],
+  "author": "Microsoft",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/microsoft/kiota/issues"
+  },
+  "homepage": "https://github.com/microsoft/kiota#readme",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "dependencies": {
+    "@azure/core-auth": "^1.3.2",
+    "@microsoft/kiota-abstractions": "^1.0.28",
+    "tslib": "^2.3.1"
+  },
+  "devDependencies": {
+    "@azure/identity": "^2.0.4",
+    "@types/chai": "^4.3.0",
+    "@types/mocha": "^9.1.0",
+    "@types/node": "^17.0.21",
+    "@types/sinon": "^10.0.11",
+    "@typescript-eslint/eslint-plugin": "^5.14.0",
+    "@typescript-eslint/parser": "^5.14.0",
+    "chai": "^4.2.0",
+    "eslint": "^8.11.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-plugin-simple-import-sort": "^7.0.0",
+    "esm": "^3.2.25",
+    "mocha": "^9.2.2",
+    "prettier": "^2.5.1",
+    "sinon": "^13.0.1",
+    "typescript": "^4.6.2"
+  }
 }

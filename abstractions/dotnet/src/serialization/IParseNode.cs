@@ -29,6 +29,16 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// <returns>The boolean value of the node.</returns>
         bool? GetBoolValue();
         /// <summary>
+        ///  Gets the byte value of the node.
+        /// </summary>
+        /// <returns>The byte value of the node.</returns>
+        byte? GetByteValue();
+        /// <summary>
+        ///  Gets the sbyte value of the node.
+        /// </summary>
+        /// <returns>The sbyte value of the node.</returns>
+        sbyte? GetSbyteValue();
+        /// <summary>
         ///  Gets the integer value of the node.
         /// </summary>
         /// <returns>The integer value of the node.</returns>
@@ -48,6 +58,11 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// </summary>
         /// <returns>The double value of the node.</returns>
         double? GetDoubleValue();
+        /// <summary>
+        /// Gets the decimal value of the node.
+        /// </summary>
+        /// <returns>The decimal value of the node.</returns>
+        decimal? GetDecimalValue();
         /// <summary>
         /// Gets the GUID value of the node.
         /// </summary>
@@ -86,8 +101,9 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// <summary>
         /// Gets the collection of model objects values of the node.
         /// </summary>
+        /// <param name="factory">The factory to use to create the model object.</param>
         /// <returns>The collection of model objects values.</returns>
-        IEnumerable<T> GetCollectionOfObjectValues<T>() where T : IParsable;
+        IEnumerable<T> GetCollectionOfObjectValues<T>(ParsableFactory<T> factory) where T : IParsable;
         /// <summary>
         /// Gets the enum value of the node.
         /// </summary>
@@ -96,8 +112,9 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// <summary>
         /// Gets the model object value of the node.
         /// </summary>
+        /// <param name="factory">The factory to use to create the model object.</param>
         /// <returns>The model object value of the node.</returns>
-        T GetObjectValue<T>() where T : IParsable;
+        T GetObjectValue<T>(ParsableFactory<T> factory) where T : IParsable;
         /// <summary>
         /// Callback called before the node is deserialized.
         /// </summary>

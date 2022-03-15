@@ -40,6 +40,22 @@ Kiota [has plans](https://github.com/microsoft/kiota/issues/648) to support disc
 
 In addition to all the described properties, a model will contain a set of default members.
 
+### Factory method
+
+The Factory method (static) is used by the Parse Node implementation to get the base or derived instance according to the discriminator value. If an operation describes returning a Person model, and the Person model has discriminator information (mapping + property name), and the response payload contains one of the mapped value (e.g. Employee), the deserialization process will deserialize the the derived Employee type instead of the base Person type. This way SDK users can take advantage of the properties that are defined on this specialized model.
+
+```csharp
+public static new Person CreateFromDiscriminatorValue(IParseNode parseNode) {
+    _ = parseNode ?? throw new ArgumentNullException(nameof(parseNode));
+    var mappingValueNode = parseNode.GetChildNode("@odata.type");
+    var mappingValue = mappingValueNode?.GetStringValue();
+    return mappingValue switch {
+        "#api.Employee" => new Employee(),
+        _ => new Person(),
+    };
+}
+```
+
 ### Field deserializers
 
 The field deserializers method or property contains a list of callbacks to be used by the `ParseNode` implementation when deserializing the objects. Kiota relies on auto-serialization, where each type *knows* how to serialize/deserialize itself thanks to the OpenAPI description. A big advantage of this approach it to avoid tying the generated models to any specific serialization format (JSON, YAML, XML,...) or any specific library (because of attributes/annotations these libraries often require).

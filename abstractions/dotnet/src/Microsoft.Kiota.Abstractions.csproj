@@ -6,7 +6,7 @@
     <LangVersion>latest</LangVersion>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryUrl>https://github.com/microsoft/kiota</RepositoryUrl>
-    <Version>1.0.28</Version>
+    <Version>1.0.33</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- Enable this line once we go live to prevent breaking changes -->

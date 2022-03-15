@@ -81,6 +81,36 @@ func (w *JsonSerializationWriter) WriteBoolValue(key string, value *bool) error 
 	return nil
 }
 
+// WriteByteValue writes a Byte value to underlying the byte array.
+func (w *JsonSerializationWriter) WriteByteValue(key string, value *byte) error {
+	if key != "" && value != nil {
+		w.writePropertyName(key)
+	}
+	if value != nil {
+		cast := int64(*value)
+		return w.WriteInt64Value(key, &cast)
+	}
+	if key != "" && value != nil {
+		w.writePropertySeparator()
+	}
+	return nil
+}
+
+// WriteInt8Value writes a int8 value to underlying the byte array.
+func (w *JsonSerializationWriter) WriteInt8Value(key string, value *int8) error {
+	if key != "" && value != nil {
+		w.writePropertyName(key)
+	}
+	if value != nil {
+		cast := int64(*value)
+		return w.WriteInt64Value(key, &cast)
+	}
+	if key != "" && value != nil {
+		w.writePropertySeparator()
+	}
+	return nil
+}
+
 // WriteInt32Value writes a Int32 value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteInt32Value(key string, value *int32) error {
 	if value != nil {
@@ -510,6 +540,52 @@ func (w *JsonSerializationWriter) WriteCollectionOfBoolValues(key string, collec
 	return nil
 }
 
+// WriteCollectionOfByteValues writes a collection of Byte values to underlying the byte array.
+func (w *JsonSerializationWriter) WriteCollectionOfByteValues(key string, collection []byte) error {
+	if collection != nil { // empty collections are meaningful
+		if key != "" {
+			w.writePropertyName(key)
+		}
+		w.writeArrayStart()
+		for _, item := range collection {
+			err := w.WriteByteValue("", &item)
+			if err != nil {
+				return err
+			}
+			w.writePropertySeparator()
+		}
+		w.trimLastPropertySeparator()
+		w.writeArrayEnd()
+		if key != "" {
+			w.writePropertySeparator()
+		}
+	}
+	return nil
+}
+
+// WriteCollectionOfInt8Values writes a collection of int8 values to underlying the byte array.
+func (w *JsonSerializationWriter) WriteCollectionOfInt8Values(key string, collection []int8) error {
+	if collection != nil { // empty collections are meaningful
+		if key != "" {
+			w.writePropertyName(key)
+		}
+		w.writeArrayStart()
+		for _, item := range collection {
+			err := w.WriteInt8Value("", &item)
+			if err != nil {
+				return err
+			}
+			w.writePropertySeparator()
+		}
+		w.trimLastPropertySeparator()
+		w.writeArrayEnd()
+		if key != "" {
+			w.writePropertySeparator()
+		}
+	}
+	return nil
+}
+
 // GetSerializedContent returns the resulting byte array from the serialization writer.
 func (w *JsonSerializationWriter) GetSerializedContent() ([]byte, error) {
 	resultStr := strings.Join(w.writer, "")
@@ -547,6 +623,22 @@ func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface
 			bc, ok := value.([]bool)
 			if ok {
 				err := w.WriteCollectionOfBoolValues(key, bc)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+			byc, ok := value.([]byte)
+			if ok {
+				err := w.WriteCollectionOfByteValues(key, byc)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+			i8c, ok := value.([]int8)
+			if ok {
+				err := w.WriteCollectionOfInt8Values(key, i8c)
 				if err != nil {
 					return err
 				}
@@ -635,6 +727,22 @@ func (w *JsonSerializationWriter) WriteAdditionalData(value map[string]interface
 			bv, ok := value.(*bool)
 			if ok {
 				err := w.WriteBoolValue(key, bv)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+			byv, ok := value.(*byte)
+			if ok {
+				err := w.WriteByteValue(key, byv)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+			i8v, ok := value.(*int8)
+			if ok {
+				err := w.WriteInt8Value(key, i8v)
 				if err != nil {
 					return err
 				}

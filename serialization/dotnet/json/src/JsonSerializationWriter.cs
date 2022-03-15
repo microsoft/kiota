@@ -86,6 +86,28 @@ namespace Microsoft.Kiota.Serialization.Json
         }
 
         /// <summary>
+        /// Write the byte value
+        /// </summary>
+        /// <param name="key">The key of the json node</param>
+        /// <param name="value">The byte value</param>
+        public void WriteByteValue(string key, byte? value)
+        {
+            if(!string.IsNullOrEmpty(key) && value.HasValue) writer.WritePropertyName(key);
+            if(value.HasValue) writer.WriteNumberValue(Convert.ToInt32(value.Value));
+        }
+
+        /// <summary>
+        /// Write the sbyte value
+        /// </summary>
+        /// <param name="key">The key of the json node</param>
+        /// <param name="value">The sbyte value</param>
+        public void WriteSbyteValue(string key, sbyte? value)
+        {
+            if(!string.IsNullOrEmpty(key) && value.HasValue) writer.WritePropertyName(key);
+            if(value.HasValue) writer.WriteNumberValue(Convert.ToInt32(value.Value));
+        }
+
+        /// <summary>
         /// Write the int value
         /// </summary>
         /// <param name="key">The key of the json node</param>
@@ -124,6 +146,17 @@ namespace Microsoft.Kiota.Serialization.Json
         /// <param name="key">The key of the json node</param>
         /// <param name="value">The double value</param>
         public void WriteDoubleValue(string key, double? value)
+        {
+            if(!string.IsNullOrEmpty(key) && value.HasValue) writer.WritePropertyName(key);
+            if(value.HasValue) writer.WriteNumberValue(value.Value);
+        }
+
+        /// <summary>
+        /// Write the decimal value
+        /// </summary>
+        /// <param name="key">The key of the json node</param>
+        /// <param name="value">The decimal value</param>
+        public void WriteDecimalValue(string key, decimal? value)
         {
             if(!string.IsNullOrEmpty(key) && value.HasValue) writer.WritePropertyName(key);
             if(value.HasValue) writer.WriteNumberValue(value.Value);
@@ -326,6 +359,12 @@ namespace Microsoft.Kiota.Serialization.Json
                     break;
                 case bool b:
                     WriteBoolValue(key, b);
+                    break;
+                case byte b:
+                    WriteByteValue(key, b);
+                    break;
+                case sbyte b:
+                    WriteSbyteValue(key, b);
                     break;
                 case int i:
                     WriteIntValue(key, i);

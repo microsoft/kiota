@@ -19,10 +19,4 @@ public interface Parsable {
      * @param writer The writer to write to.
      */
     void serialize(@Nonnull final SerializationWriter writer);
-    /**
-     * Gets the additional data for this object that did not belong to the properties.
-     * @return The additional data for this object.
-     */
-    @Nonnull
-    Map<String, Object> getAdditionalData();
 }

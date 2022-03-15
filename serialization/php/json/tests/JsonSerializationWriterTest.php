@@ -58,7 +58,7 @@ class JsonSerializationWriterTest extends TestCase
      */
     public function testWriteCollectionOfNonParsableObjectValues(): void{
         $this->jsonSerializationWriter = new JsonSerializationWriter();
-        $this->jsonSerializationWriter->writeCollectionOfNonParsableObjectValues("stops", [1,2,3,4,5]);
+        $this->jsonSerializationWriter->writeCollectionOfPrimitiveValues("stops", [1,2,3,4,5]);
         $expected = '"stops":[1,2,3,4,5]';
         $actual = $this->jsonSerializationWriter->getSerializedContent()->getContents();
         $this->jsonSerializationWriter = new JsonSerializationWriter();
@@ -106,7 +106,7 @@ class JsonSerializationWriterTest extends TestCase
         $person2->setName('Jane');
         $person2->setMaritalStatus(new MaritalStatus('married'));
         $this->jsonSerializationWriter->writeAnyValue("to", [$person1, $person2]);
-        $expected = '"to":[{"name":"John","age":,"maritalStatus":"single","height":,"address":null},{"name":"Jane","age":,"maritalStatus":"married","height":,"address":null}]';
+        $expected = '"to":[{"name":"John","maritalStatus":"single"},{"name":"Jane","maritalStatus":"married"}]';
         $actual = $this->jsonSerializationWriter->getSerializedContent()->getContents();
         $this->assertEquals($expected, $actual);
     }
@@ -120,7 +120,7 @@ class JsonSerializationWriterTest extends TestCase
         $address->setCity('Nairobi');
         $person1->setAddress($address);
         $this->jsonSerializationWriter->writeAnyValue("to", $person1);
-        $expected = '"to":{"name":"John","age":,"maritalStatus":"single","height":,"address":{"street":null,"city":"Nairobi"}}';
+        $expected = '"to":{"name":"John","maritalStatus":"single","address":{"city":"Nairobi"}}';
         $actual = $this->jsonSerializationWriter->getSerializedContent()->getContents();
         $this->assertEquals($expected, $actual);
     }

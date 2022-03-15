@@ -9,17 +9,90 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [0.0.18] - 2022-03-14
+
+### Added
+
+- Added default implementations for table and JSON output in CLI commons (Shell) #1326
+- Adds missing mapped types (int8, uint8, commonmark, html, ...) #1287
+
+### Changed
+
+- Add missing method getBinaryContent to the ParseNode interface(PHP).
+- Split the Parsable interface into AdditionalData interface and Parsable interface(PHP) #1324.
+- Shell commands will now default to writing indented JSON. This option can be disabled through the CLI option `--json-no-indent` (Shell) #1326
+- Update System.CommandLine version (Shell) #1338
+- Add async writers in output formatters (Shell) #1326
+- Add async filter function in output filters (Shell) #1326
+- BREAKING: Remove synchronous version of WriteOutput that accepts a stream input (Shell) #1326
+- BREAKING: Remove synchronous version of WriteOutput that accepts a string input (Shell) #1326
+- BREAKING: Remove synchronous version of FilterOutput that accepts a string input (Shell) #1326
+- Fixed a bug where error responses without schema would make generation fail #1272
+- Fixed indeterministic parameters ordering #1358
+- Fixed indeterministic error mappings ordering #1358
+- Fixed indeterministic discriminator mapping ordering #1358
+- Fixed race condition when removing child items leading to erratic code generation results #1358
+- Replaced models namespaces flattening by circular properties trimming in Go #1358
+- Fixed a bug where inherited interfaces would be missing imports in Go #1358
+- Fixed a bug where inherited interfaces would be missing imports for the parent #1358
+- Fixed bugs across request adapter and serialization in PHP #1353
+- Fixed NullReferenceException in Go generator
+- Fixed incorrect mapping when the response type is `text/plain` #1356
+- Fixed a bug in Dotnet.Typescript where properties could have invalid characters #1354
+- Improved error display #1269
+- Fixed a bug where union wrapper models would lack the discriminator methods.
+- Fixed bug working with async azure credentials in Python.
+- Fixed minor issues around PHP Generation, Serialization and Abstractions.
+- Fix Discriminator support for PHP.
+- Move additional data from Parsable into AdditionalDataHolder base class in Python #1360
+
+## [0.0.17] - 2022-03-03
+
+### Added
+
+- Adds support for downcast of types during deserialization according to the discriminator information in the description (CSharp/Go/Java/TypeScript). [#646](https://github.com/microsoft/kiota/issues/646)
+- Adds support for generating interfaces for models in Go. [#646](https://github.com/microsoft/kiota/issues/646)
+- Adds support for generating functions (as opposed to methods or static methods) in the generator (used in TypeScript for discriminator factories). [#646](https://github.com/microsoft/kiota/issues/646)
+- Added support for global error handling in python abstractions #1289
+- Added a HTTPRequestAdapter for python Requests library #1251
+- Added Shell output filter (JMESPath) support #1291
+- Added output options to Shell output filter #1321
+
+### Changed
+
+- Fixed a bug in Go generator where temporary url template parameters would not be used preventing the use of raw urls.
+- Fixed a bug where the Go http client configuration would impact non-kiota requests.
+- Fixed bug where installing python abstractions failed due to missing dependencies  #1289
+- Modified python test matrix to include python 3.10  #1289
+- Added return statement to AnonymousAuthenticationProvider in python abstractions  #1289
+- Fixed bug in enabling backing store for parse node factory by passing ParseNodeFactoryRegistry to method call  #1289
+- Fixed errors in python serialization due to to responses as json instead of json strings #1290
+- Added python version 3.10 to testing matrix #1290 
+- Fixed bug with inconsistent Java namespace and directory name casing #1267
+- Fixed typeOf string check in JsonParseNode Typescript.
+- Fixed shell stream output getting processed by output formatters when no file path is provided #1291
+
+## [0.0.16] - 2022-02-23
+
+### Added
+
 - Added the ability to configure the underlying transport in Go. #1003
 - Added additional date time (date, time, duration) types in the generation process. #1017
 - PHP Request Adapter (includes middleware) #1048, #918, #1024, #1025
 - Added support for PHP Json Serialization.
-- Update PHP abstractions to make property keys and values nullable in `SerializationWriter.php`.
 - Adds Python abstractions library. #925
 - Adds hostname and protocol validation in authentication. #1051
 - Adds Azure Identity Authentication Provider for Python. #1108
+- Adds JSON Serialization library for Python. #1186
+- Adds PHP League Authentication Provider for PHP #1201
+- Added Shell language support #738
+
 
 ### Changed
 
+- Fixed a bug where request body would get dropped by the compression handler in Go
 - Fixed an issue where multiple api clients could run into racing conditions in Go.
 - Fixed a bug where empty additional data in Go would lead to invalid JSON payloads during serialization.
 - Fixed a bug where Go serialization would write empty arrays for nil values.
@@ -28,6 +101,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modified the TypeScript RequestInformation query and path paramaters data type from Map to Record Type.
 - Modified TypeScript RequestInformation headers and options to Record type.
 - Modified the TypeScript RequestInformation content data type to ArrayBuffer.
+- Updated PHP abstractions to make property keys and values nullable in `SerializationWriter.php`.
+- Fixed an issue where enum collections parsing would fail in Go.
+- Breaking. Kiota clients generate error types and throw when the target API returns a failed response (dotnet, go, java, typescript). #1100
+- Fixed missing methods for serializing/deserializing decimal values in dotnet #1252
+- Modified RequestBuilder types are suffixed with the ItemRequestBuilder if they belong to an item namespace to fix name collisions #1252
+- Modified the use of fully qualified name of types in dotnet to ensure the target type and current element are not in the same namespace #1252.
 
 ## [0.0.15] - 2021-12-17
 
@@ -49,7 +128,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug in Go where empty collections would not be serialized.
 - Fixes a bug where generation would fail because of empty usings.
 - Fixes a bug where Java and Go escaped model properties would not serialize properly.
-- Fixes a bug where null values would not be added to additionalData if there was no matching property in dotnet. 
+- Fixes a bug where null values would not be added to additionalData if there was no matching property in dotnet.
 - Fixes a bug where deserialzation of enums would throw an ArgumentExcpetion if the member didn't exist in dotnet.
 
 ## [0.0.14] - 2021-11-08

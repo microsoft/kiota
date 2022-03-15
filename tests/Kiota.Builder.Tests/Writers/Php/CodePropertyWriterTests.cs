@@ -24,7 +24,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             tw = new StringWriter();
             parentClass = new CodeClass()
             {
-                Name = "ParentClass", Description = "This is an amazing class", ClassKind = CodeClassKind.Model
+                Name = "ParentClass", Description = "This is an amazing class", Kind = CodeClassKind.Model
             };
             _refiner = new PhpRefiner(new() {Language = GenerationLanguage.PHP});
             propertyWriter = new CodePropertyWriter(new PhpConventionService());
@@ -50,7 +50,7 @@ namespace Kiota.Builder.Tests.Writers.Php
 
             var result = tw.ToString();
             Assert.Contains("@var EmailAddress|null $email", result);
-            Assert.Contains("private ?EmailAddress $email;", result);
+            Assert.Contains("private ?EmailAddress $email = null;", result);
         }
 
         [Fact]
@@ -60,11 +60,12 @@ namespace Kiota.Builder.Tests.Writers.Php
             {
                 Name = "message",
                 Access = AccessModifier.Public,
+                Description = "I can get your messages.",
                 Type = new CodeType()
                 {
                     Name = "MessageRequestBuilder"
                 },
-                PropertyKind = CodePropertyKind.RequestBuilder
+                Kind = CodePropertyKind.RequestBuilder
             };
             var cls = parentClass;
             cls.AddProperty(property);
@@ -82,12 +83,12 @@ namespace Kiota.Builder.Tests.Writers.Php
             {
                 Description = "Additional data dictionary",
                 Name = "additionalData",
-                PropertyKind = CodePropertyKind.AdditionalData,
+                Kind = CodePropertyKind.AdditionalData,
                 Access = AccessModifier.Private,
                 Type = new CodeType() {Name = "array", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array}
             };
             var currentClass = parentClass;
-            currentClass.ClassKind = CodeClassKind.Model;
+            currentClass.Kind = CodeClassKind.Model;
 
             currentClass.AddProperty(property);
             _refiner.Refine(root);
@@ -103,7 +104,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             var property = new CodeProperty()
             {
                 Name = "recipients",
-                PropertyKind = CodePropertyKind.Custom,
+                Kind = CodePropertyKind.Custom,
                 Access = AccessModifier.Private,
                 Type = new CodeType()
                 {
@@ -127,7 +128,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                 Name = "adapter",
                 Type = new CodeType() {Name = "requestAdapter", IsNullable = false},
                 Access = AccessModifier.Private,
-                PropertyKind = CodePropertyKind.RequestAdapter
+                Kind = CodePropertyKind.RequestAdapter
             };
             
             
@@ -135,7 +136,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             currentClass.AddProperty(new CodeProperty()
             {
                 Name = "pathSegment", 
-                PropertyKind = CodePropertyKind.PathParameters
+                Kind = CodePropertyKind.PathParameters
             });
             propertyWriter.WriteCodeElement(adapter, writer);
             var result = tw.ToString();

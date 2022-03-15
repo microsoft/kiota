@@ -24,6 +24,16 @@ public class GoConventionService : CommonLanguageConventionService
     {
         return $"{parameter.Name.ToFirstCharacterLowerCase()} {GetTypeString(parameter.Type, targetElement)}";
     }
+    private static readonly char dot = '.';
+    public string GetImportedStaticMethodName(CodeTypeBase code, CodeElement targetElement, string methodPrefix = "New", string methodSuffix = "", string trimEnd = "") {
+        var typeString = GetTypeString(code, targetElement, false, false)?.Split(dot);
+        var importSymbol = typeString == null || typeString.Length < 2 ? string.Empty : typeString.First() + dot;
+        var methodName = typeString.Last().ToFirstCharacterUpperCase();
+        if(!string.IsNullOrEmpty(trimEnd) && methodName.EndsWith(trimEnd, StringComparison.OrdinalIgnoreCase)) {
+            methodName = methodName[0..^trimEnd.Length];
+        }
+        return $"{importSymbol}{methodPrefix}{methodName}{methodSuffix}";
+    }
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true) =>
         GetTypeString(code, targetElement, includeCollectionInformation, true);
     public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation, bool addPointerSymbol)
@@ -37,6 +47,7 @@ public class GoConventionService : CommonLanguageConventionService
             var typeName = TranslateType(currentType, true);
             var nullableSymbol = addPointerSymbol && 
                                 currentType.IsNullable &&
+                                currentType.TypeDefinition is not CodeInterface &&
                                 currentType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None &&
                                 !IsScalarType(currentType.Name) ? "*"
                                 : string.Empty;
@@ -63,7 +74,9 @@ public class GoConventionService : CommonLanguageConventionService
             "float" => "float32",
             "integer" => "int32",
             "long" => "int64",
-            "double" or "decimal" => "float64",
+            "double" or "decimal" => "float64", //decimal should be float128
+            "byte" => "byte",
+            "sbyte" => "int8",
             "boolean" => "bool",
             "guid" when includeImportSymbol => "uuid.UUID",
             "guid" when !includeImportSymbol => "UUID",
@@ -81,7 +94,7 @@ public class GoConventionService : CommonLanguageConventionService
         return typeName.TrimCollectionAndPointerSymbols() switch {
             "void" or "string" or "float" or "integer" or "long" or "double" or "boolean" or "guid" or "DateTimeOffset"
             or "bool" or "int32" or "int64" or "float32" or "float64" or "UUID" or "Time" or "decimal" or "TimeOnly"
-            or "DateOnly" or "ISODuration" => true,
+            or "DateOnly" or "ISODuration" or "uint8" or "byte" => true,
             _ => false,
         };
     }
@@ -97,18 +110,19 @@ public class GoConventionService : CommonLanguageConventionService
         if(currentBaseType == null || IsPrimitiveType(currentBaseType.Name)) return string.Empty;
         var targetNamespace = targetElement.GetImmediateParentOfType<CodeNamespace>();
         if(currentBaseType is CodeType currentType) {
-            if(currentType.TypeDefinition is CodeClass currentClassDefinition &&
-                currentClassDefinition.Parent is CodeNamespace classNS &&
-                targetNamespace != classNS)
-                    return classNS.GetNamespaceImportSymbol();
+            if(currentType.TypeDefinition is IProprietableBlock currentTypDefinition &&
+                currentTypDefinition.Parent is CodeNamespace typeDefNS &&
+                targetNamespace != typeDefNS)
+                    return typeDefNS.GetNamespaceImportSymbol();
             else if(currentType.TypeDefinition is CodeEnum currentEnumDefinition &&
                 currentEnumDefinition.Parent is CodeNamespace enumNS &&
                 targetNamespace != enumNS)
                     return enumNS.GetNamespaceImportSymbol();
             else if(currentType.TypeDefinition is null &&
-                    targetElement is CodeClass targetClass) {
-                        var symbolUsing = (targetClass.Parent is CodeClass parentClass ? parentClass : targetClass)
-                                                        .StartBlock
+                    targetElement is IProprietableBlock targetTypeDef) {
+                        var symbolUsing = ((targetTypeDef.Parent as CodeClass)?.StartBlock as BlockDeclaration ?? 
+                                            (targetTypeDef as CodeClass)?.StartBlock as BlockDeclaration ??
+                                            (targetTypeDef as CodeInterface)?.StartBlock as BlockDeclaration)
                                                         .Usings
                                                         .FirstOrDefault(x => currentBaseType.Name.Equals(x.Name, StringComparison.OrdinalIgnoreCase));
                         return symbolUsing == null ? string.Empty : symbolUsing.Declaration.Name.GetNamespaceImportSymbol();

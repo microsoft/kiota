@@ -7,8 +7,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
@@ -25,6 +24,7 @@ import java.util.function.Consumer;
 
 import com.microsoft.kiota.serialization.ParseNode;
 import com.microsoft.kiota.serialization.Parsable;
+import com.microsoft.kiota.serialization.AdditionalDataHolder;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -55,6 +55,15 @@ public class JsonParseNode implements ParseNode {
     }
     public Boolean getBooleanValue() {
         return currentNode.getAsBoolean();
+    }
+    public Byte getByteValue() {
+        return currentNode.getAsByte();
+    }
+    public Short getShortValue() {
+        return currentNode.getAsShort();
+    }
+    public BigDecimal getBigDecimalValue() {
+        return currentNode.getAsBigDecimal();
     }
     public Integer getIntegerValue() {
         return currentNode.getAsInt();
@@ -109,6 +118,12 @@ public class JsonParseNode implements ParseNode {
                             }};
                             if(targetClass == Boolean.class) {
                                 return (T)itemNode.getBooleanValue();
+                            } else if(targetClass == Short.class) {
+                                return (T)itemNode.getShortValue();
+                            } else if(targetClass == Byte.class) {
+                                return (T)itemNode.getByteValue();
+                            } else if(targetClass == BigDecimal.class) {
+                                return (T)itemNode.getBigDecimalValue();
                             } else if(targetClass == String.class) {
                                 return (T)itemNode.getStringValue();
                             } else if(targetClass == Integer.class) {
@@ -136,8 +151,8 @@ public class JsonParseNode implements ParseNode {
             });
         } else throw new RuntimeException("invalid state expected to have an array node");
     }
-    public <T extends Parsable> List<T> getCollectionOfObjectValues(final Class<T> targetClass) {
-        Objects.requireNonNull(targetClass, "parameter targetClass cannot be null");
+    public <T extends Parsable> List<T> getCollectionOfObjectValues(@Nonnull final ParsableFactory<T> factory) {
+        Objects.requireNonNull(factory, "parameter factory cannot be null");
         if(currentNode.isJsonArray()) {
             final JsonArray array = currentNode.getAsJsonArray();
             final Iterator<JsonElement> sourceIterator = array.iterator();
@@ -159,7 +174,7 @@ public class JsonParseNode implements ParseNode {
                                 this.setOnBeforeAssignFieldValues(onBefore);
                                 this.setOnAfterAssignFieldValues(onAfter);
                             }};
-                            return itemNode.getObjectValue(targetClass);
+                            return itemNode.getObjectValue(factory);
                         }
                     };
                 }
@@ -198,16 +213,11 @@ public class JsonParseNode implements ParseNode {
             });
         } else throw new RuntimeException("invalid state expected to have an array node");
     }
-    public <T extends Parsable> T getObjectValue(final Class<T> targetClass) {
-        Objects.requireNonNull(targetClass, "parameter targetClass cannot be null");
-        try {
-            final Constructor<T> constructor = targetClass.getConstructor();
-            final T item = constructor.newInstance();
-            assignFieldValues(item, item.getFieldDeserializers());
-            return item;
-        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException ex) {
-            throw new RuntimeException("Error during deserialization", ex);
-        }
+    public <T extends Parsable> T getObjectValue(@Nonnull final ParsableFactory<T> factory) {
+        Objects.requireNonNull(factory, "parameter factory cannot be null");
+        final T item = factory.Create(this);
+        assignFieldValues(item, item.getFieldDeserializers());
+        return item;
     }
     @Nullable
     public <T extends Enum<T>> T getEnumValue(@Nonnull final Class<T> targetEnum) {
@@ -246,6 +256,10 @@ public class JsonParseNode implements ParseNode {
             if(this.onBeforeAssignFieldValues != null) {
                 this.onBeforeAssignFieldValues.accept(item);
             }
+            Map<String, Object> itemAdditionalData = null;
+            if(item instanceof AdditionalDataHolder) {
+                itemAdditionalData = ((AdditionalDataHolder)item).getAdditionalData();
+            }
             for (final Map.Entry<String, JsonElement> fieldEntry : currentNode.getAsJsonObject().entrySet()) {
                 final String fieldKey = fieldEntry.getKey();
                 final BiConsumer<? super T, ParseNode> fieldDeserializer = fieldDeserializers.get(fieldKey);
@@ -260,8 +274,8 @@ public class JsonParseNode implements ParseNode {
                         this.setOnAfterAssignFieldValues(onAfter);
                     }});
                 }
-                else
-                    item.getAdditionalData().put(fieldKey, this.tryGetAnything(fieldValue));
+                else if (itemAdditionalData != null)
+                    itemAdditionalData.put(fieldKey, this.tryGetAnything(fieldValue));
             }
             if(this.onAfterAssignFieldValues != null) {
                 this.onAfterAssignFieldValues.accept(item);

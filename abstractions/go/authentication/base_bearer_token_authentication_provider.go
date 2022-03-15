@@ -20,7 +20,10 @@ func NewBaseBearerTokenAuthenticationProvider(accessTokenProvider AccessTokenPro
 }
 
 // AuthenticateRequest authenticates the provided RequestInformation instance using the provided authorization token callback.
-func (provider *BaseBearerTokenAuthenticationProvider) AuthenticateRequest(request abs.RequestInformation) error {
+func (provider *BaseBearerTokenAuthenticationProvider) AuthenticateRequest(request *abs.RequestInformation) error {
+	if request == nil {
+		return errors.New("request is nil")
+	}
 	if request.Headers == nil {
 		request.Headers = make(map[string]string)
 	}

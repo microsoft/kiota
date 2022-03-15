@@ -13,6 +13,7 @@ use Microsoft\Kiota\Abstractions\Types\Byte;
 use Microsoft\Kiota\Abstractions\Types\Date;
 use Microsoft\Kiota\Abstractions\Types\Time;
 use Psr\Http\Message\StreamInterface;
+use RuntimeException;
 
 /**
  * @method onBeforeObjectSerialization(?Parsable $value);
@@ -42,59 +43,64 @@ class JsonSerializationWriter implements SerializationWriter
 
     /**
      * @inheritDoc
-     * @throws \JsonException
      */
     public function writeStringValue(?string $key, ?string $value): void {
-        if (!empty($key)) {
-            $this->writePropertyName($key);
+
+        $propertyValue = $value !== null ? '"'.addcslashes($value, "\\\r\n\"").'"' : '';
+        if ($value !== null) {
+            if (!empty($key)) {
+                $this->writePropertyName($key);
+            }
+            $this->writePropertyValue($key, $propertyValue);
         }
-        $propertyValue = $value !== null ? '"'.addcslashes($value, "\\\r\n\"").'"' : 'null';
-        $this->writePropertyValue($key, $propertyValue);
     }
 
     /**
      * @inheritDoc
      */
     public function writeBooleanValue(?string $key, ?bool $value): void {
-        if (!empty($key)) {
-            $this->writePropertyName($key);
+        if ($value !== null) {
+            if (!empty($key)) {
+                $this->writePropertyName($key);
+            }
+            $options = ['false', 'true'];
+            $this->writePropertyValue($key, $options[$value]);
         }
-        $valS = ['false', 'true'];
-        $vV= $value === null ? 'null' : $valS[$value];
-        $this->writePropertyValue($key, $vV);
     }
 
     /**
      * @inheritDoc
      */
     public function writeFloatValue(?string $key, ?float $value): void {
-        if (!empty($key)) {
-            $this->writePropertyName($key);
+        if ($value !== null) {
+            if (!empty($key)) {
+                $this->writePropertyName($key);
+            }
+            $this->writePropertyValue($key, $value);
         }
-        $this->writePropertyValue($key, $value);
     }
 
     /**
      * @inheritDoc
      */
     public function writeIntegerValue(?string $key, ?int $value): void {
-        if (!empty($key)) {
-            $this->writePropertyName($key);
+        if ($value !== null) {
+            if (!empty($key)) {
+                $this->writePropertyName($key);
+            }
+            $this->writePropertyValue($key, $value);
         }
-        $this->writePropertyValue($key, $value);
     }
 
     /**
      * @inheritDoc
      */
     public function writeDateTimeValue(?string $key, ?DateTime $value): void {
-        if (!empty($key)) {
-            $this->writePropertyName($key);
-        }
         if ($value !== null) {
+            if (!empty($key)) {
+                $this->writePropertyName($key);
+            }
             $this->writePropertyValue($key, "\"{$value->format(DateTimeInterface::RFC3339)}Z\"");
-        } else{
-            $this->writePropertyValue($key, 'null');
         }
     }
 
@@ -104,14 +110,21 @@ class JsonSerializationWriter implements SerializationWriter
      * @return void
      */
     public function writeDateValue(?string $key, ?Date $value): void {
-        if (!empty($key)) {
-            $this->writePropertyName($key);
-        }
         if ($value !== null) {
+            if (!empty($key)) {
+                $this->writePropertyName($key);
+            }
             $valueString = (string)$value;
             $this->writePropertyValue($key, "\"{$valueString}\"");
-        } else {
-            $this->writePropertyValue($key, 'null');
+        }
+    }
+
+    public function writeBinaryContent(?string $key, ?StreamInterface $value): void {
+        if ($value !== null) {
+            if (!empty($key)) {
+                $this->writePropertyName($key);
+            }
+            $this->writePropertyValue($key, "\"{$value->getContents()}\"");
         }
     }
 
@@ -119,10 +132,10 @@ class JsonSerializationWriter implements SerializationWriter
      * @inheritDoc
      */
     public function writeCollectionOfObjectValues(?string $key, ?array $values): void {
-        if($key !== null){
-            $this->writePropertyName($key);
-        }
         if ($values !== null) {
+            if($key !== null){
+                $this->writePropertyName($key);
+            }
             $this->writer [] = '[';
             foreach ($values as $v) {
                 $this->writeObjectValue(null, $v);
@@ -135,8 +148,6 @@ class JsonSerializationWriter implements SerializationWriter
             if ($key !== null) {
                 $this->writer []= self::PROPERTY_SEPARATOR;
             }
-        } else {
-            $this->writePropertyValue($key, 'null');
         }
     }
 
@@ -144,12 +155,10 @@ class JsonSerializationWriter implements SerializationWriter
      * @inheritDoc
      */
     public function writeObjectValue(?string $key, $value): void {
-        if(!empty($key)) {
-            $this->writePropertyName($key);
-        }
-        if ($value === null) {
-            $this->writer []= 'null';
-        } else {
+        if ($value !== null) {
+            if(!empty($key)) {
+                $this->writePropertyName($key);
+            }
             if ($this->onBeforeObjectSerialization !== null) {
                 $this->onBeforeObjectSerialization($value);
             }
@@ -166,7 +175,7 @@ class JsonSerializationWriter implements SerializationWriter
             }
             $this->writer [] = '}';
         }
-        if ($key !== null) {
+        if ($key !== null && $value !== null) {
             $this->writer [] = self::PROPERTY_SEPARATOR;
         }
     }
@@ -185,17 +194,15 @@ class JsonSerializationWriter implements SerializationWriter
      * @inheritDoc
      */
     public function writeEnumSetValue(?string $key, ?array $values): void {
-        if (!empty($key)) {
-            $this->writePropertyName($key);
-        }
         if ($values !== null) {
+            if (!empty($key)) {
+                $this->writePropertyName($key);
+            }
             $valS = [];
             foreach ($values as $value){
                 $valS []= $value->value();
             }
             $this->writeStringValue($key, implode(',', $valS));
-        } else {
-            $this->writePropertyValue($key, 'null');
         }
     }
 
@@ -203,13 +210,11 @@ class JsonSerializationWriter implements SerializationWriter
      * @inheritDoc
      */
     public function writeEnumValue(?string $key, ?Enum $value): void {
-        if (!empty($key)) {
-            $this->writePropertyName($key);
-        }
         if ($value !== null) {
+            if (!empty($key)) {
+                $this->writePropertyName($key);
+            }
             $this->writePropertyValue($key, "\"{$value->value()}\"");
-        } else {
-            $this->writePropertyValue($key, 'null');
         }
     }
 
@@ -280,7 +285,6 @@ class JsonSerializationWriter implements SerializationWriter
     /**
      * @param string|null $key
      * @param mixed $value
-     * @throws \JsonException
      */
     public function writeAnyValue(?string $key, $value): void{
         $type = get_debug_type($value);
@@ -329,7 +333,7 @@ class JsonSerializationWriter implements SerializationWriter
                     if (is_subclass_of($value[0], Parsable::class)) {
                         $this->writeCollectionOfObjectValues($key, $value);
                     } else{
-                        $this->writeCollectionOfNonParsableObjectValues($key, $value);
+                        $this->writeCollectionOfPrimitiveValues($key, $value);
                     }
                 }
                 break;
@@ -340,6 +344,10 @@ class JsonSerializationWriter implements SerializationWriter
                     $this->writeEnumValue($key, $value);
                 } else if(is_subclass_of($type, DateTimeInterface::class)){
                     $this->writeDateTimeValue($key, $value);
+                } else if(is_a($value, StreamInterface::class) || is_subclass_of($type, StreamInterface::class)) {
+                    $this->writeStringValue($key, $value->getContents());
+                } else {
+                   throw new RuntimeException("Could not serialize the object of type {$type}");
                 }
                 break;
         }
@@ -347,23 +355,25 @@ class JsonSerializationWriter implements SerializationWriter
 
     /**
      * @param string|null $key
-     * @param mixed $value
+     * @param mixed|null $value
      */
     public function writeNonParsableObjectValue(?string $key, $value): void{
-        if(!empty($key)) {
-            $this->writePropertyName($key);
-        }
-        $this->writer []= '{';
-        $value = (array)$value;
-        foreach ($value as $kKey => $kVal) {
-            $this->writeAnyValue($kKey, $kVal);
-        }
-        if (count($value) > 0) {
-            array_pop($this->writer);
-        }
-        $this->writer []= '}';
-        if ($key !== null) {
-            $this->writer [] = self::PROPERTY_SEPARATOR;
+        if ($value !== null) {
+            if(!empty($key)) {
+                $this->writePropertyName($key);
+            }
+            $this->writer [] = '{';
+            $value = (array)$value;
+            foreach ($value as $kKey => $kVal) {
+                $this->writeAnyValue($kKey, $kVal);
+            }
+            if (count($value) > 0) {
+                array_pop($this->writer);
+            }
+            $this->writer [] = '}';
+            if ($key !== null) {
+                $this->writer [] = self::PROPERTY_SEPARATOR;
+            }
         }
     }
 
@@ -385,21 +395,24 @@ class JsonSerializationWriter implements SerializationWriter
      * @param array<mixed> $values
      * @return void
      */
-    public function writeCollectionOfNonParsableObjectValues(?string $key, array $values): void {
-        if (!empty($key)) {
-            $this->writePropertyName($key);
-        }
-        $this->writer []= '[';
-        foreach ($values as $value){
-            $this->writeAnyValue(null, $value);
-            $this->writer [] = self::PROPERTY_SEPARATOR;
-        }
-        if (count($values) > 0){
-            array_pop($this->writer);
-        }
-        $this->writer []= ']';
-        if ($key !== null) {
-            $this->writer [] = self::PROPERTY_SEPARATOR;
+    public function writeCollectionOfPrimitiveValues(?string $key, ?array $values): void
+    {
+        if ($values !== null) {
+            if (!empty($key)) {
+                $this->writePropertyName($key);
+            }
+            $this->writer [] = '[';
+            foreach ($values as $value) {
+                $this->writeAnyValue(null, $value);
+                $this->writer [] = self::PROPERTY_SEPARATOR;
+            }
+            if (count($values) > 0) {
+                array_pop($this->writer);
+            }
+            $this->writer [] = ']';
+            if ($key !== null) {
+                $this->writer [] = self::PROPERTY_SEPARATOR;
+            }
         }
     }
 
@@ -407,36 +420,40 @@ class JsonSerializationWriter implements SerializationWriter
      * @inheritDoc
      */
     public function writeTimeValue(?string $key, ?Time $value): void {
-        if (!empty($key)) {
-            $this->writePropertyName($key);
-        }
 
-        $val = $value !== null ? "\"{$value}\"" : 'null';
-        $this->writePropertyValue($key, $val);
+
+        if ($value !== null) {
+            if (!empty($key)) {
+                $this->writePropertyName($key);
+            }
+            $val = "\"{$value}\"";
+            $this->writePropertyValue($key, $val);
+        }
     }
 
     public function writeDateIntervalValue(?string $key, ?DateInterval $value): void {
-        if (!empty($key)) {
-            $this->writePropertyName($key);
-        }
-
-        $res = null;
         if ($value !== null){
+            if (!empty($key)) {
+                $this->writePropertyName($key);
+            }
             $res = "P{$value->y}Y{$value->y}M{$value->d}DT{$value->h}H{$value->i}M{$value->s}S";
+            $val = "\"{$res}\"" ;
+            $this->writePropertyValue($key, $val);
         }
-        $val = $res !== null ? "\"{$res}\"" : 'null';
-        $this->writePropertyValue($key, $val);
     }
 
     /**
      * @inheritDoc
      */
     public function writeByteValue(?string $key, ?Byte $value): void {
-        if (!empty($key)) {
-            $this->writePropertyName($key);
-        }
 
-        $val = $value !== null ? (int)(string)($value) : 'null';
-        $this->writePropertyValue($key, $val);
+
+        if ($value !== null) {
+            if (!empty($key)) {
+                $this->writePropertyName($key);
+            }
+            $val = (int)(string)($value);
+            $this->writePropertyValue($key, $val);
+        }
     }
 }

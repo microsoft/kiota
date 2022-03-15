@@ -7,3 +7,4 @@ Your project will need a reference to the abstraction package to build and run, 
 - [Go](./do/nethttp): relies on [NetHttp](https://pkg.go.dev/net/http).
 - [Java](./java/okhttp) : relies on [OkHttp](https://square.github.io/okhttp/).
 - [TypeScript](./typescript/fetch) : relies on [cross-fetch](https://www.npmjs.com/package/cross-fetch).
+- [PHP](./php/guzzle) : relies on [Guzzle](http://guzzlephp.org/)

@@ -7,7 +7,7 @@ namespace Kiota.Builder
     /// <summary>
     /// 
     /// </summary>
-    public class CodeNamespace : CodeBlock
+    public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
     {
         private CodeNamespace():base() {}
         public static CodeNamespace InitRootNamespace() {
@@ -23,7 +23,13 @@ namespace Kiota.Builder
                 StartBlock.Name = name;
             }
         }
-
+        public bool IsParentOf(CodeNamespace childNamespace) {
+            if(childNamespace == null)
+                throw new ArgumentNullException(nameof(childNamespace));
+            if(this == childNamespace)
+                return false;
+            return childNamespace.Name.StartsWith(Name + ".", StringComparison.OrdinalIgnoreCase);
+        }
         public IEnumerable<CodeClass> AddClass(params CodeClass[] codeClasses)
         {
             if(codeClasses == null || codeClasses.Any( x=> x == null))
@@ -104,6 +110,23 @@ namespace Kiota.Builder
                 if (Parent is CodeNamespace n) return n.Depth + 1;
                 else return 0;
             }
+        }
+
+        public IEnumerable<CodeFunction> AddFunction(params CodeFunction[] globalFunctions)
+        {
+            if(globalFunctions == null || globalFunctions.Any( x=> x == null))
+                throw new ArgumentNullException(nameof(globalFunctions));
+            if(!globalFunctions.Any())
+                throw new ArgumentOutOfRangeException(nameof(globalFunctions));
+            return AddRange(globalFunctions);
+        }
+        public IEnumerable<CodeInterface> AddInterface(params CodeInterface[] interfaces)
+        {
+            if(interfaces == null || interfaces.Any( x=> x == null))
+                throw new ArgumentNullException(nameof(interfaces));
+            if(!interfaces.Any())
+                throw new ArgumentOutOfRangeException(nameof(interfaces));
+            return AddRange(interfaces);
         }
     }
 }

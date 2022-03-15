@@ -151,7 +151,7 @@ class ParseNode(ABC):
         pass
 
     @abstractmethod
-    def get_object_value(self) -> U:
+    def get_object_value(self, class_type: Callable[[], U]) -> U:
         """Gets the model object value of the node
 
         Returns:

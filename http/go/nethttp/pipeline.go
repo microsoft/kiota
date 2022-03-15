@@ -1,6 +1,8 @@
 package nethttplibrary
 
-import nethttp "net/http"
+import (
+	nethttp "net/http"
+)
 
 // Pipeline contract for middleware infrastructure
 type Pipeline interface {
@@ -48,6 +50,7 @@ func (transport *customTransport) RoundTrip(req *nethttp.Request) (*nethttp.Resp
 func GetDefaultTransport() nethttp.RoundTripper {
 	defaultTransport := nethttp.DefaultTransport.(*nethttp.Transport).Clone()
 	defaultTransport.ForceAttemptHTTP2 = true
+	defaultTransport.DisableCompression = false
 	return defaultTransport
 }
 
