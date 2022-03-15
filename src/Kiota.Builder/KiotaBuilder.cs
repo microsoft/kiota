@@ -559,14 +559,14 @@ public class KiotaBuilder
                 ("string", "date") => "DateOnly",
                 ("string", "date-time") => "DateTimeOffset",
                 ("string", _) => "string", // covers commonmark and html
+                ("number", "double" or "float" or "decimal") => format.ToLowerInvariant(),
+                ("number" or "integer", "int8") => "sbyte",
+                ("number" or "integer", "uint8") => "byte",
+                ("number" or "integer", "int64") => "int64",
                 ("number", "int32") => "integer",
-                ("number", "int8") => "sbyte",
-                ("number", "uint8") => "byte",
-                ("number", "double" or "float" or "int64" or "decimal") => format.ToLowerInvariant(),
                 ("integer", _) => "integer",
                 ("boolean", _) => "boolean",
-                (_, "byte") => "binary",
-                (_, "binary") => "binary",
+                (_, "byte" or "binary") => "binary",
                 (_, _) => string.Empty,
             };
             if(primitiveTypeName != string.Empty) {
