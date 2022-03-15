@@ -792,6 +792,7 @@ public class KiotaBuilder
     private static string GetReferenceIdFromOriginalSchema(OpenApiSchema schema, OpenApiSchema parentSchema) {
         var title = schema.Title;
         if(!string.IsNullOrEmpty(schema.Reference?.Id)) return schema.Reference.Id;
+        else if (string.IsNullOrEmpty(title)) return string.Empty;
         if(parentSchema.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false) return parentSchema.Reference.Id;
         if(parentSchema.Items?.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false) return parentSchema.Items.Reference.Id;
         return (parentSchema.
