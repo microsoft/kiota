@@ -822,6 +822,10 @@ public class KiotaBuilder
                 Name = className,
             });
         }
+        if(unionType.Types.Count() == 1 &&
+            schema.Nullable &&
+            unionType.Types.First().TypeDefinition != null)
+            return unionType.Types.First();// so we don't create unnecessary union types when anyOf was used only for nullable.
         return unionType;
     }
     private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement, string suffixForInlineSchema, OpenApiResponse response = default)
