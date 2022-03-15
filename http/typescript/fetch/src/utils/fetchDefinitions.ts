@@ -15,16 +15,6 @@ export type FetchRequestInfo = string;
  */
 export type FetchHeadersInit = Record<string, string>;
 
-interface FetchBody {
-	readonly body: ReadableStream<Uint8Array> | null;
-	readonly bodyUsed: boolean;
-	arrayBuffer(): Promise<ArrayBuffer>;
-	blob(): Promise<Blob>;
-	formData(): Promise<FormData>;
-	json(): Promise<any>;
-	text(): Promise<string>;
-}
-
 export type FetchHeaders = Headers & {
 	append?(name: string, value: string): void;
 	delete?(name: string): void;
@@ -50,19 +40,11 @@ export type FetchHeaders = Headers & {
 	raw?(): Record<string, string[]>;
 };
 
-export type FetchResponse = Response &
-	FetchBody & {
-		readonly headers: FetchHeaders;
-		readonly ok: boolean;
-		readonly redirected: boolean;
-		readonly status: number;
-		readonly statusText: string;
-		readonly type: unknown;
-		readonly url: string;
-		clone(): Response;
-	};
+export type FetchResponse = Omit<Response, "headers"> & {
+	headers: FetchHeaders;
+};
 
-export type FetchRequestInit = Omit<RequestInit, "body" | "headers" | "redirect" | "signal"> & {
+export type FetchRequestInit = Omit<RequestInit, "body" | "headers" | "redirect"> & {
 	/**
 	 * Request's body
 	 * Expected type in case of dom - ReadableStream | XMLHttpRequestBodyInit|null
@@ -70,63 +52,15 @@ export type FetchRequestInit = Omit<RequestInit, "body" | "headers" | "redirect"
 	 */
 	body?: unknown;
 	/**
-	 * A string indicating how the request will interact with the browser's cache to set request's cache.
-	 */
-	cache?: unknown;
-	/**
-	 * A string indicating whether credentials will be sent with the request always, never, or only when sent to a same-origin URL. Sets request's credentials.
-	 */
-	credentials?: unknown;
-	/**
 	 * A Headers object, an object literal, or an array of two-item arrays to set request's headers.
 	 */
 	headers?: FetchHeadersInit;
-	/**
-	 * A cryptographic hash of the resource to be fetched by request. Sets request's integrity.
-	 */
-	integrity?: string;
-	/**
-	 * A boolean to set request's keepalive.
-	 */
-	keepalive?: boolean;
 	/**
 	 * A string to set request's method.
 	 */
 	method?: string;
 	/**
-	 * A string to indicate whether the request will use CORS, or will be restricted to same-origin URLs. Sets request's mode.
-	 */
-	mode?: unknown;
-	/**
 	 * A string indicating whether request follows redirects, results in an error upon encountering a redirect, or returns the redirect (in an opaque fashion). Sets request's redirect.
 	 */
 	redirect?: unknown;
-	/**
-	 * A string whose value is a same-origin URL, "about:client", or the empty string, to set request's referrer.
-	 */
-	referrer?: string;
-	/**
-	 * A referrer policy to set request's referrerPolicy.
-	 */
-	referrerPolicy?: unknown;
-	/**
-	 * An AbortSignal to set request's signal.
-	 */
-	signal?: unknown;
-	/**
-	 * Can only be null. Used to disassociate request from any Window.
-	 */
-	window?: any;
-
-	//Node-Fetch
-	agent?: unknown;
-	compress?: boolean;
-	counter?: number;
-	follow?: number;
-	hostname?: string;
-	port?: number;
-	protocol?: string;
-	size?: number;
-	highWaterMark?: number;
-	insecureHTTPParser?: boolean;
 };

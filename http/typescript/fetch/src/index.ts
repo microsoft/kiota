@@ -10,13 +10,14 @@
 export * from "./fetchRequestAdapter";
 export * from "./httpClient";
 export * from "./middlewares/middleware";
-export * from "./middlewares/defaultFetchHandler";
 export * from "./middlewares/customFetchHandler";
 export * from "./middlewares/redirectHandler";
 export * from "./middlewares/retryHandler";
 export * from "./middlewares/options/redirectHandlerOptions";
 export * from "./middlewares/options/retryHandlerOptions";
-export * from "./middlewares/middlewareContext";
+export * from "./middlewares/options/telemetryHandlerOptions";
+export * from "./middlewares/telemetryHandler";
+
 export * from "./middlewares/middlewareFactory";
 export * from "./utils/headersUtil";
 export * from "./utils/fetchDefinitions";

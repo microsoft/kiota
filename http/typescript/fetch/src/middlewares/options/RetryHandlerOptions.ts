@@ -11,13 +11,13 @@
 
 import { RequestOption } from "@microsoft/kiota-abstractions";
 
-import { FetchRequestInit, FetchResponse } from "../../utils/fetchDefinitions";
+import { FetchResponse } from "../../utils/fetchDefinitions";
 
 /**
  * @type
  * A type declaration for shouldRetry callback
  */
-export type ShouldRetry = (delay: number, attempt: number, request: string, options: FetchRequestInit | undefined, response: FetchResponse) => boolean;
+export type ShouldRetry = (delay: number, attempt: number, request: string, options: RequestInit | undefined, response: FetchResponse) => boolean;
 
 export const RetryHandlerOptionKey = "RetryHandlerOptionKey";
 

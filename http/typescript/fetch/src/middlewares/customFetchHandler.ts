@@ -9,7 +9,6 @@
  * @module FetchHandler
  */
 
-import { FetchRequestInfo, FetchRequestInit, FetchResponse } from "../utils/fetchDefinitions";
 import { Middleware } from "./middleware";
 
 /**
@@ -25,7 +24,7 @@ export class CustomFetchHandler implements Middleware {
 	 */
 	next: Middleware;
 
-	constructor(private customFetch?: (input: FetchRequestInfo, init: FetchRequestInit) => Promise<FetchResponse>) {}
+	constructor(private customFetch?: (input: string, init: RequestInit) => Promise<Response>) {}
 
 	/**
 	 * @public
@@ -34,7 +33,7 @@ export class CustomFetchHandler implements Middleware {
 	 * @param {Context} context - The request context object
 	 * @returns A promise that resolves to nothing
 	 */
-	public async execute(url: string, requestInit: FetchRequestInit): Promise<FetchResponse> {
+	public async execute(url: string, requestInit: RequestInit): Promise<Response> {
 		return await this.customFetch(url, requestInit);
 	}
 }

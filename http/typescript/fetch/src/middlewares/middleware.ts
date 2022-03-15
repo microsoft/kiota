@@ -4,8 +4,7 @@
  * See License in the project root for license information.
  * -------------------------------------------------------------------------------------------
  */
-import {RequestOption} from "@microsoft/kiota-abstractions"
-import { FetchRequestInit, FetchResponse } from "../utils/fetchDefinitions";
+import {RequestOption} from "@microsoft/kiota-abstractions";
 // use import types
 /** Defines the contract for a middleware in the request execution pipeline. */
 export interface Middleware {
@@ -18,5 +17,5 @@ export interface Middleware {
 	 * @param url The URL of the request.
 	 * @return A promise that resolves to the response object.
 	 */
-	execute(url: string, requestInit: FetchRequestInit, requestOptions?: Record<string, RequestOption>): Promise<FetchResponse>;
+	execute(url: string, requestInit: RequestInit, requestOptions?: Record<string, RequestOption>): Promise<Response>;
 }

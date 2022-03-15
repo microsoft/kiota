@@ -9,11 +9,10 @@
  * @module RedirectHandler
  */
 
-import { HttpMethod } from "@microsoft/kiota-abstractions";
+import { type RequestOption, HttpMethod } from "@microsoft/kiota-abstractions";
 
 import { FetchRequestInit, FetchResponse } from "../utils/fetchDefinitions";
 import { Middleware } from "./middleware";
-import { MiddlewareContext } from "./middlewareContext";
 import { RedirectHandlerOptionKey, RedirectHandlerOptions } from "./options/redirectHandlerOptions";
 
 /**
@@ -139,17 +138,6 @@ export class RedirectHandler implements Middleware {
         return typeof requestAuthority !== "undefined" && typeof redirectAuthority !== "undefined" && requestAuthority !== redirectAuthority;
     }
 
-    /**
-     * @private
-     * @async
-     * To update a request url with the redirect url
-     * @param {string} redirectUrl - The redirect url value
-     * @param {Context} context - The context object value
-     * @returns Nothing
-     */
-    private updateRequestUrl(redirectUrl: string, context: MiddlewareContext) {
-        context.requestUrl = redirectUrl;
-    }
 
     /**
      * @private
@@ -161,7 +149,7 @@ export class RedirectHandler implements Middleware {
      * @returns A promise that resolves to nothing
      */
     private async executeWithRedirect(url: string, fetchRequestInit: FetchRequestInit, redirectCount: number, requestOptions?: Record<string, RequestOption>): Promise<FetchResponse> {
-        const response = await this.next.execute(url, fetchRequestInit, requestOptions);
+        const response = await this.next.execute(url, fetchRequestInit as RequestInit, requestOptions);
         if (redirectCount < this.options.maxRedirects && this.isRedirect(response) && this.hasLocationHeader(response) && this.options.shouldRedirect(response)) {
             ++redirectCount;
             if (response.status === RedirectHandler.STATUS_CODE_SEE_OTHER) {
@@ -187,13 +175,13 @@ export class RedirectHandler implements Middleware {
      * @param {Context} context - The context object of the request
      * @returns A Promise that resolves to nothing
      */
-    public execute(url: string, requestInit: FetchRequestInit, requestOptions?: Record<string, RequestOption>): Promise<FetchResponse> {
+    public execute(url: string, requestInit: RequestInit, requestOptions?: Record<string, RequestOption>): Promise<FetchResponse> {
         const redirectCount = 0;
-        if (requestOptions && requestOptions[RedirectHandlerOptionKey]))
+        if (requestOptions && requestOptions[RedirectHandlerOptionKey])
         {
             this.options = requestOptions[RedirectHandlerOptionKey] as RedirectHandlerOptions;
         }
-        requestInit.redirect = RedirectHandler.MANUAL_REDIRECT;
-        return this.executeWithRedirect(url, requestInit, redirectCount, requestOptions);
+        (requestInit as FetchRequestInit).redirect = RedirectHandler.MANUAL_REDIRECT;
+        return this.executeWithRedirect(url, requestInit as FetchRequestInit, redirectCount, requestOptions);
     }
 }

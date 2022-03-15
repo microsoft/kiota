@@ -9,12 +9,11 @@
  * @module RetryHandler
  */
 
-import { HttpMethod } from "@microsoft/kiota-abstractions";
+import { HttpMethod, RequestOption } from "@microsoft/kiota-abstractions";
 
-import { FetchRequestInfo, FetchRequestInit, FetchResponse } from "../utils/fetchDefinitions";
+import { FetchRequestInit, FetchResponse } from "../utils/fetchDefinitions";
 import { getRequestHeader, setRequestHeader } from "../utils/headersUtil";
 import { Middleware } from "./middleware";
-import { MiddlewareContext } from "./middlewareContext";
 import { RetryHandlerOptionKey, RetryHandlerOptions } from "./options/retryHandlerOptions";
 
 /**
@@ -77,15 +76,14 @@ export class RetryHandler implements Middleware {
 	/**
 	 * @private
 	 * To check whether the payload is buffered or not
-	 * @param {RequestInfo} request - The url string or the request object value
 	 * @param {RequestInit} options - The options of a request
 	 * @returns Whether the payload is buffered or not
 	 */
-	private isBuffered(request: FetchRequestInfo, options: FetchRequestInit | undefined): boolean {
+	private isBuffered(options: FetchRequestInit | undefined): boolean {
 		const method = options.method;
 		const isPutPatchOrPost: boolean = method === HttpMethod.PUT || method === HttpMethod.PATCH || method === HttpMethod.POST;
 		if (isPutPatchOrPost) {
-			const isStream = getRequestHeader(options, "content-type") === "application/octet-stream";
+			const isStream = getRequestHeader(options as RequestInit, "content-type") === "application/octet-stream";
 			if (isStream) {
 				return false;
 			}
@@ -151,14 +149,14 @@ export class RetryHandler implements Middleware {
 	 * @param {RetryHandlerOptions} options - The retry middleware options instance
 	 * @returns A Promise that resolves to nothing
 	 */
-	private async executeWithRetry(url: string, requestInit: FetchRequestInit, retryAttempts:number, requestOptions?: Record<string, RequestOption>): Promise<FetchResponse> {
-		const response = await this.next.execute(url, requestInit, requestOptions);
-		if (retryAttempts < this.options.maxRetries && this.isRetry(response) && this.isBuffered(url, requestInit) && this.options.shouldRetry(this.options.delay, retryAttempts, url, requestInit as FetchRequestInit, response)) {
+	private async executeWithRetry(url: string, fetchRequestInit: FetchRequestInit, retryAttempts:number, requestOptions?: Record<string, RequestOption>): Promise<FetchResponse> {
+		const response = await this.next.execute(url, fetchRequestInit as RequestInit, requestOptions);
+		if (retryAttempts < this.options.maxRetries && this.isRetry(response) && this.isBuffered(fetchRequestInit) && this.options.shouldRetry(this.options.delay, retryAttempts, url, fetchRequestInit as RequestInit, response)) {
 			++retryAttempts;
-			setRequestHeader(requestInit, RetryHandler.RETRY_ATTEMPT_HEADER, retryAttempts.toString());
+			setRequestHeader(fetchRequestInit as RequestInit, RetryHandler.RETRY_ATTEMPT_HEADER, retryAttempts.toString());
 			const delay = this.getDelay(response, retryAttempts, this.options.delay);
 			await this.sleep(delay);
-			return await this.executeWithRetry(url, requestInit, retryAttempts, requestOptions);
+			return await this.executeWithRetry(url, fetchRequestInit, retryAttempts, requestOptions);
 		} else {
 			return response;
 		}
@@ -171,12 +169,12 @@ export class RetryHandler implements Middleware {
 	 * @param {Context} context - The context object of the request
 	 * @returns A Promise that resolves to nothing
 	 */
-	public execute(url: string, requestInit: FetchRequestInit, requestOptions?: Record<string, RequestOption>): Promise<FetchResponse> {
+	public execute(url: string, requestInit: RequestInit, requestOptions?: Record<string, RequestOption>): Promise<Response> {
 		const retryAttempts = 0;
 
         if((requestOptions && requestOptions[RetryHandlerOptionKey])){
             this.options = requestOptions[RetryHandlerOptionKey] as RetryHandlerOptions;
         }
-	    return this.executeWithRetry(url, requestInit, retryAttempts, requestOptions);
+	    return this.executeWithRetry(url, requestInit as FetchRequestInit, retryAttempts, requestOptions);
 	}
 }
