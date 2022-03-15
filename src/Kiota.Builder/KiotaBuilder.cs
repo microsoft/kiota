@@ -901,7 +901,9 @@ public class KiotaBuilder
         var newClass = currentNamespace.AddClass(new CodeClass {
             Name = declarationName,
             Kind = CodeClassKind.Model,
-            Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel)
+            Description = schema.Description ?? (string.IsNullOrEmpty(schema.Reference?.Id) ? 
+                                                    currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel) :
+                                                    null),// if it's a referenced component, we shouldn't use the path item description as it makes it indeterministic
         }).First();
         if(inheritsFrom != null)
             newClass.StartBlock.Inherits = new CodeType { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
