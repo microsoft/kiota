@@ -759,8 +759,8 @@ public class KiotaBuilder
             referenceId = referenceId[config.ClientClassName.Length..];
         referenceId = referenceId.Trim(nsNameSeparator);
         var lastDotIndex = referenceId.LastIndexOf(nsNameSeparator);
-        var namespaceSuffix = lastDotIndex != -1 ? referenceId[..lastDotIndex] : referenceId;
-        return $"{modelsNamespace.Name}.{namespaceSuffix}";
+        var namespaceSuffix = lastDotIndex != -1 ? $".{referenceId[..lastDotIndex]}" : string.Empty;
+        return $"{modelsNamespace.Name}{namespaceSuffix}";
     }
     private CodeType CreateModelDeclarationAndType(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeNamespace codeNamespace, string classNameSuffix = "", OpenApiResponse response = default) {
         var className = currentNode.GetClassName(operation: operation, suffix: classNameSuffix, response: response, schema: schema);
