@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Kiota.Serialization.Text", "src\Microsoft.Kiota.Serialization.Text.csproj", "{29CEB2E3-93C5-4AFF-BAE1-DFF7BADF9A4D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Kiota.Serialization.Text.Tests", "Microsoft.Kiota.Serialization.Text.Tests\Microsoft.Kiota.Serialization.Text.Tests.csproj", "{53A7CB1A-280A-4BEB-B064-91065436CD4C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{29CEB2E3-93C5-4AFF-BAE1-DFF7BADF9A4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29CEB2E3-93C5-4AFF-BAE1-DFF7BADF9A4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29CEB2E3-93C5-4AFF-BAE1-DFF7BADF9A4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29CEB2E3-93C5-4AFF-BAE1-DFF7BADF9A4D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{53A7CB1A-280A-4BEB-B064-91065436CD4C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53A7CB1A-280A-4BEB-B064-91065436CD4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53A7CB1A-280A-4BEB-B064-91065436CD4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53A7CB1A-280A-4BEB-B064-91065436CD4C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
