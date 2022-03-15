@@ -551,7 +551,7 @@ namespace Kiota.Builder.Writers.Go {
                 propertyTypeName = "Object";
             else if(isEnum)
                 propertyTypeName = "String";
-            else if (propertyTypeName.Equals("[]byte", StringComparison.OrdinalIgnoreCase))
+            else if (conventions.StreamTypeName.Equals(propertyTypeName, StringComparison.OrdinalIgnoreCase))
                 propertyTypeName = "ByteArray";
             writer.WriteLine($"{errorPrefix}Write{collectionPrefix}{propertyTypeName}Value{collectionSuffix}({serializationKey}, {reference})");
             WriteReturnError(writer);
