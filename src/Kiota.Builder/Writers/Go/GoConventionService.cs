@@ -94,7 +94,8 @@ public class GoConventionService : CommonLanguageConventionService
         return typeName.TrimCollectionAndPointerSymbols() switch {
             "void" or "string" or "float" or "integer" or "long" or "double" or "boolean" or "guid" or "DateTimeOffset"
             or "bool" or "int32" or "int64" or "float32" or "float64" or "UUID" or "Time" or "decimal" or "TimeOnly"
-            or "DateOnly" or "ISODuration" or "uint8" or "byte" => true,
+            or "DateOnly" or "ISODuration" or "uint8" => true,
+            "byte" when !typeName.StartsWith("[]") => true,
             _ => false,
         };
     }
