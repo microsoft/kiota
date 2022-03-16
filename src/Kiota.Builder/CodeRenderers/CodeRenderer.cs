@@ -56,7 +56,7 @@ namespace Kiota.Builder.CodeRenderers
             {
                 if (ShouldRenderNamespaceFile(codeNamespace))
                 {
-                    await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(root, codeNamespace));
+                    await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(root, codeNamespace), cancellationToken);
                 }
             }
         }

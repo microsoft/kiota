@@ -25,7 +25,7 @@ namespace Kiota.Builder.Writers
         /// <param name="codeUsing">The using to import into the current namespace context</param>
         /// <param name="currentNamespace">The current namespace</param>
         /// <returns>The import symbol, it's alias if any and the relative import path</returns>
-        public (string, string, string) GetRelativeImportPathForUsing(CodeUsing codeUsing, CodeNamespace currentNamespace)
+        public virtual (string, string, string) GetRelativeImportPathForUsing(CodeUsing codeUsing, CodeNamespace currentNamespace)
         {
             if (codeUsing?.IsExternal ?? true)
                 return (string.Empty, string.Empty, string.Empty);//it's an external import, add nothing
@@ -54,7 +54,7 @@ namespace Kiota.Builder.Writers
                 return (importSymbol, codeUsing.Alias, importPath);
             }
         }
-        private string GetImportRelativePathFromNamespaces(CodeNamespace currentNamespace, CodeNamespace importNamespace)
+        protected string GetImportRelativePathFromNamespaces(CodeNamespace currentNamespace, CodeNamespace importNamespace)
         {
             if (currentNamespace == null)
                 throw new ArgumentNullException(nameof(currentNamespace));
@@ -65,7 +65,7 @@ namespace Kiota.Builder.Writers
             else
                 return GetRelativeImportPathFromSegments(currentNamespace, importNamespace);
         }
-        private string GetRelativeImportPathFromSegments(CodeNamespace currentNamespace, CodeNamespace importNamespace)
+        protected string GetRelativeImportPathFromSegments(CodeNamespace currentNamespace, CodeNamespace importNamespace)
         {
             var currentNamespaceSegments = currentNamespace
                                     .Name[prefixLength..]
@@ -96,7 +96,7 @@ namespace Kiota.Builder.Writers
                         GetRemainingImportPath(importNamespaceSegments.Skip(deeperMostSegmentIndex));
             }
         }
-        private static string GetRemainingImportPath(IEnumerable<string> remainingSegments)
+        protected static string GetRemainingImportPath(IEnumerable<string> remainingSegments)
         {
             if (remainingSegments.Any())
                 return remainingSegments.Select(x => x.ToFirstCharacterLowerCase()).Aggregate((x, y) => $"{x}/{y}") + '/';

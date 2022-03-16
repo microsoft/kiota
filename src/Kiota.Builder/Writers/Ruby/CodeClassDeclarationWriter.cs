@@ -1,13 +1,13 @@
-using System;
+﻿using System;
 using System.Linq;
 using Kiota.Builder.Extensions;
 
 namespace  Kiota.Builder.Writers.Ruby {
     public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, RubyConventionService>
     {
-        private readonly RubyRelativeImportManager relativeImportManager;
+        private readonly RelativeImportManager relativeImportManager;
         public CodeClassDeclarationWriter(RubyConventionService conventionService, string clientNamespaceName) : base(conventionService){
-            relativeImportManager = new RubyRelativeImportManager(clientNamespaceName, '.');
+            relativeImportManager = new RelativeImportManager(clientNamespaceName, '.');
         }
         
         

@@ -240,7 +240,7 @@ public class KiotaBuilder
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         var codeRenderer = CodeRenderer.GetCodeRender(config);
-        await codeRenderer.RenderCodeNamespaceToFilePerClassAsync(languageWriter, generatedCode);
+        await codeRenderer.RenderCodeNamespaceToFilePerClassAsync(languageWriter, generatedCode, cancellationToken);
         stopwatch.Stop();
         logger.LogTrace("{timestamp}ms: Files written to {path}", stopwatch.ElapsedMilliseconds, config.OutputPath);
     }
