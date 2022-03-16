@@ -6,7 +6,7 @@ using Microsoft.Kiota.Abstractions.Serialization;
 
 namespace Microsoft.Kiota.Serialization.Text;
 /// <summary>
-/// The <see cref="IParseNode"/> implementation for the json content type
+/// The <see cref="IParseNode"/> implementation for the text/plain content type
 /// </summary>
 public class TextParseNode : IParseNode
 {
