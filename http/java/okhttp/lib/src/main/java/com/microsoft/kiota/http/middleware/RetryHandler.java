@@ -1,6 +1,15 @@
 package com.microsoft.kiota.http.middleware;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.TemporalAccessor;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 import java.util.Objects;
 
 import javax.annotation.Nullable;
@@ -127,7 +136,11 @@ public class RetryHandler implements Interceptor{
         String retryAfterHeader = response.header(RETRY_AFTER);
         double retryDelay = RetryHandlerOption.DEFAULT_DELAY * DELAY_MILLISECONDS;
         if(retryAfterHeader != null) {
-            retryDelay = Long.parseLong(retryAfterHeader) * DELAY_MILLISECONDS;
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH).withZone(ZoneId.of("GMT"));
+            String current = formatter.format((TemporalAccessor)Calendar.getInstance().getTime());
+            retryDelay = Long.parseLong(retryAfterHeader) * DELAY_MILLISECONDS;  
+
+            
         } else {
             retryDelay = (double)((Math.pow(2.0, (double)executionCount)-1)*0.5);
             retryDelay = (executionCount < 2 ? delay : retryDelay + delay) + (double)Math.random();
