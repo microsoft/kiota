@@ -410,12 +410,11 @@ namespace Microsoft.Kiota.Serialization.Json
             }
         }
 
-        /// <summary>
-        /// Cleanup/dispose the writer
-        /// </summary>
+        /// <inheritdoc />
         public void Dispose()
         {
             writer.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

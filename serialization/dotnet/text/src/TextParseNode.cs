@@ -10,6 +10,7 @@ namespace Microsoft.Kiota.Serialization.Text;
 /// </summary>
 public class TextParseNode : IParseNode
 {
+    internal const string NoStructuredDataMessage = "text does not support structured data";
     private readonly string Text;
     /// <summary>
     /// Initializes a new instance of the <see cref="TextParseNode"/> class.
@@ -30,11 +31,11 @@ public class TextParseNode : IParseNode
     /// <inheritdoc />
     public byte? GetByteValue() => byte.TryParse(Text, out var result) ? result : null;
     /// <inheritdoc />
-    public IParseNode GetChildNode(string identifier) => throw new InvalidOperationException("text does not support structured data");
+    public IParseNode GetChildNode(string identifier) => throw new InvalidOperationException(NoStructuredDataMessage);
     /// <inheritdoc />
-    public IEnumerable<T> GetCollectionOfObjectValues<T>(ParsableFactory<T> factory) where T : IParsable => throw new InvalidOperationException("text does not support structured data");
+    public IEnumerable<T> GetCollectionOfObjectValues<T>(ParsableFactory<T> factory) where T : IParsable => throw new InvalidOperationException(NoStructuredDataMessage);
     /// <inheritdoc />
-    public IEnumerable<T> GetCollectionOfPrimitiveValues<T>() => throw new InvalidOperationException("text does not support structured data");
+    public IEnumerable<T> GetCollectionOfPrimitiveValues<T>() => throw new InvalidOperationException(NoStructuredDataMessage);
     /// <inheritdoc />
     public DateTimeOffset? GetDateTimeOffsetValue() => DateTimeOffset.TryParse(Text, out var result) ? result : null;
     /// <inheritdoc />
@@ -52,7 +53,7 @@ public class TextParseNode : IParseNode
     /// <inheritdoc />
     public long? GetLongValue() => long.TryParse(Text, out var result) ? result : null;
     /// <inheritdoc />
-    public T GetObjectValue<T>(ParsableFactory<T> factory) where T : IParsable => throw new InvalidOperationException("text does not support structured data");
+    public T GetObjectValue<T>(ParsableFactory<T> factory) where T : IParsable => throw new InvalidOperationException(NoStructuredDataMessage);
     /// <inheritdoc />
     public sbyte? GetSbyteValue() => sbyte.TryParse(Text, out var result) ? result : null;
     /// <inheritdoc />
@@ -62,7 +63,7 @@ public class TextParseNode : IParseNode
     /// <inheritdoc />
     public Time? GetTimeValue() => DateTime.TryParse(Text, out var result) ? new Time(result) : null;
     /// <inheritdoc />
-    IEnumerable<T?> IParseNode.GetCollectionOfEnumValues<T>() => throw new InvalidOperationException("text does not support structured data");
+    IEnumerable<T?> IParseNode.GetCollectionOfEnumValues<T>() => throw new InvalidOperationException(NoStructuredDataMessage);
     /// <inheritdoc />
     T? IParseNode.GetEnumValue<T>() => Enum.TryParse<T>(Text, true, out var result) ? result : null;
 }
