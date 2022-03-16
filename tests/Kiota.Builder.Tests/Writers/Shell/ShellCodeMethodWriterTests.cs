@@ -222,6 +222,7 @@ public class ShellCodeMethodWriterTests : IDisposable
     public void WritesExecutableCommandForGetRequest() {
         
         method.Kind = CodeMethodKind.CommandBuilder;
+        method.Description = "Test description";
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Get;
         var stringType = new CodeType {
@@ -249,9 +250,12 @@ public class ShellCodeMethodWriterTests : IDisposable
         var result = tw.ToString();
 
         Assert.Contains("var command = new Command(\"user\");", result);
+        Assert.Contains("command.Description = \"Test description\";", result);
         Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
         Assert.Contains("qOption.IsRequired = false;", result);
+        Assert.Contains("var jsonNoIndentOption = new Option<bool>(\"--json-no-indent\", r => {", result);
         Assert.Contains("command.AddOption(qOption);", result);
+        Assert.Contains("command.AddOption(jsonNoIndentOption);", result);
         Assert.Contains("command.AddOption(outputOption);", result);
         Assert.Contains("command.SetHandler(async (object[] parameters) => {", result);
         Assert.Contains("var q = (string) parameters[0];", result);
@@ -259,34 +263,50 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("PathParameters.Add(\"p\", p);", result);
         Assert.Contains("var requestInfo = CreateGetRequestInformation", result);
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
+        Assert.Contains("response = await outputFilter?.FilterOutputAsync(response, query, cancellationToken)", result);
+        Assert.Contains("await formatter.WriteOutputAsync(response, formatterOptions, cancellationToken);", result);
         Assert.Contains("}, new CollectionBinding(qOption,", result);
         Assert.Contains("return command;", result);
     }
 
     [Fact]
-    public void WritesExecutableCommandForPostRequest() {
-        
+    public void WritesExecutableCommandForPostRequestWithModelBody()
+    {
+
         method.Kind = CodeMethodKind.CommandBuilder;
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Post;
-        var stringType = new CodeType {
+        var stringType = new CodeType
+        {
             Name = "string",
         };
-        var generatorMethod = new CodeMethod {
+        var bodyType = new CodeType
+        {
+            Name = "content",
+            TypeDefinition = new CodeClass
+            {
+                Name = "Content",
+                Kind = CodeClassKind.Model
+            },
+        };
+        var generatorMethod = new CodeMethod
+        {
             Kind = CodeMethodKind.RequestGenerator,
             Name = "CreatePostRequestInformation",
             HttpMethod = method.HttpMethod
         };
-        method.OriginalMethod = new CodeMethod {
+        method.OriginalMethod = new CodeMethod
+        {
             Kind = CodeMethodKind.RequestExecutor,
             HttpMethod = method.HttpMethod,
             ReturnType = stringType,
             Parent = method.Parent
         };
-        method.OriginalMethod.AddParameter(new CodeParameter{
+        method.OriginalMethod.AddParameter(new CodeParameter
+        {
             Name = "body",
             Kind = CodeParameterKind.RequestBody,
-            Type = stringType,
+            Type = bodyType,
         });
         var codeClass = method.Parent as CodeClass;
         codeClass.AddMethod(generatorMethod);
@@ -307,9 +327,179 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("command.AddOption(outputOption);", result);
         Assert.Contains("PathParameters.Clear();", result);
         Assert.Contains("PathParameters.Add(\"p\", p);", result);
+        Assert.Contains("using var stream = new MemoryStream(Encoding.UTF8.GetBytes(body));", result);
+        Assert.Contains("var model = parseNode.GetObjectValue<Content>(Content.CreateFromDiscriminatorValue);", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("return command;", result);
+    }
+
+    [Fact]
+    public void WritesExecutableCommandForPostRequestWithCollectionModel()
+    {
+
+        method.Kind = CodeMethodKind.CommandBuilder;
+        method.SimpleName = "User";
+        method.HttpMethod = HttpMethod.Post;
+        var stringType = new CodeType
+        {
+            Name = "string",
+        };
+        var bodyType = new CodeType
+        {
+            Name = "content",
+            TypeDefinition = new CodeClass
+            {
+                Name = "Content",
+                Kind = CodeClassKind.Model
+            },
+            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex
+        };
+        var generatorMethod = new CodeMethod
+        {
+            Kind = CodeMethodKind.RequestGenerator,
+            Name = "CreatePostRequestInformation",
+            HttpMethod = method.HttpMethod
+        };
+        method.OriginalMethod = new CodeMethod
+        {
+            Kind = CodeMethodKind.RequestExecutor,
+            HttpMethod = method.HttpMethod,
+            ReturnType = stringType,
+            Parent = method.Parent
+        };
+        method.OriginalMethod.AddParameter(new CodeParameter
+        {
+            Name = "body",
+            Kind = CodeParameterKind.RequestBody,
+            Type = bodyType,
+        });
+        var codeClass = method.Parent as CodeClass;
+        codeClass.AddMethod(generatorMethod);
+
+        AddRequestProperties();
+        AddPathAndQueryParameters(generatorMethod);
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("var command = new Command(\"user\");", result);
+        Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
+        Assert.Contains("qOption.IsRequired = false;", result);
+        Assert.Contains("command.AddOption(qOption);", result);
+        Assert.Contains("var bodyOption = new Option<string>(\"--body\")", result);
+        Assert.Contains("bodyOption.IsRequired = true;", result);
+        Assert.Contains("command.AddOption(bodyOption);", result);
+        Assert.Contains("command.AddOption(outputOption);", result);
+        Assert.Contains("PathParameters.Clear();", result);
+        Assert.Contains("PathParameters.Add(\"p\", p);", result);
+        Assert.Contains("using var stream = new MemoryStream(Encoding.UTF8.GetBytes(body));", result);
+        Assert.Contains("var model = parseNode.GetCollectionOfObjectValues<Content>(Content.CreateFromDiscriminatorValue);", result);
+        Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
+        Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
+        Assert.Contains("return command;", result);
+    }
+
+    [Fact]
+    public void WritesExecutableCommandForPostRequestWithStreamBody()
+    {
+
+        method.Kind = CodeMethodKind.CommandBuilder;
+        method.SimpleName = "User";
+        method.HttpMethod = HttpMethod.Post;
+        var stringType = new CodeType
+        {
+            Name = "string",
+        };
+        var bodyType = new CodeType
+        {
+            Name = "stream"
+        };
+        var generatorMethod = new CodeMethod
+        {
+            Kind = CodeMethodKind.RequestGenerator,
+            Name = "CreatePostRequestInformation",
+            HttpMethod = method.HttpMethod
+        };
+        method.OriginalMethod = new CodeMethod
+        {
+            Kind = CodeMethodKind.RequestExecutor,
+            HttpMethod = method.HttpMethod,
+            ReturnType = stringType,
+            Parent = method.Parent
+        };
+        method.OriginalMethod.AddParameter(new CodeParameter
+        {
+            Name = "body",
+            Kind = CodeParameterKind.RequestBody,
+            Type = bodyType,
+        });
+        var codeClass = method.Parent as CodeClass;
+        codeClass.AddMethod(generatorMethod);
+
+        AddRequestProperties();
+        AddPathAndQueryParameters(generatorMethod);
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("var command = new Command(\"user\");", result);
+        Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
+        Assert.Contains("qOption.IsRequired = false;", result);
+        Assert.Contains("command.AddOption(qOption);", result);
+        Assert.Contains("var bodyOption = new Option<Stream>(\"--file\")", result);
+        Assert.Contains("bodyOption.IsRequired = true;", result);
+        Assert.Contains("command.AddOption(bodyOption);", result);
+        Assert.Contains("command.AddOption(outputOption);", result);
+        Assert.Contains("PathParameters.Clear();", result);
+        Assert.Contains("PathParameters.Add(\"p\", p);", result);
+        Assert.Contains("using var stream = file.OpenRead();", result);
+        Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
+        Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
+        Assert.Contains("return command;", result);
+    }
+
+    [Fact]
+    public void WritesExecutableCommandForDeleteRequest() {
+        
+        method.Kind = CodeMethodKind.CommandBuilder;
+        method.SimpleName = "User";
+        method.HttpMethod = HttpMethod.Delete;
+        var stringType = new CodeType {
+            Name = "void",
+        };
+        var generatorMethod = new CodeMethod {
+            Kind = CodeMethodKind.RequestGenerator,
+            Name = "CreateDeleteRequestInformation",
+            HttpMethod = method.HttpMethod
+        };
+        method.OriginalMethod = new CodeMethod {
+            Kind = CodeMethodKind.RequestExecutor,
+            HttpMethod = method.HttpMethod,
+            ReturnType = stringType,
+            Parent = method.Parent
+        };
+        var codeClass = method.Parent as CodeClass;
+        codeClass.AddMethod(generatorMethod);
+
+        AddRequestProperties();
+        AddPathAndQueryParameters(generatorMethod);
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("var command = new Command(\"user\");", result);
+        Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
+        Assert.Contains("qOption.IsRequired = false;", result);
+        Assert.Contains("command.AddOption(qOption);", result);
+        Assert.Contains("PathParameters.Clear();", result);
+        Assert.Contains("PathParameters.Add(\"p\", p);", result);
+        Assert.Contains("var requestInfo = CreateDeleteRequestInformation", result);
+        Assert.Contains("await RequestAdapter.SendNoContentAsync(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
+        Assert.Contains("Console.WriteLine(\"Success\");", result);
+        Assert.Contains("return command;", result);
+        Assert.DoesNotContain("command.AddOption(outputOption);", result);
+        Assert.DoesNotContain("var jsonNoIndentOption = new Option<bool>(\"--json-no-indent\", r => {", result);
     }
 
     [Fact]
@@ -350,7 +540,6 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
         Assert.Contains("qOption.IsRequired = false;", result);
         Assert.Contains("command.AddOption(qOption);", result);
-        Assert.Contains("command.AddOption(outputOption);", result);
         Assert.Contains("var fileOption = new Option<FileInfo>(\"--file\");", result);
         Assert.Contains("command.AddOption(fileOption);", result);
         Assert.Contains("command.SetHandler(async (object[] parameters) => {", result);
@@ -413,5 +602,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("await RequestAdapter.SendNoContentAsync(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("Console.WriteLine(\"Success\");", result);
         Assert.Contains("return command;", result);
+        Assert.DoesNotContain("response = await outputFilter?.FilterOutputAsync(response, query, cancellationToken)", result);
+        Assert.DoesNotContain("await formatter.WriteOutputAsync(response, formatterOptions, cancellationToken);", result);
     }
 }

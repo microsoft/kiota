@@ -16,7 +16,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         RemoveCancellationParameter(generatedCode);
         ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
         AddRawUrlConstructorOverload(generatedCode);
-        CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
+        CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
         ReplaceBinaryByNativeType(generatedCode, "InputStream", "java.io", true);
         AddGetterAndSetterMethods(generatedCode,
             new() {
@@ -92,6 +92,8 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             "com.microsoft.kiota", "QueryParametersBase"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
             "com.microsoft.kiota.serialization", "Parsable"),
+        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
+            "com.microsoft.kiota.serialization", "AdditionalDataHolder"),
         new (x => x is CodeMethod method && method.Parameters.Any(x => !x.Optional),
                 "java.util", "Objects"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor) &&
@@ -113,6 +115,10 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             "com.microsoft.kiota.store", "BackingStoreFactory", "BackingStoreFactorySingleton"),
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
             "com.microsoft.kiota.store", "BackingStore", "BackedModel", "BackingStoreFactorySingleton"),
+        new (x => x is CodeProperty prop && "decimal".Equals(prop.Type.Name, StringComparison.OrdinalIgnoreCase) ||
+                x is CodeMethod method && "decimal".Equals(method.ReturnType.Name, StringComparison.OrdinalIgnoreCase) ||
+                x is CodeParameter para && "decimal".Equals(para.Type.Name, StringComparison.OrdinalIgnoreCase),
+            "java.math", "BigDecimal"),
     };
     private static void CorrectPropertyType(CodeProperty currentProperty) {
         if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter)) {
@@ -133,6 +139,9 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 currentProperty.DefaultValue = "new HashMap<>()";
         } else
             CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+    }
+    private static void CorrectImplements(ProprietableBlockDeclaration block) {
+        block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {
         if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {

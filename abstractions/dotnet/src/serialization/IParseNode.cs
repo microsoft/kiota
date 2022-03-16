@@ -29,6 +29,16 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// <returns>The boolean value of the node.</returns>
         bool? GetBoolValue();
         /// <summary>
+        ///  Gets the byte value of the node.
+        /// </summary>
+        /// <returns>The byte value of the node.</returns>
+        byte? GetByteValue();
+        /// <summary>
+        ///  Gets the sbyte value of the node.
+        /// </summary>
+        /// <returns>The sbyte value of the node.</returns>
+        sbyte? GetSbyteValue();
+        /// <summary>
         ///  Gets the integer value of the node.
         /// </summary>
         /// <returns>The integer value of the node.</returns>

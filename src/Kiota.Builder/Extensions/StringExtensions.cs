@@ -82,7 +82,7 @@ namespace Kiota.Builder.Extensions {
             {
                 return current;
             }
-            return current.StartsWith("\"", StringComparison.OrdinalIgnoreCase) ? current.Replace('\"', '\'') : current;
+            return current.StartsWith("\"", StringComparison.OrdinalIgnoreCase) ? current.Replace("'", "\\'").Replace('\"', '\'') : current;
         }
         
         public static string ReplaceDotsWithSlashInNamespaces(this string namespaced)

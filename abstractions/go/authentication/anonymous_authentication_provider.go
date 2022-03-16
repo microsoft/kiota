@@ -7,6 +7,6 @@ type AnonymousAuthenticationProvider struct {
 }
 
 // AuthenticateRequest is a placeholder method that "authenticates" the RequestInformation instance: no-op.
-func (provider *AnonymousAuthenticationProvider) AuthenticateRequest(request abs.RequestInformation) error {
+func (provider *AnonymousAuthenticationProvider) AuthenticateRequest(request *abs.RequestInformation) error {
 	return nil
 }

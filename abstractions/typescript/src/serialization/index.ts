@@ -1,3 +1,4 @@
+export * from "./additionalDataHolder";
 export * from "./parsable";
 export * from "./parsableFactory";
 export * from "./parseNode";

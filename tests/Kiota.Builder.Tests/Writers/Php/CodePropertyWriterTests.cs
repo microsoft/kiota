@@ -50,7 +50,7 @@ namespace Kiota.Builder.Tests.Writers.Php
 
             var result = tw.ToString();
             Assert.Contains("@var EmailAddress|null $email", result);
-            Assert.Contains("private ?EmailAddress $email;", result);
+            Assert.Contains("private ?EmailAddress $email = null;", result);
         }
 
         [Fact]
@@ -60,6 +60,7 @@ namespace Kiota.Builder.Tests.Writers.Php
             {
                 Name = "message",
                 Access = AccessModifier.Public,
+                Description = "I can get your messages.",
                 Type = new CodeType()
                 {
                     Name = "MessageRequestBuilder"

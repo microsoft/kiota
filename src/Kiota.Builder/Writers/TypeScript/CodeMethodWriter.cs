@@ -24,7 +24,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         WriteMethodPrototype(codeElement, writer, returnType, isVoid);
         writer.IncreaseIndent();
         var parentClass = codeElement.Parent as CodeClass;
-        var inherits = parentClass.StartBlock is ClassDeclaration declaration && declaration.Inherits != null && !parentClass.IsErrorDefinition;
+        var inherits = parentClass.StartBlock.Inherits != null && !parentClass.IsErrorDefinition;
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
         var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
         var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
@@ -114,8 +114,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
         if(inherits || parentClass.IsErrorDefinition)
             writer.WriteLine("super();");
-        if(parentClass.IsErrorDefinition && parentClass.StartBlock is ClassDeclaration declaration)
-            writer.WriteLine($"Object.setPrototypeOf(this, {declaration.Inherits.Name.ToFirstCharacterUpperCase()}.prototype);");
+        if(parentClass.IsErrorDefinition)
+            writer.WriteLine($"Object.setPrototypeOf(this, {parentClass.StartBlock.Inherits.Name.ToFirstCharacterUpperCase()}.prototype);");
         var propertiesWithDefaultValues = new List<CodePropertyKind> {
             CodePropertyKind.AdditionalData,
             CodePropertyKind.BackingStore,

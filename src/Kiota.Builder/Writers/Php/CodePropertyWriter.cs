@@ -19,7 +19,7 @@ namespace Kiota.Builder.Writers.Php
                     break;
                 default:
                     WritePropertyDocComment(codeElement, writer);
-                    writer.WriteLine($"{propertyAccess} {(codeElement.Type.IsNullable ? "?" : string.Empty)}{returnType} ${propertyName};");
+                    writer.WriteLine($"{propertyAccess} {(codeElement.Type.IsNullable ? "?" : string.Empty)}{returnType} ${propertyName}{(codeElement.Type.IsNullable ? " = null" : string.Empty)};");
                     break;
             }
             writer.WriteLine("");
@@ -49,8 +49,7 @@ namespace Kiota.Builder.Writers.Php
             writer.WriteLine($"{propertyAccess} function {propertyName}(): {returnType} {{");
             writer.IncreaseIndent();
             conventions.AddRequestBuilderBody(returnType, writer);
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
+            writer.CloseBlock();
         }
     }
 }

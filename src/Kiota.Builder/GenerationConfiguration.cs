@@ -32,5 +32,6 @@ namespace Kiota.Builder {
 
           GenerationLanguage.TypeScript
         };
+        public bool CleanOutput { get; set;}
     }
 }

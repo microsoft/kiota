@@ -9,14 +9,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Adds a `--clean-output` argument to clean the target directory before generation #1357
+
+### Changed
+
+- Fixed a bug where models descriptions would not be deterministic #1393
+- Fixed a bug where unnecessary namespaces would be added to models generation #1273
+- Fixed a bug where Go byte arrays would not write deserializers properly.
+- Fixed a bug where integers would not be recognized when type is not number.
+- Fixed a bug where union types with primitive member types would fail to generate #1270
+- Fixed a bug where union types with inline schema member types would fail to generate #1270
+- Fixed a bug where referenced types with no titles would fail to generate #1271
+- Fixed a bug where the generator would introduce unnecessary union types for nullables. #990
+
+## [0.0.18] - 2022-03-14
+
+### Added
+
+- Added default implementations for table and JSON output in CLI commons (Shell) #1326
+- Adds missing mapped types (int8, uint8, commonmark, html, ...) #1287
+
+### Changed
+
+- Add missing method getBinaryContent to the ParseNode interface(PHP).
+- Split the Parsable interface into AdditionalData interface and Parsable interface(PHP) #1324.
+- Shell commands will now default to writing indented JSON. This option can be disabled through the CLI option `--json-no-indent` (Shell) #1326
+- Update System.CommandLine version (Shell) #1338
+- Add async writers in output formatters (Shell) #1326
+- Add async filter function in output filters (Shell) #1326
+- BREAKING: Remove synchronous version of WriteOutput that accepts a stream input (Shell) #1326
+- BREAKING: Remove synchronous version of WriteOutput that accepts a string input (Shell) #1326
+- BREAKING: Remove synchronous version of FilterOutput that accepts a string input (Shell) #1326
+- Fixed a bug where error responses without schema would make generation fail #1272
+- Fixed indeterministic parameters ordering #1358
+- Fixed indeterministic error mappings ordering #1358
+- Fixed indeterministic discriminator mapping ordering #1358
+- Fixed race condition when removing child items leading to erratic code generation results #1358
+- Replaced models namespaces flattening by circular properties trimming in Go #1358
+- Fixed a bug where inherited interfaces would be missing imports in Go #1358
+- Fixed a bug where inherited interfaces would be missing imports for the parent #1358
+- Fixed bugs across request adapter and serialization in PHP #1353
+- Fixed NullReferenceException in Go generator
+- Fixed incorrect mapping when the response type is `text/plain` #1356
+- Fixed a bug in Dotnet.Typescript where properties could have invalid characters #1354
+- Improved error display #1269
+- Fixed a bug where union wrapper models would lack the discriminator methods.
+- Fixed bug working with async azure credentials in Python.
+- Fixed minor issues around PHP Generation, Serialization and Abstractions.
+- Fix Discriminator support for PHP.
+- Move additional data from Parsable into AdditionalDataHolder base class in Python #1360
+
+## [0.0.17] - 2022-03-03
+
+### Added
+
 - Adds support for downcast of types during deserialization according to the discriminator information in the description (CSharp/Go/Java/TypeScript). [#646](https://github.com/microsoft/kiota/issues/646)
 - Adds support for generating interfaces for models in Go. [#646](https://github.com/microsoft/kiota/issues/646)
 - Adds support for generating functions (as opposed to methods or static methods) in the generator (used in TypeScript for discriminator factories). [#646](https://github.com/microsoft/kiota/issues/646)
 - Added support for global error handling in python abstractions #1289
 - Added a HTTPRequestAdapter for python Requests library #1251
+- Added Shell output filter (JMESPath) support #1291
+- Added output options to Shell output filter #1321
 
 ### Changed
 
+- Fixed a bug in Go generator where temporary url template parameters would not be used preventing the use of raw urls.
 - Fixed a bug where the Go http client configuration would impact non-kiota requests.
 - Fixed bug where installing python abstractions failed due to missing dependencies  #1289
 - Modified python test matrix to include python 3.10  #1289
@@ -26,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added python version 3.10 to testing matrix #1290 
 - Fixed bug with inconsistent Java namespace and directory name casing #1267
 - Fixed typeOf string check in JsonParseNode Typescript.
+- Fixed shell stream output getting processed by output formatters when no file path is provided #1291
 
 ## [0.0.16] - 2022-02-23
 

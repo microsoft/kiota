@@ -23,7 +23,13 @@ namespace Kiota.Builder
                 StartBlock.Name = name;
             }
         }
-
+        public bool IsParentOf(CodeNamespace childNamespace) {
+            if(childNamespace == null)
+                throw new ArgumentNullException(nameof(childNamespace));
+            if(this == childNamespace)
+                return false;
+            return childNamespace.Name.StartsWith(Name + ".", StringComparison.OrdinalIgnoreCase);
+        }
         public IEnumerable<CodeClass> AddClass(params CodeClass[] codeClasses)
         {
             if(codeClasses == null || codeClasses.Any( x=> x == null))
