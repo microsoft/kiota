@@ -29,8 +29,16 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             string.Empty,
             string.Empty);
         AddConstructorsForDefaultValues(generatedCode, true);
-        ReplaceDefaultSerializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory");
-        ReplaceDefaultDeserializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonParseNodeFactory");
+        ReplaceDefaultSerializationModules(
+            generatedCode,
+            "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory",
+            "@microsoft/kiota-serialization-text.TextSerializationWriterFactory"
+        );
+        ReplaceDefaultDeserializationModules(
+            generatedCode,
+            "@microsoft/kiota-serialization-json.JsonParseNodeFactory",
+            "@microsoft/kiota-serialization-text.TextParseNodeFactory"
+        );
         AddSerializationModulesImport(generatedCode,
             new[] { $"{AbstractionsPackageName}.registerDefaultSerializer", 
                     $"{AbstractionsPackageName}.enableBackingStoreForSerializationWriterFactory",
