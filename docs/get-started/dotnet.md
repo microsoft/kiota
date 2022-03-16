@@ -35,6 +35,7 @@ Once the package feed is accessible the following packages can be added to the p
 dotnet add package Microsoft.Kiota.Abstractions
 dotnet add package Microsoft.Kiota.Http.HttpClientLibrary
 dotnet add package Microsoft.Kiota.Serialization.Json
+dotnet add package Microsoft.Kiota.Serialization.Text
 dotnet add package Microsoft.Kiota.Authentication.Azure
 dotnet add package Azure.Identity
 ```
