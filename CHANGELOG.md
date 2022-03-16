@@ -13,12 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where models descriptions would not be deterministic #1393
 - Fixed a bug where unnecessary namespaces would be added to models generation #1273
 - Fixed a bug where Go byte arrays would not write deserializers properly.
 - Fixed a bug where integers would not be recognized when type is not number.
 - Fixed a bug where union types with primitive member types would fail to generate #1270
 - Fixed a bug where union types with inline schema member types would fail to generate #1270
 - Fixed a bug where referenced types with no titles would fail to generate #1271
+- Fixed a bug where the generator would introduce unnecessary union types for nullables. #990
 
 ## [0.0.18] - 2022-03-14
 

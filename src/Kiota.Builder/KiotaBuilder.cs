@@ -830,6 +830,10 @@ public class KiotaBuilder
                 Name = className,
             });
         }
+        if(unionType.Types.Count() == 1 &&
+            schema.Nullable &&
+            unionType.Types.First().TypeDefinition != null)
+            return unionType.Types.First();// so we don't create unnecessary union types when anyOf was used only for nullable.
         return unionType;
     }
     private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement, string suffixForInlineSchema, OpenApiResponse response = default)
@@ -909,7 +913,9 @@ public class KiotaBuilder
         var newClass = currentNamespace.AddClass(new CodeClass {
             Name = declarationName,
             Kind = CodeClassKind.Model,
-            Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel)
+            Description = schema.Description ?? (string.IsNullOrEmpty(schema.Reference?.Id) ? 
+                                                    currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel) :
+                                                    null),// if it's a referenced component, we shouldn't use the path item description as it makes it indeterministic
         }).First();
         if(inheritsFrom != null)
             newClass.StartBlock.Inherits = new CodeType { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
