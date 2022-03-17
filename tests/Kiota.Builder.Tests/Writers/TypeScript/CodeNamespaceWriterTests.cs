@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using Xunit;
 
 namespace Kiota.Builder.Writers.TypeScript.Tests
@@ -17,7 +18,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests
             tw = new StringWriter();
             writer.SetTextWriter(tw);
         }
-        
+
         public void Dispose()
         {
             tw?.Dispose();
@@ -55,14 +56,17 @@ namespace Kiota.Builder.Writers.TypeScript.Tests
                 Kind = CodeClassKind.Model,
                 Name = "ModelA",
             };
-            var modelB = new CodeClass
+          
+            root.AddClass(modelA);
+
+            var modelB = modelA.AddInnerClass(new CodeClass
             {
                 Kind = CodeClassKind.Model,
-                Name = "ModelB",
-                Parent = modelA
-            };
+                Name = "ModelB"
+            }).First();
 
             var declarationB = modelB.StartBlock;
+
 
             declarationB.Inherits = new CodeType()
             {
@@ -72,12 +76,13 @@ namespace Kiota.Builder.Writers.TypeScript.Tests
                 }
             };
 
-            var modelC = new CodeClass
+            var modelC = modelB.AddInnerClass(new CodeClass
             {
                 Kind = CodeClassKind.Model,
-                Name = "ModelC",
-                Parent = modelB
-            };
+                Name = "ModelX"
+            }).First();
+
+
 
             var declarationC = modelC.StartBlock;
 
@@ -85,17 +90,16 @@ namespace Kiota.Builder.Writers.TypeScript.Tests
             {
                 TypeDefinition = new CodeType()
                 {
-                    Parent= modelB
+                    Parent = modelB
                 }
             };
 
-            root.AddClass(modelA);
             root.AddClass(modelB);
             root.AddClass(modelC);
 
             writer.Write(root);
             var result = tw.ToString();
-            Console.WriteLine(result);
+  
             Assert.Contains("export * from './modelA'\r\nexport * from './modelB'\r\nexport * from './modelC'\r\n'", result);
         }
     }
