@@ -22,15 +22,6 @@ namespace Kiota.Builder.Writers.TypeScript
             {
                 writer.WriteLine($"export * from './{className.ToFirstCharacterLowerCase()}'");
             }
-
-            //var enums = codeElement.Enums;
-            //if (enums != null && enums.Any())
-            //{
-            //    foreach (var e in enums)
-            //    {
-            //        writer.WriteLine($"export * from './{e.Name.ToFirstCharacterLowerCase()}'");
-            //    }
-            //}
         }
 
         /// <summary>

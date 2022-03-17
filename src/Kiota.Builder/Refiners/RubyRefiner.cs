@@ -36,7 +36,6 @@ namespace Kiota.Builder.Refiners {
                                                 "microsoft_kiota_abstractions.SerializationWriterFactoryRegistry" },
                                         new [] { "microsoft_kiota_abstractions.ParseNodeFactoryRegistry" });
         }
-
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
                 currentProperty.Type.IsNullable = true;
