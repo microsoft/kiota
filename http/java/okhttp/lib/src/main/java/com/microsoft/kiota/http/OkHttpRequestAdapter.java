@@ -2,13 +2,16 @@ package com.microsoft.kiota.http;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.Period;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.StringJoiner;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -165,8 +168,16 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
                         Object result;
                         if(targetClass == Boolean.class) {
                             result = rootNode.getBooleanValue();
+                        } else if(targetClass == Byte.class) {
+                            result = rootNode.getByteValue();
                         } else if(targetClass == String.class) {
                             result = rootNode.getStringValue();
+                        } else if(targetClass == Short.class) {
+                            result = rootNode.getShortValue();
+                        } else if(targetClass == BigDecimal.class) {
+                            result = rootNode.getBigDecimalValue();
+                        } else if(targetClass == Double.class) {
+                            result = rootNode.getDoubleValue();
                         } else if(targetClass == Integer.class) {
                             result = rootNode.getIntegerValue();
                         } else if(targetClass == Float.class) {
@@ -177,6 +188,14 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
                             result = rootNode.getUUIDValue();
                         } else if(targetClass == OffsetDateTime.class) {
                             result = rootNode.getOffsetDateTimeValue();
+                        } else if(targetClass == LocalDate.class) {
+                            result = rootNode.getLocalDateValue();
+                        } else if(targetClass == LocalTime.class) {
+                            result = rootNode.getLocalTimeValue();
+                        } else if(targetClass == Period.class) {
+                            result = rootNode.getPeriodValue();
+                        } else if(targetClass == byte[].class) {
+                            result = rootNode.getByteArrayValue();
                         } else {
                             throw new RuntimeException("unexpected payload type " + targetClass.getName());
                         }
