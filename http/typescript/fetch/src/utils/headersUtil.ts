@@ -5,6 +5,8 @@
  * -------------------------------------------------------------------------------------------
  */
 
+import { FetchRequestInit } from "./fetchDefinitions";
+
 /**
  * @module MiddlewareUtil
  */
@@ -17,7 +19,7 @@
  * @param {string} key - The header key string
  * @returns A header value for the given key from the request
  */
-export const getRequestHeader = (options: RequestInit | undefined, key: string): string | null => {
+export const getRequestHeader = (options: FetchRequestInit | undefined, key: string): string | undefined => {
 	if (typeof options !== "undefined" && options.headers !== undefined) {
 		return options.headers[key];
 	}
@@ -33,7 +35,7 @@ export const getRequestHeader = (options: RequestInit | undefined, key: string):
  * @param {string } value - The header value string
  * @returns Nothing
  */
-export const setRequestHeader = (options: RequestInit | undefined, key: string, value: string): void => {
+export const setRequestHeader = (options: FetchRequestInit | undefined, key: string, value: string): void => {
 	if (typeof options !== "undefined") {
 		if (!options.headers) {
 			options.headers = {};
@@ -51,7 +53,7 @@ export const setRequestHeader = (options: RequestInit | undefined, key: string, 
  * @param {string } value - The header value string
  * @returns Nothing
  */
-export const appendRequestHeader = (options: RequestInit | undefined, key: string, value: string): void => {
+export const appendRequestHeader = (options: FetchRequestInit | undefined, key: string, value: string): void => {
 	if (typeof options !== "undefined") {
 		if (!options.headers) {
 			options.headers = {};

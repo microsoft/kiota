@@ -3,8 +3,9 @@
 	"compilerOptions": {
 		"module": "ES2015",
 		"target": "ES2017",
-		"outDir": "dist/es/"
+		"outDir": "dist/es/",
+        "composite": true
 	},
 	"exclude": ["node_modules", "dist"],
-	"include": ["./src/**/*.ts", "./test/**/*.ts"]
+	"include": ["./src/**/*.ts"]
 }

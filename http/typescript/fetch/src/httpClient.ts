@@ -5,7 +5,7 @@ import { Middleware } from "./middlewares/middleware";
 import { MiddlewareFactory } from "./middlewares/middlewareFactory";
 
 export class HttpClient {
-	private middleware: Middleware;
+	private middleware: Middleware | undefined;
 	/**
 	 * @public
 	 * @constructor
@@ -17,17 +17,17 @@ export class HttpClient {
 	 * @param {(request: string, init?: RequestInit) => Promise < Response >} custom fetch function - a Fetch API implementation
 	 *
 	 */
-	public constructor(private customFetch?: (request: string, init?: RequestInit) => Promise<Response>, ...middlewares: Middleware[]) {
+	public constructor(private customFetch?: (request: string, init: RequestInit) => Promise<Response>, ...middlewares: Middleware[]) {
 		// Use default middleware chain if middlewares and custom fetch function are  undefined
 		if (!middlewares.length || middlewares[0] === null) {
-			if (this.customFetch) {
+			if (this.customFetch !== undefined) {
 				this.setMiddleware(...MiddlewareFactory.getDefaultMiddlewareChain(customFetch));
 			} else {
 				this.setMiddleware(...MiddlewareFactory.getDefaultMiddlewareChain());
 			}
 		} else {
 			if (this.customFetch) {
-				this.setMiddleware(...middlewares, new CustomFetchHandler(customFetch));
+				this.setMiddleware(...middlewares, new CustomFetchHandler(customFetch! as any));
 			} else {
 				this.setMiddleware(...middlewares);
 			}
@@ -72,7 +72,7 @@ export class HttpClient {
 	 * @param options request options.
 	 * @returns the promise resolving the response.
 	 */
-	public async executeFetch(url: string, requestInit?: RequestInit, requestOptions?: Record<string, RequestOption>): Promise<Response> {
+	public async executeFetch(url: string, requestInit: RequestInit, requestOptions?: Record<string, RequestOption>): Promise<Response> {
 		if (this.customFetch && !this.middleware) {
 			return this.customFetch(url, requestInit);
 		}

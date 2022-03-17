@@ -4,8 +4,13 @@
         "target": "ES2015",
         "module": "commonjs",
         "outDir": "./dist/cjs",
-        "composite": true
     },
 	"exclude": ["node_modules", "dist"],
-	"include": ["./src/**/*.ts"]
+	"include": ["./test"],
+    "references": [
+        {
+            "path": "./tsconfig.cjs.json"
+        }
+    ]
+    
 }

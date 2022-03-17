@@ -34,14 +34,15 @@
         "build": "npm run build:cjs && npm run build:es",
         "build:cjs": "tsc -p tsconfig.cjs.json",
         "build:es": "tsc -p tsconfig.es.json",
+        "build:test": "tsc -b tsconfig.cjs.test.json && tsc -b tsconfig.es.test.json",
         "clean": "rm -r ./dist",
         "karma": "npm run rollup && karma  start --single-run --browsers ChromeHeadless karma.conf.js",
         "lint": "eslint . --ext .ts",
         "lint:fix": "eslint . --ext .ts --fix",
         "rollup": "rollup -c",
         "test": "npm run test:cjs && npm run test:es && npm run karma",
-        "test:cjs": "npm run build:cjs   && mocha  'dist/cjs/test/common/**/*.js' && mocha  'dist/cjs/test/node/**/*.js'",
-        "test:es": " npm run build:es && mocha 'dist/es/test/common/**/*.js'  --require  esm && mocha 'dist/es/test/node/**/*.js'  --require  esm"
+        "test:cjs": "tsc -b tsconfig.cjs.test.json  && mocha  'dist/cjs/test/common/**/*.js' && mocha  'dist/cjs/test/node/**/*.js'",
+        "test:es": "tsc -b tsconfig.es.test.json && mocha 'dist/es/test/common/**/*.js'  --require  esm && mocha 'dist/es/test/node/**/*.js'  --require  esm"
     },
     "dependencies": {
         "@microsoft/kiota-abstractions": "1.0.31",
@@ -55,6 +56,7 @@
         "@types/chai": "^4.2.22",
         "@types/mocha": "^9.0.0",
         "@types/node": "^17.0.13",
+        "@types/node-fetch": "^2.6.1",
         "@types/sinon": "^10.0.4",
         "@typescript-eslint/eslint-plugin": "^5.14.0",
         "@typescript-eslint/parser": "^5.14.0",

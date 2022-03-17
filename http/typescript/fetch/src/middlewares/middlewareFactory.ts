@@ -29,18 +29,15 @@ export class MiddlewareFactory {
 	 * @param {AuthenticationProvider} authProvider - The authentication provider instance
 	 * @returns an array of the middleware handlers of the default middleware chain
 	 */
-	public static getDefaultMiddlewareChain(customFetch?: (request: string, init?: RequestInit) => Promise<Response>): Middleware[] {
+	public static getDefaultMiddlewareChain(customFetch: (request: string, init: RequestInit) => Promise<Response> = fetch as any): Middleware[] {
 		const middlewareArray: Middleware[] = [];
 		const retryHandler = new RetryHandler(new RetryHandlerOptions());
 		middlewareArray.push(retryHandler);
 		const redirectHandler = new RedirectHandler(new RedirectHandlerOptions());
 		middlewareArray.push(redirectHandler);
-		if (customFetch) {
-			middlewareArray.push(new CustomFetchHandler(customFetch));
-		} else {
-			middlewareArray.push(new CustomFetchHandler(fetch));
-		}
+		middlewareArray.push(new CustomFetchHandler(customFetch));
 
 		return middlewareArray;
 	}
 }
+

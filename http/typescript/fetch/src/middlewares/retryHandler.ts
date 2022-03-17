@@ -51,7 +51,7 @@ export class RetryHandler implements Middleware {
 	 * @private
 	 * The next middleware in the middleware chain
 	 */
-	next: Middleware;
+	next: Middleware | undefined;
 
 	/**
 	 * @public
@@ -79,11 +79,11 @@ export class RetryHandler implements Middleware {
 	 * @param {RequestInit} options - The options of a request
 	 * @returns Whether the payload is buffered or not
 	 */
-	private isBuffered(options: FetchRequestInit | undefined): boolean {
+	private isBuffered(options: FetchRequestInit): boolean {
 		const method = options.method;
 		const isPutPatchOrPost: boolean = method === HttpMethod.PUT || method === HttpMethod.PATCH || method === HttpMethod.POST;
 		if (isPutPatchOrPost) {
-			const isStream = getRequestHeader(options as RequestInit, "content-type") === "application/octet-stream";
+			const isStream = getRequestHeader(options, "content-type") === "application/octet-stream";
 			if (isStream) {
 				return false;
 			}
@@ -149,13 +149,18 @@ export class RetryHandler implements Middleware {
 	 * @param {RetryHandlerOptions} options - The retry middleware options instance
 	 * @returns A Promise that resolves to nothing
 	 */
-	private async executeWithRetry(url: string, fetchRequestInit: FetchRequestInit, retryAttempts:number, requestOptions?: Record<string, RequestOption>): Promise<FetchResponse> {
-		const response = await this.next.execute(url, fetchRequestInit as RequestInit, requestOptions);
-		if (retryAttempts < this.options.maxRetries && this.isRetry(response) && this.isBuffered(fetchRequestInit) && this.options.shouldRetry(this.options.delay, retryAttempts, url, fetchRequestInit as RequestInit, response)) {
+	private async executeWithRetry(url: string, fetchRequestInit: FetchRequestInit, retryAttempts: number, requestOptions?: Record<string, RequestOption>): Promise<FetchResponse> {
+		const response = await this.next?.execute(url, fetchRequestInit as RequestInit, requestOptions);
+		if (!response) {
+			throw new Error("Response is undefined");
+		}
+		if (retryAttempts < this.options.maxRetries && this.isRetry(response!) && this.isBuffered(fetchRequestInit) && this.options.shouldRetry(this.options.delay, retryAttempts, url, fetchRequestInit! as RequestInit, response)) {
 			++retryAttempts;
-			setRequestHeader(fetchRequestInit as RequestInit, RetryHandler.RETRY_ATTEMPT_HEADER, retryAttempts.toString());
-			const delay = this.getDelay(response, retryAttempts, this.options.delay);
-			await this.sleep(delay);
+			setRequestHeader(fetchRequestInit, RetryHandler.RETRY_ATTEMPT_HEADER, retryAttempts.toString());
+			if (response) {
+				const delay = this.getDelay(response!, retryAttempts, this.options.delay);
+				await this.sleep(delay);
+			}
 			return await this.executeWithRetry(url, fetchRequestInit, retryAttempts, requestOptions);
 		} else {
 			return response;
@@ -172,9 +177,9 @@ export class RetryHandler implements Middleware {
 	public execute(url: string, requestInit: RequestInit, requestOptions?: Record<string, RequestOption>): Promise<Response> {
 		const retryAttempts = 0;
 
-        if((requestOptions && requestOptions[RetryHandlerOptionKey])){
-            this.options = requestOptions[RetryHandlerOptionKey] as RetryHandlerOptions;
-        }
-	    return this.executeWithRetry(url, requestInit as FetchRequestInit, retryAttempts, requestOptions);
+		if (requestOptions && requestOptions[RetryHandlerOptionKey]) {
+			this.options = requestOptions[RetryHandlerOptionKey] as RetryHandlerOptions;
+		}
+		return this.executeWithRetry(url, requestInit as FetchRequestInit, retryAttempts, requestOptions);
 	}
 }
