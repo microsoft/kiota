@@ -8,17 +8,8 @@ namespace Kiota.Builder.Writers.TypeScript
     public class TypescriptRelativeImportManager : RelativeImportManager
 
     {
-        private readonly int prefixLength;
-        private readonly char separator;
         public TypescriptRelativeImportManager(string namespacePrefix, char namespaceSeparator) : base(namespacePrefix,namespaceSeparator)
         {
-            if (string.IsNullOrEmpty(namespacePrefix))
-                throw new ArgumentNullException(nameof(namespacePrefix));
-            if (namespaceSeparator == default)
-                throw new ArgumentNullException(nameof(namespaceSeparator));
-
-            prefixLength = namespacePrefix.Length;
-            separator = namespaceSeparator;
         }
         /// <summary>
         /// Returns the relative import path for the given using and import context namespace.
