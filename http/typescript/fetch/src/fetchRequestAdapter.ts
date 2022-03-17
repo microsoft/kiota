@@ -1,4 +1,4 @@
-import { ApiError, AuthenticationProvider, BackingStoreFactory, BackingStoreFactorySingleton, enableBackingStoreForParseNodeFactory, enableBackingStoreForSerializationWriterFactory, Parsable, ParsableFactory, ParseNode,ParseNodeFactory, ParseNodeFactoryRegistry, RequestAdapter, RequestInformation, ResponseHandler, SerializationWriterFactory, SerializationWriterFactoryRegistry } from "@microsoft/kiota-abstractions";
+import { ApiError, AuthenticationProvider, BackingStoreFactory, BackingStoreFactorySingleton, DateOnly, Duration, enableBackingStoreForParseNodeFactory, enableBackingStoreForSerializationWriterFactory, Parsable, ParsableFactory, ParseNode,ParseNodeFactory, ParseNodeFactoryRegistry, RequestAdapter, RequestInformation, ResponseHandler, SerializationWriterFactory, SerializationWriterFactoryRegistry, TimeOnly } from "@microsoft/kiota-abstractions";
 
 import { HttpClient } from "./httpClient";
 
@@ -59,6 +59,12 @@ export class FetchRequestAdapter implements RequestAdapter {
 						return rootNode.getCollectionOfPrimitiveValues<boolean>() as unknown as ResponseType[];
 					} else if (responseType === "Date") {
 						return rootNode.getCollectionOfPrimitiveValues<Date>() as unknown as ResponseType[];
+					} else if (responseType === "Duration") {
+						return rootNode.getCollectionOfPrimitiveValues<Duration>() as unknown as ResponseType[];
+					} else if (responseType === "DateOnly") {
+						return rootNode.getCollectionOfPrimitiveValues<DateOnly>() as unknown as ResponseType[];
+					} else if (responseType === "TimeOnly") {
+						return rootNode.getCollectionOfPrimitiveValues<TimeOnly>() as unknown as ResponseType[];
 					} else {
 						throw new Error("unexpected type to deserialize");
 					}
@@ -118,6 +124,12 @@ export class FetchRequestAdapter implements RequestAdapter {
 						return rootNode.getBooleanValue() as unknown as ResponseType;
 					} else if (responseType === "Date") {
 						return rootNode.getDateValue() as unknown as ResponseType;
+					} else if (responseType === "Duration") {
+						return rootNode.getDurationValue() as unknown as ResponseType;
+					} else if (responseType === "DateOnly") {
+						return rootNode.getDateOnlyValue() as unknown as ResponseType;
+					} else if (responseType === "TimeOnly") {
+						return rootNode.getTimeOnlyValue() as unknown as ResponseType;
 					} else {
 						throw new Error("unexpected type to deserialize");
 					}
