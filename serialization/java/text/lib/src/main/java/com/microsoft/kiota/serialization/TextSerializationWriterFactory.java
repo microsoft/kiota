@@ -11,7 +11,7 @@ public class TextSerializationWriterFactory implements SerializationWriterFactor
     public String getValidContentType() {
         return validContentType;
     }
-    private static final String validContentType = "application/text";
+    private static final String validContentType = "text/plain";
     @Override
     @Nonnull
     public SerializationWriter getSerializationWriter(@Nonnull final String contentType) {

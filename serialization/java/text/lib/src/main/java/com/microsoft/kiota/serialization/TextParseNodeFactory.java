@@ -17,7 +17,7 @@ public class TextParseNodeFactory implements ParseNodeFactory {
     public String getValidContentType() {
         return validContentType;
     }
-    private final static String validContentType = "application/text";
+    private final static String validContentType = "text/plain";
     @Override
     @Nonnull
     public ParseNode getParseNode(@Nonnull final String contentType, @Nonnull final InputStream rawResponse) {

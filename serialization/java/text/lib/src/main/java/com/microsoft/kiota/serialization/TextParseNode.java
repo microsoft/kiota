@@ -30,7 +30,7 @@ public class TextParseNode implements ParseNode {
     private final static String NoStructuredDataMessage = "text does not support structured data";
     public TextParseNode(@Nonnull final String rawJson) {
         Objects.requireNonNull(rawJson, "parameter node cannot be null");
-        text = rawJson; //TODO trim "
+        text = rawJson.startsWith("\"") && rawJson.endsWith("\"") ? rawJson.substring(1, text.length() - 2) : rawJson;
     }
     public ParseNode getChildNode(final String identifier) {
         throw new UnsupportedOperationException(NoStructuredDataMessage);

@@ -15,10 +15,10 @@ export class TextParseNode implements ParseNode {
    *
    */
   constructor(private readonly text: string) {
-    this.text = this.text.startsWith('"') ? this.text.substring(1) : this.text;
-    this.text = this.text.endsWith('"')
-      ? this.text.substring(0, this.text.length - 2)
-      : this.text;
+    this.text =
+      this.text.startsWith('"') && this.text.endsWith('"')
+        ? this.text.substring(1, this.text.length - 2)
+        : this.text;
   }
   public onBeforeAssignFieldValues: ((value: Parsable) => void) | undefined;
   public onAfterAssignFieldValues: ((value: Parsable) => void) | undefined;

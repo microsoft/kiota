@@ -17,7 +17,7 @@ func NewTextParseNodeFactory() *TextParseNodeFactory {
 
 // GetValidContentType returns the content type this factory's parse nodes can deserialize.
 func (f *TextParseNodeFactory) GetValidContentType() (string, error) {
-	return "application/text", nil
+	return "text/plain", nil
 }
 
 // GetRootParseNode return a new ParseNode instance that is the root of the content

@@ -17,7 +17,7 @@ func NewTextSerializationWriterFactory() *TextSerializationWriterFactory {
 
 // GetValidContentType returns the valid content type for the SerializationWriterFactoryRegistry
 func (f *TextSerializationWriterFactory) GetValidContentType() (string, error) {
-	return "application/text", nil
+	return "text/plain", nil
 }
 
 // GetSerializationWriter returns the relevant SerializationWriter instance for the given content type
