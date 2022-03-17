@@ -7,12 +7,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import java.net.HttpURLConnection;
+import java.sql.Time;
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalUnit;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
@@ -38,6 +44,10 @@ public class RetryHandlerTests {
    
     @InjectMocks
     public OkHttpRequestAdapter adapter = new OkHttpRequestAdapter(mock(AuthenticationProvider.class));
+
+    private final String RFC1123Pattern = "EEE, dd MMM yyyy HH:mm:ss z";
+    SimpleDateFormat formatter = new SimpleDateFormat(RFC1123Pattern, Locale.ENGLISH);
+
 
     @Test 
     public void RetryHandlerConstructorDefaults() {
@@ -159,6 +169,16 @@ public class RetryHandlerTests {
         assertTrue(delay == 60000);
         delay = retryHandler.getRetryAfter(tooManyRequestResponse().newBuilder().addHeader("Retry-After", "1").build(), 2, 3);
         assertTrue(delay == 1000);
+
+
+        formatter.setTimeZone(TimeZone.getTimeZone(ZoneId.of("GMT")));
+        Instant futureTime = Instant.now().plus(25, ChronoUnit.SECONDS); //Make the retry after time 25 seconds from time of running test
+        String retryAfterString = formatter.format(new Date().from(futureTime));
+
+        delay = retryHandler.getRetryAfter(tooManyRequestResponse().newBuilder().addHeader("Retry-After", retryAfterString).build(), 2, 3);
+        assertTrue(delay > 23000); //Delay will not be exactly 25000 due to processing time, but should be close
+        assertTrue(delay != 180000); //Ensure it has not simply fallen back to default
+
     }
 
     @Test 
@@ -175,23 +195,22 @@ public class RetryHandlerTests {
         RetryHandler retryHandler = new RetryHandler();
         long delay = retryHandler.getRetryAfter(tooManyRequestResponse(), 190, 1);
         assertTrue(delay == 180000);
+
+        //Ensure fallback to max works with retry after header of date type
+        formatter.setTimeZone(TimeZone.getTimeZone(ZoneId.of("GMT")));
+        Instant futureTime = Instant.now().plus(181, ChronoUnit.SECONDS);
+        String retryAfterString = formatter.format(new Date().from(futureTime));
+
+        delay = retryHandler.getRetryAfter(tooManyRequestResponse().newBuilder().addHeader("Retry-After", retryAfterString).build(), 2, 3);
+        assertTrue(delay == 180000);
+
     }
 
     @Test
-    public void TestNullLoggerHandling() {
+    public void TestNullLoggerHandling() throws ParseException {
         assertThrows(NullPointerException.class, () -> {
             new RetryHandler(null, new RetryHandlerOption());
         }, "logger cannot be null");
-
-        //DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH).withZone(ZoneId.of("GMT"));
-        SimpleDateFormat formatter2 = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
-        //formatter2.setTimeZone(TimeZone.getTimeZone(ZoneId.of("GMT")));
-
-        //String current = formatter.format(Instant.now());
-        String current2 = formatter2.format(new Date());
-        System.out.println(current2);
-        //TODO: convert gmt time to local machine time, compare the dates, this avoids getting todays date into utc only to go back into date format
-
     }
 
     @Test
