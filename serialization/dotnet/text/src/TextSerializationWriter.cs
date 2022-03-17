@@ -77,7 +77,7 @@ public class TextSerializationWriter : ISerializationWriter, IDisposable {
             throw new InvalidOperationException(TextParseNode.NoStructuredDataMessage);
         if(!string.IsNullOrEmpty(value))
             if(written)
-                throw new InvalidOperationException("a value was already written for this serialization writter, text content only supports a single value");
+                throw new InvalidOperationException("a value was already written for this serialization writer, text content only supports a single value");
             else {
                 writer.Append(value);
                 written = true;
