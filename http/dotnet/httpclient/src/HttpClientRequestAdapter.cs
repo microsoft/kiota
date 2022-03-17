@@ -143,33 +143,57 @@ namespace Microsoft.Kiota.Http.HttpClientLibrary
                 {
                     var rootNode = await GetRootParseNode(response);
                     object result;
-                    if(modelType == typeof(bool))
+                    if(modelType == typeof(bool?))
                     {
                         result = rootNode.GetBoolValue();
+                    }
+                    else if(modelType == typeof(byte?))
+                    {
+                        result = rootNode.GetByteValue();
+                    }
+                    else if(modelType == typeof(sbyte?))
+                    {
+                        result = rootNode.GetSbyteValue();
                     }
                     else if(modelType == typeof(string))
                     {
                         result = rootNode.GetStringValue();
                     }
-                    else if(modelType == typeof(int))
+                    else if(modelType == typeof(int?))
                     {
                         result = rootNode.GetIntValue();
                     }
-                    else if(modelType == typeof(float))
+                    else if(modelType == typeof(float?))
                     {
                         result = rootNode.GetFloatValue();
                     }
-                    else if(modelType == typeof(double))
+                    else if(modelType == typeof(long?))
+                    {
+                        result = rootNode.GetLongValue();
+                    }
+                    else if(modelType == typeof(double?))
                     {
                         result = rootNode.GetDoubleValue();
                     }
-                    else if(modelType == typeof(Guid))
+                    else if(modelType == typeof(decimal?))
+                    {
+                        result = rootNode.GetDecimalValue();
+                    }
+                    else if(modelType == typeof(Guid?))
                     {
                         result = rootNode.GetGuidValue();
                     }
-                    else if(modelType == typeof(DateTimeOffset))
+                    else if(modelType == typeof(DateTimeOffset?))
                     {
                         result = rootNode.GetDateTimeOffsetValue();
+                    }
+                    else if(modelType == typeof(TimeSpan?))
+                    {
+                        result = rootNode.GetTimeSpanValue();
+                    }
+                    else if(modelType == typeof(Date?))
+                    {
+                        result = rootNode.GetDateValue();
                     }
                     else throw new InvalidOperationException("error handling the response, unexpected type");
                     return (ModelType)result;
