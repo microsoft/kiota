@@ -66,16 +66,15 @@ namespace Kiota.Builder.Writers.TypeScript
             foreach (var @class in classes.Where(c => c.IsOfKind(CodeClassKind.Model)))
             {
                 // Verify if parent class is from the same namespace
-                var inheritsFrom = @class.StartBlock?.Inherits?.TypeDefinition?.Parent?.Name == @class.Parent.Name ? @class.StartBlock?.Inherits?.Name : null;
+                var inheritsFrom = @class.Parent.Name.Equals(@class.StartBlock.Inherits?.TypeDefinition?.Parent?.Name, StringComparison.OrdinalIgnoreCase) ? @class.StartBlock.Inherits?.Name : null;
 
-                if (inheritsFrom != null)
+                if (!string.IsNullOrEmpty(inheritsFrom))
                 {
                     if (!parentChildrenMap.ContainsKey(inheritsFrom))
                     {
                         parentChildrenMap[inheritsFrom] = new List<string>();
                     }
                     parentChildrenMap[inheritsFrom].Add(@class.Name);
-
                 }
             }
 

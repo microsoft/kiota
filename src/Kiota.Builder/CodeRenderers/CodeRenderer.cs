@@ -74,7 +74,7 @@ namespace Kiota.Builder.CodeRenderers
 
         }
 
-        public virtual  bool ShouldRenderNamespaceFile(CodeNamespace codeNamespace)
+        public virtual bool ShouldRenderNamespaceFile(CodeNamespace codeNamespace)
         {
             // if the module already has a class with the same name, it's going to be declared automatically
             var namespaceNameLastSegment = codeNamespace.Name.Split('.').Last().ToLowerInvariant();
@@ -83,14 +83,12 @@ namespace Kiota.Builder.CodeRenderers
 
         public static CodeRenderer GetCodeRender(GenerationConfiguration config)
         {
-            switch (config.Language)
+            return config.Language switch
             {
-                case GenerationLanguage.TypeScript:
-                    return new TypeScriptCodeRenderer(config);
-                default:
-                    return new CodeRenderer(config);
-               
-            }
+                GenerationLanguage.TypeScript =>
+                    new TypeScriptCodeRenderer(config),
+                _ => new CodeRenderer(config),
+            };
         }
     
     }
