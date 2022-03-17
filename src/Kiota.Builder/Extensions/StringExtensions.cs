@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -26,7 +26,7 @@ namespace Kiota.Builder.Extensions {
         public static string TrimQuotes(this string original) =>
             original?.Trim('\'', '"');
         
-        public static string ToSnakeCase(this string name)
+        public static string ToSnakeCase(this string name, char separator = '_')
         {
             if(string.IsNullOrEmpty(name)) return name;
             var chunks = name.Split('-', StringSplitOptions.RemoveEmptyEntries);
@@ -40,7 +40,7 @@ namespace Kiota.Builder.Extensions {
             foreach (var item in identifier[1..])
             {
                 if(char.IsUpper(item)) {
-                    sb.Append('_');
+                    sb.Append(separator);
                     sb.Append(char.ToLowerInvariant(item));
                 } else {
                     sb.Append(item);
@@ -82,7 +82,7 @@ namespace Kiota.Builder.Extensions {
             {
                 return current;
             }
-            return current.StartsWith("\"", StringComparison.OrdinalIgnoreCase) ? current.Replace('\"', '\'') : current;
+            return current.StartsWith("\"", StringComparison.OrdinalIgnoreCase) ? current.Replace("'", "\\'").Replace('\"', '\'') : current;
         }
         
         public static string ReplaceDotsWithSlashInNamespaces(this string namespaced)

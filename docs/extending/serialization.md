@@ -9,6 +9,18 @@ APIs rely on some serialization format (JSON, YAML, XML...) to be able to receiv
 - Models rely on a set of abstractions described below, available in the abstractions package and implemented in a separate package for each format.
 - Models self-describe their serialization/deserialization logic, more information in [the models](./models.md) documentation page.
 
+## Additional Data Holder
+
+The additional data holder interface defines members implemented by models when they support additional properties that are not described in the OpenAPI description of the API but could be part of the response.
+
+```csharp
+public interface IAdditionalDataHolder
+{
+    IDictionary<string, object> AdditionalData { get; set; }
+}
+
+```
+
 ## Parsable
 
 The parsable interface defines members that are required to be implemented by a model in order to be able to self serialize/deserialize itself. You can find a detailed description of those members in the [models](./models.md) documentation page.
@@ -20,6 +32,14 @@ public interface IParsable
     void Serialize(ISerializationWriter writer);
     IDictionary<string, object> AdditionalData { get; set; }
 }
+```
+
+## Parsable Factory
+
+Parsable Factory defines the structure for models factories creating parsable objects according or their derived types to the discriminator value present in the payload.
+
+```CSharp
+public delegate T ParsableFactory<T>(IParseNode node) where T : IParsable;
 ```
 
 ## Parse Node

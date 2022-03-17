@@ -1,7 +1,9 @@
 import {
+  AdditionalDataHolder,
   DateOnly,
   Duration,
   Parsable,
+  ParsableFactory,
   ParseNode,
   TimeOnly,
   toFirstCharacterUpper,
@@ -27,11 +29,12 @@ export class JsonParseNode implements ParseNode {
   public getCollectionOfPrimitiveValues = <T>(): T[] | undefined => {
     return (this._jsonNode as unknown[]).map((x) => {
       const currentParseNode = new JsonParseNode(x);
-      if (x instanceof Boolean) {
+      const typeOfX = typeof x;
+      if (typeOfX === "boolean") {
         return currentParseNode.getBooleanValue() as unknown as T;
-      } else if (x instanceof String) {
+      } else if (typeOfX === "string") {
         return currentParseNode.getStringValue() as unknown as T;
-      } else if (x instanceof Number) {
+      } else if (typeOfX === "number") {
         return currentParseNode.getNumberValue() as unknown as T;
       } else if (x instanceof Date) {
         return currentParseNode.getDateValue() as unknown as T;
@@ -49,17 +52,21 @@ export class JsonParseNode implements ParseNode {
     });
   };
   public getCollectionOfObjectValues = <T extends Parsable>(
-    type: new () => T
+    type: ParsableFactory<T>
   ): T[] | undefined => {
     return (this._jsonNode as unknown[])
       .map((x) => new JsonParseNode(x))
       .map((x) => x.getObjectValue<T>(type));
   };
-  public getObjectValue = <T extends Parsable>(type: new () => T): T => {
-    const result = new type();
-    this.onBeforeAssignFieldValues && this.onBeforeAssignFieldValues(result);
+  public getObjectValue = <T extends Parsable>(type: ParsableFactory<T>): T => {
+    const result = type(this);
+    if (this.onBeforeAssignFieldValues) {
+      this.onBeforeAssignFieldValues(result);
+    }
     this.assignFieldValues(result);
-    this.onAfterAssignFieldValues && this.onAfterAssignFieldValues(result);
+    if (this.onAfterAssignFieldValues) {
+      this.onAfterAssignFieldValues(result);
+    }
     return result;
   };
   public getEnumValues = <T>(type: any): T[] => {
@@ -79,12 +86,17 @@ export class JsonParseNode implements ParseNode {
   };
   private assignFieldValues = <T extends Parsable>(item: T): void => {
     const fields = item.getFieldDeserializers();
+    let itemAdditionalData: Map<string, unknown> | undefined;
+    const holder = item as unknown as AdditionalDataHolder;
+    if (holder && holder.additionalData) {
+      itemAdditionalData = holder.additionalData;
+    }
     Object.entries(this._jsonNode as any).forEach(([k, v]) => {
       const deserializer = fields.get(k);
       if (deserializer) {
         deserializer(item, new JsonParseNode(v));
-      } else {
-        item.additionalData.set(k, v);
+      } else if (itemAdditionalData) {
+        itemAdditionalData.set(k, v);
       }
     });
   };

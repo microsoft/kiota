@@ -29,13 +29,13 @@ namespace Kiota.Builder.Writers.Java.Tests {
         }
         [Fact]
         public void WritesSimpleDeclaration() {
-            codeElementWriter.WriteCodeElement(parentClass.StartBlock as CodeClass.Declaration, writer);
+            codeElementWriter.WriteCodeElement(parentClass.StartBlock as ClassDeclaration, writer);
             var result = tw.ToString();
             Assert.Contains("public class", result);
         }
         [Fact]
         public void WritesImplementation() {
-            var declaration = parentClass.StartBlock as CodeClass.Declaration;
+            var declaration = parentClass.StartBlock as ClassDeclaration;
             declaration.AddImplements(new CodeType {
                 Name = "someInterface"
             });
@@ -45,7 +45,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
         }
         [Fact]
         public void WritesInheritance() {
-            var declaration = parentClass.StartBlock as CodeClass.Declaration;
+            var declaration = parentClass.StartBlock as ClassDeclaration;
             declaration.Inherits = new (){
                 Name = "someInterface"
             };
@@ -55,7 +55,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
         }
         [Fact]
         public void WritesImports() {
-            var declaration = parentClass.StartBlock as CodeClass.Declaration;
+            var declaration = parentClass.StartBlock as ClassDeclaration;
             declaration.AddUsings(new () {
                 Name = "Objects",
                 Declaration = new() {
@@ -76,7 +76,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
         }
         [Fact]
         public void RemovesImportWithClassName() {
-            var declaration = parentClass.StartBlock as CodeClass.Declaration;
+            var declaration = parentClass.StartBlock as ClassDeclaration;
             declaration.AddUsings(new CodeUsing {
                 Name = "project.graph",
                 Declaration = new() {

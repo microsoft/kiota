@@ -9,6 +9,7 @@ verify_ssl = true
 name = "testpypi"
 
 [packages]
+aiohttp = {version="3.8.1", index="pypi"}
 azure-core = {version="1.21.1", index="pypi"}
 kiota-abstractions = {version="*", index="testpypi"}
 

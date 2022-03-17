@@ -22,9 +22,5 @@ namespace Microsoft.Kiota.Abstractions.Serialization
         /// </summary>
         /// <param name="writer">The <see cref="ISerializationWriter">writer</see> to write to.</param>
         void Serialize(ISerializationWriter writer);
-        /// <summary>
-        ///  Stores the additional data for this object that did not belong to the properties.
-        /// </summary>
-        IDictionary<string, object> AdditionalData { get; set; }
     }
 }

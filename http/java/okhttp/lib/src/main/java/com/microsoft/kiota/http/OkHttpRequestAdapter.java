@@ -6,6 +6,7 @@ import java.lang.StackWalker.Option;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
@@ -16,6 +17,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.microsoft.kiota.ApiClientBuilder;
+import com.microsoft.kiota.ApiException;
 import com.microsoft.kiota.RequestInformation;
 import com.microsoft.kiota.RequestOption;
 import com.microsoft.kiota.ResponseHandler;
@@ -27,6 +29,7 @@ import com.microsoft.kiota.http.middleware.options.RetryHandlerOption;
 import com.microsoft.kiota.http.middleware.options.TelemetryHandlerOption;
 import com.microsoft.kiota.serialization.ParseNodeFactoryRegistry;
 import com.microsoft.kiota.serialization.Parsable;
+import com.microsoft.kiota.serialization.ParsableFactory;
 import com.microsoft.kiota.serialization.ParseNode;
 import com.microsoft.kiota.serialization.ParseNodeFactory;
 import com.microsoft.kiota.serialization.SerializationWriterFactory;
@@ -98,48 +101,52 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
         }
     }
     @Nonnull
-    public <ModelType extends Parsable> CompletableFuture<Iterable<ModelType>> sendCollectionAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
+    public <ModelType extends Parsable> CompletableFuture<Iterable<ModelType>> sendCollectionAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final ParsableFactory<ModelType> factory, @Nullable final ResponseHandler responseHandler, @Nullable final HashMap<String, ParsableFactory<? extends Parsable>> errorMappings) {
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
+        Objects.requireNonNull(factory, "parameter factory cannot be null");
 
-        return this.getHttpResponseMessage(requestInfo).thenCompose(response -> {
+        return this.getHttpResponseMessage(requestInfo)
+        .thenCompose(response -> {
             if(responseHandler == null) {
-                final ResponseBody body = response.body();
                 try {
-                    try (final InputStream rawInputStream = body.byteStream()) {
-                        final ParseNode rootNode = pNodeFactory.getParseNode(getMediaTypeAndSubType(body.contentType()), rawInputStream);
-                        final Iterable<ModelType> result = rootNode.getCollectionOfObjectValues(targetClass);
-                        return CompletableFuture.completedStage(result);
-                    }
+                    this.throwFailedResponse(response, errorMappings);
+                    final ParseNode rootNode = getRootParseNode(response);
+                    final Iterable<ModelType> result = rootNode.getCollectionOfObjectValues(factory);
+                    return CompletableFuture.completedStage(result);
+                } catch(ApiException ex) {
+                    return CompletableFuture.failedFuture(ex);
                 } catch(IOException ex) {
                     return CompletableFuture.failedFuture(new RuntimeException("failed to read the response body", ex));
                 } finally {
                     response.close();
                 }
             } else {
-                return responseHandler.handleResponseAsync(response);
+                return responseHandler.handleResponseAsync(response, errorMappings);
             }
         });
     }
     @Nonnull
-    public <ModelType extends Parsable> CompletableFuture<ModelType> sendAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
+    public <ModelType extends Parsable> CompletableFuture<ModelType> sendAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final ParsableFactory<ModelType> factory, @Nullable final ResponseHandler responseHandler, @Nullable final HashMap<String, ParsableFactory<? extends Parsable>> errorMappings) {
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
+        Objects.requireNonNull(factory, "parameter factory cannot be null");
 
-        return this.getHttpResponseMessage(requestInfo).thenCompose(response -> {
+        return this.getHttpResponseMessage(requestInfo)
+        .thenCompose(response -> {
             if(responseHandler == null) {
-                final ResponseBody body = response.body();
                 try {
-                    try (final InputStream rawInputStream = body.byteStream()) {
-                        final ParseNode rootNode = pNodeFactory.getParseNode(getMediaTypeAndSubType(body.contentType()), rawInputStream);
-                        final ModelType result = rootNode.getObjectValue(targetClass);
-                        return CompletableFuture.completedStage(result);
-                    }
+                    this.throwFailedResponse(response, errorMappings);
+                    final ParseNode rootNode = getRootParseNode(response);
+                    final ModelType result = rootNode.getObjectValue(factory);
+                    return CompletableFuture.completedStage(result);
+                } catch(ApiException ex) {
+                    return CompletableFuture.failedFuture(ex);
                 } catch(IOException ex) {
                     return CompletableFuture.failedFuture(new RuntimeException("failed to read the response body", ex));
                 } finally {
                     response.close();
                 }
             } else {
-                return responseHandler.handleResponseAsync(response);
+                return responseHandler.handleResponseAsync(response, errorMappings);
             }
         });
     }
@@ -147,20 +154,21 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
         return mediaType.type() + "/" + mediaType.subtype();
     }
     @Nonnull
-    public <ModelType> CompletableFuture<ModelType> sendPrimitiveAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
-        return this.getHttpResponseMessage(requestInfo).thenCompose(response -> {
+    public <ModelType> CompletableFuture<ModelType> sendPrimitiveAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler, @Nullable final HashMap<String, ParsableFactory<? extends Parsable>> errorMappings) {
+        return this.getHttpResponseMessage(requestInfo)
+        .thenCompose(response -> {
             if(responseHandler == null) {
-                final ResponseBody body = response.body();
                 try {
+                    this.throwFailedResponse(response, errorMappings);
                     if(targetClass == Void.class) {
                         return CompletableFuture.completedStage(null);
                     } else {
-                        final InputStream rawInputStream = body.byteStream();
                         if(targetClass == InputStream.class) {
+                            final ResponseBody body = response.body();
+                            final InputStream rawInputStream = body.byteStream();
                             return CompletableFuture.completedStage((ModelType)rawInputStream);
                         }
-                        final ParseNode rootNode = pNodeFactory.getParseNode(getMediaTypeAndSubType(body.contentType()), rawInputStream);
-                        rawInputStream.close();
+                        final ParseNode rootNode = getRootParseNode(response);
                         Object result;
                         if(targetClass == Boolean.class) {
                             result = rootNode.getBooleanValue();
@@ -181,37 +189,75 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
                         }
                         return CompletableFuture.completedStage((ModelType)result);
                     }
+                } catch(ApiException ex) {
+                    return CompletableFuture.failedFuture(ex);
                 } catch(IOException ex) {
                     return CompletableFuture.failedFuture(new RuntimeException("failed to read the response body", ex));
                 } finally {
                     response.close();
                 }
             } else {
-                return responseHandler.handleResponseAsync(response);
+                return responseHandler.handleResponseAsync(response, errorMappings);
             }
         });
     }
-    public <ModelType> CompletableFuture<Iterable<ModelType>> sendPrimitiveCollectionAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler) {
+    public <ModelType> CompletableFuture<Iterable<ModelType>> sendPrimitiveCollectionAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler, @Nullable final HashMap<String, ParsableFactory<? extends Parsable>> errorMappings) {
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
 
-        return this.getHttpResponseMessage(requestInfo).thenCompose(response -> {
+        return this.getHttpResponseMessage(requestInfo)
+        .thenCompose(response -> {
             if(responseHandler == null) {
-                final ResponseBody body = response.body();
                 try {
-                    try (final InputStream rawInputStream = body.byteStream()) {
-                        final ParseNode rootNode = pNodeFactory.getParseNode(getMediaTypeAndSubType(body.contentType()), rawInputStream);
-                        final Iterable<ModelType> result = rootNode.getCollectionOfPrimitiveValues(targetClass);
-                        return CompletableFuture.completedStage(result);
-                    }
+                    this.throwFailedResponse(response, errorMappings);
+                    final ParseNode rootNode = getRootParseNode(response);
+                    final Iterable<ModelType> result = rootNode.getCollectionOfPrimitiveValues(targetClass);
+                    return CompletableFuture.completedStage(result);
+                } catch(ApiException ex) {
+                    return CompletableFuture.failedFuture(ex);
                 } catch(IOException ex) {
                     return CompletableFuture.failedFuture(new RuntimeException("failed to read the response body", ex));
                 } finally {
                     response.close();
                 }
             } else {
-                return responseHandler.handleResponseAsync(response);
+                return responseHandler.handleResponseAsync(response, errorMappings);
             }
         });
+    }
+    private ParseNode getRootParseNode(final Response response) throws IOException {
+        final ResponseBody body = response.body();
+        try (final InputStream rawInputStream = body.byteStream()) {
+            final ParseNode rootNode = pNodeFactory.getParseNode(getMediaTypeAndSubType(body.contentType()), rawInputStream);
+            return rootNode;
+        }
+    }
+    private Response throwFailedResponse(final Response response, final HashMap<String, ParsableFactory<? extends Parsable>> errorMappings) throws IOException, ApiException {
+        if (response.isSuccessful()) return response;
+
+        final String statusCodeAsString = Integer.toString(response.code());
+        final Integer statusCode = response.code();
+        if (errorMappings == null ||
+           !errorMappings.containsKey(statusCodeAsString) &&
+           !(statusCode >= 400 && statusCode < 500 && errorMappings.containsKey("4XX")) &&
+           !(statusCode >= 500 && statusCode < 600 && errorMappings.containsKey("5XX"))) {
+            throw new ApiException("the server returned an unexpected status code and no error class is registered for this code " + statusCode);
+        }
+        final ParsableFactory<? extends Parsable> errorClass = errorMappings.containsKey(statusCodeAsString) ?
+                                                    errorMappings.get(statusCodeAsString) :
+                                                    (statusCode >= 400 && statusCode < 500 ?
+                                                        errorMappings.get("4XX") :
+                                                        errorMappings.get("5XX"));
+        try {
+            final ParseNode rootNode = getRootParseNode(response);
+            final Parsable error = rootNode.getObjectValue(errorClass);
+            if (error instanceof ApiException) {
+                throw (ApiException)error;
+            } else {
+                throw new ApiException("unexpected error type " + error.getClass().getName());
+            }
+        } finally {
+            response.close();
+        }
     }
     private CompletableFuture<Response> getHttpResponseMessage(@Nonnull final RequestInformation requestInfo) {
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");

@@ -14,6 +14,7 @@ Kiota accepts the following parameters during the generation.
 ```shell
 kiota [--backing-store | -b]
       [--class-name | -c]
+      [--clean-output | -co]
       [--deserializer | -ds]
       [--language | -l]
       [--loglevel | -ll]
@@ -36,6 +37,14 @@ kiota --backing-store
 ### `--class-name (-c)`
 
 The class name to use for the core client class. Defaults to `ApiClient`.
+
+### `--clean-output (-co)`
+
+Delete the output directory before generating the client. Defaults to false.
+
+```shell
+kiota --clean-output
+```
 
 #### Accepted values
 

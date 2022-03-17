@@ -53,12 +53,11 @@ class BaseBearerTokenAuthenticationProvider implements AuthenticationProvider {
      */
     public function authenticateRequest(RequestInformation $request): Promise {
         if (!array_key_exists(self::$authorizationHeaderKey, $request->headers)) {
-            return $this->accessTokenProvider->getAuthorizationTokenAsync($request->getUri())
+            return $this->getAccessTokenProvider()->getAuthorizationTokenAsync($request->getUri())
                         ->then(function ($token) use($request) {
-                            if(is_null($token)){
-                                throw new \DomainException('Could not get an authorization token');
+                            if ($token) {
+                                $request->headers[self::$authorizationHeaderKey] = "Bearer {$token}";
                             }
-                            $request->headers[self::$authorizationHeaderKey] = "Bearer {$token}";
                             return null;
                         });
         }

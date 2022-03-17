@@ -14,7 +14,6 @@ namespace Kiota.Builder.Tests {
             Assert.False(codeClass.IsOfKind((CodeClassKind[])null));
             Assert.False(codeClass.IsOfKind(Array.Empty<CodeClassKind>()));
 
-            codeClass.StartBlock = new CodeBlock.BlockDeclaration();
             Assert.Null(codeClass.GetParentClass());
         }
         [Fact]
@@ -25,7 +24,7 @@ namespace Kiota.Builder.Tests {
             };
             root.AddClass(codeClass);
             Assert.False(codeClass.IsOfKind(CodeClassKind.Model));
-            codeClass.ClassKind = CodeClassKind.RequestBuilder;
+            codeClass.Kind = CodeClassKind.RequestBuilder;
             Assert.True(codeClass.IsOfKind(CodeClassKind.RequestBuilder));
             Assert.True(codeClass.IsOfKind(CodeClassKind.RequestBuilder, CodeClassKind.QueryParameters));
             Assert.False(codeClass.IsOfKind(CodeClassKind.QueryParameters));
@@ -105,6 +104,27 @@ namespace Kiota.Builder.Tests {
             Assert.Equal(3, codeClass.GetChildElements(true).Count());
         }
         [Fact]
+        public void AddsInnerInterface() {
+            var root = CodeNamespace.InitRootNamespace();
+            var child = root.AddNamespace(CodeNamespaceTests.ChildName);
+            var codeClass = child.AddClass(new CodeClass {
+                Name = "class1"
+            }).First();
+            codeClass.AddInnerInterface(new CodeInterface {
+                Name = "subinterface"
+            });
+            Assert.Single(codeClass.GetChildElements(true).OfType<CodeInterface>());
+            Assert.Throws<ArgumentNullException>(() => {
+                codeClass.AddInnerInterface(null);
+            });
+            Assert.Throws<ArgumentNullException>(() => {
+                codeClass.AddInnerInterface(new CodeInterface[] {null});
+            });
+            Assert.Throws<ArgumentOutOfRangeException>(() => {
+                codeClass.AddInnerInterface(new CodeInterface[] {});
+            });
+        }
+        [Fact]
         public void GetsParentAndGrandParent() {
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(CodeNamespaceTests.ChildName);
@@ -117,10 +137,10 @@ namespace Kiota.Builder.Tests {
             var childClass = child.AddClass(new CodeClass {
                 Name = "child"
             }).First();
-            (childClass.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
+            (childClass.StartBlock as ClassDeclaration).Inherits = new CodeType {
                 TypeDefinition = parent,
             };
-            (parent.StartBlock as CodeClass.Declaration).Inherits = new CodeType {
+            (parent.StartBlock as ClassDeclaration).Inherits = new CodeType {
                 TypeDefinition = grandParent,
             };
             Assert.Equal(grandParent, parent.GetParentClass());

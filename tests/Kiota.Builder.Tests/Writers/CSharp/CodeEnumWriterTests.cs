@@ -32,7 +32,7 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             writer.Write(currentEnum);
             var result = tw.ToString();
             Assert.Contains("public enum", result);
-            AssertExtensions.CurlyBracesAreClosed(result);
+            AssertExtensions.CurlyBracesAreClosed(result, 1);
             Assert.Contains(OptionName, result);
         }
         [Fact]

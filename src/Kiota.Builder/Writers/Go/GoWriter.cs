@@ -4,11 +4,12 @@ namespace Kiota.Builder.Writers.Go {
         {
             PathSegmenter = new GoPathSegmenter(rootPath, clientNamespaceName);
             var conventionService = new GoConventionService();
-            AddCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
-            AddCodeElementWriter(new CodeClassEndWriter());
-            AddCodeElementWriter(new CodePropertyWriter(conventionService));
-            AddCodeElementWriter(new CodeEnumWriter(conventionService));
-            AddCodeElementWriter(new CodeMethodWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeInterfaceDeclarationWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeBlockEndWriter());
+            AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));
         }
     }
 }

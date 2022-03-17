@@ -42,6 +42,18 @@ namespace Microsoft.Kiota.Serialization.Json
         public bool? GetBoolValue() => _jsonNode.GetBoolean();
 
         /// <summary>
+        /// Get the byte value from the json node
+        /// </summary>
+        /// <returns>A byte value</returns>
+        public byte? GetByteValue() => _jsonNode.GetByte();
+
+        /// <summary>
+        /// Get the sbyte value from the json node
+        /// </summary>
+        /// <returns>A sbyte value</returns>
+        public sbyte? GetSbyteValue() => _jsonNode.GetSByte();
+
+        /// <summary>
         /// Get the int value from the json node
         /// </summary>
         /// <returns>A int value</returns>
@@ -64,6 +76,12 @@ namespace Microsoft.Kiota.Serialization.Json
         /// </summary>
         /// <returns>A double value</returns>
         public double? GetDoubleValue() => _jsonNode.GetDouble();
+
+        /// <summary>
+        /// Get the decimal value from the json node
+        /// </summary>
+        /// <returns>A decimal value</returns>
+        public decimal? GetDecimalValue() => _jsonNode.GetDecimal();
 
         /// <summary>
         /// Get the guid value from the json node
@@ -149,8 +167,9 @@ namespace Microsoft.Kiota.Serialization.Json
         /// <summary>
         /// Get the collection of type <typeparam name="T"/>from the json node
         /// </summary>
+        /// <param name="factory">The factory to use to create the model object.</param>
         /// <returns>A collection of objects</returns>
-        public IEnumerable<T> GetCollectionOfObjectValues<T>() where T : IParsable
+        public IEnumerable<T> GetCollectionOfObjectValues<T>(ParsableFactory<T> factory) where T : IParsable
         {
             var enumerator = _jsonNode.EnumerateArray();
             while(enumerator.MoveNext())
@@ -160,7 +179,7 @@ namespace Microsoft.Kiota.Serialization.Json
                     OnAfterAssignFieldValues = OnAfterAssignFieldValues,
                     OnBeforeAssignFieldValues = OnBeforeAssignFieldValues
                 };
-                yield return currentParseNode.GetObjectValue<T>();
+                yield return currentParseNode.GetObjectValue<T>(factory);
             }
         }
         /// <summary>
@@ -190,6 +209,8 @@ namespace Microsoft.Kiota.Serialization.Json
             return Convert.FromBase64String(rawValue);
         }
         private static Type booleanType = typeof(bool?);
+        private static Type byteType = typeof(byte?);
+        private static Type sbyteType = typeof(sbyte?);
         private static Type stringType = typeof(string);
         private static Type intType = typeof(int?);
         private static Type floatType = typeof(float?);
@@ -216,6 +237,10 @@ namespace Microsoft.Kiota.Serialization.Json
                 };
                 if(genericType == booleanType)
                     yield return (T)(object)currentParseNode.GetBoolValue();
+                else if(genericType == byteType)
+                    yield return (T)(object)currentParseNode.GetByteValue();
+                else if(genericType == sbyteType)
+                    yield return (T)(object)currentParseNode.GetSbyteValue();
                 else if(genericType == stringType)
                     yield return (T)(object)currentParseNode.GetStringValue();
                 else if(genericType == intType)
@@ -252,10 +277,11 @@ namespace Microsoft.Kiota.Serialization.Json
         /// <summary>
         /// Get the object of type <typeparam name="T"/>from the json node
         /// </summary>
+        /// <param name="factory">The factory to use to create the model object.</param>
         /// <returns>A object of the specified type</returns>
-        public T GetObjectValue<T>() where T : IParsable
+        public T GetObjectValue<T>(ParsableFactory<T> factory) where T : IParsable
         {
-            var item = (T)(typeof(T).GetConstructor(new Type[] { }).Invoke(new object[] { }));
+            var item = factory(this);
             var fieldDeserializers = item.GetFieldDeserializers<T>();
             OnBeforeAssignFieldValues?.Invoke(item);
             AssignFieldValues(item, fieldDeserializers);
@@ -265,8 +291,13 @@ namespace Microsoft.Kiota.Serialization.Json
         private void AssignFieldValues<T>(T item, IDictionary<string, Action<T, IParseNode>> fieldDeserializers) where T : IParsable
         {
             if(_jsonNode.ValueKind != JsonValueKind.Object) return;
-            if(item.AdditionalData == null)
-                item.AdditionalData = new Dictionary<string, object>();
+            IDictionary<string, object> itemAdditionalData = null;
+            if(item is IAdditionalDataHolder holder)
+            {
+                if(holder.AdditionalData == null)
+                    holder.AdditionalData = new Dictionary<string, object>();
+                itemAdditionalData = holder.AdditionalData;
+            }
 
             foreach(var fieldValue in _jsonNode.EnumerateObject())
             {
@@ -283,10 +314,14 @@ namespace Microsoft.Kiota.Serialization.Json
                         OnAfterAssignFieldValues = OnAfterAssignFieldValues
                     });
                 }
-                else
+                else if (itemAdditionalData != null)
                 {
                     Debug.WriteLine($"found additional property {fieldValue.Name} to deserialize");
-                    item.AdditionalData.TryAdd(fieldValue.Name, TryGetAnything(fieldValue.Value));
+                    itemAdditionalData.TryAdd(fieldValue.Name, TryGetAnything(fieldValue.Value));
+                }
+                else
+                {
+                    Debug.WriteLine($"found additional property {fieldValue.Name} to deserialize but the model doesn't support additional data");
                 }
             }
         }
