@@ -51,56 +51,48 @@ namespace Kiota.Builder.Writers.TypeScript.Tests
         public void SortModelClassesBasedonInheritance()
         {
             var root = CodeNamespace.InitRootNamespace();
+            root.Name = "testNameSpace";
+
             var modelA = new CodeClass
             {
                 Kind = CodeClassKind.Model,
                 Name = "ModelA",
             };
-          
+
+            var modelB = new CodeClass
+            {
+                Kind = CodeClassKind.Model,
+                Name = "ModelB",
+            };
+
+            var modelC = new CodeClass
+            {
+                Kind = CodeClassKind.Model,
+                Name = "ModelC",
+            };
+
             root.AddClass(modelA);
-
-            var modelB = modelA.AddInnerClass(new CodeClass
-            {
-                Kind = CodeClassKind.Model,
-                Name = "ModelB"
-            }).First();
-
-            var declarationB = modelB.StartBlock;
-
-
-            declarationB.Inherits = new CodeType()
-            {
-                TypeDefinition = new CodeType()
-                {
-                    Parent = modelA
-                }
-            };
-
-            var modelC = modelB.AddInnerClass(new CodeClass
-            {
-                Kind = CodeClassKind.Model,
-                Name = "ModelX"
-            }).First();
-
-
-
-            var declarationC = modelC.StartBlock;
-
-            declarationC.Inherits = new CodeType()
-            {
-                TypeDefinition = new CodeType()
-                {
-                    Parent = modelB
-                }
-            };
-
             root.AddClass(modelB);
             root.AddClass(modelC);
 
+            var declarationB = modelB.StartBlock;
+
+            declarationB.Inherits = new CodeType
+            {
+                Name = modelA.Name,
+                TypeDefinition = modelA
+            };
+            var declarationC = modelC.StartBlock;
+            declarationC.Inherits = new CodeType
+            {
+                Name = modelB.Name,
+                TypeDefinition = modelB
+            };
+
             writer.Write(root);
             var result = tw.ToString();
-  
-            Assert.Contains("export * from './modelA'\r\nexport * from './modelB'\r\nexport * from './modelC'\r\n'", result);
+
+            Assert.Contains("export * from './modelA'\r\nexport * from './modelB'\r\nexport * from './modelC'\r\n", result);
         }
     }
 }

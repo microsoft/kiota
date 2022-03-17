@@ -43,14 +43,10 @@ namespace Kiota.Builder.Writers
             {
                 var importPath = GetImportRelativePathFromNamespaces(currentNamespace,
                                                         typeDef.GetImmediateParentOfType<CodeNamespace>());
-                if (importPath == "./")
-                {
-                    importPath += "index";
-                }
-                else if (string.IsNullOrEmpty(importPath))
-                {
+                if (string.IsNullOrEmpty(importPath))
                     importPath += codeUsing.Name;
-                }
+                else
+                    importPath += codeUsing.Declaration.Name.ToFirstCharacterLowerCase();
                 return (importSymbol, codeUsing.Alias, importPath);
             }
         }

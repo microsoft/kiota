@@ -42,7 +42,6 @@ namespace Kiota.Builder.Writers.TypeScript
                     if (parentChildrenMap.ContainsKey(child))
                     {
                         VisitEveryChild(parentChildrenMap, visited, inheritanceOrderList, child);
-
                     }
                 }
                 inheritanceOrderList.Insert(0, current);
