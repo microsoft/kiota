@@ -6,8 +6,7 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Refiners;
 public abstract class CommonLanguageRefiner : ILanguageRefiner
 {
-    protected CommonLanguageRefiner(GenerationConfiguration configuration)
-    {
+    protected CommonLanguageRefiner(GenerationConfiguration configuration) {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
     }
     public abstract void Refine(CodeNamespace generatedCode);
@@ -18,9 +17,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected void AddSerializationModulesImport(CodeElement generatedCode, string[] serializationWriterFactoryInterfaceAndRegistrationFullName = default, string[] parseNodeFactoryInterfaceAndRegistrationFullName = default, char separator = '.') {
         if(serializationWriterFactoryInterfaceAndRegistrationFullName == null)
             serializationWriterFactoryInterfaceAndRegistrationFullName = Array.Empty<string>();
-        if (parseNodeFactoryInterfaceAndRegistrationFullName == null)
+        if(parseNodeFactoryInterfaceAndRegistrationFullName == null)
             parseNodeFactoryInterfaceAndRegistrationFullName = Array.Empty<string>();
-        if (generatedCode is CodeMethod currentMethod &&
+        if(generatedCode is CodeMethod currentMethod &&
             currentMethod.IsOfKind(CodeMethodKind.ClientConstructor) &&
             currentMethod.Parent is CodeClass currentClass &&
             currentClass.StartBlock is ClassDeclaration declaration) {
@@ -43,30 +42,25 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
         CrawlTree(generatedCode, x => AddSerializationModulesImport(x, serializationWriterFactoryInterfaceAndRegistrationFullName, parseNodeFactoryInterfaceAndRegistrationFullName, separator));
     }
-    protected static void ReplaceDefaultSerializationModules(CodeElement generatedCode, params string[] moduleNames)
-    {
-        if (ReplaceSerializationModules(generatedCode, x => x.SerializerModules, "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory", moduleNames))
+    protected static void ReplaceDefaultSerializationModules(CodeElement generatedCode, params string[] moduleNames) {
+        if(ReplaceSerializationModules(generatedCode, x => x.SerializerModules, "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory", moduleNames))
             return;
         CrawlTree(generatedCode, (x) => ReplaceDefaultSerializationModules(x, moduleNames));
     }
-    protected static void ReplaceDefaultDeserializationModules(CodeElement generatedCode, params string[] moduleNames)
-    {
-        if (ReplaceSerializationModules(generatedCode, x => x.DeserializerModules, "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory", moduleNames))
+    protected static void ReplaceDefaultDeserializationModules(CodeElement generatedCode, params string[] moduleNames) {
+        if(ReplaceSerializationModules(generatedCode, x => x.DeserializerModules, "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory", moduleNames))
             return;
         CrawlTree(generatedCode, (x) => ReplaceDefaultDeserializationModules(x, moduleNames));
     }
-    private static bool ReplaceSerializationModules(CodeElement generatedCode, Func<CodeMethod, List<string>> propertyGetter, string initialName, params string[] moduleNames)
-    {
-        if (generatedCode is CodeMethod currentMethod &&
-            currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
-        {
-            var modules = propertyGetter.Invoke(currentMethod);
-            if (modules.Count == 1 &&
-                modules.Any(x => initialName.Equals(x, StringComparison.OrdinalIgnoreCase)))
-            {
-                modules.Clear();
-                modules.AddRange(moduleNames);
-                return true;
+    private static bool ReplaceSerializationModules(CodeElement generatedCode, Func<CodeMethod, List<string>> propertyGetter, string initialName, params string[] moduleNames) {
+        if(generatedCode is CodeMethod currentMethod &&
+            currentMethod.IsOfKind(CodeMethodKind.ClientConstructor)) {
+                var modules = propertyGetter.Invoke(currentMethod);
+                if(modules.Count == 1 &&
+                    modules.Any(x => initialName.Equals(x, StringComparison.OrdinalIgnoreCase))) {
+                    modules.Clear();
+                    modules.AddRange(moduleNames);
+                    return true;
             }
         }
 
@@ -76,12 +70,12 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder)
             && currentClass.StartBlock is ClassDeclaration currentDeclaration) {
             var backedModelImplements = currentDeclaration.Implements.FirstOrDefault(x => "IBackedModel".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
-            if (backedModelImplements != null)
+            if(backedModelImplements != null)
                 backedModelImplements.Name = backedModelImplements.Name[1..]; //removing the "I"
             var backingStoreProperty = currentClass.GetPropertyOfKind(CodePropertyKind.BackingStore);
-            if (backingStoreProperty != null)
+            if(backingStoreProperty != null)
                 backingStoreProperty.DefaultValue = defaultPropertyValue;
-
+            
         }
         CrawlTree(currentElement, (x) => CorrectCoreTypesForBackingStore(x, defaultPropertyValue));
     }
@@ -100,12 +94,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if(current is CodeProperty currentProperty &&
             propertyKindsToAddAccessors.Contains(currentProperty.Kind) &&
             current.Parent is CodeClass parentClass &&
-            !parentClass.IsOfKind(CodeClassKind.QueryParameters))
-        {
-            if (removeProperty && currentProperty.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.AdditionalData)) // we never want to remove backing stores
+            !parentClass.IsOfKind(CodeClassKind.QueryParameters)) {
+            if(removeProperty && currentProperty.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.AdditionalData)) // we never want to remove backing stores
                 parentClass.RemoveChildElement(currentProperty);
-            else
-            {
+            else {
                 currentProperty.Access = AccessModifier.Private;
                 currentProperty.NamePrefix = "_";
             }
@@ -132,8 +124,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     Kind = CodeMethodKind.Setter,
                     Description = $"Sets the {propertyOriginalName} property value. {currentProperty.Description}",
                     AccessedProperty = currentProperty,
-                    ReturnType = new CodeType
-                    {
+                    ReturnType = new CodeType {
                         Name = "void",
                         IsNullable = false,
                         IsExternal = true,
@@ -160,8 +151,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             currentClass.Properties.Any(x => !string.IsNullOrEmpty(x.DefaultValue)) ||
             addIfInherited && DoesAnyParentHaveAPropertyWithDefaultValue(currentClass)) &&
             !currentClass.Methods.Any(x => x.IsOfKind(CodeMethodKind.ClientConstructor)))
-            currentClass.AddMethod(new CodeMethod
-            {
+            currentClass.AddMethod(new CodeMethod {
                 Name = "constructor",
                 Kind = CodeMethodKind.Constructor,
                 ReturnType = new CodeType {
@@ -172,25 +162,23 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             });
         CrawlTree(current, x => AddConstructorsForDefaultValues(x, addIfInherited, forceAdd));
     }
-    protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement, HashSet<Type> codeElementExceptions = null, Func<CodeElement, bool> shouldReplaceCallback = null)
-    {
+    protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement, HashSet<Type> codeElementExceptions = null, Func<CodeElement, bool> shouldReplaceCallback = null) {
         var shouldReplace = shouldReplaceCallback?.Invoke(current) ?? true;
         var isNotInExceptions = !codeElementExceptions?.Contains(current.GetType()) ?? true;
-        if (current is CodeClass currentClass &&
+        if(current is CodeClass currentClass && 
             isNotInExceptions &&
             shouldReplace &&
             currentClass.StartBlock is ClassDeclaration currentDeclaration)
             ReplaceReservedCodeUsings(currentDeclaration, provider, replacement);
-        else if (current is CodeNamespace currentNamespace &&
+        else if(current is CodeNamespace currentNamespace &&
             isNotInExceptions &&
             shouldReplace &&
             !string.IsNullOrEmpty(currentNamespace.Name))
             ReplaceReservedNamespaceSegments(currentNamespace, provider, replacement);
-        else if (current is CodeMethod currentMethod &&
+        else if(current is CodeMethod currentMethod &&
             isNotInExceptions &&
-            shouldReplace)
-        {
-            if (currentMethod.ReturnType is CodeType returnType &&
+            shouldReplace) {
+            if(currentMethod.ReturnType is CodeType returnType &&
                 !returnType.IsExternal &&
                 provider.ReservedNames.Contains(returnType.Name))
                 returnType.Name = replacement.Invoke(returnType.Name);
@@ -201,13 +189,12 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             if(currentMethod.DiscriminatorMappings.Select(x => x.Value.Name).Any(x => provider.ReservedNames.Contains(x)))
                 ReplaceMappingNames(currentMethod.DiscriminatorMappings, provider, replacement);
             ReplaceReservedParameterNamesTypes(currentMethod, provider, replacement);
-        }
-        else if (current is CodeProperty currentProperty &&
-              isNotInExceptions &&
-              shouldReplace &&
-              currentProperty.Type is CodeType propertyType &&
-              !propertyType.IsExternal &&
-              provider.ReservedNames.Contains(currentProperty.Type.Name))
+        } else if (current is CodeProperty currentProperty &&
+                isNotInExceptions &&
+                shouldReplace &&
+                currentProperty.Type is CodeType propertyType &&
+                !propertyType.IsExternal &&
+                provider.ReservedNames.Contains(currentProperty.Type.Name))
             propertyType.Name = replacement.Invoke(propertyType.Name);
         // Check if the current name meets the following conditions to be replaced
         // 1. In the list of reserved names
@@ -215,11 +202,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         // 3. There's not a very specific condition preventing from replacement
         if (provider.ReservedNames.Contains(current.Name) &&
             isNotInExceptions &&
-            shouldReplace)
-        {
-            if (current is CodeProperty currentProperty &&
-                currentProperty.IsOfKind(CodePropertyKind.Custom))
-            {
+            shouldReplace) {
+            if(current is CodeProperty currentProperty &&
+                currentProperty.IsOfKind(CodePropertyKind.Custom)) {
                 currentProperty.SerializationName = currentProperty.Name;
                 currentProperty.IsNameEscaped = true;
             }
@@ -235,15 +220,14 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                         .Where(x => x != null && !x.IsExternal)
                         .Join(provider.ReservedNames, x => x.Name, y => y, (x, y) => x)
                         .ToList()
-                        .ForEach(x =>
-                        {
+                        .ForEach(x => {
                             x.Name = replacement.Invoke(x.Name);
                         });
     }
     private static void ReplaceReservedNamespaceSegments(CodeNamespace currentNamespace, IReservedNamesProvider provider, Func<string, string> replacement)
     {
         var segments = currentNamespace.Name.Split('.');
-        if (segments.Any(x => provider.ReservedNames.Contains(x)))
+        if(segments.Any(x => provider.ReservedNames.Contains(x)))
             currentNamespace.Name = segments.Select(x => provider.ReservedNames.Contains(x) ?
                                                             replacement.Invoke(x) :
                                                             x)
@@ -261,20 +245,18 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                             !parameterType.IsExternal &&
                                             provider.ReservedNames.Contains(parameterType.Name))
                                             .ToList()
-                                            .ForEach(x =>
-                                            {
+                                            .ForEach(x => {
                                                 x.Type.Name = replacement.Invoke(x.Type.Name);
                                             });
     }
     private static IEnumerable<CodeUsing> usingSelector(AdditionalUsingEvaluator x) =>
-    x.ImportSymbols.Select(y =>
+    x.ImportSymbols.Select(y => 
         new CodeUsing
         {
             Name = y,
             Declaration = new CodeType { Name = x.NamespaceName, IsExternal = true },
         });
-    protected static void AddDefaultImports(CodeElement current, IEnumerable<AdditionalUsingEvaluator> evaluators)
-    {
+    protected static void AddDefaultImports(CodeElement current, IEnumerable<AdditionalUsingEvaluator> evaluators) {
         var usingsToAdd = evaluators.Where(x => x.CodeElementEvaluator.Invoke(current))
                         .SelectMany(x => usingSelector(x))
                         .ToArray();
@@ -286,32 +268,25 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         CrawlTree(current, c => AddDefaultImports(c, evaluators));
     }
     private const string BinaryType = "binary";
-    protected static void ReplaceBinaryByNativeType(CodeElement currentElement, string symbol, string ns, bool addDeclaration = false)
-    {
-        if (currentElement is CodeMethod currentMethod)
-        {
+    protected static void ReplaceBinaryByNativeType(CodeElement currentElement, string symbol, string ns, bool addDeclaration = false) {
+        if(currentElement is CodeMethod currentMethod) {
             var parentClass = currentMethod.Parent as CodeClass;
             var shouldInsertUsing = false;
-            if (BinaryType.Equals(currentMethod.ReturnType?.Name))
-            {
+            if(BinaryType.Equals(currentMethod.ReturnType?.Name)) {
                 currentMethod.ReturnType.Name = symbol;
                 shouldInsertUsing = !string.IsNullOrWhiteSpace(ns);
             }
             var binaryParameter = currentMethod.Parameters.FirstOrDefault(x => x.Type.Name.Equals(BinaryType));
-            if (binaryParameter != null)
-            {
+            if(binaryParameter != null) {
                 binaryParameter.Type.Name = symbol;
                 shouldInsertUsing = !string.IsNullOrWhiteSpace(ns);
             }
-            if (shouldInsertUsing)
-            {
-                var newUsing = new CodeUsing
-                {
+            if(shouldInsertUsing) {
+                var newUsing = new CodeUsing {
                     Name = addDeclaration ? symbol : ns,
                 };
-                if (addDeclaration)
-                    newUsing.Declaration = new CodeType
-                    {
+                if(addDeclaration)
+                    newUsing.Declaration = new CodeType {
                         Name = ns,
                         IsExternal = true,
                     };
@@ -359,8 +334,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         newClass.AddProperty(codeUnionType
                                 .Types
-                                .Select(x => new CodeProperty
-                                {
+                                .Select(x => new CodeProperty {
                                     Name = x.Name,
                                     Type = x,
                                     Description = $"Union type representation for type {x.Name}"
@@ -395,50 +369,26 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             ActionOf = codeUnionType.ActionOf,
         };
     }
-    protected static void MoveClassesWithNamespaceNamesUnderNamespace(CodeElement currentElement)
-    {
-        if (currentElement is CodeClass currentClass &&
+    protected static void MoveClassesWithNamespaceNamesUnderNamespace(CodeElement currentElement) {
+        if(currentElement is CodeClass currentClass && 
             !string.IsNullOrEmpty(currentClass.Name) &&
-            currentClass.Parent is CodeNamespace parentNamespace)
-        {
+            currentClass.Parent is CodeNamespace parentNamespace) {
             var childNamespaceWithClassName = parentNamespace.GetChildElements(true)
                                                             .OfType<CodeNamespace>()
                                                             .FirstOrDefault(x => x.Name
                                                                                 .EndsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase));
-            if (childNamespaceWithClassName != null)
-            {
+            if(childNamespaceWithClassName != null) {
                 parentNamespace.RemoveChildElement(currentClass);
                 childNamespaceWithClassName.AddClass(currentClass);
             }
         }
         CrawlTree(currentElement, MoveClassesWithNamespaceNamesUnderNamespace);
     }
-
-    protected static void MoveEnumsWithNamespaceNamesUnderNamespace(CodeElement currentElement)
-    {
-        if (currentElement is CodeEnum currentClass &&
-            !string.IsNullOrEmpty(currentClass.Name) &&
-            currentClass.Parent is CodeNamespace parentNamespace)
-        {
-            var childNamespaceWithClassName = parentNamespace.GetChildElements(true)
-                                                            .OfType<CodeNamespace>()
-                                                            .FirstOrDefault(x => x.Name
-                                                                                .EndsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase));
-            if (childNamespaceWithClassName != null)
-            {
-                parentNamespace.RemoveChildElement(currentClass);
-                childNamespaceWithClassName.AddEnum(currentClass);
-            }
-        }
-        CrawlTree(currentElement, MoveEnumsWithNamespaceNamesUnderNamespace);
-    }
-    protected static void ReplaceIndexersByMethodsWithParameter(CodeElement currentElement, CodeNamespace rootNamespace, bool parameterNullable, string methodNameSuffix = default)
-    {
-        if (currentElement is CodeIndexer currentIndexer &&
-            currentElement.Parent is CodeClass currentParentClass)
-        {
+    protected static void ReplaceIndexersByMethodsWithParameter(CodeElement currentElement, CodeNamespace rootNamespace, bool parameterNullable, string methodNameSuffix = default) {
+        if(currentElement is CodeIndexer currentIndexer &&
+            currentElement.Parent is CodeClass currentParentClass) {
             currentParentClass.RemoveChildElement(currentElement);
-            foreach (var returnType in currentIndexer.ReturnType.AllTypes)
+            foreach(var returnType in currentIndexer.ReturnType.AllTypes)
                 AddIndexerMethod(rootNamespace,
                                 currentParentClass,
                                 returnType.TypeDefinition as CodeClass,
@@ -448,35 +398,29 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, c => ReplaceIndexersByMethodsWithParameter(c, rootNamespace, parameterNullable, methodNameSuffix));
     }
-    private static void AddIndexerMethod(CodeElement currentElement, CodeClass targetClass, CodeClass indexerClass, string methodNameSuffix, bool parameterNullable, CodeIndexer currentIndexer)
-    {
-        if (currentElement is CodeProperty currentProperty && currentProperty.Type.AllTypes.Any(x => x.TypeDefinition == targetClass))
-        {
+    private static void AddIndexerMethod(CodeElement currentElement, CodeClass targetClass, CodeClass indexerClass, string methodNameSuffix, bool parameterNullable, CodeIndexer currentIndexer) {
+        if(currentElement is CodeProperty currentProperty && currentProperty.Type.AllTypes.Any(x => x.TypeDefinition == targetClass)) {
             var parentClass = currentElement.Parent as CodeClass;
-            var method = new CodeMethod
-            {
+            var method = new CodeMethod {
                 IsAsync = false,
                 IsStatic = false,
                 Access = AccessModifier.Public,
                 Kind = CodeMethodKind.IndexerBackwardCompatibility,
                 Name = currentIndexer.PathSegment + methodNameSuffix,
                 Description = currentIndexer.Description,
-                ReturnType = new CodeType
-                {
+                ReturnType = new CodeType {
                     IsNullable = false,
                     TypeDefinition = indexerClass,
                     Name = indexerClass.Name,
                 },
                 OriginalIndexer = currentIndexer,
             };
-            var parameter = new CodeParameter
-            {
+            var parameter = new CodeParameter {
                 Name = "id",
                 Optional = false,
                 Kind = CodeParameterKind.Custom,
                 Description = "Unique identifier of the item",
-                Type = new CodeType
-                {
+                Type = new CodeType {
                     Name = "String",
                     IsNullable = parameterNullable,
                     IsExternal = true,
@@ -487,26 +431,21 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, c => AddIndexerMethod(c, targetClass, indexerClass, methodNameSuffix, parameterNullable, currentIndexer));
     }
-    internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName, string queryParametersBaseClassName = "QueryParametersBase")
-    {
-        if (current is CodeClass currentClass)
-        {
-            foreach (var innerClass in currentClass
+    internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName, string queryParametersBaseClassName = "QueryParametersBase") {
+        if(current is CodeClass currentClass) {
+            foreach(var innerClass in currentClass
                                     .Methods
                                     .SelectMany(x => x.Parameters)
                                     .Where(x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.QueryParameter))
                                     .SelectMany(x => x.Type.AllTypes)
                                     .Select(x => x.TypeDefinition)
-                                    .OfType<CodeClass>())
-            {
-                if (prefixClassNameWithParentName && !innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase))
-                {
+                                    .OfType<CodeClass>()) {
+                if(prefixClassNameWithParentName && !innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase)) {
                     innerClass.Name = $"{currentClass.Name}{innerClass.Name}";
                     innerClass.StartBlock.Name = innerClass.Name;
                 }
-
-                if (currentClass.FindChildByName<CodeClass>(innerClass.Name) == null)
-                {
+                
+                if(currentClass.FindChildByName<CodeClass>(innerClass.Name) == null) {
                     currentClass.AddInnerClass(innerClass);
                 }
                 if(!string.IsNullOrEmpty(queryParametersBaseClassName))
@@ -562,22 +501,20 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                 .Where(x => x.Declaration?.TypeDefinition != current)
                                 .Distinct(compareOnDeclaration ? usingComparerWithDeclarations : usingComparerWithoutDeclarations)
                                 .ToArray();
-            if (usingsToAdd.Any())
+            if(usingsToAdd.Any())
                 (currentClass.Parent is CodeClass parentClass ? parentClass : currentClass).AddUsing(usingsToAdd); //lots of languages do not support imports on nested classes
         }
         CrawlTree(current, (x) => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration));
     }
-    protected static void PatchHeaderParametersType(CodeElement currentElement, string newTypeName)
-    {
-        if (currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Headers)))
+    protected static void PatchHeaderParametersType(CodeElement currentElement, string newTypeName) {
+        if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Headers)))
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Headers))
                                     .ToList()
                                     .ForEach(x => x.Type.Name = newTypeName);
         CrawlTree(currentElement, (x) => PatchHeaderParametersType(x, newTypeName));
     }
-    protected static void CrawlTree(CodeElement currentElement, Action<CodeElement> function)
-    {
-        foreach (var childElement in currentElement.GetChildElements())
+    protected static void CrawlTree(CodeElement currentElement, Action<CodeElement> function) {
+        foreach(var childElement in currentElement.GetChildElements())
             function.Invoke(childElement);
     }
     protected static void CorrectCoreType(CodeElement currentElement, Action<CodeMethod> correctMethodType, Action<CodeProperty> correctPropertyType, Action<ProprietableBlockDeclaration> correctImplements = default) {
@@ -594,9 +531,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, x => CorrectCoreType(x, correctMethodType, correctPropertyType, correctImplements));
     }
-    protected static void MakeModelPropertiesNullable(CodeElement currentElement)
-    {
-        if (currentElement is CodeClass currentClass &&
+    protected static void MakeModelPropertiesNullable(CodeElement currentElement) {
+        if(currentElement is CodeClass currentClass &&
             currentClass.IsOfKind(CodeClassKind.Model))
             currentClass.Properties
                         .Where(x => x.IsOfKind(CodePropertyKind.Custom))
@@ -604,19 +540,16 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                         .ForEach(x => x.Type.IsNullable = true);
         CrawlTree(currentElement, MakeModelPropertiesNullable);
     }
-    protected static void AddRawUrlConstructorOverload(CodeElement currentElement)
-    {
-        if (currentElement is CodeMethod currentMethod &&
+    protected static void AddRawUrlConstructorOverload(CodeElement currentElement) {
+        if(currentElement is CodeMethod currentMethod &&
             currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
             currentElement.Parent is CodeClass parentClass &&
-            parentClass.IsOfKind(CodeClassKind.RequestBuilder))
-        {
+            parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
             var overloadCtor = currentMethod.Clone() as CodeMethod;
             overloadCtor.Kind = CodeMethodKind.RawUrlConstructor;
             overloadCtor.OriginalMethod = currentMethod;
             overloadCtor.RemoveParametersByKind(CodeParameterKind.PathParameters, CodeParameterKind.Path);
-            overloadCtor.AddParameter(new CodeParameter
-            {
+            overloadCtor.AddParameter(new CodeParameter {
                 Name = "rawUrl",
                 Type = new CodeType { Name = "string", IsExternal = true },
                 Optional = false,
@@ -627,11 +560,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, AddRawUrlConstructorOverload);
     }
-    protected static void RemoveCancellationParameter(CodeElement currentElement)
-    {
+    protected static void RemoveCancellationParameter(CodeElement currentElement){
         if (currentElement is CodeMethod currentMethod &&
-            currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
-        {
+            currentMethod.IsOfKind(CodeMethodKind.RequestExecutor)){ 
             currentMethod.RemoveParametersByKind(CodeParameterKind.Cancellation);
         }
         CrawlTree(currentElement, RemoveCancellationParameter);
@@ -649,34 +580,29 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, c => AddParsableImplementsForModelClasses(c, className));
     }
-    protected static void CorrectDateTypes(CodeClass parentClass, Dictionary<string, (string, CodeUsing)> dateTypesReplacements, params CodeTypeBase[] types)
-    {
-        if (parentClass == null)
+    protected static void CorrectDateTypes(CodeClass parentClass, Dictionary<string, (string, CodeUsing)> dateTypesReplacements, params CodeTypeBase[] types) {
+        if(parentClass == null)
             return;
-        foreach (var type in types.Where(x => x != null && dateTypesReplacements.ContainsKey(x.Name)))
-        {
+        foreach(var type in types.Where(x => x != null && dateTypesReplacements.ContainsKey(x.Name))) {
             var replacement = dateTypesReplacements[type.Name];
-            if (replacement.Item1 != null)
+            if(replacement.Item1 != null)
                 type.Name = replacement.Item1;
-            if (replacement.Item2 != null)
+            if(replacement.Item2 != null)
                 parentClass.AddUsing(replacement.Item2.Clone() as CodeUsing);
         }
     }
-    protected static void AddParentClassToErrorClasses(CodeElement currentElement, string parentClassName, string parentClassNamespace)
-    {
-        if (currentElement is CodeClass currentClass &&
-            currentClass.IsErrorDefinition) {
-            if(currentClass.StartBlock.Inherits != null)
+    protected static void AddParentClassToErrorClasses(CodeElement currentElement, string parentClassName, string parentClassNamespace) {
+        if(currentElement is CodeClass currentClass &&
+            currentClass.IsErrorDefinition &&
+            currentClass.StartBlock is ClassDeclaration declaration) {
+            if(declaration.Inherits != null)
                 throw new InvalidOperationException("This error class already inherits from another class. Update the description to remove that inheritance.");
-            currentClass.StartBlock.Inherits = new CodeType
-            {
+            declaration.Inherits = new CodeType {
                 Name = parentClassName,
             };
-            currentClass.StartBlock.AddUsings(new CodeUsing
-            {
+            declaration.AddUsings(new CodeUsing {
                 Name = parentClassName,
-                Declaration = new CodeType
-                {
+                Declaration = new CodeType {
                     Name = parentClassNamespace,
                     IsExternal = true,
                 }

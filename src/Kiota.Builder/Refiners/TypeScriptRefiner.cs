@@ -2,14 +2,11 @@
 using System;
 using Kiota.Builder.Extensions;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Data;
-using Kiota.Builder.Writers.Go;
 
 namespace Kiota.Builder.Refiners;
 public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
-    public TypeScriptRefiner(GenerationConfiguration configuration) : base(configuration) { }
+    public TypeScriptRefiner(GenerationConfiguration configuration) : base(configuration) {}
     public override void Refine(CodeNamespace generatedCode)
     {
         AddDefaultImports(generatedCode, defaultUsingEvaluators);
@@ -35,13 +32,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         ReplaceDefaultSerializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory");
         ReplaceDefaultDeserializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonParseNodeFactory");
         AddSerializationModulesImport(generatedCode,
-            new[] { $"{AbstractionsPackageName}.registerDefaultSerializer",
+            new[] { $"{AbstractionsPackageName}.registerDefaultSerializer", 
                     $"{AbstractionsPackageName}.enableBackingStoreForSerializationWriterFactory",
                     $"{AbstractionsPackageName}.SerializationWriterFactoryRegistry"},
             new[] { $"{AbstractionsPackageName}.registerDefaultDeserializer",
                     $"{AbstractionsPackageName}.ParseNodeFactoryRegistry" });
-
-
         AddParentClassToErrorClasses(
                 generatedCode,
                 "ApiError",
@@ -74,23 +69,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             generatedCode,
             factoryNameCallbackFromType
         );
-        MoveEnumsWithNamespaceNamesUnderNamespace(generatedCode);
     }
-
-    /// <summary>
-    ///  Verifies if an index.ts, that is, a barrel file should be generated for  a given namespace.
-    /// </summary>
-    /// <param name="codeNamespace">Code namespace to be verified for  index file generation</param>
-    /// <returns>
-    /// True: If there are classes or enums present in the namespace
-    /// False: If the code namespace does not contain any child classes or enums. That is, to 
-    /// generating an index file.
-    /// </returns>
-    public static bool RenderNamespaceIndexFile(CodeNamespace codeNamespace)
-    {
-        return (codeNamespace.Classes.Any() || codeNamespace.Enums.Any());
-    }
-
     private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
     private static void AliasUsingsWithSameSymbol(CodeElement currentElement) {
         if(currentElement is CodeClass currentClass &&
@@ -120,7 +99,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, AliasUsingsWithSameSymbol);
     }
     private const string AbstractionsPackageName = "@microsoft/kiota-abstractions";
-    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] {
+    private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             AbstractionsPackageName, "RequestAdapter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
@@ -151,55 +130,45 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static void CorrectPropertyType(CodeProperty currentProperty) {
         if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))
             currentProperty.Type.Name = "RequestAdapter";
-        else if (currentProperty.IsOfKind(CodePropertyKind.BackingStore))
+        else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
             currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
-        else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
-        {
+        else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
             currentProperty.Type.Name = "Map<string, unknown>";
             currentProperty.DefaultValue = "new Map<string, unknown>()";
-        }
-        else if (currentProperty.IsOfKind(CodePropertyKind.PathParameters))
-        {
+        } else if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
             currentProperty.Type.IsNullable = false;
             currentProperty.Type.Name = "Record<string, unknown>";
-            if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
+            if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "{}";
-        }
-        else
+        } else
             CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
     }
-    private static void CorrectMethodType(CodeMethod currentMethod)
-    {
-        if (currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator))
-        {
-            if (currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
+    private static void CorrectMethodType(CodeMethod currentMethod) {
+        if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
+            if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ResponseHandler) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
-            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => x.Type.Name = "Record<string,RequestOption>");
+            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => x.Type.Name = "RequestOption[]");
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Headers)).ToList().ForEach(x => { x.Type.Name = "Record<string, string>"; x.Type.ActionOf = false; });
         }
-        else if (currentMethod.IsOfKind(CodeMethodKind.Serializer))
+        else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
-        else if (currentMethod.IsOfKind(CodeMethodKind.Deserializer))
+        else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer))
             currentMethod.ReturnType.Name = $"Map<string, (item: T, node: ParseNode) => void>";
-        else if (currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor))
-        {
+        else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor)) {
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.BackingStore))
                 .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                 .ToList()
                 .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
             var urlTplParams = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
-            if (urlTplParams != null &&
-                urlTplParams.Type is CodeType originalType)
-            {
+            if(urlTplParams != null &&
+                urlTplParams.Type is CodeType originalType) {
                 originalType.Name = "Record<string, unknown>";
                 urlTplParams.Description = "The raw url or the Url template parameters for the request.";
-                var unionType = new CodeUnionType
-                {
+                var unionType = new CodeUnionType {
                     Name = "rawUrlOrTemplateParameters",
                     IsNullable = true,
                 };
-                unionType.AddType(originalType, new()
-                {
+                unionType.AddType(originalType, new() {
                     Name = "string",
                     IsNullable = true,
                     IsExternal = true,
@@ -209,50 +178,31 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
                                                 .Select(x => x.Type)
-                                                .Union(new CodeTypeBase[] { currentMethod.ReturnType })
+                                                .Union(new CodeTypeBase[] { currentMethod.ReturnType})
                                                 .ToArray());
     }
-    private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
-    {
-        {
-            "DateTimeOffset",
-            ("Date", null)
-        },
-        {
-            "TimeSpan",
-            ("Duration", new CodeUsing
-            {
-                Name = "Duration",
-                Declaration = new CodeType
-                {
-                    Name = AbstractionsPackageName,
-                    IsExternal = true,
-                },
-            })
-        },
-        {
-            "DateOnly",
-            (null, new CodeUsing
-            {
-                Name = "DateOnly",
-                Declaration = new CodeType
-                {
-                    Name = AbstractionsPackageName,
-                    IsExternal = true,
-                },
-            })
-        },
-        {
-            "TimeOnly",
-            (null, new CodeUsing
-            {
-                Name = "TimeOnly",
-                Declaration = new CodeType
-                {
-                    Name = AbstractionsPackageName,
-                    IsExternal = true,
-                },
-            })
-        },
+    private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {
+    {"DateTimeOffset", ("Date", null)},
+    {"TimeSpan", ("Duration", new CodeUsing {
+                                    Name = "Duration",
+                                    Declaration = new CodeType {
+                                        Name = AbstractionsPackageName,
+                                        IsExternal = true,
+                                    },
+                                })},
+    {"DateOnly", ( null, new CodeUsing {
+                            Name = "DateOnly",
+                            Declaration = new CodeType {
+                                Name = AbstractionsPackageName,
+                                IsExternal = true,
+                            },
+                        })},
+    {"TimeOnly", ( null, new CodeUsing {
+                            Name = "TimeOnly",
+                            Declaration = new CodeType {
+                                Name = AbstractionsPackageName,
+                                IsExternal = true,
+                            },
+                        })},
     };
 }
