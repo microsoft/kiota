@@ -258,7 +258,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             }
         }
         if(requestParams.options != null)
-            writer.WriteLine($"{requestParams.options.Name} && {RequestInfoVarName}.addRequestOptions({requestParams.options.Name});");
+            writer.WriteLine($"{requestParams.options.Name} && {RequestInfoVarName}.addRequestOptions(...{requestParams.options.Name});");
         writer.WriteLine($"return {RequestInfoVarName};");
     }
     private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"this.{property.Name}";
