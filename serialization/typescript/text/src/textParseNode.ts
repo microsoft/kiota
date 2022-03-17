@@ -16,7 +16,10 @@ export class TextParseNode implements ParseNode {
    */
   constructor(private readonly text: string) {
     this.text =
-      this.text.startsWith('"') && this.text.endsWith('"')
+      this.text &&
+      this.text.length > 1 &&
+      this.text.charAt(0) === '"' &&
+      this.text.charAt(this.text.length - 1) === '"'
         ? this.text.substring(1, this.text.length - 2)
         : this.text;
   }
