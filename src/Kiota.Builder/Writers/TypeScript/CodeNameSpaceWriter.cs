@@ -38,12 +38,9 @@ namespace Kiota.Builder.Writers.TypeScript
             {
                 visited.Add(current);
 
-                foreach (var child in parentChildrenMap[current])
+                foreach (var child in parentChildrenMap[current].Where(x => parentChildrenMap.ContainsKey(x)))
                 {
-                    if (parentChildrenMap.ContainsKey(child))
-                    {
-                        VisitEveryChild(parentChildrenMap, visited, inheritanceOrderList, child);
-                    }
+                      VisitEveryChild(parentChildrenMap, visited, inheritanceOrderList, child);
                 }
                 inheritanceOrderList.Insert(0, current);
             }
@@ -90,13 +87,10 @@ namespace Kiota.Builder.Writers.TypeScript
             /*
              * 3. Print all remaining classes which have not been visted or those do not have any parent/child relationship.
              */
-            foreach (var @class in classes.Where(c => c.IsOfKind(CodeClassKind.Model) && !visited.Contains(c.Name) ))
+            foreach (var className in classes.Where(c => c.IsOfKind(CodeClassKind.Model) && !visited.Contains(c.Name)).Select(x => x.Name))
             {
-                if (!visited.Contains(@class.Name))
-                {
-                    visited.Add(@class.Name);
-                    inheritanceOrderList.Add(@class.Name);
-                }
+                    visited.Add(className);
+                    inheritanceOrderList.Add(className);
             }
             return inheritanceOrderList;
         }
