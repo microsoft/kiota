@@ -45,6 +45,9 @@ namespace Kiota {
             var deserializerOption = new Option<List<string>>("--deserializer", () => new List<string> {"Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory"}, "The fully qualified class names for deserializers. Accepts multiple values.");
             deserializerOption.AddAlias("--ds");
 
+            var cleanOutputOption = new Option<bool>("--clean-output", () => false, "Removes all files from the output directory before generating the code files.");
+            cleanOutputOption.AddAlias("-co");
+
             var command = new RootCommand {
                 outputOption,
                 languageOption,
@@ -55,15 +58,16 @@ namespace Kiota {
                 namespaceOption,
                 serializerOption,
                 deserializerOption,
+                cleanOutputOption,
             };
-            command.SetHandler<string, GenerationLanguage, string, bool, string, LogLevel, string, List<string>, List<string>, CancellationToken>(HandleCommandCall, outputOption, languageOption, descriptionOption, backingStoreOption, classOption, logLevelOption, namespaceOption, serializerOption, deserializerOption);
+            command.SetHandler<string, GenerationLanguage, string, bool, string, LogLevel, string, List<string>, List<string>, bool, CancellationToken>(HandleCommandCall, outputOption, languageOption, descriptionOption, backingStoreOption, classOption, logLevelOption, namespaceOption, serializerOption, deserializerOption, cleanOutputOption);
             return command;
         }
         private void AssignIfNotNullOrEmpty(string input, Action<GenerationConfiguration, string> assignment) {
             if (!string.IsNullOrEmpty(input))
                 assignment.Invoke(Configuration, input);
         }
-        private async Task<int> HandleCommandCall(string output, GenerationLanguage language, string openapi, bool backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer, List<string> deserializer, CancellationToken cancellationToken) {
+        private async Task<int> HandleCommandCall(string output, GenerationLanguage language, string openapi, bool backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer, List<string> deserializer, bool cleanOutput, CancellationToken cancellationToken) {
             AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
             AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
             AssignIfNotNullOrEmpty(classname, (c, s) => c.ClientClassName = s);
@@ -81,6 +85,7 @@ namespace Kiota {
 
             Configuration.OpenAPIFilePath = GetAbsolutePath(Configuration.OpenAPIFilePath);
             Configuration.OutputPath = GetAbsolutePath(Configuration.OutputPath);
+            Configuration.CleanOutput = cleanOutput;
 
             var logger = LoggerFactory.Create((builder) => {
                 builder

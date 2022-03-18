@@ -30,13 +30,13 @@ jobs:
           BRANCH_NAME: ${{ github.ref }}
       - name: Push to GitHub Packages - Nightly
         if: contains(github.ref, 'refs/head/main')
-        uses: docker/build-push-action@v2.9.0
+        uses: docker/build-push-action@v2.10.0
         with:
           push: true
           tags: docker.pkg.github.com/microsoft/kiota/generator:nightly
       - name: Push to GitHub Packages - Release
         if: contains(github.ref, 'refs/tags/v')
-        uses: docker/build-push-action@v2.9.0
+        uses: docker/build-push-action@v2.10.0
         with:
           push: true
           tags: docker.pkg.github.com/microsoft/kiota/generator:latest,docker.pkg.github.com/microsoft/kiota/generator:${{ steps.getversion.outputs.version }}

@@ -28,5 +28,6 @@ namespace Kiota.Builder {
         private static readonly HashSet<GenerationLanguage> BarreledLanguagesWithConstantFileName = new () {
             //TODO: add typescript once we have a barrel writer for it
         };
+        public bool CleanOutput { get; set;}
     }
 }

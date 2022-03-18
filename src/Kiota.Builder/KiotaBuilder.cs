@@ -29,6 +29,14 @@ public class KiotaBuilder
         this.logger = logger;
         this.config = config;
     }
+    private void CleanOutputDirectory()
+    {
+        if(config.CleanOutput && Directory.Exists(config.OutputPath))
+        {
+            logger.LogInformation("Cleaning output directory {path}", config.OutputPath);
+            Directory.Delete(config.OutputPath, true);
+        }
+    }
 
     public async Task GenerateSDK(CancellationToken cancellationToken)
     {
@@ -37,6 +45,7 @@ public class KiotaBuilder
         string inputPath = config.OpenAPIFilePath;
 
         try {
+            CleanOutputDirectory();
             // doing this verification at the begining to give immediate feedback to the user
             Directory.CreateDirectory(config.OutputPath);
         } catch (Exception ex) {
@@ -550,14 +559,14 @@ public class KiotaBuilder
                 ("string", "date") => "DateOnly",
                 ("string", "date-time") => "DateTimeOffset",
                 ("string", _) => "string", // covers commonmark and html
+                ("number", "double" or "float" or "decimal") => format.ToLowerInvariant(),
+                ("number" or "integer", "int8") => "sbyte",
+                ("number" or "integer", "uint8") => "byte",
+                ("number" or "integer", "int64") => "int64",
                 ("number", "int32") => "integer",
-                ("number", "int8") => "sbyte",
-                ("number", "uint8") => "byte",
-                ("number", "double" or "float" or "int64" or "decimal") => format.ToLowerInvariant(),
                 ("integer", _) => "integer",
                 ("boolean", _) => "boolean",
-                (_, "byte") => "binary",
-                (_, "binary") => "binary",
+                (_, "byte" or "binary") => "binary",
                 (_, _) => string.Empty,
             };
             if(primitiveTypeName != string.Empty) {
@@ -750,8 +759,8 @@ public class KiotaBuilder
             referenceId = referenceId[config.ClientClassName.Length..];
         referenceId = referenceId.Trim(nsNameSeparator);
         var lastDotIndex = referenceId.LastIndexOf(nsNameSeparator);
-        var namespaceSuffix = lastDotIndex != -1 ? referenceId[..lastDotIndex] : referenceId;
-        return $"{modelsNamespace.Name}.{namespaceSuffix}";
+        var namespaceSuffix = lastDotIndex != -1 ? $".{referenceId[..lastDotIndex]}" : string.Empty;
+        return $"{modelsNamespace.Name}{namespaceSuffix}";
     }
     private CodeType CreateModelDeclarationAndType(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeNamespace codeNamespace, string classNameSuffix = "", OpenApiResponse response = default) {
         var className = currentNode.GetClassName(operation: operation, suffix: classNameSuffix, response: response, schema: schema);
@@ -783,6 +792,7 @@ public class KiotaBuilder
     private static string GetReferenceIdFromOriginalSchema(OpenApiSchema schema, OpenApiSchema parentSchema) {
         var title = schema.Title;
         if(!string.IsNullOrEmpty(schema.Reference?.Id)) return schema.Reference.Id;
+        else if (string.IsNullOrEmpty(title)) return string.Empty;
         if(parentSchema.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false) return parentSchema.Reference.Id;
         if(parentSchema.Items?.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false) return parentSchema.Items.Reference.Id;
         return (parentSchema.
@@ -801,18 +811,29 @@ public class KiotaBuilder
         var unionType = new CodeUnionType {
             Name = currentNode.GetClassName(operation: operation, suffix: suffixForInlineSchema, schema: schema),
         };
+        var membersWithNoName = 0;
         foreach(var currentSchema in schemas) {
             var shortestNamespaceName = currentSchema.Reference == null ? currentNode.GetNodeNamespaceFromPath(config.ClientNamespaceName) : GetModelsNamespaceNameFromReferenceId(currentSchema.Reference.Id);
             var shortestNamespace = rootNamespace.FindNamespaceByName(shortestNamespaceName);
             if(shortestNamespace == null)
                 shortestNamespace = rootNamespace.AddNamespace(shortestNamespaceName);
             var className = currentSchema.GetSchemaTitle();
+            if (string.IsNullOrEmpty(className))
+                if(GetPrimitiveType(currentSchema) is CodeType primitiveType && !string.IsNullOrEmpty(primitiveType.Name)) {
+                    unionType.AddType(primitiveType);
+                    continue;
+                } else
+                    className = $"{unionType.Name}Member{++membersWithNoName}";
             var codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, currentSchema, className, shortestNamespace);
             unionType.AddType(new CodeType {
                 TypeDefinition = codeDeclaration,
                 Name = className,
             });
         }
+        if(unionType.Types.Count() == 1 &&
+            schema.Nullable &&
+            unionType.Types.First().TypeDefinition != null)
+            return unionType.Types.First();// so we don't create unnecessary union types when anyOf was used only for nullable.
         return unionType;
     }
     private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement, string suffixForInlineSchema, OpenApiResponse response = default)
@@ -892,7 +913,9 @@ public class KiotaBuilder
         var newClass = currentNamespace.AddClass(new CodeClass {
             Name = declarationName,
             Kind = CodeClassKind.Model,
-            Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel)
+            Description = schema.Description ?? (string.IsNullOrEmpty(schema.Reference?.Id) ? 
+                                                    currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel) :
+                                                    null),// if it's a referenced component, we shouldn't use the path item description as it makes it indeterministic
         }).First();
         if(inheritsFrom != null)
             newClass.StartBlock.Inherits = new CodeType { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
