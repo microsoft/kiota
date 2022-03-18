@@ -20,7 +20,7 @@ import { FetchRequestInit } from "./fetchDefinitions";
  * @returns A header value for the given key from the request
  */
 export const getRequestHeader = (options: FetchRequestInit | undefined, key: string): string | undefined => {
-	if (typeof options !== "undefined" && options.headers !== undefined) {
+	if (options && options.headers) {
 		return options.headers[key];
 	}
 	return undefined;
@@ -36,7 +36,7 @@ export const getRequestHeader = (options: FetchRequestInit | undefined, key: str
  * @returns Nothing
  */
 export const setRequestHeader = (options: FetchRequestInit | undefined, key: string, value: string): void => {
-	if (typeof options !== "undefined") {
+	if (options) {
 		if (!options.headers) {
 			options.headers = {};
 		}
@@ -54,11 +54,11 @@ export const setRequestHeader = (options: FetchRequestInit | undefined, key: str
  * @returns Nothing
  */
 export const appendRequestHeader = (options: FetchRequestInit | undefined, key: string, value: string): void => {
-	if (typeof options !== "undefined") {
+	if (options) {
 		if (!options.headers) {
 			options.headers = {};
 		}
-		if (options.headers[key] === undefined) {
+		if (!options.headers[key]) {
 			options.headers[key] = value;
 		} else {
 			options.headers[key] += `, ${value}`;

@@ -90,7 +90,7 @@ export class RetryHandlerOptions implements RequestOption {
 	 * @param {ShouldRetry} [shouldRetry = RetryHandlerOptions.DEFAULT_SHOULD_RETRY] - The shouldRetry callback function
 	 * @returns An instance of RetryHandlerOptions
 	 */
-	public constructor(delay: number = RetryHandlerOptions.DEFAULT_DELAY, maxRetries: number = RetryHandlerOptions.DEFAULT_MAX_RETRIES, shouldRetry: ShouldRetry = RetryHandlerOptions.defaultShouldRetry) {
+	public constructor(private delay: number = RetryHandlerOptions.DEFAULT_DELAY, private maxRetries: number = RetryHandlerOptions.DEFAULT_MAX_RETRIES, private shouldRetry: ShouldRetry = RetryHandlerOptions.defaultShouldRetry) {
 		if (delay > RetryHandlerOptions.MAX_DELAY && maxRetries > RetryHandlerOptions.MAX_MAX_RETRIES) {
 			const error = new Error(`Delay and MaxRetries should not be more than ${RetryHandlerOptions.MAX_DELAY} and ${RetryHandlerOptions.MAX_MAX_RETRIES}`);
 			error.name = "MaxLimitExceeded";
