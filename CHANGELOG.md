@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where JSON serialization would fail on nil properties in Go.
+
 ## [0.0.19] - 2022-03-18
 
 ### Added
