@@ -58,24 +58,6 @@ export class RetryHandlerOptions implements RequestOption {
 	private static MAX_MAX_RETRIES = 10;
 
 	/**
-	 * @public
-	 * A member holding delay value in seconds
-	 */
-	public delay: number;
-
-	/**
-	 * @public
-	 * A member holding maxRetries value
-	 */
-	public maxRetries: number;
-
-	/**
-	 * @public
-	 * A member holding shouldRetry callback
-	 */
-	public shouldRetry: ShouldRetry;
-
-	/**
 	 * @private
 	 * A member holding default shouldRetry callback
 	 */
@@ -90,7 +72,7 @@ export class RetryHandlerOptions implements RequestOption {
 	 * @param {ShouldRetry} [shouldRetry = RetryHandlerOptions.DEFAULT_SHOULD_RETRY] - The shouldRetry callback function
 	 * @returns An instance of RetryHandlerOptions
 	 */
-	public constructor(private delay: number = RetryHandlerOptions.DEFAULT_DELAY, private maxRetries: number = RetryHandlerOptions.DEFAULT_MAX_RETRIES, private shouldRetry: ShouldRetry = RetryHandlerOptions.defaultShouldRetry) {
+	public constructor(public delay: number = RetryHandlerOptions.DEFAULT_DELAY, public maxRetries: number = RetryHandlerOptions.DEFAULT_MAX_RETRIES, public shouldRetry: ShouldRetry = RetryHandlerOptions.defaultShouldRetry) {
 		if (delay > RetryHandlerOptions.MAX_DELAY && maxRetries > RetryHandlerOptions.MAX_MAX_RETRIES) {
 			const error = new Error(`Delay and MaxRetries should not be more than ${RetryHandlerOptions.MAX_DELAY} and ${RetryHandlerOptions.MAX_MAX_RETRIES}`);
 			error.name = "MaxLimitExceeded";
