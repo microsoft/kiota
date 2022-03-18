@@ -39,10 +39,22 @@ namespace Kiota {
             var backingStoreOption = new Option<bool>("--backing-store", () => false, "Enables backing store for models.");
             backingStoreOption.AddAlias("-b");
 
-            var serializerOption = new Option<List<string>>("--serializer", () => new List<string> {"Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory"}, "The fully qualified class names for serializers. Accepts multiple values.");
+            var serializerOption = new Option<List<string>>(
+                "--serializer", 
+                () => new List<string> {
+                    "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory",
+                    "Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory"
+                },
+                "The fully qualified class names for serializers. Accepts multiple values.");
             serializerOption.AddAlias("-s");
 
-            var deserializerOption = new Option<List<string>>("--deserializer", () => new List<string> {"Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory"}, "The fully qualified class names for deserializers. Accepts multiple values.");
+            var deserializerOption = new Option<List<string>>(
+                "--deserializer",
+                () => new List<string> {
+                    "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory",
+                    "Microsoft.Kiota.Serialization.Text.TextParseNodeFactory"
+                },
+                "The fully qualified class names for deserializers. Accepts multiple values.");
             deserializerOption.AddAlias("--ds");
 
             var cleanOutputOption = new Option<bool>("--clean-output", () => false, "Removes all files from the output directory before generating the code files.");

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Adds a `--clean-output` argument to clean the target directory before generation #1357
+- Adds support for `text/plain` responses for CSharp, Java, TypeScript and Go. #878
 
 ### Changed
 

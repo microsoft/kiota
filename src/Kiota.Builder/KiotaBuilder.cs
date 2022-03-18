@@ -612,13 +612,12 @@ public class KiotaBuilder
 
         var schema = operation.GetResponseSchema();
         var method = (HttpMethod)Enum.Parse(typeof(HttpMethod), operationType.ToString());
-        var executorMethod = new CodeMethod {
+        var executorMethod = parentClass.AddMethod(new CodeMethod {
             Name = operationType.ToString(),
             Kind = CodeMethodKind.RequestExecutor,
             HttpMethod = method,
             Description = operation.Description ?? operation.Summary,
-        };
-        parentClass.AddMethod(executorMethod);
+        }).FirstOrDefault();
         AddErrorMappingsForExecutorMethod(currentNode, operation, executorMethod);
         if (schema != null)
         {

@@ -55,6 +55,7 @@ npm install @microsoft/kiota-abstractions
 npm install @microsoft/kiota-authentication-azure
 npm install @microsoft/kiota-http-fetchlibrary
 npm install @microsoft/kiota-serialization-json
+npm install @microsoft/kiota-serialization-text
 npm install @azure/identity node-fetch
 ```
 
