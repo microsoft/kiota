@@ -30,7 +30,7 @@ describe("RedirectHandlerOptions.ts", () => {
 				const options = new RedirectHandlerOptions(100);
 				throw new Error("Test Failed - Something wrong with the max redirects value redirection");
 			} catch (error) {
-				assert.equal(error.name, "MaxLimitExceeded");
+				assert.equal((error as Error).name, "MaxLimitExceeded");
 			}
 		});
 		it("Should throw error for setting max redirects to negative", () => {
@@ -39,7 +39,7 @@ describe("RedirectHandlerOptions.ts", () => {
 				const options = new RedirectHandlerOptions(-10);
 				throw new Error(" Test Failed - Something wrong with the max redirects value redirection");
 			} catch (error) {
-				assert.equal(error.name, "MinExpectationNotMet");
+				assert.equal((error as Error).name, "MinExpectationNotMet");
 			}
 		});
 

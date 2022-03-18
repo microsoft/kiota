@@ -7,7 +7,7 @@
 
 import { assert } from "chai";
 
-import { DefaultFetchHandler, MiddlewareFactory, RetryHandler } from "../../src/browser";
+import { CustomFetchHandler, MiddlewareFactory, RetryHandler } from "../../src/browser";
 
 describe("MiddlewareFactory", () => {
 	it("Should return the default pipeline", () => {
@@ -15,6 +15,6 @@ describe("MiddlewareFactory", () => {
 
 		assert.equal(defaultMiddleWareArray.length, 2);
 		assert.isTrue(defaultMiddleWareArray[0] instanceof RetryHandler);
-		assert.isTrue(defaultMiddleWareArray[1] instanceof DefaultFetchHandler);
+		assert.isTrue(defaultMiddleWareArray[1] instanceof CustomFetchHandler);
 	});
 });

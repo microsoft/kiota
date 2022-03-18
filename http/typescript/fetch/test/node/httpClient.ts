@@ -7,7 +7,7 @@
 
 import { assert } from "chai";
 
-import { CustomFetchHandler, DefaultFetchHandler, HttpClient, RedirectHandler, RetryHandler } from "../../src";
+import { CustomFetchHandler, HttpClient, RedirectHandler, RetryHandler } from "../../src";
 import { DummyFetchHandler } from "../common/middleware/dummyFetchHandler";
 
 describe("HTTPClient.ts", () => {
@@ -37,7 +37,7 @@ describe("HTTPClient.ts", () => {
 
 			assert.isTrue(client["middleware"] instanceof RetryHandler);
 			assert.isTrue(next instanceof RedirectHandler);
-			assert.isTrue(next.next instanceof DefaultFetchHandler);
+			assert.isTrue(next.next instanceof CustomFetchHandler);
 		});
 
 		it("Should set default middleware array with customFetchHandler if middleware parameter is undefined && customFetch is defined", () => {
@@ -58,13 +58,13 @@ describe("HTTPClient.ts", () => {
 
 			assert.isNotNull(client["middleware"]);
 
-			assert.isTrue(client["middleware"] instanceof DefaultFetchHandler);
+			assert.isTrue(client["middleware"] instanceof RetryHandler);
 		});
 
 		it("Should only set custom fetch if middleware parameter is null && customFetch is defined", () => {
 			const client = new HttpClient(dummyCustomFetch, null);
 
-			assert.isUndefined(client["middleware"]);
+			assert.isDefined(client["middleware"]);
 			assert.equal(client["customFetch"], dummyCustomFetch);
 		});
 	});

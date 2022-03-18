@@ -9,8 +9,8 @@
  * @module DummyHTTPMessageHandler
  */
 
+import { RequestOption } from "@microsoft/kiota-abstractions";
 import { Middleware } from "../../../src/middlewares/middleware";
-import { MiddlewareContext } from "../../../src/middlewares/middlewareContext";
 
 /**
  * @class
@@ -55,7 +55,7 @@ export class DummyFetchHandler implements Middleware {
 	 * @returns A promise that resolves to nothing
 	 */
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	public async execute(context: MiddlewareContext) {
+	public async execute(url: string, requestInit: RequestInit, requestOptions?: Record<string, RequestOption>) {
 		return this.responses.shift();
 	}
 }

@@ -21,8 +21,6 @@
     "main": "dist/cjs/src/index.js",
     "browser": {
         "./dist/es/src/index.js": "./dist/es/src/browser/index.js",
-        "./dist/es/src/utils/utils.js": "./dist/es/src/utils/browser/utils.js",
-        "./dist/es/src/middlewares/defaultFetchHandler.js": "./dist/es/src/middlewares/browser/defaultFetchHandler.js",
         "./dist/es/src/middlewares/middlewareFactory.js": "./dist/es/src/middlewares/browser/middlewareFactory.js"
     },
     "types": "dist/cjs/src/index.d.ts",
@@ -47,14 +45,14 @@
     "dependencies": {
         "@microsoft/kiota-abstractions": "1.0.31",
         "node-fetch": "^2.6.5",
-        "tslib": "2.3.1"
+        "tslib": "^2.3.1"
     },
     "devDependencies": {
         "@microsoft/kiota-abstractions": "^1.0.30",
         "@rollup/plugin-commonjs": "^21.0.0",
         "@rollup/plugin-node-resolve": "^13.0.5",
         "@types/chai": "^4.2.22",
-        "@types/mocha": "^9.0.0",
+        "@types/mocha": "^9.1.0",
         "@types/node": "^17.0.13",
         "@types/node-fetch": "^2.6.1",
         "@types/sinon": "^10.0.4",

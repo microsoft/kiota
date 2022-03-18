@@ -166,7 +166,7 @@ export class RedirectHandler implements Middleware {
 					url = redirectUrl;
 				}
 			}
-			return await this.executeWithRedirect(url, requestOptions as FetchRequestInit, redirectCount, requestOptions);
+			return await this.executeWithRedirect(url, fetchRequestInit, redirectCount, requestOptions);
 		} else {
 			return response;
 		}

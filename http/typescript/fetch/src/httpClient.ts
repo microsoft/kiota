@@ -19,12 +19,8 @@ export class HttpClient {
 	 */
 	public constructor(private customFetch?: (request: string, init: RequestInit) => Promise<Response>, ...middlewares: Middleware[]) {
 		// Use default middleware chain if middlewares and custom fetch function are  undefined
-		if (!middlewares.length || middlewares[0] === null) {
-			if (this.customFetch !== undefined) {
-				this.setMiddleware(...MiddlewareFactory.getDefaultMiddlewareChain(customFetch));
-			} else {
-				this.setMiddleware(...MiddlewareFactory.getDefaultMiddlewareChain());
-			}
+		if (!middlewares.length || !middlewares[0]) {
+			this.setMiddleware(...MiddlewareFactory.getDefaultMiddlewareChain(customFetch));
 		} else {
 			if (this.customFetch) {
 				this.setMiddleware(...middlewares, new CustomFetchHandler(customFetch! as any));

@@ -32,9 +32,9 @@ export class MiddlewareFactory {
 		const middlewareArray: Middleware[] = [];
 		const retryHandler = new RetryHandler(new RetryHandlerOptions());
 		middlewareArray.push(retryHandler);
-		
-        middlewareArray.push(new CustomFetchHandler(customFetch));
-		
+
+		middlewareArray.push(new CustomFetchHandler(customFetch));
+
 		return middlewareArray;
 	}
 }

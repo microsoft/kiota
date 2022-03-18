@@ -8,7 +8,6 @@
 import { assert } from "chai";
 import { Response } from "node-fetch";
 
-import { MiddlewareContext } from "../../src/middlewares/middlewareContext";
 import { RedirectHandlerOptionKey, RedirectHandlerOptions } from "../../src/middlewares/options/redirectHandlerOptions";
 import { RedirectHandler } from "../../src/middlewares/redirectHandler";
 import { DummyFetchHandler } from "../common/middleware/dummyFetchHandler";
@@ -33,42 +32,42 @@ describe("RedirectHandler.ts", () => {
 			const response = new Response("Dummy", {
 				status: 301,
 			});
-			assert.isTrue(redirectHandler["isRedirect"](response));
+			assert.isTrue(redirectHandler["isRedirect"](response as any));
 		});
 
 		it("Should return true for response having 302 status code", () => {
 			const response = new Response("Dummy", {
 				status: 302,
 			});
-			assert.isTrue(redirectHandler["isRedirect"](response));
+			assert.isTrue(redirectHandler["isRedirect"](response as any));
 		});
 
 		it("Should return true for response having 303 status code", () => {
 			const response = new Response("Dummy", {
 				status: 303,
 			});
-			assert.isTrue(redirectHandler["isRedirect"](response));
+			assert.isTrue(redirectHandler["isRedirect"](response as any));
 		});
 
 		it("Should return true for response having 307 status code", () => {
 			const response = new Response("Dummy", {
 				status: 307,
 			});
-			assert.isTrue(redirectHandler["isRedirect"](response));
+			assert.isTrue(redirectHandler["isRedirect"](response as any));
 		});
 
 		it("Should return true for response having 308 status code", () => {
 			const response = new Response("Dummy", {
 				status: 308,
 			});
-			assert.isTrue(redirectHandler["isRedirect"](response));
+			assert.isTrue(redirectHandler["isRedirect"](response as any));
 		});
 
 		it("Should return false for non redirect status codes", () => {
 			const response = new Response("Dummy", {
 				status: 200,
 			});
-			assert.isFalse(redirectHandler["isRedirect"](response));
+			assert.isFalse(redirectHandler["isRedirect"](response as any));
 		});
 	});
 
@@ -87,7 +86,7 @@ describe("RedirectHandler.ts", () => {
 			const res = new Response("Dummy", {
 				status: 301,
 			});
-			assert.isFalse(redirectHandler["hasLocationHeader"](res));
+			assert.isFalse(redirectHandler["hasLocationHeader"](res as any));
 		});
 	});
 
@@ -100,14 +99,14 @@ describe("RedirectHandler.ts", () => {
 					location,
 				},
 			});
-			assert.equal(redirectHandler["getLocationHeader"](res), location);
+			assert.equal(redirectHandler["getLocationHeader"](res as any), location);
 		});
 
 		it("Should return null for response without location header", () => {
 			const res = new Response("Dummy", {
 				status: 301,
 			});
-			assert.equal(redirectHandler["getLocationHeader"](res), null);
+			assert.equal(redirectHandler["getLocationHeader"](res as any), null);
 		});
 	});
 
@@ -170,17 +169,16 @@ describe("RedirectHandler.ts", () => {
 			const maxRedirects = 2;
 			const shouldRedirect = () => true;
 			const options = new RedirectHandlerOptions(maxRedirects, shouldRedirect);
-			const cxt: MiddlewareContext = {
-				requestUrl: "url",
-				fetchRequestInit: {
-					method: "PUT",
-					headers: {
-						"Content-Type": "application/octet-stream",
-					},
+
+			const requestUrl = "url";
+			const fetchRequestInit = {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/octet-stream",
 				},
-				requestInformationOptions: {
-					[RedirectHandlerOptionKey]: options,
-				},
+			};
+			const requestInformationOptions = {
+				[RedirectHandlerOptionKey]: options,
 			};
 
 			dummyFetchHandler.setResponses([
@@ -198,8 +196,8 @@ describe("RedirectHandler.ts", () => {
 				}),
 				new Response("RETURNED", { status: 301 }),
 				new Response("ok", { status: 200 }),
-			]);
-			const response = await handler["execute"](cxt);
+			] as any);
+			const response = await handler["execute"](requestUrl, fetchRequestInit, requestInformationOptions);
 			assert.equal(response.status, 301);
 			assert.isDefined(response.body);
 		});
@@ -208,15 +206,15 @@ describe("RedirectHandler.ts", () => {
 			const handler = new RedirectHandler();
 			const dummyFetchHandler = new DummyFetchHandler();
 			handler.next = dummyFetchHandler;
-			const cxt: MiddlewareContext = {
-				requestUrl: "url",
-				fetchRequestInit: {
-					method: "PUT",
-					headers: {
-						"Content-Type": "application/octet-stream",
-					},
+
+			const requestUrl = "url";
+			const fetchRequestInit = {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/octet-stream",
 				},
 			};
+
 			const responseBody = {
 				test: "TEST",
 			};
@@ -229,55 +227,59 @@ describe("RedirectHandler.ts", () => {
 					},
 				});
 			}
-			dummyFetchHandler.setResponses([...arr, new Response(responseBody, { status: 301 })]);
+			dummyFetchHandler.setResponses([...arr, new Response(responseBody as any, { status: 301 })]);
 
-			const response = await handler["execute"](cxt);
+			const response = await handler["execute"](requestUrl, fetchRequestInit);
 			assert.equal(response.status, 301);
 			assert.isNotNull(response.body);
 		});
 	});
 
 	describe("executeWithRedirect", async () => {
-		const context: MiddlewareContext = {
-			requestUrl: "/me",
-			fetchRequestInit: {
-				method: "GET",
-			},
+		const requestUrl = "/me";
+		const fetchRequestInit = {
+			method: "GET",
 		};
-		const dummyFetchHandler = new DummyFetchHandler();
+
 		const handler = new RedirectHandler();
+		const dummyFetchHandler = new DummyFetchHandler();
 		handler.next = dummyFetchHandler;
+
 		it("Should not redirect for the redirect count equal to maxRedirects", async () => {
 			const maxRedirect = 1;
 			const options = new RedirectHandlerOptions(maxRedirect);
-			dummyFetchHandler.setResponses([new Response("", { status: 301 }), new Response("ok", { status: 200 })]);
-			const response = await handler["executeWithRedirect"](context, maxRedirect, options);
+			const handler = new RedirectHandler(options);
+			handler.next = dummyFetchHandler;
+			dummyFetchHandler.setResponses([new Response("", { status: 301 }), new Response("ok", { status: 200 }) as any]);
+			const response = await handler["executeWithRedirect"](requestUrl, fetchRequestInit, maxRedirect);
 			assert.equal(response.status, 301);
 		});
 
 		it("Should not redirect for the non redirect response", async () => {
 			const options = new RedirectHandlerOptions();
-			dummyFetchHandler.setResponses([new Response("", { status: 200 })]);
-			const response = await handler["executeWithRedirect"](context, 0, options);
+			const handler = new RedirectHandler(options);
+			handler.next = dummyFetchHandler;
+			dummyFetchHandler.setResponses([new Response("", { status: 200 })] as any);
+			const response = await handler["executeWithRedirect"](requestUrl, fetchRequestInit, 0);
 			assert.equal(response.status, 200);
 		});
 
 		it("Should not redirect for the redirect response without location header", async () => {
-			const options = new RedirectHandlerOptions();
-			dummyFetchHandler.setResponses([new Response("", { status: 301 }), new Response("ok", { status: 200 })]);
-			const response = await handler["executeWithRedirect"](context, 0, options);
+			dummyFetchHandler.setResponses([new Response("", { status: 301 }), new Response("ok", { status: 200 }) as any]);
+			const response = await handler["executeWithRedirect"](requestUrl, fetchRequestInit, 0);
 			assert.equal(response.status, 301);
 		});
 
 		it("Should not redirect for shouldRedirect callback returning false", async () => {
 			const options = new RedirectHandlerOptions(undefined, () => false);
-			dummyFetchHandler.setResponses([new Response("", { status: 301 }), new Response("ok", { status: 200 })]);
-			const response = await handler["executeWithRedirect"](context, 0, options);
+			const handler = new RedirectHandler(options);
+			handler.next = dummyFetchHandler;
+			dummyFetchHandler.setResponses([new Response("", { status: 301 }), new Response("ok", { status: 200 }) as any]);
+			const response = await handler["executeWithRedirect"](requestUrl, fetchRequestInit, 0);
 			assert.equal(response.status, 301);
 		});
 
 		it("Should drop body and change method to get for SEE_OTHER status code", async () => {
-			const options = new RedirectHandlerOptions();
 			dummyFetchHandler.setResponses([
 				new Response("", {
 					status: 303,
@@ -286,25 +288,23 @@ describe("RedirectHandler.ts", () => {
 					},
 				}),
 				new Response("ok", { status: 200 }),
-			]);
-			const response = await handler["executeWithRedirect"](context, 0, options);
-			assert.isUndefined(context.fetchRequestInit.body);
-			assert.equal(context.fetchRequestInit.method, "GET");
+			] as any);
+			const response = await handler["executeWithRedirect"](requestUrl, fetchRequestInit, 0);
+			assert.isUndefined(fetchRequestInit["body"]);
+			assert.equal(fetchRequestInit.method, "GET");
 			assert.equal(response.status, 200);
 		});
 
 		it("Should not drop Authorization header for relative url redirect", async () => {
-			const options = new RedirectHandlerOptions();
-			const cxt: MiddlewareContext = {
-				requestUrl: "/me",
-				fetchRequestInit: {
-					method: "POST",
-					body: "dummy body",
-					headers: {
-						[RedirectHandler["AUTHORIZATION_HEADER"]]: "Bearer TEST",
-					},
+			const requestUrl = "/me";
+			const fetchRequestInit = {
+				method: "POST",
+				body: "dummy body",
+				headers: {
+					[RedirectHandler["AUTHORIZATION_HEADER"]]: "Bearer TEST",
 				},
 			};
+
 			dummyFetchHandler.setResponses([
 				new Response("", {
 					status: 301,
@@ -312,27 +312,25 @@ describe("RedirectHandler.ts", () => {
 						[RedirectHandler["LOCATION_HEADER"]]: "/location",
 					},
 				}),
-				new Response("ok", { status: 200 }),
+				new Response("ok", { status: 200 }) as any,
 			]);
-			const response = await handler["executeWithRedirect"](cxt, 0, options);
-			assert.isDefined(cxt.fetchRequestInit.headers[RedirectHandler["AUTHORIZATION_HEADER"]]);
-			assert.equal(cxt.fetchRequestInit.headers[RedirectHandler["AUTHORIZATION_HEADER"]], "Bearer TEST");
+			const response = await handler["executeWithRedirect"](requestUrl, fetchRequestInit, 0);
+			assert.isDefined(fetchRequestInit.headers[RedirectHandler["AUTHORIZATION_HEADER"]]);
+			assert.equal(fetchRequestInit.headers[RedirectHandler["AUTHORIZATION_HEADER"]], "Bearer TEST");
 
 			assert.equal(response.status, 200);
 		});
 
 		it("Should not drop Authorization header for same authority redirect url", async () => {
-			const options = new RedirectHandlerOptions();
-			const cxt: MiddlewareContext = {
-				requestUrl: "https://graph.microsoft.com/v1.0/me",
-				fetchRequestInit: {
-					method: "POST",
-					body: "dummy body",
-					headers: {
-						[RedirectHandler["AUTHORIZATION_HEADER"]]: "Bearer TEST",
-					},
+			const requestUrl = "https://graph.microsoft.com/v1.0/me";
+			const fetchRequestInit = {
+				method: "POST",
+				body: "dummy body",
+				headers: {
+					[RedirectHandler["AUTHORIZATION_HEADER"]]: "Bearer TEST",
 				},
 			};
+
 			dummyFetchHandler.setResponses([
 				new Response("", {
 					status: 301,
@@ -341,21 +339,19 @@ describe("RedirectHandler.ts", () => {
 					},
 				}),
 				new Response("ok", { status: 200 }),
-			]);
-			const response = await handler["executeWithRedirect"](cxt, 0, options);
-			assert.isDefined(cxt.fetchRequestInit.headers[RedirectHandler["AUTHORIZATION_HEADER"]]);
+			] as any);
+			const response = await handler["executeWithRedirect"](requestUrl, fetchRequestInit, 0);
+			assert.isDefined(fetchRequestInit.headers[RedirectHandler["AUTHORIZATION_HEADER"]]);
 			assert.equal(response.status, 200);
 		});
 
 		it("Should return success response after successful redirect", async () => {
-			const options = new RedirectHandlerOptions();
-			const cxt: MiddlewareContext = {
-				requestUrl: "https://graph.microsoft.com/v1.0/me",
-				fetchRequestInit: {
-					method: "POST",
-					body: "dummy body",
-				},
+			const requestUrl = "https://graph.microsoft.com/v1.0/me";
+			const fetchRequestInit = {
+				method: "POST",
+				body: "dummy body",
 			};
+
 			dummyFetchHandler.setResponses([
 				new Response(null, {
 					status: 301,
@@ -364,26 +360,25 @@ describe("RedirectHandler.ts", () => {
 					},
 				}),
 				new Response("ok", { status: 200 }),
-			]);
-			const response = await handler["executeWithRedirect"](cxt, 0, options);
+			] as any);
+			const response = await handler["executeWithRedirect"](requestUrl, fetchRequestInit, 0);
 			assert.equal(response.status, 200);
 		});
 	});
 
 	describe("execute", async () => {
 		it("Should set the redirect value in options to manual", async () => {
-			const context: MiddlewareContext = {
-				requestUrl: "/me",
-				fetchRequestInit: {
-					method: "GET",
-				},
+			const requestUrl = "/me";
+			const fetchRequestInit: RequestInit = {
+				method: "GET",
 			};
+
 			const dummyFetchHandler = new DummyFetchHandler();
 			const handler = new RedirectHandler();
 			handler.next = dummyFetchHandler;
-			dummyFetchHandler.setResponses([new Response("", { status: 200 })]);
-			await handler.execute(context);
-			assert.equal(context.fetchRequestInit.redirect, RedirectHandler["MANUAL_REDIRECT"]);
+			dummyFetchHandler.setResponses([new Response("", { status: 200 })] as any);
+			await handler.execute(requestUrl, fetchRequestInit);
+			assert.equal(fetchRequestInit.redirect, RedirectHandler["MANUAL_REDIRECT"]);
 		});
 	});
 });

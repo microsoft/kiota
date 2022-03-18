@@ -23,7 +23,7 @@ describe("RetryHandlerOptions.ts", () => {
 				const options = new RetryHandlerOptions(1000, 1000);
 				throw new Error("Test Failed - Something wrong with the delay and maxRetries max limit validation");
 			} catch (error) {
-				assert.equal(error.name, "MaxLimitExceeded");
+				assert.equal((error as Error).name, "MaxLimitExceeded");
 			}
 		});
 
@@ -32,7 +32,7 @@ describe("RetryHandlerOptions.ts", () => {
 				const options = new RetryHandlerOptions(1000, 2);
 				throw new Error("Test Failed - Test Failed - Something wrong with the delay max limit validation");
 			} catch (error) {
-				assert.equal(error.name, "MaxLimitExceeded");
+				assert.equal((error as Error).name, "MaxLimitExceeded");
 			}
 		});
 
@@ -41,7 +41,7 @@ describe("RetryHandlerOptions.ts", () => {
 				const options = new RetryHandlerOptions(1, 2000);
 				throw new Error("Test Failed - Something wrong with the maxRetries max limit validation");
 			} catch (error) {
-				assert.equal(error.name, "MaxLimitExceeded");
+				assert.equal((error as Error).name, "MaxLimitExceeded");
 			}
 		});
 
@@ -50,7 +50,7 @@ describe("RetryHandlerOptions.ts", () => {
 				const options = new RetryHandlerOptions(-1, -100);
 				throw new Error("Test Failed - Something wrong with the delay and maxRetries max limit validation");
 			} catch (error) {
-				assert.equal(error.name, "MinExpectationNotMet");
+				assert.equal((error as Error).name, "MinExpectationNotMet");
 			}
 		});
 
@@ -60,7 +60,7 @@ describe("RetryHandlerOptions.ts", () => {
 				const options = new RetryHandlerOptions(-5, 2);
 				throw new Error("Test Failed - Something wrong with the delay max limit validation");
 			} catch (error) {
-				assert.equal(error.name, "MinExpectationNotMet");
+				assert.equal((error as Error).name, "MinExpectationNotMet");
 			}
 		});
 
@@ -69,7 +69,7 @@ describe("RetryHandlerOptions.ts", () => {
 				const options = new RetryHandlerOptions(1, -10);
 				throw new Error("Test Failed - Something wrong with the maxRetries max limit validation");
 			} catch (error) {
-				assert.equal(error.name, "MinExpectationNotMet");
+				assert.equal((error as Error).name, "MinExpectationNotMet");
 			}
 		});
 

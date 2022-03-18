@@ -3,7 +3,17 @@
     "compilerOptions":{
         "target": "ES2015",
         "module": "commonjs",
-        "outDir": "./dist/cjs",
+        "outDir": "./dist/cjs/test/",
+        "noEmitOnError": true,
+        "noImplicitAny": false,
+        "moduleResolution": "node",
+        "removeComments": false,
+        "strictFunctionTypes": false,
+        "strictNullChecks": false,
+        "sourceMap": false,
+        "declaration": false,
+        "strict": false,
+        "noImplicitThis": false
     },
 	"exclude": ["node_modules", "dist"],
 	"include": ["./test"],
