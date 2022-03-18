@@ -15,7 +15,14 @@ namespace Microsoft.Kiota.Serialization.Text;
 /// </summary>
 public class TextSerializationWriter : ISerializationWriter, IDisposable {
     private readonly MemoryStream _stream = new MemoryStream();
-    private readonly StringBuilder writer = new();
+    private readonly StreamWriter writer;
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TextSerializationWriter"/> class.
+    /// </summary>
+    public TextSerializationWriter()
+    {
+        writer = new(_stream);
+    }
     private bool written;
     /// <inheritdoc />
     public Action<IParsable> OnBeforeObjectSerialization { get; set; }
@@ -27,13 +34,12 @@ public class TextSerializationWriter : ISerializationWriter, IDisposable {
     public void Dispose()
     {
         _stream?.Dispose();
+        writer?.Dispose();
         GC.SuppressFinalize(this);
     }
     /// <inheritdoc />
     public Stream GetSerializedContent() {
-        var result = writer.ToString();
-        _stream.Write(Encoding.UTF8.GetBytes(result));
-        writer.Clear();
+        writer.Flush();
         return _stream;
     }
     /// <inheritdoc />
@@ -79,7 +85,7 @@ public class TextSerializationWriter : ISerializationWriter, IDisposable {
             if(written)
                 throw new InvalidOperationException("a value was already written for this serialization writer, text content only supports a single value");
             else {
-                writer.Append(value);
+                writer.Write(value);
                 written = true;
             }
     }

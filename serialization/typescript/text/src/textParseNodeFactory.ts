@@ -21,7 +21,6 @@ export class TextParseNodeFactory implements ParseNodeFactory {
     }
     const decoder = new TextDecoder();
     const contentAsStr = decoder.decode(content);
-    const contentAsText = JSON.parse(contentAsStr);
-    return new TextParseNode(contentAsText);
+    return new TextParseNode(contentAsStr);
   }
 }
