@@ -92,7 +92,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests
             writer.Write(root);
             var result = tw.ToString();
 
-            Assert.Contains("export * from './modelA'\r\nexport * from './modelB'\r\nexport * from './modelC'\r\n", result);
+            Assert.Contains($"export * from './modelA'{Environment.NewLine}export * from './modelB'{Environment.NewLine}export * from './modelC'{Environment.NewLine}", result);
         }
     }
 }
