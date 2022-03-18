@@ -25,7 +25,7 @@
             }
         ],
         "@typescript-eslint/no-var-requires": "error",
-        "@typescript-eslint/no-non-null-assertion": "off",
+        "@typescript-eslint/no-non-null-assertion": "error",
         "@typescript-eslint/naming-convention": [
             "error",
             {

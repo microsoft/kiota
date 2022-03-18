@@ -1,4 +1,5 @@
 /** Represents a request option. */
 export interface RequestOption {
-    getKey(): string;
+  /** Gets the option key for when adding it to a request. Must be unique. */
+  getKey(): string;
 }
