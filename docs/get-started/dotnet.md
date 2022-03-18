@@ -27,16 +27,12 @@ dotnet new gitignore
 
 ## Adding dependencies
 
-If you have not already, you will need to create a nuget.config to enable access to the packages in the GitHub package feed. See [Configure NuGet to access GitHub](index.md#configure-nuget-to-access-github) for instructions.
-
-Once the package feed is accessible the following packages can be added to the project.
-
 ```bash
-dotnet add package Microsoft.Kiota.Abstractions
-dotnet add package Microsoft.Kiota.Http.HttpClientLibrary
-dotnet add package Microsoft.Kiota.Serialization.Json
-dotnet add package Microsoft.Kiota.Serialization.Text
-dotnet add package Microsoft.Kiota.Authentication.Azure
+dotnet add package Microsoft.Kiota.Abstractions --prerelease
+dotnet add package Microsoft.Kiota.Http.HttpClientLibrary --prerelease
+dotnet add package Microsoft.Kiota.Serialization.Json --prerelease
+dotnet add package Microsoft.Kiota.Serialization.Text --prerelease
+dotnet add package Microsoft.Kiota.Authentication.Azure --prerelease
 dotnet add package Azure.Identity
 ```
 
