@@ -25,7 +25,7 @@
 1. In `build.gradle` in the `dependencies` section:
 
     ```Groovy
-    api 'com.microsoft.kiota.serialization:kiota-json:1.0.0'
+    api 'com.microsoft.kiota.serialization:kiota-json:1.+'
     ```
 
 1. In `gradle.properties` next to the `build.gradle` file:
