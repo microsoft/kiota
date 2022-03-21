@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Writers;
 
-namespace Kiota.Builder
+namespace Kiota.Builder.CodeRenderers
 {
     /// <summary>
     /// Convert CodeDOM classes to strings or files
@@ -51,13 +52,10 @@ namespace Kiota.Builder
             if (!string.IsNullOrEmpty(codeNamespace.Name) &&
                 !string.IsNullOrEmpty(root.Name) &&
                 _configuration.ShouldWriteNamespaceIndices &&
-                !_configuration.ClientNamespaceName.Contains(codeNamespace.Name, StringComparison.OrdinalIgnoreCase))
+                !_configuration.ClientNamespaceName.Contains(codeNamespace.Name, StringComparison.OrdinalIgnoreCase) &&
+                ShouldRenderNamespaceFile(codeNamespace))
             {
-                var namespaceNameLastSegment = codeNamespace.Name.Split('.').Last().ToLowerInvariant();
-                // if the module already has a class with the same name, it's going to be declared automatically
-                if (_configuration.ShouldWriteBarrelsIfClassExists ||
-                    codeNamespace.FindChildByName<CodeClass>(namespaceNameLastSegment, false) == null)
-                    await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(root, codeNamespace), cancellationToken);
+                await RenderCodeNamespaceToSingleFileAsync(writer, codeNamespace, writer.PathSegmenter.GetPath(root, codeNamespace), cancellationToken);
             }
         }
         private readonly CodeElementOrderComparer _rendererElementComparer;
@@ -73,5 +71,23 @@ namespace Kiota.Builder
                 }
 
         }
+
+        public virtual bool ShouldRenderNamespaceFile(CodeNamespace codeNamespace)
+        {
+            // if the module already has a class with the same name, it's going to be declared automatically
+            var namespaceNameLastSegment = codeNamespace.Name.Split('.').Last().ToLowerInvariant();
+            return (_configuration.ShouldWriteBarrelsIfClassExists || codeNamespace.FindChildByName<CodeClass>(namespaceNameLastSegment, false) == null);
+        }
+
+        public static CodeRenderer GetCodeRender(GenerationConfiguration config)
+        {
+            return config.Language switch
+            {
+                GenerationLanguage.TypeScript =>
+                    new TypeScriptCodeRenderer(config),
+                _ => new CodeRenderer(config),
+            };
+        }
+    
     }
 }

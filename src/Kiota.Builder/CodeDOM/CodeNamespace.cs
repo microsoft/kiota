@@ -11,7 +11,9 @@ namespace Kiota.Builder
     {
         private CodeNamespace():base() {}
         public static CodeNamespace InitRootNamespace() {
-            return new CodeNamespace();
+            return new() {
+                Name = string.Empty,
+            };
         }
         private string name;
         public override string Name
@@ -60,11 +62,11 @@ namespace Kiota.Builder
         public CodeNamespace AddNamespace(string namespaceName) {
             if(string.IsNullOrEmpty(namespaceName))
                 throw new ArgumentNullException(nameof(namespaceName));
-            var namespaceNameSegements = namespaceName.Split(namespaceNameSeparator, StringSplitOptions.RemoveEmptyEntries);
+            var namespaceNameSegments = namespaceName.Split(namespaceNameSeparator, StringSplitOptions.RemoveEmptyEntries);
             var lastPresentSegmentIndex = default(int);
             var lastPresentSegmentNamespace = GetRootNamespace();
-            while(lastPresentSegmentIndex < namespaceNameSegements.Length) {
-                var segmentNameSpace = lastPresentSegmentNamespace.FindNamespaceByName(namespaceNameSegements.Take(lastPresentSegmentIndex + 1).Aggregate((x, y) => $"{x}.{y}"));
+            while(lastPresentSegmentIndex < namespaceNameSegments.Length) {
+                var segmentNameSpace = lastPresentSegmentNamespace.FindNamespaceByName(namespaceNameSegments.Take(lastPresentSegmentIndex + 1).Aggregate((x, y) => $"{x}.{y}"));
                 if(segmentNameSpace == null)
                     break;
                 else {
@@ -72,7 +74,7 @@ namespace Kiota.Builder
                     lastPresentSegmentIndex++;
                 }
             }
-            foreach(var childSegment in namespaceNameSegements.Skip(lastPresentSegmentIndex))
+            foreach(var childSegment in namespaceNameSegments.Skip(lastPresentSegmentIndex))
                 lastPresentSegmentNamespace = lastPresentSegmentNamespace
                                             .AddRange(
                                                 new CodeNamespace {

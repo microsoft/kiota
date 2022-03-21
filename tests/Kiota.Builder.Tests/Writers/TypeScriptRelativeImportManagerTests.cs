@@ -1,12 +1,13 @@
+﻿using Kiota.Builder.Writers.TypeScript;
 using Xunit;
 
 namespace Kiota.Builder.Writers.Tests {
-    public class RelativeImportManagerTests {
+    public class TypeScriptRelativeImportManagerTests {
         private readonly CodeNamespace root;
         private readonly CodeNamespace graphNS;
         private readonly CodeClass parentClass;
-        private readonly RelativeImportManager importManager = new("graph", '.');
-        public RelativeImportManagerTests() {
+        private readonly TypescriptRelativeImportManager importManager = new("graph", '.');
+        public TypeScriptRelativeImportManagerTests() {
             root = CodeNamespace.InitRootNamespace();
             graphNS = root.AddNamespace("graph");
             parentClass = new () {
@@ -116,6 +117,30 @@ namespace Kiota.Builder.Writers.Tests {
             declaration.AddUsings(nUsing);
             var result = importManager.GetRelativeImportPathForUsing(nUsing, graphNS);
             Assert.Equal("./message", result.Item3);
+        }
+
+        [Fact]
+        public void ReplacesImportsSameNamespaceIndex()
+        {
+            var declaration = parentClass.StartBlock as ClassDeclaration;
+            var messageClassDef = new CodeClass
+            {
+                Name = "Message",
+                Kind = CodeClassKind.Model
+            };
+            graphNS.AddClass(messageClassDef);
+            var nUsing = new CodeUsing
+            {
+                Name = "graph",
+                Declaration = new()
+                {
+                    Name = "Message",
+                    TypeDefinition = messageClassDef,
+                }
+            };
+            declaration.AddUsings(nUsing);
+            var result = importManager.GetRelativeImportPathForUsing(nUsing, graphNS);
+            Assert.Equal("./index", result.Item3);
         }
     }
 }
