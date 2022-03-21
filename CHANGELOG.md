@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- TypeScript adding index exporting models to fix #870.
 
 ### Added
 
@@ -66,7 +67,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed minor issues around PHP Generation, Serialization and Abstractions.
 - Fix Discriminator support for PHP.
 - Move additional data from Parsable into AdditionalDataHolder base class in Python #1360
-- TypeScript adding index exporting models to fix #870.
 
 ## [0.0.17] - 2022-03-03
 
