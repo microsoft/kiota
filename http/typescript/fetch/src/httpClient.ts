@@ -1,3 +1,10 @@
+/**
+ * -------------------------------------------------------------------------------------------
+ * Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the MIT License.
+ * See License in the project root for license information.
+ * -------------------------------------------------------------------------------------------
+ */
+
 import { type RequestOption } from "@microsoft/kiota-abstractions";
 
 import { CustomFetchHandler } from "./middlewares/customFetchHandler";
@@ -38,28 +45,12 @@ export class HttpClient {
 	 * @returns Nothing
 	 */
 	private setMiddleware(...middleware: Middleware[]): void {
-		if (middleware.length > 1) {
-			this.parseMiddleWareArray(middleware);
-		} else {
-			this.middleware = middleware[0];
-		}
-	}
-
-	/**
-	 * @private
-	 * Processes the middleware array to construct the chain
-	 * and sets this.middleware property to the first middlware handler of the array
-	 * The calling function should validate if middleware is not undefined or not empty
-	 * @param {Middleware[]} middlewareArray - The array of middleware handlers
-	 * @returns Nothing
-	 */
-	private parseMiddleWareArray(middlewareArray: Middleware[]) {
-		middlewareArray.forEach((element, index) => {
-			if (index < middlewareArray.length - 1) {
-				element.next = middlewareArray[index + 1];
+        middleware.forEach((element, index) => {
+			if (index < middleware.length - 1) {
+				element.next = middleware[index + 1];
 			}
 		});
-		this.middleware = middlewareArray[0];
+        this.middleware = middleware[0];
 	}
 
 	/**

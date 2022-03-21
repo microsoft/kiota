@@ -27,11 +27,11 @@ export class RetryHandler implements Middleware {
 	 * @static
 	 * A list of status codes that needs to be retried
 	 */
-	private static RETRY_STATUS_CODES: number[] = [
+	private static RETRY_STATUS_CODES: Set<number> = new Set([
 		429, // Too many requests
 		503, // Service unavailable
 		504, // Gateway timeout
-	];
+	]);
 
 	/**
 	 * @private
@@ -70,7 +70,7 @@ export class RetryHandler implements Middleware {
 	 * @returns Whether the response has retry status code or not
 	 */
 	private isRetry(response: FetchResponse): boolean {
-		return RetryHandler.RETRY_STATUS_CODES.indexOf(response.status) !== -1;
+		return RetryHandler.RETRY_STATUS_CODES.has(response.status);
 	}
 
 	/**

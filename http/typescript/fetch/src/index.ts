@@ -6,7 +6,8 @@
  */
 
 /* eslint-disable @typescript-eslint/triple-slash-reference*/
-/// <reference path= "./dom.shim.d.ts" />
+/// <reference path= "../dom.shim.d.ts" />
+
 export * from "./fetchRequestAdapter";
 export * from "./httpClient";
 export * from "./middlewares/middleware";

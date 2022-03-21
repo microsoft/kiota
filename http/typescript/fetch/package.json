@@ -1,6 +1,6 @@
 {
     "name": "@microsoft/kiota-http-fetchlibrary",
-    "version": "1.0.17",
+    "version": "1.0.18",
     "description": "Kiota request adapter implementation with fetch",
     "keywords": [
         "Kiota",
@@ -26,7 +26,8 @@
     "types": "dist/cjs/src/index.d.ts",
     "files": [
         "dist/",
-        "src/"
+        "src/",
+        "dom.shim.d.ts"
     ],
     "scripts": {
         "build": "npm run build:cjs && npm run build:es",
@@ -74,7 +75,6 @@
         "rollup": "^2.58.0",
         "rollup-plugin-terser": "^7.0.2",
         "sinon": "^11.1.2",
-        "tslib": "^2.3.1",
         "typescript": "^4.6.2"
     },
     "publishConfig": {
