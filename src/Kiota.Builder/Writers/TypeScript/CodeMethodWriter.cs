@@ -114,8 +114,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
         if(inherits || parentClass.IsErrorDefinition)
             writer.WriteLine("super();");
-        if(parentClass.IsErrorDefinition)
-            writer.WriteLine($"Object.setPrototypeOf(this, {parentClass.StartBlock.Inherits.Name.ToFirstCharacterUpperCase()}.prototype);");
         var propertiesWithDefaultValues = new List<CodePropertyKind> {
             CodePropertyKind.AdditionalData,
             CodePropertyKind.BackingStore,

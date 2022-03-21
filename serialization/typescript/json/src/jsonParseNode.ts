@@ -85,7 +85,7 @@ export class JsonParseNode implements ParseNode {
     }
   };
   private assignFieldValues = <T extends Parsable>(item: T): void => {
-    const fields = item.getFieldDeserializers();
+    const fields = item.getFieldDeserializers<T>();
     let itemAdditionalData: Record<string, unknown> | undefined;
     const holder = item as unknown as AdditionalDataHolder;
     if (holder && holder.additionalData) {
