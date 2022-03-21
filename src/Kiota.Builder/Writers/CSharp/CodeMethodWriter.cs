@@ -72,8 +72,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 throw new InvalidOperationException("getters and setters are automatically added on fields in dotnet");
             case CodeMethodKind.RequestBuilderBackwardCompatibility:
                 throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
-            case CodeMethodKind.NullCheck:
-                throw new InvalidOperationException("NullChecks are not required in C#");
             case CodeMethodKind.CommandBuilder:
                 var origParams = codeElement.OriginalMethod?.Parameters ?? codeElement.Parameters;
                 requestBodyParam = origParams.OfKind(CodeParameterKind.RequestBody);

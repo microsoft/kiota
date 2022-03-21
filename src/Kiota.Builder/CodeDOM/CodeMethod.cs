@@ -20,7 +20,6 @@ public enum CodeMethodKind
     RequestBuilderBackwardCompatibility,
     RequestBuilderWithParameters,
     RawUrlConstructor,
-    NullCheck,
     CommandBuilder,
     /// <summary>
     /// The method to be used during deserialization with the discriminator property to get a new instance of the target type.
