@@ -1,3 +1,32 @@
 {
-    "omnisharp.enableRoslynAnalyzers": true
+    "omnisharp.enableRoslynAnalyzers": true,
+    "markdownlint.config": {
+        "MD028": false,
+        "MD025": {
+            "front_matter_title": ""
+        }
+    },
+    "cSpell.ignoreWords": [
+        "Todos",
+        "azidentity",
+        "getme",
+        "gson",
+        "kiotaabstractions",
+        "msgraph",
+        "okhttp",
+        "okhttp3",
+        "okhttplibrary",
+        "println",
+        "squareup",
+        "todoclient"
+    ],
+    "cSpell.words": [
+        "deserialization",
+        "getenv",
+        "Kiota",
+        "npmrc",
+        "openapi",
+        "serializers"
+    ],
+    "java.configuration.updateBuildConfiguration": "automatic"
 }

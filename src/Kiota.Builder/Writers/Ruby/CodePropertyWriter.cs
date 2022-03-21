@@ -10,13 +10,12 @@ namespace Kiota.Builder.Writers.Ruby {
             conventions.WriteShortDescription(codeElement.Description, writer);
             var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
             var parentClass = codeElement.Parent as CodeClass;
-            var currentPathProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
-            switch(codeElement.PropertyKind) {
+            switch(codeElement.Kind) {
                 case CodePropertyKind.RequestBuilder:
                     writer.WriteLine($"def {codeElement.Name.ToSnakeCase()}()");
                     writer.IncreaseIndent();
                     var prefix = conventions.GetNormalizedNamespacePrefixForType(codeElement.Type);
-                    conventions.AddRequestBuilderBody(currentPathProperty != null, returnType, writer, null, $"return {prefix}");
+                    conventions.AddRequestBuilderBody(parentClass, returnType, writer, prefix: $"return {prefix}");
                     writer.DecreaseIndent();
                     writer.WriteLine("end");
                 break;

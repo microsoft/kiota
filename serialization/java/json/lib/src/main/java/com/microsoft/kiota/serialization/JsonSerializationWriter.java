@@ -6,22 +6,22 @@ import com.microsoft.kiota.serialization.Parsable;
 
 import java.lang.Enum;
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.Period;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.BiConsumer;
 
@@ -48,6 +48,39 @@ public class JsonSerializationWriter implements SerializationWriter {
             }
     }
     public void writeBooleanValue(final String key, final Boolean value) {
+        if(value != null)
+            try {
+                if(key != null && !key.isEmpty()) {
+                    writer.name(key);
+                }
+                writer.value(value);
+            } catch (IOException ex) {
+                throw new RuntimeException("could not serialize value", ex);
+            }
+    }
+    public void writeShortValue(final String key, final Short value) {
+        if(value != null)
+            try {
+                if(key != null && !key.isEmpty()) {
+                    writer.name(key);
+                }
+                writer.value(value);
+            } catch (IOException ex) {
+                throw new RuntimeException("could not serialize value", ex);
+            }
+    }
+    public void writeByteValue(final String key, final Byte value) {
+        if(value != null)
+            try {
+                if(key != null && !key.isEmpty()) {
+                    writer.name(key);
+                }
+                writer.value(value);
+            } catch (IOException ex) {
+                throw new RuntimeException("could not serialize value", ex);
+            }
+    }
+    public void writeBigDecimalValue(final String key, final BigDecimal value) {
         if(value != null)
             try {
                 if(key != null && !key.isEmpty()) {
@@ -120,6 +153,39 @@ public class JsonSerializationWriter implements SerializationWriter {
                     writer.name(key);
                 }
                 writer.value(value.format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
+            } catch (IOException ex) {
+                throw new RuntimeException("could not serialize value", ex);
+            }
+    }
+    public void writeLocalDateValue(final String key, final LocalDate value) {
+        if(value != null)
+            try {
+                if(key != null && !key.isEmpty()) {
+                    writer.name(key);
+                }
+                writer.value(value.format(DateTimeFormatter.ISO_LOCAL_DATE));
+            } catch (IOException ex) {
+                throw new RuntimeException("could not serialize value", ex);
+            }
+    }
+    public void writeLocalTimeValue(final String key, final LocalTime value) {
+        if(value != null)
+            try {
+                if(key != null && !key.isEmpty()) {
+                    writer.name(key);
+                }
+                writer.value(value.format(DateTimeFormatter.ISO_LOCAL_TIME));
+            } catch (IOException ex) {
+                throw new RuntimeException("could not serialize value", ex);
+            }
+    }
+    public void writePeriodValue(final String key, final Period value) {
+        if(value != null)
+            try {
+                if(key != null && !key.isEmpty()) {
+                    writer.name(key);
+                }
+                writer.value(value.toString());
             } catch (IOException ex) {
                 throw new RuntimeException("could not serialize value", ex);
             }
@@ -267,6 +333,12 @@ public class JsonSerializationWriter implements SerializationWriter {
                 this.writeStringValue(key, (String)value);
             else if(valueClass.equals(Boolean.class))
                 this.writeBooleanValue(key, (Boolean)value);
+            else if(valueClass.equals(Byte.class))
+                this.writeByteValue(key, (Byte)value);
+            else if(valueClass.equals(Short.class))
+                this.writeShortValue(key, (Short)value);
+            else if(valueClass.equals(BigDecimal.class))
+                this.writeBigDecimalValue(key, (BigDecimal)value);
             else if(valueClass.equals(Float.class))
                 this.writeFloatValue(key, (Float)value);
             else if(valueClass.equals(Long.class))
@@ -277,6 +349,12 @@ public class JsonSerializationWriter implements SerializationWriter {
                 this.writeUUIDValue(key, (UUID)value);
             else if(valueClass.equals(OffsetDateTime.class))
                 this.writeOffsetDateTimeValue(key, (OffsetDateTime)value);
+            else if(valueClass.equals(LocalDate.class))
+                this.writeLocalDateValue(key, (LocalDate)value);
+            else if(valueClass.equals(LocalTime.class))
+                this.writeLocalTimeValue(key, (LocalTime)value);
+            else if(valueClass.equals(Period.class))
+                this.writePeriodValue(key, (Period)value);
             else if(value instanceof Iterable<?>)
                 this.writeCollectionOfPrimitiveValues(key, (Iterable<?>)value);
             else if(!valueClass.isPrimitive())

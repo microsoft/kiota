@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -9,10 +9,7 @@ namespace Kiota.Builder.Writers.CSharp {
         public override string StreamTypeName => "stream";
         public override string VoidTypeName => "void";
         public override string DocCommentPrefix => "/// ";
-        private const string PathSegmentPropertyName = "PathSegment";
-        private const string CurrentPathPropertyName = "CurrentPath";
-        private const string RequestAdapterPropertyName = "RequestAdapter";
-        private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "float", "double", "decimal", "long", "Guid", "DateTimeOffset" };
+        private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "float", "double", "decimal", "long", "Guid", "DateTimeOffset", "TimeSpan", "Date","Time", "sbyte", "byte" };
         public static readonly char NullableMarker = '?';
         public static string NullableMarkerAsString => "?";
         public override string ParseNodeInterfaceName => "IParseNode";
@@ -29,10 +26,21 @@ namespace Kiota.Builder.Writers.CSharp {
             };
         }
         #pragma warning disable CA1822 // Method should be static
-        internal void AddRequestBuilderBody(bool addCurrentPath, string returnType, LanguageWriter writer, string suffix = default, string prefix = default, IEnumerable<CodeParameter> pathParameters = default) {
-            var currentPath = addCurrentPath ? $"{CurrentPathPropertyName} + " : string.Empty;
-            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $"{string.Join(", ", pathParameters.Select(x => $"{x.Name}"))}, ";
-            writer.WriteLine($"{prefix}new {returnType}({currentPath}{PathSegmentPropertyName} {suffix}, {RequestAdapterPropertyName}, {pathParametersSuffix}false);");
+        internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string urlTemplateVarName = default, string prefix = default, IEnumerable<CodeParameter> pathParameters = default) {
+            var pathParametersProp = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
+            var requestAdapterProp = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
+            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(x => $"{x.Name.ToFirstCharacterLowerCase()}"))}";
+            var urlTplRef = urlTemplateVarName ?? pathParametersProp.Name.ToFirstCharacterUpperCase();
+            writer.WriteLine($"{prefix}new {returnType}({urlTplRef}, {requestAdapterProp.Name.ToFirstCharacterUpperCase()}{pathParametersSuffix});");
+        }
+        public override string TempDictionaryVarName => "urlTplParams";
+        internal void AddParametersAssignment(LanguageWriter writer, CodeTypeBase pathParametersType, string pathParametersReference, params (CodeTypeBase, string, string)[] parameters) {
+            if(pathParametersType == null) return;
+            writer.WriteLine($"var {TempDictionaryVarName} = new {pathParametersType.Name}({pathParametersReference});");
+            if(parameters.Any())
+                writer.WriteLines(parameters.Select(p =>
+                    $"{TempDictionaryVarName}.Add(\"{p.Item2}\", {p.Item3});"
+                ).ToArray());
         }
         #pragma warning restore CA1822 // Method should be static
         internal bool ShouldTypeHaveNullableMarker(CodeTypeBase propType, string propTypeName) {
@@ -81,12 +89,23 @@ namespace Kiota.Builder.Writers.CSharp {
         }
         private string TranslateTypeAndAvoidUsingNamespaceSegmentNames(CodeType currentType, CodeElement targetElement)
         {
+            var parentElements = new List<string>();
+            if(targetElement.Parent is CodeClass parentClass)
+                parentElements.AddRange(parentClass.Methods.Select(x => x.Name).Union(parentClass.Properties.Select(x => x.Name)));
+            var parentElementsHash = new HashSet<string>(parentElements, StringComparer.OrdinalIgnoreCase);
             var typeName = TranslateType(currentType);
             if(currentType.TypeDefinition != null &&
-                GetNamesInUseByNamespaceSegments(targetElement).Contains(typeName))
+                (GetNamesInUseByNamespaceSegments(targetElement).Contains(typeName) &&
+                !DoesTypeExistsInSameNamesSpaceAsTarget(currentType,targetElement) ||
+                parentElementsHash.Contains(typeName)))
                 return $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
             else
                 return typeName;
+        }
+
+        private static bool DoesTypeExistsInSameNamesSpaceAsTarget(CodeType currentType, CodeElement targetElement)
+        {
+            return currentType?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>()?.Name.Equals(targetElement?.GetImmediateParentOfType<CodeNamespace>()?.Name) ?? false;
         }
         public override string TranslateType(CodeType type)
         {
@@ -95,7 +114,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 "integer" => "int",
                 "boolean" => "bool",
                 "int64" => "long",
-                "string" or "float" or "double" or "object" or "void" => type.Name.ToLowerInvariant(),// little casing hack
+                "string" or "float" or "double" or "object" or "void" or "decimal" or "sbyte" or "byte" => type.Name.ToLowerInvariant(),// little casing hack
                 "binary" => "byte[]",
                 _ => type.Name?.ToFirstCharacterUpperCase() ?? "object",
             };
@@ -117,7 +136,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 _ when parameter.Optional => " = default",
                 _ => string.Empty,
             };
-            return $"{parameterType} {parameter.Name}{defaultValue}";
+            return $"{parameterType} {parameter.Name.ToFirstCharacterLowerCase()}{defaultValue}";
         }
     }
 }

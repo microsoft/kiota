@@ -8,31 +8,46 @@ import (
 
 const authorizationHeader = "Authorization"
 
+// BaseBearerTokenAuthenticationProvider provides a base class implementing AuthenticationProvider for Bearer token scheme.
 type BaseBearerTokenAuthenticationProvider struct {
-	getAuthorizationToken func(request abs.RequestInformation) (string, error)
+	// accessTokenProvider is called by the BaseBearerTokenAuthenticationProvider class to authenticate the request via the returned access token.
+	accessTokenProvider AccessTokenProvider
 }
 
-func NewBaseBearerTokenAuthenticationProvider(getAuthorizationToken func(request abs.RequestInformation) (string, error)) *BaseBearerTokenAuthenticationProvider {
-	return &BaseBearerTokenAuthenticationProvider{getAuthorizationToken}
+// NewBaseBearerTokenAuthenticationProvider creates a new instance of the BaseBearerTokenAuthenticationProvider class.
+func NewBaseBearerTokenAuthenticationProvider(accessTokenProvider AccessTokenProvider) *BaseBearerTokenAuthenticationProvider {
+	return &BaseBearerTokenAuthenticationProvider{accessTokenProvider}
 }
 
-func (provider *BaseBearerTokenAuthenticationProvider) Authenticate(request abs.RequestInformation) error {
+// AuthenticateRequest authenticates the provided RequestInformation instance using the provided authorization token callback.
+func (provider *BaseBearerTokenAuthenticationProvider) AuthenticateRequest(request *abs.RequestInformation) error {
+	if request == nil {
+		return errors.New("request is nil")
+	}
 	if request.Headers == nil {
 		request.Headers = make(map[string]string)
 	}
-	if provider.getAuthorizationToken == nil {
-		return errors.New("This class is abstract, you need to derive from it and implement the GetAuthorizationToken method.")
+	if provider.accessTokenProvider == nil {
+		return errors.New("this class needs to be initialized with an access token provider")
 	}
 	if request.Headers[authorizationHeader] == "" {
-		token, err := provider.getAuthorizationToken(request)
+		uri, err := request.GetUri()
 		if err != nil {
 			return err
 		}
-		if token == "" {
-			return errors.New("Could not get an authorization token")
+		token, err := provider.accessTokenProvider.GetAuthorizationToken(uri)
+		if err != nil {
+			return err
 		}
-		request.Headers[authorizationHeader] = "Bearer " + token
+		if token != "" {
+			request.Headers[authorizationHeader] = "Bearer " + token
+		}
 	}
 
 	return nil
+}
+
+// GetAuthorizationTokenProvider returns the access token provider the BaseBearerTokenAuthenticationProvider class uses to authenticate the request.
+func (provider *BaseBearerTokenAuthenticationProvider) GetAuthorizationTokenProvider() AccessTokenProvider {
+	return provider.accessTokenProvider
 }

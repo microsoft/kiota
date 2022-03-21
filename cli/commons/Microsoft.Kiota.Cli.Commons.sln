@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{8DEB9AF3-BEA6-4E73-BB5E-EBC1DFE6AF22}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Kiota.Cli.Commons", "src\Microsoft.Kiota.Cli.Commons\Microsoft.Kiota.Cli.Commons.csproj", "{23DD14C5-3060-4498-B2F9-85B68770AE0B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Kiota.Cli.Commons.Tests", "src\Microsoft.Kiota.Cli.Commons.Tests\Microsoft.Kiota.Cli.Commons.Tests.csproj", "{D1228DD9-C98F-46C1-911A-65AE2D34DBE5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{23DD14C5-3060-4498-B2F9-85B68770AE0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{23DD14C5-3060-4498-B2F9-85B68770AE0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{23DD14C5-3060-4498-B2F9-85B68770AE0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{23DD14C5-3060-4498-B2F9-85B68770AE0B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1228DD9-C98F-46C1-911A-65AE2D34DBE5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1228DD9-C98F-46C1-911A-65AE2D34DBE5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1228DD9-C98F-46C1-911A-65AE2D34DBE5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1228DD9-C98F-46C1-911A-65AE2D34DBE5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{23DD14C5-3060-4498-B2F9-85B68770AE0B} = {8DEB9AF3-BEA6-4E73-BB5E-EBC1DFE6AF22}
+		{D1228DD9-C98F-46C1-911A-65AE2D34DBE5} = {8DEB9AF3-BEA6-4E73-BB5E-EBC1DFE6AF22}
+	EndGlobalSection
+EndGlobal

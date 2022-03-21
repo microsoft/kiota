@@ -15,12 +15,11 @@ namespace Kiota.Builder.Writers.CSharp {
             var simpleBody = $"get; {setterAccessModifier}set;";
             var propertyType = conventions.GetTypeString(codeElement.Type, codeElement);
             conventions.WriteShortDescription(codeElement.Description, writer);
-            switch(codeElement.PropertyKind) {
+            switch(codeElement.Kind) {
                 case CodePropertyKind.RequestBuilder:
-                    var currentPathProperty = parentClass.Properties.FirstOrDefault(x => x.IsOfKind(CodePropertyKind.CurrentPath));
                     writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ get =>");
                     writer.IncreaseIndent();
-                    conventions.AddRequestBuilderBody(currentPathProperty != null, propertyType, writer);
+                    conventions.AddRequestBuilderBody(parentClass, propertyType, writer);
                     writer.DecreaseIndent();
                     writer.WriteLine("}");
                 break;

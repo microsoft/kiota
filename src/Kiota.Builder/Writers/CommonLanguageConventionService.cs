@@ -19,6 +19,10 @@ namespace Kiota.Builder.Writers {
         {
             get;
         }
+        public abstract string TempDictionaryVarName
+        {
+            get;
+        }
 
         public abstract string GetAccessModifier(AccessModifier access);
         public abstract string GetParameterSignature(CodeParameter parameter, CodeElement targetElement);

@@ -10,12 +10,14 @@ namespace Kiota.Builder.Refiners {
         public override void Refine(CodeNamespace generatedCode)
         {
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode, _configuration.UsesBackingStore);
+            AddRawUrlConstructorOverload(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddAsyncSuffix(generatedCode);
             AddInnerClasses(generatedCode, false);
-            AddParsableInheritanceForModelClasses(generatedCode);
+            AddParsableImplementsForModelClasses(generatedCode, "IParsable");
             CapitalizeNamespacesFirstLetters(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");
             MakeEnumPropertiesNullable(generatedCode);
@@ -26,13 +28,23 @@ namespace Kiota.Builder.Refiners {
             ReplaceReservedNames(
                 generatedCode,
                 new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}",
-                new HashSet<Type>{ typeof(CodeClass), typeof(CodeClass.Declaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod) }
+                new HashSet<Type>{ typeof(CodeClass), typeof(ClassDeclaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod) }
             ); 
             DisambiguatePropertiesWithClassNames(generatedCode);
             AddConstructorsForDefaultValues(generatedCode, false);
             AddSerializationModulesImport(generatedCode);
+            AddParentClassToErrorClasses(
+                generatedCode,
+                "ApiException",
+                "Microsoft.Kiota.Abstractions"
+            );
+            AddDiscriminatorMappingsUsingsToParentClasses(
+                generatedCode,
+                "IParseNode",
+                addUsings: false
+            );
         }
-        private static void DisambiguatePropertiesWithClassNames(CodeElement currentElement) {
+        protected static void DisambiguatePropertiesWithClassNames(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass) {
                 var sameNameProperty = currentClass.Properties
                                                 .FirstOrDefault(x => x.Name.Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase));
@@ -45,7 +57,7 @@ namespace Kiota.Builder.Refiners {
             }
             CrawlTree(currentElement, DisambiguatePropertiesWithClassNames);
         }
-        private static void MakeEnumPropertiesNullable(CodeElement currentElement) {
+        protected static void MakeEnumPropertiesNullable(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model))
                 currentClass.Properties
                             .Where(x => x.Type is CodeType propType && propType.TypeDefinition is CodeEnum)
@@ -53,29 +65,12 @@ namespace Kiota.Builder.Refiners {
                             .ForEach(x => x.Type.IsNullable = true);
             CrawlTree(currentElement, MakeEnumPropertiesNullable);
         }
-        private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass &&
-                currentClass.IsOfKind(CodeClassKind.Model) &&
-                currentClass.StartBlock is CodeClass.Declaration declaration) {
-                declaration.AddImplements(new CodeType {
-                    IsExternal = true,
-                    Name = $"IParsable",
-                });
-                (currentClass.Parent is CodeClass parentClass &&
-                parentClass.StartBlock is CodeClass.Declaration parentDeclaration ? 
-                    parentDeclaration :
-                    declaration)
-                    .AddUsings(new CodeUsing {
-                        Name = "Microsoft.Kiota.Abstractions.Serialization"
-                });
-            }
-            CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
-        }
-        private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
+        
+        protected static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
                 "Microsoft.Kiota.Abstractions", "IRequestAdapter"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-                "Microsoft.Kiota.Abstractions", "HttpMethod", "RequestInformation", "IRequestOption"),
+                "Microsoft.Kiota.Abstractions", "Method", "RequestInformation", "IRequestOption"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
                 "Microsoft.Kiota.Abstractions", "IResponseHandler"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
@@ -84,6 +79,8 @@ namespace Kiota.Builder.Refiners {
                 "Microsoft.Kiota.Abstractions.Serialization", "IParseNode"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
                 "Microsoft.Kiota.Abstractions.Serialization", "IParsable"),
+            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
+                "Microsoft.Kiota.Abstractions.Serialization", "IAdditionalDataHolder"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
                 "Microsoft.Kiota.Abstractions.Serialization", "IParsable"),
             new (x => x is CodeClass || x is CodeEnum,
@@ -92,6 +89,8 @@ namespace Kiota.Builder.Refiners {
                 "System.Collections.Generic", "List", "Dictionary"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder),
                 "System.IO", "Stream"),
+            new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
+                "System.Threading", "CancellationToken"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
                 "System.Threading.Tasks", "Task"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder),
@@ -102,15 +101,51 @@ namespace Kiota.Builder.Refiners {
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
                 "Microsoft.Kiota.Abstractions.Store",  "IBackingStore", "IBackedModel", "BackingStoreFactorySingleton" ),
         };
-        private static void CapitalizeNamespacesFirstLetters(CodeElement current) {
+        protected static void CapitalizeNamespacesFirstLetters(CodeElement current) {
             if(current is CodeNamespace currentNamespace)
                 currentNamespace.Name = currentNamespace.Name?.Split('.')?.Select(x => x.ToFirstCharacterUpperCase())?.Aggregate((x, y) => $"{x}.{y}");
             CrawlTree(current, CapitalizeNamespacesFirstLetters);
         }
-        private static void AddAsyncSuffix(CodeElement currentElement) {
+        protected static void AddAsyncSuffix(CodeElement currentElement) {
             if(currentElement is CodeMethod currentMethod && currentMethod.IsAsync)
                 currentMethod.Name += "Async";
             CrawlTree(currentElement, AddAsyncSuffix);
         }
+        protected static void CorrectPropertyType(CodeProperty currentProperty)
+        {
+            CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        }
+        protected static void CorrectMethodType(CodeMethod currentMethod)
+        {
+            CorrectDateTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
+                                                    .Select(x => x.Type)
+                                                    .Union(new CodeTypeBase[] { currentMethod.ReturnType })
+                                                    .ToArray());
+        }
+        private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
+        {
+            {
+                "DateOnly",("Date", new CodeUsing
+                    {
+                        Name = "Date",
+                        Declaration = new CodeType
+                        {
+                            Name = "Microsoft.Kiota.Abstractions",
+                            IsExternal = true,
+                        },
+                    })
+            },
+            {
+                "TimeOnly",("Time", new CodeUsing
+                    {
+                        Name = "Time",
+                        Declaration = new CodeType
+                        {
+                            Name = "Microsoft.Kiota.Abstractions",
+                            IsExternal = true,
+                        },
+                    })
+            },
+        };
     }
 }

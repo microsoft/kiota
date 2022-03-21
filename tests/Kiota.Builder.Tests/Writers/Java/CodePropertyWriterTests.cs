@@ -27,7 +27,13 @@ namespace Kiota.Builder.Writers.Java.Tests {
             property.Type = new CodeType {
                 Name = TypeName
             };
-            parentClass.AddProperty(property);
+            parentClass.AddProperty(property, new() {
+                Name = "pathParameters",
+                Kind = CodePropertyKind.PathParameters,
+            }, new() {
+                Name = "requestAdapter",
+                Kind = CodePropertyKind.RequestAdapter,
+            });
         }
         public void Dispose() {
             tw?.Dispose();
@@ -35,16 +41,16 @@ namespace Kiota.Builder.Writers.Java.Tests {
         }
         [Fact]
         public void WritesRequestBuilder() {
-            property.PropertyKind = CodePropertyKind.RequestBuilder;
+            property.Kind = CodePropertyKind.RequestBuilder;
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains($"return new {TypeName}", result);
             Assert.Contains("requestAdapter", result);
-            Assert.Contains("pathSegment", result);
+            Assert.Contains("pathParameters", result);
         }
         [Fact]
         public void WritesCustomProperty() {
-            property.PropertyKind = CodePropertyKind.Custom;
+            property.Kind = CodePropertyKind.Custom;
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains($"{TypeName} {PropertyName}", result);
@@ -52,7 +58,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
         }
         [Fact]
         public void WritesFlagEnums() {
-            property.PropertyKind = CodePropertyKind.Custom;
+            property.Kind = CodePropertyKind.Custom;
             property.Type = new CodeType {
                 Name = "customEnum",
             };
@@ -66,7 +72,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
         }
         [Fact]
         public void WritesNonNull() {
-            property.PropertyKind = CodePropertyKind.Custom;
+            property.Kind = CodePropertyKind.Custom;
             (property.Type as CodeType).IsNullable = false;
             writer.Write(property);
             var result = tw.ToString();

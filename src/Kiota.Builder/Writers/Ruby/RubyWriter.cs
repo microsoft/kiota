@@ -6,12 +6,12 @@ namespace Kiota.Builder.Writers.Ruby
         {
             PathSegmenter = new RubyPathSegmenter(rootPath, clientNamespaceName);
             var conventionService = new RubyConventionService();
-            AddCodeElementWriter(new CodeClassDeclarationWriter(conventionService, clientNamespaceName));
-            AddCodeElementWriter(new CodeClassEndWriter(conventionService));
-            AddCodeElementWriter(new CodeNamespaceWriter(conventionService));
-            AddCodeElementWriter(new CodeEnumWriter(conventionService));
-            AddCodeElementWriter(new CodeMethodWriter(conventionService));
-            AddCodeElementWriter(new CodePropertyWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService, clientNamespaceName));
+            AddOrReplaceCodeElementWriter(new CodeBlockEndWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeNamespaceWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
         }
     }
 }

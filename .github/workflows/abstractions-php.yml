@@ -1,0 +1,28 @@
+name: PHP abstractions
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths: ['abstractions/php/**', '.github/workflows/**']
+  pull_request:
+    paths: ['abstractions/php/**', '.github/workflows/**']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      relativePath: ./abstractions/php
+      XDEBUG_MODE: 'coverage'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install dependencies
+        run: composer install
+        working-directory: ${{ env.relativePath }}
+      - name: Run static analysis
+        run: ./vendor/bin/phpstan
+        working-directory: ${{ env.relativePath }}
+      - name: Run tests
+        run: ./vendor/bin/phpunit --coverage-text
+        working-directory: ${{ env.relativePath }}

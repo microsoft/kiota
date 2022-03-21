@@ -27,8 +27,8 @@ namespace Kiota.Builder.Extensions {
             original?.Replace("$value", "Content");
         public static string TrimQuotes(this string original) =>
             original?.Trim('\'', '"');
-        
-        public static string ToSnakeCase(this string name)
+
+        public static string ToSnakeCase(this string name, char separator = '_')
         {
             if(string.IsNullOrEmpty(name)) return name;
             var chunks = name.Split('-', StringSplitOptions.RemoveEmptyEntries);
@@ -42,7 +42,7 @@ namespace Kiota.Builder.Extensions {
             foreach (var item in identifier[1..])
             {
                 if(char.IsUpper(item)) {
-                    sb.Append('_');
+                    sb.Append(separator);
                     sb.Append(char.ToLowerInvariant(item));
                 } else {
                     sb.Append(item);
@@ -52,14 +52,14 @@ namespace Kiota.Builder.Extensions {
             int index = output.IndexOf("<");
             if (index >= 0)
                 output = output.Substring(0, index);
-            
+
             return output;
         }
         private static Regex pascalWordRegex = new Regex("[A-Z][a-z]*|[a-z]+|\\d+", RegexOptions.Compiled);
         public static IEnumerable<string> SplitAndSingularizePascalCase(this string name) =>
             pascalWordRegex.Matches(name).Select(m => m.Value.Singularize(inputIsKnownToBePlural: false));
-        public static string NormalizeNameSpaceName(this string original, string delimiter) => 
-            string.IsNullOrEmpty(original) ? 
+        public static string NormalizeNameSpaceName(this string original, string delimiter) =>
+            string.IsNullOrEmpty(original) ?
                 original :
                 original?.Split('.').Select(x => x.ToFirstCharacterUpperCase()).Aggregate((z,y) => z + delimiter + y);
         private static readonly HashAlgorithm sha = SHA256.Create();
@@ -70,6 +70,34 @@ namespace Kiota.Builder.Extensions {
         private static string HashString(string input) {
             var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
             return hash.Select(b => b.ToString("x2")).Aggregate((x, y) => x + y);
+        }
+        public static string SanitizeUrlTemplateParameterName(this string original) =>
+            original?.Replace('-', '_');
+        /// <summary>
+        /// For Php strings, having double quotes around strings might cause an issue
+        /// if the string contains valid variable name.
+        /// For example $variable = "$value" will try too set the value of
+        /// $variable to the variable named $value rather than the string '$value'
+        /// around quotes as expected.
+        /// </summary>
+        /// <param name="current"></param>
+        public static string ReplaceDoubleQuoteWithSingleQuote(this string current)
+        {
+            if (string.IsNullOrEmpty(current))
+            {
+                return current;
+            }
+            return current.StartsWith("\"", StringComparison.OrdinalIgnoreCase) ? current.Replace("'", "\\'").Replace('\"', '\'') : current;
+        }
+
+        public static string ReplaceDotsWithSlashInNamespaces(this string namespaced)
+        {
+            if (string.IsNullOrEmpty(namespaced))
+            {
+                return namespaced;
+            }
+            var parts = namespaced.Split('.');
+            return string.Join('\\', parts.Select(x => x.ToFirstCharacterUpperCase())).Trim('\\');
         }
     }
 }

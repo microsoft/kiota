@@ -15,11 +15,11 @@ jobs:
           - linux-x64
           - osx-x64
     steps:
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v3
       - name: Setup .NET
-        uses: actions/setup-dotnet@v1.8.2
+        uses: actions/setup-dotnet@v2
         with:
-          dotnet-version: 5.0.x
+          dotnet-version: 6.0.x
       - name: Publish ${{ matrix.architecture }}
         run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -r ${{ matrix.architecture }} -o ./${{ matrix.architecture }}
       - name: Archive Release ${{ matrix.architecture }}
@@ -38,12 +38,12 @@ jobs:
       name: gh_releases
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v3
       - uses: actions/download-artifact@v2
         with:
           path: output
       - name: Release
-        uses: anton-yurchenko/git-release@v4.1
+        uses: anton-yurchenko/git-release@v4.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DRAFT_RELEASE: "false"

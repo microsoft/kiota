@@ -1,7 +1,11 @@
 package com.microsoft.kiota.serialization;
 
 import java.lang.Enum;
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.Period;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
@@ -11,12 +15,12 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * Interface for a deserialization node in a parse tree. This interace provides an abstraction layer over serialiation formats, libararies and implementations.
+ * Interface for a deserialization node in a parse tree. This interface provides an abstraction layer over serialization formats, libraries and implementations.
  */
 public interface ParseNode {
     /**
      * Gets a new parse node for the given identifier.
-     * @param identitier the identifier of the current node property.
+     * @param identifier the identifier of the current node property.
      * @return a new parse node for the given identifier.
      */
     @Nonnull
@@ -33,6 +37,24 @@ public interface ParseNode {
      */
     @Nonnull
     Boolean getBooleanValue();
+    /**
+     * Gets the byte value of the node.
+     * @return the byte value of the node.
+     */
+    @Nonnull
+    Byte getByteValue();
+    /**
+     * Gets the short value of the node.
+     * @return the short value of the node.
+     */
+    @Nonnull
+    Short getShortValue();
+    /**
+     * Gets the BigDecimal value of the node.
+     * @return the BigDecimal value of the node.
+     */
+    @Nonnull
+    BigDecimal getBigDecimalValue();
     /**
      * Gets the Integer value of the node.
      * @return the Integer value of the node.
@@ -69,6 +91,28 @@ public interface ParseNode {
      */
     @Nonnull
     OffsetDateTime getOffsetDateTimeValue();
+
+    /**
+     * Gets the LocalDate value of the node.
+     * @return the LocalDate value of the node.
+     */
+    @Nonnull
+    LocalDate getLocalDateValue();
+
+    /**
+     * Gets the LocalTime value of the node.
+     * @return the LocalTime value of the node.
+     */
+    @Nonnull
+    LocalTime getLocalTimeValue();
+
+    /**
+     * Gets the Period value of the node.
+     * @return the Period value of the node.
+     */
+    @Nonnull
+    Period getPeriodValue();
+
     /**
      * Gets the Enum value of the node.
      * @return the Enum value of the node.
@@ -89,10 +133,11 @@ public interface ParseNode {
     <T> List<T> getCollectionOfPrimitiveValues(@Nonnull final Class<T> targetClass);
     /**
      * Gets the collection of object values of the node.
+     * @param factory the factory to use to create the model object.
      * @return the collection of object values of the node.
      */
     @Nonnull
-    <T extends Parsable> List<T> getCollectionOfObjectValues(@Nonnull final Class<T> targetClass);
+    <T extends Parsable> List<T> getCollectionOfObjectValues(@Nonnull final ParsableFactory<T> factory);
     /**
      * Gets the collection of Enum values of the node.
      * @return the collection of Enum values of the node.
@@ -101,10 +146,11 @@ public interface ParseNode {
     <T extends Enum<T>> List<T> getCollectionOfEnumValues(@Nonnull final Class<T> targetEnum);
     /**
      * Gets the model object value of the node.
+     * @param factory the factory to use to create the model object.
      * @return the model object value of the node.
      */
     @Nonnull
-    <T extends Parsable> T getObjectValue(@Nonnull final Class<T> targetClass);
+    <T extends Parsable> T getObjectValue(@Nonnull final ParsableFactory<T> factory);
     /**
      * Gets the callback called before the node is deserialized.
      * @return the callback called before the node is deserialized.
@@ -112,7 +158,7 @@ public interface ParseNode {
     @Nullable
     Consumer<Parsable> getOnBeforeAssignFieldValues();
     /**
-     * Gets the callback called after the node is deseserialized.
+     * Gets the callback called after the node is deserialized.
      * @return the callback called after the node is deserialized.
      */
     @Nullable

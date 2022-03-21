@@ -1,0 +1,29 @@
+name: Go Serialization Json
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths: ['serialization/go/json/**', '.github/workflows/**']
+  pull_request:
+    paths: ['serialization/go/json/**', '.github/workflows/**']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      relativePath: ./serialization/go/json
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.17.3'
+      - name: Install dependencies
+        run: go install
+        working-directory: ${{ env.relativePath }}
+      - name: Build SDK project
+        run: go build
+        working-directory: ${{ env.relativePath }}
+      - name: Run unit tests
+        run: go test
+        working-directory: ${{ env.relativePath }}

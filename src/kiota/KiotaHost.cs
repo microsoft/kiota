@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.CommandLine;
-using System.CommandLine.Binding;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder;
 using Kiota.Builder.Extensions;
@@ -39,11 +39,26 @@ namespace Kiota {
             var backingStoreOption = new Option<bool>("--backing-store", () => false, "Enables backing store for models.");
             backingStoreOption.AddAlias("-b");
 
-            var serializerOption = new Option<List<string>>("--serializer", () => new List<string> {"Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory"}, "The fully qualified class names for serializers. Accepts multiple values.");
+            var serializerOption = new Option<List<string>>(
+                "--serializer", 
+                () => new List<string> {
+                    "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory",
+                    "Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory"
+                },
+                "The fully qualified class names for serializers. Accepts multiple values.");
             serializerOption.AddAlias("-s");
 
-            var deserializerOption = new Option<List<string>>("--deserializer", () => new List<string> {"Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory"}, "The fully qualified class names for deserializers. Accepts multiple values.");
+            var deserializerOption = new Option<List<string>>(
+                "--deserializer",
+                () => new List<string> {
+                    "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory",
+                    "Microsoft.Kiota.Serialization.Text.TextParseNodeFactory"
+                },
+                "The fully qualified class names for deserializers. Accepts multiple values.");
             deserializerOption.AddAlias("--ds");
+
+            var cleanOutputOption = new Option<bool>("--clean-output", () => false, "Removes all files from the output directory before generating the code files.");
+            cleanOutputOption.AddAlias("-co");
 
             var command = new RootCommand {
                 outputOption,
@@ -55,23 +70,22 @@ namespace Kiota {
                 namespaceOption,
                 serializerOption,
                 deserializerOption,
+                cleanOutputOption,
             };
-            command.Handler = HandlerDescriptor.FromDelegate(new HandleCommandCallDel(HandleCommandCall)).GetCommandHandler();
+            command.SetHandler<string, GenerationLanguage, string, bool, string, LogLevel, string, List<string>, List<string>, bool, CancellationToken>(HandleCommandCall, outputOption, languageOption, descriptionOption, backingStoreOption, classOption, logLevelOption, namespaceOption, serializerOption, deserializerOption, cleanOutputOption);
             return command;
         }
         private void AssignIfNotNullOrEmpty(string input, Action<GenerationConfiguration, string> assignment) {
             if (!string.IsNullOrEmpty(input))
                 assignment.Invoke(Configuration, input);
         }
-        private delegate Task HandleCommandCallDel(string output, GenerationLanguage? language, string openapi, bool backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer, List<string> deserializer);
-        private async Task HandleCommandCall(string output, GenerationLanguage? language, string openapi, bool backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer, List<string> deserializer) {
+        private async Task<int> HandleCommandCall(string output, GenerationLanguage language, string openapi, bool backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer, List<string> deserializer, bool cleanOutput, CancellationToken cancellationToken) {
             AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
             AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
             AssignIfNotNullOrEmpty(classname, (c, s) => c.ClientClassName = s);
             AssignIfNotNullOrEmpty(namespacename, (c, s) => c.ClientNamespaceName = s);
             Configuration.UsesBackingStore = backingstore;
-            if (language.HasValue)
-                Configuration.Language = language.Value;
+            Configuration.Language = language;
             if(serializer?.Any() ?? false)
                 Configuration.Serializers.AddRange(serializer.Select(x => x.TrimQuotes()));
             if(deserializer?.Any() ?? false)
@@ -83,6 +97,7 @@ namespace Kiota {
 
             Configuration.OpenAPIFilePath = GetAbsolutePath(Configuration.OpenAPIFilePath);
             Configuration.OutputPath = GetAbsolutePath(Configuration.OutputPath);
+            Configuration.CleanOutput = cleanOutput;
 
             var logger = LoggerFactory.Create((builder) => {
                 builder
@@ -93,17 +108,28 @@ namespace Kiota {
                     .SetMinimumLevel(loglevel);
             }).CreateLogger<KiotaBuilder>();
 
-            logger.LogTrace($"configuration: {JsonSerializer.Serialize(Configuration)}");
+            logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration));
 
-            await new KiotaBuilder(logger, Configuration).GenerateSDK();
+            try {
+                await new KiotaBuilder(logger, Configuration).GenerateSDK(cancellationToken);
+                return 0;
+            } catch (Exception ex) {
+#if DEBUG
+                logger.LogCritical(ex, "error generating the SDK: {exceptionMessage}", ex.Message);
+                throw; // so debug tools go straight to the source of the exception when attached
+#else
+                logger.LogCritical("error generating the SDK: {exceptionMessage}", ex.Message);
+                return 1;
+#endif
+            }
         }
         private static void AddStringRegexValidator(Option<string> option, string pattern, string parameterName) {
             var validator = new Regex(pattern);
             option.AddValidator((input) => {
-                if(input.Tokens.Any() &&
-                    !validator.IsMatch(input.Tokens[0].Value))
-                        return $"{input.Tokens[0].Value} is not a valid {parameterName} for the client, the {parameterName} must conform to {pattern}";
-                return null;
+                var value = input.GetValueForOption(option);
+                if(string.IsNullOrEmpty(value) ||
+                    !validator.IsMatch(value))
+                        input.ErrorMessage = $"{value} is not a valid {parameterName} for the client, the {parameterName} must conform to {pattern}";
             });
         }
         private static void AddEnumValidator<T>(Option<T> option, string parameterName) where T: struct, Enum {
@@ -111,9 +137,8 @@ namespace Kiota {
                 if(input.Tokens.Any() &&
                     !Enum.TryParse<T>(input.Tokens[0].Value, true, out var _)) {
                         var validOptionsList = Enum.GetValues<T>().Select(x => x.ToString()).Aggregate((x, y) => x + ", " + y);
-                        return $"{input.Tokens[0].Value} is not a supported generation {parameterName}, supported values are {validOptionsList}";
+                        input.ErrorMessage = $"{input.Tokens[0].Value} is not a supported generation {parameterName}, supported values are {validOptionsList}";
                     }
-                return null;
             });
         }
         private GenerationConfiguration Configuration { get => ConfigurationFactory.Value; }

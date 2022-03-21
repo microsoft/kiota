@@ -6,6 +6,8 @@ namespace Kiota.Builder {
         public string OutputPath { get; set; } = "./output";
         public string ClientClassName { get; set; } = "ApiClient";
         public string ClientNamespaceName { get; set; } = "ApiSdk";
+        public string NamespaceNameSeparator { get; set; } = ".";
+        public string ModelsNamespaceName { get => $"{ClientNamespaceName}{NamespaceNameSeparator}models"; }
         public GenerationLanguage Language { get; set; } = GenerationLanguage.CSharp;
         public string ApiRootUrl { get; set; }
         public List<string> PropertiesPrefixToStrip { get; set; } = new() { "@odata."};
@@ -31,5 +33,6 @@ namespace Kiota.Builder {
         {
             GenerationLanguage.PowerShell,
         };
+        public bool CleanOutput { get; set;}
     }
 }

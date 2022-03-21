@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -11,14 +11,21 @@ namespace Kiota.Builder.Refiners {
         {
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "_by_id");
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
-            AddParsableInheritanceForModelClasses(generatedCode);
+            RemoveCancellationParameter(generatedCode);
+            AddParsableImplementsForModelClasses(generatedCode, "MicrosoftKiotaAbstractions::Parsable");
             AddInheritedAndMethodTypesImports(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
-            AddGetterAndSetterMethods(generatedCode, new() {
-                                                    CodePropertyKind.Custom,
-                                                    CodePropertyKind.AdditionalData,
-                                                    CodePropertyKind.BackingStore,
-                                                }, _configuration.UsesBackingStore, true);
+            CorrectCoreType(generatedCode, null, CorrectPropertyType);
+            AddGetterAndSetterMethods(generatedCode,
+                new() {
+                    CodePropertyKind.Custom,
+                    CodePropertyKind.AdditionalData,
+                    CodePropertyKind.BackingStore,
+                },
+                _configuration.UsesBackingStore,
+                true,
+                string.Empty,
+                string.Empty);
             ReplaceReservedNames(generatedCode, new RubyReservedNamesProvider(), x => $"{x}_escaped");
             AddNamespaceModuleImports(generatedCode , _configuration.ClientNamespaceName);
             FixInheritedEntityType(generatedCode);
@@ -28,6 +35,13 @@ namespace Kiota.Builder.Refiners {
                                         new [] { "microsoft_kiota_abstractions.ApiClientBuilder",
                                                 "microsoft_kiota_abstractions.SerializationWriterFactoryRegistry" },
                                         new [] { "microsoft_kiota_abstractions.ParseNodeFactoryRegistry" });
+        }
+        private static void CorrectPropertyType(CodeProperty currentProperty) {
+            if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
+                currentProperty.Type.IsNullable = true;
+                if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
+                    currentProperty.DefaultValue = "Hash.new";
+            }
         }
         private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
@@ -50,20 +64,10 @@ namespace Kiota.Builder.Refiners {
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
                 "microsoft_kiota_abstractions", "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
         };
-        private static void AddParsableInheritanceForModelClasses(CodeElement currentElement) {
-            if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
-                && currentClass.StartBlock is CodeClass.Declaration declaration) {
-                declaration.AddImplements(new CodeType {
-                    IsExternal = true,
-                    Name = $"MicrosoftKiotaAbstractions::Parsable",
-                });
-            }
-            CrawlTree(currentElement, AddParsableInheritanceForModelClasses);
-        }
         protected static void AddInheritedAndMethodTypesImports(CodeElement currentElement) {
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
-                && currentClass.StartBlock is CodeClass.Declaration declaration && declaration.Inherits != null) {
-                currentClass.AddUsing(new CodeUsing { Name = declaration.Inherits.Name, Declaration = declaration.Inherits});
+                && currentClass.StartBlock.Inherits != null) {
+                currentClass.AddUsing(new CodeUsing { Name = currentClass.StartBlock.Inherits.Name, Declaration = currentClass.StartBlock.Inherits});
             }
             CrawlTree(currentElement, (x) => AddInheritedAndMethodTypesImports(x));
         }
@@ -72,9 +76,9 @@ namespace Kiota.Builder.Refiners {
 
             var nameSpaceName = string.IsNullOrEmpty(prefix) ? FetchEntityNamespace(currentElement).NormalizeNameSpaceName("::") : prefix; 
             if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model) 
-                && currentClass.StartBlock is CodeClass.Declaration declaration && declaration.Inherits != null 
-                && "entity".Equals(declaration.Inherits.Name, StringComparison.OrdinalIgnoreCase)) {
-                declaration.Inherits.Name = prefix + declaration.Inherits.Name.ToFirstCharacterUpperCase();
+                && currentClass.StartBlock.Inherits != null 
+                && "entity".Equals(currentClass.StartBlock.Inherits.Name, StringComparison.OrdinalIgnoreCase)) {
+                currentClass.StartBlock.Inherits.Name = prefix + currentClass.StartBlock.Inherits.Name.ToFirstCharacterUpperCase();
             }
             CrawlTree(currentElement, (c) => FixInheritedEntityType(c, nameSpaceName));
         }

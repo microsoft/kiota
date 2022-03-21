@@ -15,10 +15,10 @@ on:
   workflow_dispatch:
   push:
     branches: [ main ]
-    path-ignore: ['abstractions/**', 'authentication/**', 'serialization/**', 'http/**', '**.md', '.vscode/**', '**.svg']
+    path-ignore: ['abstractions/**', 'authentication/**', 'serialization/**', 'http/**', 'cli/**', '**.md', '.vscode/**', '**.svg']
   pull_request:
     # The branches below must be a subset of the branches above
-    path-ignore: ['abstractions/**', 'authentication/**', 'serialization/**', 'http/**', '**.md', '.vscode/**', '**.svg']
+    path-ignore: ['abstractions/**', 'authentication/**', 'serialization/**', 'http/**', 'cli/**', '**.md', '.vscode/**', '**.svg']
   schedule:
     - cron: '20 9 * * 5'
 
@@ -37,7 +37,12 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2.3.4
+      uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 6.0.x
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL

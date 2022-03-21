@@ -8,11 +8,13 @@ using Kiota.Builder.Writers.Go;
 using Kiota.Builder.Writers.Java;
 using Kiota.Builder.Writers.PowerShell;
 using Kiota.Builder.Writers.Ruby;
+using Kiota.Builder.Writers.Shell;
 using Kiota.Builder.Writers.TypeScript;
+using Kiota.Builder.Writers.Php;
 
 namespace Kiota.Builder.Writers
 {
- 
+
     public abstract class LanguageWriter
     {
         private TextWriter writer;
@@ -48,7 +50,7 @@ namespace Kiota.Builder.Writers
 
         public string GetIndent()
         {
-            return indentString.Substring(0, Math.Max(0, currentIndent));
+            return indentString[..Math.Max(0, currentIndent)];
         }
         public static string NewLine { get => Environment.NewLine;}
         /// <summary>
@@ -63,6 +65,12 @@ namespace Kiota.Builder.Writers
             foreach(var line in lines) {
                 WriteLine(line, true);
             }
+        }
+        internal void CloseBlock(string symbol = "}", bool decreaseIndent = true)
+        {
+            if (decreaseIndent)
+                DecreaseIndent();
+            WriteLine(symbol);
         }
 
         internal void Write(string text, bool includeIndent = true)
@@ -83,11 +91,11 @@ namespace Kiota.Builder.Writers
                     case CodeIndexer i:
                         ((ICodeElementWriter<CodeIndexer>) elementWriter).WriteCodeElement(i, this);
                         break;
-                    case CodeClass.Declaration d:
-                        ((ICodeElementWriter<CodeClass.Declaration>) elementWriter).WriteCodeElement(d, this);
+                    case ClassDeclaration d:
+                        ((ICodeElementWriter<ClassDeclaration>) elementWriter).WriteCodeElement(d, this);
                         break;
-                    case CodeClass.End i:
-                        ((ICodeElementWriter<CodeClass.End>) elementWriter).WriteCodeElement(i, this);
+                    case BlockEnd i:
+                        ((ICodeElementWriter<BlockEnd>) elementWriter).WriteCodeElement(i, this);
                         break;
                     case CodeEnum e:
                         ((ICodeElementWriter<CodeEnum>) elementWriter).WriteCodeElement(e, this);
@@ -101,12 +109,22 @@ namespace Kiota.Builder.Writers
                     case CodeNamespace n:
                         ((ICodeElementWriter<CodeNamespace>) elementWriter).WriteCodeElement(n, this);
                         break;
+                    case CodeFunction n:
+                        ((ICodeElementWriter<CodeFunction>) elementWriter).WriteCodeElement(n, this);
+                        break;
+                    case InterfaceDeclaration itfd:
+                        ((ICodeElementWriter<InterfaceDeclaration>) elementWriter).WriteCodeElement(itfd, this);
+                        break;
                 }
-            else if(!(code is CodeClass) && !(code is CodeNamespace.BlockDeclaration) && !(code is CodeNamespace.BlockEnd))
+            else if(code is not CodeClass &&
+                    code is not BlockDeclaration &&
+                    code is not BlockEnd &&
+                    code is not CodeInterface)
                 throw new InvalidOperationException($"Dispatcher missing for type {code.GetType()}");
         }
-        protected void AddCodeElementWriter<T>(ICodeElementWriter<T> writer) where T: CodeElement {
-            Writers.Add(typeof(T), writer);
+        protected void AddOrReplaceCodeElementWriter<T>(ICodeElementWriter<T> writer) where T: CodeElement {
+            if (!Writers.TryAdd(typeof(T), writer))
+                Writers[typeof(T)] = writer;
         }
         private readonly Dictionary<Type, object> Writers = new(); // we have to type as object because dotnet doesn't have type capture i.e eq for `? extends CodeElement`
         public static LanguageWriter GetLanguageWriter(GenerationLanguage language, string outputPath, string clientNamespaceName) {
@@ -116,8 +134,10 @@ namespace Kiota.Builder.Writers
                 GenerationLanguage.Java => new JavaWriter(outputPath, clientNamespaceName),
                 GenerationLanguage.TypeScript => new TypeScriptWriter(outputPath, clientNamespaceName),
                 GenerationLanguage.Ruby => new RubyWriter(outputPath, clientNamespaceName),
+                GenerationLanguage.PHP => new PhpWriter(outputPath, clientNamespaceName),
                 GenerationLanguage.Go => new GoWriter(outputPath, clientNamespaceName),
                 GenerationLanguage.PowerShell => new PowerShellWritter(outputPath, clientNamespaceName),
+                GenerationLanguage.Shell => new ShellWriter(outputPath, clientNamespaceName),
                 _ => throw new InvalidEnumArgumentException($"{language} language currently not supported."),
             };
         }

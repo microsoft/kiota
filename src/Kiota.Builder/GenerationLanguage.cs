@@ -7,6 +7,7 @@
         Python,
         Go,
         Ruby,
-        PowerShell
+        PowerShell,
+        Shell
     }
 }

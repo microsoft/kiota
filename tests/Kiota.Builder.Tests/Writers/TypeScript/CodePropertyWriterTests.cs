@@ -28,7 +28,13 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             property.Type = new CodeType {
                 Name = TypeName
             };
-            parentClass.AddProperty(property);
+            parentClass.AddProperty(property, new() {
+                Name = "pathParameters",
+                Kind = CodePropertyKind.PathParameters,
+            }, new() {
+                Name = "requestAdapter",
+                Kind = CodePropertyKind.RequestAdapter,
+            });
         }
         public void Dispose() {
             tw?.Dispose();
@@ -36,23 +42,23 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         }
         [Fact]
         public void WritesRequestBuilder() {
-            property.PropertyKind = CodePropertyKind.RequestBuilder;
+            property.Kind = CodePropertyKind.RequestBuilder;
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains($"return new {TypeName}", result);
             Assert.Contains("this.requestAdapter", result);
-            Assert.Contains("this.pathSegment", result);
+            Assert.Contains("this.pathParameters", result);
         }
         [Fact]
         public void WritesCustomProperty() {
-            property.PropertyKind = CodePropertyKind.Custom;
+            property.Kind = CodePropertyKind.Custom;
             writer.Write(property);
             var result = tw.ToString();
             Assert.Contains($"{PropertyName}?: {TypeName} | undefined", result);
         }
         [Fact]
         public void WritesPrivateSetter() {
-            property.PropertyKind = CodePropertyKind.Custom;
+            property.Kind = CodePropertyKind.Custom;
             property.ReadOnly = true;
             writer.Write(property);
             var result = tw.ToString();
@@ -60,7 +66,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
         }
         [Fact]
         public void WritesFlagEnums() {
-            property.PropertyKind = CodePropertyKind.Custom;
+            property.Kind = CodePropertyKind.Custom;
             property.Type = new CodeType {
                 Name = "customEnum",
             };

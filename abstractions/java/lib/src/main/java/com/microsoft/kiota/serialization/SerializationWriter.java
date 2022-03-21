@@ -2,11 +2,15 @@ package com.microsoft.kiota.serialization;
 
 import java.io.Closeable;
 import java.io.InputStream;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.Period;
 import java.util.Map;
 import java.util.UUID;
 import java.util.EnumSet;
 import java.lang.Enum;
+import java.math.BigDecimal;
 import java.util.function.Consumer;
 import java.util.function.BiConsumer;
 
@@ -27,6 +31,24 @@ public interface SerializationWriter extends Closeable {
      * @param value the value to write to the stream.
      */
     void writeBooleanValue(@Nullable final String key, @Nonnull final Boolean value);
+    /**
+     * Writes the specified Byte value to the stream with an optional given key.
+     * @param key the key to write the value with.
+     * @param value the value to write to the stream.
+     */
+    void writeByteValue(@Nullable final String key, @Nonnull final Byte value);
+    /**
+     * Writes the specified Short value to the stream with an optional given key.
+     * @param key the key to write the value with.
+     * @param value the value to write to the stream.
+     */
+    void writeShortValue(@Nullable final String key, @Nonnull final Short value);
+    /**
+     * Writes the specified BigDecimal value to the stream with an optional given key.
+     * @param key the key to write the value with.
+     * @param value the value to write to the stream.
+     */
+    void writeBigDecimalValue(@Nullable final String key, @Nonnull final BigDecimal value);
     /**
      * Writes the specified Integer value to the stream with an optional given key.
      * @param key the key to write the value with.
@@ -63,6 +85,24 @@ public interface SerializationWriter extends Closeable {
      * @param value the value to write to the stream.
      */
     void writeOffsetDateTimeValue(@Nullable final String key, @Nonnull final OffsetDateTime value);
+    /**
+     * Writes the specified LocalDate value to the stream with an optional given key.
+     * @param key the key to write the value with.
+     * @param value the value to write to the stream.
+     */
+    void writeLocalDateValue(@Nullable final String key, @Nonnull final LocalDate value);
+    /**
+     * Writes the specified LocalTime value to the stream with an optional given key.
+     * @param key the key to write the value with.
+     * @param value the value to write to the stream.
+     */
+    void writeLocalTimeValue(@Nullable final String key, @Nonnull final LocalTime value);
+    /**
+     * Writes the specified Period value to the stream with an optional given key.
+     * @param key the key to write the value with.
+     * @param value the value to write to the stream.
+     */
+    void writePeriodValue(@Nullable final String key, @Nonnull final Period value);
     /**
      * Writes the specified collection of primitive values to the stream with an optional given key.
      * @param key the key to write the value with.
