@@ -243,7 +243,7 @@ func (w *JsonSerializationWriter) WriteByteArrayValue(key string, value []byte) 
 
 // WriteObjectValue writes a Parsable value to underlying the byte array.
 func (w *JsonSerializationWriter) WriteObjectValue(key string, item absser.Parsable) error {
-	if !item.IsNil() {
+	if item != nil {
 		if key != "" {
 			w.writePropertyName(key)
 		}

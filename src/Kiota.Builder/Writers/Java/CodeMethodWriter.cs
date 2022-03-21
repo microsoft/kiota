@@ -74,8 +74,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                 break;
             case CodeMethodKind.RequestBuilderBackwardCompatibility:
                 throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
-            case CodeMethodKind.NullCheck:
-                throw new InvalidOperationException("NullChecks are not required in Java");
             case CodeMethodKind.Factory:
                 WriteFactoryMethodBody(codeElement, writer);
                 break;
