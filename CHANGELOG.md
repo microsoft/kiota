@@ -28,7 +28,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where union types with inline schema member types would fail to generate #1270
 - Fixed a bug where referenced types with no titles would fail to generate #1271
 - Fixed a bug where the generator would introduce unnecessary union types for nullables. #990
-- TypeScript adding index exporting models to fix #870.
 - Moved all the dotnet libraries to their own repository. #1409
 
 ## [0.0.18] - 2022-03-14
@@ -67,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed minor issues around PHP Generation, Serialization and Abstractions.
 - Fix Discriminator support for PHP.
 - Move additional data from Parsable into AdditionalDataHolder base class in Python #1360
+- TypeScript adding index exporting models to fix #870.
 
 ## [0.0.17] - 2022-03-03
 
