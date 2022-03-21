@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- Moving middlewares from Graph core
 
 ## [0.0.19] - 2022-03-18
 
