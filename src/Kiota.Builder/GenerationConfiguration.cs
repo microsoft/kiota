@@ -16,6 +16,7 @@ namespace Kiota.Builder {
         public bool ShouldWriteNamespaceIndices { get { return BarreledLanguages.Contains(Language); } }
         public bool ShouldWriteBarrelsIfClassExists { get { return BarreledLanguagesWithConstantFileName.Contains(Language); } }
         public bool ShouldRenderMethodsOutsideOfClasses { get { return MethodOutsideOfClassesLanguages.Contains(Language); } }
+        public bool ShouldWriteMethodsAsFiles {get { return FunctionalLanguages.Contains(Language); } }
         private static readonly HashSet<GenerationLanguage> MethodOutsideOfClassesLanguages = new () {
             GenerationLanguage.Go,
         };
@@ -25,6 +26,10 @@ namespace Kiota.Builder {
         };
         private static readonly HashSet<GenerationLanguage> BarreledLanguagesWithConstantFileName = new () {
             //TODO: add typescript once we have a barrel writer for it
+        };
+        private static readonly HashSet<GenerationLanguage> FunctionalLanguages = new()
+        {
+            GenerationLanguage.PowerShell,
         };
     }
 }

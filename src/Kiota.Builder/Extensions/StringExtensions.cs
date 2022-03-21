@@ -1,8 +1,10 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-
+using System.Text.RegularExpressions;
+using Humanizer;
 
 namespace Kiota.Builder.Extensions {
     public static class StringExtensions {
@@ -53,6 +55,9 @@ namespace Kiota.Builder.Extensions {
             
             return output;
         }
+        private static Regex pascalWordRegex = new Regex("[A-Z][a-z]*|[a-z]+|\\d+", RegexOptions.Compiled);
+        public static IEnumerable<string> SplitAndSingularizePascalCase(this string name) =>
+            pascalWordRegex.Matches(name).Select(m => m.Value.Singularize(inputIsKnownToBePlural: false));
         public static string NormalizeNameSpaceName(this string original, string delimiter) => 
             string.IsNullOrEmpty(original) ? 
                 original :

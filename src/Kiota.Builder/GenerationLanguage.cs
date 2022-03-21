@@ -1,4 +1,4 @@
-namespace Kiota.Builder {
+﻿namespace Kiota.Builder {
     public enum GenerationLanguage {
         CSharp,
         Java,
@@ -7,5 +7,6 @@ namespace Kiota.Builder {
         Python,
         Go,
         Ruby,
+        PowerShell
     }
 }

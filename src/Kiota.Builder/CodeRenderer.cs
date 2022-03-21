@@ -31,7 +31,15 @@ namespace Kiota.Builder
             foreach (var codeElement in root.GetChildElements(true))
             {
                 if (codeElement is CodeClass codeClass)
-                    await RenderCodeNamespaceToSingleFileAsync(writer, codeClass, writer.PathSegmenter.GetPath(root, codeClass));
+                {
+                    if (codeClass.ClassKind == CodeClassKind.RequestBuilder && _configuration.ShouldWriteMethodsAsFiles)
+                        foreach (var method in codeClass.Methods)
+                        {
+                            await RenderCodeNamespaceToSingleFileAsync(writer, method, writer.PathSegmenter.GetPath(root, method));
+                        }
+                    else
+                        await RenderCodeNamespaceToSingleFileAsync(writer, codeClass, writer.PathSegmenter.GetPath(root, codeClass));
+                }
                 else if (codeElement is CodeEnum codeEnum)
                     await RenderCodeNamespaceToSingleFileAsync(writer, codeEnum, writer.PathSegmenter.GetPath(root, codeEnum));
                 else if (codeElement is CodeNamespace codeNamespace)
