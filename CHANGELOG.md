@@ -95,6 +95,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug with inconsistent Java namespace and directory name casing #1267
 - Fixed typeOf string check in JsonParseNode Typescript.
 - Fixed shell stream output getting processed by output formatters when no file path is provided #1291
+- Using Record type instead of Map for additionalData in TypeScript
 
 ## [0.0.16] - 2022-02-23
 

@@ -153,12 +153,12 @@ export class JsonSerializationWriter implements SerializationWriter {
     return arrayBuffer;
   };
 
-  public writeAdditionalData = (value: Map<string, unknown>): void => {
+  public writeAdditionalData = (value: Record<string, unknown>): void => {
     if (!value) return;
 
-    value.forEach((dataValue, key) => {
-      this.writeAnyValue(key, dataValue);
-    });
+    for(const key in value ) {
+      this.writeAnyValue(key, value[key]);
+    };
   };
   private writeNonParsableObjectValue = (
     key?: string | undefined,

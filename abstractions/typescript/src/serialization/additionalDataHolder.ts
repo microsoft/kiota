@@ -4,5 +4,5 @@ export interface AdditionalDataHolder {
    * Gets the additional data for this object that did not belong to the properties.
    * @return The additional data for this object.
    */
-  additionalData: Map<string, unknown>;
+  additionalData: Record<string, unknown>;
 }
