@@ -52,7 +52,7 @@ public class JavaLanguageRefinerTests {
                 Name = "string"
             },
         }).First();
-        requestExecutor.ErrorMappings.TryAdd("4XX", new CodeType {
+        requestExecutor.AddErrorMapping("4XX", new CodeType {
                         Name = "Error4XX",
                         TypeDefinition = errorClass,
                     });
@@ -103,6 +103,9 @@ public class JavaLanguageRefinerTests {
         requestBuilder.AddMethod(new CodeMethod {
             Name = "get",
             Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType {
+                Name = "string",
+            },
         });
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
         Assert.NotEmpty(model.StartBlock.Usings);
@@ -341,6 +344,11 @@ public class JavaLanguageRefinerTests {
         });
         const string handlerDefaultName = "IResponseHandler";
         const string headersDefaultName = "IDictionary<string, string>";
+        const string additionalDataHolderDefaultName = "IAdditionalDataHolder";
+        model.StartBlock.AddImplements(new CodeType {
+            Name = additionalDataHolderDefaultName,
+            IsExternal = true,
+        });
         var executorMethod = model.AddMethod(new CodeMethod {
             Name = "executor",
             Kind = CodeMethodKind.RequestExecutor,
@@ -391,6 +399,8 @@ public class JavaLanguageRefinerTests {
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => handlerDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => headersDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.StartBlock.Implements.Where(x => additionalDataHolderDefaultName.Equals(x.Name, StringComparison.OrdinalIgnoreCase)));
+        Assert.Contains( additionalDataHolderDefaultName[1..], model.StartBlock.Implements.Select(x => x.Name).ToList());
     }
     [Fact]
     public void AddsMethodsOverloads() {

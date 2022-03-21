@@ -10,7 +10,8 @@ public class CodeParameterOrderComparer : IComparer<CodeParameter>
             (null, _) => -1,
             (_, null) => 1,
             _ => x.Optional.CompareTo(y.Optional) * optionalWeight +
-                getKindOrderHint(x.Kind).CompareTo(getKindOrderHint(y.Kind)) * kindWeight,
+                getKindOrderHint(x.Kind).CompareTo(getKindOrderHint(y.Kind)) * kindWeight +
+                x.Name.CompareTo(y.Name) * nameWeight,
         };
     }
     private static int getKindOrderHint(CodeParameterKind kind) {
@@ -32,6 +33,7 @@ public class CodeParameterOrderComparer : IComparer<CodeParameter>
             _ => 15,
         };
     }
-    private static readonly int optionalWeight = 1000;
-    private static readonly int kindWeight = 10;
+    private static readonly int optionalWeight = 10000;
+    private static readonly int kindWeight = 100;
+    private static readonly int nameWeight = 10;
 }

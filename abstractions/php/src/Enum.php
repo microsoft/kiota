@@ -30,14 +30,14 @@ use ReflectionException;
  */
 abstract class Enum
 {
-    /** @var array<string, array<string>> */
+    /** @var array<string, array<mixed>> */
     private static array $constants = [];
     /**
      * The value of the enum
      *
      * @var string
      */
-    private $_value;
+    private string $_value;
 
     /**
      * Create a new enum
@@ -85,10 +85,10 @@ abstract class Enum
     /**
      * Create a new class for the enum in question
      *
-     * @return mixed
+     * @return array<mixed>
      * @throws ReflectionException
      */
-    public static function toArray()
+    public static function toArray(): array
     {
         $class = static::class;
 
@@ -103,9 +103,9 @@ abstract class Enum
     /**
      * Get the value of the enum
      *
-     * @return mixed value of the enum
+     * @return string value of the enum
      */
-    public function value()
+    public function value(): string
     {
         return $this->_value;
     }

@@ -12,7 +12,7 @@ public class JavaConventionService : CommonLanguageConventionService
     private const string InternalVoidTypeName = "Void";
     public override string VoidTypeName => InternalVoidTypeName;
     public override string DocCommentPrefix => " * ";
-    internal HashSet<string> PrimitiveTypes = new() {"String", "Boolean", "Integer", "Float", "Long", "Guid", "Double", "OffsetDateTime", "LocalDate", "LocalTime", "Period", InternalVoidTypeName, InternalStreamTypeName };
+    internal HashSet<string> PrimitiveTypes = new() {"String", "Boolean", "Integer", "Float", "Long", "Guid", "Double", "OffsetDateTime", "LocalDate", "LocalTime", "Period", "Byte", "Short", "BigDecimal", InternalVoidTypeName, InternalStreamTypeName };
     public override string ParseNodeInterfaceName => "ParseNode";
     internal string DocCommentStart = "/**";
     internal string DocCommentEnd = " */";
@@ -68,6 +68,8 @@ public class JavaConventionService : CommonLanguageConventionService
     public override string TranslateType(CodeType type) {
         return type.Name switch {
             "int64" => "Long",
+            "sbyte" => "Short",
+            "decimal" => "BigDecimal",
             "void" or "boolean" when !type.IsNullable => type.Name, //little casing hack
             "binary" => "byte[]",
             _ => type.Name.ToFirstCharacterUpperCase() ?? "Object",

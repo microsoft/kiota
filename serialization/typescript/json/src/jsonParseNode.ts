@@ -1,4 +1,5 @@
 import {
+  AdditionalDataHolder,
   DateOnly,
   Duration,
   Parsable,
@@ -59,9 +60,13 @@ export class JsonParseNode implements ParseNode {
   };
   public getObjectValue = <T extends Parsable>(type: ParsableFactory<T>): T => {
     const result = type(this);
-    this.onBeforeAssignFieldValues && this.onBeforeAssignFieldValues(result);
+    if (this.onBeforeAssignFieldValues) {
+      this.onBeforeAssignFieldValues(result);
+    }
     this.assignFieldValues(result);
-    this.onAfterAssignFieldValues && this.onAfterAssignFieldValues(result);
+    if (this.onAfterAssignFieldValues) {
+      this.onAfterAssignFieldValues(result);
+    }
     return result;
   };
   public getEnumValues = <T>(type: any): T[] => {
@@ -81,12 +86,17 @@ export class JsonParseNode implements ParseNode {
   };
   private assignFieldValues = <T extends Parsable>(item: T): void => {
     const fields = item.getFieldDeserializers();
+    let itemAdditionalData: Map<string, unknown> | undefined;
+    const holder = item as unknown as AdditionalDataHolder;
+    if (holder && holder.additionalData) {
+      itemAdditionalData = holder.additionalData;
+    }
     Object.entries(this._jsonNode as any).forEach(([k, v]) => {
       const deserializer = fields.get(k);
       if (deserializer) {
         deserializer(item, new JsonParseNode(v));
-      } else {
-        item.additionalData[k] = v;
+      } else if (itemAdditionalData) {
+        itemAdditionalData[k] = v;
       }
     });
   };

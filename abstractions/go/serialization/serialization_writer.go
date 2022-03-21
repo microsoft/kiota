@@ -14,6 +14,10 @@ type SerializationWriter interface {
 	WriteStringValue(key string, value *string) error
 	// WriteBoolValue writes a Bool value to underlying the byte array.
 	WriteBoolValue(key string, value *bool) error
+	// WriteInt8Value writes a int8 value to underlying the byte array.
+	WriteInt8Value(key string, value *int8) error
+	// WriteByteValue writes a Byte value to underlying the byte array.
+	WriteByteValue(key string, value *byte) error
 	// WriteInt32Value writes a Int32 value to underlying the byte array.
 	WriteInt32Value(key string, value *int32) error
 	// WriteInt64Value writes a Int64 value to underlying the byte array.
@@ -42,6 +46,10 @@ type SerializationWriter interface {
 	WriteCollectionOfStringValues(key string, collection []string) error
 	// WriteCollectionOfBoolValues writes a collection of Bool values to underlying the byte array.
 	WriteCollectionOfBoolValues(key string, collection []bool) error
+	// WriteCollectionOfInt8Values writes a collection of Int8 values to underlying the byte array.
+	WriteCollectionOfInt8Values(key string, collection []int8) error
+	// WriteCollectionOfByteValues writes a collection of Byte values to underlying the byte array.
+	WriteCollectionOfByteValues(key string, collection []byte) error
 	// WriteCollectionOfInt32Values writes a collection of Int32 values to underlying the byte array.
 	WriteCollectionOfInt32Values(key string, collection []int32) error
 	// WriteCollectionOfInt64Values writes a collection of Int64 values to underlying the byte array.

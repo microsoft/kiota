@@ -9,7 +9,7 @@ namespace Kiota.Builder.Writers.CSharp {
         public override string StreamTypeName => "stream";
         public override string VoidTypeName => "void";
         public override string DocCommentPrefix => "/// ";
-        private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "float", "double", "decimal", "long", "Guid", "DateTimeOffset", "TimeSpan", "Date","Time" };
+        private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "float", "double", "decimal", "long", "Guid", "DateTimeOffset", "TimeSpan", "Date","Time", "sbyte", "byte" };
         public static readonly char NullableMarker = '?';
         public static string NullableMarkerAsString => "?";
         public override string ParseNodeInterfaceName => "IParseNode";
@@ -95,9 +95,9 @@ namespace Kiota.Builder.Writers.CSharp {
             var parentElementsHash = new HashSet<string>(parentElements, StringComparer.OrdinalIgnoreCase);
             var typeName = TranslateType(currentType);
             if(currentType.TypeDefinition != null &&
-                GetNamesInUseByNamespaceSegments(targetElement).Contains(typeName) &&
+                (GetNamesInUseByNamespaceSegments(targetElement).Contains(typeName) &&
                 !DoesTypeExistsInSameNamesSpaceAsTarget(currentType,targetElement) ||
-                parentElementsHash.Contains(typeName))
+                parentElementsHash.Contains(typeName)))
                 return $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
             else
                 return typeName;
@@ -114,7 +114,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 "integer" => "int",
                 "boolean" => "bool",
                 "int64" => "long",
-                "string" or "float" or "double" or "object" or "void" or "decimal" => type.Name.ToLowerInvariant(),// little casing hack
+                "string" or "float" or "double" or "object" or "void" or "decimal" or "sbyte" or "byte" => type.Name.ToLowerInvariant(),// little casing hack
                 "binary" => "byte[]",
                 _ => type.Name?.ToFirstCharacterUpperCase() ?? "object",
             };
