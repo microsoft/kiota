@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- Moving middlewares from Graph core
 
 - TypeScript adding index exporting models to fix #870.
 - Fixed a bug where JSON serialization would fail on nil properties in Go.

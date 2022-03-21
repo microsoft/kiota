@@ -1,0 +1,24 @@
+{
+	"extends": "./tsconfig.base.json",
+	"compilerOptions": {
+		"module": "ES2015",
+		"target": "ES2017",
+		"outDir": "dist/es/test/",
+        "noEmitOnError": true,
+        "noImplicitAny": false,
+        "removeComments": false,
+        "strictFunctionTypes": false,
+        "strictNullChecks": false,
+        "sourceMap": false,
+        "declaration": false,
+        "strict": false,
+        "noImplicitThis": false
+	},
+	"exclude": ["node_modules", "dist","src"],
+	"include": [ "./test/**/*.ts"],
+    "references": [
+        {
+            "path": "./tsconfig.es.json"
+        }
+    ]
+}

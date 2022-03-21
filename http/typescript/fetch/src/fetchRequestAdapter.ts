@@ -184,7 +184,7 @@ export class FetchRequestAdapter implements RequestAdapter {
 		await this.authenticationProvider.authenticateRequest(requestInfo);
 
 		const request = this.getRequestFromRequestInformation(requestInfo);
-		return await this.httpClient.fetch(requestInfo.URL, request);
+		return await this.httpClient.executeFetch(requestInfo.URL, request, requestInfo.getRequestOptions());
 	};
 	private setBaseUrlForRequestInformation = (requestInfo: RequestInformation): void => {
 		requestInfo.pathParameters["baseurl"] = this.baseUrl;

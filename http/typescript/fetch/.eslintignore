@@ -3,5 +3,4 @@
 *.d.ts
 
 node_modules
-lib
-spec/development
+dist
