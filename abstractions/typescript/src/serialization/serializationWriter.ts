@@ -115,7 +115,7 @@ export interface SerializationWriter {
    * Writes the specified additional data values to the stream with an optional given key.
    * @param value the values to write to the stream.
    */
-  writeAdditionalData(value: Map<string, unknown>): void;
+  writeAdditionalData(value: Record<string, unknown>): void;
   /**
    * Gets the callback called before the object gets serialized.
    * @return the callback called before the object gets serialized.

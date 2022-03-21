@@ -121,7 +121,7 @@ export class TextSerializationWriter implements SerializationWriter {
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public writeAdditionalData = (value: Map<string, unknown>): void => {
+  public writeAdditionalData = (value: Record<string, unknown>): void => {
     throw new Error(TextSerializationWriter.noStructuredDataMessage);
   };
 }
