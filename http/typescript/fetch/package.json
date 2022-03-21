@@ -45,7 +45,7 @@
     },
     "dependencies": {
         "@microsoft/kiota-abstractions": "1.0.31",
-        "node-fetch": "^2.6.5",
+        "node-fetch": "^3.2.3",
         "tslib": "^2.3.1"
     },
     "devDependencies": {
