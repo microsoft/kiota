@@ -186,7 +186,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         writer.WriteLine($"return {promisePrefix}{(codeElement.ReturnType.Name.Equals("string") ? "''" : "{} as any")}{promiseSuffix};");
     }
     private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits) {
-       writer.WriteLine("return {");
+       writer.WriteLine($"return {{{(inherits? $"...super.{codeElement.Name.ToFirstCharacterLowerCase()}(),": string.Empty)}");
         writer.IncreaseIndent();
         var parentClassName = parentClass.Name.ToFirstCharacterUpperCase();
         foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
