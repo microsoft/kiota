@@ -199,6 +199,43 @@ public class KiotaBuilderTests
         Assert.NotNull(userClass);
     }
     [Fact]
+    public void TextPlainEndpointsAreSupported() {
+        var document = new OpenApiDocument() {
+            Paths = new OpenApiPaths() {
+                ["users/$count"] = new OpenApiPathItem() {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation() {
+                            Responses = new OpenApiResponses {
+                                ["200"] = new OpenApiResponse() {
+                                    Content = {
+                                        ["text/plain"] = new OpenApiMediaType() {
+                                            Schema = new OpenApiSchema {
+                                                Type = "number",
+                                                Format = "int32",
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+            },
+        };
+        var node = OpenApiUrlTreeNode.Create(document, "default");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost" });
+        builder.CreateUriSpace(document);//needed so the component index exists
+        var codeModel = builder.CreateSourceModel(node);
+        var requestBuilderClass = codeModel.FindChildByName<CodeClass>("CountRequestBuilder");
+        Assert.NotNull(requestBuilderClass);
+        var executorMethod = requestBuilderClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+        Assert.NotNull(executorMethod);
+        var methodReturnType = executorMethod.ReturnType as CodeType;
+        Assert.NotNull(methodReturnType);
+        Assert.Equal("integer", methodReturnType.Name);
+    }
+    [Fact]
     public void Supports_Path_Parameters() {
         var resourceActionSchema = new OpenApiSchema {
             Type = "object",

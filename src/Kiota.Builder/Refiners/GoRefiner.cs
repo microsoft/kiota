@@ -82,10 +82,12 @@ public class GoRefiner : CommonLanguageRefiner
             generatedCode);
         ReplaceDefaultSerializationModules(
             generatedCode,
-            "github.com/microsoft/kiota/serialization/go/json.JsonSerializationWriterFactory");
+            "github.com/microsoft/kiota/serialization/go/json.JsonSerializationWriterFactory",
+            "github.com/microsoft/kiota/serialization/go/text.TextSerializationWriterFactory");
         ReplaceDefaultDeserializationModules(
             generatedCode,
-            "github.com/microsoft/kiota/serialization/go/json.JsonParseNodeFactory");
+            "github.com/microsoft/kiota/serialization/go/json.JsonParseNodeFactory",
+            "github.com/microsoft/kiota/serialization/go/text.TextParseNodeFactory");
         AddSerializationModulesImport(
             generatedCode,
             new string[] {"github.com/microsoft/kiota/abstractions/go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota/abstractions/go.RegisterDefaultSerializer"},

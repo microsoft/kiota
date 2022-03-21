@@ -9,7 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [0.0.19] - 2022-03-18
+
+### Added
+
 - Adds a `--clean-output` argument to clean the target directory before generation #1357
+- Adds support for `text/plain` responses for CSharp, Java, TypeScript and Go. #878
 
 ### Changed
 
@@ -21,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where union types with inline schema member types would fail to generate #1270
 - Fixed a bug where referenced types with no titles would fail to generate #1271
 - Fixed a bug where the generator would introduce unnecessary union types for nullables. #990
+- Moved all the dotnet libraries to their own repository. #1409
 
 ## [0.0.18] - 2022-03-14
 

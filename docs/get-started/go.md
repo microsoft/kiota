@@ -30,6 +30,7 @@ Create a file named **getuser.go** and add the following code.
 go get github.com/microsoft/kiota/abstractions/go
 go get github.com/microsoft/kiota/http/go/nethttp
 go get github.com/microsoft/kiota/serialization/go/json
+go get github.com/microsoft/kiota/serialization/go/text
 go get github.com/microsoft/kiota/authentication/go/azure
 go get github.com/Azure/azure-sdk-for-go/sdk/azidentity
 ```
