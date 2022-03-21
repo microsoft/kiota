@@ -83,7 +83,7 @@ export class RetryHandler implements Middleware {
 		const method = options.method;
 		const isPutPatchOrPost: boolean = method === HttpMethod.PUT || method === HttpMethod.PATCH || method === HttpMethod.POST;
 		if (isPutPatchOrPost) {
-			const isStream = getRequestHeader(options, "content-type") === "application/octet-stream";
+			const isStream = getRequestHeader(options, "content-type")?.toLowerCase() === "application/octet-stream";
 			if (isStream) {
 				return false;
 			}
