@@ -13,8 +13,8 @@
 
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
-		"formulahendry.dotnet-test-explorer",
 		"ms-dotnettools.csharp",
+		"formulahendry.dotnet-test-explorer",
 		"editorconfig.editorconfig",
 		"cschleiden.vscode-github-actions",
 		"davidanson.vscode-markdownlint",
@@ -41,7 +41,6 @@
 		"visualstudioexptteam.vscodeintellicode",
         "streetsidesoftware.code-spell-checker"
 	],
-
 	"remoteUser": "vscode",
 	"features": {
 		"github-cli": "latest",
@@ -52,5 +51,14 @@
 		"ruby": "latest",
 		"rust": "latest",
 		"powershell": "latest"
-	}
+	},
+    "postCreateCommand": [
+        "git config pull.rebase false",
+        "git config push.default simple",
+        "git config remote.origin.prune true",
+        "git config commit.gpgsign true",
+        "git config tag.gpgsign true",
+        "git config core.safecrlf false",
+        "gh repo clone microsoft/kiota-samples samples"
+    ]
 }
