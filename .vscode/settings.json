@@ -28,5 +28,6 @@
         "openapi",
         "serializers"
     ],
-    "java.configuration.updateBuildConfiguration": "automatic"
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "dotnet-test-explorer.testProjectPath": "kiota.sln"
 }
