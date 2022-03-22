@@ -29,5 +29,5 @@
         "serializers"
     ],
     "java.configuration.updateBuildConfiguration": "automatic",
-    "dotnet-test-explorer.testProjectPath": "kiota.sln"
+    "dotnet-test-explorer.testProjectPath": "tests/**/*.Tests.csproj"
 }
