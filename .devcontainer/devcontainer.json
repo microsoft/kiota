@@ -38,12 +38,14 @@
 		"fknop.vscode-npm",
 		"ms-vscode.powershell",
 		"rebornix.ruby",
-		"visualstudioexptteam.vscodeintellicode"
+		"visualstudioexptteam.vscodeintellicode",
+        "streetsidesoftware.code-spell-checker"
 	],
 
 	"remoteUser": "vscode",
 	"features": {
 		"github-cli": "latest",
+        "gradle": "latest",
 		"python": "latest",
 		"golang": "latest",
 		"java": "latest",
