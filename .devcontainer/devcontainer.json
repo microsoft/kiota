@@ -1,6 +1,18 @@
 {
-    "image": "mcr.microsoft.com/vscode/devcontainers/dotnetcore:6.0",
-    "extensions": [
+	"name": "C# (.NET)",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"args": { 
+			"VARIANT": "6.0",
+			"NODE_VERSION": "16"
+		}
+	},
+
+	// Set *default* container specific settings.json values on container create.
+	"settings": {},
+
+	// Add the IDs of extensions you want installed when the container is created.
+	"extensions": [
 		"formulahendry.dotnet-test-explorer",
 		"ms-dotnettools.csharp",
 		"editorconfig.editorconfig",
@@ -28,12 +40,15 @@
 		"rebornix.ruby",
 		"visualstudioexptteam.vscodeintellicode"
 	],
-    "features": {
-        "github-cli": "latest",
-        "java": "latest",
-		"gradle": "latest",
+
+	"remoteUser": "vscode",
+	"features": {
+		"github-cli": "latest",
+		"python": "latest",
+		"golang": "latest",
+		"java": "latest",
 		"ruby": "latest",
-		"powershell": "latest",
-        "node": "latest"
-    }
+		"rust": "latest",
+		"powershell": "latest"
+	}
 }
