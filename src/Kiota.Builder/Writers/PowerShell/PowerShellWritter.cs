@@ -12,13 +12,14 @@ namespace Kiota.Builder.Writers.PowerShell
         {
             PathSegmenter = new PowerShellPathSegmenter(rootPath, clientNamespaceName);
             var conventionService = new PowerShellConventionService();
-            AddCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
-            AddCodeElementWriter(new CodeClassEndWriter(conventionService));
-            AddCodeElementWriter(new CodeEnumWriter(conventionService));
-            AddCodeElementWriter(new CodeIndexerWriter(conventionService));
-            AddCodeElementWriter(new CodeMethodWriter(conventionService));
-            AddCodeElementWriter(new CodePropertyWriter(conventionService));
-            AddCodeElementWriter(new CodeTypeWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeBlockEndWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeIndexerWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeTypeWriter(conventionService));
         }
+       
     }
 }

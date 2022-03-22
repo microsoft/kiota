@@ -13,14 +13,16 @@ namespace Kiota.Builder
         {
             //TODO: Flatten request builder into a PowerShell command.
             string fileName = GetLastFileNameSegment(currentElement).ToFirstCharacterUpperCase();
-            if (currentElement is CodeMethod methodElement && methodElement.Parent.Name != ClientNamespaceName
-                && methodElement.MethodKind != CodeMethodKind.ClientConstructor)
+            if (currentElement is CodeClass classElement && classElement.Parent.Name != ClientNamespaceName
+                && classElement.Kind == CodeClassKind.RequestBuilder)
             {
                 // Drop RequestBuilder and Async. These are not needed in PowerShell.
                 fileName = fileName.Replace("RequestBuilder", string.Empty).Replace("Async", string.Empty);
-                var parentNamespace = methodElement.Parent.Parent as CodeNamespace;
-                fileName = $"{fileName}{GetNamespacePathSegments(parentNamespace, currentElement, fileName).Aggregate((x,y) => $"{x}{y}")}";
-                fileName = fileName.SplitAndSingularizePascalCase().Distinct().Aggregate((x,y) => $"{x}{y}").Replace("Item", string.Empty);
+                var parentNamespace = classElement.Parent.Parent as CodeNamespace;
+                var pathSegments = GetNamespacePathSegments(parentNamespace, currentElement, fileName);
+                if (!pathSegments.Any()) { return null; }
+                fileName = $"{pathSegments.Aggregate((x, y) => $"{x}{y}")}{fileName}";
+                fileName = fileName.SplitAndSingularizePascalCase().Distinct().Aggregate((x, y) => $"{x}{y}").Replace("Item", string.Empty);
             }
             return fileName;
         }

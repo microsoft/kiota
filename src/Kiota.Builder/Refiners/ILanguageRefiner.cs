@@ -26,6 +26,7 @@
                     break;
                 case GenerationLanguage.PowerShell:
                     new PowerShellRefiner(config).Refine(generatedCode);
+                    break;
                 case GenerationLanguage.Shell:
                     new ShellRefiner(config).Refine(generatedCode);
                     break;
