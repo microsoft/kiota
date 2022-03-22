@@ -9,7 +9,7 @@ namespace Kiota.Builder.Writers.Swift {
         {
             var propertyName = codeElement.Access == AccessModifier.Public ? codeElement.Name.ToFirstCharacterUpperCase() : codeElement.Name.ToFirstCharacterLowerCase();
             var returnType = conventions.GetTypeString(codeElement.Type, codeElement.Parent);
-            switch(codeElement.PropertyKind) {
+            switch(codeElement.Kind) {
                 default:
                     writer.WriteLine($"var {propertyName}: {returnType}?");
                 break;

@@ -1,7 +1,7 @@
 namespace Kiota.Builder.Writers.Swift {
-    public class CodeClassEndWriter : ICodeElementWriter<CodeClass.End>
+    public class CodeBlockEndWriter : ICodeElementWriter<BlockEnd>
     {
-        public void WriteCodeElement(CodeClass.End codeElement, LanguageWriter writer)
+        public void WriteCodeElement(BlockEnd codeElement, LanguageWriter writer)
         {
             writer.DecreaseIndent();
             writer.WriteLine("}");

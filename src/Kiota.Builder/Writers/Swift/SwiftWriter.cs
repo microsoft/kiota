@@ -4,12 +4,12 @@ namespace Kiota.Builder.Writers.Swift {
         {
             PathSegmenter = new SwiftPathSegmenter(rootPath, clientNamespaceName);
             var conventionService = new SwiftConventionService();
-            AddCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
-            AddCodeElementWriter(new CodeClassEndWriter());
-            AddCodeElementWriter(new CodePropertyWriter(conventionService));
-            AddCodeElementWriter(new CodeNamespaceWriter(conventionService));
-            AddCodeElementWriter(new CodeEnumWriter(conventionService));
-            AddCodeElementWriter(new CodeMethodWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeBlockEndWriter());
+            AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeNamespaceWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));
         }
     }
 }

@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Swift {
-    public class CodeClassDeclarationWriter : BaseElementWriter<CodeClass.Declaration, SwiftConventionService>
+    public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, SwiftConventionService>
     {
         public CodeClassDeclarationWriter(SwiftConventionService conventionService): base(conventionService) { }
-        public override void WriteCodeElement(CodeClass.Declaration codeElement, LanguageWriter writer)
+        public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
         {
             if(codeElement?.Parent?.Parent is CodeNamespace) {
                 writer.WriteLine($"extension {codeElement.Parent.Parent.Name} {{");
