@@ -71,7 +71,7 @@
         "karma-mocha": "^2.0.1",
         "karma-typescript": "^5.5.2",
         "mocha": "^9.2.2",
-        "prettier": "^2.5.1",
+        "prettier": "^2.6.0",
         "rollup": "^2.58.0",
         "rollup-plugin-terser": "^7.0.2",
         "sinon": "^13.0.1",
