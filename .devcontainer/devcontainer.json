@@ -1,5 +1,5 @@
 {
-    "build": { "dockerfile": "Dockerfile" },
+    "image": "mcr.microsoft.com/vscode/devcontainers/dotnetcore:6.0",
     "extensions": [
 		"formulahendry.dotnet-test-explorer",
 		"ms-dotnettools.csharp",
@@ -27,5 +27,13 @@
 		"ms-vscode.powershell",
 		"rebornix.ruby",
 		"visualstudioexptteam.vscodeintellicode"
-	]
+	],
+    "features": {
+        "github-cli": "latest",
+        "java": "latest",
+		"gradle": "latest",
+		"ruby": "latest",
+		"powershell": "latest",
+        "node": "latest"
+    }
 }
