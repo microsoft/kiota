@@ -1,8 +1,20 @@
 {
-    "build": { "dockerfile": "Dockerfile" },
-    "extensions": [
-		"formulahendry.dotnet-test-explorer",
+	"name": "C# (.NET)",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"args": { 
+			"VARIANT": "6.0",
+			"NODE_VERSION": "16"
+		}
+	},
+
+	// Set *default* container specific settings.json values on container create.
+	"settings": {},
+
+	// Add the IDs of extensions you want installed when the container is created.
+	"extensions": [
 		"ms-dotnettools.csharp",
+		"formulahendry.dotnet-test-explorer",
 		"editorconfig.editorconfig",
 		"cschleiden.vscode-github-actions",
 		"davidanson.vscode-markdownlint",
@@ -26,6 +38,20 @@
 		"fknop.vscode-npm",
 		"ms-vscode.powershell",
 		"rebornix.ruby",
-		"visualstudioexptteam.vscodeintellicode"
-	]
+		"visualstudioexptteam.vscodeintellicode",
+        "streetsidesoftware.code-spell-checker"
+	],
+	"remoteUser": "vscode",
+	"features": {
+		"github-cli": "latest",
+        "gradle": "latest",
+		"python": "latest",
+		"golang": "latest",
+		"java": "latest",
+		"ruby": "latest",
+		"rust": "latest",
+		"powershell": "latest"
+	},
+    "postCreateCommand":
+        "git config pull.rebase false && git config push.default simple && git config remote.origin.prune true && git config commit.gpgsign true && git config tag.gpgsign true && git config core.safecrlf false && gh repo clone microsoft/kiota-samples samples"
 }
