@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Moving middleware from Graph core to kiota http.
 - Fixed a bug where errors would fail to deserialize for TypeScript.
+- Fixed a bug where decimal types would not be mapped in TypeScript.
 - TypeScript adding index exporting models to fix #870.
 - Fixed a bug where JSON serialization would fail on nil properties in Go.
 - Move typescript core packages into Kiota-TypeScript repo and delete for Kiota repo.
