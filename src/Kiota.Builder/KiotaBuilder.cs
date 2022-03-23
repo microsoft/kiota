@@ -854,7 +854,7 @@ public class KiotaBuilder
         } else if (schema.IsArray()) {
             // collections at root
             var type = GetPrimitiveType(schema?.Items, string.Empty);
-            if (type == null)
+            if (type == null || string.IsNullOrEmpty(type.Name))
             {
                 var targetNamespace = schema?.Items == null ? codeNamespace : GetShortestNamespace(codeNamespace, schema.Items);
                 type = CreateModelDeclarationAndType(currentNode, schema?.Items, operation, targetNamespace);
