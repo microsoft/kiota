@@ -6,7 +6,7 @@ parent: Get started
 
 ## Required tools
 
-- [NodeJS 14](https://nodejs.org/en/)
+- [NodeJS 16](https://nodejs.org/en/)
 - [TypeScript](https://www.typescriptlang.org/)
 
 ## Target project requirements
@@ -27,28 +27,7 @@ npx tsc --init
 
 ## Adding dependencies
 
-### Getting access to the packages
-
-> **Note:** This is a temporary requirement while Kiota is in preview.
-
-1. Navigate to [New personal access token](https://github.com/settings/tokens/new) and generate a new token. (permissions: `package:read`, `repo`).
-1. Copy the token, you will need it later.
-1. Enable SSO for the Microsoft org on the token if you are a Microsoft employee.
-1. Add a new file named **.npmrc** in the root of the project with the following content.
-
-    ```conf
-    @microsoft:registry=https://npm.pkg.github.com/
-    ```
-
-1. Run the following command to authenticate NPM to the GitHub package server. When prompted, enter your GitHub username and use the personal access token you generated earlier as the password.
-
-    ```bash
-    npm login --scope=@microsoft --registry=https://npm.pkg.github.com
-    ```
-
-### Add Kiota and dependencies
-
-Once the package feed is accessible the following packages can be added to the project.
+The following packages can be added to the project.
 
 ```bash
 npm install @microsoft/kiota-abstractions
