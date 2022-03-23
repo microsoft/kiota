@@ -591,7 +591,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected static void CorrectDateTypes(CodeClass parentClass, Dictionary<string, (string, CodeUsing)> dateTypesReplacements, params CodeTypeBase[] types) {
         if(parentClass == null)
             return;
-        foreach(var type in types.Where(x => x != null && dateTypesReplacements.ContainsKey(x.Name))) {
+        foreach(var type in types.Where(x => x != null && !string.IsNullOrEmpty(x.Name) && dateTypesReplacements.ContainsKey(x.Name))) {
             var replacement = dateTypesReplacements[type.Name];
             if(replacement.Item1 != null)
                 type.Name = replacement.Item1;

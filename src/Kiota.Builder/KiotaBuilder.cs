@@ -853,17 +853,21 @@ public class KiotaBuilder
             return CreateModelDeclarationAndType(currentNode, schema, operation, targetNamespace, response: response);
         } else if (schema.IsArray()) {
             // collections at root
-            var type = GetPrimitiveType(schema?.Items, string.Empty);
-            if (type == null)
-            {
-                var targetNamespace = schema?.Items == null ? codeNamespace : GetShortestNamespace(codeNamespace, schema.Items);
-                type = CreateModelDeclarationAndType(currentNode, schema?.Items, operation, targetNamespace);
-            }
-            type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
-            return type;
+            return CreateCollectionModelDeclaration(currentNode, schema, operation, codeNamespace);
         } else if(!string.IsNullOrEmpty(schema.Type) || !string.IsNullOrEmpty(schema.Format))
             return GetPrimitiveType(schema, string.Empty);
         else throw new InvalidOperationException("un handled case, might be object type or array type");
+    }
+    private CodeTypeBase CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeNamespace codeNamespace)
+    {
+        var type = GetPrimitiveType(schema?.Items, string.Empty);
+        if (type == null || string.IsNullOrEmpty(type.Name))
+        {
+            var targetNamespace = schema?.Items == null ? codeNamespace : GetShortestNamespace(codeNamespace, schema.Items);
+            type = CreateModelDeclarationAndType(currentNode, schema?.Items, operation, targetNamespace);
+        }
+        type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
+        return type;
     }
     private CodeElement GetExistingDeclaration(bool checkInAllNamespaces, CodeNamespace currentNamespace, OpenApiUrlTreeNode currentNode, string declarationName) {
         var localNameSpace = GetSearchNamespace(false, currentNode, currentNamespace);

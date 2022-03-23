@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TypeScript adding index exporting models to fix #870.
 - Fixed a bug where JSON serialization would fail on nil properties in Go.
 - Move typescript core packages into Kiota-TypeScript repo and delete for Kiota repo.
+- Fixed a bug where collections of complex types could be mis-represented. [#1438](https://github.com/microsoft/kiota/issues/1438)
+- Fixed a bug where inline properties would not generate their own type definition. [#1438](https://github.com/microsoft/kiota/issues/1438)
 
 ## [0.0.19] - 2022-03-18
 
