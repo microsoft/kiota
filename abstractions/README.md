@@ -7,6 +7,6 @@ Your project will need a reference to the abstraction package to build and run, 
 - [Java](./java)
 - [Go](./go)
 - [Ruby](./ruby/microsoft_kiota_abstractions)
-- [TypeScript](./typescript)
+- [TypeScript](https://github.com/microsoft/kiota-typescript/tree/main/packages/abstractions)
 - [PHP](./php)
 - [Python](./python)

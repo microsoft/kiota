@@ -24,13 +24,6 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
-- package-ecosystem: npm
-  directory: "/abstractions/typescript"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
-  labels:
-    - TypeScript
 - package-ecosystem: bundler
   directory: "/abstractions/ruby"
   schedule:
@@ -64,13 +57,6 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
-- package-ecosystem: npm
-  directory: "/authentication/typescript/azure"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
-  labels:
-    - TypeScript
 - package-ecosystem: nuget
   directory: "/serialization/dotnet/json"
   schedule:
@@ -83,13 +69,6 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
-- package-ecosystem: npm
-  directory: "/serialization/typescript/json"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
-  labels:
-    - TypeScript
 - package-ecosystem: nuget
   directory: "/http/dotnet/httpclient"
   schedule:
@@ -102,13 +81,6 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
-- package-ecosystem: npm
-  directory: "/http/typescript/fetch"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
-  labels:
-    - TypeScript
 - package-ecosystem: nuget
   directory: "/cli/commons"
   schedule:
