@@ -6,5 +6,5 @@ Your project will need a reference to the abstraction package to build and run, 
 - [Dotnet](https://github.com/microsoft/kiota-http-dotnet): relies on [HttpClient](https://docs.microsoft.com/en-us/dotnet/api/system.net.http.httpclient?view=net-6.0).
 - [Go](./do/nethttp): relies on [NetHttp](https://pkg.go.dev/net/http).
 - [Java](./java/okhttp) : relies on [OkHttp](https://square.github.io/okhttp/).
-- [TypeScript](./typescript/fetch) : relies on [cross-fetch](https://www.npmjs.com/package/cross-fetch).
+- [TypeScript](https://github.com/microsoft/kiota-typescript/tree/main/packages/http/fetch : relies on [node-fetch](https://www.npmjs.com/package/cross-fetch) for node users and global browser fetch for browser applications.
 - [PHP](./php/guzzle) : relies on [Guzzle](http://guzzlephp.org/)
