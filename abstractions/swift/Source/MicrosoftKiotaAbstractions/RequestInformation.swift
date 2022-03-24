@@ -3,6 +3,10 @@ import URITemplate
 
 public enum RequestInformationErrors : Error {
     case emptyUrlTemplate
+    case emptyContentType
+    case itemsCannotBeNilOrEmpty
+    case unableToExpandUriTemplate
+    case invalidRawUrl
 }
 
 public class RequestInformation {
@@ -39,9 +43,18 @@ public class RequestInformation {
                     return url
                 }
             }
+            throw RequestInformationErrors.invalidRawUrl
+        } else {
+            let urlTemplate = URITemplate(template: self.urlTemplate)
+            let merged = pathParameters.merging(queryParameters) 
+                            { (first, _) in first }
+            let url = urlTemplate.expand(merged)
+            if let newValue = URL(string: url) {
+                return newValue
+            } else {
+                throw RequestInformationErrors.unableToExpandUriTemplate
+            }
         }
-        //TODO template resolution
-        return uriInternal!
     }
     public func setUri(newUri: URL) {
         uriInternal = newUri
@@ -52,14 +65,30 @@ public class RequestInformation {
     let rawUrlKey = "request-raw-url"
     let contentTypeHeaderKey = "Content-Type"
     let binaryContentType = "application/octet-stream"
-    func addRequestOption(options:RequestOption...) {
+    public func addRequestOption(options:RequestOption...) {
         for option in options {
             self.options[option.key] = option
         }
     }
-    func getRequestOptions() -> [RequestOption] {
+    public func getRequestOptions() -> [RequestOption] {
         return [RequestOption](options.values)
     }
-    //TODO set content from parsable
+    public func setContentFromParsable<T: Parsable>(requestAdapter: RequestAdapter, contentType: String, items: T...) throws {
+        guard contentType != "" else {
+            throw RequestInformationErrors.emptyContentType
+        }
+        guard items.count > 0 else {
+            throw RequestInformationErrors.itemsCannotBeNilOrEmpty
+        }
+        if let writer = try? requestAdapter.serializationWriterFactory.getSerializationWriter(contentType: contentType) {
+            if(items.count == 1) {
+                try writer.writeObjectValue(key: "", value: items[0])
+            } else {
+                try writer.writeCollectionOfObjectValues(key: "", value: items)
+            }
+            self.content = try? writer.getSerializedContent()
+            self.headers[contentTypeHeaderKey] = contentType
+        }
+    }
     //TODO add query parameters from object by reflection
 }
