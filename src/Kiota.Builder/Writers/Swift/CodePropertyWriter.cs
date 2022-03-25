@@ -9,9 +9,10 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, SwiftConventio
     {
         var returnType = conventions.GetTypeString(codeElement.Type, codeElement.Parent);
         var accessModifier = conventions.GetAccessModifier(codeElement.Access);
+        var defaultValue = codeElement.DefaultValue != null ? $" = {codeElement.DefaultValue}" : string.Empty;
         switch(codeElement.Kind) {
             default:
-                writer.WriteLine($"{accessModifier} var {codeElement.Name.ToFirstCharacterLowerCase()}: {returnType}");
+                writer.WriteLine($"{accessModifier} var {codeElement.Name.ToFirstCharacterLowerCase()}: {returnType}{defaultValue}");
             break;
         }
     }
