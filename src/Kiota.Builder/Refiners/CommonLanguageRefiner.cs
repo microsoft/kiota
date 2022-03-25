@@ -204,6 +204,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 !propertyType.IsExternal &&
                 provider.ReservedNames.Contains(currentProperty.Type.Name))
             propertyType.Name = replacement.Invoke(propertyType.Name);
+        else if (current is CodeEnum currentEnum &&
+                shouldReplace &&
+                currentEnum.Options.Any(x => provider.ReservedNames.Contains(x)))
+            ReplaceReservedEnumNames(currentEnum, provider, replacement);
         // Check if the current name meets the following conditions to be replaced
         // 1. In the list of reserved names
         // 2. If it is a reserved name, make sure that the CodeElement type is worth replacing(not on the blocklist)
@@ -220,6 +224,17 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
 
         CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions, shouldReplaceCallback));
+    }
+    private static void ReplaceReservedEnumNames(CodeEnum currentEnum, IReservedNamesProvider provider, Func<string, string> replacement)
+    {
+        currentEnum.Options
+                    .Where(x => provider.ReservedNames.Contains(x))
+                    .ToList()
+                    .ForEach(x => {
+                        var newValue = replacement.Invoke(x);
+                        currentEnum.Options.Remove(x);
+                        currentEnum.Options.Add(newValue);
+                    });
     }
     private static void ReplaceReservedCodeUsings(ClassDeclaration currentDeclaration, IReservedNamesProvider provider, Func<string, string> replacement)
     {
