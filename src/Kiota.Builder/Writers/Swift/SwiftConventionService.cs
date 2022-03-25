@@ -11,7 +11,6 @@ namespace Kiota.Builder.Writers.Swift {
         public override string StreamTypeName => "stream";
         public override string VoidTypeName => "void";
         public override string DocCommentPrefix => "/// ";
-        private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "float", "double", "decimal", "long", "Guid", "DateTimeOffset" };
         public static readonly char NullableMarker = '?';
         public static string NullableMarkerAsString => "?";
         public override string ParseNodeInterfaceName => "IParseNode";
@@ -37,9 +36,6 @@ namespace Kiota.Builder.Writers.Swift {
         }
         public override string TempDictionaryVarName => "urlTplParams";
         #pragma warning restore CA1822 // Method should be static
-        internal bool ShouldTypeHaveNullableMarker(CodeTypeBase propType, string propTypeName) {
-            return propType.IsNullable && (NullableTypes.Contains(propTypeName) || (propType is CodeType codeType && codeType.TypeDefinition is CodeEnum));
-        }
         private static HashSet<string> _namespaceSegmentsNames;
         private static readonly object _namespaceSegmentsNamesLock = new();
         private static HashSet<string> GetNamesInUseByNamespaceSegments(CodeElement currentElement) {
@@ -64,20 +60,17 @@ namespace Kiota.Builder.Writers.Swift {
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
         {
             if(code is CodeUnionType)
-                // TODO (Swift) reevalaute for Swift
-                throw new InvalidOperationException($"CSharp does not support union types, the union type {code.Name} should have been filtered out by the refiner");
+                throw new InvalidOperationException($"Swift does not support union types, the union type {code.Name} should have been filtered out by the refiner");
             else if (code is CodeType currentType) {
                 var typeName = TranslateTypeAndAvoidUsingNamespaceSegmentNames(currentType, targetElement);
-                var nullableSuffix = ShouldTypeHaveNullableMarker(code, typeName) ? NullableMarkerAsString : string.Empty;
-                var collectionPrefix = currentType.CollectionKind == CodeTypeCollectionKind.Complex && includeCollectionInformation ? "[" : string.Empty;
-                var collectionSuffix = currentType.CollectionKind switch {
-                    CodeTypeCollectionKind.Complex when includeCollectionInformation => "]",
-                    CodeTypeCollectionKind.Array when includeCollectionInformation => "[]",
-                    _ => string.Empty,
-                };
-                // TODO (Swift)
+                var nullableSuffix = code.IsNullable ? NullableMarkerAsString : string.Empty;
+                var collectionPrefix = currentType.IsCollection && includeCollectionInformation ? "[" : string.Empty;
+                var collectionSuffix = currentType.IsCollection && includeCollectionInformation ? $"]{nullableSuffix}" : string.Empty;
+                if(currentType.IsCollection && !string.IsNullOrEmpty(nullableSuffix))
+                    nullableSuffix = string.Empty;
+
                 if (currentType.ActionOf)
-                    return $"Action<{collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}>";
+                    return $"({collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}>) -> Void";
                 else
                     return $"{collectionPrefix}{typeName}{nullableSuffix}{collectionSuffix}";
             }
@@ -96,12 +89,15 @@ namespace Kiota.Builder.Writers.Swift {
         {
             return type.Name switch
             {
-                "integer" => "Int",
+                "integer" => "Int32",
                 "boolean" => "Bool",
-                "int64" => "Long",
-                "string" => "String",
+                "float" => "Float32",
+                "long" => "Int64",
+                "double" or "decimal" => "Float64",
+                "guid" => "UUID",
+                "void" or "uint8" or "int8" or "int32" or "int64" or "float32" or "float64" or "string" => type.Name.ToFirstCharacterUpperCase(),
                 "binary" => "[UInt8]",
-                "DateTimeOffset" => "String", // TODO
+                "DateTimeOffset" => "Date", // TODO
                 _ => type.Name?.ToFirstCharacterUpperCase() ?? "object",
             };
         }

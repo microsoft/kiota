@@ -133,13 +133,15 @@ public class SwiftRefiner : CommonLanguageRefiner
     };
     private static void CorrectPropertyType(CodeProperty currentProperty) {
         if (currentProperty.Type != null) {
-            if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))
+            if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter)) {
+                currentProperty.Type.IsNullable = true;
                 currentProperty.Type.Name = "RequestAdapter";
-            else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
+            } else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
                 currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
             else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
-                currentProperty.Type.Name = "[String:Any]?";
-                currentProperty.DefaultValue = $"{currentProperty.Type.Name[..^1]}()";
+                currentProperty.Type.IsNullable = false;
+                currentProperty.Type.Name = "[String:Any]";
+                currentProperty.DefaultValue = $"{currentProperty.Type.Name}()";
             } else if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
                 currentProperty.Type.IsNullable = true;
                 currentProperty.Type.Name = "[String:String]";
