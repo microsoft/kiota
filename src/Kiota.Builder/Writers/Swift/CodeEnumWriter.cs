@@ -9,8 +9,8 @@ namespace Kiota.Builder.Writers.Swift {
             if(!codeElement.Options.Any())
                 return;
 
-            var codeNamespace = codeElement?.Parent as CodeNamespace;
-            if(codeNamespace != null) {
+            if (codeElement?.Parent is CodeNamespace codeNamespace)
+            {
                 writer.WriteLine($"extension {codeNamespace.Name} {{");
                 writer.IncreaseIndent();
             }
@@ -20,10 +20,8 @@ namespace Kiota.Builder.Writers.Swift {
                             .Select(x => x.ToFirstCharacterUpperCase())
                             .Select((x, idx) => $"case {x}")
                             .ToArray());
-            writer.CloseBlock();//TODO static parse function?
-            if(codeNamespace != null) {
-                writer.CloseBlock();
-            }
+            //TODO static parse function?
+            //enum and ns are closed by the code block end writer
         }
     }
 }

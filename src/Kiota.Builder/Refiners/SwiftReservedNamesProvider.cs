@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Kiota.Builder.Refiners {
     public class SwiftReservedNamesProvider : IReservedNamesProvider
     {
-        private readonly Lazy<HashSet<string>> _reservedNames = new(() => new HashSet<string> {
+        private readonly Lazy<HashSet<string>> _reservedNames = new(() => new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
             "any"
             // TODO (Swift) add full list
         });
