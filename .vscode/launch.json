@@ -121,9 +121,10 @@
                  "--language",
                  "swift",
                  "-o",
-                 "${workspaceFolder}/samples/msgraph-mail/swift",
+                 "${workspaceFolder}/samples/msgraph-mail/Swiftconsoleapp/Sources/Swiftconsoleapp",
                  "-n",
-                 "swift" ],
+                 "Swiftconsoleapp",
+                 "-co" ],
             "cwd": "${workspaceFolder}/src/kiota",
             "console": "internalConsole",
             "stopAtEntry": false
