@@ -14,6 +14,10 @@ public enum CodeClassKind {
     /// Only used for languages that do not support overloads or optional parameters like go.
     /// </summary>
     ParameterSet,
+    /// <summary>
+    /// A class used as a placeholder for the barrel file.
+    /// </summary>
+    BarrelInitializer,
 }
 /// <summary>
 /// CodeClass represents an instance of a Class to be generated in source code

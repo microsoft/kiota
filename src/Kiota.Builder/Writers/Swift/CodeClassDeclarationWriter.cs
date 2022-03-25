@@ -9,7 +9,7 @@ namespace Kiota.Builder.Writers.Swift {
         public CodeClassDeclarationWriter(SwiftConventionService conventionService): base(conventionService) { }
         public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
         {
-            if(codeElement?.Parent?.Parent is CodeNamespace) {
+            if(codeElement?.Parent?.Parent is CodeNamespace && !(codeElement.Parent is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.BarrelInitializer))) {
                 writer.WriteLine($"extension {codeElement.Parent.Parent.Name} {{");
                 writer.IncreaseIndent();
             }
