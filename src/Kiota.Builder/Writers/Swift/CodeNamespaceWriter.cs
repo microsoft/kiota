@@ -11,7 +11,7 @@ namespace  Kiota.Builder.Writers.Swift {
             var parentNamespaces = string.Join('.', segments[..^1]);
             writer.WriteLine($"extension {parentNamespaces} {{");
             writer.IncreaseIndent();
-            writer.WriteLine($"struct {lastSegment} {{");
+            writer.WriteLine($"public struct {lastSegment} {{");
             writer.WriteLine("}");
             writer.DecreaseIndent();
             writer.WriteLine("}");
