@@ -23,7 +23,7 @@ namespace Kiota.Builder.Writers.Swift {
         {
             return access switch {
                 AccessModifier.Public => "public",
-                AccessModifier.Protected => "protected",
+                AccessModifier.Protected => "internal",
                 _ => "private",
             };
         }
