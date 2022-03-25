@@ -29,7 +29,7 @@ namespace Kiota.Builder.Refiners {
                 generatedCode,
                 new CSharpReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}",
                 new HashSet<Type>{ typeof(CodeClass), typeof(ClassDeclaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod) }
-            ); 
+            );
             DisambiguatePropertiesWithClassNames(generatedCode);
             AddConstructorsForDefaultValues(generatedCode, false);
             AddSerializationModulesImport(generatedCode);
@@ -65,8 +65,8 @@ namespace Kiota.Builder.Refiners {
                             .ForEach(x => x.Type.IsNullable = true);
             CrawlTree(currentElement, MakeEnumPropertiesNullable);
         }
-        
-        protected static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
+
+        protected static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] {
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
                 "Microsoft.Kiota.Abstractions", "IRequestAdapter"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
@@ -107,8 +107,9 @@ namespace Kiota.Builder.Refiners {
             CrawlTree(current, CapitalizeNamespacesFirstLetters);
         }
         protected static void AddAsyncSuffix(CodeElement currentElement) {
-            if(currentElement is CodeMethod currentMethod && currentMethod.IsAsync)
-                currentMethod.Name += "Async";
+            var asyncSuffix = "Async";
+            if(currentElement is CodeMethod currentMethod && currentMethod.IsAsync && !currentMethod.Name.EndsWith(asyncSuffix))
+                currentMethod.Name += asyncSuffix;
             CrawlTree(currentElement, AddAsyncSuffix);
         }
         protected static void CorrectPropertyType(CodeProperty currentProperty)

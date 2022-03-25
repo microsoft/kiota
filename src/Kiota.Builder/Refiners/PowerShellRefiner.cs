@@ -18,15 +18,19 @@ namespace Kiota.Builder.Refiners
         public override void Refine(CodeNamespace generatedCode)
         {
             MoveOperationsToClasses(generatedCode);
-            AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            AddDefaultImports(generatedCode, GetPowerShellImports());
             AddDefaultImports(generatedCode, powerShellUsingEvaluators);
-        }
-
-        private void GetPowerShellNamespace(CodeElement currentElement)
-        {
-            if (currentElement is CodeNamespace codeNamespace)
-
-                CrawlTree(currentElement, GetPowerShellNamespace);
+            AddAsyncSuffix(generatedCode);
+            CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType);
+            /* Exclude the following as their names will be capitalized making the change unnecessary in this case sensitive language
+             * code classes, class declarations, property names, using declarations, namespace names
+             * Exclude CodeMethod as the return type will also be capitalized (excluding the CodeType is not enough since this is evaluated at the code method level)
+            */
+            ReplaceReservedNames(
+                generatedCode,
+                new PowerShellReservedNamesProvider(), x => $"@{x.ToFirstCharacterUpperCase()}",
+                new HashSet<Type> { typeof(CodeClass), typeof(ClassDeclaration), typeof(CodeProperty), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod) }
+            );
         }
 
         private void MoveOperationsToClasses(CodeElement currentElement)
@@ -41,19 +45,18 @@ namespace Kiota.Builder.Refiners
                 var requestGenerators = currentClass.GetMethodsOffKind(CodeMethodKind.RequestGenerator);
                 foreach (var requestExecutor in requestExecutors)
                 {
-                    CodeClass cmdletClass;
+                    string entityName;
                     if (parentNamespace.IsItemNamespace)
                     {
                         // TODO: Add parent and nav prop (item) indexer as cmdlet parameter.
-                        string entityName = currentClass.Name.Replace("ItemRequestBuilder", string.Empty);
-                        cmdletClass = GetCmdletClass(requestExecutor, entityName, parentNamespace);
+                        entityName = currentClass.Name.Replace("ItemRequestBuilder", string.Empty);
                     }
                     else
                     {
                         // TODO: Add parent indexer as cmdlet parameter.
-                        string entityName = currentClass.Name.Replace("RequestBuilder", string.Empty);
-                        cmdletClass = GetCmdletClass(requestExecutor, entityName, parentNamespace);
+                        entityName = currentClass.Name.Replace("RequestBuilder", string.Empty);
                     }
+                    CodeClass cmdletClass = GetCmdletClass(requestExecutor, entityName, parentNamespace);
 
                     var requiredProperties = currentClass.GetPropertiesOfKind(CodePropertyKind.RequestAdapter, CodePropertyKind.UrlTemplate, CodePropertyKind.PathParameters, CodePropertyKind.QueryParameter, CodePropertyKind.AdditionalData);
                     cmdletClass.AddProperty(requiredProperties.ToArray());
@@ -61,8 +64,7 @@ namespace Kiota.Builder.Refiners
                     var requestGenerator = requestGenerators.Where(g => g.HttpMethod == requestExecutor.HttpMethod).FirstOrDefault();
                     cmdletClass.AddMethod(requestGenerator);
                     cmdletClass.AddMethod(requestExecutor);
-
-                    cmdletClass.AddMethod(GetPSCmdletMethods());
+                    cmdletClass.AddMethod(GetCmdletMethods());
 
                     parentNamespace.AddClass(cmdletClass);
                 }
@@ -73,6 +75,7 @@ namespace Kiota.Builder.Refiners
         private CodeClass GetCmdletClass(CodeMethod currentMethod, string entityName, CodeNamespace parentNamespace)
         {
             string className = GetClassName(currentMethod.HttpMethod, entityName, parentNamespace);
+            // TODO: Add *_{UniqueParameterSetName} to class namme.
             var newClass = new CodeClass
             {
                 Name = className,
@@ -86,20 +89,32 @@ namespace Kiota.Builder.Refiners
             return newClass;
         }
 
-        private CodeMethod[] GetPSCmdletMethods()
+        private CodeMethod[] GetCmdletMethods()
         {
-            // TODO: Add PSCmdlet overrides.
-            var beginProcessing = new CodeMethod { Name = "BeginProcessing", Access = AccessModifier.Protected, Kind = CodeMethodKind.Custom };
-            var endProcessing = new CodeMethod { };
-            var stopProcessing = new CodeMethod { };
-            var processRecord = new CodeMethod { };
-            var processRecordAsync = new CodeMethod { };
+            var voidReturnType = new CodeType { Name = "void" };
+            var processRecordAsync = GetCodeMethod("ProcessRecordAsync", voidReturnType);
+            processRecordAsync.IsAsync = true;
+            processRecordAsync.IsOverride = false;
+
             return new[] {
-                beginProcessing,
-                endProcessing,
-                stopProcessing,
-                processRecord,
+                GetCodeMethod("BeginProcessing", voidReturnType),
+                GetCodeMethod("EndProcessing", voidReturnType),
+                GetCodeMethod("StopProcessing", voidReturnType),
+                GetCodeMethod("ProcessRecord", voidReturnType),
                 processRecordAsync
+            };
+        }
+
+        private CodeMethod GetCodeMethod(string name, CodeType returnType)
+        {
+            return new CodeMethod
+            {
+                Name = name,
+                Access = AccessModifier.Protected,
+                Kind = CodeMethodKind.Custom,
+                ReturnType = returnType,
+                IsAsync = false,
+                IsOverride = true
             };
         }
 
@@ -140,26 +155,27 @@ namespace Kiota.Builder.Refiners
 
         private string GetPowerShellVerb(HttpMethod httpMethod)
         {
-            switch (httpMethod)
+            return httpMethod switch
             {
-                case HttpMethod.Get:
-                    return "Get";
-                case HttpMethod.Post:
-                    return "New";
-                case HttpMethod.Put:
-                    return "Set";
-                case HttpMethod.Patch:
-                    return "Update";
-                case HttpMethod.Delete:
-                    return "Remove";
-                default:
-                    return "Invoke";
-            }
+                HttpMethod.Get => "Get",
+                HttpMethod.Post => "New",
+                HttpMethod.Put => "Set",
+                HttpMethod.Patch => "Update",
+                HttpMethod.Delete => "Remove",
+                _ => "Invoke",
+            };
         }
 
         private static readonly AdditionalUsingEvaluator[] powerShellUsingEvaluators = new AdditionalUsingEvaluator[] {
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
                 "System.Management.Automation", "PSCmdlet", "Cmdlet", "InvocationInfo", "SwitchParameter")
         };
+
+        private IEnumerable<AdditionalUsingEvaluator> GetPowerShellImports()
+        {
+            var imports = new List<AdditionalUsingEvaluator>(defaultUsingEvaluators);
+            imports.AddRange(powerShellUsingEvaluators);
+            return imports;
+        }
     }
 }
