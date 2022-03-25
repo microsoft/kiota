@@ -3,7 +3,7 @@ namespace Kiota.Builder.Writers.Swift {
         public SwiftWriter(string rootPath, string clientNamespaceName)
         {
             PathSegmenter = new SwiftPathSegmenter(rootPath, clientNamespaceName);
-            var conventionService = new SwiftConventionService();
+            var conventionService = new SwiftConventionService(clientNamespaceName);
             AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeBlockEndWriter());
             AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
