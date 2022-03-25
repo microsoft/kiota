@@ -14,17 +14,15 @@ namespace Kiota.Builder.Writers.Swift {
                 writer.WriteLine($"extension {codeNamespace.Name} {{");
                 writer.IncreaseIndent();
             }
-            writer.WriteLine($"public enum {codeElement.Name.ToFirstCharacterUpperCase()} {{"); //TODO docs
+            writer.WriteLine($"public enum {codeElement.Name.ToFirstCharacterUpperCase()} : String {{"); //TODO docs
             writer.IncreaseIndent();
             writer.WriteLines(codeElement.Options
                             .Select(x => x.ToFirstCharacterUpperCase())
                             .Select((x, idx) => $"case {x}")
                             .ToArray());
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
+            writer.CloseBlock();//TODO static parse function?
             if(codeNamespace != null) {
-                writer.DecreaseIndent();
-                writer.WriteLine("}");
+                writer.CloseBlock();
             }
         }
     }
