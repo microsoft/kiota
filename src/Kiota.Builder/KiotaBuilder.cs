@@ -662,7 +662,7 @@ public class KiotaBuilder
             Description = operation.Description ?? operation.Summary,
             ReturnType = new CodeType { Name = "RequestInformation", IsNullable = false, IsExternal = true},
         };
-        if (config.Language == GenerationLanguage.Shell)
+        if (config.Language == GenerationLanguage.Shell || config.Language == GenerationLanguage.PowerShell)
             SetPathAndQueryParameters(generatorMethod, currentNode, operation);
         parentClass.AddMethod(generatorMethod);
         AddRequestBuilderMethodParameters(currentNode, operation, parameterClass, generatorMethod);

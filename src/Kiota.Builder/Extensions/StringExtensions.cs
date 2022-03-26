@@ -4,24 +4,24 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using Humanizer;
 
-namespace Kiota.Builder.Extensions {
+namespace Kiota.Builder.Extensions
+{
     public static class StringExtensions {
         public static string ToFirstCharacterLowerCase(this string input)
             => string.IsNullOrEmpty(input) ? input : $"{char.ToLowerInvariant(input.FirstOrDefault())}{input[1..]}";
         public static string ToFirstCharacterUpperCase(this string input)
             => string.IsNullOrEmpty(input) ? input : Char.ToUpperInvariant(input.FirstOrDefault()) + input[1..];
-        public static string ToCamelCase(this string name)
+        public static string ToCamelCase(this string name, char separator = '-')
         {
             if(string.IsNullOrEmpty(name)) return name;
-            var chunks = name.Split('-', StringSplitOptions.RemoveEmptyEntries);
+            var chunks = name.Split(separator, StringSplitOptions.RemoveEmptyEntries);
             var identifier = chunks[0] + string.Join(string.Empty, chunks.Skip(1)
                                                                 .Select(s => ToFirstCharacterUpperCase(s)));
             return identifier;
         }
-        public static string ToPascalCase(this string name)
-            => string.IsNullOrEmpty(name) ? name : String.Join(null, name.Split("-", StringSplitOptions.RemoveEmptyEntries)
+        public static string ToPascalCase(this string name, char separator = '-')
+            => string.IsNullOrEmpty(name) ? name : String.Join(null, name.Split(separator, StringSplitOptions.RemoveEmptyEntries)
                                                                             .Select(s => ToFirstCharacterUpperCase(s)));
         public static string ReplaceValueIdentifier(this string original) =>
             original?.Replace("$value", "Content");
@@ -56,8 +56,8 @@ namespace Kiota.Builder.Extensions {
             return output;
         }
         private static Regex pascalWordRegex = new Regex("[A-Z][a-z]*|[a-z]+|\\d+", RegexOptions.Compiled);
-        public static IEnumerable<string> SplitAndSingularizePascalCase(this string name) =>
-            pascalWordRegex.Matches(name).Select(m => m.Value.Singularize(inputIsKnownToBePlural: false));
+        public static IEnumerable<string> SplitPascalCase(this string name) =>
+            pascalWordRegex.Matches(name).Select(m => m.Value);
         public static string NormalizeNameSpaceName(this string original, string delimiter) =>
             string.IsNullOrEmpty(original) ?
                 original :

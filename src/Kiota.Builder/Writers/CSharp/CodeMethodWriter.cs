@@ -343,9 +343,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         var baseSuffix = string.Empty;
         if (isConstructor && inherits)
             baseSuffix = " : base()";
+        var overrideModifier = (code.IsOverride && !code.IsStatic) ? "override " : string.Empty;
         var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p => conventions.GetParameterSignature(p, code)).ToList());
         var methodName = isConstructor ? code.Parent.Name.ToFirstCharacterUpperCase() : code.Name.ToFirstCharacterUpperCase();
-        writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({parameters}){baseSuffix} {{");
+        writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{overrideModifier}{completeReturnType}{methodName}({parameters}){baseSuffix} {{");
     }
     private string GetSerializationMethodName(CodeTypeBase propType, CodeMethod method)
     {

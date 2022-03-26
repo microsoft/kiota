@@ -47,21 +47,17 @@ namespace Kiota.Builder.Refiners
                 {
                     string entityName;
                     if (parentNamespace.IsItemNamespace)
-                    {
-                        // TODO: Add parent and nav prop (item) indexer as cmdlet parameter.
                         entityName = currentClass.Name.Replace("ItemRequestBuilder", string.Empty);
-                    }
                     else
-                    {
-                        // TODO: Add parent indexer as cmdlet parameter.
                         entityName = currentClass.Name.Replace("RequestBuilder", string.Empty);
-                    }
                     CodeClass cmdletClass = GetCmdletClass(requestExecutor, entityName, parentNamespace);
 
                     var requiredProperties = currentClass.GetPropertiesOfKind(CodePropertyKind.RequestAdapter, CodePropertyKind.UrlTemplate, CodePropertyKind.PathParameters, CodePropertyKind.QueryParameter, CodePropertyKind.AdditionalData);
                     cmdletClass.AddProperty(requiredProperties.ToArray());
 
                     var requestGenerator = requestGenerators.Where(g => g.HttpMethod == requestExecutor.HttpMethod).FirstOrDefault();
+                    if (requestGenerator.PathAndQueryParameters != null)
+                        cmdletClass.AddProperty(GetCmdletParamters(requestGenerator.PathAndQueryParameters).ToArray());
                     cmdletClass.AddMethod(requestGenerator);
                     cmdletClass.AddMethod(requestExecutor);
                     cmdletClass.AddMethod(GetCmdletMethods());
@@ -84,8 +80,6 @@ namespace Kiota.Builder.Refiners
                 Description = currentMethod.Description,
             };
             newClass.StartBlock.AddImplements(new CodeType { Name = "PSCmdlet", IsExternal = true });
-
-            //TODO: Add PS's Cmdlet & OutputType C# annotation.
             return newClass;
         }
 
@@ -111,23 +105,28 @@ namespace Kiota.Builder.Refiners
             {
                 Name = name,
                 Access = AccessModifier.Protected,
-                Kind = CodeMethodKind.Custom,
+                Kind = CodeMethodKind.CommandBuilder,
                 ReturnType = returnType,
                 IsAsync = false,
                 IsOverride = true
             };
         }
 
-        private CodeProperty GetPropertyFromIndexer(CodeIndexer indexer)
+        private IEnumerable<CodeProperty> GetCmdletParamters(IEnumerable<CodeParameter> pathAndQueryParameters)
         {
-            return new CodeProperty
+            var cmdletParameters = new List<CodeProperty>();
+            foreach (var pathAndQueryParameter in pathAndQueryParameters)
             {
-                Name = indexer.Name.Replace("-indexer", "Id"),
-                Description = indexer.Description,
-                Access = AccessModifier.Public,
-                Kind = CodePropertyKind.Custom,
-                Type = indexer.IndexType
-            };
+                cmdletParameters.Add(new CodeProperty
+                {
+                    Name = pathAndQueryParameter.Name.ToPascalCase('_'),
+                    Description = pathAndQueryParameter.Description,
+                    Access = AccessModifier.Public,
+                    Kind = CodePropertyKind.Custom,
+                    Type = pathAndQueryParameter.Type
+                });
+            }
+            return cmdletParameters;
         }
 
         private string GetClassName(HttpMethod? httpMethod, string entityName, CodeNamespace parentNamespace)
@@ -140,31 +139,28 @@ namespace Kiota.Builder.Refiners
             int namespaceSegmentDepth = namespaceSegments.Length;
             if (namespaceSegmentDepth > 2)
             {
-                string previousPathNoun = namespaceSegments[namespaceSegmentDepth - 2].Singularize();
+                string previousPathNoun = namespaceSegments[namespaceSegmentDepth - 2].Singularize(inputIsKnownToBePlural: false);
                 if (previousPathNoun.Equals(entityName, StringComparison.InvariantCultureIgnoreCase) &&
                     previousPathNoun.Equals("value", StringComparison.InvariantCultureIgnoreCase))
-                    previousPathNoun = namespaceSegments[namespaceSegmentDepth - 3].Singularize();
+                    previousPathNoun = namespaceSegments[namespaceSegmentDepth - 3].Singularize(inputIsKnownToBePlural: false);
                 pathSegmentNoun = previousPathNoun.ToFirstCharacterUpperCase(); ;
             }
 
-            string entityNoun = entityName.ToFirstCharacterUpperCase();
+            string entityNoun = entityName.ToFirstCharacterUpperCase().Singularize(inputIsKnownToBePlural: false);
             string verb = GetPowerShellVerb(httpMethod.Value);
-            var commandName = $"{verb}{pathSegmentNoun}{entityNoun}".SplitAndSingularizePascalCase().Distinct().Aggregate((x, y) => $"{x}{y}");
+            var commandName = $"{verb}{pathSegmentNoun}{entityNoun}".SplitPascalCase().Distinct().Aggregate((x, y) => $"{x}{y}");
             return commandName;
         }
 
-        private string GetPowerShellVerb(HttpMethod httpMethod)
+        private string GetPowerShellVerb(HttpMethod httpMethod) => httpMethod switch
         {
-            return httpMethod switch
-            {
-                HttpMethod.Get => "Get",
-                HttpMethod.Post => "New",
-                HttpMethod.Put => "Set",
-                HttpMethod.Patch => "Update",
-                HttpMethod.Delete => "Remove",
-                _ => "Invoke",
-            };
-        }
+            HttpMethod.Get => "Get",
+            HttpMethod.Post => "New",
+            HttpMethod.Put => "Set",
+            HttpMethod.Patch => "Update",
+            HttpMethod.Delete => "Remove",
+            _ => "Invoke",
+        };
 
         private static readonly AdditionalUsingEvaluator[] powerShellUsingEvaluators = new AdditionalUsingEvaluator[] {
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
