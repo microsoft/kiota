@@ -158,8 +158,9 @@ func (a *NetHttpRequestAdapter) SendAsync(requestInfo *abs.RequestInformation, c
 		if err != nil {
 			return nil, err
 		}
-		if a.shouldReturnNil(response) {
-			return nil, nil
+		shouldReturn, err := a.shouldReturnNil(response)
+		if shouldReturn {
+			return nil, err
 		}
 		parseNode, err := a.getRootParseNode(response)
 		if err != nil {
@@ -192,8 +193,9 @@ func (a *NetHttpRequestAdapter) SendCollectionAsync(requestInfo *abs.RequestInfo
 		if err != nil {
 			return nil, err
 		}
-		if a.shouldReturnNil(response) {
-			return nil, nil
+		shouldReturn, err := a.shouldReturnNil(response)
+		if shouldReturn {
+			return nil, err
 		}
 		parseNode, err := a.getRootParseNode(response)
 		if err != nil {
@@ -226,8 +228,9 @@ func (a *NetHttpRequestAdapter) SendPrimitiveAsync(requestInfo *abs.RequestInfor
 		if err != nil {
 			return nil, err
 		}
-		if a.shouldReturnNil(response) {
-			return nil, nil
+		shouldReturn, err := a.shouldReturnNil(response)
+		if shouldReturn {
+			return nil, err
 		}
 		if typeName == "[]byte" {
 			return ioutil.ReadAll(response.Body)
@@ -281,8 +284,9 @@ func (a *NetHttpRequestAdapter) SendPrimitiveCollectionAsync(requestInfo *abs.Re
 		if err != nil {
 			return nil, err
 		}
-		if a.shouldReturnNil(response) {
-			return nil, nil
+		shouldReturn, err := a.shouldReturnNil(response)
+		if shouldReturn {
+			return nil, err
 		}
 		parseNode, err := a.getRootParseNode(response)
 		if err != nil {
@@ -311,10 +315,8 @@ func (a *NetHttpRequestAdapter) SendNoContentAsync(requestInfo *abs.RequestInfor
 		if err != nil {
 			return err
 		}
-		if a.shouldReturnNil(response) {
-			return nil
-		}
-		return nil
+		_, err := a.shouldReturnNil(response)
+		return err
 	} else {
 		return errors.New("response is nil")
 	}
@@ -328,8 +330,12 @@ func (a *NetHttpRequestAdapter) getRootParseNode(response *nethttp.Response) (ab
 	return a.parseNodeFactory.GetRootParseNode(a.getResponsePrimaryContentType(response), body)
 }
 
-func (a *NetHttpRequestAdapter) shouldReturnNil(response *nethttp.Response) bool {
-	return response.StatusCode == 204
+func (a *NetHttpRequestAdapter) shouldReturnNil(response *nethttp.Response) (bool, error) {
+	if response.StatusCode == 204 {
+		err := response.Body.Close()
+		return true, err
+	}
+	return false, nil
 }
 
 func (a *NetHttpRequestAdapter) throwFailedResponses(response *nethttp.Response, errorMappings abs.ErrorMappings) error {
