@@ -58,11 +58,11 @@ namespace Kiota.Builder.Writers
                 NamespaceDifferentialTrackerState.Same => "./",
                 NamespaceDifferentialTrackerState.Downwards => $"./{GetRemainingImportPath(result.DownwardsSegments)}",
                 NamespaceDifferentialTrackerState.Upwards => GetUpwardsMoves(result.UpwardsMovesCount),
-                NamespaceDifferentialTrackerState.UpwardsAndThenDownwards => $"{GetUpwardsMoves(result.UpwardsMovesCount)}/{GetRemainingImportPath(result.DownwardsSegments)}",
+                NamespaceDifferentialTrackerState.UpwardsAndThenDownwards => $"{GetUpwardsMoves(result.UpwardsMovesCount)}{GetRemainingImportPath(result.DownwardsSegments)}",
                 _ => throw new NotImplementedException(),
             };
         }
-        protected static string GetUpwardsMoves(int UpwardsMovesCount) => string.Join("/", Enumerable.Repeat("..", UpwardsMovesCount));
+        protected static string GetUpwardsMoves(int UpwardsMovesCount) => string.Join("/", Enumerable.Repeat("..", UpwardsMovesCount)) + (UpwardsMovesCount > 0 ? "/" : string.Empty);
         protected static string GetRemainingImportPath(IEnumerable<string> remainingSegments)
         {
             if (remainingSegments.Any())
