@@ -416,15 +416,16 @@ public class KiotaBuilderTests
         builder.CreateUriSpace(document);//needed so the component index exists
         var codeModel = builder.CreateSourceModel(node);
         var resourceClass = codeModel.FindNamespaceByName("ApiSdk.models").FindChildByName<CodeClass>("resource");
-        var responseClass = codeModel.FindNamespaceByName("ApiSdk.resource.item").FindChildByName<CodeClass>("WithResponse");
-        var derivedResourceClass = codeModel.FindNamespaceByName("ApiSdk.resource.item").FindChildByName<CodeClass>("WithResponse_derivedResource");
-        var derivedResourceInfoClass = codeModel.FindNamespaceByName("ApiSdk.resource.item").FindChildByName<CodeClass>("WithResponse_derivedResource_info");
+        var itemsNS = codeModel.FindNamespaceByName("ApiSdk.resource.item");
+        var responseClass = itemsNS.FindChildByName<CodeClass>("ResourceResponse");
+        var derivedResourceClass = itemsNS.FindChildByName<CodeClass>("ResourceResponse_derivedResource");
+        var derivedResourceInfoClass = itemsNS.FindChildByName<CodeClass>("ResourceResponse_derivedResource_info");
 
         
         Assert.NotNull(resourceClass);
         Assert.NotNull(derivedResourceClass);
         Assert.NotNull(derivedResourceClass.StartBlock);
-        Assert.Equal((derivedResourceClass.StartBlock as ClassDeclaration).Inherits.TypeDefinition, resourceClass);
+        Assert.Equal(derivedResourceClass.StartBlock.Inherits.TypeDefinition, resourceClass);
         Assert.NotNull(derivedResourceInfoClass);
         Assert.NotNull(responseClass);
     }
@@ -1486,6 +1487,59 @@ public class KiotaBuilderTests
         var modelsSubNS = codeModel.FindNamespaceByName("TestSdk.Models.subns");
         Assert.NotNull(modelsSubNS);
         Assert.NotNull(modelsSubNS.FindChildByName<CodeClass>("Myobject", false));
+    }
+    [Fact]
+    public void IdsResultInIndexers(){
+        var myObjectSchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = "string",
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument() {
+            Paths = new OpenApiPaths() {
+                ["answers/{id}"] = new OpenApiPathItem() {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation() { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new() {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", myObjectSchema
+                    }
+                }
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var rbNS = codeModel.FindNamespaceByName("TestSdk.Answers.Item");
+        Assert.NotNull(rbNS);
+        var rb = rbNS.Classes.First();
+        Assert.Equal("AnswersItemRequestBuilder", rb.Name);
     }
     [Fact]
     public void InlinePropertiesGenerateTypes(){
