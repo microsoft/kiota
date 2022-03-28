@@ -158,6 +158,9 @@ func (a *NetHttpRequestAdapter) SendAsync(requestInfo *abs.RequestInformation, c
 		if err != nil {
 			return nil, err
 		}
+		if a.shouldReturnNil(response) {
+			return nil, nil
+		}
 		parseNode, err := a.getRootParseNode(response)
 		if err != nil {
 			return nil, err
@@ -189,6 +192,9 @@ func (a *NetHttpRequestAdapter) SendCollectionAsync(requestInfo *abs.RequestInfo
 		if err != nil {
 			return nil, err
 		}
+		if a.shouldReturnNil(response) {
+			return nil, nil
+		}
 		parseNode, err := a.getRootParseNode(response)
 		if err != nil {
 			return nil, err
@@ -219,6 +225,9 @@ func (a *NetHttpRequestAdapter) SendPrimitiveAsync(requestInfo *abs.RequestInfor
 		err = a.throwFailedResponses(response, errorMappings)
 		if err != nil {
 			return nil, err
+		}
+		if a.shouldReturnNil(response) {
+			return nil, nil
 		}
 		if typeName == "[]byte" {
 			return ioutil.ReadAll(response.Body)
@@ -272,6 +281,9 @@ func (a *NetHttpRequestAdapter) SendPrimitiveCollectionAsync(requestInfo *abs.Re
 		if err != nil {
 			return nil, err
 		}
+		if a.shouldReturnNil(response) {
+			return nil, nil
+		}
 		parseNode, err := a.getRootParseNode(response)
 		if err != nil {
 			return nil, err
@@ -295,6 +307,13 @@ func (a *NetHttpRequestAdapter) SendNoContentAsync(requestInfo *abs.RequestInfor
 		_, err := responseHandler(response, errorMappings)
 		return err
 	} else if response != nil {
+		err = a.throwFailedResponses(response, errorMappings)
+		if err != nil {
+			return err
+		}
+		if a.shouldReturnNil(response) {
+			return nil
+		}
 		return nil
 	} else {
 		return errors.New("response is nil")
@@ -307,6 +326,10 @@ func (a *NetHttpRequestAdapter) getRootParseNode(response *nethttp.Response) (ab
 		return nil, err
 	}
 	return a.parseNodeFactory.GetRootParseNode(a.getResponsePrimaryContentType(response), body)
+}
+
+func (a *NetHttpRequestAdapter) shouldReturnNil(response *nethttp.Response) bool {
+	return response.StatusCode == 204
 }
 
 func (a *NetHttpRequestAdapter) throwFailedResponses(response *nethttp.Response, errorMappings abs.ErrorMappings) error {
