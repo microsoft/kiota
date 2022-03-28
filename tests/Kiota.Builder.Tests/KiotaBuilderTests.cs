@@ -1536,10 +1536,15 @@ public class KiotaBuilderTests
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
+        Assert.Null(codeModel.FindChildByName<CodeClass>("With"));
+        Assert.Null(codeModel.FindChildByName<CodeClass>("WithResponse"));
         var rbNS = codeModel.FindNamespaceByName("TestSdk.Answers.Item");
         Assert.NotNull(rbNS);
         var rb = rbNS.Classes.First();
         Assert.Equal("AnswersItemRequestBuilder", rb.Name);
+        var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
+        Assert.NotNull(modelsNS);
+        Assert.Null(modelsNS.FindChildByName<CodeClass>("With", false));
     }
     [Fact]
     public void InlinePropertiesGenerateTypes(){
