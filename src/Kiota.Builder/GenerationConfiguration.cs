@@ -11,7 +11,7 @@ namespace Kiota.Builder {
         public string ModelsNamespaceName { get => $"{ClientNamespaceName}{NamespaceNameSeparator}models"; }
         public GenerationLanguage Language { get; set; } = GenerationLanguage.CSharp;
         public string ApiRootUrl { get; set; }
-        public List<string> PropertiesPrefixToStrip { get; set; } = new() { "@odata."};
+        public string[] PropertiesPrefixToStrip { get; set; } = new string[] { "@odata."};
         public HashSet<string> IgnoredRequestContentTypes { get; set; } = new();
         public bool UsesBackingStore { get; set; }
         public List<string> Serializers { get; set; } = new();
