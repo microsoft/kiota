@@ -257,10 +257,7 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
     }
     private boolean shouldReturnNull(final Response response) {
         final int statusCode = response.code();
-        if (statusCode == 204) {
-            response.close();
-        }
-        return false;
+        return statusCode == 204;
     }
     private Response throwFailedResponse(final Response response, final HashMap<String, ParsableFactory<? extends Parsable>> errorMappings) throws IOException, ApiException {
         if (response.isSuccessful()) return response;
