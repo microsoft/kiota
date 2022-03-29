@@ -106,6 +106,9 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
             if(responseHandler == null) {
                 try {
                     this.throwFailedResponse(response, errorMappings);
+                    if(this.shouldReturnNull(response)) {
+                        return CompletableFuture.completedStage(null);
+                    }
                     final ParseNode rootNode = getRootParseNode(response);
                     final Iterable<ModelType> result = rootNode.getCollectionOfObjectValues(factory);
                     return CompletableFuture.completedStage(result);
@@ -131,6 +134,9 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
             if(responseHandler == null) {
                 try {
                     this.throwFailedResponse(response, errorMappings);
+                    if(this.shouldReturnNull(response)) {
+                        return CompletableFuture.completedStage(null);
+                    }
                     final ParseNode rootNode = getRootParseNode(response);
                     final ModelType result = rootNode.getObjectValue(factory);
                     return CompletableFuture.completedStage(result);
@@ -156,6 +162,9 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
             if(responseHandler == null) {
                 try {
                     this.throwFailedResponse(response, errorMappings);
+                    if(this.shouldReturnNull(response)) {
+                        return CompletableFuture.completedStage(null);
+                    }
                     if(targetClass == Void.class) {
                         return CompletableFuture.completedStage(null);
                     } else {
@@ -221,6 +230,9 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
             if(responseHandler == null) {
                 try {
                     this.throwFailedResponse(response, errorMappings);
+                    if(this.shouldReturnNull(response)) {
+                        return CompletableFuture.completedStage(null);
+                    }
                     final ParseNode rootNode = getRootParseNode(response);
                     final Iterable<ModelType> result = rootNode.getCollectionOfPrimitiveValues(targetClass);
                     return CompletableFuture.completedStage(result);
@@ -242,6 +254,10 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
             final ParseNode rootNode = pNodeFactory.getParseNode(getMediaTypeAndSubType(body.contentType()), rawInputStream);
             return rootNode;
         }
+    }
+    private boolean shouldReturnNull(final Response response) {
+        final int statusCode = response.code();
+        return statusCode == 204;
     }
     private Response throwFailedResponse(final Response response, final HashMap<String, ParsableFactory<? extends Parsable>> errorMappings) throws IOException, ApiException {
         if (response.isSuccessful()) return response;
