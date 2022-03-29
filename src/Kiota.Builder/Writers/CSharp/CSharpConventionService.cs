@@ -138,5 +138,26 @@ namespace Kiota.Builder.Writers.CSharp {
             };
             return $"{parameterType} {parameter.Name.ToFirstCharacterLowerCase()}{defaultValue}";
         }
+
+        public string GetTargetTypeDeclarationRelativeToElement(CodeTypeBase targetType, CodeMethod codeElement)
+        {
+            var targetClass = GetTypeString(targetType, codeElement);
+            if (targetType is CodeType type)
+            {
+                // Include namespace to avoid type ambiguity on similarly named classes. Currently, if we have namespaces A and A.B where both namespaces have type T,
+                // Trying to use type A.B.T in namespace A without using the fully qualified name will break the build.
+                var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>()?.Name;
+                var returnNamespace = type.TypeDefinition.GetImmediateParentOfType<CodeNamespace>()?.Name;
+                var returnNamespacePrefix = returnNamespace?.Replace(parentNamespace, string.Empty);
+                if (returnNamespacePrefix?.StartsWith('.') == true)
+                    returnNamespacePrefix = returnNamespacePrefix.Remove(0, 1);
+
+                if (!string.IsNullOrEmpty(returnNamespacePrefix))
+                    targetClass = string.Join(".", returnNamespacePrefix, targetClass);
+            }
+
+            return targetClass;
+        }
+
     }
 }

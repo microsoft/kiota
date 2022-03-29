@@ -315,7 +315,7 @@ namespace Kiota.Builder.Writers.Shell
 
             if ((codeElement.AccessedProperty?.Type) is CodeType codeReturnType)
             {
-                var targetClass = GetTargetTypeDeclarationRelativeToElement(codeReturnType, codeElement);
+                var targetClass = conventions.GetTargetTypeDeclarationRelativeToElement(codeReturnType, codeElement);
 
                 var builderMethods = codeReturnType.TypeDefinition.GetChildElements(true).OfType<CodeMethod>()
                     .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder))
@@ -343,26 +343,6 @@ namespace Kiota.Builder.Writers.Shell
             writer.WriteLine("return command;");
         }
 
-        private string GetTargetTypeDeclarationRelativeToElement(CodeTypeBase targetType, CodeMethod codeElement)
-        {
-            var targetClass = conventions.GetTypeString(targetType, codeElement);
-            if (targetType is CodeType type)
-            {
-                // Include namespace to avoid type ambiguity on similarly named classes. Currently, if we have namespaces A and A.B where both namespaces have type T,
-                // Trying to use type A.B.T in namespace A without using the fully qualified name will break the build.
-                var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>()?.Name;
-                var returnNamespace = type.TypeDefinition.GetImmediateParentOfType<CodeNamespace>()?.Name;
-                var returnNamespacePrefix = returnNamespace?.Replace(parentNamespace, string.Empty);
-                if (returnNamespacePrefix?.StartsWith('.') == true)
-                    returnNamespacePrefix = returnNamespacePrefix.Remove(0, 1);
-
-                if (!string.IsNullOrEmpty(returnNamespacePrefix))
-                    targetClass = string.Join(".", returnNamespacePrefix, targetClass);
-            }
-            
-            return targetClass;
-        }
-
         private void WriteUnnamedBuildCommand(CodeMethod codeElement, LanguageWriter writer, CodeClass parent, IEnumerable<CodeMethod> classMethods)
         {
             if (codeElement.OriginalMethod?.Kind == CodeMethodKind.ClientConstructor)
@@ -379,7 +359,7 @@ namespace Kiota.Builder.Writers.Shell
             }
             else if (codeElement.OriginalIndexer != null)
             {
-                var targetClass = GetTargetTypeDeclarationRelativeToElement(codeElement.OriginalIndexer.ReturnType, codeElement);
+                var targetClass = conventions.GetTargetTypeDeclarationRelativeToElement(codeElement.OriginalIndexer.ReturnType, codeElement);
                 var builderMethods = (codeElement.OriginalIndexer.ReturnType as CodeType).TypeDefinition.GetChildElements(true).OfType<CodeMethod>()
                     .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder))
                     .OrderBy(m => m.Name);
