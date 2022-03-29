@@ -94,6 +94,9 @@ namespace Kiota.Builder.Extensions {
             var parts = namespaced.Split('.');
             return string.Join('\\', parts.Select(x => x.ToFirstCharacterUpperCase())).Trim('\\');
         }
+        ///<summary>
+        /// Cleanup regex that remvoes all special characters from ASCII 0-127
+        ///</summary>
         private static readonly Regex propertyCleanupRegex = new(@"[""\s!#$%&'()*+,./:;<=>?@\[\]\\^`{}|~]", RegexOptions.Compiled);
         public static string CleanupSymbolName(this string original, params string[] prefixesToStrip)
         {
