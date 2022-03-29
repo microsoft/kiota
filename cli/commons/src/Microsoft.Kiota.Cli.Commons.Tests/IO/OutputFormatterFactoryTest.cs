@@ -42,10 +42,10 @@ public class OutputFormatterFactoryTest
         {
             var factory = new OutputFormatterFactory();
 
-            var formatter = factory.GetFormatter("json");
+            var formatter = factory.GetFormatter(formatterType);
 
             Assert.NotNull(formatter);
-            Assert.True(formatter is JsonOutputFormatter);
+            Assert.Equal(expectedType, formatter.GetType());
         }
     }
 }
