@@ -103,7 +103,7 @@ namespace Kiota.Builder.Writers.Shell
 
             AddCustomCommandOptions(writer, ref availableOptions, ref paramTypes, ref paramNames, returnType, isHandlerVoid);
 
-            if (!isHandlerVoid && !conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
+            if (!isHandlerVoid && !conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase) && !conventions.IsPrimitiveType(returnType))
             {
                 // Add output filter param
                 paramNames.Add(outputFilterParamName);
@@ -160,7 +160,7 @@ namespace Kiota.Builder.Writers.Shell
                 paramNames.Add(fileParamName);
                 availableOptions.Add(fileOptionName);
             } 
-            else if (!isHandlerVoid)
+            else if (!isHandlerVoid && !conventions.IsPrimitiveType(returnType))
             {
                 // Add output type param
                 var outputOptionName = "outputOption";
@@ -214,9 +214,17 @@ namespace Kiota.Builder.Writers.Shell
                 if (typeString != "Stream")
                 {
                     var formatterOptionsVar = "formatterOptions";
-                    writer.WriteLine($"var {formatterVar} = {outputFormatterFactoryParamName}.GetFormatter({outputFormatParamName});");
-                    writer.WriteLine($"response = await {outputFilterParamName}?.FilterOutputAsync(response, {outputFilterQueryParamName}, {cancellationTokenParamName}) ?? response;");
-                    writer.WriteLine($"var {formatterOptionsVar} = {outputFormatParamName}.GetOutputFormatterOptions(new FormatterOptionsModel(!{jsonNoIndentParamName}));");
+                    var formatterTypeVal = "FormatterType.TEXT";
+                    if (conventions.IsPrimitiveType(typeString))
+                    {
+                        writer.WriteLine($"IOutputFormatterOptions? {formatterOptionsVar} = null;");
+                    } else
+                    {
+                        formatterTypeVal = outputFormatParamName;
+                        writer.WriteLine($"response = await {outputFilterParamName}?.FilterOutputAsync(response, {outputFilterQueryParamName}, {cancellationTokenParamName}) ?? response;");
+                        writer.WriteLine($"var {formatterOptionsVar} = {outputFormatParamName}.GetOutputFormatterOptions(new FormatterOptionsModel(!{jsonNoIndentParamName}));");
+                    }
+                    writer.WriteLine($"var {formatterVar} = {outputFormatterFactoryParamName}.GetFormatter({formatterTypeVal});");
                     writer.WriteLine($"await {formatterVar}.WriteOutputAsync(response, {formatterOptionsVar}, {cancellationTokenParamName});");
                 }
                 else
@@ -307,9 +315,8 @@ namespace Kiota.Builder.Writers.Shell
 
             if ((codeElement.AccessedProperty?.Type) is CodeType codeReturnType)
             {
-                // Include namespace to avoid type ambiguity on similarly named classes. Currently, if we have namespaces A and A.B where both namespaces have type T,
-                // Trying to use type A.B.T in namespace A without using the fully qualified name will break the build.
-                var targetClass = string.Join(".", codeReturnType.TypeDefinition.Parent.Name, conventions.GetTypeString(codeReturnType, codeElement));
+                var targetClass = GetTargetTypeDeclarationRelativeToElement(codeReturnType, codeElement);
+
                 var builderMethods = codeReturnType.TypeDefinition.GetChildElements(true).OfType<CodeMethod>()
                     .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder))
                     .OrderBy(m => m.Name)
@@ -336,6 +343,26 @@ namespace Kiota.Builder.Writers.Shell
             writer.WriteLine("return command;");
         }
 
+        private string GetTargetTypeDeclarationRelativeToElement(CodeTypeBase targetType, CodeMethod codeElement)
+        {
+            var targetClass = conventions.GetTypeString(targetType, codeElement);
+            if (targetType is CodeType type)
+            {
+                // Include namespace to avoid type ambiguity on similarly named classes. Currently, if we have namespaces A and A.B where both namespaces have type T,
+                // Trying to use type A.B.T in namespace A without using the fully qualified name will break the build.
+                var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>()?.Name;
+                var returnNamespace = type.TypeDefinition.GetImmediateParentOfType<CodeNamespace>()?.Name;
+                var returnNamespacePrefix = returnNamespace?.Replace(parentNamespace, string.Empty);
+                if (returnNamespacePrefix?.StartsWith('.') == true)
+                    returnNamespacePrefix = returnNamespacePrefix.Remove(0, 1);
+
+                if (!string.IsNullOrEmpty(returnNamespacePrefix))
+                    targetClass = string.Join(".", returnNamespacePrefix, targetClass);
+            }
+            
+            return targetClass;
+        }
+
         private void WriteUnnamedBuildCommand(CodeMethod codeElement, LanguageWriter writer, CodeClass parent, IEnumerable<CodeMethod> classMethods)
         {
             if (codeElement.OriginalMethod?.Kind == CodeMethodKind.ClientConstructor)
@@ -352,7 +379,7 @@ namespace Kiota.Builder.Writers.Shell
             }
             else if (codeElement.OriginalIndexer != null)
             {
-                var targetClass = conventions.GetTypeString(codeElement.OriginalIndexer.ReturnType, codeElement);
+                var targetClass = GetTargetTypeDeclarationRelativeToElement(codeElement.OriginalIndexer.ReturnType, codeElement);
                 var builderMethods = (codeElement.OriginalIndexer.ReturnType as CodeType).TypeDefinition.GetChildElements(true).OfType<CodeMethod>()
                     .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder))
                     .OrderBy(m => m.Name);
