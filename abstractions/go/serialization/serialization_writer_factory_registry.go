@@ -1,6 +1,9 @@
 package serialization
 
-import "errors"
+import (
+	"errors"
+	"strings"
+)
 
 // SerializationWriterFactoryRegistry is a factory holds a list of all the registered factories for the various types of nodes.
 type SerializationWriterFactoryRegistry struct {
@@ -23,10 +26,15 @@ func (m *SerializationWriterFactoryRegistry) GetSerializationWriter(contentType 
 	if contentType == "" {
 		return nil, errors.New("the content type is empty")
 	}
-	factory := m.ContentTypeAssociatedFactories[contentType]
-	if factory == nil {
-		return nil, errors.New("Content type " + contentType + " does not have a factory registered to be parsed")
-	} else {
+	vendorSpecificContentType := strings.Split(contentType, ";")[0]
+	factory, ok := m.ContentTypeAssociatedFactories[vendorSpecificContentType]
+	if ok {
 		return factory.GetSerializationWriter(contentType)
 	}
+	cleanedContentType := contentTypeVendorCleanupPattern.ReplaceAllString(vendorSpecificContentType, "")
+	factory, ok = m.ContentTypeAssociatedFactories[cleanedContentType]
+	if ok {
+		return factory.GetSerializationWriter(cleanedContentType)
+	}
+	return nil, errors.New("Content type " + cleanedContentType + " does not have a factory registered to be parsed")
 }

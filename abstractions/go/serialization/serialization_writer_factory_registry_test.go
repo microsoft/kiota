@@ -1,13 +1,10 @@
-package abstractions
+package serialization
 
 import (
-	"github.com/google/uuid"
-	serialization "github.com/microsoft/kiota/abstractions/go/serialization"
 	assert "github.com/stretchr/testify/assert"
 	"testing"
-	"time"
+    "github.com/stretchr/testify/mock"
 )
-
 type mockSerializer struct {
 }
 
@@ -118,12 +115,9 @@ func (*mockSerializerFactory) GetSerializationWriter(contentType string) (serial
 	return &mockSerializer{}, nil
 }
 
-func TestItCreatesClientConcurrently(t *testing.T) {
-	metaFactory := func() serialization.SerializationWriterFactory {
-		return &mockSerializerFactory{}
-	}
-	for i := 0; i < 1000; i++ {
-		go RegisterDefaultSerializer(metaFactory)
-	}
-	assert.Equal(t, 1, len(serialization.DefaultSerializationWriterFactoryInstance.ContentTypeAssociatedFactories))
+func TestItGetsVendorSpecificSerializationWriter(t *testing.T) {
+    registry := NewSerializationWriterFactoryRegistry()
+    registry.ContentTypeAssociatedFactories["application/json"] = &mockSerializerFactory{}
+    serializationWriter = registry.GetSerializationWriter("application/vnd+json")
+    assert.NotNil(t, serializationWriter)
 }
