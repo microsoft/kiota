@@ -2,6 +2,7 @@ package com.microsoft.kiota.serialization;
 
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
 /** This factory holds a list of all the registered factories for the various types of nodes. */
@@ -13,6 +14,7 @@ public class SerializationWriterFactoryRegistry implements SerializationWriterFa
     public String getValidContentType() {
         throw new UnsupportedOperationException("The registry supports multiple content types. Get the registered factory instead.");
     }
+    private static Pattern contentTypeVendorCleanupPattern = Pattern.compile("[^/]+\\+", Pattern.CASE_INSENSITIVE);
     @Override
     @Nonnull
     public SerializationWriter getSerializationWriter(@Nonnull final String contentType) {
@@ -20,11 +22,15 @@ public class SerializationWriterFactoryRegistry implements SerializationWriterFa
         if(contentType.isEmpty()) {
             throw new NullPointerException("contentType cannot be empty");
         }
-        if(contentTypeAssociatedFactories.containsKey(contentType)) {
-            return contentTypeAssociatedFactories.get(contentType).getSerializationWriter(contentType);
-        } else {
-            throw new RuntimeException("Content type " + contentType + " does not have a factory to be serialized");
+        final String vendorSpecificContentType = contentType.split(";")[0];
+        if(contentTypeAssociatedFactories.containsKey(vendorSpecificContentType)) {
+            return contentTypeAssociatedFactories.get(vendorSpecificContentType).getSerializationWriter(vendorSpecificContentType);
         }
+        final String cleanedContentType = contentTypeVendorCleanupPattern.matcher(vendorSpecificContentType).replaceAll("");
+        if(contentTypeAssociatedFactories.containsKey(cleanedContentType)) {
+            return contentTypeAssociatedFactories.get(cleanedContentType).getSerializationWriter(cleanedContentType);
+        }
+        throw new RuntimeException("Content type " + contentType + " does not have a factory to be serialized");
     }
     
 }
