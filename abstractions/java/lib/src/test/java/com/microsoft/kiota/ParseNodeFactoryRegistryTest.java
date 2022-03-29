@@ -24,9 +24,9 @@ class ParseNodeFactoryRegistryTest {
         final var parseNodeMock = mock(ParseNode.class);
         when(parseNodeFactoryMock.getValidContentType()).thenReturn("application/json");
         when(parseNodeFactoryMock.getParseNode(anyString(), any(InputStream.class))).thenReturn(parseNodeMock);
+        registry.contentTypeAssociatedFactories.put("application/json", parseNodeFactoryMock);
         final var str = "{\"test\":\"test\"}";
         try (final var payloadMock = new ByteArrayInputStream(str.getBytes(StandardCharsets.UTF_8))) {
-            registry.contentTypeAssociatedFactories.put("application/json", parseNodeFactoryMock);
             final var parseNode = registry.getParseNode("application/vnd+json", payloadMock);
             assertNotNull(parseNode);
         }
