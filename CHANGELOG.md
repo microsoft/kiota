@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where request builder classes for collections endpoints would have a wrong name. #1052
+
 ## [0.0.20] - 2022-03-25
 
 ### Changed
