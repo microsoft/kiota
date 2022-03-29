@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-
+using System.Text.RegularExpressions;
 
 namespace Kiota.Builder.Extensions {
     public static class StringExtensions {
@@ -93,6 +93,24 @@ namespace Kiota.Builder.Extensions {
             }
             var parts = namespaced.Split('.');
             return string.Join('\\', parts.Select(x => x.ToFirstCharacterUpperCase())).Trim('\\');
+        }
+        ///<summary>
+        /// Cleanup regex that remvoes all special characters from ASCII 0-127
+        ///</summary>
+        private static readonly Regex propertyCleanupRegex = new(@"[""\s!#$%&'()*+,./:;<=>?@\[\]\\^`{}|~]", RegexOptions.Compiled);
+        public static string CleanupSymbolName(this string original, params string[] prefixesToStrip)
+        {
+            if (string.IsNullOrEmpty(original))
+                return original;
+
+            foreach (var prefix in prefixesToStrip.Where(x => !string.IsNullOrEmpty(x)))
+                original = original.Replace(prefix, string.Empty);
+            
+            original = original.ToCamelCase(); //ensure the name is camel cased to strip out any potential '-' characters
+
+            original = propertyCleanupRegex.Replace(original, string.Empty); //strip out any invalid characters
+
+            return original;
         }
     }
 }
