@@ -103,12 +103,15 @@ namespace Kiota.Builder.Writers.Shell
 
             AddCustomCommandOptions(writer, ref availableOptions, ref paramTypes, ref paramNames, returnType, isHandlerVoid);
 
-            if (!isHandlerVoid && !conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase) && !conventions.IsPrimitiveType(returnType))
+            if (!isHandlerVoid && !conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
             {
-                // Add output filter param
-                paramNames.Add(outputFilterParamName);
-                paramTypes.Add(outputFilterParamType);
-                availableOptions.Add($"new TypeBinding(typeof({outputFilterParamType}))");
+                if (!conventions.IsPrimitiveType(returnType))
+                {
+                    // Add output filter param
+                    paramNames.Add(outputFilterParamName);
+                    paramTypes.Add(outputFilterParamType);
+                    availableOptions.Add($"new TypeBinding(typeof({outputFilterParamType}))");
+                }
 
                 // Add output formatter factory param
                 paramTypes.Add(outputFormatterFactoryParamType);
