@@ -32,7 +32,6 @@ public class TextOutputFormatter : IOutputFormatter
     {
         using var reader = new StreamReader(content);
         const int BUFFER_LENGTH = 4096;
-        var count = 0;
         var charsReceived = 0;
         do {
             var buffer = new char[BUFFER_LENGTH];
@@ -41,7 +40,6 @@ public class TextOutputFormatter : IOutputFormatter
                 break;
             }
             _ansiConsole.Write(new string(buffer, 0, charsReceived));
-            count++;
         } while(charsReceived == BUFFER_LENGTH);
         _ansiConsole.WriteLine();
     }
