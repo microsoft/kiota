@@ -130,5 +130,35 @@ namespace Kiota.Builder
                 throw new ArgumentOutOfRangeException(nameof(interfaces));
             return AddRange(interfaces);
         }
+        public NamespaceDifferentialTracker GetDifferential(CodeNamespace importNamespace, string namespacePrefix, char separator = '.')
+        {
+            if(importNamespace == null)
+                throw new ArgumentNullException(nameof(importNamespace));
+            if(string.IsNullOrEmpty(namespacePrefix))
+                throw new ArgumentNullException(nameof(namespacePrefix));
+            if (this == importNamespace || Name.Equals(importNamespace.Name, StringComparison.OrdinalIgnoreCase)) // we're in the same namespace
+                return new();
+            var prefixLength = namespacePrefix.Length;
+            var currentNamespaceSegments = Name[prefixLength..]
+                                    .Split(separator, StringSplitOptions.RemoveEmptyEntries);
+            var importNamespaceSegments = importNamespace
+                                .Name[prefixLength..]
+                                .Split(separator, StringSplitOptions.RemoveEmptyEntries);
+            var importNamespaceSegmentsCount = importNamespaceSegments.Length;
+            var currentNamespaceSegmentsCount = currentNamespaceSegments.Length;
+            var deeperMostSegmentIndex = 0;
+            while (deeperMostSegmentIndex < Math.Min(importNamespaceSegmentsCount, currentNamespaceSegmentsCount))
+            {
+                if (currentNamespaceSegments.ElementAt(deeperMostSegmentIndex).Equals(importNamespaceSegments.ElementAt(deeperMostSegmentIndex), StringComparison.OrdinalIgnoreCase))
+                    deeperMostSegmentIndex++;
+                else
+                    break;
+            }
+            var upMoves = currentNamespaceSegmentsCount - deeperMostSegmentIndex;
+            return new() { // we're in a parent namespace and need to import with a relative path or we're in a sub namespace and need to go "up" with dot dots
+                UpwardsMovesCount = upMoves,
+                DownwardsSegments = importNamespaceSegments.Skip(deeperMostSegmentIndex)
+            };
+        }
     }
 }

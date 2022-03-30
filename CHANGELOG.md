@@ -9,8 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Adds support for 204 no content in generation and CSharp/Java/Go/TypeScript request adapters. #1410
-- Adds text output formatter to CLI commons. (Shell)
+- Added text output formatter to CLI commons. (Shell)
+- Added support for vendor specific content types generation/serialization. [#1197](https://github.com/microsoft/kiota/issues/1197)
+- Added support for 204 no content in generation and CSharp/Java/Go/TypeScript request adapters. #1410
+- Added a draft swift generation implementation. #1444
 
 ### Changed
 

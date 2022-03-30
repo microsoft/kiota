@@ -7,7 +7,7 @@ namespace Kiota.Builder.Writers
 {
     public class RelativeImportManager
     {
-        private readonly int prefixLength;
+        private readonly string prefix;
         private readonly char separator;
         public RelativeImportManager(string namespacePrefix, char namespaceSeparator)
         {
@@ -16,7 +16,7 @@ namespace Kiota.Builder.Writers
             if (namespaceSeparator == default)
                 throw new ArgumentNullException(nameof(namespaceSeparator));
 
-            prefixLength = namespacePrefix.Length;
+            prefix = namespacePrefix;
             separator = namespaceSeparator;
         }
         /// <summary>
@@ -52,46 +52,17 @@ namespace Kiota.Builder.Writers
         }
         protected string GetImportRelativePathFromNamespaces(CodeNamespace currentNamespace, CodeNamespace importNamespace)
         {
-            if (currentNamespace == null)
-                throw new ArgumentNullException(nameof(currentNamespace));
-            else if (importNamespace == null)
-                throw new ArgumentNullException(nameof(importNamespace));
-            else if (currentNamespace == importNamespace || currentNamespace.Name.Equals(importNamespace.Name, StringComparison.OrdinalIgnoreCase)) // we're in the same namespace
-                return "./";
-            else
-                return GetRelativeImportPathFromSegments(currentNamespace, importNamespace);
-        }
-        protected string GetRelativeImportPathFromSegments(CodeNamespace currentNamespace, CodeNamespace importNamespace)
-        {
-            var currentNamespaceSegments = currentNamespace
-                                    .Name[prefixLength..]
-                                    .Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            var importNamespaceSegments = importNamespace
-                                .Name[prefixLength..]
-                                .Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            var importNamespaceSegmentsCount = importNamespaceSegments.Length;
-            var currentNamespaceSegmentsCount = currentNamespaceSegments.Length;
-            var deeperMostSegmentIndex = 0;
-            while (deeperMostSegmentIndex < Math.Min(importNamespaceSegmentsCount, currentNamespaceSegmentsCount))
+            var result = currentNamespace.GetDifferential(importNamespace, prefix, separator);
+            return result.State switch
             {
-                if (currentNamespaceSegments.ElementAt(deeperMostSegmentIndex).Equals(importNamespaceSegments.ElementAt(deeperMostSegmentIndex), StringComparison.OrdinalIgnoreCase))
-                    deeperMostSegmentIndex++;
-                else
-                    break;
-            }
-            if (deeperMostSegmentIndex == currentNamespaceSegmentsCount)
-            { // we're in a parent namespace and need to import with a relative path
-                return "./" + GetRemainingImportPath(importNamespaceSegments.Skip(deeperMostSegmentIndex));
-            }
-            else
-            { // we're in a sub namespace and need to go "up" with dot dots
-                var upMoves = currentNamespaceSegmentsCount - deeperMostSegmentIndex;
-                var pathSegmentSeparator = upMoves > 0 ? "/" : string.Empty;
-                return string.Join("/", Enumerable.Repeat("..", upMoves)) +
-                        pathSegmentSeparator +
-                        GetRemainingImportPath(importNamespaceSegments.Skip(deeperMostSegmentIndex));
-            }
+                NamespaceDifferentialTrackerState.Same => "./",
+                NamespaceDifferentialTrackerState.Downwards => $"./{GetRemainingImportPath(result.DownwardsSegments)}",
+                NamespaceDifferentialTrackerState.Upwards => GetUpwardsMoves(result.UpwardsMovesCount),
+                NamespaceDifferentialTrackerState.UpwardsAndThenDownwards => $"{GetUpwardsMoves(result.UpwardsMovesCount)}{GetRemainingImportPath(result.DownwardsSegments)}",
+                _ => throw new NotImplementedException(),
+            };
         }
+        protected static string GetUpwardsMoves(int UpwardsMovesCount) => string.Join("/", Enumerable.Repeat("..", UpwardsMovesCount)) + (UpwardsMovesCount > 0 ? "/" : string.Empty);
         protected static string GetRemainingImportPath(IEnumerable<string> remainingSegments)
         {
             if (remainingSegments.Any())
