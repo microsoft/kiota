@@ -116,14 +116,15 @@ namespace Kiota.Builder.Writers.CSharp {
             // Similarly, if we have type A.B.C.D.T1 that needs to be used within type A.B.C.T2, but there's also a type
             // A.B.T1, using T1 in T2 will resolve A.B.T1 even if you have a using statement with A.B.C.D.
             var hasChildWithName = false;
-            if (!currentType.IsExternal)
+            if (currentType != null && currentType.TypeDefinition != null && !currentType.IsExternal && targetElement != null)
             {
-                var typeName = currentType?.TypeDefinition?.Name;
-                var ns = targetElement?.GetImmediateParentOfType<CodeNamespace>();
-                while (ns is not null && ns != ns?.GetRootNamespace() && !hasChildWithName)
+                var typeName = currentType.TypeDefinition.Name;
+                var ns = targetElement.GetImmediateParentOfType<CodeNamespace>();
+                var rootNs = ns?.GetRootNamespace();
+                while (ns is not null && ns != rootNs && !hasChildWithName)
                 {
                     hasChildWithName = ns.GetChildElements(true).OfType<CodeClass>().Any(c => c.Name?.Equals(typeName) == true);
-                    ns = ns?.Parent is CodeNamespace n ? n : (ns?.GetImmediateParentOfType<CodeNamespace>());
+                    ns = ns.Parent is CodeNamespace n ? n : (ns.GetImmediateParentOfType<CodeNamespace>());
                 }
             }
             return hasChildWithName;
