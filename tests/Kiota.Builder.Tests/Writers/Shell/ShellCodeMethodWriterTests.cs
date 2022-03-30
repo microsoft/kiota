@@ -317,7 +317,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var requestInfo = CreateGetRequestInformation", result);
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("IOutputFormatterOptions? formatterOptions = null;", result);
-        Assert.Contains("var outputFormatterFactory = (IOutputFormatterFactory) parameters[0];", result);
+        Assert.Contains("var outputFormatterFactory = (IOutputFormatterFactory) parameters[3];", result);
         Assert.Contains("var formatter = outputFormatterFactory.GetFormatter(FormatterType.TEXT);", result);
         Assert.Contains("await formatter.WriteOutputAsync(response, formatterOptions, cancellationToken);", result);
         Assert.Contains("}, new CollectionBinding(qOption,", result);
