@@ -303,8 +303,7 @@ public class KiotaBuilder
         {
             foreach(var operation in currentNode
                                     .PathItems[Constants.DefaultOpenApiLabel]
-                                    .Operations
-                                    .Where(x => x.Value.RequestBody?.Content?.Any(y => !config.IgnoredRequestContentTypes.Contains(y.Key)) ?? true))
+                                    .Operations)
                 CreateOperationMethods(currentNode, operation.Key, operation.Value, codeClass);
         }
         CreateUrlManagement(codeClass, currentNode, isApiClientClass);
@@ -622,13 +621,13 @@ public class KiotaBuilder
             var returnType = CreateModelDeclarations(currentNode, schema, operation, executorMethod, "Response");
             executorMethod.ReturnType = returnType ?? throw new InvalidOperationException("Could not resolve return type for operation");
         } else {
-            var returnType = voidType;
-            if(operation.Responses.Any(x => x.Value.Content.ContainsKey(RequestBodyBinaryContentType)))
-                returnType = "binary";
+            string returnType;
+            if(!operation.Responses.Any(x => noContentStatusCodes.Contains(x.Key)))
+                returnType = voidType;
             else if (operation.Responses.Any(x => x.Value.Content.ContainsKey(RequestBodyPlainTextContentType)))
                 returnType = "string";
-            else if(!operation.Responses.Any(x => noContentStatusCodes.Contains(x.Key)))
-                logger.LogWarning("could not find operation return type {operationType} {currentNodePath}", operationType, currentNode.Path);
+            else
+                returnType = "binary";
             executorMethod.ReturnType = new CodeType { Name = returnType, IsExternal = true, };
         }
 
