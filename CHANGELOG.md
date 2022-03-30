@@ -10,11 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added support for vendor specific content types generation/serialization. [#1197](https://github.com/microsoft/kiota/issues/1197)
-- Adds support for 204 no content in generation and CSharp/Java/Go/TypeScript request adapters. #1410
+- Added support for 204 no content in generation and CSharp/Java/Go/TypeScript request adapters. #1410
+- Added a draft swift generation implementation. #1444
 
 ### Changed
 
 - Fixed a bug where request builder classes for collections endpoints would have a wrong name. #1052
+- Fixed a bug where symbols (properties, methods, classes) could contain invalid characters #1436
 
 ## [0.0.20] - 2022-03-25
 
