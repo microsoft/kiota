@@ -120,7 +120,7 @@ namespace Kiota.Builder.Writers.CSharp {
             {
                 var typeName = currentType?.TypeDefinition?.Name;
                 var ns = targetElement?.GetImmediateParentOfType<CodeNamespace>();
-                while (ns != ns.GetRootNamespace() && !hasChildWithName)
+                while (ns is not null && ns != ns?.GetRootNamespace() && !hasChildWithName)
                 {
                     hasChildWithName = ns.GetChildElements(true).OfType<CodeClass>().Any(c => c.Name?.Equals(typeName) == true);
                     ns = ns?.Parent is CodeNamespace n ? n : (ns?.GetImmediateParentOfType<CodeNamespace>());
