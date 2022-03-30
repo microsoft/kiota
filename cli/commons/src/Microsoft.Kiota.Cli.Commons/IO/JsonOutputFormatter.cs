@@ -28,7 +28,7 @@ public class JsonOutputFormatter : IOutputFormatter
     }
 
     /// <inheritdoc />
-    public async Task WriteOutputAsync(Stream content, IOutputFormatterOptions options, CancellationToken cancellationToken = default)
+    public async Task WriteOutputAsync(Stream content, IOutputFormatterOptions? options = null, CancellationToken cancellationToken = default)
     {
         string resultStr;
 
