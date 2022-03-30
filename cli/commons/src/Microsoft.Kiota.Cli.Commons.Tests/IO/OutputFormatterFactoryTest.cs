@@ -28,7 +28,7 @@ public class OutputFormatterFactoryTest
             var formatter = factory.GetFormatter(formatterType);
 
             Assert.NotNull(formatter);
-            Assert.Equal(expectedType, formatter.GetType());
+            Assert.IsType(expectedType, formatter);
         }
 
         [Theory]
