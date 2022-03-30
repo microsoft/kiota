@@ -184,7 +184,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
 
-        Assert.Contains("var builder = new Name.Sub.TestRequestBuilder", result);
+        Assert.Contains("var builder = new TestRequestBuilder", result);
         Assert.Contains("var commands = new List<Command>();", result);
         Assert.Contains("commands.Add(builder.BuildTestMethod1());", result);
         Assert.Contains("commands.AddRange(builder.BuildTestMethod2());", result);
@@ -192,22 +192,29 @@ public class ShellCodeMethodWriterTests : IDisposable
     }
 
     [Fact]
-    public void WritesContainerCommands() {
+    public void WritesContainerCommands()
+    {
         method.Kind = CodeMethodKind.CommandBuilder;
         method.SimpleName = "User";
-        var type = new CodeClass { Name = "TestClass", Kind = CodeClassKind.RequestBuilder };
-        type.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod1", ReturnType = new CodeType() });
-        type.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod2", ReturnType = new CodeType {CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array} });
-        type.Parent = CodeNamespace.InitRootNamespace();
-        type.Parent.Name = "Test.Name.Sub";
-        method.AccessedProperty = new CodeProperty {
-            Type = new CodeType {
+        // Types: A.B.C.T2
+        //        A.B.C.D.T1
+        var ns1 = root.AddNamespace("Test.Name");
+        var ns2 = ns1.AddNamespace("Test.Name.Sub1");
+        var ns3 = ns2.AddNamespace("Test.Name.Sub1.Sub2");
+        var t2 = parentClass;
+        ns2.AddClass(t2);
+        var t1Sub = new CodeClass { Name = "TestClass1", Kind = CodeClassKind.RequestBuilder };
+        ns3.AddClass(t1Sub);
+        t1Sub.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod1", ReturnType = new CodeType() });
+        t1Sub.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod2", ReturnType = new CodeType { CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array } });
+        method.AccessedProperty = new CodeProperty
+        {
+            Type = new CodeType
+            {
                 Name = "TestRequestBuilder",
-                TypeDefinition = type
+                TypeDefinition = t1Sub
             }
         };
-
-        root.Name = "Test.Name";
 
         AddRequestProperties();
 
@@ -215,7 +222,48 @@ public class ShellCodeMethodWriterTests : IDisposable
         var result = tw.ToString();
 
         Assert.Contains("var command = new Command(\"user\");", result);
-        Assert.Contains("var builder = new Sub.TestRequestBuilder", result);
+        Assert.Contains("var builder = new TestRequestBuilder", result);
+        Assert.Contains("command.AddCommand(builder.BuildTestMethod1());", result);
+        Assert.Contains("foreach (var cmd in builder.BuildTestMethod2()) {", result);
+        Assert.Contains("command.AddCommand(cmd);", result);
+        Assert.Contains("return command;", result);
+    }
+
+    [Fact]
+    public void WritesContainerCommandWithConflictingTypes()
+    {
+        method.Kind = CodeMethodKind.CommandBuilder;
+        method.SimpleName = "User";
+        // Types: A.B.T1
+        //        A.B.C.T2
+        //        A.B.C.D.T1
+        var ns1 = root.AddNamespace("Test.Name");
+        var ns2 = ns1.AddNamespace("Test.Name.Sub1");
+        var ns3 = ns2.AddNamespace("Test.Name.Sub1.Sub2");
+        var t1 = new CodeClass { Name = "TestClass1", Kind = CodeClassKind.RequestBuilder };
+        ns1.AddClass(t1);
+        var t2 = parentClass;
+        ns2.AddClass(t2);
+        var t1Sub = new CodeClass { Name = "TestClass1", Kind = CodeClassKind.RequestBuilder };
+        ns3.AddClass(t1Sub);
+        t1Sub.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod1", ReturnType = new CodeType() });
+        t1Sub.AddMethod(new CodeMethod { Kind = CodeMethodKind.CommandBuilder, Name = "BuildTestMethod2", ReturnType = new CodeType { CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array } });
+        method.AccessedProperty = new CodeProperty
+        {
+            Type = new CodeType
+            {
+                Name = "TestRequestBuilder",
+                TypeDefinition = t1Sub
+            }
+        };
+
+        AddRequestProperties();
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("var command = new Command(\"user\");", result);
+        Assert.Contains("var builder = new Test.Name.Sub1.Sub2.TestRequestBuilder", result);
         Assert.Contains("command.AddCommand(builder.BuildTestMethod1());", result);
         Assert.Contains("foreach (var cmd in builder.BuildTestMethod2()) {", result);
         Assert.Contains("command.AddCommand(cmd);", result);

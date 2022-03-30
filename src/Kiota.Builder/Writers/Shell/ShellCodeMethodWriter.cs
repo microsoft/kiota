@@ -315,7 +315,7 @@ namespace Kiota.Builder.Writers.Shell
 
             if ((codeElement.AccessedProperty?.Type) is CodeType codeReturnType)
             {
-                var targetClass = conventions.GetTargetTypeDeclarationRelativeToElement(codeReturnType, codeElement);
+                var targetClass = conventions.GetTypeString(codeReturnType, codeElement);
 
                 var builderMethods = codeReturnType.TypeDefinition.GetChildElements(true).OfType<CodeMethod>()
                     .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder))
@@ -359,7 +359,7 @@ namespace Kiota.Builder.Writers.Shell
             }
             else if (codeElement.OriginalIndexer != null)
             {
-                var targetClass = conventions.GetTargetTypeDeclarationRelativeToElement(codeElement.OriginalIndexer.ReturnType, codeElement);
+                var targetClass = conventions.GetTypeString(codeElement.OriginalIndexer.ReturnType, codeElement);
                 var builderMethods = (codeElement.OriginalIndexer.ReturnType as CodeType).TypeDefinition.GetChildElements(true).OfType<CodeMethod>()
                     .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder))
                     .OrderBy(m => m.Name);

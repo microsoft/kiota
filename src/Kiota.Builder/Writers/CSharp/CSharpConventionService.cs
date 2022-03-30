@@ -97,7 +97,8 @@ namespace Kiota.Builder.Writers.CSharp {
             if(currentType.TypeDefinition != null &&
                 (GetNamesInUseByNamespaceSegments(targetElement).Contains(typeName) &&
                 !DoesTypeExistsInSameNamesSpaceAsTarget(currentType,targetElement) ||
-                parentElementsHash.Contains(typeName)))
+                parentElementsHash.Contains(typeName) ||
+                DoesTypeExistsInTargetAncestorNamespace(currentType, targetElement)))
                 return $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
             else
                 return typeName;
@@ -106,6 +107,26 @@ namespace Kiota.Builder.Writers.CSharp {
         private static bool DoesTypeExistsInSameNamesSpaceAsTarget(CodeType currentType, CodeElement targetElement)
         {
             return currentType?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>()?.Name.Equals(targetElement?.GetImmediateParentOfType<CodeNamespace>()?.Name) ?? false;
+        }
+
+        private static bool DoesTypeExistsInTargetAncestorNamespace(CodeType currentType, CodeElement targetElement)
+        {
+            // Avoid type ambiguity on similarly named classes. Currently, if we have namespaces A and A.B where both namespaces have type T,
+            // Trying to use type A.B.T in namespace A without using a qualified name will break the build.
+            // Similarly, if we have type A.B.C.D.T1 that needs to be used within type A.B.C.T2, but there's also a type
+            // A.B.T1, using T1 in T2 will resolve A.B.T1 even if you have a using statement with A.B.C.D.
+            var hasChildWithName = false;
+            if (!currentType.IsExternal)
+            {
+                var typeName = currentType?.TypeDefinition?.Name;
+                var ns = targetElement?.GetImmediateParentOfType<CodeNamespace>();
+                while (ns != ns.GetRootNamespace() && !hasChildWithName)
+                {
+                    hasChildWithName = ns.GetChildElements(true).OfType<CodeClass>().Any(c => c.Name?.Equals(typeName) == true);
+                    ns = ns?.Parent is CodeNamespace n ? n : (ns?.GetImmediateParentOfType<CodeNamespace>());
+                }
+            }
+            return hasChildWithName;
         }
         public override string TranslateType(CodeType type)
         {
@@ -138,26 +159,5 @@ namespace Kiota.Builder.Writers.CSharp {
             };
             return $"{parameterType} {parameter.Name.ToFirstCharacterLowerCase()}{defaultValue}";
         }
-
-        public string GetTargetTypeDeclarationRelativeToElement(CodeTypeBase targetType, CodeMethod codeElement)
-        {
-            var targetClass = GetTypeString(targetType, codeElement);
-            if (targetType is CodeType type)
-            {
-                // Include namespace to avoid type ambiguity on similarly named classes. Currently, if we have namespaces A and A.B where both namespaces have type T,
-                // Trying to use type A.B.T in namespace A without using the fully qualified name will break the build.
-                var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>()?.Name;
-                var returnNamespace = type.TypeDefinition.GetImmediateParentOfType<CodeNamespace>()?.Name;
-                var returnNamespacePrefix = returnNamespace?.Replace(parentNamespace, string.Empty);
-                if (returnNamespacePrefix?.StartsWith('.') == true)
-                    returnNamespacePrefix = returnNamespacePrefix.Remove(0, 1);
-
-                if (!string.IsNullOrEmpty(returnNamespacePrefix))
-                    targetClass = string.Join(".", returnNamespacePrefix, targetClass);
-            }
-
-            return targetClass;
-        }
-
     }
 }
