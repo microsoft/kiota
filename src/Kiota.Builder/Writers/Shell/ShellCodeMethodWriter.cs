@@ -220,7 +220,7 @@ namespace Kiota.Builder.Writers.Shell
                     var formatterTypeVal = "FormatterType.TEXT";
                     if (conventions.IsPrimitiveType(typeString))
                     {
-                        writer.WriteLine($"IOutputFormatterOptions? {formatterOptionsVar} = null;");
+                        formatterOptionsVar = "null";
                     } else
                     {
                         formatterTypeVal = outputFormatParamName;
