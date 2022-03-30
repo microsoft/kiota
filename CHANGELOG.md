@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where the base url of the request adapter would be reset by the client. [#1443](https://github.com/microsoft/kiota/issues/1443)
 - Fixed a bug where request builder classes for collections endpoints would have a wrong name. #1052
 - Fixed a bug where symbols (properties, methods, classes) could contain invalid characters #1436
 
