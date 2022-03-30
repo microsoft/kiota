@@ -727,7 +727,7 @@ public class KiotaBuilder
         if(parameterClass != null) {
             var qsParam = new CodeParameter
             {
-                Name = "q",
+                Name = "queryParameters",
                 Optional = true,
                 Kind = CodeParameterKind.QueryParameter,
                 Description = "Request query parameters",
@@ -736,7 +736,7 @@ public class KiotaBuilder
             method.AddParameter(qsParam);
         }
         var headersParam = new CodeParameter {
-            Name = "h",
+            Name = "headers",
             Optional = true,
             Kind = CodeParameterKind.Headers,
             Description = "Request headers",
@@ -744,7 +744,7 @@ public class KiotaBuilder
         };
         method.AddParameter(headersParam);
         var optionsParam = new CodeParameter {
-            Name = "o",
+            Name = "options",
             Optional = true,
             Kind = CodeParameterKind.Options,
             Description = "Request options",
