@@ -1,0 +1,26 @@
+name: Swift abstractions
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths: ['abstractions/swift/**', '.github/workflows/**']
+  pull_request:
+    paths: ['abstractions/swift/**', '.github/workflows/**']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      relativePath: ./abstractions/swift
+    steps:
+      - uses: actions/checkout@v3
+      - uses: fwal/setup-swift@v1
+        with:
+          swift-version: '5.6.0'
+      - name: Build SDK project
+        run: swift build
+        working-directory: ${{ env.relativePath }}
+      - name: Run unit tests
+        run: swift test
+        working-directory: ${{ env.relativePath }}

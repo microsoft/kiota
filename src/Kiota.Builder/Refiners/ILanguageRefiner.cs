@@ -27,6 +27,9 @@
                 case GenerationLanguage.Shell:
                     new ShellRefiner(config).Refine(generatedCode);
                     break;
+                case GenerationLanguage.Swift:
+                    new SwiftRefiner(config).Refine(generatedCode);
+                    break;
                 default:
                     break; //Do nothing
             }
