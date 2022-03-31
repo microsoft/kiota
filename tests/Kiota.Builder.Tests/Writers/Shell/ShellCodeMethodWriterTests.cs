@@ -331,14 +331,15 @@ public class ShellCodeMethodWriterTests : IDisposable
         method.Description = "Test description";
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Get;
+        var userClass = root.AddClass(new CodeClass
+        {
+            Name = "User",
+            Kind = CodeClassKind.Model
+        }).First();
         var stringType = new CodeType
         {
             Name = "user",
-            TypeDefinition = new CodeClass
-            {
-                Name = "User",
-                Kind = CodeClassKind.Model
-            },
+            TypeDefinition = userClass,
         };
         var generatorMethod = new CodeMethod
         {
@@ -395,14 +396,15 @@ public class ShellCodeMethodWriterTests : IDisposable
         {
             Name = "string",
         };
+        var contentClass = root.AddClass(new CodeClass
+        {
+            Name = "Content",
+            Kind = CodeClassKind.Model
+        }).First();
         var bodyType = new CodeType
         {
             Name = "content",
-            TypeDefinition = new CodeClass
-            {
-                Name = "Content",
-                Kind = CodeClassKind.Model
-            },
+            TypeDefinition = contentClass,
         };
         var generatorMethod = new CodeMethod
         {
@@ -459,14 +461,15 @@ public class ShellCodeMethodWriterTests : IDisposable
         {
             Name = "string",
         };
+        var contentClass = root.AddClass(new CodeClass
+        {
+            Name = "Content",
+            Kind = CodeClassKind.Model
+        }).First();
         var bodyType = new CodeType
         {
             Name = "content",
-            TypeDefinition = new CodeClass
-            {
-                Name = "Content",
-                Kind = CodeClassKind.Model
-            },
+            TypeDefinition = contentClass,
             CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex
         };
         var generatorMethod = new CodeMethod
