@@ -7,19 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import java.net.HttpURLConnection;
-import java.sql.Time;
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalUnit;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -31,7 +23,6 @@ import com.microsoft.kiota.http.middleware.options.RetryHandlerOption;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
-import org.mockito.internal.matchers.Null;
 
 import okhttp3.MediaType;
 import okhttp3.Protocol;
