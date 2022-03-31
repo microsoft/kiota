@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -15,7 +15,7 @@ namespace Kiota.Builder.Writers.CSharp {
         public override string ParseNodeInterfaceName => "IParseNode";
         public override void WriteShortDescription(string description, LanguageWriter writer) {
             if(!string.IsNullOrEmpty(description))
-                writer.WriteLine($"{DocCommentPrefix}<summary>{description}</summary>");
+                writer.WriteLine($"{DocCommentPrefix}<summary>{description.CleanupXMLString()}</summary>");
         }
         public override string GetAccessModifier(AccessModifier access)
         {
@@ -94,11 +94,14 @@ namespace Kiota.Builder.Writers.CSharp {
                 parentElements.AddRange(parentClass.Methods.Select(x => x.Name).Union(parentClass.Properties.Select(x => x.Name)));
             var parentElementsHash = new HashSet<string>(parentElements, StringComparer.OrdinalIgnoreCase);
             var typeName = TranslateType(currentType);
-            if(currentType.TypeDefinition != null &&
-                (GetNamesInUseByNamespaceSegments(targetElement).Contains(typeName) &&
-                !DoesTypeExistsInSameNamesSpaceAsTarget(currentType,targetElement) ||
-                parentElementsHash.Contains(typeName) ||
-                DoesTypeExistsInTargetAncestorNamespace(currentType, targetElement)))
+            var areElementsInSameNamesSpace = DoesTypeExistsInSameNamesSpaceAsTarget(currentType, targetElement);
+            if (currentType.TypeDefinition != null &&
+                    (
+                        GetNamesInUseByNamespaceSegments(targetElement).Contains(typeName) && !areElementsInSameNamesSpace         // match if elements are not in the same namespace and the type name is used in the namespace segments
+                    ||  parentElementsHash.Contains(typeName)                                                                   // match if type name is used in the parent elements segments
+                    ||  !areElementsInSameNamesSpace && DoesTypeExistsInTargetAncestorNamespace(currentType, targetElement)     // match if elements are not in the same namespace and the type exists in target ancestor namespace
+                    )
+                )
                 return $"{currentType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>().Name}.{typeName}";
             else
                 return typeName;

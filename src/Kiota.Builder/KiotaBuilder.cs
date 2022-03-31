@@ -526,7 +526,7 @@ public class KiotaBuilder
             Name = propertyName,
             DefaultValue = defaultValue,
             Kind = kind,
-            Description = typeSchema?.Description,
+            Description = typeSchema?.Description ?? $"The {propertyName} property",
         };
         if(propertyName != childIdentifier)
             prop.SerializationName = childIdentifier;
