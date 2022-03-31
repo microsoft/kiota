@@ -5,6 +5,9 @@ on:
     branches: [main]
     tags: ['v*']
     paths: ['src/**', '.github/workflows/**']
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/generator
 jobs:
   push_to_registry:
     environment:
@@ -19,7 +22,7 @@ jobs:
         with:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-          registry: docker.pkg.github.com
+          registry: ${{ env.REGISTRY }}
       - run: |
           $version = $Env:BRANCH_NAME -replace "refs/tags/v",""
           echo "::set-output name=version::${version}"
@@ -33,10 +36,10 @@ jobs:
         uses: docker/build-push-action@v2.10.0
         with:
           push: true
-          tags: docker.pkg.github.com/microsoft/kiota/generator:nightly
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nightly
       - name: Push to GitHub Packages - Release
         if: contains(github.ref, 'refs/tags/v')
         uses: docker/build-push-action@v2.10.0
         with:
           push: true
-          tags: docker.pkg.github.com/microsoft/kiota/generator:latest,docker.pkg.github.com/microsoft/kiota/generator:${{ steps.getversion.outputs.version }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.getversion.outputs.version }}
