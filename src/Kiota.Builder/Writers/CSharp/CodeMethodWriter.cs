@@ -72,8 +72,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 throw new InvalidOperationException("getters and setters are automatically added on fields in dotnet");
             case CodeMethodKind.RequestBuilderBackwardCompatibility:
                 throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
-            case CodeMethodKind.NullCheck:
-                throw new InvalidOperationException("NullChecks are not required in C#");
             case CodeMethodKind.CommandBuilder:
                 var origParams = codeElement.OriginalMethod?.Parameters ?? codeElement.Parameters;
                 requestBodyParam = origParams.OfKind(CodeParameterKind.RequestBody);
@@ -115,7 +113,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         var requestAdapterPropertyName = requestAdapterProperty.Name.ToFirstCharacterUpperCase();
         WriteSerializationRegistration(method.SerializerModules, writer, "RegisterDefaultSerializer");
         WriteSerializationRegistration(method.DeserializerModules, writer, "RegisterDefaultDeserializer");
+        writer.WriteLine($"if (string.IsNullOrEmpty({requestAdapterPropertyName}.BaseUrl)) {{");
+        writer.IncreaseIndent();
         writer.WriteLine($"{requestAdapterPropertyName}.BaseUrl = \"{method.BaseUrl}\";");
+        writer.CloseBlock();
         if (backingStoreParameter != null)
             writer.WriteLine($"{requestAdapterPropertyName}.EnableBackingStore({backingStoreParameter.Name});");
     }

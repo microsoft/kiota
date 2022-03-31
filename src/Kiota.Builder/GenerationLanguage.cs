@@ -6,6 +6,7 @@
         PHP,
         Python,
         Go,
+        Swift,
         Ruby,
         Shell
     }

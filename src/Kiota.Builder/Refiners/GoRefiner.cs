@@ -29,9 +29,6 @@ public class GoRefiner : CommonLanguageRefiner
             generatedCode,
             _configuration.UsesBackingStore
         );
-        AddNullCheckMethods(
-            generatedCode
-        );
         AddRawUrlConstructorOverload(
             generatedCode
         );
@@ -82,10 +79,12 @@ public class GoRefiner : CommonLanguageRefiner
             generatedCode);
         ReplaceDefaultSerializationModules(
             generatedCode,
-            "github.com/microsoft/kiota/serialization/go/json.JsonSerializationWriterFactory");
+            "github.com/microsoft/kiota/serialization/go/json.JsonSerializationWriterFactory",
+            "github.com/microsoft/kiota/serialization/go/text.TextSerializationWriterFactory");
         ReplaceDefaultDeserializationModules(
             generatedCode,
-            "github.com/microsoft/kiota/serialization/go/json.JsonParseNodeFactory");
+            "github.com/microsoft/kiota/serialization/go/json.JsonParseNodeFactory",
+            "github.com/microsoft/kiota/serialization/go/text.TextParseNodeFactory");
         AddSerializationModulesImport(
             generatedCode,
             new string[] {"github.com/microsoft/kiota/abstractions/go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota/abstractions/go.RegisterDefaultSerializer"},
@@ -167,21 +166,6 @@ public class GoRefiner : CommonLanguageRefiner
                 }
             }
         CrawlTree(currentElement, ReplaceExecutorAndGeneratorParametersByParameterSets);
-    }
-    private static void AddNullCheckMethods(CodeElement currentElement) {
-        if(currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model)) {
-            currentClass.AddMethod(new CodeMethod {
-                Name = "IsNil",
-                IsAsync = false,
-                Kind = CodeMethodKind.NullCheck,
-                ReturnType = new CodeType {
-                    Name = "boolean",
-                    IsExternal = true,
-                    IsNullable = false,
-                },
-            });
-        }
-        CrawlTree(currentElement, AddNullCheckMethods);
     }
     private static void RemoveModelPropertiesThatDependOnSubNamespaces(CodeElement currentElement) {
         if(currentElement is CodeClass currentClass && 

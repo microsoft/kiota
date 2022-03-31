@@ -34,8 +34,9 @@ namespace Kiota.Builder.Extensions {
         private static readonly char requestParametersEndChar = '}';
         private static readonly char requestParametersSectionChar = '(';
         private static readonly char requestParametersSectionEndChar = ')';
+        private const string WithKeyword = "With";
         private static readonly MatchEvaluator requestParametersMatchEvaluator = (match) => {
-            return "With" + match.Groups["paramName"].Value.ToFirstCharacterUpperCase();
+            return WithKeyword + match.Groups["paramName"].Value.ToFirstCharacterUpperCase();
         };
         private static string CleanupParametersFromPath(string pathSegment) {
             if((pathSegment?.Contains(requestParametersChar) ?? false) ||
@@ -72,8 +73,16 @@ namespace Kiota.Builder.Extensions {
                                 .TrimStart('$') //$ref from OData
                                 .Split('-')
                                 .First();
-            if((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup.IsMatch(rawClassName))
+            if((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup.IsMatch(rawClassName)) {
                 rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
+                if(rawClassName == WithKeyword) // in case the single parameter doesn't follow {classname-id} we get the previous segment
+                    rawClassName = currentNode.Path
+                                            .Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
+                                            .SkipLast(1)
+                                            .Last()
+                                            .ToFirstCharacterUpperCase();
+
+            }
             return prefix + rawClassName?.Split('.', StringSplitOptions.RemoveEmptyEntries)?.LastOrDefault() + suffix;
         }
         public static string GetPathItemDescription(this OpenApiUrlTreeNode currentNode, string label, string defaultValue = default) =>

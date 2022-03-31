@@ -154,8 +154,12 @@ func (a *NetHttpRequestAdapter) SendAsync(requestInfo *abs.RequestInformation, c
 		}
 		return result.(absser.Parsable), nil
 	} else if response != nil {
+		defer a.purge(response)
 		err = a.throwFailedResponses(response, errorMappings)
 		if err != nil {
+			return nil, err
+		}
+		if a.shouldReturnNil(response) {
 			return nil, err
 		}
 		parseNode, err := a.getRootParseNode(response)
@@ -185,8 +189,12 @@ func (a *NetHttpRequestAdapter) SendCollectionAsync(requestInfo *abs.RequestInfo
 		}
 		return result.([]absser.Parsable), nil
 	} else if response != nil {
+		defer a.purge(response)
 		err = a.throwFailedResponses(response, errorMappings)
 		if err != nil {
+			return nil, err
+		}
+		if a.shouldReturnNil(response) {
 			return nil, err
 		}
 		parseNode, err := a.getRootParseNode(response)
@@ -216,8 +224,12 @@ func (a *NetHttpRequestAdapter) SendPrimitiveAsync(requestInfo *abs.RequestInfor
 		}
 		return result.(absser.Parsable), nil
 	} else if response != nil {
+		defer a.purge(response)
 		err = a.throwFailedResponses(response, errorMappings)
 		if err != nil {
+			return nil, err
+		}
+		if a.shouldReturnNil(response) {
 			return nil, err
 		}
 		if typeName == "[]byte" {
@@ -268,8 +280,12 @@ func (a *NetHttpRequestAdapter) SendPrimitiveCollectionAsync(requestInfo *abs.Re
 		}
 		return result.([]interface{}), nil
 	} else if response != nil {
+		defer a.purge(response)
 		err = a.throwFailedResponses(response, errorMappings)
 		if err != nil {
+			return nil, err
+		}
+		if a.shouldReturnNil(response) {
 			return nil, err
 		}
 		parseNode, err := a.getRootParseNode(response)
@@ -295,6 +311,8 @@ func (a *NetHttpRequestAdapter) SendNoContentAsync(requestInfo *abs.RequestInfor
 		_, err := responseHandler(response, errorMappings)
 		return err
 	} else if response != nil {
+		defer a.purge(response)
+		err = a.throwFailedResponses(response, errorMappings)
 		return nil
 	} else {
 		return errors.New("response is nil")
@@ -307,6 +325,17 @@ func (a *NetHttpRequestAdapter) getRootParseNode(response *nethttp.Response) (ab
 		return nil, err
 	}
 	return a.parseNodeFactory.GetRootParseNode(a.getResponsePrimaryContentType(response), body)
+}
+func (a *NetHttpRequestAdapter) purge(response *nethttp.Response) error {
+	_, _ = ioutil.ReadAll(response.Body) //we don't care about errors comming from reading the body, just trying to purge anything that maybe left
+	err := response.Body.Close()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (a *NetHttpRequestAdapter) shouldReturnNil(response *nethttp.Response) bool {
+	return response.StatusCode == 204
 }
 
 func (a *NetHttpRequestAdapter) throwFailedResponses(response *nethttp.Response, errorMappings abs.ErrorMappings) error {

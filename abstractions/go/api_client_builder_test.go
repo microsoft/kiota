@@ -17,6 +17,12 @@ func (*mockSerializer) WriteStringValue(key string, value *string) error {
 func (*mockSerializer) WriteBoolValue(key string, value *bool) error {
 	return nil
 }
+func (*mockSerializer) WriteByteValue(key string, value *byte) error {
+	return nil
+}
+func (*mockSerializer) WriteInt8Value(key string, value *int8) error {
+	return nil
+}
 func (*mockSerializer) WriteInt32Value(key string, value *int32) error {
 	return nil
 }
@@ -57,6 +63,12 @@ func (*mockSerializer) WriteCollectionOfStringValues(key string, collection []st
 	return nil
 }
 func (*mockSerializer) WriteCollectionOfBoolValues(key string, collection []bool) error {
+	return nil
+}
+func (*mockSerializer) WriteCollectionOfByteValues(key string, collection []byte) error {
+	return nil
+}
+func (*mockSerializer) WriteCollectionOfInt8Values(key string, collection []int8) error {
 	return nil
 }
 func (*mockSerializer) WriteCollectionOfInt32Values(key string, collection []int32) error {

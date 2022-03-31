@@ -111,6 +111,25 @@
             "stopAtEntry": false
         },
         {
+            "name": "Launch Swift",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/kiota/bin/Debug/net6.0/kiota.dll",
+            "args": ["--openapi",
+                 "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
+                 "--language",
+                 "swift",
+                 "-o",
+                 "${workspaceFolder}/samples/msgraph-mail/Swiftconsoleapp/Sources/Swiftconsoleapp",
+                 "-n",
+                 "Swiftconsoleapp",
+                 "-co" ],
+            "cwd": "${workspaceFolder}/src/kiota",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
             "name": ".NET Core Attach",
             "type": "coreclr",
             "request": "attach",

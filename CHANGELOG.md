@@ -9,7 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added text output formatter to CLI commons. (Shell)
+- Added support for vendor specific content types generation/serialization. [#1197](https://github.com/microsoft/kiota/issues/1197)
+- Added support for 204 no content in generation and CSharp/Java/Go/TypeScript request adapters. #1410
+- Added a draft swift generation implementation. #1444
+
+### Changed
+
+- Fixed a bug where the base url of the request adapter would be reset by the client. [#1443](https://github.com/microsoft/kiota/issues/1443)
+- Fixed a bug where request builder classes for collections endpoints would have a wrong name. #1052
+- Fix issue with ambiguous type names causing build errors and stack overflows. (Shell) #1052
+- Fixed a bug where symbols (properties, methods, classes) could contain invalid characters #1436
+- Renamed parameters for requests: o => options, q => queryParameters, h => headers. [#1380](https://github.com/microsoft/kiota/issues/1380)
+
+## [0.0.20] - 2022-03-25
+
+### Changed
+
+- Moved TypeScript middleware from Graph core to kiota http.
+- Fixed a bug where errors would fail to deserialize for TypeScript.
+- Fixed a bug where decimal types would not be mapped in TypeScript.
+- Fixed circular dependencies issues for TypeScript #870.
+- Fixed a bug where JSON serialization would fail on nil properties in Go.
+- Moved typescript core packages into Kiota-TypeScript repo and delete for Kiota repo.
+- Fixed a bug where collections of complex types could be mis-represented. [#1438](https://github.com/microsoft/kiota/issues/1438)
+- Fixed a bug where inline properties would not generate their own type definition. [#1438](https://github.com/microsoft/kiota/issues/1438)
+
+## [0.0.19] - 2022-03-18
+
+### Added
+
 - Adds a `--clean-output` argument to clean the target directory before generation #1357
+- Adds support for `text/plain` responses for CSharp, Java, TypeScript and Go. #878
 
 ### Changed
 
@@ -21,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where union types with inline schema member types would fail to generate #1270
 - Fixed a bug where referenced types with no titles would fail to generate #1271
 - Fixed a bug where the generator would introduce unnecessary union types for nullables. #990
+- Moved all the dotnet libraries to their own repository. #1409
 
 ## [0.0.18] - 2022-03-14
 
@@ -84,6 +116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug with inconsistent Java namespace and directory name casing #1267
 - Fixed typeOf string check in JsonParseNode Typescript.
 - Fixed shell stream output getting processed by output formatters when no file path is provided #1291
+- Using Record type instead of Map for additionalData in TypeScript
 
 ## [0.0.16] - 2022-02-23
 

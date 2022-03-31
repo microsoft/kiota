@@ -31,6 +31,7 @@ namespace Kiota.Builder.Extensions {
             else if(!string.IsNullOrEmpty(schema.Reference?.Id)) return new OpenApiSchema[] { schema };
             else if(schema.Properties?.Any() ?? false) return new OpenApiSchema[] { schema };
             else if(schema.Items != null) return schema.Items.GetNonEmptySchemas();
+            else if(schema.AdditionalProperties != null) return new OpenApiSchema[] { schema };
             else if(schema.AnyOf.Any()) return schema.AnyOf.SelectMany(x => x.GetNonEmptySchemas());
             else if(schema.AllOf.Any()) return schema.AllOf.SelectMany(x => x.GetNonEmptySchemas());
             else if(schema.OneOf.Any()) return schema.OneOf.SelectMany(x => x.GetNonEmptySchemas());

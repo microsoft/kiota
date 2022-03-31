@@ -6,17 +6,6 @@ namespace Microsoft.Kiota.Cli.Commons.Tests.IO;
 
 public class OutputFormatterFactoryTest
 {
-    public class InstanceProperty_Should
-    {
-        [Fact]
-        public void ReturnOutputFormatterFactoryInstance()
-        {
-            var instance = new OutputFormatterFactory();
-
-            Assert.NotNull(instance);
-        }
-    }
-
     public class GetFormatterFunction_Should
     {
         [Theory]
@@ -28,26 +17,35 @@ public class OutputFormatterFactoryTest
             Assert.Throws<NotSupportedException>(() => factory.GetFormatter(formatterType));
         }
 
-        [Fact]
-        public void Return_JsonOutputFormatter_On_JSON_FormatterType()
+        [Theory]
+        [InlineData(FormatterType.JSON, typeof(JsonOutputFormatter))]
+        [InlineData(FormatterType.TABLE, typeof(TableOutputFormatter))]
+        [InlineData(FormatterType.TEXT, typeof(TextOutputFormatter))]
+        public void Return_OutputFormatter_On_FormatterType(FormatterType formatterType, Type expectedType)
         {
             var factory = new OutputFormatterFactory();
 
-            var formatter = factory.GetFormatter(FormatterType.JSON);
+            var formatter = factory.GetFormatter(formatterType);
 
             Assert.NotNull(formatter);
-            Assert.True(formatter is JsonOutputFormatter);
+            Assert.IsType(expectedType, formatter);
         }
 
-        [Fact]
-        public void Return_JsonOutputFormatter_On_JSON_String()
+        [Theory]
+        [InlineData("json", typeof(JsonOutputFormatter))]
+        [InlineData("JSON", typeof(JsonOutputFormatter))]
+        [InlineData("table", typeof(TableOutputFormatter))]
+        [InlineData("TABLE", typeof(TableOutputFormatter))]
+        [InlineData("text", typeof(TextOutputFormatter))]
+        [InlineData("TEXT", typeof(TextOutputFormatter))]
+        public void Return_OutputFormatter_On_FormatterType_String(string formatterType, Type expectedType)
         {
             var factory = new OutputFormatterFactory();
 
-            var formatter = factory.GetFormatter("json");
+            var formatter = factory.GetFormatter(formatterType);
 
             Assert.NotNull(formatter);
-            Assert.True(formatter is JsonOutputFormatter);
+            Assert.Equal(expectedType, formatter.GetType());
         }
     }
 }
