@@ -56,7 +56,7 @@ class KiotaClientFactory
      */
     public static function createWithConfig(array $guzzleConfig): Client
     {
-        return new Client($guzzleConfig);
+        return new Client(array_merge(['handler' => self::getDefaultHandlerStack()], $guzzleConfig));
     }
 
     /**

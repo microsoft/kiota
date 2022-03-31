@@ -5,9 +5,6 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import javax.annotation.Nonnull;
 
-import com.microsoft.kiota.http.middleware.MiddlewareType;
-import com.microsoft.kiota.http.middleware.options.TelemetryOptions;
-
 import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.Protocol;
@@ -50,20 +47,13 @@ public class ChaosHandler implements Interceptor {
     public Response intercept(@Nonnull final Chain chain) throws IOException {
         Request request = chain.request();
 
-        TelemetryOptions telemetryOptions = request.tag(TelemetryOptions.class);
-        if(telemetryOptions == null) {
-            telemetryOptions = new TelemetryOptions();
-            request = request.newBuilder().tag(TelemetryOptions.class, telemetryOptions).build();
-        }
-        telemetryOptions.setFeatureUsage(TelemetryOptions.RETRY_HANDLER_ENABLED_FLAG);
-
         final int dice = ThreadLocalRandom.current().nextInt(1, Integer.MAX_VALUE);
 
         if(dice % failureRate == 0) {
             return new Response
                     .Builder()
                     .request(request)
-                    .protocol(Protocol.HTTP_1_1)
+                    .protocol(Protocol.HTTP_1_1)//TODO: Confirming that this will need to be removed
                     .code(MSClientErrorCodeTooManyRequests)
                     .message("Too Many Requests")
                     .addHeader(RETRY_AFTER, retryAfterValue)

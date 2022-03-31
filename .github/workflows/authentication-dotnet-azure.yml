@@ -16,9 +16,9 @@ jobs:
       relativePath: ./authentication/dotnet/azure
       solutionName: Microsoft.Kiota.Authentication.Azure.sln
     steps:
-      - uses: actions/checkout@v2.4.0
+      - uses: actions/checkout@v3
       - name: Setup .NET
-        uses: actions/setup-dotnet@v1.9.0
+        uses: actions/setup-dotnet@v2
         with:
           dotnet-version: 6.0.x
       - name: Add NuGet kiota source
@@ -60,7 +60,7 @@ jobs:
     needs: [build]
     steps:
       - name: Setup .NET
-        uses: actions/setup-dotnet@v1.9.0
+        uses: actions/setup-dotnet@v2
         with:
           dotnet-version: 6.0.x
       - uses: actions/download-artifact@v2

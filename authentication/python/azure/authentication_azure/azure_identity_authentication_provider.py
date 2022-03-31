@@ -1,18 +1,18 @@
-import imp
-from typing import Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Dict, List, Optional, Set
 
 from kiota.abstractions.authentication import BaseBearerTokenAuthenticationProvider
 
-from azure.core.credentials_async import AsyncTokenCredential
-
 from .azure_identity_access_token_provider import AzureIdentityAccessTokenProvider
+
+if TYPE_CHECKING:
+    from azure.core.credentials_async import AsyncTokenCredential
 
 
 class AzureIdentityAuthenticationProvider(BaseBearerTokenAuthenticationProvider):
 
     def __init__(
         self,
-        credentials: AsyncTokenCredential,
+        credentials: "AsyncTokenCredential",
         options: Optional[Dict],
         scopes: List[str] = ['https://graph.microsoft.com/.default'],
         allowed_hosts: Set[str] = {

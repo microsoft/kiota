@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Xunit;
 
@@ -14,6 +15,151 @@ public class TypeScriptLanguageRefinerTests {
         };
         graphNS.AddClass(parentClass);
     }
+#region commonrefiner
+    [Fact]
+    public void AddStaticMethodsUsingsForDeserializer() {
+        var model = graphNS.AddClass(new CodeClass {
+            Name = "somemodel",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+
+        model.AddMethod(new CodeMethod {
+            Name = "Deserialize",
+            Kind = CodeMethodKind.Deserializer,
+            IsAsync = false,
+            ReturnType = new CodeType {
+                Name = "void",
+                IsExternal = true,
+            },
+        });
+
+        var subNs = graphNS.AddNamespace($"{graphNS.Name}.subns");
+
+        var propertyModel = subNs.AddClass(new CodeClass {
+            Name = "somepropertyModel",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+
+        propertyModel.AddMethod(new CodeMethod {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            IsAsync = false,
+            IsStatic = true,
+            ReturnType = new CodeType {
+                Name = "void",
+                IsExternal = true,
+            },
+        });
+
+        model.AddProperty(new CodeProperty {
+            Name = "someProperty",
+            Type = new CodeType {
+                Name = "somepropertyModel",
+                TypeDefinition = propertyModel,
+            },
+        });
+
+        Assert.Empty(graphNS.GetChildElements(true).OfType<CodeFunction>());
+        Assert.Single(model.GetChildElements(true).OfType<CodeMethod>());
+
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, graphNS);
+        Assert.Empty(model.GetChildElements(true).OfType<CodeMethod>().Where(x => x.IsOfKind(CodeMethodKind.Factory)));
+        Assert.Single(subNs.GetChildElements(true).OfType<CodeFunction>());
+
+        var function = subNs.GetChildElements(true).OfType<CodeFunction>().First();
+        Assert.Single(model.Usings.Where(x => !x.IsExternal && x.Declaration.TypeDefinition == function));
+
+    }
+    [Fact]
+    public void AddsExceptionInheritanceOnErrorClasses() {
+        var model = root.AddClass(new CodeClass {
+            Name = "somemodel",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+
+        var declaration = model.StartBlock;
+
+        Assert.Contains("ApiError", declaration.Usings.Select(x => x.Name));
+        Assert.Equal("ApiError", declaration.Inherits.Name);
+    }
+    [Fact]
+    public void FailsExceptionInheritanceOnErrorClassesWhichAlreadyInherit() {
+        var model = root.AddClass(new CodeClass {
+            Name = "somemodel",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+        var declaration = model.StartBlock;
+        declaration.Inherits = new CodeType {
+            Name = "SomeOtherModel"
+        };
+        Assert.Throws<InvalidOperationException>(() => ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root));
+    }
+    [Fact]
+    public void AddsUsingsForErrorTypesForRequestExecutor() {
+        var requestBuilder = root.AddClass(new CodeClass {
+            Name = "somerequestbuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        var subNS = root.AddNamespace($"{root.Name}.subns"); // otherwise the import gets trimmed
+        var errorClass = subNS.AddClass(new CodeClass {
+            Name = "Error4XX",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+        var requestExecutor = requestBuilder.AddMethod(new CodeMethod {
+            Name = "get",
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType {
+                Name = "string"
+            },
+        }).First();
+        requestExecutor.AddErrorMapping("4XX", new CodeType {
+                        Name = "Error4XX",
+                        TypeDefinition = errorClass,
+                    });
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+
+        var declaration = requestBuilder.StartBlock;
+
+        Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
+    }
+    [Fact]
+    public void AddsUsingsForDiscriminatorTypes() {
+        var parentModel = root.AddClass(new CodeClass {
+            Name = "parentModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var childModel = root.AddClass(new CodeClass {
+            Name = "childModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        (childModel.StartBlock).Inherits = new CodeType {
+            Name = "parentModel",
+            TypeDefinition = parentModel,
+        };
+        var factoryMethod = parentModel.AddMethod(new CodeMethod {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType {
+                Name = "parentModel",
+                TypeDefinition = parentModel,
+            },
+            IsStatic = true,
+        }).First();
+        factoryMethod.AddDiscriminatorMapping("ns.childmodel", new CodeType {
+                        Name = "childModel",
+                        TypeDefinition = childModel,
+                    });
+        Assert.False(factoryMethod.Parent is CodeFunction);
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        Assert.Equal(childModel, (factoryMethod.Parent as CodeFunction).StartBlock.Usings.First(x => x.Name.Equals("childModel", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
+    }
+#endregion
 #region typescript
     private const string HttpCoreDefaultName = "IRequestAdapter";
     private const string FactoryDefaultName = "ISerializationWriterFactory";
@@ -27,7 +173,7 @@ public class TypeScriptLanguageRefinerTests {
     public void EscapesReservedKeywords() {
         var model = root.AddClass(new CodeClass {
             Name = "break",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
         Assert.NotEqual("break", model.Name);
@@ -38,29 +184,29 @@ public class TypeScriptLanguageRefinerTests {
 
         var model = root.AddClass(new CodeClass () {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         model.AddProperty(new CodeProperty() {
             Name = "core",
-            PropertyKind = CodePropertyKind.RequestAdapter,
+            Kind = CodePropertyKind.RequestAdapter,
             Type = new CodeType {
                 Name = HttpCoreDefaultName
             }
         }, new () {
             Name = "someDate",
-            PropertyKind = CodePropertyKind.Custom,
+            Kind = CodePropertyKind.Custom,
             Type = new CodeType {
                 Name = DateTimeOffsetDefaultName,
             }
         }, new () {
             Name = "additionalData",
-            PropertyKind = CodePropertyKind.AdditionalData,
+            Kind = CodePropertyKind.AdditionalData,
             Type = new CodeType {
                 Name = AddiationalDataDefaultName
             }
         }, new () {
             Name = "pathParameters",
-            PropertyKind = CodePropertyKind.PathParameters,
+            Kind = CodePropertyKind.PathParameters,
             Type = new CodeType {
                 Name = PathParametersDefaultName
             },
@@ -68,14 +214,14 @@ public class TypeScriptLanguageRefinerTests {
         });
         var executorMethod = model.AddMethod(new CodeMethod {
             Name = "executor",
-            MethodKind = CodeMethodKind.RequestExecutor,
+            Kind = CodeMethodKind.RequestExecutor,
             ReturnType = new CodeType {
                 Name = "string"
             }
         }).First();
         executorMethod.AddParameter(new CodeParameter {
             Name = "handler",
-            ParameterKind = CodeParameterKind.ResponseHandler,
+            Kind = CodeParameterKind.ResponseHandler,
             Type = new CodeType {
                 Name = HandlerDefaultName,
             }
@@ -83,28 +229,28 @@ public class TypeScriptLanguageRefinerTests {
         const string serializerDefaultName = "ISerializationWriter";
         var serializationMethod = model.AddMethod(new CodeMethod {
             Name = "seriailization",
-            MethodKind = CodeMethodKind.Serializer,
+            Kind = CodeMethodKind.Serializer,
             ReturnType = new CodeType {
                 Name = "string"
             }
         }).First();
         serializationMethod.AddParameter(new CodeParameter {
             Name = "handler",
-            ParameterKind = CodeParameterKind.Serializer,
+            Kind = CodeParameterKind.Serializer,
             Type = new CodeType {
                 Name = serializerDefaultName,
             }
         });
         var constructorMethod = model.AddMethod(new CodeMethod {
             Name = "constructor",
-            MethodKind = CodeMethodKind.Constructor,
+            Kind = CodeMethodKind.Constructor,
             ReturnType = new CodeType {
                 Name = "void"
             }
         }).First();
         constructorMethod.AddParameter(new CodeParameter {
             Name = "pathParameters",
-            ParameterKind = CodeParameterKind.PathParameters,
+            Kind = CodeParameterKind.PathParameters,
             Type = new CodeType {
                 Name = PathParametersDefaultName
             },
@@ -125,7 +271,7 @@ public class TypeScriptLanguageRefinerTests {
     public void ReplacesDateTimeOffsetByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var method = model.AddMethod(new CodeMethod {
             Name = "method",
@@ -141,7 +287,7 @@ public class TypeScriptLanguageRefinerTests {
     public void ReplacesDateOnlyByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var method = model.AddMethod(new CodeMethod {
             Name = "method",
@@ -157,7 +303,7 @@ public class TypeScriptLanguageRefinerTests {
     public void ReplacesTimeOnlyByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var method = model.AddMethod(new CodeMethod {
             Name = "method",
@@ -173,7 +319,7 @@ public class TypeScriptLanguageRefinerTests {
     public void ReplacesDurationByNativeType() {
         var model = root.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var method = model.AddMethod(new CodeMethod {
             Name = "method",
@@ -189,17 +335,17 @@ public class TypeScriptLanguageRefinerTests {
     public void AliasesDuplicateUsingSymbols() {
         var model = graphNS.AddClass(new CodeClass {
             Name = "model",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var modelsNS = graphNS.AddNamespace($"{graphNS.Name}.models");
         var source1 = modelsNS.AddClass(new CodeClass {
             Name = "source",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
         var submodelsNS = modelsNS.AddNamespace($"{modelsNS.Name}.submodels");
         var source2 = submodelsNS.AddClass(new CodeClass {
             Name = "source",
-            ClassKind = CodeClassKind.Model
+            Kind = CodeClassKind.Model
         }).First();
 
         var using1 = new CodeUsing {
@@ -231,12 +377,12 @@ public class TypeScriptLanguageRefinerTests {
         var model = root.AddClass(new CodeClass
         {
             Name = "model",
-            ClassKind = CodeClassKind.RequestBuilder
+            Kind = CodeClassKind.RequestBuilder
         }).First();
         var method = model.AddMethod(new CodeMethod
         {
             Name = "getMethod",
-            MethodKind = CodeMethodKind.RequestExecutor,
+            Kind = CodeMethodKind.RequestExecutor,
             ReturnType = new CodeType
             {
                 Name = "string"
@@ -246,7 +392,7 @@ public class TypeScriptLanguageRefinerTests {
         {
             Name = "cancelletionToken",
             Optional = true,
-            ParameterKind = CodeParameterKind.Cancellation,
+            Kind = CodeParameterKind.Cancellation,
             Description = "Cancellation token to use when cancelling requests",
             Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
         };

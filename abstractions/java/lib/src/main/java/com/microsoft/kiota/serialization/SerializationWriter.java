@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.EnumSet;
 import java.lang.Enum;
+import java.math.BigDecimal;
 import java.util.function.Consumer;
 import java.util.function.BiConsumer;
 
@@ -30,6 +31,24 @@ public interface SerializationWriter extends Closeable {
      * @param value the value to write to the stream.
      */
     void writeBooleanValue(@Nullable final String key, @Nonnull final Boolean value);
+    /**
+     * Writes the specified Byte value to the stream with an optional given key.
+     * @param key the key to write the value with.
+     * @param value the value to write to the stream.
+     */
+    void writeByteValue(@Nullable final String key, @Nonnull final Byte value);
+    /**
+     * Writes the specified Short value to the stream with an optional given key.
+     * @param key the key to write the value with.
+     * @param value the value to write to the stream.
+     */
+    void writeShortValue(@Nullable final String key, @Nonnull final Short value);
+    /**
+     * Writes the specified BigDecimal value to the stream with an optional given key.
+     * @param key the key to write the value with.
+     * @param value the value to write to the stream.
+     */
+    void writeBigDecimalValue(@Nullable final String key, @Nonnull final BigDecimal value);
     /**
      * Writes the specified Integer value to the stream with an optional given key.
      * @param key the key to write the value with.

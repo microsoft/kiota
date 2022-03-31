@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"io/ioutil"
+	"strconv"
 	"strings"
 
 	ctx "context"
@@ -87,7 +88,7 @@ func (a *NetHttpRequestAdapter) SetBaseUrl(baseUrl string) {
 func (a *NetHttpRequestAdapter) GetBaseUrl() string {
 	return a.baseUrl
 }
-func (a *NetHttpRequestAdapter) getHttpResponseMessage(requestInfo abs.RequestInformation) (*nethttp.Response, error) {
+func (a *NetHttpRequestAdapter) getHttpResponseMessage(requestInfo *abs.RequestInformation) (*nethttp.Response, error) {
 	a.setBaseUrlForRequestInformation(requestInfo)
 	err := a.authenticationProvider.AuthenticateRequest(requestInfo)
 	if err != nil {
@@ -107,10 +108,10 @@ func (a *NetHttpRequestAdapter) getResponsePrimaryContentType(response *nethttp.
 	splat := strings.Split(rawType, ";")
 	return strings.ToLower(splat[0])
 }
-func (a *NetHttpRequestAdapter) setBaseUrlForRequestInformation(requestInfo abs.RequestInformation) {
+func (a *NetHttpRequestAdapter) setBaseUrlForRequestInformation(requestInfo *abs.RequestInformation) {
 	requestInfo.PathParameters["baseurl"] = a.GetBaseUrl()
 }
-func (a *NetHttpRequestAdapter) getRequestFromRequestInformation(requestInfo abs.RequestInformation) (*nethttp.Request, error) {
+func (a *NetHttpRequestAdapter) getRequestFromRequestInformation(requestInfo *abs.RequestInformation) (*nethttp.Request, error) {
 	uri, err := requestInfo.GetUri()
 	if err != nil {
 		return nil, err
@@ -138,23 +139,26 @@ func (a *NetHttpRequestAdapter) getRequestFromRequestInformation(requestInfo abs
 }
 
 // SendAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized response model.
-func (a *NetHttpRequestAdapter) SendAsync(requestInfo abs.RequestInformation, constructor func() absser.Parsable, responseHandler abs.ResponseHandler) (absser.Parsable, error) {
+func (a *NetHttpRequestAdapter) SendAsync(requestInfo *abs.RequestInformation, constructor absser.ParsableFactory, responseHandler abs.ResponseHandler, errorMappings abs.ErrorMappings) (absser.Parsable, error) {
+	if requestInfo == nil {
+		return nil, errors.New("requestInfo cannot be nil")
+	}
 	response, err := a.getHttpResponseMessage(requestInfo)
 	if err != nil {
 		return nil, err
 	}
 	if responseHandler != nil {
-		result, err := responseHandler(response)
+		result, err := responseHandler(response, errorMappings)
 		if err != nil {
 			return nil, err
 		}
 		return result.(absser.Parsable), nil
 	} else if response != nil {
-		body, err := ioutil.ReadAll(response.Body)
+		err = a.throwFailedResponses(response, errorMappings)
 		if err != nil {
 			return nil, err
 		}
-		parseNode, err := a.parseNodeFactory.GetRootParseNode(a.getResponsePrimaryContentType(response), body)
+		parseNode, err := a.getRootParseNode(response)
 		if err != nil {
 			return nil, err
 		}
@@ -166,23 +170,26 @@ func (a *NetHttpRequestAdapter) SendAsync(requestInfo abs.RequestInformation, co
 }
 
 // SendCollectionAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized response model collection.
-func (a *NetHttpRequestAdapter) SendCollectionAsync(requestInfo abs.RequestInformation, constructor func() absser.Parsable, responseHandler abs.ResponseHandler) ([]absser.Parsable, error) {
+func (a *NetHttpRequestAdapter) SendCollectionAsync(requestInfo *abs.RequestInformation, constructor absser.ParsableFactory, responseHandler abs.ResponseHandler, errorMappings abs.ErrorMappings) ([]absser.Parsable, error) {
+	if requestInfo == nil {
+		return nil, errors.New("requestInfo cannot be nil")
+	}
 	response, err := a.getHttpResponseMessage(requestInfo)
 	if err != nil {
 		return nil, err
 	}
 	if responseHandler != nil {
-		result, err := responseHandler(response)
+		result, err := responseHandler(response, errorMappings)
 		if err != nil {
 			return nil, err
 		}
 		return result.([]absser.Parsable), nil
 	} else if response != nil {
-		body, err := ioutil.ReadAll(response.Body)
+		err = a.throwFailedResponses(response, errorMappings)
 		if err != nil {
 			return nil, err
 		}
-		parseNode, err := a.parseNodeFactory.GetRootParseNode(a.getResponsePrimaryContentType(response), body)
+		parseNode, err := a.getRootParseNode(response)
 		if err != nil {
 			return nil, err
 		}
@@ -194,23 +201,29 @@ func (a *NetHttpRequestAdapter) SendCollectionAsync(requestInfo abs.RequestInfor
 }
 
 // SendPrimitiveAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model.
-func (a *NetHttpRequestAdapter) SendPrimitiveAsync(requestInfo abs.RequestInformation, typeName string, responseHandler abs.ResponseHandler) (interface{}, error) {
+func (a *NetHttpRequestAdapter) SendPrimitiveAsync(requestInfo *abs.RequestInformation, typeName string, responseHandler abs.ResponseHandler, errorMappings abs.ErrorMappings) (interface{}, error) {
+	if requestInfo == nil {
+		return nil, errors.New("requestInfo cannot be nil")
+	}
 	response, err := a.getHttpResponseMessage(requestInfo)
 	if err != nil {
 		return nil, err
 	}
 	if responseHandler != nil {
-		result, err := responseHandler(response)
+		result, err := responseHandler(response, errorMappings)
 		if err != nil {
 			return nil, err
 		}
 		return result.(absser.Parsable), nil
 	} else if response != nil {
-		body, err := ioutil.ReadAll(response.Body)
+		err = a.throwFailedResponses(response, errorMappings)
 		if err != nil {
 			return nil, err
 		}
-		parseNode, err := a.parseNodeFactory.GetRootParseNode(a.getResponsePrimaryContentType(response), body)
+		if typeName == "[]byte" {
+			return ioutil.ReadAll(response.Body)
+		}
+		parseNode, err := a.getRootParseNode(response)
 		if err != nil {
 			return nil, err
 		}
@@ -240,23 +253,26 @@ func (a *NetHttpRequestAdapter) SendPrimitiveAsync(requestInfo abs.RequestInform
 }
 
 // SendPrimitiveCollectionAsync executes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model collection.
-func (a *NetHttpRequestAdapter) SendPrimitiveCollectionAsync(requestInfo abs.RequestInformation, typeName string, responseHandler abs.ResponseHandler) ([]interface{}, error) {
+func (a *NetHttpRequestAdapter) SendPrimitiveCollectionAsync(requestInfo *abs.RequestInformation, typeName string, responseHandler abs.ResponseHandler, errorMappings abs.ErrorMappings) ([]interface{}, error) {
+	if requestInfo == nil {
+		return nil, errors.New("requestInfo cannot be nil")
+	}
 	response, err := a.getHttpResponseMessage(requestInfo)
 	if err != nil {
 		return nil, err
 	}
 	if responseHandler != nil {
-		result, err := responseHandler(response)
+		result, err := responseHandler(response, errorMappings)
 		if err != nil {
 			return nil, err
 		}
 		return result.([]interface{}), nil
 	} else if response != nil {
-		body, err := ioutil.ReadAll(response.Body)
+		err = a.throwFailedResponses(response, errorMappings)
 		if err != nil {
 			return nil, err
 		}
-		parseNode, err := a.parseNodeFactory.GetRootParseNode(a.getResponsePrimaryContentType(response), body)
+		parseNode, err := a.getRootParseNode(response)
 		if err != nil {
 			return nil, err
 		}
@@ -267,17 +283,64 @@ func (a *NetHttpRequestAdapter) SendPrimitiveCollectionAsync(requestInfo abs.Req
 }
 
 // SendNoContentAsync executes the HTTP request specified by the given RequestInformation with no return content.
-func (a *NetHttpRequestAdapter) SendNoContentAsync(requestInfo abs.RequestInformation, responseHandler abs.ResponseHandler) error {
+func (a *NetHttpRequestAdapter) SendNoContentAsync(requestInfo *abs.RequestInformation, responseHandler abs.ResponseHandler, errorMappings abs.ErrorMappings) error {
+	if requestInfo == nil {
+		return errors.New("requestInfo cannot be nil")
+	}
 	response, err := a.getHttpResponseMessage(requestInfo)
 	if err != nil {
 		return err
 	}
 	if responseHandler != nil {
-		_, err := responseHandler(response)
+		_, err := responseHandler(response, errorMappings)
 		return err
 	} else if response != nil {
 		return nil
 	} else {
 		return errors.New("response is nil")
 	}
+}
+
+func (a *NetHttpRequestAdapter) getRootParseNode(response *nethttp.Response) (absser.ParseNode, error) {
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+	return a.parseNodeFactory.GetRootParseNode(a.getResponsePrimaryContentType(response), body)
+}
+
+func (a *NetHttpRequestAdapter) throwFailedResponses(response *nethttp.Response, errorMappings abs.ErrorMappings) error {
+	if response.StatusCode < 400 {
+		return nil
+	}
+
+	statusAsString := strconv.Itoa(response.StatusCode)
+	var errorCtor absser.ParsableFactory = nil
+	if len(errorMappings) != 0 {
+		if errorMappings[statusAsString] != nil {
+			errorCtor = errorMappings[statusAsString]
+		} else if response.StatusCode >= 400 && response.StatusCode < 500 && errorMappings["4XX"] != nil {
+			errorCtor = errorMappings["4XX"]
+		} else if response.StatusCode >= 500 && response.StatusCode < 600 && errorMappings["5XX"] != nil {
+			errorCtor = errorMappings["5XX"]
+		}
+	}
+
+	if errorCtor == nil {
+		return &abs.ApiError{
+			Message: "The server returned an unexpected status code and no error factory is registered for this code: " + statusAsString,
+		}
+	}
+
+	rootNode, err := a.getRootParseNode(response)
+	if err != nil {
+		return err
+	}
+
+	errValue, err := rootNode.GetObjectValue(errorCtor)
+	if err != nil {
+		return err
+	}
+
+	return errValue.(error)
 }

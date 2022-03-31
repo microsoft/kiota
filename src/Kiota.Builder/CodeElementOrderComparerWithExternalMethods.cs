@@ -3,12 +3,15 @@ namespace Kiota.Builder {
         protected override int GetTypeFactor(CodeElement element) {
             return element switch {
                 CodeUsing => 1,
-                CodeClass.Declaration => 2,
+                ClassDeclaration => 2,
                 CodeProperty => 3,
-                CodeClass.End => 4,
-                CodeClass => 5,
-                CodeIndexer => 6,
-                CodeMethod => 7,
+                InterfaceDeclaration => 4,
+                CodeMethod when element.Parent is CodeInterface => 5, //methods are declared inside of interfaces
+                BlockEnd => 6,
+                CodeClass => 7,
+                CodeInterface => 8,
+                CodeIndexer => 9,
+                CodeMethod => 10,
                 _ => 0,
             };
         }

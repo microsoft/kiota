@@ -12,9 +12,7 @@ import java.net.ProtocolException;
 import javax.annotation.Nullable;
 import javax.annotation.Nonnull;
 
-import com.microsoft.kiota.http.middleware.MiddlewareType;
-import com.microsoft.kiota.http.middleware.options.RedirectOptions;
-import com.microsoft.kiota.http.middleware.options.TelemetryOptions;
+import com.microsoft.kiota.http.middleware.options.RedirectHandlerOption;
 
 import okhttp3.HttpUrl;
 import okhttp3.Interceptor;
@@ -31,7 +29,7 @@ public class RedirectHandler implements Interceptor{
      */
     public final MiddlewareType MIDDLEWARE_TYPE = MiddlewareType.REDIRECT;
 
-    private RedirectOptions mRedirectOptions;
+    private RedirectHandlerOption mRedirectOption;
 
     /**
      * Initialize using default redirect options, default IShouldRedirect and max redirect value
@@ -42,18 +40,18 @@ public class RedirectHandler implements Interceptor{
 
     /**
      * Initialize using custom redirect options.
-     * @param redirectOptions pass instance of redirect options to be used
+     * @param redirectOption pass instance of redirect options to be used
      */
-    public RedirectHandler(@Nullable final RedirectOptions redirectOptions) {
-        this.mRedirectOptions = redirectOptions;
-        if(redirectOptions == null) {
-            this.mRedirectOptions = new RedirectOptions();
+    public RedirectHandler(@Nullable final RedirectHandlerOption redirectOption) {
+        this.mRedirectOption = redirectOption;
+        if(redirectOption == null) {
+            this.mRedirectOption = new RedirectHandlerOption();
         }
     }
 
-    boolean isRedirected(Request request, Response response, int redirectCount, RedirectOptions redirectOptions) throws IOException {
+    boolean isRedirected(Request request, Response response, int redirectCount, RedirectHandlerOption redirectOption) throws IOException {
         // Check max count of redirects reached
-        if(redirectCount > redirectOptions.maxRedirects()) return false;
+        if(redirectCount > redirectOption.maxRedirects()) return false;
 
         // Location header empty then don't redirect
         final String locationHeader = response.header("location");
@@ -118,25 +116,17 @@ public class RedirectHandler implements Interceptor{
     @Nonnull
     public Response intercept(@Nonnull final Chain chain) throws IOException {
         Request request = chain.request();
-
-        TelemetryOptions telemetryOptions = request.tag(TelemetryOptions.class);
-        if(telemetryOptions == null) {
-            telemetryOptions = new TelemetryOptions();
-            request = request.newBuilder().tag(TelemetryOptions.class, telemetryOptions).build();
-        }
-        telemetryOptions.setFeatureUsage(TelemetryOptions.REDIRECT_HANDLER_ENABLED_FLAG);
-
         Response response = null;
         int requestsCount = 1;
 
         // Use should retry pass along with this request
-        RedirectOptions redirectOptions = request.tag(RedirectOptions.class);
-        redirectOptions = redirectOptions != null ? redirectOptions : this.mRedirectOptions;
+        RedirectHandlerOption redirectOption = request.tag(RedirectHandlerOption.class);
+        redirectOption = redirectOption != null ? redirectOption : this.mRedirectOption;
 
         while(true) {
             response = chain.proceed(request);
-            final boolean shouldRedirect = isRedirected(request, response, requestsCount, redirectOptions)
-                    && redirectOptions.shouldRedirect().shouldRedirect(response);
+            final boolean shouldRedirect = isRedirected(request, response, requestsCount, redirectOption)
+                    && redirectOption.shouldRedirect().shouldRedirect(response);
             if(!shouldRedirect) break;
 
             final Request followup = getRedirect(request, response);

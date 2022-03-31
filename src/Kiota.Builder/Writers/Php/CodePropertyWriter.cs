@@ -12,14 +12,14 @@ namespace Kiota.Builder.Writers.Php
             var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
             var propertyName = codeElement.Name.ToFirstCharacterLowerCase();
             var propertyAccess = conventions.GetAccessModifier(codeElement.Access);
-            switch (codeElement.PropertyKind)
+            switch (codeElement.Kind)
             {
                 case CodePropertyKind.RequestBuilder:
                     WriteRequestBuilderBody(codeElement, writer, returnType, propertyAccess, propertyName);
                     break;
                 default:
                     WritePropertyDocComment(codeElement, writer);
-                    writer.WriteLine($"{propertyAccess} {(codeElement.Type.IsNullable ? "?" : string.Empty)}{returnType} ${propertyName};");
+                    writer.WriteLine($"{propertyAccess} {(codeElement.Type.IsNullable ? "?" : string.Empty)}{returnType} ${propertyName}{(codeElement.Type.IsNullable ? " = null" : string.Empty)};");
                     break;
             }
             writer.WriteLine("");
@@ -49,8 +49,7 @@ namespace Kiota.Builder.Writers.Php
             writer.WriteLine($"{propertyAccess} function {propertyName}(): {returnType} {{");
             writer.IncreaseIndent();
             conventions.AddRequestBuilderBody(returnType, writer);
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
+            writer.CloseBlock();
         }
     }
 }

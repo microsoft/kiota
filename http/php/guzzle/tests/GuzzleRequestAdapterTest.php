@@ -25,6 +25,7 @@ class GuzzleRequestAdapterTest extends TestCase
     private AuthenticationProvider $authenticationProvider;
     private RequestInformation $requestInformation;
     private string $baseUrl = "https:/graph.microsoft.com";
+    private string $contentType = "application/json; odata.metadata=minimal; odata.streaming=true; IEEE754Compatible=false; charset=utf-8";
 
     protected function setUp(): void
     {
@@ -93,14 +94,14 @@ class GuzzleRequestAdapterTest extends TestCase
 
     public function testSendAsync(): void
     {
-        $requestAdapter = $this->mockRequestAdapter([new Response(200, ['Content-Type' => 'application/json'])]);
+        $requestAdapter = $this->mockRequestAdapter([new Response(200, ['Content-Type' => $this->contentType])]);
         $promise = $requestAdapter->sendAsync($this->requestInformation, TestUser::class);
         $this->assertInstanceOf(TestUser::class, $promise->wait());
     }
 
     public function testSendAsyncWithResponseHandler(): void
     {
-        $requestAdapter = $this->mockRequestAdapter([new Response(200, ['Content-Type' => 'application/json'])]);
+        $requestAdapter = $this->mockRequestAdapter([new Response(200, ['Content-Type' => $this->contentType])]);
         $customResponseHandler = $this->createMock(ResponseHandler::class);
         $customResponseHandler->expects($this->once())
             ->method('handleResponseAsync');
@@ -109,7 +110,7 @@ class GuzzleRequestAdapterTest extends TestCase
 
     public function testSendCollectionAsync(): void
     {
-        $requestAdapter = $this->mockRequestAdapter([new Response(200, ['Content-Type' => 'application/json'])]);
+        $requestAdapter = $this->mockRequestAdapter([new Response(200, ['Content-Type' => $this->contentType])]);
         $promise = $requestAdapter->sendCollectionAsync($this->requestInformation, TestUser::class);
         $result = $promise->wait();
         $this->assertIsArray($result);

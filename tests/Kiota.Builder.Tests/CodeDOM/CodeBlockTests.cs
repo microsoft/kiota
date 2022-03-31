@@ -14,7 +14,7 @@ namespace Kiota.Builder.Tests {
             child.AddRange();
             Assert.Empty(child.GetChildElements(true));
         }
-        class NeverBlock : CodeBlock
+        class NeverBlock : CodeBlock<BlockDeclaration, BlockEnd>
         {
             public void AddRange() {
                 base.AddRange((CodeClass[]) null);
@@ -78,6 +78,31 @@ namespace Kiota.Builder.Tests {
             Assert.Single(child.StartBlock.Usings);
         }
         [Fact]
+        public void RemoveUsing() {
+            var root = CodeNamespace.InitRootNamespace();
+            var child = root.AddNamespace(CodeNamespaceTests.ChildName);
+            var usng = new CodeUsing {
+                Name = "someNS"
+            };
+            child.AddUsing(usng);
+            child.StartBlock.RemoveUsings(usng);
+            Assert.Empty(child.StartBlock.Usings);
+        }
+        [Fact]
+        public void RemoveUsingByDeclarationName() {
+            var root = CodeNamespace.InitRootNamespace();
+            var child = root.AddNamespace(CodeNamespaceTests.ChildName);
+            var usng = new CodeUsing {
+                Name = "someNS",
+                Declaration = new CodeType {
+                    Name = "someClass"
+                }
+            };
+            child.AddUsing(usng);
+            child.StartBlock.RemoveUsingsByDeclarationName("someClass");
+            Assert.Empty(child.StartBlock.Usings);
+        }
+        [Fact]
         public void ThrowsWhenInsertingDuplicatedElements() {
             var root = CodeNamespace.InitRootNamespace();
             var child = root.AddNamespace(CodeNamespaceTests.ChildName);
@@ -99,7 +124,7 @@ namespace Kiota.Builder.Tests {
             }).First();
             var method = new CodeMethod {
                 Name = "method",
-                MethodKind = CodeMethodKind.RequestExecutor,
+                Kind = CodeMethodKind.RequestExecutor,
             };
             var overload = method.Clone() as CodeMethod;
             overload.AddParameter(new CodeParameter {
@@ -116,11 +141,11 @@ namespace Kiota.Builder.Tests {
             }).First();
             var property = new CodeProperty {
                 Name = "method",
-                PropertyKind = CodePropertyKind.RequestBuilder,
+                Kind = CodePropertyKind.RequestBuilder,
             };
             var indexer = new CodeMethod {
                 Name = "method",
-                MethodKind = CodeMethodKind.IndexerBackwardCompatibility
+                Kind = CodeMethodKind.IndexerBackwardCompatibility
             };
             codeClass.AddProperty(property);
             codeClass.AddMethod(indexer);
@@ -161,6 +186,22 @@ namespace Kiota.Builder.Tests {
                 Name = className
             });
             Assert.Equal(2, root.FindChildrenByName<CodeClass>(className).Count());
+        }
+        [Fact]
+        public void ReplacesImplementsByName() {
+            var root = CodeNamespace.InitRootNamespace();
+            var child = root.AddNamespace(CodeNamespaceTests.ChildName);
+            var className = "class1";
+            var model = child.AddClass(new CodeClass {
+                Name = className
+            }).First();
+            model.StartBlock.AddImplements(new CodeType {
+                Name = "IParsable",
+                IsExternal = true
+            });
+            model.StartBlock.ReplaceImplementByName("IParsable", "Parsable");
+            Assert.Empty(model.StartBlock.Implements.Where(x => x.Name == "IParsable"));
+            Assert.Single(model.StartBlock.Implements.Where(x => x.Name == "Parsable"));
         }
     }
 }

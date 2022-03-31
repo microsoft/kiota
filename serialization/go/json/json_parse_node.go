@@ -100,6 +100,16 @@ func loadJsonTree(decoder *json.Decoder) (*JsonParseNode, error) {
 			v := token.(bool)
 			c.SetValue(&v)
 			return c, nil
+		case int8:
+			c := &JsonParseNode{}
+			v := token.(int8)
+			c.SetValue(&v)
+			return c, nil
+		case byte:
+			c := &JsonParseNode{}
+			v := token.(byte)
+			c.SetValue(&v)
+			return c, nil
 		case float64:
 			c := &JsonParseNode{}
 			v := token.(float64)
@@ -146,14 +156,17 @@ func (n *JsonParseNode) GetChildNode(index string) (absser.ParseNode, error) {
 }
 
 // GetObjectValue returns the Parsable value from the node.
-func (n *JsonParseNode) GetObjectValue(ctor func() absser.Parsable) (absser.Parsable, error) {
+func (n *JsonParseNode) GetObjectValue(ctor absser.ParsableFactory) (absser.Parsable, error) {
 	if ctor == nil {
 		return nil, errors.New("constructor is nil")
 	}
 	if n == nil || n.value == nil {
 		return nil, nil
 	}
-	result := ctor()
+	result, err := ctor(n)
+	if err != nil {
+		return nil, err
+	}
 	//TODO on before when implementing backing store
 	properties, ok := n.value.(map[string]*JsonParseNode)
 	if !ok {
@@ -161,11 +174,21 @@ func (n *JsonParseNode) GetObjectValue(ctor func() absser.Parsable) (absser.Pars
 	}
 	fields := result.GetFieldDeserializers()
 	if len(properties) != 0 {
+		itemAsHolder, isHolder := result.(absser.AdditionalDataHolder)
+		var itemAdditionalData map[string]interface{}
+		if isHolder {
+			itemAdditionalData = itemAsHolder.GetAdditionalData()
+			if itemAdditionalData == nil {
+				itemAdditionalData = make(map[string]interface{})
+				itemAsHolder.SetAdditionalData(itemAdditionalData)
+			}
+		}
+
 		for key, value := range properties {
 			field := fields[key]
 			if field == nil {
-				if value != nil {
-					result.GetAdditionalData()[key] = value.value
+				if value != nil && isHolder {
+					itemAdditionalData[key] = value.value
 				}
 			} else {
 				err := field(result, value)
@@ -180,7 +203,7 @@ func (n *JsonParseNode) GetObjectValue(ctor func() absser.Parsable) (absser.Pars
 }
 
 // GetCollectionOfObjectValues returns the collection of Parsable values from the node.
-func (n *JsonParseNode) GetCollectionOfObjectValues(ctor func() absser.Parsable) ([]absser.Parsable, error) {
+func (n *JsonParseNode) GetCollectionOfObjectValues(ctor absser.ParsableFactory) ([]absser.Parsable, error) {
 	if n == nil || n.value == nil {
 		return nil, nil
 	}
@@ -230,6 +253,10 @@ func (n *JsonParseNode) getPrimitiveValue(targetType string) (interface{}, error
 		return n.GetStringValue()
 	case "bool":
 		return n.GetBoolValue()
+	case "uint8":
+		return n.GetInt8Value()
+	case "byte":
+		return n.GetByteValue()
 	case "float32":
 		return n.GetFloat32Value()
 	case "float64":
@@ -292,6 +319,22 @@ func (n *JsonParseNode) GetBoolValue() (*bool, error) {
 		return nil, nil
 	}
 	return n.value.(*bool), nil
+}
+
+// GetInt8Value returns a int8 value from the nodes.
+func (n *JsonParseNode) GetInt8Value() (*int8, error) {
+	if n == nil || n.value == nil {
+		return nil, nil
+	}
+	return n.value.(*int8), nil
+}
+
+// GetBoolValue returns a Bool value from the nodes.
+func (n *JsonParseNode) GetByteValue() (*byte, error) {
+	if n == nil || n.value == nil {
+		return nil, nil
+	}
+	return n.value.(*byte), nil
 }
 
 // GetFloat32Value returns a Float32 value from the nodes.

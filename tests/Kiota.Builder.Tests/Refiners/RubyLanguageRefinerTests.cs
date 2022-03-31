@@ -22,12 +22,12 @@ namespace Kiota.Builder.Refiners.Tests {
             var model = root.AddClass(new CodeClass
             {
                 Name = "model",
-                ClassKind = CodeClassKind.RequestBuilder
+                Kind = CodeClassKind.RequestBuilder
             }).First();
             var method = model.AddMethod(new CodeMethod
             {
                 Name = "getMethod",
-                MethodKind = CodeMethodKind.RequestExecutor,
+                Kind = CodeMethodKind.RequestExecutor,
                 ReturnType = new CodeType
                 {
                     Name = "string"
@@ -37,7 +37,7 @@ namespace Kiota.Builder.Refiners.Tests {
             {
                 Name = "cancelletionToken",
                 Optional = true,
-                ParameterKind = CodeParameterKind.Cancellation,
+                Kind = CodeParameterKind.Cancellation,
                 Description = "Cancellation token to use when cancelling requests",
                 Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
             };
@@ -50,15 +50,15 @@ namespace Kiota.Builder.Refiners.Tests {
         public void AddsDefaultImports() {
             var model = root.AddClass(new CodeClass {
                 Name = "model",
-                ClassKind = CodeClassKind.Model
+                Kind = CodeClassKind.Model
             }).First();
             var requestBuilder = root.AddClass(new CodeClass {
                 Name = "rb",
-                ClassKind = CodeClassKind.RequestBuilder,
+                Kind = CodeClassKind.RequestBuilder,
             }).First();
             requestBuilder.AddMethod(new CodeMethod {
                 Name = "get",
-                MethodKind = CodeMethodKind.RequestExecutor,
+                Kind = CodeMethodKind.RequestExecutor,
             });
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
             Assert.NotEmpty(model.StartBlock.Usings);
@@ -70,7 +70,7 @@ namespace Kiota.Builder.Refiners.Tests {
         public void CorrectsCoreTypes() {
             var model = root.AddClass(new CodeClass {
                 Name = "rb",
-                ClassKind = CodeClassKind.RequestBuilder
+                Kind = CodeClassKind.RequestBuilder
             }).First();
             var property = model.AddProperty(new CodeProperty {
                 Name = "name",
@@ -78,7 +78,7 @@ namespace Kiota.Builder.Refiners.Tests {
                     Name = "string",
                     IsExternal = true
                 },
-                PropertyKind = CodePropertyKind.PathParameters,
+                Kind = CodePropertyKind.PathParameters,
                 DefaultValue = "wrongDefaultValue"
             }).First();
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
@@ -88,7 +88,7 @@ namespace Kiota.Builder.Refiners.Tests {
         public void EscapesReservedKeywords() {
             var model = root.AddClass(new CodeClass {
                 Name = "break",
-                ClassKind = CodeClassKind.Model
+                Kind = CodeClassKind.Model
             }).First();
             ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
             Assert.NotEqual("break", model.Name);
@@ -98,9 +98,9 @@ namespace Kiota.Builder.Refiners.Tests {
         public void AddInheritedAndMethodTypesImports() {
             var model = root.AddClass(new CodeClass {
                 Name = "model",
-                ClassKind = CodeClassKind.Model
+                Kind = CodeClassKind.Model
             }).First();
-            var declaration = model.StartBlock as CodeClass.Declaration;
+            var declaration = model.StartBlock as ClassDeclaration;
             declaration.Inherits = new (){
                 Name = "someInterface"
             };
@@ -111,13 +111,13 @@ namespace Kiota.Builder.Refiners.Tests {
         public void FixInheritedEntityType() {
             var model = root.AddClass(new CodeClass {
                 Name = "model",
-                ClassKind = CodeClassKind.Model
+                Kind = CodeClassKind.Model
             }).First();
             var entity = graphNS.AddClass(new CodeClass {
                 Name = "entity",
-                ClassKind = CodeClassKind.Model
+                Kind = CodeClassKind.Model
             }).First();
-            var declaration = model.StartBlock as CodeClass.Declaration;
+            var declaration = model.StartBlock as ClassDeclaration;
             declaration.Inherits = new (){
                 Name = "entity"
             };
@@ -126,7 +126,7 @@ namespace Kiota.Builder.Refiners.Tests {
         }
         [Fact]
         public void AddNamespaceModuleImports() {
-            var declaration = parentClass.StartBlock as CodeClass.Declaration;
+            var declaration = parentClass.StartBlock as ClassDeclaration;
             var subNS = graphNS.AddNamespace($"{graphNS.Name}.messages");
             var messageClassDef = new CodeClass {
                 Name = "Message",
