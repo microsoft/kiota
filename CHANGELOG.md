@@ -15,13 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a draft swift generation implementation. #1444
 
 ### Changed
-
+- Fixed a bug where the base url of the request adapter would be reset by the client(PHP). [#1469](https://github.com/microsoft/kiota/issues/1469)
+- Fix issue where custom date types are never corrected for method parameters(PHP). #1474
+- Replace DateTimeOffset with DateTime for custom date types(PHP). #1474
 - Fixed a bug where the base url of the request adapter would be reset by the client. [#1443](https://github.com/microsoft/kiota/issues/1443)
 - Fixed a bug where request builder classes for collections endpoints would have a wrong name. #1052
 - Fix issue with ambiguous type names causing build errors and stack overflows. (Shell) #1052
 - Fixed a bug where symbols (properties, methods, classes) could contain invalid characters #1436
 - Renamed parameters for requests: o => options, q => queryParameters, h => headers. [#1380](https://github.com/microsoft/kiota/issues/1380)
-
 ## [0.0.20] - 2022-03-25
 
 ### Changed
