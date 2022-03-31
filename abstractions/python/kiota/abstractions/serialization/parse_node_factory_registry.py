@@ -15,7 +15,7 @@ class ParseNodeFactoryRegistry(ParseNodeFactory):
     __instance = None
 
     def __new__(cls, *args, **kwargs):
-        """Default singleton instance of the registry to be used when registring new
+        """Default singleton instance of the registry to be used when registering new
         factories that should be available by default.
 
         Returns:

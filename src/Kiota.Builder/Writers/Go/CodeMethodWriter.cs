@@ -70,9 +70,6 @@ namespace Kiota.Builder.Writers.Go {
                 case CodeMethodKind.RequestBuilderWithParameters:
                     WriteRequestBuilderBody(parentClass, codeElement, writer);
                     break;
-                case CodeMethodKind.NullCheck:
-                    WriteNullCheckBody(writer);
-                    break;
                 case CodeMethodKind.Factory:
                     WriteFactoryMethodBody(codeElement, writer);
                     break;
@@ -115,10 +112,6 @@ namespace Kiota.Builder.Writers.Go {
         private void WriteMethodDocumentation(CodeMethod code, string methodName, LanguageWriter writer) {
             if(!string.IsNullOrEmpty(code.Description))
                 conventions.WriteShortDescription($"{methodName.ToFirstCharacterUpperCase()} {code.Description.ToFirstCharacterLowerCase()}", writer);
-        }
-        private static void WriteNullCheckBody(LanguageWriter writer)
-        {
-            writer.WriteLine("return m == nil");
         }
         private const string TempParamsVarName = "urlParams";
         private static void WriteRawUrlConstructorBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
@@ -185,8 +178,7 @@ namespace Kiota.Builder.Writers.Go {
                                                 CodeMethodKind.Deserializer,
                                                 CodeMethodKind.RequestBuilderWithParameters,
                                                 CodeMethodKind.RequestBuilderBackwardCompatibility,
-                                                CodeMethodKind.RawUrlConstructor,
-                                                CodeMethodKind.NullCheck) || code.IsAsync ? 
+                                                CodeMethodKind.RawUrlConstructor) || code.IsAsync ? 
                                                     string.Empty :
                                                     "error";
             if(!string.IsNullOrEmpty(finalReturnType) && !string.IsNullOrEmpty(errorDeclaration))
@@ -227,7 +219,10 @@ namespace Kiota.Builder.Writers.Go {
             var backingStoreParameter = method.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.BackingStore));
             WriteSerializationRegistration(method.SerializerModules, writer, parentClass, "RegisterDefaultSerializer", "SerializationWriterFactory");
             WriteSerializationRegistration(method.DeserializerModules, writer, parentClass, "RegisterDefaultDeserializer", "ParseNodeFactory");
+            writer.WriteLine($"if m.{requestAdapterPropertyName}.GetBaseUrl() == \"\" {{");
+            writer.IncreaseIndent();
             writer.WriteLine($"m.{requestAdapterPropertyName}.SetBaseUrl(\"{method.BaseUrl}\")");
+            writer.CloseBlock();
             if(backingStoreParameter != null)
                 writer.WriteLine($"m.{requestAdapterPropertyName}.EnableBackingStore({backingStoreParameter.Name});");
         }

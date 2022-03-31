@@ -43,21 +43,29 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         CrawlTree(generatedCode, x => AddSerializationModulesImport(x, serializationWriterFactoryInterfaceAndRegistrationFullName, parseNodeFactoryInterfaceAndRegistrationFullName, separator));
     }
     protected static void ReplaceDefaultSerializationModules(CodeElement generatedCode, params string[] moduleNames) {
-        if(ReplaceSerializationModules(generatedCode, x => x.SerializerModules, "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory", moduleNames))
+        var defaultValues = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+            "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory",
+            "Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory",
+        };
+        if(ReplaceSerializationModules(generatedCode, x => x.SerializerModules, defaultValues, moduleNames))
             return;
         CrawlTree(generatedCode, (x) => ReplaceDefaultSerializationModules(x, moduleNames));
     }
     protected static void ReplaceDefaultDeserializationModules(CodeElement generatedCode, params string[] moduleNames) {
-        if(ReplaceSerializationModules(generatedCode, x => x.DeserializerModules, "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory", moduleNames))
+        var defaultValues = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+            "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory",
+            "Microsoft.Kiota.Serialization.Text.TextParseNodeFactory",
+        };
+        if(ReplaceSerializationModules(generatedCode, x => x.DeserializerModules, defaultValues, moduleNames))
             return;
         CrawlTree(generatedCode, (x) => ReplaceDefaultDeserializationModules(x, moduleNames));
     }
-    private static bool ReplaceSerializationModules(CodeElement generatedCode, Func<CodeMethod, List<string>> propertyGetter, string initialName, params string[] moduleNames) {
+    private static bool ReplaceSerializationModules(CodeElement generatedCode, Func<CodeMethod, List<string>> propertyGetter, HashSet<string> initialNames, params string[] moduleNames) {
         if(generatedCode is CodeMethod currentMethod &&
             currentMethod.IsOfKind(CodeMethodKind.ClientConstructor)) {
                 var modules = propertyGetter.Invoke(currentMethod);
-                if(modules.Count == 1 &&
-                    modules.Any(x => initialName.Equals(x, StringComparison.OrdinalIgnoreCase))) {
+                if(modules.Count == initialNames.Count &&
+                    modules.All(x => initialNames.Contains(x))) {
                     modules.Clear();
                     modules.AddRange(moduleNames);
                     return true;
@@ -196,6 +204,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 !propertyType.IsExternal &&
                 provider.ReservedNames.Contains(currentProperty.Type.Name))
             propertyType.Name = replacement.Invoke(propertyType.Name);
+        else if (current is CodeEnum currentEnum &&
+                shouldReplace &&
+                currentEnum.Options.Any(x => provider.ReservedNames.Contains(x)))
+            ReplaceReservedEnumNames(currentEnum, provider, replacement);
         // Check if the current name meets the following conditions to be replaced
         // 1. In the list of reserved names
         // 2. If it is a reserved name, make sure that the CodeElement type is worth replacing(not on the blocklist)
@@ -212,6 +224,17 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
 
         CrawlTree(current, x => ReplaceReservedNames(x, provider, replacement, codeElementExceptions, shouldReplaceCallback));
+    }
+    private static void ReplaceReservedEnumNames(CodeEnum currentEnum, IReservedNamesProvider provider, Func<string, string> replacement)
+    {
+        currentEnum.Options
+                    .Where(x => provider.ReservedNames.Contains(x))
+                    .ToList()
+                    .ForEach(x => {
+                        var newValue = replacement.Invoke(x);
+                        currentEnum.Options.Remove(x);
+                        currentEnum.Options.Add(newValue);
+                    });
     }
     private static void ReplaceReservedCodeUsings(ClassDeclaration currentDeclaration, IReservedNamesProvider provider, Func<string, string> replacement)
     {
@@ -583,7 +606,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected static void CorrectDateTypes(CodeClass parentClass, Dictionary<string, (string, CodeUsing)> dateTypesReplacements, params CodeTypeBase[] types) {
         if(parentClass == null)
             return;
-        foreach(var type in types.Where(x => x != null && dateTypesReplacements.ContainsKey(x.Name))) {
+        foreach(var type in types.Where(x => x != null && !string.IsNullOrEmpty(x.Name) && dateTypesReplacements.ContainsKey(x.Name))) {
             var replacement = dateTypesReplacements[type.Name];
             if(replacement.Item1 != null)
                 type.Name = replacement.Item1;

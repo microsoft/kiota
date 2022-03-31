@@ -29,8 +29,16 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             string.Empty,
             string.Empty);
         AddConstructorsForDefaultValues(generatedCode, true);
-        ReplaceDefaultSerializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory");
-        ReplaceDefaultDeserializationModules(generatedCode, "@microsoft/kiota-serialization-json.JsonParseNodeFactory");
+        ReplaceDefaultSerializationModules(
+            generatedCode,
+            "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory",
+            "@microsoft/kiota-serialization-text.TextSerializationWriterFactory"
+        );
+        ReplaceDefaultDeserializationModules(
+            generatedCode,
+            "@microsoft/kiota-serialization-json.JsonParseNodeFactory",
+            "@microsoft/kiota-serialization-text.TextParseNodeFactory"
+        );
         AddSerializationModulesImport(generatedCode,
             new[] { $"{AbstractionsPackageName}.registerDefaultSerializer", 
                     $"{AbstractionsPackageName}.enableBackingStoreForSerializationWriterFactory",
@@ -132,10 +140,13 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.Name = "RequestAdapter";
         else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
             currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
-        else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
-            currentProperty.Type.Name = "Map<string, unknown>";
-            currentProperty.DefaultValue = "new Map<string, unknown>()";
-        } else if(currentProperty.IsOfKind(CodePropertyKind.PathParameters)) {
+        else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
+        {
+            currentProperty.Type.Name = "Record<string, unknown>";
+            currentProperty.DefaultValue = "{}";
+        }
+        else if (currentProperty.IsOfKind(CodePropertyKind.PathParameters))
+        {
             currentProperty.Type.IsNullable = false;
             currentProperty.Type.Name = "Record<string, unknown>";
             if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
@@ -152,9 +163,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
-        else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer))
-            currentMethod.ReturnType.Name = $"Map<string, (item: T, node: ParseNode) => void>";
-        else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor)) {
+        else if (currentMethod.IsOfKind(CodeMethodKind.Deserializer))
+            currentMethod.ReturnType.Name = $"Record<string, (item: T, node: ParseNode) => void>";
+        else if (currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor))
+        {
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.BackingStore))
                 .Where(x => x.Type.Name.StartsWith("I", StringComparison.InvariantCultureIgnoreCase))
                 .ToList()
