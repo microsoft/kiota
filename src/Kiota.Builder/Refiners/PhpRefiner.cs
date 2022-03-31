@@ -71,9 +71,20 @@ namespace Kiota.Builder.Refiners
                 })
             },
             {
-                "TimeSpan", ("DateInterval", new CodeUsing()
+                "TimeSpan", ("DateInterval", new CodeUsing
                 {
                     Name = "DateInterval",
+                    Declaration = new CodeType
+                    {
+                        Name = "",
+                        IsExternal = true
+                    }
+                })
+            },
+            {
+                "DateTimeOffset", ("DateTime", new CodeUsing
+                {
+                    Name = "DateTime",
                     Declaration = new CodeType
                     {
                         Name = "",
@@ -150,6 +161,10 @@ namespace Kiota.Builder.Refiners
             {
                 method.ReturnType = new CodeType() {Name = method.ReturnType.Name, IsExternal = true, IsNullable = false};
             }
+            CorrectDateTypes(method.Parent as CodeClass, DateTypesReplacements, method.Parameters
+                .Select(x => x.Type)
+                .Union(new CodeTypeBase[] { method.ReturnType})
+                .ToArray());
         }
         private static void CorrectParameterType(CodeElement codeElement)
         {
