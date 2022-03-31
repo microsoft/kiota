@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Security;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -112,5 +113,13 @@ namespace Kiota.Builder.Extensions {
 
             return original;
         }
+
+        /// <summary>
+        /// Cleanup the XML string
+        /// </summary>
+        /// <param name="original">The original string</param>
+        /// <returns></returns>
+        public static string CleanupXMLString(this string original) 
+            => SecurityElement.Escape(original);
     }
 }

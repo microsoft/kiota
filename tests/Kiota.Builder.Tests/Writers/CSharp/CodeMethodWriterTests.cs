@@ -85,21 +85,25 @@ public class CodeMethodWriterTests : IDisposable {
         var dummyComplexCollection = parentClass.AddProperty(new CodeProperty {
             Name = "dummyComplexColl"
         }).First();
+        var complexTypeClass = root.AddClass(new CodeClass
+        {
+            Name = "SomeComplexType"
+        }).First();
         dummyComplexCollection.Type = new CodeType {
             Name = "Complex",
             CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-            TypeDefinition = new CodeClass {
-                Name = "SomeComplexType"
-            }
+            TypeDefinition = complexTypeClass
         };
         var dummyEnumProp = parentClass.AddProperty(new CodeProperty{
             Name = "dummyEnumCollection",
         }).First();
+        var enumDefinition = root.AddEnum(new CodeEnum
+        {
+            Name = "EnumType"
+        }).First();
         dummyEnumProp.Type = new CodeType {
             Name = "SomeEnum",
-            TypeDefinition = new CodeEnum {
-                Name = "EnumType"
-            }
+            TypeDefinition = enumDefinition
         };
     }
     private void AddInheritanceClass() {
@@ -230,9 +234,6 @@ public class CodeMethodWriterTests : IDisposable {
             Kind = CodeParameterKind.ParseNode,
             Type = new CodeType {
                 Name = "ParseNode",
-                TypeDefinition = new CodeClass {
-                    Name = "ParseNode",
-                },
                 IsExternal = true,
             },
             Optional = false,
@@ -316,9 +317,6 @@ public class CodeMethodWriterTests : IDisposable {
             Kind = CodeParameterKind.ParseNode,
             Type = new CodeType {
                 Name = "ParseNode",
-                TypeDefinition = new CodeClass {
-                    Name = "ParseNode",
-                },
                 IsExternal = true,
             },
             Optional = false,
@@ -353,9 +351,6 @@ public class CodeMethodWriterTests : IDisposable {
             Kind = CodeParameterKind.ParseNode,
             Type = new CodeType {
                 Name = "ParseNode",
-                TypeDefinition = new CodeClass {
-                    Name = "ParseNode",
-                },
                 IsExternal = true,
             },
             Optional = false,
