@@ -444,8 +444,7 @@ namespace Kiota.Builder.Writers.Php
             writer.WriteLines($"if (empty({GetPropertyCall(requestAdapterProperty, string.Empty)}->getBaseUrl())) {{");
             writer.IncreaseIndent();
             writer.WriteLine($"{GetPropertyCall(requestAdapterProperty, string.Empty)}->setBaseUrl('{codeMethod.BaseUrl}');");
-            writer.DecreaseIndent();
-            writer.WriteLine("}");
+            writer.CloseBlock();
         }
         
         private static void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, string methodName) {
