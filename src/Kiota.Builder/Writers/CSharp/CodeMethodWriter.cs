@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -321,9 +321,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         {
             writer.WriteLine($"{conventions.DocCommentPrefix}<summary>");
             if (isDescriptionPresent)
-                writer.WriteLine($"{conventions.DocCommentPrefix}{code.Description}");
+                writer.WriteLine($"{conventions.DocCommentPrefix}{code.Description.CleanupXMLString()}");
             foreach (var paramWithDescription in parametersWithDescription.OrderBy(x => x.Name))
-                writer.WriteLine($"{conventions.DocCommentPrefix}<param name=\"{paramWithDescription.Name}\">{paramWithDescription.Description}</param>");
+                writer.WriteLine($"{conventions.DocCommentPrefix}<param name=\"{paramWithDescription.Name.ToFirstCharacterLowerCase()}\">{paramWithDescription.Description.CleanupXMLString()}</param>");
             writer.WriteLine($"{conventions.DocCommentPrefix}</summary>");
         }
     }

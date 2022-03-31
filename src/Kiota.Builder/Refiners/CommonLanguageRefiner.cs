@@ -170,6 +170,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             });
         CrawlTree(current, x => AddConstructorsForDefaultValues(x, addIfInherited, forceAdd));
     }
+
+    protected static void ReplaceReservedModelTypes(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement) => 
+        ReplaceReservedNames(current, provider, replacement, shouldReplaceCallback: (codeElement) => codeElement is CodeClass || codeElement is CodeMethod || codeElement is CodeProperty);
+
     protected static void ReplaceReservedNames(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement, HashSet<Type> codeElementExceptions = null, Func<CodeElement, bool> shouldReplaceCallback = null) {
         var shouldReplace = shouldReplaceCallback?.Invoke(current) ?? true;
         var isNotInExceptions = !codeElementExceptions?.Contains(current.GetType()) ?? true;
@@ -205,6 +209,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 provider.ReservedNames.Contains(currentProperty.Type.Name))
             propertyType.Name = replacement.Invoke(propertyType.Name);
         else if (current is CodeEnum currentEnum &&
+                isNotInExceptions &&
                 shouldReplace &&
                 currentEnum.Options.Any(x => provider.ReservedNames.Contains(x)))
             ReplaceReservedEnumNames(currentEnum, provider, replacement);
