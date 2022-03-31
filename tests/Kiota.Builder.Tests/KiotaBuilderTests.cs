@@ -1768,8 +1768,40 @@ public class KiotaBuilderTests
         Assert.NotNull(responseClass);
         Assert.Equal("some description", responseClass.Description);
     }
-    [Fact]
-    public void GeneratesAVoidExecutorForSingle204() {
+    [InlineData("application/json", "204", true, "void")]
+    [InlineData("application/json", "204", false, "void")]
+    [InlineData("application/json", "200", true, "Myobject")]
+    [InlineData("application/json", "200", false, "binary")]
+    [InlineData("application/xml", "204", true, "void")]
+    [InlineData("application/xml", "204", false, "void")]
+    [InlineData("application/xml", "200", true, "Myobject")]
+    [InlineData("application/xml", "200", false, "binary")]
+    [InlineData("text/xml", "204", true, "void")]
+    [InlineData("text/xml", "204", false, "void")]
+    [InlineData("text/xml", "200", true, "Myobject")]
+    [InlineData("text/xml", "200", false, "binary")]
+    [InlineData("text/yaml", "204", true, "void")]
+    [InlineData("text/yaml", "204", false, "void")]
+    [InlineData("text/yaml", "200", true, "Myobject")]
+    [InlineData("text/yaml", "200", false, "binary")]
+    [InlineData("application/octet-stream", "204", true, "void")]
+    [InlineData("application/octet-stream", "204", false, "void")]
+    [InlineData("application/octet-stream", "200", true, "binary")]
+    [InlineData("application/octet-stream", "200", false, "binary")]
+    [InlineData("text/html", "204", true, "void")]
+    [InlineData("text/html", "204", false, "void")]
+    [InlineData("text/html", "200", true, "binary")]
+    [InlineData("text/html", "200", false, "binary")]
+    [InlineData("*/*", "204", true, "void")]
+    [InlineData("*/*", "204", false, "void")]
+    [InlineData("*/*", "200", true, "binary")]
+    [InlineData("*/*", "200", false, "binary")]
+    [InlineData("text/plain", "204", true, "void")]
+    [InlineData("text/plain", "204", false, "void")]
+    [InlineData("text/plain", "200", true, "Myobject")]
+    [InlineData("text/plain", "200", false, "string")]
+    [Theory]
+    public void GeneratesTheRightReturnTypeBasedOnContentAndStatus(string contentType, string statusCode, bool addModel, string returnType) {
         var myObjectSchema = new OpenApiSchema {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
@@ -1792,10 +1824,10 @@ public class KiotaBuilderTests
                         [OperationType.Get] = new OpenApiOperation() { 
                             Responses = new OpenApiResponses
                             {
-                                ["204"] = new OpenApiResponse {
+                                [statusCode] = new OpenApiResponse {
                                     Content = {
-                                        ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                        [contentType] = new OpenApiMediaType {
+                                            Schema = addModel ? myObjectSchema : null
                                         }
                                     }
                                 },
@@ -1822,7 +1854,7 @@ public class KiotaBuilderTests
         Assert.NotNull(rbClass);
         var executor = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(executor);
-        Assert.Equal("void", executor.ReturnType.Name);
+        Assert.Equal(returnType, executor.ReturnType.Name);
     }
     [Fact]
     public void DoesntGenerateVoidExecutorOnMixed204(){

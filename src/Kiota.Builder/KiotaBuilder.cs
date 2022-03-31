@@ -622,7 +622,7 @@ public class KiotaBuilder
             executorMethod.ReturnType = returnType ?? throw new InvalidOperationException("Could not resolve return type for operation");
         } else {
             string returnType;
-            if(!operation.Responses.Any(x => noContentStatusCodes.Contains(x.Key)))
+            if(operation.Responses.Any(x => noContentStatusCodes.Contains(x.Key)))
                 returnType = voidType;
             else if (operation.Responses.Any(x => x.Value.Content.ContainsKey(RequestBodyPlainTextContentType)))
                 returnType = "string";
