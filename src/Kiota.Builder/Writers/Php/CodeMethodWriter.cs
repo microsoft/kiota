@@ -441,7 +441,11 @@ namespace Kiota.Builder.Writers.Php
             var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter);
             WriteSerializationRegistration(codeMethod.SerializerModules, writer, "registerDefaultSerializer");
             WriteSerializationRegistration(codeMethod.DeserializerModules, writer, "registerDefaultDeserializer");
+            writer.WriteLines($"if (empty({GetPropertyCall(requestAdapterProperty, string.Empty)}->getBaseUrl())) {{");
+            writer.IncreaseIndent();
             writer.WriteLine($"{GetPropertyCall(requestAdapterProperty, string.Empty)}->setBaseUrl('{codeMethod.BaseUrl}');");
+            writer.DecreaseIndent();
+            writer.WriteLine("}");
         }
         
         private static void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, string methodName) {
