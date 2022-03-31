@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix issue with ambiguous type names causing build errors and stack overflows. (Shell) #1052
 - Fixed a bug where symbols (properties, methods, classes) could contain invalid characters #1436
 - Renamed parameters for requests: o => options, q => queryParameters, h => headers. [#1380](https://github.com/microsoft/kiota/issues/1380)
+- Fixed a bug where names would clash with reserved type [#1437](https://github.com/microsoft/kiota/issues/1437)
+- Fixed unnecessary use of fully qualified type names in Dotnet 
 
 ## [0.0.20] - 2022-03-25
 
