@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace Kiota.Builder.Refiners {
@@ -90,7 +90,6 @@ namespace Kiota.Builder.Refiners {
             "string",
             "struct",
             "switch",
-            "task",
             "this",
             "throw",
             "true",

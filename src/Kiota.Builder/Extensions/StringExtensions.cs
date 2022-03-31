@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Security;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -118,16 +119,7 @@ namespace Kiota.Builder.Extensions {
         /// </summary>
         /// <param name="original">The original string</param>
         /// <returns></returns>
-        public static string CleanupXMLString(this string original)
-        {
-            if (string.IsNullOrEmpty(original))
-                return original;
-
-            return original.Replace("&", "&amp;")
-                           .Replace("<", "&lt;")
-                           .Replace(">", "&gt;")
-                           .Replace("&#34;", "&quot;")
-                           .Replace("'", "&apos;");
-        }
+        public static string CleanupXMLString(this string original) 
+            => SecurityElement.Escape(original);
     }
 }
