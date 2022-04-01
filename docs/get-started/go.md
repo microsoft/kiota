@@ -67,7 +67,7 @@ import (
   "getuser/client"
 
   "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-  azure "github.com/microsoft/kiota/authentication/go/azure"
+  azure "github.com/microsoft/kiota-authentication-azure-go"
   http "github.com/microsoft/kiota-http-go"
 )
 
