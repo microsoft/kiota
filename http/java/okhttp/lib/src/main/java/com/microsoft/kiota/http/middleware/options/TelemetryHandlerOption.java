@@ -12,8 +12,8 @@ import okhttp3.Request;
 public class TelemetryHandlerOption implements RequestOption {
 
     /**
-     * A delegate which can be called to configure the Request with desired telemetry values.
-     */
+    * A delegate which can be called to configure the Request with desired telemetry values.
+    */
     public Function<Request, Request> TelemetryConfigurator = (request) -> request;
 
     @Override
