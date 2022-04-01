@@ -46,6 +46,5 @@ public class KiotaClientFactory {
             new RetryHandler(),
             new TelemetryHandler()
         };
-        //DO we want to add Chaos as a default? 
     }
 }
