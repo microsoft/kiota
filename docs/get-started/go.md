@@ -10,7 +10,7 @@ parent: Get started
 
 ## Target project requirements
 
-Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](https://github.com/microsoft/kiota/tree/main/abstractions/go/), [authentication](https://github.com/microsoft/kiota/tree/main/authentication/go/azure), [http](https://github.com/microsoft/kiota/tree/main/http/go/http/), and [serialization](https://github.com/microsoft/kiota/tree/main/serialization/go/json/) packages from the GitHub feed.
+Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](https://github.com/microsoft/kiota-abstractions-go), [authentication](https://github.com/microsoft/kiota-authentication-azure-go), [http](https://github.com/microsoft/kiota-http-go), [serialization JSON](https://github.com/microsoft/kiota-serialization-json-go), and [serialization Text](https://github.com/microsoft/kiota-serialization-text-go) packages.
 
 ## Creating target projects
 
