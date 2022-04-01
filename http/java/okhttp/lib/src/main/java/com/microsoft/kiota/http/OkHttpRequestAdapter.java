@@ -2,7 +2,6 @@ package com.microsoft.kiota.http;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.StackWalker.Option;
 import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
