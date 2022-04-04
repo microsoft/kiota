@@ -1,7 +1,7 @@
 package com.microsoft.kiota.serialization;
 
 import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import javax.annotation.Nonnull;
 /**
@@ -13,7 +13,7 @@ public interface Parsable {
      * @return The deserialization information for this object where each entry is a property key with its deserialization callback.
      */
     @Nonnull
-    <T> Map<String, BiConsumer<T, ParseNode>> getFieldDeserializers();
+    Map<String, Consumer<ParseNode>> getFieldDeserializers();
     /**
      * Writes the objects properties to the current writer.
      * @param writer The writer to write to.
