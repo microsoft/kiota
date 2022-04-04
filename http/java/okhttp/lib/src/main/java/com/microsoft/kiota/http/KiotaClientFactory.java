@@ -43,8 +43,7 @@ public class KiotaClientFactory {
     public static Interceptor[] CreateDefaultInterceptors() {
         return new Interceptor[] {
             new RedirectHandler(),
-            new RetryHandler(),
-            new TelemetryHandler()
+            new RetryHandler()
         };
     }
 }
