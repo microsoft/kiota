@@ -1914,4 +1914,54 @@ public class KiotaBuilderTests
         Assert.NotNull(executor);
         Assert.NotEqual("void", executor.ReturnType.Name);
     }
+    [InlineData(new string[] {"microsoft.graph.user", "microsoft.graph.termstore.term"}, "microsoft.graph")]
+    [InlineData(new string[] {"microsoft.graph.user", "odata.errors.error"}, "")]
+    [InlineData(new string[] {}, "")]
+    [Theory]
+    public void StripsCommonModelsPrefix(string[] componentNames, string stripPrefix) {
+        var paths = new OpenApiPaths();
+        var components = new OpenApiComponents() {
+            Schemas = new Dictionary<string, OpenApiSchema>()
+        };
+        foreach(var componentName in componentNames) {
+            var myObjectSchema = new OpenApiSchema {
+                Type = "object",
+                Properties = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "id", new OpenApiSchema {
+                            Type = "string",
+                        }
+                    }
+                },
+                Reference = new OpenApiReference {
+                    Id = componentName,
+                    Type = ReferenceType.Schema
+                },
+                UnresolvedReference = false
+            };
+            paths.Add($"answer{componentName}", new OpenApiPathItem() {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation() { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    } 
+                });
+            components.Schemas.Add(componentName, myObjectSchema);
+        }
+        var document = new OpenApiDocument() {
+            Paths = paths,
+            Components = components,
+        };
+        var result = KiotaBuilder.GetDeeperMostCommonNamespaceNameForModels(document);
+        Assert.Equal(stripPrefix, result);
+    }
 }

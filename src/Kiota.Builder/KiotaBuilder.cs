@@ -71,6 +71,8 @@ public class KiotaBuilder
 
         SetApiRootUrl();
 
+        modelNamespacePrefixToTrim = GetDeeperMostCommonNamespaceNameForModels(openApiDocument);
+
         // Step 3 - Create Uri Space of API
         sw.Start();
         var openApiTree = CreateUriSpace(openApiDocument);
@@ -167,6 +169,32 @@ public class KiotaBuilder
 
         return doc;
     }
+    public static string GetDeeperMostCommonNamespaceNameForModels(OpenApiDocument document)
+    {
+        if(!(document?.Components?.Schemas?.Any() ?? false)) return string.Empty;
+        var distinctKeys = document.Components
+                                .Schemas
+                                .Keys
+                                .Select(x => string.Join(nsNameSeparator, x.Split(nsNameSeparator, StringSplitOptions.RemoveEmptyEntries)
+                                                .SkipLast(1)))
+                                .Where(x => !string.IsNullOrEmpty(x))
+                                .Distinct()
+                                .OrderByDescending(x => x.Count(y => y == nsNameSeparator));
+        if(!distinctKeys.Any()) return string.Empty;
+        var longestKey = distinctKeys.FirstOrDefault();
+        var candidate = string.Empty;
+        var longestKeySegments = longestKey.Split(nsNameSeparator, StringSplitOptions.RemoveEmptyEntries);
+        foreach(var segment in longestKeySegments)
+        {
+            var testValue = (candidate + nsNameSeparator + segment).Trim(nsNameSeparator);
+            if(distinctKeys.All(x => x.StartsWith(testValue, StringComparison.OrdinalIgnoreCase)))
+                candidate = testValue;
+            else
+                break;
+        }
+
+        return candidate;
+    }
 
     /// <summary>
     /// Translate OpenApi PathItems into a tree structure that will define the classes
@@ -187,6 +215,7 @@ public class KiotaBuilder
     }
     private CodeNamespace rootNamespace;
     private CodeNamespace modelsNamespace;
+    private string modelNamespacePrefixToTrim;
 
     /// <summary>
     /// Convert UriSpace of OpenApiPathItems into conceptual SDK Code model 
@@ -753,8 +782,11 @@ public class KiotaBuilder
     }
     private string GetModelsNamespaceNameFromReferenceId(string referenceId) {
         if (string.IsNullOrEmpty(referenceId)) return referenceId;
-        if(referenceId.StartsWith(config.ClientClassName, StringComparison.OrdinalIgnoreCase))
+        if(referenceId.StartsWith(config.ClientClassName, StringComparison.OrdinalIgnoreCase)) // the client class having a namespace segment name can be problematic in some languages
             referenceId = referenceId[config.ClientClassName.Length..];
+        referenceId = referenceId.Trim(nsNameSeparator);
+        if(!string.IsNullOrEmpty(modelNamespacePrefixToTrim) && referenceId.StartsWith(modelNamespacePrefixToTrim, StringComparison.OrdinalIgnoreCase))
+            referenceId = referenceId[modelNamespacePrefixToTrim.Length..];
         referenceId = referenceId.Trim(nsNameSeparator);
         var lastDotIndex = referenceId.LastIndexOf(nsNameSeparator);
         var namespaceSuffix = lastDotIndex != -1 ? $".{referenceId[..lastDotIndex]}" : string.Empty;
