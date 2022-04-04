@@ -96,7 +96,7 @@ public class RetryHandlerOption implements RequestOption{
     }
 
     @Override
-    public  Class<? extends RequestOption> getType() {
-        return RetryHandlerOption.class; 
+    public <T extends RequestOption> Class<T> getType() {
+        return (Class<T>) RetryHandlerOption.class; 
     }
 }

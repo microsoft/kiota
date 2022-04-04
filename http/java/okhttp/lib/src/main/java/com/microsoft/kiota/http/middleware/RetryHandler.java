@@ -1,27 +1,16 @@
 package com.microsoft.kiota.http.middleware;
 
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.ParseException;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAccessor;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
-import java.util.Objects;
 
 import javax.annotation.Nullable;
 import javax.annotation.Nonnull;
 
 import com.microsoft.kiota.http.middleware.options.IShouldRetry;
 import com.microsoft.kiota.http.middleware.options.RetryHandlerOption;
-import com.microsoft.kiota.http.logger.DefaultLogger;
-import com.microsoft.kiota.http.logger.ILogger;
 
 import okhttp3.Interceptor;
 import okhttp3.Request;
@@ -33,11 +22,6 @@ import okhttp3.ResponseBody;
  * The middleware responsible for retrying requests when they fail because of transient issues
  */
 public class RetryHandler implements Interceptor{
-
-    /**
-     * Type of the current middleware
-     */
-    public final MiddlewareType MIDDLEWARE_TYPE = MiddlewareType.RETRY;
 
     private RetryHandlerOption mRetryOption;
 
@@ -68,20 +52,11 @@ public class RetryHandler implements Interceptor{
      */
     private static final long DELAY_MILLISECONDS = 1000;
 
-    private final ILogger logger;
 
     /**
      * @param retryOption Create Retry handler using retry option
      */
     public RetryHandler(@Nullable final RetryHandlerOption retryOption) {
-        this(new DefaultLogger(), retryOption);
-    }
-    /**
-     * @param retryOption Create Retry handler using retry option
-     * @param logger logger to use for telemetry
-     */
-    public RetryHandler(@Nonnull final ILogger logger, @Nullable final RetryHandlerOption retryOption) {
-        this.logger = Objects.requireNonNull(logger, "logger parameter cannot be null");
         this.mRetryOption = retryOption;
         if(this.mRetryOption == null) {
             this.mRetryOption = new RetryHandlerOption();
@@ -122,7 +97,6 @@ public class RetryHandler implements Interceptor{
                 Thread.sleep(retryInterval);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                logger.logError("error retrying the request", e);
             }
         }
         return shouldRetry;

@@ -2,12 +2,10 @@ package com.microsoft.kiota.http.middleware;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import java.net.HttpURLConnection;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -195,13 +193,6 @@ public class RetryHandlerTests {
         delay = retryHandler.getRetryAfter(tooManyRequestResponse().newBuilder().addHeader("Retry-After", retryAfterString).build(), 2, 3);
         assertTrue(delay == 180000);
 
-    }
-
-    @Test
-    public void TestNullLoggerHandling() throws ParseException {
-        assertThrows(NullPointerException.class, () -> {
-            new RetryHandler(null, new RetryHandlerOption());
-        }, "logger cannot be null");
     }
 
     @Test

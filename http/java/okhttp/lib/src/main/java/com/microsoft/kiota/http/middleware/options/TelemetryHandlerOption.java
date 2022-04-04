@@ -17,7 +17,7 @@ public class TelemetryHandlerOption implements RequestOption {
     public Function<Request, Request> TelemetryConfigurator = (request) -> request;
 
     @Override
-    public  Class<? extends RequestOption> getType() {
-        return TelemetryHandlerOption.class; 
+    public <T extends RequestOption> Class<T> getType() {
+        return (Class<T>) TelemetryHandlerOption.class; 
     }
 }

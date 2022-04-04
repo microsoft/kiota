@@ -63,7 +63,7 @@ public class RedirectHandlerOption implements RequestOption {
     }
 
     @Override
-    public  Class<? extends RequestOption> getType() {
-        return RedirectHandlerOption.class; 
+    public <T extends RequestOption> Class<T> getType() {
+        return (Class<T>) RedirectHandlerOption.class; 
     }
 }

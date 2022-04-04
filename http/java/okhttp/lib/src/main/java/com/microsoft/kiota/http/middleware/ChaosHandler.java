@@ -18,10 +18,6 @@ import okhttp3.ResponseBody;
  */
 public class ChaosHandler implements Interceptor {
     /**
-     * The current middleware type
-     */
-    public final MiddlewareType MIDDLEWARE_TYPE = MiddlewareType.RETRY;
-    /**
      * constant string being used
      */
     private static final String RETRY_AFTER = "Retry-After";

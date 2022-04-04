@@ -24,11 +24,6 @@ import okhttp3.Response;
  */
 public class RedirectHandler implements Interceptor{
 
-    /**
-     * The current middleware type
-     */
-    public final MiddlewareType MIDDLEWARE_TYPE = MiddlewareType.REDIRECT;
-
     private RedirectHandlerOption mRedirectOption;
 
     /**
