@@ -1916,6 +1916,7 @@ public class KiotaBuilderTests
     }
     [InlineData(new string[] {"microsoft.graph.user", "microsoft.graph.termstore.term"}, "microsoft.graph")]
     [InlineData(new string[] {"microsoft.graph.user", "odata.errors.error"}, "")]
+    [InlineData(new string[] {}, "")]
     [Theory]
     public void StripsCommonModelsPrefix(string[] componentNames, string stripPrefix) {
         var paths = new OpenApiPaths();

@@ -171,6 +171,7 @@ public class KiotaBuilder
     }
     public static string GetDeeperMostCommonNamespaceNameForModels(OpenApiDocument document)
     {
+        if(!(document?.Components?.Schemas?.Any() ?? false)) return string.Empty;
         var distinctKeys = document.Components
                                 .Schemas
                                 .Keys
@@ -179,6 +180,7 @@ public class KiotaBuilder
                                 .Where(x => !string.IsNullOrEmpty(x))
                                 .Distinct()
                                 .OrderByDescending(x => x.Count(y => y == nsNameSeparator));
+        if(!distinctKeys.Any()) return string.Empty;
         var longestKey = distinctKeys.FirstOrDefault();
         var candidate = string.Empty;
         var longestKeySegments = longestKey.Split(nsNameSeparator, StringSplitOptions.RemoveEmptyEntries);
@@ -783,7 +785,7 @@ public class KiotaBuilder
         if(referenceId.StartsWith(config.ClientClassName, StringComparison.OrdinalIgnoreCase)) // the client class having a namespace segment name can be problematic in some languages
             referenceId = referenceId[config.ClientClassName.Length..];
         referenceId = referenceId.Trim(nsNameSeparator);
-        if(referenceId.StartsWith(modelNamespacePrefixToTrim, StringComparison.OrdinalIgnoreCase))
+        if(!string.IsNullOrEmpty(modelNamespacePrefixToTrim) && referenceId.StartsWith(modelNamespacePrefixToTrim, StringComparison.OrdinalIgnoreCase))
             referenceId = referenceId[modelNamespacePrefixToTrim.Length..];
         referenceId = referenceId.Trim(nsNameSeparator);
         var lastDotIndex = referenceId.LastIndexOf(nsNameSeparator);
