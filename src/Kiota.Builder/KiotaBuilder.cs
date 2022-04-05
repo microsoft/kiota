@@ -682,45 +682,43 @@ public class KiotaBuilder
         executorMethod.AddParameter(cancellationParam);// Add cancellation token parameter
         logger.LogTrace("Creating method {name} of {type}", executorMethod.Name, executorMethod.ReturnType);
 
-        var generatorMethod = new CodeMethod {
+        var generatorMethod = parentClass.AddMethod(new CodeMethod {
             Name = $"Create{operationType.ToString().ToFirstCharacterUpperCase()}RequestInformation",
             Kind = CodeMethodKind.RequestGenerator,
             IsAsync = false,
             HttpMethod = method,
             Description = (operation.Description ?? operation.Summary).CleanupDescription(),
             ReturnType = new CodeType { Name = "RequestInformation", IsNullable = false, IsExternal = true},
-        };
+        }).FirstOrDefault();
         if (config.Language == GenerationLanguage.Shell)
-            SetPathQueryAndHeaderParameters(generatorMethod, currentNode, operation);
-        parentClass.AddMethod(generatorMethod);
+            SetPathAndQueryParameters(generatorMethod, currentNode, operation);
         AddRequestBuilderMethodParameters(currentNode, operation, parameterClass, generatorMethod);
         logger.LogTrace("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
     }
-    private static void SetPathQueryAndHeaderParameters(CodeMethod target, OpenApiUrlTreeNode currentNode, OpenApiOperation operation)
+    private static readonly Func<OpenApiParameter, CodeParameter> GetCodeParameterFromApiParameter = x => {
+        var codeName = x.Name.SanitizePathParameterName();
+        return new CodeParameter
+        {
+            Name = codeName,
+            SerializationName = codeName.Equals(x.Name) ? default : x.Name,
+            Type = GetQueryParameterType(x.Schema),
+            Description = x.Description.CleanupDescription(),
+            Kind = GetParameterKindFromLocation(x.In),
+            Optional = !x.Required
+        };
+    };
+    private static readonly Func<OpenApiParameter, bool> ParametersFilter = x => x.In == ParameterLocation.Path || x.In == ParameterLocation.Query || x.In == ParameterLocation.Header;
+    private static void SetPathAndQueryParameters(CodeMethod target, OpenApiUrlTreeNode currentNode, OpenApiOperation operation)
     {
         var pathAndQueryParameters = currentNode
             .PathItems[Constants.DefaultOpenApiLabel]
             .Parameters
-            .Where(x => x.In == ParameterLocation.Path || x.In == ParameterLocation.Query || x.In == ParameterLocation.Header)
-            .Select(x => new CodeParameter
-            {
-                Name = x.Name.TrimStart('$'),
-                Type = GetQueryParameterType(x.Schema),
-                Description = x.Description.CleanupDescription(),
-                Kind = GetParameterKindFromLocation(x.In),
-                Optional = !x.Required
-            })
+            .Where(ParametersFilter)
+            .Select(GetCodeParameterFromApiParameter)
             .Union(operation
                     .Parameters
-                    .Where(x => x.In == ParameterLocation.Path || x.In == ParameterLocation.Query || x.In == ParameterLocation.Header)
-                    .Select(x => new CodeParameter
-                    {
-                        Name = x.Name.TrimStart('$'),
-                        Type = GetQueryParameterType(x.Schema),
-                        Description = x.Description.CleanupDescription(),
-                        Kind = GetParameterKindFromLocation(x.In),
-                        Optional = !x.Required
-                    }))
+                    .Where(ParametersFilter)
+                    .Select(GetCodeParameterFromApiParameter))
             .ToArray();
         target.AddPathQueryOrHeaderParameter(pathAndQueryParameters);
     }
@@ -1132,7 +1130,7 @@ public class KiotaBuilder
             {
                 var prop = new CodeProperty
                 {
-                    Name = FixQueryParameterIdentifier(parameter),
+                    Name = parameter.Name.SanitizePathParameterName(),
                     Description = parameter.Description.CleanupDescription(),
                     Type = new CodeType
                     {
@@ -1141,6 +1139,11 @@ public class KiotaBuilder
                         CollectionKind = parameter.Schema.IsArray() ? CodeType.CodeTypeCollectionKind.Array : default,
                     },
                 };
+
+                if(!parameter.Name.Equals(prop.Name))
+                {
+                    prop.SerializationName = parameter.Name;
+                }
 
                 if (!parameterClass.ContainsMember(parameter.Name))
                 {
@@ -1162,11 +1165,4 @@ public class KiotaBuilder
             Name = schema.Items?.Type ?? schema.Type,
             CollectionKind = schema.IsArray() ? CodeType.CodeTypeCollectionKind.Array : default,
         };
-
-    private static string FixQueryParameterIdentifier(OpenApiParameter parameter)
-    {
-        // Replace with regexes pulled from settings that are API specific
-
-        return parameter.Name.Replace("$","").ToCamelCase();
-    }
 }

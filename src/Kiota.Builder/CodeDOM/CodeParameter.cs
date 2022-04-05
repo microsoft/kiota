@@ -49,6 +49,7 @@ namespace Kiota.Builder
         public bool Optional {get;set;}= false;
         public string Description {get; set;}
         public string DefaultValue {get; set;}
+        public string SerializationName { get; set; }
         /// <summary>
         /// The name of the url template parameter this path parameter maps to.
         /// </summary>
@@ -64,6 +65,7 @@ namespace Kiota.Builder
                 DefaultValue = DefaultValue?.Clone() as string,
                 Parent = Parent,
                 UrlTemplateParameterName = UrlTemplateParameterName?.Clone() as string,
+                SerializationName = SerializationName?.Clone() as string,
             };
         }
     }
