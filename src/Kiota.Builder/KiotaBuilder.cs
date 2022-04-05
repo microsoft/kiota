@@ -1019,7 +1019,7 @@ public class KiotaBuilder
         else if(schema?.AllOf?.Any(x => x.IsObject()) ?? false)
             CreatePropertiesForModelClass(currentNode, schema.AllOf.Last(x => x.IsObject()), ns, model);
     }
-    private const string FieldDeserializersMethodName = "GetFieldDeserializers<T>";
+    private const string FieldDeserializersMethodName = "GetFieldDeserializers";
     private const string SerializeMethodName = "Serialize";
     private const string AdditionalDataPropName = "AdditionalData";
     private const string BackingStorePropertyName = "BackingStore";
@@ -1028,7 +1028,7 @@ public class KiotaBuilder
     private const string ParseNodeInterface = "IParseNode";
     internal const string AdditionalHolderInterface = "IAdditionalDataHolder";
     internal static void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties, bool usesBackingStore) {
-        var serializationPropsType = $"IDictionary<string, Action<T, {ParseNodeInterface}>>";
+        var serializationPropsType = $"IDictionary<string, Action<{ParseNodeInterface}>>";
         if(!model.ContainsMember(FieldDeserializersMethodName)) {
             var deserializeProp = new CodeMethod {
                 Name = FieldDeserializersMethodName,

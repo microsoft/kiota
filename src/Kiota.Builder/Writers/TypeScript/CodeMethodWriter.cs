@@ -189,9 +189,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits) {
        writer.WriteLine($"return {{{(inherits? $"...super.{codeElement.Name.ToFirstCharacterLowerCase()}(),": string.Empty)}");
         writer.IncreaseIndent();
-        var parentClassName = parentClass.Name.ToFirstCharacterUpperCase();
         foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
-            writer.WriteLine($"\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\": (o, n) => {{ (o as unknown as {parentClassName}).{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type)}; }},");
+            writer.WriteLine($"\"{otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase()}\": n => {{ this.{otherProp.Name.ToFirstCharacterLowerCase()} = n.{GetDeserializationMethodName(otherProp.Type)}; }},");
         }
         writer.DecreaseIndent();
         writer.WriteLine("};");
@@ -247,9 +246,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                             $"{RequestInfoVarName}.pathParameters = {GetPropertyCall(urlTemplateParamsProperty, "''")};",
                             $"{RequestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.ToString().ToUpperInvariant()};");
         if(requestParams.headers != null)
-            writer.WriteLine($"if(h) {RequestInfoVarName}.headers = h;");
+            writer.WriteLine($"if({requestParams.headers.Name}) {RequestInfoVarName}.headers = {requestParams.headers.Name};");
         if(requestParams.queryString != null)
-            writer.WriteLines($"{requestParams.queryString.Name} && {RequestInfoVarName}.setQueryStringParametersFromRawObject(q);");
+            writer.WriteLines($"{requestParams.queryString.Name} && {RequestInfoVarName}.setQueryStringParametersFromRawObject({requestParams.queryString.Name});");
         if(requestParams.requestBody != null) {
             if(requestParams.requestBody.Type.Name.Equals(localConventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                 writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name});");
