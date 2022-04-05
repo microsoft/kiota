@@ -5,7 +5,6 @@ import javax.annotation.Nullable;
 
 import com.microsoft.kiota.http.middleware.RedirectHandler;
 import com.microsoft.kiota.http.middleware.RetryHandler;
-import com.microsoft.kiota.http.middleware.TelemetryHandler;
 
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
