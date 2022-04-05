@@ -14,6 +14,11 @@ namespace Kiota.Builder.Refiners
         public override void Refine(CodeNamespace generatedCode)
         {
             ReplaceReservedNames(generatedCode, new PhpReservedNamesProvider(), reservedWord => $"Escaped{reservedWord.ToFirstCharacterUpperCase()}");
+            AddParentClassToErrorClasses(
+                generatedCode,
+                "ApiException",
+                "Microsoft\\Kiota\\Abstractions"
+            );
             AddConstructorsForDefaultValues(generatedCode, true);
             RemoveCancellationParameter(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode, false, false);

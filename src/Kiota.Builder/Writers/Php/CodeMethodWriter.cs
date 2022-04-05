@@ -189,7 +189,7 @@ namespace Kiota.Builder.Writers.Php
             };
             if(codeMethod.IsOfKind(CodeMethodKind.Deserializer))
             {
-                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function getFieldDeserializers(): array {{");
+                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} {(codeMethod.IsStatic ? "static" : string.Empty)} function getFieldDeserializers(): array {{");
                 writer.IncreaseIndent();
                 return;
             }
@@ -291,7 +291,7 @@ namespace Kiota.Builder.Writers.Php
                         null => "$n->getCollectionOfPrimitiveValues()",
                         CodeEnum enumType =>
                             $"$n->getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)",
-                        _ => $"$n->getCollectionOfObjectValues({conventions.TranslateType(propType)}::class)"
+                        _ => $"$n->getCollectionOfObjectValues(array('{conventions.TranslateType(propType)}', 'createFromDiscriminatorValue'))"
                     };
                 else if (currentType.TypeDefinition is CodeEnum)
                     return $"$n->getEnumValue({propertyType.ToFirstCharacterUpperCase()}::class)";
@@ -306,7 +306,7 @@ namespace Kiota.Builder.Writers.Php
                 "decimal" or "double" => "$n->getFloatValue()",
                 "streaminterface" => "$n->getBinaryContent()",
                 _ when conventions.PrimitiveTypes.Contains(lowerCaseType) => $"$n->get{propertyType.ToFirstCharacterUpperCase()}Value()",
-                _ => $"$n->getObjectValue({propertyType.ToFirstCharacterUpperCase()}::class)",
+                _ => $"$n->getObjectValue(array('{propertyType.ToFirstCharacterUpperCase()}', 'createFromDiscriminatorValue'))",
             };
         }
 
@@ -424,10 +424,23 @@ namespace Kiota.Builder.Writers.Php
             writer.WriteLine($"$requestInfo = $this->{generatorMethodName}({joinedParams});");
             writer.WriteLine("try {");
             writer.IncreaseIndent();
+            var errorMappings = codeElement.ErrorMappings;
+            var hasErrorMappings = false;
+            var errorMappingsVarName = "$errorMappings";
+            if (errorMappings != null && errorMappings.Any())
+            {
+                hasErrorMappings = true;
+                writer.WriteLine($"{errorMappingsVarName} = [");
+                errorMappings.ToList().ForEach(errorMapping =>
+                {
+                    writer.WriteLine($"'{errorMapping.Key}' => array('{errorMapping.Value.Name}', 'createFromDiscriminatorValue'),");
+                });
+                writer.WriteLine("];");
+            }
             if(codeElement.Parameters.Any(x => x.IsOfKind(CodeParameterKind.ResponseHandler)))
-                writer.WriteLine($"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->sendAsync({RequestInfoVarName}, {(!returnVoidOrString ? $"{returnType}::class": "''")}, $responseHandler);");
+                writer.WriteLine($"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->sendAsync({RequestInfoVarName}, {(!returnVoidOrString ? $"{returnType}::class": "''")}, $responseHandler, {(hasErrorMappings ? $"{errorMappingsVarName}" : "null")});");
             else
-                writer.WriteLine($"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->sendAsync({RequestInfoVarName}, {(!returnVoidOrString ? $"{returnType}::class": "''")}, null);");
+                writer.WriteLine($"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->sendAsync({RequestInfoVarName}, {(!returnVoidOrString ? $"{returnType}::class": "''")}, null, {(hasErrorMappings ? $"{errorMappingsVarName}" : "null")});");
             writer.DecreaseIndent();
             writer.WriteLine("} catch(Exception $ex) {");
             writer.IncreaseIndent();
