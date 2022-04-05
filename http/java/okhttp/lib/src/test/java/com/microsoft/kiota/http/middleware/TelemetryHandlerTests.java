@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.List;
 
 import com.microsoft.kiota.HttpMethod;
 import com.microsoft.kiota.RequestInformation;
@@ -54,9 +55,11 @@ public class TelemetryHandlerTests {
             return request.newBuilder().addHeader("SdkVersion","x.x.x").build();
         };
         requestInfo.addRequestOptions(telemetryHandlerOption, new RetryHandlerOption());
+        TelemetryHandler telemetryHandler = new TelemetryHandler();
+        Interceptor[] interceptors = {telemetryHandler};
 
         Request request = (Request) method.invoke(adapter, requestInfo);
-        OkHttpClient client = KiotaClientFactory.Create().build();
+        OkHttpClient client = KiotaClientFactory.Create(interceptors).build();
         Response response = client.newCall(request).execute();
 
         assertTrue(response.request().header("SdkVersion").contains("x.x.x"));
