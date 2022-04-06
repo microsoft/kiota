@@ -707,7 +707,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                 "'years' => function (self $o, ParseNode $n) { $o->setYears($n->getCollectionOfPrimitiveValues())",
                 result);
             Assert.Contains(
-                "'users' => function (self $o, ParseNode $n) { $o->setUsers($n->getCollectionOfObjectValues(EmailAddress::class));",
+                "'users' => function (self $o, ParseNode $n) { $o->setUsers($n->getCollectionOfObjectValues(array(EmailAddress::class, 'createFromDiscriminatorValue')));",
                 result);
             Assert.Contains(
                 "'dOB' => function (self $o, ParseNode $n) { $o->setDOB($n->getDateTimeValue());",
