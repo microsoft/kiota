@@ -469,7 +469,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                 OriginalIndexer = new CodeIndexer()
                 {
                     Name = "messageById",
-                    ParameterName = "message_id",
+                    SerializationName = "message_id",
                     IndexType = new CodeType()
                     {
                         Name = "MessageRequestBuilder"

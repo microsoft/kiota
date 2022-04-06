@@ -438,7 +438,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests {
             method.Kind = CodeMethodKind.IndexerBackwardCompatibility;
             method.OriginalIndexer = new () {
                 Name = "indx",
-                ParameterName = "id",
+                SerializationName = "id",
                 IndexType = new CodeType {
                     Name = "string",
                     IsNullable = true,

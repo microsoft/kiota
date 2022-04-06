@@ -542,7 +542,7 @@ public class KiotaBuilder
             Description = $"Gets an item from the {currentNode.GetNodeNamespaceFromPath(config.ClientNamespaceName)} collection",
             IndexType = new CodeType { Name = "string", IsExternal = true, },
             ReturnType = new CodeType { Name = childType },
-            ParameterName = currentNode.Segment.SanitizeUrlTemplateParameterName().TrimStart('{').TrimEnd('}'),
+            SerializationName = currentNode.Segment.SanitizeParameterNameForUrlTemplate(),
             PathSegment = parentNode.GetNodeNamespaceFromPath(string.Empty).Split('.').Last(),
         };
     }
@@ -696,7 +696,7 @@ public class KiotaBuilder
         logger.LogTrace("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
     }
     private static readonly Func<OpenApiParameter, CodeParameter> GetCodeParameterFromApiParameter = x => {
-        var codeName = x.Name.SanitizePathParameterName();
+        var codeName = x.Name.SanitizeParameterNameForCodeSymbols();
         return new CodeParameter
         {
             Name = codeName,
@@ -1130,7 +1130,7 @@ public class KiotaBuilder
             {
                 var prop = new CodeProperty
                 {
-                    Name = parameter.Name.SanitizePathParameterName(),
+                    Name = parameter.Name.SanitizeParameterNameForCodeSymbols(),
                     Description = parameter.Description.CleanupDescription(),
                     Type = new CodeType
                     {

@@ -126,7 +126,7 @@ namespace Kiota.Builder.Writers.Ruby {
             var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var prefix = conventions.GetNormalizedNamespacePrefixForType(codeElement.ReturnType);
             writer.WriteLines($"{conventions.TempDictionaryVarName} = @{pathParametersProperty.Name.ToSnakeCase()}.clone",
-                            $"{conventions.TempDictionaryVarName}[\"{codeElement.OriginalIndexer.ParameterName}\"] = id");
+                            $"{conventions.TempDictionaryVarName}[\"{codeElement.OriginalIndexer.SerializationName}\"] = id");
             conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, $"return {prefix}");
         }
         private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer) {

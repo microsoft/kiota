@@ -110,10 +110,12 @@ public class OpenApiUrlTreeNodeExtensionsTests
     }
     [InlineData("$select", "select")]
     [InlineData("api-version", "apiversion")]
+    [InlineData("api~topic", "apitopic")]
+    [InlineData("api.encoding", "apiencoding")]
     [Theory]
-    public void SanitizesParameterName(string original, string result)
+    public void SanitizesParameterNameForSymbols(string original, string result)
     {
-        Assert.Equal(result, original.SanitizePathParameterName());
+        Assert.Equal(result, original.SanitizeParameterNameForCodeSymbols());
     }
     [Fact]
     public void GetUrlTemplateCleansInvalidParameters()
@@ -148,13 +150,28 @@ public class OpenApiUrlTreeNodeExtensionsTests
                                 Schema = new () {
                                     Type = "string"
                                 }
+                            },
+                            new (){
+                                Name = "api~topic",
+                                In = ParameterLocation.Query,
+                                Schema = new () {
+                                    Type = "string"
+                                }
+                            },
+                            new (){
+                                Name = "api.encoding",
+                                In = ParameterLocation.Query,
+                                Schema = new () {
+                                    Type = "string"
+                                }
                             }
                         }
-                    } 
+                    }
                 }
             }
         });
         var node = OpenApiUrlTreeNode.Create(doc, Label);
-        Assert.Equal("{+baseurl}/{param}", node.Children.First().Value.GetUrlTemplate());
+        Assert.Equal("{+baseurl}/{param%2Dwith%2Ddashes}/existing-segment{?%24select,api%2Dversion,api%7Etopic,api%2Eencoding}", node.Children.First().Value.GetUrlTemplate());
+        // the query parameters will be decoded by a middleware at runtime before the request is executed
     }
 }
