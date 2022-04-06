@@ -65,7 +65,7 @@ namespace Kiota.Builder.Writers.Shell
             var generatorMethod = (codeElement.Parent as CodeClass)
                                            .Methods
                                            .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod);
-            var pathAndQueryParams = generatorMethod.PathAndQueryParameters;
+            var pathAndQueryParams = generatorMethod.PathQueryAndHeaderParameters;
             var originalMethod = codeElement.OriginalMethod;
             var origParams = originalMethod.Parameters;
             var parametersList = pathAndQueryParams?.Where(p => !string.IsNullOrWhiteSpace(p.Name))?.ToList() ?? new List<CodeParameter>();
@@ -130,18 +130,7 @@ namespace Kiota.Builder.Writers.Shell
             for (int i = 0; i < availableOptions.Count; i++)
             {
                 var (paramType, paramName) = zipped[i];
-                writer.WriteLine($"var {paramName} = ({paramType}) parameters[{i}];");
-            }
-            var pathParams = parametersList.Where(p => p.IsOfKind(CodeParameterKind.Path)).Select(p => p.Name);
-            var pathParamsProp = (codeElement.Parent as CodeClass)?.GetPropertyOfKind(CodePropertyKind.PathParameters);
-            if (pathParamsProp != null && pathParams.Any())
-            {
-                var pathParamsPropName = pathParamsProp.Name.ToFirstCharacterUpperCase();
-                writer.WriteLine($"{pathParamsPropName}.Clear();");
-                foreach (var p in pathParams)
-                {
-                    writer.WriteLine($"{pathParamsPropName}.Add(\"{p}\", {NormalizeToIdentifier(p)});");
-                }
+                writer.WriteLine($"var {paramName.ToFirstCharacterLowerCase()} = ({paramType}) parameters[{i}];");
             }
 
             WriteCommandHandlerBody(originalMethod, requestParams, isHandlerVoid, returnType, writer);
@@ -254,7 +243,7 @@ namespace Kiota.Builder.Writers.Shell
             foreach (var option in parametersList)
             {
                 var type = option.Type as CodeType;
-                var optionName = $"{NormalizeToIdentifier(option.Name)}Option";
+                var optionName = $"{NormalizeToIdentifier(option.Name).ToFirstCharacterLowerCase()}Option";
                 var optionType = conventions.GetTypeString(option.Type, option);
                 if (option.Kind == CodeParameterKind.RequestBody && type.TypeDefinition is CodeClass) optionType = "string";
 
@@ -450,10 +439,10 @@ namespace Kiota.Builder.Writers.Shell
         private static void WriteRequestInformation(LanguageWriter writer, CodeMethod generatorMethod, string parametersList, string separator)
         {
             writer.WriteLine($"var requestInfo = {generatorMethod?.Name}({parametersList}{separator}q => {{");
-            if (generatorMethod?.PathAndQueryParameters != null)
+            if (generatorMethod?.PathQueryAndHeaderParameters != null)
             {
                 writer.IncreaseIndent();
-                foreach (var param in generatorMethod.PathAndQueryParameters.Where(p => p.IsOfKind(CodeParameterKind.QueryParameter)))
+                foreach (var param in generatorMethod.PathQueryAndHeaderParameters.Where(p => p.IsOfKind(CodeParameterKind.QueryParameter)))
                 {
                     var paramName = NormalizeToIdentifier(param.Name);
                     bool isStringParam = "string".Equals(param.Type.Name, StringComparison.OrdinalIgnoreCase) && !param.Type.IsCollection;
@@ -470,9 +459,14 @@ namespace Kiota.Builder.Writers.Shell
                 }
                 writer.CloseBlock("});");
 
-                foreach (var paramName in generatorMethod.PathAndQueryParameters.Where(p => p.IsOfKind(CodeParameterKind.PathParameters)).Select(p => p.Name))
+                foreach (var paramName in generatorMethod.PathQueryAndHeaderParameters.Where(p => p.IsOfKind(CodeParameterKind.Path)).Select(p => p.Name))
                 {
-                    writer.WriteLine($"requestInfo.PathParameters.Add(\"{paramName}\", {NormalizeToIdentifier(paramName)});");
+                    writer.WriteLine($"requestInfo.PathParameters.Add(\"{paramName}\", {NormalizeToIdentifier(paramName).ToFirstCharacterLowerCase()});");
+                }
+
+                foreach (var paramName in generatorMethod.PathQueryAndHeaderParameters.Where(p => p.IsOfKind(CodeParameterKind.Headers)).Select(p => p.Name))
+                {
+                    writer.WriteLine($"requestInfo.Headers[\"{paramName}\"] = {NormalizeToIdentifier(paramName).ToFirstCharacterLowerCase()};");
                 }
             }
             else
