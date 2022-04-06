@@ -12,6 +12,7 @@ namespace Microsoft\Kiota\Http;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
 use Http\Promise\Promise;
+use Microsoft\Kiota\Abstractions\ApiException;
 use Microsoft\Kiota\Abstractions\Authentication\AuthenticationProvider;
 use Microsoft\Kiota\Abstractions\RequestAdapter;
 use Microsoft\Kiota\Abstractions\RequestInformation;
@@ -27,6 +28,7 @@ use Microsoft\Kiota\Abstractions\Types\Time;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
+use function PHPUnit\Framework\throwException;
 
 /**
  * Class GuzzleRequestAdapter
@@ -265,5 +267,37 @@ class GuzzleRequestAdapter implements RequestAdapter
                 return $this->guzzleClient->send($psrRequest, $requestInformation->getRequestOptions());
             }
         );
+    }
+
+    /**
+     * @param ResponseInterface $response
+     * @param array<string, array{string, string}>|null $errorMappings
+     * @return ResponseInterface
+     * @throws ApiException
+     */
+    private function throwFailedResponse(ResponseInterface $response, ?array $errorMappings): ResponseInterface {
+        $statusCode = $response->getStatusCode();
+        if ($statusCode >= 200 && $statusCode < 400) {
+            return $response;
+        }
+        $statusCodeAsString = (string)$statusCode;
+        if ($errorMappings === null || (!isset($errorMappings[$statusCodeAsString]) &&
+            !($statusCode >= 400 && $statusCode < 500 && isset($errorMappings['4XX'])) &&
+            !($statusCode >= 500 && $statusCode < 600 && isset($errorMappings["5XX"])))) {
+            throw new ApiException("the server returned an unexpected status code and no error class is registered for this code " . $statusCode);
+        }
+        /** @var array{string,string}|null $errorClass */
+        $errorClass = $errorMappings[$statusCodeAsString] ?? ($errorMappings[$statusCodeAsString[0] . 'XX'] ?? null);
+
+        try {
+            $rootParseNode = $this->getRootParseNode($response);
+            $error = $rootParseNode->getObjectValue($errorClass);
+            if (is_subclass_of($error, ApiException::class)) {
+                throw $error;
+            }
+            throw new ApiException("Unsupported error type ". get_debug_type($error));
+        } catch (\RuntimeException $exception){
+            throw new \RuntimeException("", 0, $exception);
+        }
     }
 }

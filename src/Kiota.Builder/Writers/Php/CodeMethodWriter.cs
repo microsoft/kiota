@@ -189,7 +189,7 @@ namespace Kiota.Builder.Writers.Php
             };
             if(codeMethod.IsOfKind(CodeMethodKind.Deserializer))
             {
-                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} {(codeMethod.IsStatic ? "static" : string.Empty)} function getFieldDeserializers(): array {{");
+                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)}{(codeMethod.IsStatic ? " static" : string.Empty)} function getFieldDeserializers(): array {{");
                 writer.IncreaseIndent();
                 return;
             }
@@ -217,12 +217,12 @@ namespace Kiota.Builder.Writers.Php
                 var parameters = pathParameters.ToList();
                 if (parameters.Any()) pathParamsString = $", {string.Join(", ", parameters)}";
                 var pathParametersString = pathParametersParam != null ? $"{conventions.GetParameterSignature(pathParametersParam, codeMethod)}, " : string.Empty;
-                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)} function {methodName}({pathParametersString}{conventions.GetParameterSignature(requestAdapterParam, codeMethod)}{pathParamsString}) {{");
+                writer.WriteLine($"{conventions.GetAccessModifier(codeMethod.Access)}{(codeMethod.IsStatic ? " static" : string.Empty)} function {methodName}({pathParametersString}{conventions.GetParameterSignature(requestAdapterParam, codeMethod)}{pathParamsString}) {{");
             }
             else
             {
                 writer.WriteLine(
-                    $"{conventions.GetAccessModifier(codeMethod.Access)} function {methodName}({methodParameters}){(!codeMethod.IsOfKind(CodeMethodKind.RequestExecutor) ? $"{returnValue}" : ": Promise")} {{");
+                    $"{conventions.GetAccessModifier(codeMethod.Access)} {(codeMethod.IsStatic ? "static " : string.Empty)}function {methodName}({methodParameters}){(!codeMethod.IsOfKind(CodeMethodKind.RequestExecutor) ? $"{returnValue}" : ": Promise")} {{");
             }
 
             writer.IncreaseIndent();
@@ -291,7 +291,7 @@ namespace Kiota.Builder.Writers.Php
                         null => "$n->getCollectionOfPrimitiveValues()",
                         CodeEnum enumType =>
                             $"$n->getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)",
-                        _ => $"$n->getCollectionOfObjectValues(array('{conventions.TranslateType(propType)}', 'createFromDiscriminatorValue'))"
+                        _ => $"$n->getCollectionOfObjectValues(array({conventions.TranslateType(propType)}::class, 'createFromDiscriminatorValue'))"
                     };
                 else if (currentType.TypeDefinition is CodeEnum)
                     return $"$n->getEnumValue({propertyType.ToFirstCharacterUpperCase()}::class)";
@@ -306,7 +306,7 @@ namespace Kiota.Builder.Writers.Php
                 "decimal" or "double" => "$n->getFloatValue()",
                 "streaminterface" => "$n->getBinaryContent()",
                 _ when conventions.PrimitiveTypes.Contains(lowerCaseType) => $"$n->get{propertyType.ToFirstCharacterUpperCase()}Value()",
-                _ => $"$n->getObjectValue(array('{propertyType.ToFirstCharacterUpperCase()}', 'createFromDiscriminatorValue'))",
+                _ => $"$n->getObjectValue(array({propertyType.ToFirstCharacterUpperCase()}::class, 'createFromDiscriminatorValue'))",
             };
         }
 
@@ -433,14 +433,26 @@ namespace Kiota.Builder.Writers.Php
                 writer.WriteLine($"{errorMappingsVarName} = [");
                 errorMappings.ToList().ForEach(errorMapping =>
                 {
-                    writer.WriteLine($"'{errorMapping.Key}' => array('{errorMapping.Value.Name}', 'createFromDiscriminatorValue'),");
+                    writer.WriteLine($"'{errorMapping.Key}' => array({errorMapping.Value.Name}::class, 'createFromDiscriminatorValue'),");
                 });
                 writer.WriteLine("];");
             }
-            if(codeElement.Parameters.Any(x => x.IsOfKind(CodeParameterKind.ResponseHandler)))
-                writer.WriteLine($"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->sendAsync({RequestInfoVarName}, {(!returnVoidOrString ? $"{returnType}::class": "''")}, $responseHandler, {(hasErrorMappings ? $"{errorMappingsVarName}" : "null")});");
+
+            var returnsVoid = returnType.Equals("void", StringComparison.OrdinalIgnoreCase);
+            var isStream = returnType.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase);
+            var isCollection = codeElement.ReturnType.IsCollection;
+            var methodName = GetSendRequestMethodName(returnsVoid, isStream, isCollection, returnType);
+            if (codeElement.Parameters.Any(x => x.IsOfKind(CodeParameterKind.ResponseHandler)))
+            {
+                writer.WriteLine(
+                    $"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->{methodName}({RequestInfoVarName}, {(!returnVoidOrString ? $"{returnType}::class" : "''")}, $responseHandler, {(hasErrorMappings ? $"{errorMappingsVarName}" : "null")});");
+            }
             else
-                writer.WriteLine($"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->sendAsync({RequestInfoVarName}, {(!returnVoidOrString ? $"{returnType}::class": "''")}, null, {(hasErrorMappings ? $"{errorMappingsVarName}" : "null")});");
+            {
+                writer.WriteLine(
+                    $"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->{methodName}({RequestInfoVarName}, {(!returnVoidOrString ? $"{returnType}::class" : "''")}, null, {(hasErrorMappings ? $"{errorMappingsVarName}" : "null")});");
+            }
+
             writer.DecreaseIndent();
             writer.WriteLine("} catch(Exception $ex) {");
             writer.IncreaseIndent();
@@ -464,6 +476,18 @@ namespace Kiota.Builder.Writers.Php
             if(serializationModules != null)
                 foreach(var module in serializationModules)
                     writer.WriteLine($"ApiClientBuilder::{methodName}({module}::class);");
+        }
+        
+        protected string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType)
+        {
+            if (isVoid) return "sendNoContentAsync";
+            else if (isStream || conventions.PrimitiveTypes.Contains(returnType.ToLowerInvariant()))
+                if (isCollection)
+                    return $"sendPrimitiveCollectionAsync";
+                else
+                    return $"sendPrimitiveAsync";
+            else if (isCollection) return $"sendCollectionAsync";
+            else return $"sendAsync";
         }
         
         private static void WriteFactoryMethodBody(CodeMethod codeElement, LanguageWriter writer){
