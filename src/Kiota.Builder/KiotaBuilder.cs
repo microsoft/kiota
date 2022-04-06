@@ -701,28 +701,39 @@ public class KiotaBuilder
         var pathAndQueryParameters = currentNode
             .PathItems[Constants.DefaultOpenApiLabel]
             .Parameters
-            .Where(x => x.In == ParameterLocation.Path || x.In == ParameterLocation.Query)
+            .Where(x => x.In == ParameterLocation.Path || x.In == ParameterLocation.Query || x.In == ParameterLocation.Header)
             .Select(x => new CodeParameter
             {
                 Name = x.Name.TrimStart('$').SanitizePathParameterName(),
                 Type = GetQueryParameterType(x.Schema),
                 Description = x.Description,
-                Kind = x.In == ParameterLocation.Path ? CodeParameterKind.Path : CodeParameterKind.QueryParameter,
+                Kind = GetParameterKindFromLocation(x.In),
                 Optional = !x.Required
             })
             .Union(operation
                     .Parameters
-                    .Where(x => x.In == ParameterLocation.Path || x.In == ParameterLocation.Query)
+                    .Where(x => x.In == ParameterLocation.Path || x.In == ParameterLocation.Query || x.In == ParameterLocation.Header)
                     .Select(x => new CodeParameter
                     {
                         Name = x.Name.TrimStart('$').SanitizePathParameterName(),
                         Type = GetQueryParameterType(x.Schema),
                         Description = x.Description,
-                        Kind = x.In == ParameterLocation.Path ? CodeParameterKind.Path : CodeParameterKind.QueryParameter,
+                        Kind = GetParameterKindFromLocation(x.In),
                         Optional = !x.Required
                     }))
             .ToArray();
-        target.AddPathOrQueryParameter(pathAndQueryParameters);
+        target.AddPathQueryOrHeaderParameter(pathAndQueryParameters);
+    }
+
+    private static CodeParameterKind GetParameterKindFromLocation(ParameterLocation? location)
+    {
+        return location switch
+        {
+            ParameterLocation.Query => CodeParameterKind.QueryParameter,
+            ParameterLocation.Header => CodeParameterKind.Headers,
+            ParameterLocation.Path => CodeParameterKind.Path,
+            _ => throw new NotSupportedException($"No matching parameter kind is supported for parameters in {location}"),
+        };
     }
     private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeClass parameterClass, CodeMethod method) {
         var nonBinaryRequestBody = operation.RequestBody?.Content?.FirstOrDefault(x => !RequestBodyBinaryContentType.Equals(x.Key, StringComparison.OrdinalIgnoreCase));

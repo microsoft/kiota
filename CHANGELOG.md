@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added generation of command options for headers defined in the OpenAPI metadata source file. (Shell)
 
 ### Changed
 
