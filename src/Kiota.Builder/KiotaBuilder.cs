@@ -691,12 +691,12 @@ public class KiotaBuilder
             ReturnType = new CodeType { Name = "RequestInformation", IsNullable = false, IsExternal = true},
         };
         if (config.Language == GenerationLanguage.Shell)
-            SetPathAndQueryParameters(generatorMethod, currentNode, operation);
+            SetPathQueryAndHeaderParameters(generatorMethod, currentNode, operation);
         parentClass.AddMethod(generatorMethod);
         AddRequestBuilderMethodParameters(currentNode, operation, parameterClass, generatorMethod);
         logger.LogTrace("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
     }
-    private static void SetPathAndQueryParameters(CodeMethod target, OpenApiUrlTreeNode currentNode, OpenApiOperation operation)
+    private static void SetPathQueryAndHeaderParameters(CodeMethod target, OpenApiUrlTreeNode currentNode, OpenApiOperation operation)
     {
         var pathAndQueryParameters = currentNode
             .PathItems[Constants.DefaultOpenApiLabel]
@@ -704,7 +704,7 @@ public class KiotaBuilder
             .Where(x => x.In == ParameterLocation.Path || x.In == ParameterLocation.Query || x.In == ParameterLocation.Header)
             .Select(x => new CodeParameter
             {
-                Name = x.Name.TrimStart('$').SanitizePathParameterName(),
+                Name = x.Name.TrimStart('$'),
                 Type = GetQueryParameterType(x.Schema),
                 Description = x.Description,
                 Kind = GetParameterKindFromLocation(x.In),
@@ -715,7 +715,7 @@ public class KiotaBuilder
                     .Where(x => x.In == ParameterLocation.Path || x.In == ParameterLocation.Query || x.In == ParameterLocation.Header)
                     .Select(x => new CodeParameter
                     {
-                        Name = x.Name.TrimStart('$').SanitizePathParameterName(),
+                        Name = x.Name.TrimStart('$'),
                         Type = GetQueryParameterType(x.Schema),
                         Description = x.Description,
                         Kind = GetParameterKindFromLocation(x.In),
