@@ -1133,6 +1133,7 @@ public class KiotaBuilder
                 {
                     Name = parameter.Name.SanitizeParameterNameForCodeSymbols(),
                     Description = parameter.Description.CleanupDescription(),
+                    Kind = CodePropertyKind.QueryParameter,
                     Type = new CodeType
                     {
                         IsExternal = true,
