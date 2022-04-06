@@ -1032,7 +1032,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                 {
                     Name = "RequestAdapter"
                 },
-                UrlTemplateParameterName = "rawUrl"
+                SerializationName = "rawUrl"
             });
             codeMethod.DeserializerModules = new() {"Microsoft\\Kiota\\Serialization\\Deserializer"};
             codeMethod.SerializerModules = new() {"Microsoft\\Kiota\\Serialization\\Serializer"};

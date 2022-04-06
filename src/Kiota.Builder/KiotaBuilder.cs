@@ -366,12 +366,13 @@ public class KiotaBuilder
     }
     private static void AddPathParametersToMethod(OpenApiUrlTreeNode currentNode, CodeMethod methodToAdd, bool asOptional) {
         foreach(var parameter in currentNode.GetPathParametersForCurrentSegment()) {
+            var codeName = parameter.Name.SanitizeParameterNameForCodeSymbols();
             var mParameter = new CodeParameter {
-                Name = parameter.Name,
+                Name = codeName,
                 Optional = asOptional,
                 Description = parameter.Description.CleanupDescription(),
                 Kind = CodeParameterKind.Path,
-                UrlTemplateParameterName = parameter.Name,
+                SerializationName = parameter.Name.Equals(codeName) ? default : parameter.Name.SanitizeParameterNameForUrlTemplate(),
             };
             mParameter.Type = GetPrimitiveType(parameter.Schema);
             methodToAdd.AddParameter(mParameter);
@@ -1142,7 +1143,7 @@ public class KiotaBuilder
 
                 if(!parameter.Name.Equals(prop.Name))
                 {
-                    prop.SerializationName = parameter.Name;
+                    prop.SerializationName = parameter.Name.SanitizeParameterNameForUrlTemplate();
                 }
 
                 if (!parameterClass.ContainsMember(parameter.Name))

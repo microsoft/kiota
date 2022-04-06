@@ -50,10 +50,6 @@ namespace Kiota.Builder
         public string Description {get; set;}
         public string DefaultValue {get; set;}
         public string SerializationName { get; set; }
-        /// <summary>
-        /// The name of the url template parameter this path parameter maps to.
-        /// </summary>
-        public string UrlTemplateParameterName { get; set; }
         public object Clone()
         {
             return new CodeParameter {
@@ -64,7 +60,6 @@ namespace Kiota.Builder
                 Description = Description?.Clone() as string,
                 DefaultValue = DefaultValue?.Clone() as string,
                 Parent = Parent,
-                UrlTemplateParameterName = UrlTemplateParameterName?.Clone() as string,
                 SerializationName = SerializationName?.Clone() as string,
             };
         }
