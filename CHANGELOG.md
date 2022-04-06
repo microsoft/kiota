@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
-
+- Simplified field deserialization.(PHP) [#1493](https://github.com/microsoft/kiota/issues/1493)
 - Fixed a bug where the generator would not strip the common namespace component id for models. [#1483](https://github.com/microsoft/kiota/issues/1483)
 - Simplified field deserialization. [#1490](https://github.com/microsoft/kiota/issues/1490)
 
