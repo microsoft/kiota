@@ -230,9 +230,6 @@ class JsonParseNode implements ParseNode
                 if (is_subclass_of($type, Enum::class)){
                     return $this->getEnumValue($type);
                 }
-                if (is_subclass_of($type, Parsable::class)){
-                    return $this->getObjectValue(array($type, 'createFromDiscriminatorValue'));
-                }
                 if (is_subclass_of($type, StreamInterface::class)) {
                     return $this->getBinaryContent();
                 }
