@@ -7,9 +7,12 @@ using Microsoft.OpenApi.Models;
 namespace Kiota.Builder.Extensions {
     public static class OpenApiOperationExtensions {
         private static readonly HashSet<string> successCodes = new(StringComparer.OrdinalIgnoreCase) {"200", "201", "202"}; //204 excluded as it won't have a schema
-        private static readonly HashSet<string> validMimeTypes = new (StringComparer.OrdinalIgnoreCase) {
+        private static readonly HashSet<string> structuredMimeTypes = new (StringComparer.OrdinalIgnoreCase) {
             "application/json",
-            "text/plain"
+            "application/xml",
+            "text/plain",
+            "text/xml",
+            "text/yaml",
         };
         /// <summary>
         /// cleans application/vnd.github.mercy-preview+json to application/json
@@ -19,8 +22,7 @@ namespace Kiota.Builder.Extensions {
         {
             // Return Schema that represents all the possible success responses!
             var schemas = operation.Responses.Where(r => successCodes.Contains(r.Key))
-                                .SelectMany(re => re.Value.GetResponseSchemas())
-                                .Where(s => s is not null);
+                                .SelectMany(re => re.Value.GetResponseSchemas());
 
             return schemas.FirstOrDefault();
         }
@@ -29,7 +31,7 @@ namespace Kiota.Builder.Extensions {
             var schemas = response.Content
                                 .Where(c => !string.IsNullOrEmpty(c.Key))
                                 .Select(c => (Key: c.Key.Split(';', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault(), c.Value))
-                                .Where(c => validMimeTypes.Contains(c.Key) || validMimeTypes.Contains(vendorSpecificCleanup.Replace(c.Key, string.Empty)))
+                                .Where(c => structuredMimeTypes.Contains(c.Key) || structuredMimeTypes.Contains(vendorSpecificCleanup.Replace(c.Key, string.Empty)))
                                 .Select(co => co.Value.Schema)
                                 .Where(s => s is not null);
 

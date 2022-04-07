@@ -13,8 +13,8 @@ public class GoConventionService : CommonLanguageConventionService
     public override string DocCommentPrefix => "// ";
     public override string ParseNodeInterfaceName => "ParseNode";
     #pragma warning disable CA1822 // Method should be static
-    public string AbstractionsHash => "ida96af0f171bb75f894a4013a6b3146a4397c58f11adb81a2b7cbea9314783a9";
-    public string SerializationHash => "i04eb5309aeaafadd28374d79c8471df9b267510b4dc2e3144c378c50f6fd7b55";
+    public string AbstractionsHash => "i2ae4187f7daee263371cb1c977df639813ab50ffa529013b7437480d1ec0158f";
+    public string SerializationHash => "i878a80d2330e89d26896388a3f487eef27b0a0e6c010c493bf80be1452208f91";
     #pragma warning restore CA1822 // Method should be static
     public override string GetAccessModifier(AccessModifier access)
     {

@@ -220,14 +220,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     }
     private void WriteDeserializerBody(CodeMethod codeElement, CodeMethod method, CodeClass parentClass, LanguageWriter writer, bool inherits) {
         var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
-        writer.WriteLine($"return new HashMap<>({(inherits ? "super." + codeElement.Name.ToFirstCharacterLowerCase()+ "()" : fieldToSerialize.Count())}) {{{{");
+        writer.WriteLines(
+            $"final {parentClass.Name.ToFirstCharacterUpperCase()} currentObject = this;",
+            $"return new HashMap<>({(inherits ? "super." + codeElement.Name.ToFirstCharacterLowerCase()+ "()" : fieldToSerialize.Count())}) {{{{");
         if(fieldToSerialize.Any()) {
             writer.IncreaseIndent();
             fieldToSerialize
                     .OrderBy(x => x.Name)
                     .Select(x => {
                         var setterName = x.IsNameEscaped && !string.IsNullOrEmpty(x.SerializationName) ? x.SerializationName : x.Name;
-                        return $"this.put(\"{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}\", (o, n) -> {{ (({parentClass.Name.ToFirstCharacterUpperCase()})o).set{setterName.ToFirstCharacterUpperCase()}({GetDeserializationMethodName(x.Type, method)}); }});";
+                        return $"this.put(\"{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}\", (n) -> {{ currentObject.set{setterName.ToFirstCharacterUpperCase()}({GetDeserializationMethodName(x.Type, method)}); }});";
                     })
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
@@ -348,7 +350,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     private static readonly CodeParameterOrderComparer parameterOrderComparer = new();
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType) {
         var accessModifier = conventions.GetAccessModifier(code.Access);
-        var genericTypeParameterDeclaration = code.IsOfKind(CodeMethodKind.Deserializer) ? " <T>": string.Empty;
         var returnTypeAsyncPrefix = code.IsAsync ? "java.util.concurrent.CompletableFuture<" : string.Empty;
         var returnTypeAsyncSuffix = code.IsAsync ? ">" : string.Empty;
         var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
@@ -366,7 +367,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                                             returnType;
         var finalReturnType = isConstructor ? string.Empty : $" {returnTypeAsyncPrefix}{collectionCorrectedReturnType}{returnTypeAsyncSuffix}";
         var staticModifier = code.IsStatic ? " static" : string.Empty;
-        writer.WriteLine($"{accessModifier}{staticModifier}{genericTypeParameterDeclaration}{finalReturnType} {methodName}({parameters}) {throwableDeclarations}{{");
+        writer.WriteLine($"{accessModifier}{staticModifier}{finalReturnType} {methodName}({parameters}) {throwableDeclarations}{{");
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer) {
         var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);

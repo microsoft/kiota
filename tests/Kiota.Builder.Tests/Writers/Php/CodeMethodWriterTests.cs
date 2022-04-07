@@ -701,16 +701,16 @@ namespace Kiota.Builder.Tests.Writers.Php
             writer.Write(deserializerMethod);
             var result = tw.ToString();
 
-            Assert.Contains("'name' => function (self $o, ParseNode $n) { $o->setName($n->getStringValue()); },", result);
-            Assert.Contains("'story' => function (self $o, ParseNode $n) { $o->setStory($n->getBinaryContent()); }", result);
+            Assert.Contains("'name' => function (ParseNode $n) use ($currentObject) { $currentObject->setName($n->getStringValue()); },", result);
+            Assert.Contains("'story' => function (ParseNode $n) use ($currentObject) { $currentObject->setStory($n->getBinaryContent()); }", result);
             Assert.Contains(
-                "'years' => function (self $o, ParseNode $n) { $o->setYears($n->getCollectionOfPrimitiveValues())",
+                "'years' => function (ParseNode $n) use ($currentObject) { $currentObject->setYears($n->getCollectionOfPrimitiveValues())",
                 result);
             Assert.Contains(
-                "'users' => function (self $o, ParseNode $n) { $o->setUsers($n->getCollectionOfObjectValues(EmailAddress::class));",
+                "'users' => function (ParseNode $n) use ($currentObject) { $currentObject->setUsers($n->getCollectionOfObjectValues(EmailAddress::class));",
                 result);
             Assert.Contains(
-                "'dOB' => function (self $o, ParseNode $n) { $o->setDOB($n->getDateTimeValue());",
+                "'dOB' => function (ParseNode $n) use ($currentObject) { $currentObject->setDOB($n->getDateTimeValue());",
                 result);
         }
 

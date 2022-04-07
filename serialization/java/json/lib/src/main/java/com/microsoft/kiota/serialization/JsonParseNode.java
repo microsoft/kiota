@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.microsoft.kiota.serialization.ParseNode;
@@ -251,7 +250,7 @@ public class JsonParseNode implements ParseNode {
         }
         return result;
     }
-    private <T extends Parsable> void assignFieldValues(final T item, final Map<String, BiConsumer<T, ParseNode>> fieldDeserializers) {
+    private <T extends Parsable> void assignFieldValues(final T item, final Map<String, Consumer<ParseNode>> fieldDeserializers) {
         if(currentNode.isJsonObject()) {
             if(this.onBeforeAssignFieldValues != null) {
                 this.onBeforeAssignFieldValues.accept(item);
@@ -262,14 +261,14 @@ public class JsonParseNode implements ParseNode {
             }
             for (final Map.Entry<String, JsonElement> fieldEntry : currentNode.getAsJsonObject().entrySet()) {
                 final String fieldKey = fieldEntry.getKey();
-                final BiConsumer<? super T, ParseNode> fieldDeserializer = fieldDeserializers.get(fieldKey);
+                final Consumer<ParseNode> fieldDeserializer = fieldDeserializers.get(fieldKey);
                 final JsonElement fieldValue = fieldEntry.getValue();
                 if(fieldValue.isJsonNull())
                     continue;
                 if(fieldDeserializer != null) {
                     final var onBefore = this.onBeforeAssignFieldValues;
                     final var onAfter = this.onAfterAssignFieldValues;
-                    fieldDeserializer.accept(item, new JsonParseNode(fieldValue) {{
+                    fieldDeserializer.accept(new JsonParseNode(fieldValue) {{
                         this.setOnBeforeAssignFieldValues(onBefore);
                         this.setOnAfterAssignFieldValues(onAfter);
                     }});

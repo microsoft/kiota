@@ -67,23 +67,23 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public string Description {get; set;}
     
     /// <summary>
-    /// The combination of the path and query parameters for the current URL.
+    /// The combination of the path, query and header parameters for the current URL.
     /// Only use this property if the language you are generating for doesn't support fluent API style (e.g. Shell/CLI)
     /// </summary>
-    public IEnumerable<CodeParameter> PathAndQueryParameters
+    public IEnumerable<CodeParameter> PathQueryAndHeaderParameters
     {
         get; private set;
     }
-    public void AddPathOrQueryParameter(params CodeParameter[] parameters)
+    public void AddPathQueryOrHeaderParameter(params CodeParameter[] parameters)
     {
         if (parameters == null || !parameters.Any()) return;
         foreach (var parameter in parameters)
         {
             EnsureElementsAreChildren(parameter);
         }
-        if (PathAndQueryParameters == null)
-            PathAndQueryParameters = new List<CodeParameter>(parameters);
-        else if (PathAndQueryParameters is List<CodeParameter> cast)
+        if (PathQueryAndHeaderParameters == null)
+            PathQueryAndHeaderParameters = new List<CodeParameter>(parameters);
+        else if (PathQueryAndHeaderParameters is List<CodeParameter> cast)
             cast.AddRange(parameters);
     }
     /// <summary>

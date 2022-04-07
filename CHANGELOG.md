@@ -8,19 +8,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added generation of command options for headers defined in the OpenAPI metadata source file. (Shell)
+
+### Changed
+- Simplified field deserialization.(PHP) [#1493](https://github.com/microsoft/kiota/issues/1493)
+- Fixed a bug where the generator would not strip the common namespace component id for models. [#1483](https://github.com/microsoft/kiota/issues/1483)
+- Simplified field deserialization. [#1490](https://github.com/microsoft/kiota/issues/1490)
+
+## [0.0.21] - 2022-04-01
+
+### Added
 
 - Added text output formatter to CLI commons. (Shell)
 - Added support for vendor specific content types generation/serialization. [#1197](https://github.com/microsoft/kiota/issues/1197)
 - Added support for 204 no content in generation and CSharp/Java/Go/TypeScript request adapters. #1410
 - Added a draft swift generation implementation. #1444
+- Added support for yaml response type generation. [#302](https://github.com/microsoft/kiota/issues/302)
+- Added support for xml response type generation. [#302](https://github.com/microsoft/kiota/issues/302)
+- Added support for unstructured response generation (stream). [#546](https://github.com/microsoft/kiota/issues/546)
 
 ### Changed
 
+- Moved go libraries to their own repository. [#370](https://github.com/microsoft/kiota/issues/370)
+- Fixed a bug where the base url of the request adapter would be reset by the client(PHP). [#1469](https://github.com/microsoft/kiota/issues/1469)
+- Fixed issue where custom date types are never corrected for method parameters(PHP). #1474
+- Replaced DateTimeOffset with DateTime for custom date types(PHP). #1474
 - Fixed a bug where the base url of the request adapter would be reset by the client. [#1443](https://github.com/microsoft/kiota/issues/1443)
 - Fixed a bug where request builder classes for collections endpoints would have a wrong name. #1052
-- Fix issue with ambiguous type names causing build errors and stack overflows. (Shell) #1052
+- Fixed issue with ambiguous type names causing build errors and stack overflows. (Shell) #1052
 - Fixed a bug where symbols (properties, methods, classes) could contain invalid characters #1436
 - Renamed parameters for requests: o => options, q => queryParameters, h => headers. [#1380](https://github.com/microsoft/kiota/issues/1380)
+- Fixed a bug where names would clash with reserved type [#1437](https://github.com/microsoft/kiota/issues/1437)
+- Fixed unnecessary use of fully qualified type names in Dotnet.
 
 ## [0.0.20] - 2022-03-25
 

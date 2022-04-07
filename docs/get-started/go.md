@@ -10,7 +10,7 @@ parent: Get started
 
 ## Target project requirements
 
-Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](https://github.com/microsoft/kiota/tree/main/abstractions/go/), [authentication](https://github.com/microsoft/kiota/tree/main/authentication/go/azure), [http](https://github.com/microsoft/kiota/tree/main/http/go/http/), and [serialization](https://github.com/microsoft/kiota/tree/main/serialization/go/json/) packages from the GitHub feed.
+Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](https://github.com/microsoft/kiota-abstractions-go), [authentication](https://github.com/microsoft/kiota-authentication-azure-go), [http](https://github.com/microsoft/kiota-http-go), [serialization JSON](https://github.com/microsoft/kiota-serialization-json-go), and [serialization Text](https://github.com/microsoft/kiota-serialization-text-go) packages.
 
 ## Creating target projects
 
@@ -27,15 +27,15 @@ go mod init getuser
 Create a file named **getuser.go** and add the following code.
 
 ```bash
-go get github.com/microsoft/kiota/abstractions/go
-go get github.com/microsoft/kiota/http/go/nethttp
-go get github.com/microsoft/kiota/serialization/go/json
-go get github.com/microsoft/kiota/serialization/go/text
-go get github.com/microsoft/kiota/authentication/go/azure
+go get github.com/microsoft/kiota-abstractions-go
+go get github.com/microsoft/kiota-http-go
+go get github.com/microsoft/kiota-serialization-json-go
+go get github.com/microsoft/kiota-serialization-text-go
+go get github.com/microsoft/kiota-authentication-azure-go
 go get github.com/Azure/azure-sdk-for-go/sdk/azidentity
 ```
 
-Only the first package, `github.com/microsoft/kiota/abstractions/go`, is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
+Only the first package, `github.com/microsoft/kiota-abstractions-go`, is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
 
 ## Generating the SDK
 
@@ -67,8 +67,8 @@ import (
   "getuser/client"
 
   "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-  azure "github.com/microsoft/kiota/authentication/go/azure"
-  http "github.com/microsoft/kiota/http/go/nethttp"
+  azure "github.com/microsoft/kiota-authentication-azure-go"
+  http "github.com/microsoft/kiota-http-go"
 )
 
 func main() {

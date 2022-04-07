@@ -105,11 +105,11 @@ public class ShellCodeMethodWriterTests : IDisposable
         });
     }
 
-    private static void AddPathAndQueryParameters(CodeMethod method) {
+    private static void AddPathQueryAndHeaderParameters(CodeMethod method) {
         var stringType = new CodeType {
             Name = "string",
         };
-        method.AddPathOrQueryParameter(new CodeParameter{
+        method.AddPathQueryOrHeaderParameter(new CodeParameter{
             Name = "q",
             Kind = CodeParameterKind.QueryParameter,
             Type = stringType,
@@ -117,10 +117,16 @@ public class ShellCodeMethodWriterTests : IDisposable
             Description = "The q option",
             Optional = true
         });
-        method.AddPathOrQueryParameter(new CodeParameter {
+        method.AddPathQueryOrHeaderParameter(new CodeParameter {
             Name = "p",
             Kind = CodeParameterKind.Path,
             Type = stringType
+        });
+        method.AddPathQueryOrHeaderParameter(new CodeParameter {
+            Name = "Test-Header",
+            Kind = CodeParameterKind.Headers,
+            Type = stringType,
+            Description = "The test header",
         });
     }
 
@@ -300,7 +306,7 @@ public class ShellCodeMethodWriterTests : IDisposable
 
         AddRequestProperties();
         AddRequestBodyParameters(method.OriginalMethod);
-        AddPathAndQueryParameters(generatorMethod);
+        AddPathQueryAndHeaderParameters(generatorMethod);
 
         writer.Write(method);
         var result = tw.ToString();
@@ -310,16 +316,20 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
         Assert.Contains("qOption.IsRequired = false;", result);
         Assert.Contains("command.AddOption(qOption);", result);
+        Assert.Contains("var testHeaderOption = new Option<string>(\"--test-header\", description: \"The test header\")", result);
+        Assert.Contains("testHeaderOption.IsRequired = true;", result);
+        Assert.Contains("command.AddOption(testHeaderOption);", result);
         Assert.Contains("command.SetHandler(async (object[] parameters) => {", result);
         Assert.Contains("var q = (string) parameters[0];", result);
-        Assert.Contains("PathParameters.Clear();", result);
-        Assert.Contains("PathParameters.Add(\"p\", p);", result);
+        Assert.Contains("var testHeader = (string) parameters[2];", result);
         Assert.Contains("var requestInfo = CreateGetRequestInformation", result);
+        Assert.Contains("requestInfo.PathParameters.Add(\"p\", p);", result);
+        Assert.Contains("requestInfo.Headers[\"Test-Header\"] = testHeader;", result);
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
-        Assert.Contains("var outputFormatterFactory = (IOutputFormatterFactory) parameters[3];", result);
+        Assert.Contains("var outputFormatterFactory = (IOutputFormatterFactory) parameters[4];", result);
         Assert.Contains("var formatter = outputFormatterFactory.GetFormatter(FormatterType.TEXT);", result);
         Assert.Contains("await formatter.WriteOutputAsync(response, null, cancellationToken);", result);
-        Assert.Contains("}, new CollectionBinding(qOption,", result);
+        Assert.Contains("}, new CollectionBinding(qOption, pOption, testHeaderOption", result);
         Assert.Contains("return command;", result);
     }
 
@@ -331,14 +341,15 @@ public class ShellCodeMethodWriterTests : IDisposable
         method.Description = "Test description";
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Get;
+        var userClass = root.AddClass(new CodeClass
+        {
+            Name = "User",
+            Kind = CodeClassKind.Model
+        }).First();
         var stringType = new CodeType
         {
             Name = "user",
-            TypeDefinition = new CodeClass
-            {
-                Name = "User",
-                Kind = CodeClassKind.Model
-            },
+            TypeDefinition = userClass,
         };
         var generatorMethod = new CodeMethod
         {
@@ -358,7 +369,7 @@ public class ShellCodeMethodWriterTests : IDisposable
 
         AddRequestProperties();
         AddRequestBodyParameters(method.OriginalMethod);
-        AddPathAndQueryParameters(generatorMethod);
+        AddPathQueryAndHeaderParameters(generatorMethod);
 
         writer.Write(method);
         var result = tw.ToString();
@@ -373,9 +384,8 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("command.AddOption(outputOption);", result);
         Assert.Contains("command.SetHandler(async (object[] parameters) => {", result);
         Assert.Contains("var q = (string) parameters[0];", result);
-        Assert.Contains("PathParameters.Clear();", result);
-        Assert.Contains("PathParameters.Add(\"p\", p);", result);
         Assert.Contains("var requestInfo = CreateGetRequestInformation", result);
+        Assert.Contains("requestInfo.PathParameters.Add(\"p\", p);", result);
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("var formatterOptions = output.GetOutputFormatterOptions(new FormatterOptionsModel(!jsonNoIndent));", result);
         Assert.Contains("response = await outputFilter?.FilterOutputAsync(response, query, cancellationToken)", result);
@@ -395,14 +405,15 @@ public class ShellCodeMethodWriterTests : IDisposable
         {
             Name = "string",
         };
+        var contentClass = root.AddClass(new CodeClass
+        {
+            Name = "Content",
+            Kind = CodeClassKind.Model
+        }).First();
         var bodyType = new CodeType
         {
             Name = "content",
-            TypeDefinition = new CodeClass
-            {
-                Name = "Content",
-                Kind = CodeClassKind.Model
-            },
+            TypeDefinition = contentClass,
         };
         var generatorMethod = new CodeMethod
         {
@@ -427,7 +438,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         codeClass.AddMethod(generatorMethod);
 
         AddRequestProperties();
-        AddPathAndQueryParameters(generatorMethod);
+        AddPathQueryAndHeaderParameters(generatorMethod);
 
         writer.Write(method);
         var result = tw.ToString();
@@ -439,11 +450,10 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var bodyOption = new Option<string>(\"--body\")", result);
         Assert.Contains("bodyOption.IsRequired = true;", result);
         Assert.Contains("command.AddOption(bodyOption);", result);
-        Assert.Contains("PathParameters.Clear();", result);
-        Assert.Contains("PathParameters.Add(\"p\", p);", result);
         Assert.Contains("using var stream = new MemoryStream(Encoding.UTF8.GetBytes(body));", result);
         Assert.Contains("var model = parseNode.GetObjectValue<Content>(Content.CreateFromDiscriminatorValue);", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
+        Assert.Contains("requestInfo.PathParameters.Add(\"p\", p);", result);
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("return command;", result);
     }
@@ -459,14 +469,15 @@ public class ShellCodeMethodWriterTests : IDisposable
         {
             Name = "string",
         };
+        var contentClass = root.AddClass(new CodeClass
+        {
+            Name = "Content",
+            Kind = CodeClassKind.Model
+        }).First();
         var bodyType = new CodeType
         {
             Name = "content",
-            TypeDefinition = new CodeClass
-            {
-                Name = "Content",
-                Kind = CodeClassKind.Model
-            },
+            TypeDefinition = contentClass,
             CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex
         };
         var generatorMethod = new CodeMethod
@@ -492,7 +503,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         codeClass.AddMethod(generatorMethod);
 
         AddRequestProperties();
-        AddPathAndQueryParameters(generatorMethod);
+        AddPathQueryAndHeaderParameters(generatorMethod);
 
         writer.Write(method);
         var result = tw.ToString();
@@ -504,11 +515,10 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var bodyOption = new Option<string>(\"--body\")", result);
         Assert.Contains("bodyOption.IsRequired = true;", result);
         Assert.Contains("command.AddOption(bodyOption);", result);
-        Assert.Contains("PathParameters.Clear();", result);
-        Assert.Contains("PathParameters.Add(\"p\", p);", result);
         Assert.Contains("using var stream = new MemoryStream(Encoding.UTF8.GetBytes(body));", result);
         Assert.Contains("var model = parseNode.GetCollectionOfObjectValues<Content>(Content.CreateFromDiscriminatorValue);", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
+        Assert.Contains("requestInfo.PathParameters.Add(\"p\", p);", result);
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("return command;", result);
     }
@@ -551,7 +561,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         codeClass.AddMethod(generatorMethod);
 
         AddRequestProperties();
-        AddPathAndQueryParameters(generatorMethod);
+        AddPathQueryAndHeaderParameters(generatorMethod);
 
         writer.Write(method);
         var result = tw.ToString();
@@ -563,10 +573,9 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var bodyOption = new Option<Stream>(\"--file\")", result);
         Assert.Contains("bodyOption.IsRequired = true;", result);
         Assert.Contains("command.AddOption(bodyOption);", result);
-        Assert.Contains("PathParameters.Clear();", result);
-        Assert.Contains("PathParameters.Add(\"p\", p);", result);
         Assert.Contains("using var stream = file.OpenRead();", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
+        Assert.Contains("requestInfo.PathParameters.Add(\"p\", p);", result);
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("return command;", result);
     }
@@ -595,7 +604,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         codeClass.AddMethod(generatorMethod);
 
         AddRequestProperties();
-        AddPathAndQueryParameters(generatorMethod);
+        AddPathQueryAndHeaderParameters(generatorMethod);
 
         writer.Write(method);
         var result = tw.ToString();
@@ -604,9 +613,8 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
         Assert.Contains("qOption.IsRequired = false;", result);
         Assert.Contains("command.AddOption(qOption);", result);
-        Assert.Contains("PathParameters.Clear();", result);
-        Assert.Contains("PathParameters.Add(\"p\", p);", result);
         Assert.Contains("var requestInfo = CreateDeleteRequestInformation", result);
+        Assert.Contains("requestInfo.PathParameters.Add(\"p\", p);", result);
         Assert.Contains("await RequestAdapter.SendNoContentAsync(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("Console.WriteLine(\"Success\");", result);
         Assert.Contains("return command;", result);
@@ -643,7 +651,7 @@ public class ShellCodeMethodWriterTests : IDisposable
 
         AddRequestProperties();
         AddRequestBodyParameters(method.OriginalMethod);
-        AddPathAndQueryParameters(generatorMethod);
+        AddPathQueryAndHeaderParameters(generatorMethod);
 
         writer.Write(method);
         var result = tw.ToString();
@@ -656,9 +664,8 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("command.AddOption(fileOption);", result);
         Assert.Contains("command.SetHandler(async (object[] parameters) => {", result);
         Assert.Contains("var q = (string) parameters[0];", result);
-        Assert.Contains("PathParameters.Clear();", result);
-        Assert.Contains("PathParameters.Add(\"p\", p);", result);
         Assert.Contains("var requestInfo = CreateGetRequestInformation", result);
+        Assert.Contains("requestInfo.PathParameters.Add(\"p\", p);", result);
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("}, new CollectionBinding(qOption,", result);
         Assert.Contains("return command;", result);
@@ -696,7 +703,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         codeClass.AddMethod(generatorMethod);
 
         AddRequestProperties();
-        AddPathAndQueryParameters(generatorMethod);
+        AddPathQueryAndHeaderParameters(generatorMethod);
 
         writer.Write(method);
         var result = tw.ToString();
@@ -708,9 +715,8 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var bodyOption = new Option<string>(\"--body\")", result);
         Assert.Contains("bodyOption.IsRequired = true;", result);
         Assert.Contains("command.AddOption(bodyOption);", result);
-        Assert.Contains("PathParameters.Clear();", result);
-        Assert.Contains("PathParameters.Add(\"p\", p);", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
+        Assert.Contains("requestInfo.PathParameters.Add(\"p\", p);", result);
         Assert.Contains("await RequestAdapter.SendNoContentAsync(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("Console.WriteLine(\"Success\");", result);
         Assert.Contains("return command;", result);

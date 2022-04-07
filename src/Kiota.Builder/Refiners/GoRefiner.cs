@@ -79,22 +79,22 @@ public class GoRefiner : CommonLanguageRefiner
             generatedCode);
         ReplaceDefaultSerializationModules(
             generatedCode,
-            "github.com/microsoft/kiota/serialization/go/json.JsonSerializationWriterFactory",
-            "github.com/microsoft/kiota/serialization/go/text.TextSerializationWriterFactory");
+            "github.com/microsoft/kiota-serialization-json-go.JsonSerializationWriterFactory",
+            "github.com/microsoft/kiota-serialization-text-go.TextSerializationWriterFactory");
         ReplaceDefaultDeserializationModules(
             generatedCode,
-            "github.com/microsoft/kiota/serialization/go/json.JsonParseNodeFactory",
-            "github.com/microsoft/kiota/serialization/go/text.TextParseNodeFactory");
+            "github.com/microsoft/kiota-serialization-json-go.JsonParseNodeFactory",
+            "github.com/microsoft/kiota-serialization-text-go.TextParseNodeFactory");
         AddSerializationModulesImport(
             generatedCode,
-            new string[] {"github.com/microsoft/kiota/abstractions/go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota/abstractions/go.RegisterDefaultSerializer"},
-            new string[] {"github.com/microsoft/kiota/abstractions/go/serialization.ParseNodeFactory", "github.com/microsoft/kiota/abstractions/go.RegisterDefaultDeserializer"});
+            new string[] {"github.com/microsoft/kiota-abstractions-go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultSerializer"},
+            new string[] {"github.com/microsoft/kiota-abstractions-go/serialization.ParseNodeFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultDeserializer"});
         ReplaceExecutorAndGeneratorParametersByParameterSets(
             generatedCode);
         AddParentClassToErrorClasses(
                 generatedCode,
                 "ApiError",
-                "github.com/microsoft/kiota/abstractions/go"
+                "github.com/microsoft/kiota-abstractions-go"
         );
         AddDiscriminatorMappingsUsingsToParentClasses(
             generatedCode,
@@ -252,25 +252,25 @@ public class GoRefiner : CommonLanguageRefiner
     };
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
-            "github.com/microsoft/kiota/abstractions/go", "RequestAdapter"),
+            "github.com/microsoft/kiota-abstractions-go", "RequestAdapter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
-            "github.com/microsoft/kiota/abstractions/go", "RequestInformation", "HttpMethod", "RequestOption"),
+            "github.com/microsoft/kiota-abstractions-go", "RequestInformation", "HttpMethod", "RequestOption"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
-            "github.com/microsoft/kiota/abstractions/go", "ResponseHandler"),
+            "github.com/microsoft/kiota-abstractions-go", "ResponseHandler"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Constructor) &&
                     method.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Path) &&
                                             !typeToSkipStrConv.Contains(x.Type.Name)),
             "strconv", "FormatBool"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Serializer),
-            "github.com/microsoft/kiota/abstractions/go/serialization", "SerializationWriter"),
+            "github.com/microsoft/kiota-abstractions-go/serialization", "SerializationWriter"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer, CodeMethodKind.Factory),
-            "github.com/microsoft/kiota/abstractions/go/serialization", "ParseNode", "Parsable"),
+            "github.com/microsoft/kiota-abstractions-go/serialization", "ParseNode", "Parsable"),
         new (x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model),
-            "github.com/microsoft/kiota/abstractions/go/serialization", "Parsable"),
+            "github.com/microsoft/kiota-abstractions-go/serialization", "Parsable"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && 
                                             (@class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)) ||
                                             @class.StartBlock.Implements.Any(x => KiotaBuilder.AdditionalHolderInterface.Equals(x.Name, StringComparison.OrdinalIgnoreCase))),
-            "github.com/microsoft/kiota/abstractions/go/serialization", "AdditionalDataHolder"),
+            "github.com/microsoft/kiota-abstractions-go/serialization", "AdditionalDataHolder"),
         new (x => x is CodeEnum num, "ToUpper", "strings"),
     };//TODO add backing store types once we have them defined
     private static void CorrectImplements(ProprietableBlockDeclaration block) {
@@ -297,7 +297,7 @@ public class GoRefiner : CommonLanguageRefiner
         else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
         else if(currentMethod.IsOfKind(CodeMethodKind.Deserializer)) {
-            currentMethod.ReturnType.Name = $"map[string]func(interface{{}}, {conventions.SerializationHash}.ParseNode)(error)";
+            currentMethod.ReturnType.Name = $"map[string]func({conventions.SerializationHash}.ParseNode)(error)";
             currentMethod.Name = "getFieldDeserializers";
         } else if(currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor)) {
             var rawUrlParam = currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl);
@@ -329,21 +329,21 @@ public class GoRefiner : CommonLanguageRefiner
         {"TimeSpan", ("ISODuration", new CodeUsing {
                                         Name = "ISODuration",
                                         Declaration = new CodeType {
-                                            Name = "github.com/microsoft/kiota/abstractions/go/serialization",
+                                            Name = "github.com/microsoft/kiota-abstractions-go/serialization",
                                             IsExternal = true,
                                         },
                                     })},
         {"DateOnly", (null, new CodeUsing {
                                 Name = "DateOnly",
                                 Declaration = new CodeType {
-                                    Name = "github.com/microsoft/kiota/abstractions/go/serialization",
+                                    Name = "github.com/microsoft/kiota-abstractions-go/serialization",
                                     IsExternal = true,
                                 },
                             })},
         {"TimeOnly", (null, new CodeUsing {
                                 Name = "TimeOnly",
                                 Declaration = new CodeType {
-                                    Name = "github.com/microsoft/kiota/abstractions/go/serialization",
+                                    Name = "github.com/microsoft/kiota-abstractions-go/serialization",
                                     IsExternal = true,
                                 },
                             })},

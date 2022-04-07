@@ -1,4 +1,4 @@
-using Microsoft.OpenApi.Services;
+﻿using Microsoft.OpenApi.Services;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
@@ -236,8 +236,10 @@ public class KiotaBuilderTests
         Assert.Equal("integer", methodReturnType.Name);
     }
     [Fact]
-    public void Supports_Path_Parameters() {
-        var resourceActionSchema = new OpenApiSchema {
+    public void Supports_Path_Parameters()
+    {
+        var resourceActionSchema = new OpenApiSchema
+        {
             Type = "object",
             Title = "resourceAction",
             Properties = new Dictionary<string, OpenApiSchema> {
@@ -258,12 +260,14 @@ public class KiotaBuilderTests
                     }
                 }
             },
-            Reference = new OpenApiReference() {
+            Reference = new OpenApiReference()
+            {
                 Id = "#/components/schemas/microsoft.graph.resourceAction"
             },
             UnresolvedReference = false
         };
-        var permissionSchema = new OpenApiSchema {
+        var permissionSchema = new OpenApiSchema
+        {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
                 {
@@ -277,14 +281,18 @@ public class KiotaBuilderTests
                     }
                 }
             },
-            Reference = new OpenApiReference() {
+            Reference = new OpenApiReference()
+            {
                 Id = "#/components/schemas/microsoft.graph.rolePermission"
             },
             UnresolvedReference = false
         };
-        var document = new OpenApiDocument() {
-            Paths = new OpenApiPaths() {
-                ["/deviceManagement/microsoft.graph.getEffectivePermissions(scope='{scope}')"] = new OpenApiPathItem() {
+        var document = new OpenApiDocument()
+        {
+            Paths = new OpenApiPaths()
+            {
+                ["/deviceManagement/microsoft.graph.getEffectivePermissions(scope='{scope}')"] = new OpenApiPathItem()
+                {
                     Parameters = {
                         new OpenApiParameter() {
                             Name = "scope",
@@ -315,7 +323,8 @@ public class KiotaBuilderTests
                     }
                 },
             },
-            Components = new OpenApiComponents() {
+            Components = new OpenApiComponents()
+            {
                 Schemas = new Dictionary<string, OpenApiSchema> {
                     { "microsoft.graph.rolePermission", permissionSchema },
                     { "microsoft.graph.resourceAction", resourceActionSchema },
@@ -341,6 +350,161 @@ public class KiotaBuilderTests
         var constructorMethod = getEffectivePermissionsRequestBuilder.FindChildByName<CodeMethod>("constructor");
         Assert.NotNull(constructorMethod);
         Assert.Single(constructorMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
+    }
+    [Fact]
+    public void Supports_Path_Query_And_Header_Parameters()
+    {
+        var resourceActionSchema = new OpenApiSchema
+        {
+            Type = "object",
+            Title = "resourceAction",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "allowedResourceActions", new OpenApiSchema {
+                        Type = "array",
+                        Items = new OpenApiSchema {
+                            Type = "string"
+                        }
+                    }
+                },
+                {
+                    "notAllowedResourceActions", new OpenApiSchema {
+                        Type = "array",
+                        Items = new OpenApiSchema {
+                            Type = "string"
+                        }
+                    }
+                }
+            },
+            Reference = new OpenApiReference()
+            {
+                Id = "#/components/schemas/microsoft.graph.resourceAction"
+            },
+            UnresolvedReference = false
+        };
+        var permissionSchema = new OpenApiSchema
+        {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "resourceActions", new OpenApiSchema {
+                        Type = "array",
+                        Items = new OpenApiSchema {
+                            AnyOf = new List<OpenApiSchema> {
+                                resourceActionSchema,
+                            }
+                        }
+                    }
+                }
+            },
+            Reference = new OpenApiReference()
+            {
+                Id = "#/components/schemas/microsoft.graph.rolePermission"
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument()
+        {
+            Paths = new OpenApiPaths()
+            {
+                ["/deviceManagement/microsoft.graph.getEffectivePermissions(scope='{scope}')"] = new OpenApiPathItem()
+                {
+                    Parameters = {
+                        new OpenApiParameter() {
+                            Name = "scope",
+                            In = ParameterLocation.Path,
+                            Required = true,
+                            Schema = new OpenApiSchema {
+                                Type = "string"
+                            }
+                        },
+                        new OpenApiParameter()
+                        {
+                            Name = "select",
+                            In = ParameterLocation.Query,
+                            Required = false,
+                            Schema = new OpenApiSchema {
+                                Type = "string"
+                            },
+                        },
+                        new OpenApiParameter()
+                        {
+                            Name = "If-Match",
+                            In = ParameterLocation.Header,
+                            Description = "ETag",
+                            Required = false,
+                            Schema = new OpenApiSchema {
+                                Type = "string"
+                            },
+                        },
+                        new OpenApiParameter()
+                        {
+                            Name = "ConsistencyLevel",
+                            In = ParameterLocation.Header,
+                            Description = "Consistency level",
+                            Required = true,
+                            Schema = new OpenApiSchema {
+                                Type = "string"
+                            },
+                        }
+                    },
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation() {
+                            Responses = new OpenApiResponses {
+                                ["200"] = new OpenApiResponse() {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType() {
+                                            Schema = new OpenApiSchema {
+                                                Type = "array",
+                                                AnyOf = new List<OpenApiSchema> {
+                                                    permissionSchema,
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+            },
+            Components = new OpenApiComponents()
+            {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    { "microsoft.graph.rolePermission", permissionSchema },
+                    { "microsoft.graph.resourceAction", resourceActionSchema },
+                }
+            }
+        };
+        var node = OpenApiUrlTreeNode.Create(document, "default");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", ApiRootUrl = "https://localhost", Language = GenerationLanguage.Shell });
+        builder.CreateUriSpace(document);//needed so the component index exists
+        var codeModel = builder.CreateSourceModel(node);
+        var deviceManagementNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement");
+        Assert.NotNull(deviceManagementNS);
+        var deviceManagementRequestBuilder = deviceManagementNS.FindChildByName<CodeClass>("DeviceManagementRequestBuilder");
+        Assert.NotNull(deviceManagementRequestBuilder);
+        var getEffectivePermissionsMethod = deviceManagementRequestBuilder.FindChildByName<CodeMethod>("getEffectivePermissionsWithScope");
+        Assert.NotNull(getEffectivePermissionsMethod);
+        Assert.Single(getEffectivePermissionsMethod.Parameters);
+        var getEffectivePermissionsNS = codeModel.FindNamespaceByName("ApiSdk.deviceManagement.getEffectivePermissionsWithScope");
+        Assert.NotNull(getEffectivePermissionsNS);
+        var getEffectivePermissionsRequestBuilder = getEffectivePermissionsNS.FindChildByName<CodeClass>("GetEffectivePermissionsWithScopeRequestBuilder");
+        Assert.NotNull(getEffectivePermissionsRequestBuilder);
+        var constructorMethod = getEffectivePermissionsRequestBuilder.FindChildByName<CodeMethod>("constructor");
+        Assert.NotNull(constructorMethod);
+        Assert.Single(constructorMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
+        var parameters = getEffectivePermissionsRequestBuilder.GetChildElements(true)
+            .Where(c => c is CodeMethod)
+            .Select(c => c as CodeMethod)
+            .SingleOrDefault(cm => cm.IsOfKind(CodeMethodKind.RequestGenerator) && cm.HttpMethod == HttpMethod.Get)?
+            .PathQueryAndHeaderParameters;
+        Assert.Equal(4, parameters.Count());
+        Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "If-Match" && p.Kind == CodeParameterKind.Headers));
+        Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "ConsistencyLevel" && p.Kind == CodeParameterKind.Headers));
+        Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "select" && p.Kind == CodeParameterKind.QueryParameter));
+        Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "scope" && p.Kind == CodeParameterKind.Path));
     }
     [Fact]
     public void Inline_Property_Inheritance_Is_Supported() {
@@ -1768,8 +1932,40 @@ public class KiotaBuilderTests
         Assert.NotNull(responseClass);
         Assert.Equal("some description", responseClass.Description);
     }
-    [Fact]
-    public void GeneratesAVoidExecutorForSingle204() {
+    [InlineData("application/json", "204", true, "void")]
+    [InlineData("application/json", "204", false, "void")]
+    [InlineData("application/json", "200", true, "Myobject")]
+    [InlineData("application/json", "200", false, "binary")]
+    [InlineData("application/xml", "204", true, "void")]
+    [InlineData("application/xml", "204", false, "void")]
+    [InlineData("application/xml", "200", true, "Myobject")]
+    [InlineData("application/xml", "200", false, "binary")]
+    [InlineData("text/xml", "204", true, "void")]
+    [InlineData("text/xml", "204", false, "void")]
+    [InlineData("text/xml", "200", true, "Myobject")]
+    [InlineData("text/xml", "200", false, "binary")]
+    [InlineData("text/yaml", "204", true, "void")]
+    [InlineData("text/yaml", "204", false, "void")]
+    [InlineData("text/yaml", "200", true, "Myobject")]
+    [InlineData("text/yaml", "200", false, "binary")]
+    [InlineData("application/octet-stream", "204", true, "void")]
+    [InlineData("application/octet-stream", "204", false, "void")]
+    [InlineData("application/octet-stream", "200", true, "binary")]
+    [InlineData("application/octet-stream", "200", false, "binary")]
+    [InlineData("text/html", "204", true, "void")]
+    [InlineData("text/html", "204", false, "void")]
+    [InlineData("text/html", "200", true, "binary")]
+    [InlineData("text/html", "200", false, "binary")]
+    [InlineData("*/*", "204", true, "void")]
+    [InlineData("*/*", "204", false, "void")]
+    [InlineData("*/*", "200", true, "binary")]
+    [InlineData("*/*", "200", false, "binary")]
+    [InlineData("text/plain", "204", true, "void")]
+    [InlineData("text/plain", "204", false, "void")]
+    [InlineData("text/plain", "200", true, "Myobject")]
+    [InlineData("text/plain", "200", false, "string")]
+    [Theory]
+    public void GeneratesTheRightReturnTypeBasedOnContentAndStatus(string contentType, string statusCode, bool addModel, string returnType) {
         var myObjectSchema = new OpenApiSchema {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
@@ -1792,10 +1988,10 @@ public class KiotaBuilderTests
                         [OperationType.Get] = new OpenApiOperation() { 
                             Responses = new OpenApiResponses
                             {
-                                ["204"] = new OpenApiResponse {
+                                [statusCode] = new OpenApiResponse {
                                     Content = {
-                                        ["application/json"] = new OpenApiMediaType {
-                                            Schema = myObjectSchema
+                                        [contentType] = new OpenApiMediaType {
+                                            Schema = addModel ? myObjectSchema : null
                                         }
                                     }
                                 },
@@ -1822,7 +2018,7 @@ public class KiotaBuilderTests
         Assert.NotNull(rbClass);
         var executor = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(executor);
-        Assert.Equal("void", executor.ReturnType.Name);
+        Assert.Equal(returnType, executor.ReturnType.Name);
     }
     [Fact]
     public void DoesntGenerateVoidExecutorOnMixed204(){
@@ -1881,5 +2077,55 @@ public class KiotaBuilderTests
         var executor = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(executor);
         Assert.NotEqual("void", executor.ReturnType.Name);
+    }
+    [InlineData(new string[] {"microsoft.graph.user", "microsoft.graph.termstore.term"}, "microsoft.graph")]
+    [InlineData(new string[] {"microsoft.graph.user", "odata.errors.error"}, "")]
+    [InlineData(new string[] {}, "")]
+    [Theory]
+    public void StripsCommonModelsPrefix(string[] componentNames, string stripPrefix) {
+        var paths = new OpenApiPaths();
+        var components = new OpenApiComponents() {
+            Schemas = new Dictionary<string, OpenApiSchema>()
+        };
+        foreach(var componentName in componentNames) {
+            var myObjectSchema = new OpenApiSchema {
+                Type = "object",
+                Properties = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "id", new OpenApiSchema {
+                            Type = "string",
+                        }
+                    }
+                },
+                Reference = new OpenApiReference {
+                    Id = componentName,
+                    Type = ReferenceType.Schema
+                },
+                UnresolvedReference = false
+            };
+            paths.Add($"answer{componentName}", new OpenApiPathItem() {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation() { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    } 
+                });
+            components.Schemas.Add(componentName, myObjectSchema);
+        }
+        var document = new OpenApiDocument() {
+            Paths = paths,
+            Components = components,
+        };
+        var result = KiotaBuilder.GetDeeperMostCommonNamespaceNameForModels(document);
+        Assert.Equal(stripPrefix, result);
     }
 }

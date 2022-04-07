@@ -397,7 +397,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("return NewParentModel(), nil", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
-    private const string AbstractionsPackageHash = "ida96af0f171bb75f894a4013a6b3146a4397c58f11adb81a2b7cbea9314783a9";
+    private const string AbstractionsPackageHash = "i2ae4187f7daee263371cb1c977df639813ab50ffa529013b7437480d1ec0158f";
     [Fact]
     public void WritesRequestGeneratorBody() {
         var configurationMock = new Mock<GenerationConfiguration>();

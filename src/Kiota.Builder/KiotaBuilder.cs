@@ -71,6 +71,8 @@ public class KiotaBuilder
 
         SetApiRootUrl();
 
+        modelNamespacePrefixToTrim = GetDeeperMostCommonNamespaceNameForModels(openApiDocument);
+
         // Step 3 - Create Uri Space of API
         sw.Start();
         var openApiTree = CreateUriSpace(openApiDocument);
@@ -167,6 +169,32 @@ public class KiotaBuilder
 
         return doc;
     }
+    public static string GetDeeperMostCommonNamespaceNameForModels(OpenApiDocument document)
+    {
+        if(!(document?.Components?.Schemas?.Any() ?? false)) return string.Empty;
+        var distinctKeys = document.Components
+                                .Schemas
+                                .Keys
+                                .Select(x => string.Join(nsNameSeparator, x.Split(nsNameSeparator, StringSplitOptions.RemoveEmptyEntries)
+                                                .SkipLast(1)))
+                                .Where(x => !string.IsNullOrEmpty(x))
+                                .Distinct()
+                                .OrderByDescending(x => x.Count(y => y == nsNameSeparator));
+        if(!distinctKeys.Any()) return string.Empty;
+        var longestKey = distinctKeys.FirstOrDefault();
+        var candidate = string.Empty;
+        var longestKeySegments = longestKey.Split(nsNameSeparator, StringSplitOptions.RemoveEmptyEntries);
+        foreach(var segment in longestKeySegments)
+        {
+            var testValue = (candidate + nsNameSeparator + segment).Trim(nsNameSeparator);
+            if(distinctKeys.All(x => x.StartsWith(testValue, StringComparison.OrdinalIgnoreCase)))
+                candidate = testValue;
+            else
+                break;
+        }
+
+        return candidate;
+    }
 
     /// <summary>
     /// Translate OpenApi PathItems into a tree structure that will define the classes
@@ -187,6 +215,7 @@ public class KiotaBuilder
     }
     private CodeNamespace rootNamespace;
     private CodeNamespace modelsNamespace;
+    private string modelNamespacePrefixToTrim;
 
     /// <summary>
     /// Convert UriSpace of OpenApiPathItems into conceptual SDK Code model 
@@ -303,8 +332,7 @@ public class KiotaBuilder
         {
             foreach(var operation in currentNode
                                     .PathItems[Constants.DefaultOpenApiLabel]
-                                    .Operations
-                                    .Where(x => x.Value.RequestBody?.Content?.Any(y => !config.IgnoredRequestContentTypes.Contains(y.Key)) ?? true))
+                                    .Operations)
                 CreateOperationMethods(currentNode, operation.Key, operation.Value, codeClass);
         }
         CreateUrlManagement(codeClass, currentNode, isApiClientClass);
@@ -527,7 +555,7 @@ public class KiotaBuilder
             Name = propertyName,
             DefaultValue = defaultValue,
             Kind = kind,
-            Description = typeSchema?.Description,
+            Description = typeSchema?.Description ?? $"The {propertyName} property",
         };
         if(propertyName != childIdentifier)
             prop.SerializationName = childIdentifier;
@@ -622,13 +650,13 @@ public class KiotaBuilder
             var returnType = CreateModelDeclarations(currentNode, schema, operation, executorMethod, "Response");
             executorMethod.ReturnType = returnType ?? throw new InvalidOperationException("Could not resolve return type for operation");
         } else {
-            var returnType = voidType;
-            if(operation.Responses.Any(x => x.Value.Content.ContainsKey(RequestBodyBinaryContentType)))
-                returnType = "binary";
+            string returnType;
+            if(operation.Responses.Any(x => noContentStatusCodes.Contains(x.Key)))
+                returnType = voidType;
             else if (operation.Responses.Any(x => x.Value.Content.ContainsKey(RequestBodyPlainTextContentType)))
                 returnType = "string";
-            else if(!operation.Responses.Any(x => noContentStatusCodes.Contains(x.Key)))
-                logger.LogWarning("could not find operation return type {operationType} {currentNodePath}", operationType, currentNode.Path);
+            else
+                returnType = "binary";
             executorMethod.ReturnType = new CodeType { Name = returnType, IsExternal = true, };
         }
 
@@ -663,38 +691,49 @@ public class KiotaBuilder
             ReturnType = new CodeType { Name = "RequestInformation", IsNullable = false, IsExternal = true},
         };
         if (config.Language == GenerationLanguage.Shell)
-            SetPathAndQueryParameters(generatorMethod, currentNode, operation);
+            SetPathQueryAndHeaderParameters(generatorMethod, currentNode, operation);
         parentClass.AddMethod(generatorMethod);
         AddRequestBuilderMethodParameters(currentNode, operation, parameterClass, generatorMethod);
         logger.LogTrace("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
     }
-    private static void SetPathAndQueryParameters(CodeMethod target, OpenApiUrlTreeNode currentNode, OpenApiOperation operation)
+    private static void SetPathQueryAndHeaderParameters(CodeMethod target, OpenApiUrlTreeNode currentNode, OpenApiOperation operation)
     {
         var pathAndQueryParameters = currentNode
             .PathItems[Constants.DefaultOpenApiLabel]
             .Parameters
-            .Where(x => x.In == ParameterLocation.Path || x.In == ParameterLocation.Query)
+            .Where(x => x.In == ParameterLocation.Path || x.In == ParameterLocation.Query || x.In == ParameterLocation.Header)
             .Select(x => new CodeParameter
             {
-                Name = x.Name.TrimStart('$').SanitizePathParameterName(),
+                Name = x.Name.TrimStart('$'),
                 Type = GetQueryParameterType(x.Schema),
                 Description = x.Description,
-                Kind = x.In == ParameterLocation.Path ? CodeParameterKind.Path : CodeParameterKind.QueryParameter,
+                Kind = GetParameterKindFromLocation(x.In),
                 Optional = !x.Required
             })
             .Union(operation
                     .Parameters
-                    .Where(x => x.In == ParameterLocation.Path || x.In == ParameterLocation.Query)
+                    .Where(x => x.In == ParameterLocation.Path || x.In == ParameterLocation.Query || x.In == ParameterLocation.Header)
                     .Select(x => new CodeParameter
                     {
-                        Name = x.Name.TrimStart('$').SanitizePathParameterName(),
+                        Name = x.Name.TrimStart('$'),
                         Type = GetQueryParameterType(x.Schema),
                         Description = x.Description,
-                        Kind = x.In == ParameterLocation.Path ? CodeParameterKind.Path : CodeParameterKind.QueryParameter,
+                        Kind = GetParameterKindFromLocation(x.In),
                         Optional = !x.Required
                     }))
             .ToArray();
-        target.AddPathOrQueryParameter(pathAndQueryParameters);
+        target.AddPathQueryOrHeaderParameter(pathAndQueryParameters);
+    }
+
+    private static CodeParameterKind GetParameterKindFromLocation(ParameterLocation? location)
+    {
+        return location switch
+        {
+            ParameterLocation.Query => CodeParameterKind.QueryParameter,
+            ParameterLocation.Header => CodeParameterKind.Headers,
+            ParameterLocation.Path => CodeParameterKind.Path,
+            _ => throw new NotSupportedException($"No matching parameter kind is supported for parameters in {location}"),
+        };
     }
     private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeClass parameterClass, CodeMethod method) {
         var nonBinaryRequestBody = operation.RequestBody?.Content?.FirstOrDefault(x => !RequestBodyBinaryContentType.Equals(x.Key, StringComparison.OrdinalIgnoreCase));
@@ -754,8 +793,11 @@ public class KiotaBuilder
     }
     private string GetModelsNamespaceNameFromReferenceId(string referenceId) {
         if (string.IsNullOrEmpty(referenceId)) return referenceId;
-        if(referenceId.StartsWith(config.ClientClassName, StringComparison.OrdinalIgnoreCase))
+        if(referenceId.StartsWith(config.ClientClassName, StringComparison.OrdinalIgnoreCase)) // the client class having a namespace segment name can be problematic in some languages
             referenceId = referenceId[config.ClientClassName.Length..];
+        referenceId = referenceId.Trim(nsNameSeparator);
+        if(!string.IsNullOrEmpty(modelNamespacePrefixToTrim) && referenceId.StartsWith(modelNamespacePrefixToTrim, StringComparison.OrdinalIgnoreCase))
+            referenceId = referenceId[modelNamespacePrefixToTrim.Length..];
         referenceId = referenceId.Trim(nsNameSeparator);
         var lastDotIndex = referenceId.LastIndexOf(nsNameSeparator);
         var namespaceSuffix = lastDotIndex != -1 ? $".{referenceId[..lastDotIndex]}" : string.Empty;
@@ -988,7 +1030,7 @@ public class KiotaBuilder
         else if(schema?.AllOf?.Any(x => x.IsObject()) ?? false)
             CreatePropertiesForModelClass(currentNode, schema.AllOf.Last(x => x.IsObject()), ns, model);
     }
-    private const string FieldDeserializersMethodName = "GetFieldDeserializers<T>";
+    private const string FieldDeserializersMethodName = "GetFieldDeserializers";
     private const string SerializeMethodName = "Serialize";
     private const string AdditionalDataPropName = "AdditionalData";
     private const string BackingStorePropertyName = "BackingStore";
@@ -997,7 +1039,7 @@ public class KiotaBuilder
     private const string ParseNodeInterface = "IParseNode";
     internal const string AdditionalHolderInterface = "IAdditionalDataHolder";
     internal static void AddSerializationMembers(CodeClass model, bool includeAdditionalProperties, bool usesBackingStore) {
-        var serializationPropsType = $"IDictionary<string, Action<T, {ParseNodeInterface}>>";
+        var serializationPropsType = $"IDictionary<string, Action<{ParseNodeInterface}>>";
         if(!model.ContainsMember(FieldDeserializersMethodName)) {
             var deserializeProp = new CodeMethod {
                 Name = FieldDeserializersMethodName,
