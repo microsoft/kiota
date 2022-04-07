@@ -162,9 +162,6 @@ namespace Kiota.Builder.Refiners
             if (method.IsOfKind(CodeMethodKind.Deserializer))
             {
                 method.ReturnType.Name = "array";
-            } else if (method.IsOfKind(CodeMethodKind.RequestExecutor))
-            {
-                method.ReturnType = new CodeType() {Name = method.ReturnType.Name, IsExternal = true, IsNullable = false};
             }
             CorrectDateTypes(method.Parent as CodeClass, DateTypesReplacements, method.Parameters
                 .Select(x => x.Type)

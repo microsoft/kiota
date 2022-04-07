@@ -444,15 +444,21 @@ namespace Kiota.Builder.Writers.Php
             var isStream = returnType.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase);
             var isCollection = codeElement.ReturnType.IsCollection;
             var methodName = GetSendRequestMethodName(returnsVoid, isStream, isCollection, returnType);
+            var returnTypeFactory = codeElement.ReturnType is CodeType {TypeDefinition: CodeClass returnTypeClass}
+                ? $", array({returnType}::class, 'createFromDiscriminatorValue')"
+                : string.Empty;
+            var finalReturn = string.IsNullOrEmpty(returnTypeFactory) && !returnsVoid
+                ? $", '{returnType}'"
+                : returnTypeFactory;
             if (codeElement.Parameters.Any(x => x.IsOfKind(CodeParameterKind.ResponseHandler)))
             {
                 writer.WriteLine(
-                    $"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->{methodName}({RequestInfoVarName}, {(!returnVoidOrString ? $"{returnType}::class" : "''")}, $responseHandler, {(hasErrorMappings ? $"{errorMappingsVarName}" : "null")});");
+                    $"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->{methodName}({RequestInfoVarName}{finalReturn}, $responseHandler, {(hasErrorMappings ? $"{errorMappingsVarName}" : "null")});");
             }
             else
             {
                 writer.WriteLine(
-                    $"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->{methodName}({RequestInfoVarName}, {(!returnVoidOrString ? $"{returnType}::class" : "''")}, null, {(hasErrorMappings ? $"{errorMappingsVarName}" : "null")});");
+                    $"return {GetPropertyCall(requestAdapterProperty, string.Empty)}->{methodName}({RequestInfoVarName}{finalReturn}, null, {(hasErrorMappings ? $"{errorMappingsVarName}" : "null")});");
             }
 
             writer.DecreaseIndent();

@@ -10,12 +10,12 @@ interface RequestAdapter {
     /**
      * Executes the HTTP request specified by the given RequestInformation and returns the deserialized response model.
      * @param RequestInformation $requestInfo the request info to execute.
-     * @param string $targetClass the class of the response model to deserialize the response into.
+     * @param array{string, string} $targetCallable the class of the response model to deserialize the response into.
      * @param ResponseHandler|null $responseHandler The response handler to use for the HTTP request instead of the default handler.
      * @param array<string, array{string, string}>|null $errorMappings
      * @return Promise with the deserialized response model.
      */
-    public function sendAsync(RequestInformation $requestInfo, string $targetClass, ?ResponseHandler $responseHandler = null, ?array $errorMappings = null): Promise;
+    public function sendAsync(RequestInformation $requestInfo, array $targetCallable, ?ResponseHandler $responseHandler = null, ?array $errorMappings = null): Promise;
 
     /**
      * Gets the serialization writer factory currently in use for the HTTP core service.
@@ -25,13 +25,13 @@ interface RequestAdapter {
 
     /**
      * Executes the HTTP request specified by the given RequestInformation and returns the deserialized response model collection.
-     * @param RequestInformation $requestInfo
-     * @param string $targetClass the request info to execute.
+     * @param RequestInformation $requestInfo the request info to execute.
+     * @param array{string, string} $targetCallable the callable representing object creation logic.
      * @param ResponseHandler|null $responseHandler
      * @param array<string, array{string, string}>|null $errorMappings
      * @return Promise with the deserialized response model collection.
      */
-    public function sendCollectionAsync(RequestInformation $requestInfo, string $targetClass, ?ResponseHandler $responseHandler = null, ?array $errorMappings = null): Promise;
+    public function sendCollectionAsync(RequestInformation $requestInfo, array $targetCallable, ?ResponseHandler $responseHandler = null, ?array $errorMappings = null): Promise;
 
     /**
      * Executes the HTTP request specified by the given RequestInformation and returns the deserialized primitive response model.
