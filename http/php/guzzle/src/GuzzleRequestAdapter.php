@@ -84,10 +84,10 @@ class GuzzleRequestAdapter implements RequestAdapter
     /**
      * @inheritDoc
      */
-    public function sendAsync(RequestInformation $requestInfo, string $targetClass, ?ResponseHandler $responseHandler = null, ?array $errorMappings = null): Promise
+    public function sendAsync(RequestInformation $requestInfo, array $targetCallable, ?ResponseHandler $responseHandler = null, ?array $errorMappings = null): Promise
     {
         return $this->getHttpResponseMessage($requestInfo)->then(
-            function (ResponseInterface $result) use ($targetClass, $responseHandler, $errorMappings) {
+            function (ResponseInterface $result) use ($targetCallable, $responseHandler, $errorMappings) {
                 try {
                     $this->throwFailedResponse($result, $errorMappings);
 
@@ -96,10 +96,10 @@ class GuzzleRequestAdapter implements RequestAdapter
                     }
                     if (!$responseHandler) {
                         $rootNode = $this->getRootParseNode($result);
-                        if ($targetClass === StreamInterface::class || is_subclass_of(StreamInterface::class, $targetClass)) {
+                        if ($targetCallable[0] === StreamInterface::class || is_subclass_of($targetCallable[0],StreamInterface::class, $targetCallable[0])) {
                             return $result->getBody();
                         }
-                        return $rootNode->getObjectValue(array($targetClass, 'createFromDiscriminatorValue'));
+                        return $rootNode->getObjectValue($targetCallable);
                     }
                     return $responseHandler->handleResponseAsync($result);
                 } catch (ApiException $exception){
@@ -120,10 +120,10 @@ class GuzzleRequestAdapter implements RequestAdapter
     /**
      * @inheritDoc
      */
-    public function sendCollectionAsync(RequestInformation $requestInfo, string $targetClass, ?ResponseHandler $responseHandler = null, ?array $errorMappings = null): Promise
+    public function sendCollectionAsync(RequestInformation $requestInfo, array $targetCallable, ?ResponseHandler $responseHandler = null, ?array $errorMappings = null): Promise
     {
         return $this->getHttpResponseMessage($requestInfo)->then(
-            function (ResponseInterface $result) use ($targetClass, $responseHandler, $errorMappings) {
+            function (ResponseInterface $result) use ($targetCallable, $responseHandler, $errorMappings) {
                 try {
                     $this->throwFailedResponse($result, $errorMappings);
 
@@ -131,7 +131,7 @@ class GuzzleRequestAdapter implements RequestAdapter
                         return new FulfilledPromise(null);
                     }
                     if (!$responseHandler) {
-                        return $this->getRootParseNode($result)->getCollectionOfObjectValues(array($targetClass, 'createFromDiscriminatorValue'));
+                        return $this->getRootParseNode($result)->getCollectionOfObjectValues($targetCallable);
                     }
                     return $responseHandler->handleResponseAsync($result);
                 } catch (ApiException $apiException) {
