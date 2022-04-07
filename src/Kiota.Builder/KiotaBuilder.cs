@@ -704,7 +704,13 @@ public class KiotaBuilder
             SerializationName = codeName.Equals(x.Name) ? default : x.Name,
             Type = GetQueryParameterType(x.Schema),
             Description = x.Description.CleanupDescription(),
-            Kind = GetParameterKindFromLocation(x.In),
+            Kind = x.In switch
+                {
+                    ParameterLocation.Query => CodeParameterKind.QueryParameter,
+                    ParameterLocation.Header => CodeParameterKind.Headers,
+                    ParameterLocation.Path => CodeParameterKind.Path,
+                    _ => throw new NotSupportedException($"No matching parameter kind is supported for parameters in {x.In}"),
+                },
             Optional = !x.Required
         };
     };
@@ -724,16 +730,6 @@ public class KiotaBuilder
         target.AddPathQueryOrHeaderParameter(pathAndQueryParameters);
     }
 
-    private static CodeParameterKind GetParameterKindFromLocation(ParameterLocation? location)
-    {
-        return location switch
-        {
-            ParameterLocation.Query => CodeParameterKind.QueryParameter,
-            ParameterLocation.Header => CodeParameterKind.Headers,
-            ParameterLocation.Path => CodeParameterKind.Path,
-            _ => throw new NotSupportedException($"No matching parameter kind is supported for parameters in {location}"),
-        };
-    }
     private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeClass parameterClass, CodeMethod method) {
         var nonBinaryRequestBody = operation.RequestBody?.Content?.FirstOrDefault(x => !RequestBodyBinaryContentType.Equals(x.Key, StringComparison.OrdinalIgnoreCase));
         if (nonBinaryRequestBody.HasValue && nonBinaryRequestBody.Value.Value != null)
