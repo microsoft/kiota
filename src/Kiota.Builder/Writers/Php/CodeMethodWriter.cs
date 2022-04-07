@@ -11,6 +11,7 @@ namespace Kiota.Builder.Writers.Php
         public CodeMethodWriter(PhpConventionService conventionService) : base(conventionService) { }
         
         private const string RequestInfoVarName = "$requestInfo";
+        private const string CreateDiscriminatorMethodName = "createFromDiscriminatorValue";
         public override void  WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
 
@@ -291,7 +292,7 @@ namespace Kiota.Builder.Writers.Php
                         null => "$n->getCollectionOfPrimitiveValues()",
                         CodeEnum enumType =>
                             $"$n->getCollectionOfEnumValues({enumType.Name.ToFirstCharacterUpperCase()}::class)",
-                        _ => $"$n->getCollectionOfObjectValues(array({conventions.TranslateType(propType)}::class, 'createFromDiscriminatorValue'))"
+                        _ => $"$n->getCollectionOfObjectValues(array({conventions.TranslateType(propType)}::class, '{CreateDiscriminatorMethodName}'))"
                     };
                 else if (currentType.TypeDefinition is CodeEnum)
                     return $"$n->getEnumValue({propertyType.ToFirstCharacterUpperCase()}::class)";
@@ -306,7 +307,7 @@ namespace Kiota.Builder.Writers.Php
                 "decimal" or "double" => "$n->getFloatValue()",
                 "streaminterface" => "$n->getBinaryContent()",
                 _ when conventions.PrimitiveTypes.Contains(lowerCaseType) => $"$n->get{propertyType.ToFirstCharacterUpperCase()}Value()",
-                _ => $"$n->getObjectValue(array({propertyType.ToFirstCharacterUpperCase()}::class, 'createFromDiscriminatorValue'))",
+                _ => $"$n->getObjectValue(array({propertyType.ToFirstCharacterUpperCase()}::class, '{CreateDiscriminatorMethodName}'))",
             };
         }
 
@@ -422,7 +423,6 @@ namespace Kiota.Builder.Writers.Php
             }
             
             var returnType = conventions.TranslateType(codeElement.ReturnType);
-            var returnVoidOrString = returnType.Equals("void", StringComparison.OrdinalIgnoreCase) || conventions.PrimitiveTypes.Contains(returnType.ToLower());
             writer.WriteLine($"$requestInfo = $this->{generatorMethodName}({joinedParams});");
             writer.WriteLine("try {");
             writer.IncreaseIndent();
@@ -435,7 +435,7 @@ namespace Kiota.Builder.Writers.Php
                 writer.WriteLine($"{errorMappingsVarName} = [");
                 errorMappings.ToList().ForEach(errorMapping =>
                 {
-                    writer.WriteLine($"'{errorMapping.Key}' => array({errorMapping.Value.Name}::class, 'createFromDiscriminatorValue'),");
+                    writer.WriteLine($"'{errorMapping.Key}' => array({errorMapping.Value.Name}::class, '{CreateDiscriminatorMethodName}'),");
                 });
                 writer.WriteLine("];");
             }
@@ -445,7 +445,7 @@ namespace Kiota.Builder.Writers.Php
             var isCollection = codeElement.ReturnType.IsCollection;
             var methodName = GetSendRequestMethodName(returnsVoid, isStream, isCollection, returnType);
             var returnTypeFactory = codeElement.ReturnType is CodeType {TypeDefinition: CodeClass returnTypeClass}
-                ? $", array({returnType}::class, 'createFromDiscriminatorValue')"
+                ? $", array({returnType}::class, '{CreateDiscriminatorMethodName}')"
                 : string.Empty;
             var finalReturn = string.IsNullOrEmpty(returnTypeFactory) && !returnsVoid
                 ? $", '{returnType}'"
