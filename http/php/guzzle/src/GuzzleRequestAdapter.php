@@ -99,7 +99,7 @@ class GuzzleRequestAdapter implements RequestAdapter
                         if ($targetClass === StreamInterface::class || is_subclass_of(StreamInterface::class, $targetClass)) {
                             return $result->getBody();
                         }
-                        return $rootNode->getObjectValue($targetClass);
+                        return $rootNode->getObjectValue(array($targetClass, 'createFromDiscriminatorValue'));
                     }
                     return $responseHandler->handleResponseAsync($result);
                 } catch (ApiException $exception){
@@ -131,7 +131,7 @@ class GuzzleRequestAdapter implements RequestAdapter
                         return new FulfilledPromise(null);
                     }
                     if (!$responseHandler) {
-                        return $this->getRootParseNode($result)->getCollectionOfObjectValues($targetClass);
+                        return $this->getRootParseNode($result)->getCollectionOfObjectValues(array($targetClass, 'createFromDiscriminatorValue'));
                     }
                     return $responseHandler->handleResponseAsync($result);
                 } catch (ApiException $apiException) {
