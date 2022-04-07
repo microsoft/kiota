@@ -79,7 +79,7 @@ class JsonParseNode implements ParseNode
      * @return array<Parsable|null>|null
      * @throws Exception
      */
-    public function getCollectionOfObjectValues(string $type): ?array {
+    public function getCollectionOfObjectValues(array $type): ?array {
         if ($this->jsonNode === null) {
             return null;
         }
@@ -94,15 +94,18 @@ class JsonParseNode implements ParseNode
      * @inheritDoc
      * @throws Exception
      */
-    public function getObjectValue(string $type): ?Parsable {
+    public function getObjectValue(array $type): ?Parsable {
         if ($this->jsonNode === null) {
             return null;
         }
-        if (!is_subclass_of($type, Parsable::class)){
-            throw new InvalidArgumentException("Invalid type $type provided.");
+        if (!is_subclass_of($type[0], Parsable::class)){
+            throw new InvalidArgumentException("Invalid type $type[0] provided.");
+        }
+        if (!is_callable($type, true, $callableString)) {
+            throw new \RuntimeException('Undefined method '. $type[1]);
         }
         /** @var Parsable $result */
-        $result = new $type();
+        $result = $callableString($this);
         if($this->onBeforeAssignFieldValues !== null) {
             $this->onBeforeAssignFieldValues($result);
         }
@@ -228,7 +231,7 @@ class JsonParseNode implements ParseNode
                     return $this->getEnumValue($type);
                 }
                 if (is_subclass_of($type, Parsable::class)){
-                    return $this->getObjectValue($type);
+                    return $this->getObjectValue(array($type, 'createFromDiscriminatorValue'));
                 }
                 if (is_subclass_of($type, StreamInterface::class)) {
                     return $this->getBinaryContent();

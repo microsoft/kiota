@@ -31,6 +31,10 @@ class Address implements Parsable
         $writer->writeStringValue('city', $this->city);
     }
 
+    public static function createFromDiscriminatorValue(ParseNode $parseNode): Address {
+        return new self();
+    }
+
     /**
      * @inheritDoc
      */

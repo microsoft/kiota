@@ -28,7 +28,7 @@ class Person implements Parsable
             "age" => function (self $o, ParseNode $n) {$o->setAge($n->getIntegerValue());},
             "height" => function (self $o, ParseNode $n) {$o->setHeight($n->getFloatValue());},
             "maritalStatus" => function (self $o, ParseNode $n) {$o->setMaritalStatus($n->getEnumValue(MaritalStatus::class));},
-            "address" => function (self $o, ParseNode $n) {$o->setAddress($n->getObjectValue(Address::class));}
+            "address" => function (self $o, ParseNode $n) {$o->setAddress($n->getObjectValue(array(Address::class, 'createFromDiscriminatorValue')));}
         ];
     }
 
@@ -48,6 +48,10 @@ class Person implements Parsable
      */
     public function getAdditionalData(): ?array {
         return $this->additionalData;
+    }
+
+    public static function createFromDiscriminatorValue(ParseNode $parseNode): Person {
+        return new self();
     }
 
     /**
