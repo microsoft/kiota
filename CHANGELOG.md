@@ -8,9 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Added generation of command options for headers defined in the OpenAPI metadata source file. (Shell)
+- Added retry, redirect, chaos and telemetry handler in java.
 
 ### Changed
+
 - Simplified field deserialization.(PHP) [#1493](https://github.com/microsoft/kiota/issues/1493)
 - Fixed a bug where the generator would not strip the common namespace component id for models. [#1483](https://github.com/microsoft/kiota/issues/1483)
 - Simplified field deserialization. [#1490](https://github.com/microsoft/kiota/issues/1490)
