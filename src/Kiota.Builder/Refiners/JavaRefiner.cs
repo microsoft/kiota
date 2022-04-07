@@ -128,7 +128,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 x is CodeParameter para && "decimal".Equals(para.Type.Name, StringComparison.OrdinalIgnoreCase),
             "java.math", "BigDecimal"),
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.QueryParameter) && !string.IsNullOrEmpty(prop.SerializationName),
-                "com.microsoft.kiota.serialization", "QueryParameter"),
+                "com.microsoft.kiota", "QueryParameter"),
     };
     private static void CorrectPropertyType(CodeProperty currentProperty) {
         if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter)) {
