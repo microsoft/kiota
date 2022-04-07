@@ -13,12 +13,19 @@ public abstract class QueryParametersBase {
         final Field[] fields = this.getClass().getFields();
         for(final Field field : fields) {
             try {
-                var value = field.get(this);
+                final var value = field.get(this);
+                var name = field.getName();
+                if (field.isAnnotationPresent(QueryParameter.class)) {
+                    final var annotationName = field.getAnnotation(QueryParameter.class).name();
+                    if(annotationName != null && !annotationName.isEmpty()) {
+                        name = annotationName;
+                    }
+                }
                 if(value != null) {
                     if(value.getClass().isArray()) {
-                        target.put(field.getName(), Arrays.asList((Object[])value));
+                        target.put(name, Arrays.asList((Object[])value));
                     } else {
-                        target.put(field.getName(), value);
+                        target.put(name, value);
                     }
                 }
             } catch (IllegalAccessException ex) {
