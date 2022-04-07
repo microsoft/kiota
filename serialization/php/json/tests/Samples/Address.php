@@ -2,11 +2,12 @@
 
 namespace Microsoft\Kiota\Serialization\Tests\Samples;
 
+use Microsoft\Kiota\Abstractions\Serialization\AdditionalDataHolder;
 use Microsoft\Kiota\Abstractions\Serialization\Parsable;
 use Microsoft\Kiota\Abstractions\Serialization\ParseNode;
 use Microsoft\Kiota\Abstractions\Serialization\SerializationWriter;
 
-class Address implements Parsable
+class Address implements Parsable, AdditionalDataHolder
 {
     /** @var array<string,mixed> $additionalData */
     private array $additionalData = [];
@@ -17,9 +18,10 @@ class Address implements Parsable
      * @inheritDoc
      */
     public function getFieldDeserializers(): array {
+        $o = $this;
         return [
-            "street" => static function (self $o, ParseNode $n) {$o->setStreet($n->getStringValue());},
-            "city" => function (self $o, ParseNode $n) {$o->setCity($n->getStringValue());},
+            "street" => static function (ParseNode $n) use ($o) {$o->setStreet($n->getStringValue());},
+            "city" => function (ParseNode $n) use ($o) {$o->setCity($n->getStringValue());},
         ];
     }
 
@@ -38,7 +40,7 @@ class Address implements Parsable
     /**
      * @inheritDoc
      */
-    public function getAdditionalData(): ?array {
+    public function getAdditionalData(): array {
         return $this->additionalData;
     }
 

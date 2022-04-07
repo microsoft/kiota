@@ -135,7 +135,7 @@ class JsonParseNode implements ParseNode
             $deserializer = $fieldDeserializers[$key] ?? null;
 
             if ($deserializer !== null){
-                $deserializer($result, new JsonParseNode($value));
+                $deserializer(new JsonParseNode($value));
             } else {
                 $key = (string)$key;
                 $additionalData[$key] = $value;
