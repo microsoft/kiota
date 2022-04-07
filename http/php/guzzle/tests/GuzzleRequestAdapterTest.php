@@ -232,4 +232,7 @@ class TestUser implements Parsable {
     {
         $this->additionalData = $value;
     }
+    public static function createFromDiscriminatorValue(ParseNode $parseNode): TestUser {
+        return new self();
+    }
 }
