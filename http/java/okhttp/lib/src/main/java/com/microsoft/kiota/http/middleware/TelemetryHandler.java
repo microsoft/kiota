@@ -50,7 +50,7 @@ public class TelemetryHandler implements Interceptor{
         if(telemetryHandlerOption == null) { telemetryHandlerOption = this._telemetryHandlerOption; }
 
         //Simply forward request if TelemetryConfigurator is set to null intentionally.
-        if(telemetryHandlerOption == null) {
+        if(telemetryHandlerOption == null || telemetryHandlerOption.TelemetryConfigurator == null) {
             return chain.proceed(request);
         }
 
