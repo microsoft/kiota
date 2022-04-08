@@ -9,12 +9,16 @@ namespace Kiota.Builder.Writers.Go {
         {
             var propertyName = codeElement.Access == AccessModifier.Public ? codeElement.Name.ToFirstCharacterUpperCase() : codeElement.Name.ToFirstCharacterLowerCase();
             var returnType = conventions.GetTypeString(codeElement.Type, codeElement.Parent);
+            var suffix = string.Empty;
             switch(codeElement.Kind) {
                 case CodePropertyKind.RequestBuilder:
                     throw new InvalidOperationException("RequestBuilders are as properties are not supported in Go and should be replaced by methods by the refiner.");
+                case CodePropertyKind.QueryParameter when !string.IsNullOrEmpty(codeElement.SerializationName):
+                    suffix = $" `uriparametername:\"{codeElement.SerializationName}\"`";
+                    goto default;
                 default:
                     conventions.WriteShortDescription(codeElement.Description, writer);
-                    writer.WriteLine($"{propertyName} {returnType};");
+                    writer.WriteLine($"{propertyName} {returnType}{suffix}");
                 break;
             }
         }
