@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [0.0.22] - 2022-04-08
+
+### Added
+
 - Added generation of command options for headers defined in the OpenAPI metadata source file. (Shell)
 - Added retry, redirect, chaos and telemetry handler in java.
 
