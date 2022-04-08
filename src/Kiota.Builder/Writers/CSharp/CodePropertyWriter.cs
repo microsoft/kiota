@@ -32,7 +32,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
             break;
-            case CodePropertyKind.QueryParameter when !string.IsNullOrEmpty(codeElement.SerializationName):
+            case CodePropertyKind.QueryParameter when codeElement.IsNameEscaped:
                 writer.WriteLine($"[QueryParameter(\"{codeElement.SerializationName}\")]");
                 goto default;
             default:

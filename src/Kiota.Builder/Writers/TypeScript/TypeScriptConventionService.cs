@@ -49,8 +49,8 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
     {
-        var defaultValueSuffiix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue}";
-        return $"{parameter.Name.ToFirstCharacterLowerCase()}{(parameter.Optional && parameter.Type.IsNullable ? "?" : string.Empty)}: {GetTypeString(parameter.Type, targetElement)}{(parameter.Type.IsNullable ? " | undefined": string.Empty)}{defaultValueSuffiix}";
+        var defaultValueSuffix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue}";
+        return $"{parameter.Name.ToFirstCharacterLowerCase()}{(parameter.Optional && parameter.Type.IsNullable ? "?" : string.Empty)}: {GetTypeString(parameter.Type, targetElement)}{(parameter.Type.IsNullable ? " | undefined": string.Empty)}{defaultValueSuffix}";
     }
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true) {
         if(code is null)
@@ -106,7 +106,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             "integer" or "int64" or "float" or "double" or "byte" or "sbyte" or "decimal" => "number",
             "binary" => "string",
             "String" or "Object" or "Boolean" or "Void" or "string" or "object" or "boolean" or "void" => type.Name.ToFirstCharacterLowerCase(), // little casing hack
-            _ => type.Name.ToFirstCharacterUpperCase() ?? "object",
+            _ => (type.TypeDefinition?.Name ?? type.Name).ToFirstCharacterUpperCase() ?? "object",
         };
     }
     #pragma warning disable CA1822 // Method should be static

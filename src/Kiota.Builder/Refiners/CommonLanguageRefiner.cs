@@ -109,11 +109,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 currentProperty.Access = AccessModifier.Private;
                 currentProperty.NamePrefix = "_";
             }
-            var isSerializationNameNullOrEmpty = string.IsNullOrEmpty(currentProperty.SerializationName);
-            var propertyOriginalName = (isSerializationNameNullOrEmpty ? current.Name : currentProperty.SerializationName)
+            var propertyOriginalName = (currentProperty.IsNameEscaped ? currentProperty.SerializationName : current.Name)
                                         .ToFirstCharacterLowerCase();
-            var accessorName = (currentProperty.IsNameEscaped && !isSerializationNameNullOrEmpty ? currentProperty.SerializationName : current.Name)
-                                .ToFirstCharacterUpperCase();
+            var accessorName = current.Name.ToFirstCharacterUpperCase();
             currentProperty.Getter = parentClass.AddMethod(new CodeMethod {
                 Name = $"get-{accessorName}",
                 Access = AccessModifier.Public,
@@ -223,7 +221,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             if(current is CodeProperty currentProperty &&
                 currentProperty.IsOfKind(CodePropertyKind.Custom)) {
                 currentProperty.SerializationName = currentProperty.Name;
-                currentProperty.IsNameEscaped = true;
             }
             current.Name = replacement.Invoke(current.Name);
         }
@@ -459,8 +456,16 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, c => AddIndexerMethod(c, targetClass, indexerClass, methodNameSuffix, parameterNullable, currentIndexer));
     }
-    internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName, string queryParametersBaseClassName = "QueryParametersBase") {
+    internal void DisableActionOf(CodeElement current, params CodeParameterKind[] kinds) {
+        if(current is CodeMethod currentMethod)
+            foreach(var parameter in currentMethod.Parameters.Where(x => x.Type.ActionOf && x.IsOfKind(kinds)))
+                parameter.Type.ActionOf = false;
+
+        CrawlTree(current, x => DisableActionOf(x, kinds));
+    }
+    internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName, string queryParametersBaseClassName = "QueryParametersBase", bool addToParentNamespace = false) {
         if(current is CodeClass currentClass) {
+            var parentNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
             foreach(var innerClass in currentClass
                                     .Methods
                                     .SelectMany(x => x.Parameters)
@@ -468,19 +473,19 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                     .SelectMany(x => x.Type.AllTypes)
                                     .Select(x => x.TypeDefinition)
                                     .OfType<CodeClass>()) {
-                if(prefixClassNameWithParentName && !innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase)) {
+                if(prefixClassNameWithParentName && !innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase))
                     innerClass.Name = $"{currentClass.Name}{innerClass.Name}";
-                    innerClass.StartBlock.Name = innerClass.Name;
-                }
-                
-                if(currentClass.FindChildByName<CodeClass>(innerClass.Name) == null) {
+
+                if(addToParentNamespace && parentNamespace.FindChildByName<CodeClass>(innerClass.Name) == null)
+                    parentNamespace.AddClass(innerClass);
+                else if(!addToParentNamespace && currentClass.FindChildByName<CodeClass>(innerClass.Name) == null)
                     currentClass.AddInnerClass(innerClass);
-                }
+
                 if(!string.IsNullOrEmpty(queryParametersBaseClassName))
                     innerClass.StartBlock.Inherits = new CodeType { Name = queryParametersBaseClassName, IsExternal = true };
             }
         }
-        CrawlTree(current, x => AddInnerClasses(x, prefixClassNameWithParentName, queryParametersBaseClassName));
+        CrawlTree(current, x => AddInnerClasses(x, prefixClassNameWithParentName, queryParametersBaseClassName, addToParentNamespace));
     }
     private static readonly CodeUsingComparer usingComparerWithDeclarations = new(true);
     private static readonly CodeUsingComparer usingComparerWithoutDeclarations = new(false);
@@ -502,7 +507,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                 .Distinct();
             var methodsParametersTypes = methods
                                 .SelectMany(x => x.Parameters)
-                                .Where(x => x.IsOfKind(CodeParameterKind.Custom, CodeParameterKind.RequestBody))
+                                .Where(x => x.IsOfKind(CodeParameterKind.Custom, CodeParameterKind.RequestBody, CodeParameterKind.QueryParameter))
                                 .Select(x => x.Type)
                                 .Distinct();
             var indexerTypes = currentClassChildren
@@ -522,10 +527,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                 .Union(inheritTypes)
                                 .Union(errorTypes)
                                 .Where(x => x != null)
-                                .SelectMany(x => x?.AllTypes?.Select(y => new Tuple<CodeType, CodeNamespace>(y, y?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())))
-                                .Where(x => x.Item2 != null && (includeCurrentNamespace || x.Item2 != currentClassNamespace))
-                                .Where(x => includeParentNamespaces || !currentClassNamespace.IsChildOf(x.Item2))
-                                .Select(x => new CodeUsing { Name = x.Item2.Name, Declaration = x.Item1 })
+                                .SelectMany(x => x?.AllTypes?.Select(y => (type: y, ns: y?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())))
+                                .Where(x => x.ns != null && (includeCurrentNamespace || x.ns != currentClassNamespace))
+                                .Where(x => includeParentNamespaces || !currentClassNamespace.IsChildOf(x.ns))
+                                .Select(x => new CodeUsing { Name = x.ns.Name, Declaration = x.type })
                                 .Where(x => x.Declaration?.TypeDefinition != current)
                                 .Distinct(compareOnDeclaration ? usingComparerWithDeclarations : usingComparerWithoutDeclarations)
                                 .ToArray();
@@ -901,5 +906,34 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 TypeDefinition = propertyInterfaceType,
             }
         };
+    }
+    public void AddQueryParameterMapperMethod(CodeElement currentElement, string methodName = "getQueryParameter", string parameterName = "originalName") {
+        if(currentElement is CodeClass currentClass &&
+            currentClass.IsOfKind(CodeClassKind.QueryParameters) &&
+            currentClass.Properties.Any(x => x.IsNameEscaped)) {
+                var method = currentClass.AddMethod(new CodeMethod {
+                    Name = methodName,
+                    Access = AccessModifier.Public,
+                    ReturnType = new CodeType {
+                        Name = "string",
+                        IsNullable = false,
+                    },
+                    IsAsync = false,
+                    IsStatic = false,
+                    Kind = CodeMethodKind.QueryParametersMapper,
+                    Description = "Maps the query parameters names to their encoded names for the URI template parsing.",
+                }).First();
+                method.AddParameter(new CodeParameter {
+                    Name = parameterName,
+                    Kind = CodeParameterKind.QueryParametersMapperParameter,
+                    Type = new CodeType {
+                        Name = "string",
+                        IsNullable = true,
+                    },
+                    Optional = false,
+                    Description = "The original query parameter name in the class.",
+                });
+            }
+        CrawlTree(currentElement, (x) => AddQueryParameterMapperMethod(x, methodName, parameterName));
     }
 }

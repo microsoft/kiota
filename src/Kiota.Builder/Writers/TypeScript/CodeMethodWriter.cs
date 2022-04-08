@@ -63,6 +63,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             case CodeMethodKind.RequestBuilderWithParameters:
                 WriteRequestBuilderWithParametersBody(codeElement, parentClass, returnType, writer);
                 break;
+            case CodeMethodKind.QueryParametersMapper:
+                WriteQueryParametersMapper(codeElement, parentClass, writer);
+                break;
             case CodeMethodKind.Factory:
                 throw new InvalidOperationException("Factory methods are implemented as functions in TypeScript");
             case CodeMethodKind.RawUrlConstructor:
@@ -76,6 +79,23 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         writer.DecreaseIndent();
         writer.WriteLine("};");
     }
+
+    private static void WriteQueryParametersMapper(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
+    {
+        var parameter = codeElement.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.QueryParametersMapperParameter));
+        if(parameter == null) throw new InvalidOperationException("QueryParametersMapper should have a parameter of type QueryParametersMapper");
+        var parameterName = parameter.Name.ToFirstCharacterLowerCase();
+        writer.WriteLine($"switch({parameterName}) {{");
+        writer.IncreaseIndent();
+        var escapedProperties = parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.QueryParameter) && x.IsNameEscaped);
+        foreach(var escapedProperty in escapedProperties) {
+            var escapedPropertyName = escapedProperty.Name.ToFirstCharacterLowerCase();
+            writer.WriteLine($"case \"{escapedProperty.Name}\": return \"{escapedProperty.SerializationName}\";");
+        }
+        writer.WriteLine($"default: return {parameterName};");
+        writer.CloseBlock();
+    }
+
     internal static void WriteDefensiveStatements(CodeMethod codeElement, LanguageWriter writer) {
         if(codeElement.IsOfKind(CodeMethodKind.Setter)) return;
 

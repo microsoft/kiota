@@ -36,7 +36,11 @@ namespace Kiota.Builder
         /// <summary>
         /// A parameter representing the parse node to be used for deserialization during discrimination.
         /// </summary>
-        ParseNode
+        ParseNode,
+        /// <summary>
+        /// Parameter representing the original name of the query parameter symbol in the generated class.
+        /// </summary>
+        QueryParametersMapperParameter
     }
 
     public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable, IDocumentedElement

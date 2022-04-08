@@ -20,7 +20,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, JavaConvention
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
             break;
-            case CodePropertyKind.QueryParameter when !string.IsNullOrEmpty(codeElement.SerializationName):
+            case CodePropertyKind.QueryParameter when codeElement.IsNameEscaped:
                 writer.WriteLine($"@QueryParameter(name = \"{codeElement.SerializationName}\")");
             goto default;
             default:

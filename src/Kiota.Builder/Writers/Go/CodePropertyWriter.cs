@@ -13,7 +13,7 @@ namespace Kiota.Builder.Writers.Go {
             switch(codeElement.Kind) {
                 case CodePropertyKind.RequestBuilder:
                     throw new InvalidOperationException("RequestBuilders are as properties are not supported in Go and should be replaced by methods by the refiner.");
-                case CodePropertyKind.QueryParameter when !string.IsNullOrEmpty(codeElement.SerializationName):
+                case CodePropertyKind.QueryParameter when codeElement.IsNameEscaped:
                     suffix = $" `uriparametername:\"{codeElement.SerializationName}\"`";
                     goto default;
                 default:
