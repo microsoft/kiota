@@ -85,11 +85,13 @@ namespace Kiota.Builder.Extensions {
             }
             return prefix + rawClassName?.Split('.', StringSplitOptions.RemoveEmptyEntries)?.LastOrDefault() + suffix;
         }
+        private static readonly Regex descriptionCleanupRegex = new (@"[\r\n\t]", RegexOptions.Compiled);
+        public static string CleanupDescription(this string description) => string.IsNullOrEmpty(description) ? description : descriptionCleanupRegex.Replace(description, string.Empty);
         public static string GetPathItemDescription(this OpenApiUrlTreeNode currentNode, string label, string defaultValue = default) =>
         !string.IsNullOrEmpty(label) && (currentNode?.PathItems.ContainsKey(label) ?? false) ?
-                currentNode.PathItems[label].Description ??
+                (currentNode.PathItems[label].Description ??
                 currentNode.PathItems[label].Summary ??
-                defaultValue :
+                defaultValue).CleanupDescription() :
             defaultValue;
         public static bool DoesNodeBelongToItemSubnamespace(this OpenApiUrlTreeNode currentNode) => currentNode.IsPathSegmentWithSingleSimpleParameter();
         public static bool IsPathSegmentWithSingleSimpleParameter(this OpenApiUrlTreeNode currentNode) =>
