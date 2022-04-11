@@ -58,7 +58,7 @@ jobs:
         uses: actions/setup-dotnet@v2
         with:
           dotnet-version: 6.0.x
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: drop
       - run: dotnet nuget push "*.nupkg" --skip-duplicate -s https://nuget.pkg.github.com/microsoft/index.json -k ${{ secrets.PUBLISH_GH_TOKEN }}
