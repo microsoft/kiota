@@ -94,6 +94,12 @@ interface ParseNode {
     public function getEnumValue(string $targetEnum): ?Enum;
 
     /**
+     * @param string $targetClass
+     * @return Enum[]|null
+     */
+    public function getCollectionOfEnumValues(string $targetClass): ?array;
+
+    /**
      * Return a byte value.
      * @return Byte|null
      */

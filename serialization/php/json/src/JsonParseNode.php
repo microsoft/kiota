@@ -163,6 +163,20 @@ class JsonParseNode implements ParseNode
     /**
      * @inheritDoc
      */
+    public function getCollectionOfEnumValues(string $targetClass): ?array {
+        if ($this->jsonNode === null) {
+            return null;
+        }
+        return array_map(static function ($val) use($targetClass) {
+            return $val->getEnumValue($targetClass);
+        }, array_map(static function ($value) {
+            return new JsonParseNode($value);
+        }, $this->jsonNode));
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function getOnBeforeAssignFieldValues(): ?callable {
         return $this->onBeforeAssignFieldValues;
     }

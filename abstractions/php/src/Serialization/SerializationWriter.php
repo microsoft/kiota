@@ -81,6 +81,14 @@ interface SerializationWriter {
     public function writeEnumValue(?string $key, ?Enum $value): void;
 
     /**
+     * Writes a collection of enum values.
+     * @param string|null $key
+     * @param Enum[]|null $values
+     * @return void
+     */
+    public function writeCollectionOfEnumValues(?string $key, ?array $values): void;
+
+    /**
      * Writes a null value for the specified key.
      * @param string|null $key the key to write the value with.
      */

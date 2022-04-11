@@ -235,7 +235,10 @@ namespace Kiota.Builder.Writers.Php
             var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();
             var writerParameter = codeMethod.Parameters.FirstOrDefault(x => x.Kind == CodeParameterKind.Serializer);
             var writerParameterName = conventions.GetParameterName(writerParameter);
-            if(inherits)
+            var implementsParsable = parentClass.StartBlock != null &&
+                                     parentClass.StartBlock.Implements.Any(x =>
+                                         x.IsExternal && x.Name.Equals("Parsable"));
+            if(inherits && implementsParsable)
                 writer.WriteLine($"parent::serialize({writerParameterName});");
             var customProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
             foreach(var otherProp in customProperties) {
@@ -271,7 +274,7 @@ namespace Kiota.Builder.Writers.Php
             return lowerCaseProp switch
             {
                 "string" or "guid" => "writeStringValue",
-                "enum" or "float" or "date" or "time" => $"write{lowerCaseProp.ToFirstCharacterUpperCase()}Value",
+                "enum" or "float" or "date" or "time" or "byte" => $"write{lowerCaseProp.ToFirstCharacterUpperCase()}Value",
                 "bool" or "boolean" => "writeBooleanValue",
                 "double" or "decimal" => "writeFloatValue",
                 "datetime" or "datetimeoffset" => "writeDateTimeValue",
@@ -306,6 +309,7 @@ namespace Kiota.Builder.Writers.Php
                 "number" => "$n->getIntegerValue()",
                 "decimal" or "double" => "$n->getFloatValue()",
                 "streaminterface" => "$n->getBinaryContent()",
+                "byte" => $"$n->getByteValue()",
                 _ when conventions.PrimitiveTypes.Contains(lowerCaseType) => $"$n->get{propertyType.ToFirstCharacterUpperCase()}Value()",
                 _ => $"$n->getObjectValue(array({propertyType.ToFirstCharacterUpperCase()}::class, '{CreateDiscriminatorMethodName}'))",
             };
@@ -381,20 +385,22 @@ namespace Kiota.Builder.Writers.Php
         private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer, CodeMethod method) {
             var inherits = parentClass.StartBlock?.Inherits != null;
             var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
+            var canCallParent = inherits && parentClass.StartBlock != null &&
+                                parentClass.StartBlock.Implements.Any(x => x.IsExternal && x.Name.Equals("Parsable"));
             var currentObjectName = "$currentObject";
             writer.WriteLine($"{currentObjectName} = $this;");
-            writer.WriteLine($"return {(inherits ? "array_merge(parent::getFieldDeserializers()," : string.Empty)} [");
+            writer.WriteLine($"return {(canCallParent ? "array_merge(parent::getFieldDeserializers()," : string.Empty)} [");
             if(fieldToSerialize.Any()) {
                 writer.IncreaseIndent();
                 fieldToSerialize
                     .OrderBy(x => x.Name)
                     .Select(x => 
-                        $"'{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}' => function (ParseNode $n) use ({currentObjectName}) {{ {currentObjectName}->set{x.Name.ToFirstCharacterUpperCase()}({GetDeserializationMethodName(x.Type, method)}); }},")
+                        $"'{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}' => function (ParseNode $n) use ({currentObjectName}) {{ {currentObjectName}->{x.Setter.Name.ToFirstCharacterLowerCase()}({GetDeserializationMethodName(x.Type, method)}); }},")
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
                 writer.DecreaseIndent();
             }
-            writer.WriteLine($"]{(inherits ? ')': string.Empty )};");
+            writer.WriteLine($"]{(canCallParent ? ')': string.Empty )};");
         }
         
         private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer) {
@@ -447,7 +453,11 @@ namespace Kiota.Builder.Writers.Php
             var returnTypeFactory = codeElement.ReturnType is CodeType {TypeDefinition: CodeClass returnTypeClass}
                 ? $", array({returnType}::class, '{CreateDiscriminatorMethodName}')"
                 : string.Empty;
-            var finalReturn = string.IsNullOrEmpty(returnTypeFactory) && !returnsVoid
+            var returnWithCustomType =
+                !returnsVoid && !string.IsNullOrEmpty(returnTypeFactory) && conventions.CustomTypes.Contains(returnType)
+                    ? $", {returnType}::class"
+                    : returnTypeFactory;
+            var finalReturn = string.IsNullOrEmpty(returnWithCustomType) && !returnsVoid
                 ? $", '{returnType}'"
                 : returnTypeFactory;
             if (codeElement.Parameters.Any(x => x.IsOfKind(CodeParameterKind.ResponseHandler)))

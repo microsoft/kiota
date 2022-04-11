@@ -28,7 +28,6 @@ namespace Kiota.Builder.Refiners
                 addUsings: false
             );
             CorrectParameterType(generatedCode);
-            AddDefaultImports(generatedCode, defaultUsingEvaluators);
             MakeModelPropertiesNullable(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
@@ -50,6 +49,7 @@ namespace Kiota.Builder.Refiners
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             ReplaceBinaryByNativeType(generatedCode, "StreamInterface", "Psr\\Http\\Message", true);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
+            AddDefaultImports(generatedCode, defaultUsingEvaluators);
         }
         private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -125,7 +125,9 @@ namespace Kiota.Builder.Refiners
             new (x => x is CodeEnum, "Microsoft\\Kiota\\Abstractions\\", "Enum"),
             new(x => x is CodeProperty property && property.Type.Name.Equals("DateTime", StringComparison.OrdinalIgnoreCase), "", "DateTime"),
             new(x => x is CodeProperty property && property.Type.Name.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase), "", "DateTime"),
-            new(x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor), "Microsoft\\Kiota\\Abstractions", "ApiClientBuilder")
+            new(x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor), "Microsoft\\Kiota\\Abstractions", "ApiClientBuilder"),
+            new(x => (x is CodeMethod method && method.ReturnType.Name.Equals("Byte", StringComparison.OrdinalIgnoreCase)) || (x is CodeParameter parameter && parameter.Type.Name.Equals("Byte", StringComparison.OrdinalIgnoreCase)), "Microsoft\\Kiota\\Abstractions\\Types", "Byte"),
+            new(x => x is CodeProperty property && property.Type.Name.Equals("Byte", StringComparison.OrdinalIgnoreCase), "Microsoft\\Kiota\\Abstractions\\Types", "Byte")
         };
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter)) {
