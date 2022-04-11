@@ -30,7 +30,7 @@ class ParametersNameDecodingHandlerTests {
   @CsvSource({"http://localhost?%24select=diplayName&api%2Dversion=2,http://localhost/?$select=diplayName&api-version=2",
   "http://localhost?%24select=diplayName&api%7Eversion=2,http://localhost/?$select=diplayName&api~version=2",
   "http://localhost?%24select=diplayName&api%2Eversion=2,http://localhost/?$select=diplayName&api.version=2",
-  "http://localhost?%24select=diplayName&api%2Eversion=2,http://localhost/?$select=diplayName&api.version=2",
+  "http://localhost/api-version/?%24select=diplayName&api%2Eversion=2,http://localhost/api-version/?$select=diplayName&api.version=2",
   "http://localhost:888?%24select=diplayName&api%2Dversion=2,http://localhost:888/?$select=diplayName&api-version=2",
   "http://localhost,http://localhost/"})
   public void testDecode(final String input, final String expected) throws IOException {
