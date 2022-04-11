@@ -27,7 +27,7 @@ jobs:
         with:
           filename: './${{ matrix.architecture }}.zip'
           path: './${{ matrix.architecture }}'
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: binaries-${{ matrix.architecture }}
           path: ./${{ matrix.architecture }}.zip

@@ -36,13 +36,13 @@ jobs:
         run: dotnet pack ${{ env.solutionName }} --no-restore --no-build --verbosity normal -c Release
         working-directory: ${{ env.relativePath }}
       - name: Upload Coverage Results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: codeCoverage
           path: |
             ${{ env.relativePath }}src/Microsoft.Kiota.Cli.Commons.Tests/TestResults
       - name: Upload Nuget Package
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: drop
           path: |
