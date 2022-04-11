@@ -635,7 +635,7 @@ public class KiotaBuilder
     }
     private void CreateOperationMethods(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
     {
-        var parameterClass = CreateOperationParameter(currentNode, operationType, operation);
+        var parameterClass = CreateOperationParameter(currentNode, operationType, operation, parentClass);
 
         var schema = operation.GetResponseSchema();
         var method = (HttpMethod)Enum.Parse(typeof(HttpMethod), operationType.ToString());
@@ -1113,16 +1113,16 @@ public class KiotaBuilder
             });
         }
     }
-    private CodeClass CreateOperationParameter(OpenApiUrlTreeNode node, OperationType operationType, OpenApiOperation operation)
+    private CodeClass CreateOperationParameter(OpenApiUrlTreeNode node, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
     {
         var parameters = node.PathItems[Constants.DefaultOpenApiLabel].Parameters.Union(operation.Parameters).Where(p => p.In == ParameterLocation.Query);
         if(parameters.Any()) {
-            var parameterClass = new CodeClass
+            var parameterClass = parentClass.AddInnerClass(new CodeClass
             {
                 Name = operationType.ToString() + "QueryParameters",
                 Kind = CodeClassKind.QueryParameters,
                 Description = (operation.Description ?? operation.Summary).CleanupDescription(),
-            };
+            }).First();
             foreach (var parameter in parameters)
             {
                 var prop = new CodeProperty
