@@ -369,7 +369,7 @@ public class KiotaBuilder
             var mParameter = new CodeParameter {
                 Name = parameter.Name,
                 Optional = asOptional,
-                Description = parameter.Description,
+                Description = parameter.Description.CleanupDescription(),
                 Kind = CodeParameterKind.Path,
                 UrlTemplateParameterName = parameter.Name,
             };
@@ -555,7 +555,7 @@ public class KiotaBuilder
             Name = propertyName,
             DefaultValue = defaultValue,
             Kind = kind,
-            Description = typeSchema?.Description ?? $"The {propertyName} property",
+            Description = typeSchema?.Description.CleanupDescription() ?? $"The {propertyName} property",
         };
         if(propertyName != childIdentifier)
             prop.SerializationName = childIdentifier;
@@ -642,7 +642,7 @@ public class KiotaBuilder
             Name = operationType.ToString(),
             Kind = CodeMethodKind.RequestExecutor,
             HttpMethod = method,
-            Description = operation.Description ?? operation.Summary,
+            Description = (operation.Description ?? operation.Summary).CleanupDescription(),
         }).FirstOrDefault();
         AddErrorMappingsForExecutorMethod(currentNode, operation, executorMethod);
         if (schema != null)
@@ -687,7 +687,7 @@ public class KiotaBuilder
             Kind = CodeMethodKind.RequestGenerator,
             IsAsync = false,
             HttpMethod = method,
-            Description = operation.Description ?? operation.Summary,
+            Description = (operation.Description ?? operation.Summary).CleanupDescription(),
             ReturnType = new CodeType { Name = "RequestInformation", IsNullable = false, IsExternal = true},
         };
         if (config.Language == GenerationLanguage.Shell)
@@ -706,7 +706,7 @@ public class KiotaBuilder
             {
                 Name = x.Name.TrimStart('$'),
                 Type = GetQueryParameterType(x.Schema),
-                Description = x.Description,
+                Description = x.Description.CleanupDescription(),
                 Kind = GetParameterKindFromLocation(x.In),
                 Optional = !x.Required
             })
@@ -717,7 +717,7 @@ public class KiotaBuilder
                     {
                         Name = x.Name.TrimStart('$'),
                         Type = GetQueryParameterType(x.Schema),
-                        Description = x.Description,
+                        Description = x.Description.CleanupDescription(),
                         Kind = GetParameterKindFromLocation(x.In),
                         Optional = !x.Required
                     }))
@@ -746,7 +746,7 @@ public class KiotaBuilder
                 Type = requestBodyType,
                 Optional = false,
                 Kind = CodeParameterKind.RequestBody,
-                Description = requestBodySchema.Description
+                Description = requestBodySchema.Description.CleanupDescription()
             });
             method.ContentType = nonBinaryRequestBody.Value.Key;
         } else if (operation.RequestBody?.Content?.ContainsKey(RequestBodyBinaryContentType) ?? false) {
@@ -958,7 +958,7 @@ public class KiotaBuilder
         var newClass = currentNamespace.AddClass(new CodeClass {
             Name = declarationName,
             Kind = CodeClassKind.Model,
-            Description = schema.Description ?? (string.IsNullOrEmpty(schema.Reference?.Id) ? 
+            Description = schema.Description.CleanupDescription() ?? (string.IsNullOrEmpty(schema.Reference?.Id) ? 
                                                     currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel) :
                                                     null),// if it's a referenced component, we shouldn't use the path item description as it makes it indeterministic
         }).First();
@@ -1126,14 +1126,14 @@ public class KiotaBuilder
             {
                 Name = operationType.ToString() + "QueryParameters",
                 Kind = CodeClassKind.QueryParameters,
-                Description = operation.Description ?? operation.Summary
+                Description = (operation.Description ?? operation.Summary).CleanupDescription(),
             };
             foreach (var parameter in parameters)
             {
                 var prop = new CodeProperty
                 {
                     Name = FixQueryParameterIdentifier(parameter),
-                    Description = parameter.Description,
+                    Description = parameter.Description.CleanupDescription(),
                     Type = new CodeType
                     {
                         IsExternal = true,
