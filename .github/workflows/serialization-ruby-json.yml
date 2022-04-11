@@ -34,7 +34,7 @@ jobs:
         working-directory: ${{ env.relativePath }}
       - name: Upload artifacts for ruby version 3 and ubuntu
         if: ${{ matrix.os == 'ubuntu-latest'  && matrix.ruby-version == '3.0'}}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: drop
           path: |

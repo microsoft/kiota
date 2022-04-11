@@ -34,6 +34,7 @@ import com.microsoft.kiota.serialization.SerializationWriterFactoryRegistry;
 import com.microsoft.kiota.store.BackingStoreFactory;
 import com.microsoft.kiota.store.BackingStoreFactorySingleton;
 
+import kotlin.OptIn;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -333,8 +334,9 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
         for (final Map.Entry<String,String> header : requestInfo.headers.entrySet()) {
             requestBuilder.addHeader(header.getKey(), header.getValue());
         }
+
         for(final RequestOption option : requestInfo.getRequestOptions()) {
-            requestBuilder.tag(option);
+            requestBuilder.tag(option.getType(), option);
         }
         return requestBuilder.build();
     }
