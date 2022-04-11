@@ -29,7 +29,7 @@ jobs:
       - name: Pack
         run: dotnet pack kiota.csproj --no-restore --no-build --verbosity normal -c Release
         working-directory: ${{ env.relativePath }}
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: drop
           path: |
