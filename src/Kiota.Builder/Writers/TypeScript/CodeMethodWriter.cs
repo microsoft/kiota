@@ -89,7 +89,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         writer.IncreaseIndent();
         var escapedProperties = parentClass.Properties.Where(x => x.IsOfKind(CodePropertyKind.QueryParameter) && x.IsNameEscaped);
         foreach(var escapedProperty in escapedProperties) {
-            var escapedPropertyName = escapedProperty.Name.ToFirstCharacterLowerCase();
             writer.WriteLine($"case \"{escapedProperty.Name}\": return \"{escapedProperty.SerializationName}\";");
         }
         writer.WriteLine($"default: return {parameterName};");
