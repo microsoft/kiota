@@ -637,7 +637,12 @@ public class KiotaBuilder
     }
     private void CreateOperationMethods(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
     {
-        var parameterClass = CreateOperationParameter(currentNode, operationType, operation, parentClass);
+        var parameterClass = CreateOperationParameterClass(currentNode, operationType, operation, parentClass);
+        var requestConfigClass = parentClass.AddInnerClass(new CodeClass {
+            Name = $"{parentClass.Name}{operationType}RequestConfiguration",
+            Kind = CodeClassKind.RequestConfiguration,
+            Description = "Configuration for the request such as headers, query parameters, and middleware options.",
+        }).First();
 
         var schema = operation.GetResponseSchema();
         var method = (HttpMethod)Enum.Parse(typeof(HttpMethod), operationType.ToString());
@@ -664,7 +669,7 @@ public class KiotaBuilder
         }
 
         
-        AddRequestBuilderMethodParameters(currentNode, operation, parameterClass, executorMethod);
+        AddRequestBuilderMethodParameters(currentNode, operation, parameterClass, requestConfigClass, executorMethod);
 
         var handlerParam = new CodeParameter {
             Name = "responseHandler",
@@ -695,7 +700,7 @@ public class KiotaBuilder
         }).FirstOrDefault();
         if (config.Language == GenerationLanguage.Shell)
             SetPathAndQueryParameters(generatorMethod, currentNode, operation);
-        AddRequestBuilderMethodParameters(currentNode, operation, parameterClass, generatorMethod);
+        AddRequestBuilderMethodParameters(currentNode, operation, parameterClass, requestConfigClass, generatorMethod);
         logger.LogTrace("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
     }
     private static readonly Func<OpenApiParameter, CodeParameter> GetCodeParameterFromApiParameter = x => {
@@ -732,7 +737,7 @@ public class KiotaBuilder
         target.AddPathQueryOrHeaderParameter(pathAndQueryParameters);
     }
 
-    private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeClass parameterClass, CodeMethod method) {
+    private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeClass parameterClass, CodeClass requestConfigClass, CodeMethod method) {
         var nonBinaryRequestBody = operation.RequestBody?.Content?.FirstOrDefault(x => !RequestBodyBinaryContentType.Equals(x.Key, StringComparison.OrdinalIgnoreCase));
         if (nonBinaryRequestBody.HasValue && nonBinaryRequestBody.Value.Value != null)
         {
@@ -760,33 +765,34 @@ public class KiotaBuilder
             };
             method.AddParameter(nParam);
         }
+        method.AddParameter(new CodeParameter {
+            Name = "requestConfiguration",
+            Optional = true,
+            Type = new CodeType { Name = requestConfigClass.Name, TypeDefinition = requestConfigClass, ActionOf = true },
+            Kind = CodeParameterKind.RequestConfiguration,
+            Description = "Configuration for the request such as headers, query parameters, and middleware options.",
+        });
         if(parameterClass != null) {
-            var qsParam = new CodeParameter
+            requestConfigClass.AddProperty(new CodeProperty
             {
                 Name = "queryParameters",
-                Optional = true,
-                Kind = CodeParameterKind.QueryParameter,
+                Kind = CodePropertyKind.QueryParameter,
                 Description = "Request query parameters",
-                Type = new CodeType { Name = parameterClass.Name, ActionOf = true, TypeDefinition = parameterClass },
-            };
-            method.AddParameter(qsParam);
+                Type = new CodeType { Name = parameterClass.Name, TypeDefinition = parameterClass },
+            });
         }
-        var headersParam = new CodeParameter {
+        requestConfigClass.AddProperty(new CodeProperty {
             Name = "headers",
-            Optional = true,
-            Kind = CodeParameterKind.Headers,
+            Kind = CodePropertyKind.Headers,
             Description = "Request headers",
-            Type = new CodeType { Name = "IDictionary<string, string>", ActionOf = true, IsExternal = true },
-        };
-        method.AddParameter(headersParam);
-        var optionsParam = new CodeParameter {
+            Type = new CodeType { Name = "IDictionary<string, string>", IsExternal = true },
+        },
+        new CodeProperty {
             Name = "options",
-            Optional = true,
-            Kind = CodeParameterKind.Options,
+            Kind = CodePropertyKind.Options,
             Description = "Request options",
-            Type = new CodeType { Name = "IEnumerable<IRequestOption>", ActionOf = false, IsExternal = true },
-        };
-        method.AddParameter(optionsParam);
+            Type = new CodeType { Name = "IEnumerable<IRequestOption>", IsExternal = true },
+        });
     }
     private string GetModelsNamespaceNameFromReferenceId(string referenceId) {
         if (string.IsNullOrEmpty(referenceId)) return referenceId;
@@ -1115,13 +1121,13 @@ public class KiotaBuilder
             });
         }
     }
-    private CodeClass CreateOperationParameter(OpenApiUrlTreeNode node, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
+    private CodeClass CreateOperationParameterClass(OpenApiUrlTreeNode node, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
     {
         var parameters = node.PathItems[Constants.DefaultOpenApiLabel].Parameters.Union(operation.Parameters).Where(p => p.In == ParameterLocation.Query);
         if(parameters.Any()) {
             var parameterClass = parentClass.AddInnerClass(new CodeClass
             {
-                Name = operationType.ToString() + "QueryParameters",
+                Name = $"{parentClass.Name}{operationType}QueryParameters",
                 Kind = CodeClassKind.QueryParameters,
                 Description = (operation.Description ?? operation.Summary).CleanupDescription(),
             }).First();

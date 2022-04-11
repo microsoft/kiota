@@ -26,10 +26,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var parentClass = codeElement.Parent as CodeClass;
         var inherits = parentClass.StartBlock.Inherits != null && !parentClass.IsErrorDefinition;
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
-        var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
-        var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
-        var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
-        var requestParams = new RequestParams(requestBodyParam, queryStringParam, headersParam, optionsParam);
+        var requestConfigParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
+        var requestParams = new RequestParams(requestBodyParam, requestConfigParam);
         WriteDefensiveStatements(codeElement, writer);
         switch(codeElement.Kind) {
             case CodeMethodKind.IndexerBackwardCompatibility:
@@ -223,7 +221,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                                             ?.Name
                                             ?.ToFirstCharacterLowerCase();
         writer.WriteLine($"const requestInfo = this.{generatorMethodName}(");
-        var requestInfoParameters = new CodeParameter[] { requestParams.requestBody, requestParams.queryString, requestParams.headers, requestParams.options }
+        var requestInfoParameters = new CodeParameter[] { requestParams.requestBody, requestParams.requestConfiguration }
                                         .Select(x => x?.Name).Where(x => x != null);
         if(requestInfoParameters.Any()) {
             writer.IncreaseIndent();
@@ -264,8 +262,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                             $"{RequestInfoVarName}.urlTemplate = {GetPropertyCall(urlTemplateProperty, "''")};",
                             $"{RequestInfoVarName}.pathParameters = {GetPropertyCall(urlTemplateParamsProperty, "''")};",
                             $"{RequestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.ToString().ToUpperInvariant()};");
-        if(requestParams.headers != null)
-            writer.WriteLine($"if({requestParams.headers.Name}) {RequestInfoVarName}.headers = {requestParams.headers.Name};");
+        var headers = requestParams.requestConfiguration.GetHeadersProperty();
+        if(headers != null)
+            writer.WriteLine($"if({requestParams.requestConfiguration.Name} && {requestParams.requestConfiguration.Name}.{headers.Name}) {RequestInfoVarName}.headers = {requestParams.requestConfiguration.Name}.{headers.Name};");
         if(requestParams.queryString != null)
             writer.WriteLines($"{requestParams.queryString.Name} && {RequestInfoVarName}.setQueryStringParametersFromRawObject({requestParams.queryString.Name});");
         if(requestParams.requestBody != null) {

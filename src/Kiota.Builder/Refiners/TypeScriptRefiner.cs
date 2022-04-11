@@ -19,7 +19,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             string.Empty,
             true);
         DisableActionOf(generatedCode, 
-            CodeParameterKind.QueryParameter);
+            CodeParameterKind.RequestConfiguration);
         AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
         AliasUsingsWithSameSymbol(generatedCode);
         AddParsableImplementsForModelClasses(generatedCode, "Parsable");
@@ -149,6 +149,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.Name = "RequestAdapter";
         else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
             currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
+        else if(currentProperty.IsOfKind(CodePropertyKind.Options))
+            currentProperty.Type.Name = "RequestOption[]";
+        else if(currentProperty.IsOfKind(CodePropertyKind.Headers))
+            currentProperty.Type.Name = "Record<string, string>";
         else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
         {
             currentProperty.Type.Name = "Record<string, unknown>";
@@ -167,8 +171,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
             if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ResponseHandler) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
-            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => x.Type.Name = "RequestOption[]");
-            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Headers)).ToList().ForEach(x => { x.Type.Name = "Record<string, string>"; x.Type.ActionOf = false; });
         }
         else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
