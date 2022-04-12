@@ -137,7 +137,7 @@ namespace Kiota.Builder.Writers.Go {
                 WriteReturnError(writer);
             }
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
-                WriteSerializationMethodCall(otherProp.Type, parentClass, otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase(), $"m.Get{otherProp.Name.ToFirstCharacterUpperCase()}()", shouldDeclareErrorVar, writer);
+                WriteSerializationMethodCall(otherProp.Type, parentClass, otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase(), $"m.Get{(otherProp.IsNameEscaped ? otherProp.SerializationName : otherProp.Name).ToFirstCharacterUpperCase()}()", shouldDeclareErrorVar, writer);
             }
             if(additionalDataProperty != null) {
                 writer.WriteLine("{");
@@ -333,7 +333,7 @@ namespace Kiota.Builder.Writers.Go {
             };
             if(property.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None)
                 WriteCollectionCast(propertyTypeImportName, "val", "res", writer, pointerSymbol, dereference);
-            writer.WriteLine($"m.Set{property.Name.ToFirstCharacterUpperCase()}({valueArgument})");
+            writer.WriteLine($"m.Set{(property.IsNameEscaped ? property.SerializationName : property.Name).ToFirstCharacterUpperCase()}({valueArgument})");
             writer.CloseBlock();
             writer.WriteLine("return nil");
             writer.CloseBlock();
