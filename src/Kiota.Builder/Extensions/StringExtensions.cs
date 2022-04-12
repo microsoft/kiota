@@ -67,8 +67,6 @@ namespace Kiota.Builder.Extensions {
             var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
             return hash.Select(b => b.ToString("x2")).Aggregate((x, y) => x + y);
         }
-        public static string SanitizeUrlTemplateParameterName(this string original) =>
-            original?.Replace('-', '_');
         /// <summary>
         /// For Php strings, having double quotes around strings might cause an issue
         /// if the string contains valid variable name.

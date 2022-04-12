@@ -25,6 +25,10 @@ public enum CodeMethodKind
     /// The method to be used during deserialization with the discriminator property to get a new instance of the target type.
     /// </summary>
     Factory,
+    /// <summary>
+    /// The method to be used during query parameters serialization to get the proper uri template parameter name.
+    /// </summary>
+    QueryParametersMapper,
 }
 public enum HttpMethod {
     Get,

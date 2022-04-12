@@ -501,7 +501,7 @@ public class KiotaBuilderTests
             .SingleOrDefault(cm => cm.IsOfKind(CodeMethodKind.RequestGenerator) && cm.HttpMethod == HttpMethod.Get)?
             .PathQueryAndHeaderParameters;
         Assert.Equal(4, parameters.Count());
-        Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "If-Match" && p.Kind == CodeParameterKind.Headers));
+        Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "IfMatch" && p.Kind == CodeParameterKind.Headers));
         Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "ConsistencyLevel" && p.Kind == CodeParameterKind.Headers));
         Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "select" && p.Kind == CodeParameterKind.QueryParameter));
         Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "scope" && p.Kind == CodeParameterKind.Path));

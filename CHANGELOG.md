@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a bug where line returns in descriptions could break the generated code. [#1504](https://github.com/microsoft/kiota/issues/1504)
+- Fixed a bug with special characters in query parameters names. [#1445](https://github.com/microsoft/kiota/issues/1445) 
 
 ## [0.0.22] - 2022-04-08
 

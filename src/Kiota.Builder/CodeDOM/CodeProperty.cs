@@ -52,6 +52,6 @@ namespace Kiota.Builder
         public string Description {get; set;}
         public string SerializationName { get; set; }
         public string NamePrefix { get; set; }
-        public bool IsNameEscaped { get; set; }
+        public bool IsNameEscaped { get => !string.IsNullOrEmpty(SerializationName); }
     }
 }

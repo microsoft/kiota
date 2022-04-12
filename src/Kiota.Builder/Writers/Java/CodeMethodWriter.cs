@@ -160,7 +160,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                                                     pathParametersParam.Name.ToFirstCharacterLowerCase(),
                                                     currentMethod.Parameters
                                                                 .Where(x => x.IsOfKind(CodeParameterKind.Path))
-                                                                .Select(x => (x.Type, x.UrlTemplateParameterName, x.Name.ToFirstCharacterLowerCase()))
+                                                                .Select(x => (x.Type, x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
                                                                 .ToArray());
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
             }
@@ -215,7 +215,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType) {
         var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
         conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"this.{pathParametersProperty.Name}",
-            (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.ParameterName, "id"));
+            (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.SerializationName, "id"));
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName);
     }
     private void WriteDeserializerBody(CodeMethod codeElement, CodeMethod method, CodeClass parentClass, LanguageWriter writer, bool inherits) {
@@ -227,10 +227,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             writer.IncreaseIndent();
             fieldToSerialize
                     .OrderBy(x => x.Name)
-                    .Select(x => {
-                        var setterName = x.IsNameEscaped && !string.IsNullOrEmpty(x.SerializationName) ? x.SerializationName : x.Name;
-                        return $"this.put(\"{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}\", (n) -> {{ currentObject.set{setterName.ToFirstCharacterUpperCase()}({GetDeserializationMethodName(x.Type, method)}); }});";
-                    })
+                    .Select(x => 
+                        $"this.put(\"{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}\", (n) -> {{ currentObject.set{x.Name.ToFirstCharacterUpperCase()}({GetDeserializationMethodName(x.Type, method)}); }});")
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
             writer.DecreaseIndent();

@@ -27,9 +27,13 @@ public class CodeBlock<V, U> : CodeElement, IBlock where V : BlockDeclaration, n
     }
     public void RemoveChildElement<T>(params T[] elements) where T: CodeElement {
         if(elements == null) return;
+        RemoveChildElementByName(elements.Select(x => x.Name).ToArray());
+    }
+    public void RemoveChildElementByName(params string[] names) {
+        if(names == null) return;
 
-        foreach(var element in elements) {
-            InnerChildElements.TryRemove(element.Name, out _);
+        foreach(var name in names) {
+            InnerChildElements.TryRemove(name, out _);
         }
     }
     public void RemoveUsingsByDeclarationName(params string[] names) => StartBlock.RemoveUsingsByDeclarationName(names);
