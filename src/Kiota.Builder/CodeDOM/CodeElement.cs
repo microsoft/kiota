@@ -19,17 +19,9 @@ namespace Kiota.Builder
         }
         public virtual IEnumerable<CodeElement> GetChildElements(bool innerOnly = false) => Enumerable.Empty<CodeElement>();
 
-        private string _name;
         public virtual string Name
         {
-            get => _name; 
-            set {
-                #if DEBUG
-                if (string.IsNullOrEmpty(value) && this is not CodeNamespace && Parent is not CodeNamespace)
-                    throw new ArgumentNullException(nameof(Name));
-                #endif
-                _name = value;
-            }
+            get; set;
         }
         protected void EnsureElementsAreChildren(params CodeElement[] elements) {
             foreach(var element in elements.Where(x => x != null && (x.Parent == null || x.Parent != this)))
