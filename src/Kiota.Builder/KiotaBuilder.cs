@@ -776,7 +776,7 @@ public class KiotaBuilder
             requestConfigClass.AddProperty(new CodeProperty
             {
                 Name = "queryParameters",
-                Kind = CodePropertyKind.QueryParameter,
+                Kind = CodePropertyKind.QueryParameters,
                 Description = "Request query parameters",
                 Type = new CodeType { Name = parameterClass.Name, TypeDefinition = parameterClass },
             });

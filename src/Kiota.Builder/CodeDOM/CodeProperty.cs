@@ -16,9 +16,13 @@ public enum CodePropertyKind
     /// </summary>
     RequestBody,
     /// <summary>
-    /// The request query parameters. Used when request parameters are wrapped in a class.
+    /// A request query parameter. Property of the query parameters class.
     /// </summary>
     QueryParameter,
+    /// <summary>
+    /// The request query parameters. Used when request parameters are wrapped in a class.
+    /// </summary>
+    QueryParameters,
     /// <summary>
     /// The request headers. Used when request parameters are wrapped in a class.
     /// </summary>
