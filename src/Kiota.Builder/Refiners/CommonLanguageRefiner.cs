@@ -480,7 +480,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     innerClass.Name = $"{currentClass.Name}{innerClass.Name}";
 
                 if(addToParentNamespace && parentNamespace.FindChildByName<CodeClass>(innerClass.Name, false) == null)
-                { // the query parameters class is already a chile of the request executor method parent class
+                { // the query parameters class is already a child of the request executor method parent class
                     parentNamespace.AddClass(innerClass);
                     currentClass.RemoveChildElementByName(originalClassName);
                 } 
