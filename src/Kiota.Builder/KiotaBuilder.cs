@@ -374,7 +374,9 @@ public class KiotaBuilder
                 Kind = CodeParameterKind.Path,
                 SerializationName = parameter.Name.Equals(codeName) ? default : parameter.Name.SanitizeParameterNameForUrlTemplate(),
             };
-            mParameter.Type = GetPrimitiveType(parameter.Schema);
+            mParameter.Type = GetPrimitiveType(parameter.Schema ?? parameter.Content.Values.FirstOrDefault()?.Schema);
+            mParameter.Type.CollectionKind = parameter.Schema.IsArray() ? CodeType.CodeTypeCollectionKind.Array : default;
+            // not using the content schema as RFC6570 will serialize arrays as CSVs and content expects a JSON array, we failsafe to opaque string, it could be improved by involving the serialization layers.
             methodToAdd.AddParameter(mParameter);
         }
     }
