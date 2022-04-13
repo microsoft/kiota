@@ -151,7 +151,7 @@ namespace Kiota.Builder.Extensions {
         private static readonly Regex removePctEncodedCharacters = new(@"%[0-9A-F]{2}", RegexOptions.Compiled);
         public static string SanitizeParameterNameForCodeSymbols(this string original, string replaceEncodedCharactersWith = "") {
             if(string.IsNullOrEmpty(original)) return original;
-            return removePctEncodedCharacters.Replace(original.ToCamelCase().SanitizeParameterNameForUrlTemplate(), replaceEncodedCharactersWith);
+            return removePctEncodedCharacters.Replace(original.ToCamelCase("-", ".", "~").SanitizeParameterNameForUrlTemplate(), replaceEncodedCharactersWith);
         }
     }
 }

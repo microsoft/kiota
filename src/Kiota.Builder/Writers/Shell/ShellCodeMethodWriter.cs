@@ -12,7 +12,6 @@ namespace Kiota.Builder.Writers.Shell
     {
         private static Regex delimitedRegex = new Regex("(?<=[a-z])[-_\\.]+([A-Za-z])", RegexOptions.Compiled);
         private static Regex camelCaseRegex = new Regex("(?<=[a-z])([A-Z])", RegexOptions.Compiled);
-        private static Regex identifierRegex = new Regex("(?:[-_\\.]([a-zA-Z]))", RegexOptions.Compiled);
         private static Regex uppercaseRegex = new Regex("([A-Z])", RegexOptions.Compiled);
         private const string cancellationTokenParamType = "CancellationToken";
         private const string cancellationTokenParamName = "cancellationToken";
@@ -484,7 +483,7 @@ namespace Kiota.Builder.Writers.Shell
         /// <returns></returns>
         private static string NormalizeToIdentifier(string input)
         {
-            return identifierRegex.Replace(input, m => m.Groups[1].Value.ToUpper());
+            return input.ToCamelCase("-", "_", ".");
         }
 
         /// <summary>
