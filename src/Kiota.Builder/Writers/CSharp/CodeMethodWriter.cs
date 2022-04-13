@@ -268,8 +268,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         {
             writer.WriteLine($"if ({requestParams.requestConfiguration.Name} != null) {{");
             writer.IncreaseIndent();
-            writer.WriteLine($"var {RequestConfigVarName} = new {requestParams.requestConfiguration.Type.Name.ToFirstCharacterUpperCase()}();");
-            writer.WriteLine($"{requestParams.requestConfiguration.Name}.Invoke({RequestConfigVarName});");
+            writer.WriteLines($"var {RequestConfigVarName} = new {requestParams.requestConfiguration.Type.Name.ToFirstCharacterUpperCase()}();",
+                            $"{requestParams.requestConfiguration.Name}.Invoke({RequestConfigVarName});");
             var queryString = requestParams.QueryParameters;
             var headers = requestParams.Headers;
             var options = requestParams.Options;

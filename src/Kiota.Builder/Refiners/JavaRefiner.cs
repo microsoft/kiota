@@ -10,7 +10,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
     public override void Refine(CodeNamespace generatedCode)
     {
         LowerCaseNamespaceNames(generatedCode);
-        AddInnerClasses(generatedCode, false);
+        AddInnerClasses(generatedCode, false, string.Empty);
         InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
         ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, true);
         RemoveCancellationParameter(generatedCode);
@@ -96,8 +96,6 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             "java.util", "Collection", "Map"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
             "com.microsoft.kiota", "ResponseHandler"),
-        new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.QueryParameters),
-            "com.microsoft.kiota", "QueryParametersBase"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model),
             "com.microsoft.kiota.serialization", "Parsable"),
         new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.Properties.Any(x => x.IsOfKind(CodePropertyKind.AdditionalData)),
@@ -154,6 +152,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {
+        //TODO set default values (new Type() for headers, options and query parameters) and add the types imports
         if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
             if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ResponseHandler) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
