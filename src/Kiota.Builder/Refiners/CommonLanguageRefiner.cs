@@ -471,7 +471,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             foreach(var innerClass in currentClass
                                     .Methods
                                     .SelectMany(x => x.Parameters)
-                                    .Where(x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.QueryParameter))
+                                    .Where(x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.RequestConfiguration))
                                     .SelectMany(x => x.Type.AllTypes)
                                     .Select(x => x.TypeDefinition)
                                     .OfType<CodeClass>()) {
@@ -513,7 +513,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                 .Distinct();
             var methodsParametersTypes = methods
                                 .SelectMany(x => x.Parameters)
-                                .Where(x => x.IsOfKind(CodeParameterKind.Custom, CodeParameterKind.RequestBody, CodeParameterKind.QueryParameter))
+                                .Where(x => x.IsOfKind(CodeParameterKind.Custom, CodeParameterKind.RequestBody, CodeParameterKind.RequestConfiguration))
                                 .Select(x => x.Type)
                                 .Distinct();
             var indexerTypes = currentClassChildren
@@ -544,13 +544,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 (currentClass.Parent is CodeClass parentClass ? parentClass : currentClass).AddUsing(usingsToAdd); //lots of languages do not support imports on nested classes
         }
         CrawlTree(current, (x) => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration));
-    }
-    protected static void PatchHeaderParametersType(CodeElement currentElement, string newTypeName) {
-        if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Headers)))
-            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Headers))
-                                    .ToList()
-                                    .ForEach(x => x.Type.Name = newTypeName);
-        CrawlTree(currentElement, (x) => PatchHeaderParametersType(x, newTypeName));
     }
     protected static void CrawlTree(CodeElement currentElement, Action<CodeElement> function) {
         foreach(var childElement in currentElement.GetChildElements())

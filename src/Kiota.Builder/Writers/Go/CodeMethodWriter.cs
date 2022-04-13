@@ -410,9 +410,6 @@ namespace Kiota.Builder.Writers.Go {
                                                 .Select(x => x.Name)
                                                 .ToList();
             var skipIndex = requestParams.requestBody == null ? 1 : 0;
-            if(codeElement.IsOverload && !codeElement.OriginalMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.QueryParameter)) || // we're on an overload and the original method has no query parameters
-                !codeElement.IsOverload && requestParams.queryString == null) // we're on the original method and there is no query string parameter
-                skipIndex++;// we skip the query string parameter null value
             requestInfoParameters.AddRange(paramsList.Where(x => x == null).Skip(skipIndex).Select(x => "nil"));
             var paramsCall = requestInfoParameters.Any() ? requestInfoParameters.Aggregate((x,y) => $"{x}, {y}") : string.Empty;
             writer.WriteLine($"{prefix}m.{generatorMethodName}({paramsCall});");

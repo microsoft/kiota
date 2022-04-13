@@ -56,9 +56,6 @@ public class GoRefiner : CommonLanguageRefiner
             CorrectMethodType,
             CorrectPropertyType,
             CorrectImplements);
-        PatchHeaderParametersType(
-            generatedCode,
-            "map[string]string");
         AddGetterAndSetterMethods(
             generatedCode, 
             new () { 
@@ -89,8 +86,6 @@ public class GoRefiner : CommonLanguageRefiner
             generatedCode,
             new string[] {"github.com/microsoft/kiota-abstractions-go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultSerializer"},
             new string[] {"github.com/microsoft/kiota-abstractions-go/serialization.ParseNodeFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultDeserializer"});
-        ReplaceExecutorAndGeneratorParametersByParameterSets(
-            generatedCode);
         AddParentClassToErrorClasses(
                 generatedCode,
                 "ApiError",
@@ -109,63 +104,6 @@ public class GoRefiner : CommonLanguageRefiner
             generatedCode,
             x => $"{x.Name}able"
         );
-    }
-    private static void ReplaceExecutorAndGeneratorParametersByParameterSets(CodeElement currentElement) {
-        if (currentElement is CodeMethod currentMethod &&
-            currentMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
-            currentMethod.Parameters.Any() &&
-            currentElement.Parent is CodeClass parentClass) {
-                var parameterSetClass = parentClass.AddInnerClass(new CodeClass{
-                    Name = $"{parentClass.Name.ToFirstCharacterUpperCase()}{currentMethod.HttpMethod}Options",
-                    Kind = CodeClassKind.ParameterSet,
-                    Description = $"Options for {currentMethod.Name}",
-                }).First();
-                parameterSetClass.AddProperty(
-                    currentMethod.Parameters.Select(x => new CodeProperty{
-                        Name = x.Name,
-                        Type = x.Type,
-                        Description = x.Description,
-                        Access = AccessModifier.Public,
-                        Kind = x.Kind switch {
-                            CodeParameterKind.RequestBody => CodePropertyKind.RequestBody,
-                            CodeParameterKind.QueryParameter => CodePropertyKind.QueryParameter,
-                            CodeParameterKind.Headers => CodePropertyKind.Headers,
-                            CodeParameterKind.Options => CodePropertyKind.Options,
-                            CodeParameterKind.ResponseHandler => CodePropertyKind.ResponseHandler,
-                            _ => CodePropertyKind.Custom
-                        },
-                    }).ToArray());
-                parameterSetClass.Properties.ToList().ForEach(x => {x.Type.ActionOf = false;});
-                currentMethod.RemoveParametersByKind(CodeParameterKind.RequestBody,
-                                                    CodeParameterKind.QueryParameter,
-                                                    CodeParameterKind.Headers,
-                                                    CodeParameterKind.Options,
-                                                    CodeParameterKind.ResponseHandler);
-                var parameterSetParameter = new CodeParameter{
-                    Name = "options",
-                    Type = new CodeType {
-                        Name = parameterSetClass.Name,
-                        ActionOf = false,
-                        IsNullable = true,
-                        TypeDefinition = parameterSetClass,
-                        IsExternal = false,
-                    },
-                    Optional = false,
-                    Description = "Options for the request",
-                    Kind = CodeParameterKind.ParameterSet,
-                };
-                currentMethod.AddParameter(parameterSetParameter);
-                var generatorMethod = parentClass.GetMethodsOffKind(CodeMethodKind.RequestGenerator)
-                                                .FirstOrDefault(x => x.HttpMethod == currentMethod.HttpMethod);
-                if(!(generatorMethod?.Parameters.Any(x => x.IsOfKind(CodeParameterKind.ParameterSet)) ?? true)) {
-                    generatorMethod.RemoveParametersByKind(CodeParameterKind.RequestBody,
-                                                    CodeParameterKind.QueryParameter,
-                                                    CodeParameterKind.Headers,
-                                                    CodeParameterKind.Options);
-                    generatorMethod.AddParameter(parameterSetParameter);
-                }
-            }
-        CrawlTree(currentElement, ReplaceExecutorAndGeneratorParametersByParameterSets);
     }
     private static void RemoveModelPropertiesThatDependOnSubNamespaces(CodeElement currentElement) {
         if(currentElement is CodeClass currentClass && 
@@ -287,12 +225,6 @@ public class GoRefiner : CommonLanguageRefiner
                 });
             else if(currentMethod.IsOfKind(CodeMethodKind.RequestGenerator))
                 currentMethod.ReturnType.IsNullable = true;
-            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => {
-                x.Type.IsNullable = false;
-                x.Type.Name = "RequestOption";
-                x.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
-            });
-            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.QueryParameter)).ToList().ForEach(x => x.Type.Name = $"{parentClass.Name}{x.Type.Name}");
         }
         else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
@@ -362,6 +294,15 @@ public class GoRefiner : CommonLanguageRefiner
                 currentProperty.Type.Name = "map[string]string";
                 if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                     currentProperty.DefaultValue = $"make({currentProperty.Type.Name})";
+            else if(currentProperty.IsOfKind(CodePropertyKind.Headers)) {
+                currentProperty.Type.Name = "map[string]string";
+                currentProperty.DefaultValue = $"make({currentProperty.Type.Name})";
+            } else if(currentProperty.IsOfKind(CodePropertyKind.Options)) {
+                currentProperty.Type.IsNullable = false;
+                currentProperty.Type.Name = "RequestOption";
+                currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
+            } else if(currentProperty.IsOfKind(CodePropertyKind.QueryParameter) && currentProperty.Parent is CodeClass parentClass)
+                currentProperty.Type.Name = $"{parentClass.Name}{currentProperty.Type.Name}";
             } else
                 CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
         }

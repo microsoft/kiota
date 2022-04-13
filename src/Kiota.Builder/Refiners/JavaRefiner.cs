@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Java;
 
 namespace Kiota.Builder.Refiners;
@@ -32,7 +33,6 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         ReplaceReservedNames(generatedCode, new JavaReservedNamesProvider(), x => $"{x}_escaped");
         AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
         AddDefaultImports(generatedCode, defaultUsingEvaluators);
-        PatchHeaderParametersType(generatedCode, "Map<String, String>");
         AddParsableImplementsForModelClasses(generatedCode, "Parsable");
         AddEnumSetImport(generatedCode);
         SetSetterParametersToNullable(generatedCode, new Tuple<CodeMethodKind, CodePropertyKind>(CodeMethodKind.Setter, CodePropertyKind.AdditionalData));
@@ -121,6 +121,10 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             "com.microsoft.kiota.store", "BackingStoreFactory", "BackingStoreFactorySingleton"),
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
             "com.microsoft.kiota.store", "BackingStore", "BackedModel", "BackingStoreFactorySingleton"),
+        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Options),
+            "java.util", "Collections"),
+        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
+            "java.util", "HashMap"),
         new (x => x is CodeProperty prop && "decimal".Equals(prop.Type.Name, StringComparison.OrdinalIgnoreCase) ||
                 x is CodeMethod method && "decimal".Equals(method.ReturnType.Name, StringComparison.OrdinalIgnoreCase) ||
                 x is CodeParameter para && "decimal".Equals(para.Type.Name, StringComparison.OrdinalIgnoreCase),
@@ -135,6 +139,14 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
             currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
+        else if (currentProperty.IsOfKind(CodePropertyKind.Options)) {
+            currentProperty.Type.Name = "Collection<RequestOption>";
+            currentProperty.DefaultValue = "Collections.emptyList()";
+        } else if (currentProperty.IsOfKind(CodePropertyKind.Headers)) {
+            currentProperty.Type.Name = "HashMap<String, String>";
+            currentProperty.DefaultValue = "new HashMap<>()";
+        } else if (currentProperty.IsOfKind(CodePropertyKind.QueryParameter))
+            currentProperty.DefaultValue = $"new {currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
         else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
             currentProperty.Type.Name = "Map<String, Object>";
             currentProperty.DefaultValue = "new HashMap<>()";
@@ -152,11 +164,9 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {
-        //TODO set default values (new Type() for headers, options and query parameters) and add the types imports
         if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
             if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ResponseHandler) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
-            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => x.Type.Name = "Collection<RequestOption>");
         }
         else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer)).ToList().ForEach(x => {
@@ -224,19 +234,11 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 var executorMethodsToAdd = originalExecutorMethods
                                     .Select(x => GetMethodClone(x, CodeParameterKind.ResponseHandler))
                                     .Union(originalExecutorMethods
-                                            .Select(x => GetMethodClone(x, CodeParameterKind.Options, CodeParameterKind.ResponseHandler)))
-                                    .Union(originalExecutorMethods
-                                            .Select(x => GetMethodClone(x, CodeParameterKind.Headers, CodeParameterKind.Options, CodeParameterKind.ResponseHandler)))
-                                    .Union(originalExecutorMethods
-                                            .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers, CodeParameterKind.Options, CodeParameterKind.ResponseHandler)))
+                                            .Select(x => GetMethodClone(x, CodeParameterKind.RequestConfiguration, CodeParameterKind.ResponseHandler)))
                                     .Where(x => x != null);
                 var originalGeneratorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestGenerator));
                 var generatorMethodsToAdd = originalGeneratorMethods
-                                    .Select(x => GetMethodClone(x, CodeParameterKind.Options))
-                                    .Union(originalGeneratorMethods
-                                            .Select(x => GetMethodClone(x, CodeParameterKind.Headers, CodeParameterKind.Options)))
-                                    .Union(originalGeneratorMethods
-                                            .Select(x => GetMethodClone(x, CodeParameterKind.QueryParameter, CodeParameterKind.Headers, CodeParameterKind.Options)))
+                                    .Select(x => GetMethodClone(x, CodeParameterKind.RequestConfiguration))
                                     .Where(x => x != null);
                 if(executorMethodsToAdd.Any() || generatorMethodsToAdd.Any())
                     currentClass.AddMethod(executorMethodsToAdd
