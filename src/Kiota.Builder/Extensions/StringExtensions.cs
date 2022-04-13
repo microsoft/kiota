@@ -22,8 +22,9 @@ namespace Kiota.Builder.Extensions {
         public static string ToCamelCase(this string input, params string[] delimiters)
         {
             if (string.IsNullOrEmpty(input)) return input;
-            var delimitersStr = delimiters.Length < 1 ? "-" : string.Join(string.Empty, delimiters);
-            return Regex.Replace(input, $"(?:[{delimitersStr}](.))", m => m.Groups[1].Value.ToUpper(), RegexOptions.Compiled, TimeSpan.FromSeconds(2));
+            delimiters = delimiters.Any() ? delimiters : new[] { "-" };
+            var chunks = input.Split(delimiters, StringSplitOptions.RemoveEmptyEntries);
+            return string.Join(string.Empty, chunks.Select((c, i) => i == 0 ? c : c.ToFirstCharacterUpperCase()));
         }
 
         public static string ToPascalCase(this string name)
