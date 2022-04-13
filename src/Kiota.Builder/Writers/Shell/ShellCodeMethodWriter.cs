@@ -459,14 +459,16 @@ namespace Kiota.Builder.Writers.Shell
                 }
                 writer.CloseBlock("});");
 
-                foreach (var paramName in generatorMethod.PathQueryAndHeaderParameters.Where(p => p.IsOfKind(CodeParameterKind.Path)).Select(p => p.Name))
+                foreach (var param in generatorMethod.PathQueryAndHeaderParameters.Where(p => p.IsOfKind(CodeParameterKind.Path)))
                 {
-                    writer.WriteLine($"requestInfo.PathParameters.Add(\"{paramName}\", {NormalizeToIdentifier(paramName).ToFirstCharacterLowerCase()});");
+                    var paramName = (string.IsNullOrEmpty(param.SerializationName) ? param.Name : param.SerializationName).SanitizeParameterNameForUrlTemplate();
+                    writer.WriteLine($"requestInfo.PathParameters.Add(\"{paramName}\", {NormalizeToIdentifier(param.Name).ToFirstCharacterLowerCase()});");
                 }
 
-                foreach (var paramName in generatorMethod.PathQueryAndHeaderParameters.Where(p => p.IsOfKind(CodeParameterKind.Headers)).Select(p => p.Name))
+                foreach (var param in generatorMethod.PathQueryAndHeaderParameters.Where(p => p.IsOfKind(CodeParameterKind.Headers)))
                 {
-                    writer.WriteLine($"requestInfo.Headers[\"{paramName}\"] = {NormalizeToIdentifier(paramName).ToFirstCharacterLowerCase()};");
+                    var paramName = string.IsNullOrEmpty(param.SerializationName) ? param.Name : param.SerializationName;
+                    writer.WriteLine($"requestInfo.Headers[\"{paramName}\"] = {NormalizeToIdentifier(param.Name).ToFirstCharacterLowerCase()};");
                 }
             }
             else
