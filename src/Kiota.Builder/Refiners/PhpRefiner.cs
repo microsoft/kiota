@@ -148,6 +148,9 @@ namespace Kiota.Builder.Refiners
             } else if (currentProperty.Type.Name.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase))
             {
                 currentProperty.Type.Name = "DateTime";
+            } else if (currentProperty.IsOfKind(CodePropertyKind.Options, CodePropertyKind.Headers))
+            {
+                currentProperty.Type.Name = "array";
             }
             CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
         }
@@ -171,10 +174,6 @@ namespace Kiota.Builder.Refiners
             var currentMethod = codeElement as CodeMethod;
             var parameters = currentMethod?.Parameters;
             var codeParameters = parameters as CodeParameter[] ?? parameters?.ToArray();
-            codeParameters?.Where(x => x.IsOfKind(CodeParameterKind.Options, CodeParameterKind.Headers)).ToList().ForEach(x =>
-            {
-                x.Type.Name = "array";
-            });
             codeParameters?.Where(x => x.IsOfKind(CodeParameterKind.ParseNode)).ToList().ForEach(x =>
             {
                 x.Type.Name = "ParseNode";

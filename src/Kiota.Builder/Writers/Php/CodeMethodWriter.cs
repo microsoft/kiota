@@ -11,6 +11,7 @@ namespace Kiota.Builder.Writers.Php
         public CodeMethodWriter(PhpConventionService conventionService) : base(conventionService) { }
         
         private const string RequestInfoVarName = "$requestInfo";
+        private const string RequestConfigVarName = "$requestConfig";
         public override void  WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
 
@@ -19,10 +20,8 @@ namespace Kiota.Builder.Writers.Php
             var inherits = parentClass?.StartBlock?.Inherits != null;
             var orNullReturn = codeElement.ReturnType.IsNullable ? new[]{"?", "|null"} : new[] {string.Empty, string.Empty};
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
-            var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
-            var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
-            var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
-            var requestParams = new RequestParams(requestBodyParam, queryStringParam, headersParam, optionsParam);
+            var config = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
+            var requestParams = new RequestParams(requestBodyParam, config);
             
             WriteMethodPhpDocs(codeElement, writer, orNullReturn);
             WriteMethodsAndParameters(codeElement, writer, orNullReturn, codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor));
@@ -339,23 +338,37 @@ namespace Kiota.Builder.Writers.Php
                                 $"{RequestInfoVarName}->urlTemplate = {GetPropertyCall(urlTemplateProperty, "''")};",
                                 $"{RequestInfoVarName}->pathParameters = {GetPropertyCall(pathParametersProperty, "''")};",
                                 $"{RequestInfoVarName}->httpMethod = HttpMethod::{codeElement?.HttpMethod?.ToString().ToUpperInvariant()};");
-            if (requestParams.headers != null)
+            if (requestParams.requestConfiguration != null)
             {
-                writer.WriteLine($"if ({conventions.GetParameterName(requestParams.headers)} !== null) {{");
-                writer.IncreaseIndent();
-                writer.WriteLine($"{RequestInfoVarName}->headers = array_merge({RequestInfoVarName}->headers, {conventions.GetParameterName(requestParams.headers)});");
-                writer.DecreaseIndent();
-                writer.WriteLine("}");
-            }
-
-            if (requestParams.queryString != null)
-            {
-                writer.WriteLine($"if ({conventions.GetParameterName(requestParams.queryString)} !== null) {{");
-                writer.IncreaseIndent();
-                writer.WriteLines(
-                    $"{RequestInfoVarName}->setQueryParameters({conventions.GetParameterName(requestParams.queryString)});");
-                writer.DecreaseIndent();
-                writer.WriteLine("}");
+                var queryString = requestParams.QueryParameters;
+                var headers = requestParams.Headers;
+                var options = requestParams.Options;
+                var requestConfigParamName = conventions.GetParameterName(requestParams.requestConfiguration);
+                writer.WriteLine($"if ({requestConfigParamName} !== null) {{");
+                if(headers != null) {
+                    var headersName = $"{requestConfigParamName}->{headers.Name.ToFirstCharacterLowerCase()}";
+                    writer.WriteLine($"if ({headersName} !== null) {{");
+                    writer.IncreaseIndent();
+                    writer.WriteLine($"{RequestInfoVarName}->headers = array_merge({RequestInfoVarName}->headers, {headersName});");
+                    writer.CloseBlock();
+                }
+                if (queryString != null)
+                {
+                    var queryStringName = $"{requestConfigParamName}->{queryString.Name.ToFirstCharacterLowerCase()}";
+                    writer.WriteLine($"if ({queryStringName} !== null) {{");
+                    writer.IncreaseIndent();
+                    writer.WriteLine($"{RequestInfoVarName}->setQueryParameters({queryStringName});");
+                    writer.CloseBlock();
+                }
+                if (options != null)
+                {
+                    var optionsName = $"{requestConfigParamName}->{options.Name.ToFirstCharacterLowerCase()}";
+                    writer.WriteLine($"if ({optionsName} !== null) {{");
+                    writer.IncreaseIndent();
+                    writer.WriteLine($"{RequestInfoVarName}->addRequestOptions(...{optionsName});");
+                    writer.CloseBlock();
+                }
+                writer.CloseBlock();
             }
 
             if(requestParams.requestBody != null) {
@@ -365,14 +378,6 @@ namespace Kiota.Builder.Writers.Php
                     var spreadOperator = requestParams.requestBody.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
                     writer.WriteLine($"{RequestInfoVarName}->setContentFromParsable($this->{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {spreadOperator}{conventions.GetParameterName(requestParams.requestBody)});");
                 }
-            }
-
-            if (requestParams.options != null)
-            {
-                writer.WriteLine($"if ({conventions.GetParameterName(requestParams.options)} !== null) {{");
-                writer.IncreaseIndent();
-                writer.WriteLine($"{RequestInfoVarName}->addRequestOptions(...$options);");
-                writer.CloseBlock();
             }
 
             writer.WriteLine($"return {RequestInfoVarName};");
@@ -410,7 +415,7 @@ namespace Kiota.Builder.Writers.Php
                 .FirstOrDefault(x =>
                     x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod);
             var generatorMethodName = generatorMethod?.Name.ToFirstCharacterLowerCase();
-            var requestInfoParameters = new CodeParameter[] { requestParams.requestBody, requestParams.queryString, requestParams.headers, requestParams.options }
+            var requestInfoParameters = new CodeParameter[] { requestParams.requestBody, requestParams.requestConfiguration }
                 .Select(x => x).Where(x => x?.Name != null);
             var infoParameters = requestInfoParameters as CodeParameter[] ?? requestInfoParameters.ToArray();
             var callParams = infoParameters.Select(x => conventions.GetParameterName(x));
