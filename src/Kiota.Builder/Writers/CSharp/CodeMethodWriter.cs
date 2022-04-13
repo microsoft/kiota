@@ -274,11 +274,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             var headers = requestParams.Headers;
             var options = requestParams.Options;
             if (queryString != null)
-                writer.WriteLine($"{RequestConfigVarName}.{queryString.Name.ToFirstCharacterUpperCase()}?.AddQueryParameters({RequestInfoVarName}.QueryParameters);");
+                writer.WriteLine($"{RequestInfoVarName}.AddQueryParameters({RequestConfigVarName}.{queryString.Name.ToFirstCharacterUpperCase()});");
             if (options != null)
-                writer.WriteLine($"{RequestInfoVarName}.AddRequestOptions({RequestConfigVarName}.{options.Name.ToFirstCharacterUpperCase()}?.ToArray());");
+                writer.WriteLine($"{RequestInfoVarName}.AddRequestOptions({RequestConfigVarName}.{options.Name.ToFirstCharacterUpperCase()});");
             if (headers != null)
-                writer.WriteLine($"{RequestInfoVarName}.Headers = {RequestConfigVarName}.{headers.Name.ToFirstCharacterUpperCase()} ?? {RequestInfoVarName}.Headers;");
+                writer.WriteLine($"{RequestInfoVarName}.AddHeaders({RequestConfigVarName}.{headers.Name.ToFirstCharacterUpperCase()});");
             writer.DecreaseIndent();
             writer.WriteLine("}");
         }

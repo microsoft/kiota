@@ -16,7 +16,7 @@ namespace Kiota.Builder.Refiners {
             AddRawUrlConstructorOverload(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddAsyncSuffix(generatedCode);
-            AddInnerClasses(generatedCode, false);
+            AddInnerClasses(generatedCode, false, string.Empty);
             AddParsableImplementsForModelClasses(generatedCode, "IParsable");
             CapitalizeNamespacesFirstLetters(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "Stream", "System.IO");
