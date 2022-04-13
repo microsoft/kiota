@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.1" />
-    <PackageReference Include="Microsoft.OpenApi" Version="1.3.1-preview6" />
+    <PackageReference Include="Microsoft.OpenApi" Version="1.3.1" />
     <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.3.1-preview6" />
   </ItemGroup>
 
