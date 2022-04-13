@@ -1,4 +1,6 @@
-﻿﻿namespace Kiota.Builder;
+﻿using Kiota.Builder.Extensions;
+
+namespace Kiota.Builder;
 public enum CodePropertyKind
 {
     Custom,
