@@ -93,14 +93,13 @@ class RequestsRequestAdapter(RequestAdapter):
 
     async def send_async(
         self, request_info: RequestInformation, model_type: ParsableFactory,
-        response_handler: Optional[ResponseHandler],
-        error_map: Dict[str, ParsableFactory]
+        response_handler: Optional[ResponseHandler], error_map: Dict[str, ParsableFactory]
     ) -> ModelType:
         """Excutes the HTTP request specified by the given RequestInformation and returns the
         deserialized response model.
         Args:
             request_info (RequestInformation): the request info to execute.
-            type (ParsableFactory): the class of the response model to deserialize the response into.
+            type (ParsableFactory): the class of the response model to deserialize the response into
             response_handler (Optional[ResponseHandler]): The response handler to use for the HTTP
             request instead of the default handler.
             error_map (Dict[str, ParsableFactory]): the error dict to use in
@@ -124,14 +123,13 @@ class RequestsRequestAdapter(RequestAdapter):
 
     async def send_collection_async(
         self, request_info: RequestInformation, model_type: ParsableFactory,
-        response_handler: Optional[ResponseHandler],
-        error_map: Dict[str, ParsableFactory]
+        response_handler: Optional[ResponseHandler], error_map: Dict[str, ParsableFactory]
     ) -> List[ModelType]:
         """Excutes the HTTP request specified by the given RequestInformation and returns the
         deserialized response model collection.
         Args:
             request_info (RequestInformation): the request info to execute.
-            type (ParsableFactory): the class of the response model to deserialize the response into.
+            type (ParsableFactory): the class of the response model to deserialize the response into
             response_handler (Optional[ResponseHandler]): The response handler to use for the
             HTTP request instead of the default handler.
             error_map (Dict[str, ParsableFactory]): the error dict to use in
@@ -155,8 +153,7 @@ class RequestsRequestAdapter(RequestAdapter):
 
     async def send_collection_of_primitive_async(
         self, request_info: RequestInformation, response_type: ResponseType,
-        response_handler: Optional[ResponseHandler],
-        error_map: Dict[str, ParsableFactory]
+        response_handler: Optional[ResponseHandler], error_map: Dict[str, ParsableFactory]
     ) -> Optional[List[ResponseType]]:
         """Excutes the HTTP request specified by the given RequestInformation and returns the
         deserialized response model collection.
@@ -186,8 +183,7 @@ class RequestsRequestAdapter(RequestAdapter):
 
     async def send_primitive_async(
         self, request_info: RequestInformation, response_type: ResponseType,
-        response_handler: Optional[ResponseHandler],
-        error_map: Dict[str, ParsableFactory]
+        response_handler: Optional[ResponseHandler], error_map: Dict[str, ParsableFactory]
     ) -> ResponseType:
         """Excutes the HTTP request specified by the given RequestInformation and returns the
         deserialized primitive response model.

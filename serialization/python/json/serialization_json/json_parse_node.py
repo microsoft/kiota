@@ -9,8 +9,12 @@ from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar
 from uuid import UUID
 
 from dateutil import parser
-
-from kiota.abstractions.serialization import AdditionalDataHolder, Parsable, ParsableFactory, ParseNode
+from kiota.abstractions.serialization import (
+    AdditionalDataHolder,
+    Parsable,
+    ParsableFactory,
+    ParseNode,
+)
 
 T = TypeVar("T")
 
@@ -272,4 +276,3 @@ class JsonParseNode(ParseNode, Generic[T, U]):
             else:
                 if item_additional_data:
                     item_additional_data[snake_case_key] = val
-                
