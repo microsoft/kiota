@@ -12,6 +12,7 @@ from kiota.abstractions.request_information import RequestInformation
 from kiota.abstractions.response_handler import ResponseHandler
 from kiota.abstractions.serialization import (
     Parsable,
+    ParsableFactory,
     ParseNode,
     ParseNodeFactory,
     ParseNodeFactoryRegistry,
@@ -91,18 +92,18 @@ class RequestsRequestAdapter(RequestAdapter):
         return segments[0]
 
     async def send_async(
-        self, request_info: RequestInformation, model_type: ModelType,
+        self, request_info: RequestInformation, model_type: ParsableFactory,
         response_handler: Optional[ResponseHandler],
-        error_map: Dict[str, Optional[Callable[[], Parsable]]]
+        error_map: Dict[str, ParsableFactory]
     ) -> ModelType:
         """Excutes the HTTP request specified by the given RequestInformation and returns the
         deserialized response model.
         Args:
             request_info (RequestInformation): the request info to execute.
-            type (ModelType): the class of the response model to deserialize the response into.
+            type (ParsableFactory): the class of the response model to deserialize the response into.
             response_handler (Optional[ResponseHandler]): The response handler to use for the HTTP
             request instead of the default handler.
-            error_map (Dict[str, Optional[Callable[[], Parsable]]]): the error dict to use in
+            error_map (Dict[str, ParsableFactory]): the error dict to use in
             case of a failed request.
 
         Returns:
@@ -122,18 +123,18 @@ class RequestsRequestAdapter(RequestAdapter):
         return result
 
     async def send_collection_async(
-        self, request_info: RequestInformation, model_type: ModelType,
+        self, request_info: RequestInformation, model_type: ParsableFactory,
         response_handler: Optional[ResponseHandler],
-        error_map: Dict[str, Optional[Callable[[], Parsable]]]
+        error_map: Dict[str, ParsableFactory]
     ) -> List[ModelType]:
         """Excutes the HTTP request specified by the given RequestInformation and returns the
         deserialized response model collection.
         Args:
             request_info (RequestInformation): the request info to execute.
-            type (ModelType): the class of the response model to deserialize the response into.
+            type (ParsableFactory): the class of the response model to deserialize the response into.
             response_handler (Optional[ResponseHandler]): The response handler to use for the
             HTTP request instead of the default handler.
-            error_map (Dict[str, Optional[Callable[[], Parsable]]]): the error dict to use in
+            error_map (Dict[str, ParsableFactory]): the error dict to use in
             case of a failed request.
 
         Returns:
@@ -155,7 +156,7 @@ class RequestsRequestAdapter(RequestAdapter):
     async def send_collection_of_primitive_async(
         self, request_info: RequestInformation, response_type: ResponseType,
         response_handler: Optional[ResponseHandler],
-        error_map: Dict[str, Optional[Callable[[], Parsable]]]
+        error_map: Dict[str, ParsableFactory]
     ) -> Optional[List[ResponseType]]:
         """Excutes the HTTP request specified by the given RequestInformation and returns the
         deserialized response model collection.
@@ -165,7 +166,7 @@ class RequestsRequestAdapter(RequestAdapter):
             response into.
             response_handler (Optional[ResponseType]): The response handler to use for the HTTP
             request instead of the default handler.
-            error_map (Dict[str, Optional[Callable[[], Parsable]]]): the error dict to use in
+            error_map (Dict[str, ParsableFactory]): the error dict to use in
             case of a failed request.
 
         Returns:
@@ -186,7 +187,7 @@ class RequestsRequestAdapter(RequestAdapter):
     async def send_primitive_async(
         self, request_info: RequestInformation, response_type: ResponseType,
         response_handler: Optional[ResponseHandler],
-        error_map: Dict[str, Optional[Callable[[], Parsable]]]
+        error_map: Dict[str, ParsableFactory]
     ) -> ResponseType:
         """Excutes the HTTP request specified by the given RequestInformation and returns the
         deserialized primitive response model.
@@ -196,7 +197,7 @@ class RequestsRequestAdapter(RequestAdapter):
             response into.
             response_handler (Optional[ResponseHandler]): The response handler to use for the
             HTTP request instead of the default handler.
-            error_map (Dict[str, Optional[Callable[[], Parsable]]]): the error dict to use in case
+            error_map (Dict[str, ParsableFactory]): the error dict to use in case
             of a failed request.
 
         Returns:
@@ -228,7 +229,7 @@ class RequestsRequestAdapter(RequestAdapter):
 
     async def send_no_response_content_async(
         self, request_info: RequestInformation, response_handler: Optional[ResponseHandler],
-        error_map: Dict[str, Optional[Callable[[], Parsable]]]
+        error_map: Dict[str, ParsableFactory]
     ) -> None:
         """Excutes the HTTP request specified by the given RequestInformation and returns the
         deserialized primitive response model.
@@ -236,7 +237,7 @@ class RequestsRequestAdapter(RequestAdapter):
             request_info (RequestInformation):the request info to execute.
             response_handler (Optional[ResponseHandler]): The response handler to use for the
             HTTP request instead of the default handler.
-            error_map (Dict[str, Optional[Callable[[], Parsable]]]): the error dict to use in case
+            error_map (Dict[str, ParsableFactory]): the error dict to use in case
             of a failed request.
         """
         if not request_info:
@@ -274,7 +275,7 @@ class RequestsRequestAdapter(RequestAdapter):
         return self._parse_node_factory.get_root_parse_node(response_content_type, payload)
 
     async def throw_failed_responses(
-        self, response: requests.Response, error_map: Dict[str, Optional[Callable[[], Parsable]]]
+        self, response: requests.Response, error_map: Dict[str, ParsableFactory]
     ) -> None:
         if response.ok:
             return
