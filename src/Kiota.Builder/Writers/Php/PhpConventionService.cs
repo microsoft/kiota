@@ -60,8 +60,9 @@ namespace Kiota.Builder.Writers.Php
             return typeName?.ToLowerInvariant() switch
             {
                 "boolean" => "bool",
-                "double" or "decimal" => "float",
-                "integer" or "int32" or "int64" or "sbyte" or "byte" => "int",
+                "double" => "float",
+                "decimal" or "byte" => "string",
+                "integer" or "int32" or "int64" or "sbyte" => "int",
                 "object" or "string" or "array" or "float" or "void" => typeName.ToLowerInvariant(),
                 "binary" => "StreamInterface",
                 _ => typeName.ToFirstCharacterUpperCase()
