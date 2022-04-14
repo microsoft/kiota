@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -149,9 +149,9 @@ namespace Kiota.Builder.Extensions {
                         .Replace("~", "%7E");// - . ~ are invalid uri template character but don't get encoded by Uri.EscapeDataString
         }
         private static readonly Regex removePctEncodedCharacters = new(@"%[0-9A-F]{2}", RegexOptions.Compiled);
-        public static string SanitizeParameterNameForCodeSymbols(this string original) {
+        public static string SanitizeParameterNameForCodeSymbols(this string original, string replaceEncodedCharactersWith = "") {
             if(string.IsNullOrEmpty(original)) return original;
-            return removePctEncodedCharacters.Replace(original.SanitizeParameterNameForUrlTemplate(), string.Empty);
+            return removePctEncodedCharacters.Replace(original.ToCamelCase("-", ".", "~").SanitizeParameterNameForUrlTemplate(), replaceEncodedCharactersWith);
         }
     }
 }

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Services;
@@ -109,9 +109,9 @@ public class OpenApiUrlTreeNodeExtensionsTests
         Assert.Equal("graph.deviceManagement.getRoleScopeTagsByIdsWithIds", node.Children.First().Value.GetNodeNamespaceFromPath("graph"));
     }
     [InlineData("$select", "select")]
-    [InlineData("api-version", "apiversion")]
-    [InlineData("api~topic", "apitopic")]
-    [InlineData("api.encoding", "apiencoding")]
+    [InlineData("api-version", "apiVersion")]
+    [InlineData("api~topic", "apiTopic")]
+    [InlineData("api.encoding", "apiEncoding")]
     [Theory]
     public void SanitizesParameterNameForSymbols(string original, string result)
     {

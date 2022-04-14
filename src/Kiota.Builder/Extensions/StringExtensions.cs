@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security;
 using System.Security.Cryptography;
@@ -11,14 +12,22 @@ namespace Kiota.Builder.Extensions {
             => string.IsNullOrEmpty(input) ? input : $"{char.ToLowerInvariant(input.FirstOrDefault())}{input[1..]}";
         public static string ToFirstCharacterUpperCase(this string input)
             => string.IsNullOrEmpty(input) ? input : Char.ToUpperInvariant(input.FirstOrDefault()) + input[1..];
-        public static string ToCamelCase(this string name)
+
+        /// <summary>
+        /// Converts a string delimited by a symbol to camel case
+        /// </summary>
+        /// <param name="input">The input string</param>
+        /// <param name="delimiters">The delimiters to use when converting to camel case. If none is given, defaults to '-'</param>
+        /// <returns>A camel case string</returns>
+        public static string ToCamelCase(this string input, params string[] delimiters)
         {
-            if(string.IsNullOrEmpty(name)) return name;
-            var chunks = name.Split('-', StringSplitOptions.RemoveEmptyEntries);
-            var identifier = chunks[0] + string.Join(string.Empty, chunks.Skip(1)
-                                                                .Select(s => ToFirstCharacterUpperCase(s)));
-            return identifier;
+            if (string.IsNullOrEmpty(input)) return input;
+            delimiters = delimiters.Any() ? delimiters : new[] { "-" };
+            var chunks = input.Split(delimiters, StringSplitOptions.RemoveEmptyEntries);
+            if (chunks.Length < 1) return string.Empty;
+            return chunks[0] + string.Join(string.Empty, chunks.Skip(1).Select(c => c.ToFirstCharacterUpperCase()));
         }
+
         public static string ToPascalCase(this string name)
             => string.IsNullOrEmpty(name) ? name : String.Join(null, name.Split("-", StringSplitOptions.RemoveEmptyEntries)
                                                                             .Select(s => ToFirstCharacterUpperCase(s)));
