@@ -5,7 +5,6 @@ namespace Microsoft\Kiota\Abstractions\Serialization;
 use DateInterval;
 use DateTime;
 use Microsoft\Kiota\Abstractions\Enum;
-use Microsoft\Kiota\Abstractions\Types\Byte;
 use Microsoft\Kiota\Abstractions\Types\Date;
 use Microsoft\Kiota\Abstractions\Types\Time;
 use Psr\Http\Message\StreamInterface;
@@ -92,18 +91,6 @@ interface ParseNode {
      * @return Enum|null the Enum value of the node.
      */
     public function getEnumValue(string $targetEnum): ?Enum;
-
-    /**
-     * @param string $targetClass
-     * @return Enum[]|null
-     */
-    public function getCollectionOfEnumValues(string $targetClass): ?array;
-
-    /**
-     * Return a byte value.
-     * @return Byte|null
-     */
-    public function getByteValue(): ?Byte;
 
     /**
      * Get a Stream from node.

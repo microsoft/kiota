@@ -4,7 +4,6 @@ namespace Microsoft\Kiota\Abstractions\Serialization;
 use DateInterval;
 use DateTime;
 use Microsoft\Kiota\Abstractions\Enum;
-use Microsoft\Kiota\Abstractions\Types\Byte;
 use Microsoft\Kiota\Abstractions\Types\Date;
 use Microsoft\Kiota\Abstractions\Types\Time;
 use Psr\Http\Message\StreamInterface;
@@ -122,13 +121,6 @@ interface SerializationWriter {
      * @return void
      */
     public function writeDateIntervalValue(?string $key, ?DateInterval $value): void;
-    /**
-     * Write a byte value.
-     * @param string|null $key
-     * @param Byte|null $value
-     * @return void
-     */
-    public function writeByteValue(?string $key, ?Byte $value): void;
 
     /**
      * @param string|null $key

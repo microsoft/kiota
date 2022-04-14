@@ -270,13 +270,6 @@ class JsonParseNode implements ParseNode
 
     /**
      * @inheritDoc
-     */
-    public function getByteValue(): ?Byte {
-        return ($this->jsonNode !== null) ? new Byte($this->jsonNode) : null;
-    }
-
-    /**
-     * @inheritDoc
      * @throws Exception
      */
     public function getDateTimeValue(): ?DateTime {
