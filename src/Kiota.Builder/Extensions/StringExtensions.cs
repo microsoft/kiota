@@ -24,7 +24,8 @@ namespace Kiota.Builder.Extensions {
             if (string.IsNullOrEmpty(input)) return input;
             delimiters = delimiters.Any() ? delimiters : new[] { "-" };
             var chunks = input.Split(delimiters, StringSplitOptions.RemoveEmptyEntries);
-            return string.Join(string.Empty, chunks.Select((c, i) => i == 0 ? c : c.ToFirstCharacterUpperCase()));
+            if (chunks.Length < 1) return string.Empty;
+            return chunks[0] + string.Join(string.Empty, chunks.Skip(1).Select(c => c.ToFirstCharacterUpperCase()));
         }
 
         public static string ToPascalCase(this string name)

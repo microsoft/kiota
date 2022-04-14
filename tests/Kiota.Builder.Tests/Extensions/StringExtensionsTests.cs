@@ -25,6 +25,7 @@ namespace Kiota.Builder.Extensions.Tests {
             string nString = null;
             Assert.Null(nString.ToCamelCase());
             Assert.Equal(string.Empty, string.Empty.ToCamelCase());
+            Assert.Equal(string.Empty, "-".ToCamelCase());
             Assert.Equal("toto", "toto".ToCamelCase());
             Assert.Equal("totoCamelCase", "toto-camel-case".ToCamelCase());
             Assert.Equal("totoCamelCase", "toto.camel~case".ToCamelCase(".", "~"));
