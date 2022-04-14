@@ -1,3 +1,4 @@
+from .additional_data_holder import AdditionalDataHolder
 from .parsable import Parsable
 from .parsable_factory import ParsableFactory
 from .parse_node import ParseNode

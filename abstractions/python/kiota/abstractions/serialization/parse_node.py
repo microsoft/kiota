@@ -9,7 +9,6 @@ from uuid import UUID
 
 from .parsable import Parsable
 
-
 T = TypeVar("T")
 
 U = TypeVar("U", bound=Parsable)
@@ -18,6 +17,7 @@ K = TypeVar("K", bound=Enum)
 
 if TYPE_CHECKING:
     from .parsable_factory import ParsableFactory
+
 
 class ParseNode(ABC):
     """
