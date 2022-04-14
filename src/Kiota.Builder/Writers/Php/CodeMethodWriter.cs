@@ -11,7 +11,6 @@ namespace Kiota.Builder.Writers.Php
         public CodeMethodWriter(PhpConventionService conventionService) : base(conventionService) { }
         
         private const string RequestInfoVarName = "$requestInfo";
-        private const string RequestConfigVarName = "$requestConfig";
         public override void  WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)
         {
 
