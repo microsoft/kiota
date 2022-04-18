@@ -4,9 +4,13 @@ namespace Kiota.Builder;
 public enum CodeParameterKind
 {
     Custom,
-    [Obsolete("User request configuration instead")]
+    ///<summary>
+    /// The request query parameters when used as a executor/generator parameter. Most languages use the intermediate RequestConfiguration wrapper class.
+    ///</summary>
     QueryParameter,
-    [Obsolete("User request configuration instead")]
+    ///<summary>
+    /// The request headers when used as a executor/generator parameter. Most languages use the intermediate RequestConfiguration wrapper class.
+    ///</summary>
     Headers,
     ResponseHandler,
     RequestBody,
@@ -16,7 +20,9 @@ public enum CodeParameterKind
     /// The set of parameters to be carried over to the next request builder.
     /// </summary>
     PathParameters,
-    [Obsolete("Use request configuration instead")]
+    ///<summary>
+    /// The request middleware options when used as a executor/generator parameter. Most languages use the intermediate RequestConfiguration wrapper class.
+    ///</summary>
     Options,
     Serializer,
     BackingStore,

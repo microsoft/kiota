@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Kiota.Builder.Extensions;
-using Kiota.Builder.Writers.Extensions;
 using Kiota.Builder.Writers.Go;
 
 namespace Kiota.Builder.Refiners;
@@ -294,14 +292,14 @@ public class GoRefiner : CommonLanguageRefiner
                 currentProperty.Type.Name = "map[string]string";
                 if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                     currentProperty.DefaultValue = $"make({currentProperty.Type.Name})";
-            else if(currentProperty.IsOfKind(CodePropertyKind.Headers)) {
+            } else if(currentProperty.IsOfKind(CodePropertyKind.Headers)) {
                 currentProperty.Type.Name = "map[string]string";
                 currentProperty.DefaultValue = $"make({currentProperty.Type.Name})";
             } else if(currentProperty.IsOfKind(CodePropertyKind.Options)) {
                 currentProperty.Type.IsNullable = false;
                 currentProperty.Type.Name = "RequestOption";
                 currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
-            } else if(currentProperty.IsOfKind(CodePropertyKind.QueryParameter) && currentProperty.Parent is CodeClass parentClass)
+            } else if(currentProperty.IsOfKind(CodePropertyKind.QueryParameter) && currentProperty.Parent is CodeClass parentClass) {
                 currentProperty.Type.Name = $"{parentClass.Name}{currentProperty.Type.Name}";
             } else
                 CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
