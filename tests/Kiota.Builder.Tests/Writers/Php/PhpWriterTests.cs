@@ -4,7 +4,7 @@ using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Php;
 using Xunit;
 
-namespace Kiota.Builder.Tests.Writers.Php
+namespace Kiota.Builder.Writers.Php.Tests
 {
     public class PhpWriterTests: IDisposable
     {

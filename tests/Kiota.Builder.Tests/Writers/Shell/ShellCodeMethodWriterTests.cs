@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Kiota.Builder.Writers;
 using Xunit;
 
-namespace Kiota.Builder.Tests.Writers.Shell;
+namespace Kiota.Builder.Writers.Shell.Tests;
 
 public class ShellCodeMethodWriterTests : IDisposable
 {
