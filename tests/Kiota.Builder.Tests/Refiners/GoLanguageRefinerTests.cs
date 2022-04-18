@@ -395,6 +395,7 @@ public class GoLanguageRefinerTests {
         const string deserializeDefaultName = "IDictionary<string, Action<Model, IParseNode>>";
         const string dateTimeOffsetDefaultName = "DateTimeOffset";
         const string additionalDataDefaultName = "new Dictionary<string, object>()";
+        const string headersDefaultName = "IDictionary<string, string>";
         var model = root.AddClass(new CodeClass {
             Name = "model",
             Kind = CodeClassKind.Model
@@ -417,9 +418,14 @@ public class GoLanguageRefinerTests {
             Type = new CodeType {
                 Name = additionalDataDefaultName
             }
+        },new () {
+            Name = "headers",
+            Kind = CodePropertyKind.Headers,
+            Type = new CodeType {
+                Name = headersDefaultName
+            }
         });
         const string handlerDefaultName = "IResponseHandler";
-        const string headersDefaultName = "IDictionary<string, string>";
         var executorMethod = model.AddMethod(new CodeMethod {
             Name = "executor",
             Kind = CodeMethodKind.RequestExecutor,
@@ -433,22 +439,16 @@ public class GoLanguageRefinerTests {
             },
             Kind = CodeMethodKind.Deserializer
         }).First();
-        executorMethod.AddParameter(new () {
+        executorMethod.AddParameter(new CodeParameter {
             Name = "handler",
             Kind = CodeParameterKind.ResponseHandler,
             Type = new CodeType {
                 Name = handlerDefaultName,
             }
-        }, new () {
-            Name = "headers",
-            Kind = CodeParameterKind.Headers,
-            Type = new CodeType {
-                Name = headersDefaultName
-            }
         });
         const string serializerDefaultName = "ISerializationWriter";
         var serializationMethod = model.AddMethod(new CodeMethod {
-            Name = "seriailization",
+            Name = "serialization",
             Kind = CodeMethodKind.Serializer,
             ReturnType = new CodeType {
                 Name = "string"
@@ -493,9 +493,9 @@ public class GoLanguageRefinerTests {
         Assert.Empty(model.Properties.Where(x => factoryDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => dateTimeOffsetDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Properties.Where(x => additionalDataDefaultName.Equals(x.Type.Name)));
+        Assert.Empty(model.Properties.Where(x => headersDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Methods.Where(x => deserializeDefaultName.Equals(x.ReturnType.Name)));
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => handlerDefaultName.Equals(x.Type.Name)));
-        Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => headersDefaultName.Equals(x.Type.Name)));
         Assert.Empty(model.Methods.SelectMany(x => x.Parameters).Where(x => serializerDefaultName.Equals(x.Type.Name)));
         Assert.Equal("make(map[string]string)", pathParamsProp.DefaultValue);
         Assert.Equal("map[string]string", pathParamsProp.Type.Name);

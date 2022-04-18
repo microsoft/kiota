@@ -755,12 +755,21 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             SetTypeAndAddUsing(CopyClassAsInterface(modelClass, interfaceNamingCallback), type, codeProperty);
         } else if (currentElement is CodeMethod codeMethod &&
-                codeMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
-                codeMethod.ReturnType is CodeType returnType &&
+                codeMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator))
+        {
+            if (codeMethod.ReturnType is CodeType returnType &&
                 returnType.TypeDefinition is CodeClass returnClass &&
                 returnClass.IsOfKind(CodeClassKind.Model))
-        {
-            SetTypeAndAddUsing(CopyClassAsInterface(returnClass, interfaceNamingCallback), returnType, codeMethod);
+            {
+                SetTypeAndAddUsing(CopyClassAsInterface(returnClass, interfaceNamingCallback), returnType, codeMethod);
+            } 
+            if (codeMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.RequestBody)) is CodeParameter requestBodyParameter &&
+                requestBodyParameter.Type is CodeType parameterType &&
+                parameterType.TypeDefinition is CodeClass parameterClass &&
+                parameterClass.IsOfKind(CodeClassKind.Model))
+            {
+                SetTypeAndAddUsing(CopyClassAsInterface(parameterClass, interfaceNamingCallback), parameterType, codeMethod);
+            }
         }
         
         CrawlTree(currentElement, x => CopyModelClassesAsInterfaces(x, interfaceNamingCallback));
