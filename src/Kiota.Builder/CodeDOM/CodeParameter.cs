@@ -26,11 +26,6 @@ public enum CodeParameterKind
     Path,
     RawUrl,
     /// <summary>
-    /// A single parameter to be provided by the SDK user which will contain query parameters, request body, options, etc.
-    /// Only used for languages that do not support overloads or optional parameters like go.
-    /// </summary>
-    ParameterSet,
-    /// <summary>
     /// A single parameter to be provided by the SDK user which can be used to cancel requests.
     /// </summary>
     Cancellation,
