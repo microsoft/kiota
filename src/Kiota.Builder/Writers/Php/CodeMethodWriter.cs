@@ -344,6 +344,7 @@ namespace Kiota.Builder.Writers.Php
                 var options = requestParams.Options;
                 var requestConfigParamName = conventions.GetParameterName(requestParams.requestConfiguration);
                 writer.WriteLine($"if ({requestConfigParamName} !== null) {{");
+                writer.IncreaseIndent();
                 if(headers != null) {
                     var headersName = $"{requestConfigParamName}->{headers.Name.ToFirstCharacterLowerCase()}";
                     writer.WriteLine($"if ({headersName} !== null) {{");

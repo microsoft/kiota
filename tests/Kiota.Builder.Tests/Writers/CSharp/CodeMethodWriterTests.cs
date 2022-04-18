@@ -140,7 +140,7 @@ public class CodeMethodWriterTests : IDisposable {
             Type = stringType,
         });
         method.AddParameter(new CodeParameter{
-            Name = "c",
+            Name = "config",
             Kind = CodeParameterKind.RequestConfiguration,
             Type = new CodeType {
                 Name = "RequestConfig",
@@ -402,9 +402,9 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("HttpMethod = Method.GET", result);
         Assert.Contains("UrlTemplate = ", result);
         Assert.Contains("PathParameters = ", result);
-        Assert.Contains("if (c != null)", result);
+        Assert.Contains("if (config != null)", result);
         Assert.Contains("var requestConfig = new RequestConfig()", result);
-        Assert.Contains("c.Invoke(requestConfig)", result);
+        Assert.Contains("config.Invoke(requestConfig)", result);
         Assert.Contains("requestInfo.AddHeaders(requestConfig.H)", result);
         Assert.Contains("requestInfo.AddQueryParameters(requestConfig.Q)", result);
         Assert.Contains("requestInfo.AddRequestOptions(requestConfig.O)", result);
