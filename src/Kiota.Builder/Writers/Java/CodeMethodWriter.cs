@@ -226,7 +226,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
             fieldToSerialize
                     .OrderBy(x => x.Name)
                     .Select(x => 
-                        $"this.put(\"{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}\", (n) -> {{ currentObject.set{x.Name.ToFirstCharacterUpperCase()}({GetDeserializationMethodName(x.Type, method)}); }});")
+                        $"this.put(\"{x.SerializationName ?? x.Name.ToFirstCharacterLowerCase()}\", (n) -> {{ currentObject.set{x.SymbolName.ToFirstCharacterUpperCase()}({GetDeserializationMethodName(x.Type, method)}); }});")
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
             writer.DecreaseIndent();
@@ -308,21 +308,22 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         if(requestParams.requestConfiguration != null) {
             writer.WriteLine($"if ({requestParams.requestConfiguration.Name} != null) {{");
             writer.IncreaseIndent();
-            writer.WriteLines($"final {requestParams.requestConfiguration.Type.Name} {RequestConfigVarName} = new {requestParams.requestConfiguration.Type.Name}();",
+            var requestConfigTypeName = requestParams.requestConfiguration.Type.Name.ToFirstCharacterUpperCase();
+            writer.WriteLines($"final {requestConfigTypeName} {RequestConfigVarName} = new {requestConfigTypeName}();",
                         $"{requestParams.requestConfiguration.Name}.accept({RequestConfigVarName});");
             var queryString = requestParams.QueryParameters;
             var headers = requestParams.Headers;
             var options = requestParams.Options;
             if(queryString != null) {
-                var queryStringName = $"{requestParams.requestConfiguration.Name}.{queryString.Name.ToFirstCharacterLowerCase()}";
+                var queryStringName = $"{RequestConfigVarName}.{queryString.Name.ToFirstCharacterLowerCase()}";
                 writer.WriteLine($"{RequestInfoVarName}.addQueryParameters({queryStringName});");
             }
             if(headers != null) {
-                var headersName = $"{requestParams.requestConfiguration.Name}.{headers.Name.ToFirstCharacterLowerCase()}";
+                var headersName = $"{RequestConfigVarName}.{headers.Name.ToFirstCharacterLowerCase()}";
                 writer.WriteLine($"{RequestInfoVarName}.addRequestHeaders({headersName});");
             }
             if(options != null) {
-                var optionsName = $"{requestParams.requestConfiguration.Name}.{options.Name.ToFirstCharacterLowerCase()}";
+                var optionsName = $"{RequestConfigVarName}.{options.Name.ToFirstCharacterLowerCase()}";
                 writer.WriteLine($"{RequestInfoVarName}.addRequestOptions({optionsName});");
             }
             

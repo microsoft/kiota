@@ -24,8 +24,11 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, JavaConvention
             case CodePropertyKind.QueryParameter when codeElement.IsNameEscaped:
                 writer.WriteLine($"@QueryParameter(name = \"{codeElement.SerializationName}\")");
             goto default;
-            case CodePropertyKind.Headers or CodePropertyKind.Options or CodePropertyKind.QueryParameters:
+            case CodePropertyKind.Headers or CodePropertyKind.Options when !string.IsNullOrEmpty(codeElement.DefaultValue):
                 defaultValue = $" = {codeElement.DefaultValue}";
+            goto default;
+            case CodePropertyKind.QueryParameters:
+                defaultValue = $" = new {returnType}()";
             goto default;
             default:
                 if(codeElement.Type is CodeType currentType && currentType.TypeDefinition is CodeEnum enumType && enumType.Flags)
