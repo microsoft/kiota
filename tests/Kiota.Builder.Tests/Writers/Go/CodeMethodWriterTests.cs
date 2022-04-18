@@ -137,7 +137,6 @@ public class CodeMethodWriterTests : IDisposable {
             Type = new CodeType {
                 Name = "RequestConfig",
                 TypeDefinition = requestConfigClass,
-                ActionOf = true,
             },
             Optional = true,
         });
