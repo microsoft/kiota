@@ -262,12 +262,20 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                             $"{RequestInfoVarName}.urlTemplate = {GetPropertyCall(urlTemplateProperty, "''")};",
                             $"{RequestInfoVarName}.pathParameters = {GetPropertyCall(urlTemplateParamsProperty, "''")};",
                             $"{RequestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.ToString().ToUpperInvariant()};");
-        var headers = requestParams.Headers;
-        if(headers != null)
-            writer.WriteLine($"if({requestParams.requestConfiguration.Name} && {requestParams.requestConfiguration.Name}.{headers.Name}) {RequestInfoVarName}.headers = {requestParams.requestConfiguration.Name}.{headers.Name};");
-        var queryString = requestParams.QueryParameters;
-        if(queryString != null)
-            writer.WriteLines($"{requestParams.requestConfiguration.Name} && {requestParams.requestConfiguration.Name}.{queryString.Name} && {RequestInfoVarName}.setQueryStringParametersFromRawObject({requestParams.requestConfiguration.Name}.{queryString.Name});");
+        if(requestParams.requestConfiguration != null) {
+            writer.WriteLine($"if ({requestParams.requestConfiguration.Name}) {{");
+            writer.IncreaseIndent();
+            var headers = requestParams.Headers;
+            if(headers != null)
+                writer.WriteLine($"{RequestInfoVarName}.addRequestHeaders({requestParams.requestConfiguration.Name}.{headers.Name});");
+            var queryString = requestParams.QueryParameters;
+            if(queryString != null)
+                writer.WriteLines($"{RequestInfoVarName}.setQueryStringParametersFromRawObject({requestParams.requestConfiguration.Name}.{queryString.Name});");
+            var options = requestParams.Options;
+            if(options != null)
+                writer.WriteLine($"{RequestInfoVarName}.addRequestOptions({requestParams.requestConfiguration.Name}.{options.Name});");
+            writer.CloseBlock();
+        }
         if(requestParams.requestBody != null) {
             if(requestParams.requestBody.Type.Name.Equals(localConventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                 writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name});");
@@ -276,9 +284,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {spreadOperator}{requestParams.requestBody.Name});");
             }
         }
-        var options = requestParams.Options;
-        if(options != null)
-            writer.WriteLine($"{requestParams.requestConfiguration.Name} && {requestParams.requestConfiguration.Name}.{options.Name} && {RequestInfoVarName}.addRequestOptions(...{requestParams.requestConfiguration.Name}.{options.Name});");
+        
         writer.WriteLine($"return {RequestInfoVarName};");
     }
     private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"this.{property.Name}";

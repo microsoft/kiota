@@ -108,14 +108,23 @@ public class CodeMethodWriterTests : IDisposable {
         var stringType = new CodeType {
             Name = "string",
         };
-        method.AddParameter(new CodeParameter {
+        var requestConfigClass = parentClass.AddInnerClass(new CodeClass {
+            Name = "RequestConfig",
+            Kind = CodeClassKind.RequestConfiguration,
+        }).First();
+        requestConfigClass.AddProperty(new() {
             Name = "h",
-            Kind = CodeParameterKind.Headers,
+            Kind = CodePropertyKind.Headers,
             Type = stringType,
-        });
-        method.AddParameter(new CodeParameter{
+        },
+        new () {
             Name = "q",
-            Kind = CodeParameterKind.QueryParameter,
+            Kind = CodePropertyKind.QueryParameters,
+            Type = stringType,
+        },
+        new () {
+            Name = "o",
+            Kind = CodePropertyKind.Options,
             Type = stringType,
         });
         method.AddParameter(new CodeParameter{
@@ -124,13 +133,18 @@ public class CodeMethodWriterTests : IDisposable {
             Type = stringType,
         });
         method.AddParameter(new CodeParameter{
+            Name = "c",
+            Kind = CodeParameterKind.RequestConfiguration,
+            Type = new CodeType {
+                Name = "RequestConfig",
+                TypeDefinition = requestConfigClass,
+                ActionOf = true,
+            },
+            Optional = true,
+        });
+        method.AddParameter(new CodeParameter{
             Name = "r",
             Kind = CodeParameterKind.ResponseHandler,
-            Type = stringType,
-        });
-        method.AddParameter(new CodeParameter {
-            Name = "o",
-            Kind = CodeParameterKind.Options,
             Type = stringType,
         });
     }
@@ -249,10 +263,11 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("requestInfo.httpMethod = HttpMethod", result);
         Assert.Contains("requestInfo.urlTemplate = ", result);
         Assert.Contains("requestInfo.pathParameters = ", result);
-        Assert.Contains("requestInfo.headers =", result);
-        Assert.Contains("setQueryStringParametersFromRawObject", result);
+        Assert.Contains("if (c)", result);
+        Assert.Contains("requestInfo.addRequestHeaders", result);
+        Assert.Contains("requestInfo.addRequestOptions", result);
+        Assert.Contains("requestInfo.setQueryStringParametersFromRawObject", result);
         Assert.Contains("setContentFromParsable", result);
-        Assert.Contains("addRequestOptions", result);
         Assert.Contains("return requestInfo;", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
