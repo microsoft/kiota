@@ -36,8 +36,8 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
             case CodePropertyKind.QueryParameter when codeElement.IsNameEscaped:
                 writer.WriteLine($"[QueryParameter(\"{codeElement.SerializationName}\")]");
                 goto default;
-            case CodePropertyKind.Headers or CodePropertyKind.Options or CodePropertyKind.QueryParameters:
-                defaultValue = $" = new {propertyType.Replace("IDictionary", "Dictionary")}();";
+            case CodePropertyKind.QueryParameters:
+                defaultValue = $" = new {propertyType}();";
                 goto default;
             default:
                 writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ {simpleBody} }}{defaultValue}");

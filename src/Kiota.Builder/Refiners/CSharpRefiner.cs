@@ -117,6 +117,10 @@ namespace Kiota.Builder.Refiners {
         }
         protected static void CorrectPropertyType(CodeProperty currentProperty)
         {
+            if(currentProperty.IsOfKind(CodePropertyKind.Options))
+                currentProperty.DefaultValue = "new List<IRequestOption>()";
+            else if(currentProperty.IsOfKind(CodePropertyKind.Headers))
+                currentProperty.DefaultValue = "new Dictionary<string, string>()";
             CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
         }
         protected static void CorrectMethodType(CodeMethod currentMethod)

@@ -791,7 +791,7 @@ public class KiotaBuilder
             Name = "options",
             Kind = CodePropertyKind.Options,
             Description = "Request options",
-            Type = new CodeType { Name = "IEnumerable<IRequestOption>", IsExternal = true },
+            Type = new CodeType { Name = "IList<IRequestOption>", IsExternal = true },
         });
     }
     private string GetModelsNamespaceNameFromReferenceId(string referenceId) {
