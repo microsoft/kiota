@@ -152,9 +152,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(current, x => AddGetterAndSetterMethods(x, propertyKindsToAddAccessors, removeProperty, parameterAsOptional, getterPrefix, setterPrefix));
     }
-    protected static void AddConstructorsForDefaultValues(CodeElement current, bool addIfInherited, bool forceAdd = false) {
+    protected static void AddConstructorsForDefaultValues(CodeElement current, bool addIfInherited, bool forceAdd = false, CodeClassKind[] classKindsToExclude = null) {
         if(current is CodeClass currentClass &&
             !currentClass.IsOfKind(CodeClassKind.RequestBuilder, CodeClassKind.QueryParameters) &&
+            !currentClass.IsOfKind(classKindsToExclude) &&
             (forceAdd ||
             currentClass.Properties.Any(x => !string.IsNullOrEmpty(x.DefaultValue)) ||
             addIfInherited && DoesAnyParentHaveAPropertyWithDefaultValue(currentClass)) &&
@@ -168,7 +169,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 IsAsync = false,
                 Description = $"Instantiates a new {current.Name} and sets the default values."
             });
-        CrawlTree(current, x => AddConstructorsForDefaultValues(x, addIfInherited, forceAdd));
+        CrawlTree(current, x => AddConstructorsForDefaultValues(x, addIfInherited, forceAdd, classKindsToExclude));
     }
 
     protected static void ReplaceReservedModelTypes(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement) => 

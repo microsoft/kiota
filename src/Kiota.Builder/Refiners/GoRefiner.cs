@@ -70,7 +70,8 @@ public class GoRefiner : CommonLanguageRefiner
         AddConstructorsForDefaultValues(
             generatedCode,
             true,
-            true); //forcing add as constructors are required for by factories
+            true,  //forcing add as constructors are required for by factories 
+            new CodeClassKind[] { CodeClassKind.RequestConfiguration });
         MakeModelPropertiesNullable(
             generatedCode);
         AddErrorImportForEnums(
