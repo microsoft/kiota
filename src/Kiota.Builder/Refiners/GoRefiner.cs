@@ -54,6 +54,9 @@ public class GoRefiner : CommonLanguageRefiner
             CorrectMethodType,
             CorrectPropertyType,
             CorrectImplements);
+        InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
+        DisableActionOf(generatedCode, 
+            CodeParameterKind.RequestConfiguration);
         AddGetterAndSetterMethods(
             generatedCode, 
             new () { 
@@ -102,6 +105,31 @@ public class GoRefiner : CommonLanguageRefiner
             generatedCode,
             x => $"{x.Name}able"
         );
+    }
+    private void InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(CodeElement currentElement) {
+        if(currentElement is CodeClass currentClass) {
+            var codeMethods = currentClass.Methods;
+            if(codeMethods.Any(x => x.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator))) {
+                var originalExecutorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor)).ToList();
+                var executorMethodsToAdd = originalExecutorMethods
+                                    .Select(x => GetMethodClone(x, CodeParameterKind.ResponseHandler, CodeParameterKind.ResponseHandler))
+                                    .Where(x => x != null)
+                                    .ToArray();
+                var originalGeneratorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestGenerator)).ToList();
+                var generatorMethodsToAdd = originalGeneratorMethods
+                                    .Select(x => GetMethodClone(x, CodeParameterKind.RequestConfiguration, CodeParameterKind.ResponseHandler))
+                                    .Where(x => x != null)
+                                    .ToArray();
+                originalExecutorMethods.ForEach(x => x.Name = $"{x.Name}With{nameof(CodeParameterKind.ResponseHandler)}");
+                originalGeneratorMethods.ForEach(x => x.Name = $"{x.Name}With{nameof(CodeParameterKind.RequestConfiguration)}");
+                if(executorMethodsToAdd.Any() || generatorMethodsToAdd.Any())
+                    currentClass.AddMethod(executorMethodsToAdd
+                                            .Union(generatorMethodsToAdd)
+                                            .ToArray());
+            }
+        }
+
+        CrawlTree(currentElement, InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors);
     }
     private static void RemoveModelPropertiesThatDependOnSubNamespaces(CodeElement currentElement) {
         if(currentElement is CodeClass currentClass && 

@@ -944,4 +944,13 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
         CrawlTree(currentElement, (x) => AddQueryParameterMapperMethod(x, methodName, parameterName));
     }
+    public CodeMethod GetMethodClone(CodeMethod currentMethod, params CodeParameterKind[] parameterTypesToExclude) {
+        if(currentMethod.Parameters.Any(x => x.IsOfKind(parameterTypesToExclude))) {
+            var cloneMethod = currentMethod.Clone() as CodeMethod;
+            cloneMethod.RemoveParametersByKind(parameterTypesToExclude);
+            cloneMethod.OriginalMethod = currentMethod;
+            return cloneMethod;
+        }
+        else return null;
+    }
 }

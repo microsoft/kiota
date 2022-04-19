@@ -226,7 +226,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                             },
                         })},
     };
-    private static void InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(CodeElement currentElement) {
+    private void InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(CodeElement currentElement) {
         if(currentElement is CodeClass currentClass) {
             var codeMethods = currentClass.Methods;
             if(codeMethods.Any()) {
@@ -248,15 +248,6 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
 
         CrawlTree(currentElement, InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors);
-    }
-    private static CodeMethod GetMethodClone(CodeMethod currentMethod, params CodeParameterKind[] parameterTypesToExclude) {
-        if(currentMethod.Parameters.Any(x => x.IsOfKind(parameterTypesToExclude))) {
-            var cloneMethod = currentMethod.Clone() as CodeMethod;
-            cloneMethod.RemoveParametersByKind(parameterTypesToExclude);
-            cloneMethod.OriginalMethod = currentMethod;
-            return cloneMethod;
-        }
-        else return null;
     }
 
     // Namespaces in Java by convention are all lower case, like:

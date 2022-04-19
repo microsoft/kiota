@@ -35,11 +35,17 @@ namespace Kiota.Builder.Writers.Go {
                 case CodeMethodKind.IndexerBackwardCompatibility:
                     WriteIndexerBody(codeElement, parentClass, writer, returnType);
                 break;
-                case CodeMethodKind.RequestGenerator:
+                case CodeMethodKind.RequestGenerator when codeElement.IsOverload:
+                    WriteGeneratorMethodCall(codeElement, requestParams, writer, "return ");
+                    break;
+                case CodeMethodKind.RequestGenerator when !codeElement.IsOverload:
                     WriteRequestGeneratorBody(codeElement, requestParams, writer, parentClass, returnType);
                 break;
-                case CodeMethodKind.RequestExecutor:
+                case CodeMethodKind.RequestExecutor when !codeElement.IsOverload:
                     WriteRequestExecutorBody(codeElement, requestParams, returnType, parentClass, writer);
+                break;
+                case CodeMethodKind.RequestExecutor when codeElement.IsOverload:
+                    WriteExecutorMethodCall(codeElement, requestParams, writer);
                 break;
                 case CodeMethodKind.Getter:
                     WriteGetterBody(codeElement, writer, parentClass);
@@ -394,20 +400,35 @@ namespace Kiota.Builder.Writers.Go {
             };
             writer.WriteLine($"return {resultReturnCast}nil");
         }
-        private static void WriteGeneratorMethodCall(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, string prefix) {
+        private static void WriteMethodCall(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, CodeMethodKind kind, Func<string, string, string> template, int parametersPad = 0) {
             var generatorMethodName = (codeElement.Parent as CodeClass)
                                                 .Methods
-                                                .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
+                                                .OrderBy(x => x.IsOverload)
+                                                .FirstOrDefault(x => x.IsOfKind(kind) && x.HttpMethod == codeElement.HttpMethod)
                                                 ?.Name
                                                 ?.ToFirstCharacterUpperCase();
             var paramsList = new List<CodeParameter> { requestParams.requestBody, requestParams.requestConfiguration };
+            if(parametersPad > 0)
+                paramsList.AddRange(Enumerable.Range(0, parametersPad).Select<int, CodeParameter>(x => null));
             var requestInfoParameters = paramsList.Where(x => x != null)
                                                 .Select(x => x.Name)
                                                 .ToList();
             var skipIndex = requestParams.requestBody == null ? 1 : 0;
             requestInfoParameters.AddRange(paramsList.Where(x => x == null).Skip(skipIndex).Select(x => "nil"));
             var paramsCall = requestInfoParameters.Any() ? requestInfoParameters.Aggregate((x,y) => $"{x}, {y}") : string.Empty;
-            writer.WriteLine($"{prefix}m.{generatorMethodName}({paramsCall});");
+            writer.WriteLine(template(generatorMethodName, paramsCall));
+        }
+        private static void WriteExecutorMethodCall(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer) {
+            var responseHandlerParam = codeElement.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.ResponseHandler));
+            WriteMethodCall(codeElement, requestParams, writer, CodeMethodKind.RequestExecutor, (name, paramsCall) => 
+                $"return m.{name}({paramsCall});",
+                1
+            );
+        }
+        private static void WriteGeneratorMethodCall(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, string prefix) {
+            WriteMethodCall(codeElement, requestParams, writer, CodeMethodKind.RequestGenerator, (name, paramsCall) => 
+                $"{prefix}m.{name}({paramsCall});"
+            );
         }
         private const string RequestInfoVarName = "requestInfo";
         private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, CodeClass parentClass, string returnType) {
@@ -447,8 +468,7 @@ namespace Kiota.Builder.Writers.Go {
                 }
                 if(options != null) {
                     var optionsName = $"{requestParams.requestConfiguration.Name}.{options.Name.ToFirstCharacterUpperCase()}";
-                    writer.WriteLine($"err := {RequestInfoVarName}.AddRequestOptions({optionsName})");
-                    WriteReturnError(writer, returnType);
+                    writer.WriteLine($"{RequestInfoVarName}.AddRequestOptions({optionsName})");
                 }
                 writer.CloseBlock();
             }
