@@ -406,7 +406,7 @@ namespace Kiota.Builder.Writers.Php
         private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer) {
             var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"$this->{pathParametersProperty.Name}",
-                (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.ParameterName, "$id"));
+                (codeElement.OriginalIndexer.IndexType, codeElement.OriginalIndexer.SerializationName, "$id"));
             conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName);
         }
 

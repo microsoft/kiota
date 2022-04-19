@@ -6,7 +6,7 @@ parent: Get started
 
 ## Required tools
 
-- [Go 1.17](https://golang.org/dl/)
+- [Go 1.18](https://golang.org/dl/)
 
 ## Target project requirements
 

@@ -137,8 +137,7 @@ namespace Kiota.Builder.Writers.Go {
                 WriteReturnError(writer);
             }
             foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
-                var accessorName = otherProp.IsNameEscaped && !string.IsNullOrEmpty(otherProp.SerializationName) ? otherProp.SerializationName : otherProp.Name.ToFirstCharacterLowerCase();
-                WriteSerializationMethodCall(otherProp.Type, parentClass, otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase(), $"m.Get{accessorName.ToFirstCharacterUpperCase()}()", shouldDeclareErrorVar, writer);
+                WriteSerializationMethodCall(otherProp.Type, parentClass, otherProp.SerializationName ?? otherProp.Name.ToFirstCharacterLowerCase(), $"m.Get{otherProp.SymbolName.ToFirstCharacterUpperCase()}()", shouldDeclareErrorVar, writer);
             }
             if(additionalDataProperty != null) {
                 writer.WriteLine("{");
@@ -266,7 +265,7 @@ namespace Kiota.Builder.Writers.Go {
                                                         pathParametersParam.Name.ToFirstCharacterLowerCase(),
                                                         currentMethod.Parameters
                                                                     .Where(x => x.IsOfKind(CodeParameterKind.Path))
-                                                                    .Select(x => (x.Type, x.UrlTemplateParameterName, x.Name.ToFirstCharacterLowerCase()))
+                                                                    .Select(x => (x.Type, x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
                                                                     .ToArray());
                     AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
                 }
@@ -297,7 +296,7 @@ namespace Kiota.Builder.Writers.Go {
             var pathParametersProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
             var idParameter = codeElement.Parameters.First();
             conventions.AddParametersAssignment(writer, pathParametersProperty.Type, $"m.{pathParametersProperty.Name.ToFirstCharacterLowerCase()}",
-                (idParameter.Type, codeElement.OriginalIndexer.ParameterName, "id"));
+                (idParameter.Type, codeElement.OriginalIndexer.SerializationName, "id"));
             conventions.AddRequestBuilderBody(parentClass, returnType, writer, urlTemplateVarName: conventions.TempDictionaryVarName);
         }
         private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits) {
@@ -334,8 +333,7 @@ namespace Kiota.Builder.Writers.Go {
             };
             if(property.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None)
                 WriteCollectionCast(propertyTypeImportName, "val", "res", writer, pointerSymbol, dereference);
-            var setterName = property.IsNameEscaped && !string.IsNullOrEmpty(property.SerializationName) ? property.SerializationName : property.Name;
-            writer.WriteLine($"m.Set{setterName.ToFirstCharacterUpperCase()}({valueArgument})");
+            writer.WriteLine($"m.Set{property.SymbolName.ToFirstCharacterUpperCase()}({valueArgument})");
             writer.CloseBlock();
             writer.WriteLine("return nil");
             writer.CloseBlock();

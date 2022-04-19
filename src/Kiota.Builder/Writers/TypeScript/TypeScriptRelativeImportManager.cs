@@ -43,7 +43,7 @@ namespace Kiota.Builder.Writers.TypeScript
                 else if (string.IsNullOrEmpty(importPath))
                     importPath += codeUsing.Name;
                 else if (!isCodeUsingAModel) {
-                    importPath += codeUsing.Declaration.Name.ToFirstCharacterLowerCase();
+                    importPath += (codeUsing.Declaration.TypeDefinition?.Name ?? codeUsing.Declaration.Name).ToFirstCharacterLowerCase();
                 }
                 return (importSymbol, codeUsing.Alias, importPath);
             }

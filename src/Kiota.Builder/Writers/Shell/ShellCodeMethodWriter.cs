@@ -12,7 +12,6 @@ namespace Kiota.Builder.Writers.Shell
     {
         private static Regex delimitedRegex = new Regex("(?<=[a-z])[-_\\.]+([A-Za-z])", RegexOptions.Compiled);
         private static Regex camelCaseRegex = new Regex("(?<=[a-z])([A-Z])", RegexOptions.Compiled);
-        private static Regex identifierRegex = new Regex("(?:[-_\\.]([a-zA-Z]))", RegexOptions.Compiled);
         private static Regex uppercaseRegex = new Regex("([A-Z])", RegexOptions.Compiled);
         private const string cancellationTokenParamType = "CancellationToken";
         private const string cancellationTokenParamName = "cancellationToken";
@@ -459,14 +458,16 @@ namespace Kiota.Builder.Writers.Shell
                 }
                 writer.CloseBlock("});");
 
-                foreach (var paramName in generatorMethod.PathQueryAndHeaderParameters.Where(p => p.IsOfKind(CodeParameterKind.Path)).Select(p => p.Name))
+                foreach (var param in generatorMethod.PathQueryAndHeaderParameters.Where(p => p.IsOfKind(CodeParameterKind.Path)))
                 {
-                    writer.WriteLine($"requestInfo.PathParameters.Add(\"{paramName}\", {NormalizeToIdentifier(paramName).ToFirstCharacterLowerCase()});");
+                    var paramName = (string.IsNullOrEmpty(param.SerializationName) ? param.Name : param.SerializationName).SanitizeParameterNameForUrlTemplate();
+                    writer.WriteLine($"requestInfo.PathParameters.Add(\"{paramName}\", {NormalizeToIdentifier(param.Name).ToFirstCharacterLowerCase()});");
                 }
 
-                foreach (var paramName in generatorMethod.PathQueryAndHeaderParameters.Where(p => p.IsOfKind(CodeParameterKind.Headers)).Select(p => p.Name))
+                foreach (var param in generatorMethod.PathQueryAndHeaderParameters.Where(p => p.IsOfKind(CodeParameterKind.Headers)))
                 {
-                    writer.WriteLine($"requestInfo.Headers[\"{paramName}\"] = {NormalizeToIdentifier(paramName).ToFirstCharacterLowerCase()};");
+                    var paramName = string.IsNullOrEmpty(param.SerializationName) ? param.Name : param.SerializationName;
+                    writer.WriteLine($"requestInfo.Headers[\"{paramName}\"] = {NormalizeToIdentifier(param.Name).ToFirstCharacterLowerCase()};");
                 }
             }
             else
@@ -482,7 +483,7 @@ namespace Kiota.Builder.Writers.Shell
         /// <returns></returns>
         private static string NormalizeToIdentifier(string input)
         {
-            return identifierRegex.Replace(input, m => m.Groups[1].Value.ToUpper());
+            return input.ToCamelCase("-", "_", ".");
         }
 
         /// <summary>

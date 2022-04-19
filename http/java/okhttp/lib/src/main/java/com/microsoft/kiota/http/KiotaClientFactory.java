@@ -5,6 +5,7 @@ import javax.annotation.Nullable;
 
 import com.microsoft.kiota.http.middleware.RedirectHandler;
 import com.microsoft.kiota.http.middleware.RetryHandler;
+import com.microsoft.kiota.http.middleware.ParametersNameDecodingHandler;
 
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
@@ -42,7 +43,8 @@ public class KiotaClientFactory {
     public static Interceptor[] CreateDefaultInterceptors() {
         return new Interceptor[] {
             new RedirectHandler(),
-            new RetryHandler()
+            new RetryHandler(),
+            new ParametersNameDecodingHandler() 
         };
     }
 }

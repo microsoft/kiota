@@ -501,7 +501,7 @@ public class KiotaBuilderTests
             .SingleOrDefault(cm => cm.IsOfKind(CodeMethodKind.RequestGenerator) && cm.HttpMethod == HttpMethod.Get)?
             .PathQueryAndHeaderParameters;
         Assert.Equal(4, parameters.Count());
-        Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "If-Match" && p.Kind == CodeParameterKind.Headers));
+        Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "IfMatch" && p.Kind == CodeParameterKind.Headers));
         Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "ConsistencyLevel" && p.Kind == CodeParameterKind.Headers));
         Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "select" && p.Kind == CodeParameterKind.QueryParameter));
         Assert.NotNull(parameters.SingleOrDefault(p => p.Name == "scope" && p.Kind == CodeParameterKind.Path));
@@ -1827,6 +1827,62 @@ public class KiotaBuilderTests
         Assert.NotNull(responseClass);
         Assert.Null(responseClass.Description);
     }
+    [Fact]
+    public void CleansUpInvalidDescriptionCharacters(){
+        var myObjectSchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "name", new OpenApiSchema {
+                        Type = "string",
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false,
+            Description = @"	some description with invalid characters: 
+",
+        };
+        var document = new OpenApiDocument() {
+            Paths = new OpenApiPaths() {
+                ["answer"] = new OpenApiPathItem() {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation() { 
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new() {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", myObjectSchema
+                    }
+                }
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("TestSdk.Models");
+        Assert.NotNull(modelsNS);
+        var responseClass = modelsNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.Model));
+        Assert.NotNull(responseClass);
+        Assert.Equal("some description with invalid characters: ", responseClass.Description);
+    }
     [InlineData("application/json")]
     [InlineData("application/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8")]
     [InlineData("application/vnd.github.mercy-preview+json")]
@@ -2127,5 +2183,82 @@ public class KiotaBuilderTests
         };
         var result = KiotaBuilder.GetDeeperMostCommonNamespaceNameForModels(document);
         Assert.Equal(stripPrefix, result);
+    }
+    [Fact]
+    public void HandlesContentParameters(){
+        var myObjectSchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "name", new OpenApiSchema {
+                        Type = "string",
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false,
+        };
+        var document = new OpenApiDocument() {
+            Paths = new OpenApiPaths() {
+                ["answer(ids={ids}"] = new OpenApiPathItem() {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation() {
+                            Parameters = new List<OpenApiParameter> {
+                                new OpenApiParameter {
+                                    Name = "ids",
+                                    In = ParameterLocation.Path,
+                                    Content = new Dictionary<string, OpenApiMediaType>() {
+                                        { "application/json",
+                                        new OpenApiMediaType {
+                                            Schema = new OpenApiSchema {
+                                                                Type = "array",
+                                                                Items = new OpenApiSchema {
+                                                                    Type = "string",
+                                                                }
+                                                            }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new() {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", myObjectSchema
+                    }
+                }
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var answersNS = codeModel.FindNamespaceByName("TestSdk.answerWithIds");
+        Assert.NotNull(answersNS);
+        var rbClass = answersNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.RequestBuilder));
+        Assert.NotNull(rbClass);
+        var ctorMethod = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Constructor));
+        Assert.NotNull(ctorMethod);
+        var idsParam = ctorMethod.Parameters.FirstOrDefault(x => x.Name.Equals("ids", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(idsParam);
+        Assert.Equal("string", idsParam.Type.Name);
+        Assert.Equal(CodeType.CodeTypeCollectionKind.None, idsParam.Type.CollectionKind);
     }
 }

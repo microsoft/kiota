@@ -366,14 +366,17 @@ public class KiotaBuilder
     }
     private static void AddPathParametersToMethod(OpenApiUrlTreeNode currentNode, CodeMethod methodToAdd, bool asOptional) {
         foreach(var parameter in currentNode.GetPathParametersForCurrentSegment()) {
+            var codeName = parameter.Name.SanitizeParameterNameForCodeSymbols();
             var mParameter = new CodeParameter {
-                Name = parameter.Name,
+                Name = codeName,
                 Optional = asOptional,
-                Description = parameter.Description,
+                Description = parameter.Description.CleanupDescription(),
                 Kind = CodeParameterKind.Path,
-                UrlTemplateParameterName = parameter.Name,
+                SerializationName = parameter.Name.Equals(codeName) ? default : parameter.Name.SanitizeParameterNameForUrlTemplate(),
             };
-            mParameter.Type = GetPrimitiveType(parameter.Schema);
+            mParameter.Type = GetPrimitiveType(parameter.Schema ?? parameter.Content.Values.FirstOrDefault()?.Schema);
+            mParameter.Type.CollectionKind = parameter.Schema.IsArray() ? CodeType.CodeTypeCollectionKind.Array : default;
+            // not using the content schema as RFC6570 will serialize arrays as CSVs and content expects a JSON array, we failsafe to opaque string, it could be improved by involving the serialization layers.
             methodToAdd.AddParameter(mParameter);
         }
     }
@@ -542,7 +545,7 @@ public class KiotaBuilder
             Description = $"Gets an item from the {currentNode.GetNodeNamespaceFromPath(config.ClientNamespaceName)} collection",
             IndexType = new CodeType { Name = "string", IsExternal = true, },
             ReturnType = new CodeType { Name = childType },
-            ParameterName = currentNode.Segment.SanitizeUrlTemplateParameterName().TrimStart('{').TrimEnd('}'),
+            SerializationName = currentNode.Segment.SanitizeParameterNameForUrlTemplate(),
             PathSegment = parentNode.GetNodeNamespaceFromPath(string.Empty).Split('.').Last(),
         };
     }
@@ -555,7 +558,7 @@ public class KiotaBuilder
             Name = propertyName,
             DefaultValue = defaultValue,
             Kind = kind,
-            Description = typeSchema?.Description ?? $"The {propertyName} property",
+            Description = typeSchema?.Description.CleanupDescription() ?? $"The {propertyName} property",
         };
         if(propertyName != childIdentifier)
             prop.SerializationName = childIdentifier;
@@ -634,7 +637,7 @@ public class KiotaBuilder
     }
     private void CreateOperationMethods(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
     {
-        var parameterClass = CreateOperationParameter(currentNode, operationType, operation);
+        var parameterClass = CreateOperationParameter(currentNode, operationType, operation, parentClass);
 
         var schema = operation.GetResponseSchema();
         var method = (HttpMethod)Enum.Parse(typeof(HttpMethod), operationType.ToString());
@@ -642,7 +645,7 @@ public class KiotaBuilder
             Name = operationType.ToString(),
             Kind = CodeMethodKind.RequestExecutor,
             HttpMethod = method,
-            Description = operation.Description ?? operation.Summary,
+            Description = (operation.Description ?? operation.Summary).CleanupDescription(),
         }).FirstOrDefault();
         AddErrorMappingsForExecutorMethod(currentNode, operation, executorMethod);
         if (schema != null)
@@ -682,59 +685,53 @@ public class KiotaBuilder
         executorMethod.AddParameter(cancellationParam);// Add cancellation token parameter
         logger.LogTrace("Creating method {name} of {type}", executorMethod.Name, executorMethod.ReturnType);
 
-        var generatorMethod = new CodeMethod {
+        var generatorMethod = parentClass.AddMethod(new CodeMethod {
             Name = $"Create{operationType.ToString().ToFirstCharacterUpperCase()}RequestInformation",
             Kind = CodeMethodKind.RequestGenerator,
             IsAsync = false,
             HttpMethod = method,
-            Description = operation.Description ?? operation.Summary,
+            Description = (operation.Description ?? operation.Summary).CleanupDescription(),
             ReturnType = new CodeType { Name = "RequestInformation", IsNullable = false, IsExternal = true},
-        };
+        }).FirstOrDefault();
         if (config.Language == GenerationLanguage.Shell)
-            SetPathQueryAndHeaderParameters(generatorMethod, currentNode, operation);
-        parentClass.AddMethod(generatorMethod);
+            SetPathAndQueryParameters(generatorMethod, currentNode, operation);
         AddRequestBuilderMethodParameters(currentNode, operation, parameterClass, generatorMethod);
         logger.LogTrace("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
     }
-    private static void SetPathQueryAndHeaderParameters(CodeMethod target, OpenApiUrlTreeNode currentNode, OpenApiOperation operation)
+    private static readonly Func<OpenApiParameter, CodeParameter> GetCodeParameterFromApiParameter = x => {
+        var codeName = x.Name.SanitizeParameterNameForCodeSymbols();
+        return new CodeParameter
+        {
+            Name = codeName,
+            SerializationName = codeName.Equals(x.Name) ? default : x.Name,
+            Type = GetQueryParameterType(x.Schema),
+            Description = x.Description.CleanupDescription(),
+            Kind = x.In switch
+                {
+                    ParameterLocation.Query => CodeParameterKind.QueryParameter,
+                    ParameterLocation.Header => CodeParameterKind.Headers,
+                    ParameterLocation.Path => CodeParameterKind.Path,
+                    _ => throw new NotSupportedException($"No matching parameter kind is supported for parameters in {x.In}"),
+                },
+            Optional = !x.Required
+        };
+    };
+    private static readonly Func<OpenApiParameter, bool> ParametersFilter = x => x.In == ParameterLocation.Path || x.In == ParameterLocation.Query || x.In == ParameterLocation.Header;
+    private static void SetPathAndQueryParameters(CodeMethod target, OpenApiUrlTreeNode currentNode, OpenApiOperation operation)
     {
         var pathAndQueryParameters = currentNode
             .PathItems[Constants.DefaultOpenApiLabel]
             .Parameters
-            .Where(x => x.In == ParameterLocation.Path || x.In == ParameterLocation.Query || x.In == ParameterLocation.Header)
-            .Select(x => new CodeParameter
-            {
-                Name = x.Name.TrimStart('$'),
-                Type = GetQueryParameterType(x.Schema),
-                Description = x.Description,
-                Kind = GetParameterKindFromLocation(x.In),
-                Optional = !x.Required
-            })
+            .Where(ParametersFilter)
+            .Select(GetCodeParameterFromApiParameter)
             .Union(operation
                     .Parameters
-                    .Where(x => x.In == ParameterLocation.Path || x.In == ParameterLocation.Query || x.In == ParameterLocation.Header)
-                    .Select(x => new CodeParameter
-                    {
-                        Name = x.Name.TrimStart('$'),
-                        Type = GetQueryParameterType(x.Schema),
-                        Description = x.Description,
-                        Kind = GetParameterKindFromLocation(x.In),
-                        Optional = !x.Required
-                    }))
+                    .Where(ParametersFilter)
+                    .Select(GetCodeParameterFromApiParameter))
             .ToArray();
         target.AddPathQueryOrHeaderParameter(pathAndQueryParameters);
     }
 
-    private static CodeParameterKind GetParameterKindFromLocation(ParameterLocation? location)
-    {
-        return location switch
-        {
-            ParameterLocation.Query => CodeParameterKind.QueryParameter,
-            ParameterLocation.Header => CodeParameterKind.Headers,
-            ParameterLocation.Path => CodeParameterKind.Path,
-            _ => throw new NotSupportedException($"No matching parameter kind is supported for parameters in {location}"),
-        };
-    }
     private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeClass parameterClass, CodeMethod method) {
         var nonBinaryRequestBody = operation.RequestBody?.Content?.FirstOrDefault(x => !RequestBodyBinaryContentType.Equals(x.Key, StringComparison.OrdinalIgnoreCase));
         if (nonBinaryRequestBody.HasValue && nonBinaryRequestBody.Value.Value != null)
@@ -746,7 +743,7 @@ public class KiotaBuilder
                 Type = requestBodyType,
                 Optional = false,
                 Kind = CodeParameterKind.RequestBody,
-                Description = requestBodySchema.Description
+                Description = requestBodySchema.Description.CleanupDescription()
             });
             method.ContentType = nonBinaryRequestBody.Value.Key;
         } else if (operation.RequestBody?.Content?.ContainsKey(RequestBodyBinaryContentType) ?? false) {
@@ -958,7 +955,7 @@ public class KiotaBuilder
         var newClass = currentNamespace.AddClass(new CodeClass {
             Name = declarationName,
             Kind = CodeClassKind.Model,
-            Description = schema.Description ?? (string.IsNullOrEmpty(schema.Reference?.Id) ? 
+            Description = schema.Description.CleanupDescription() ?? (string.IsNullOrEmpty(schema.Reference?.Id) ? 
                                                     currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel) :
                                                     null),// if it's a referenced component, we shouldn't use the path item description as it makes it indeterministic
         }).First();
@@ -1118,22 +1115,23 @@ public class KiotaBuilder
             });
         }
     }
-    private CodeClass CreateOperationParameter(OpenApiUrlTreeNode node, OperationType operationType, OpenApiOperation operation)
+    private CodeClass CreateOperationParameter(OpenApiUrlTreeNode node, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
     {
         var parameters = node.PathItems[Constants.DefaultOpenApiLabel].Parameters.Union(operation.Parameters).Where(p => p.In == ParameterLocation.Query);
         if(parameters.Any()) {
-            var parameterClass = new CodeClass
+            var parameterClass = parentClass.AddInnerClass(new CodeClass
             {
                 Name = operationType.ToString() + "QueryParameters",
                 Kind = CodeClassKind.QueryParameters,
-                Description = operation.Description ?? operation.Summary
-            };
+                Description = (operation.Description ?? operation.Summary).CleanupDescription(),
+            }).First();
             foreach (var parameter in parameters)
             {
                 var prop = new CodeProperty
                 {
-                    Name = FixQueryParameterIdentifier(parameter),
-                    Description = parameter.Description,
+                    Name = parameter.Name.SanitizeParameterNameForCodeSymbols(),
+                    Description = parameter.Description.CleanupDescription(),
+                    Kind = CodePropertyKind.QueryParameter,
                     Type = new CodeType
                     {
                         IsExternal = true,
@@ -1141,6 +1139,11 @@ public class KiotaBuilder
                         CollectionKind = parameter.Schema.IsArray() ? CodeType.CodeTypeCollectionKind.Array : default,
                     },
                 };
+
+                if(!parameter.Name.Equals(prop.Name))
+                {
+                    prop.SerializationName = parameter.Name.SanitizeParameterNameForUrlTemplate();
+                }
 
                 if (!parameterClass.ContainsMember(parameter.Name))
                 {
@@ -1162,11 +1165,4 @@ public class KiotaBuilder
             Name = schema.Items?.Type ?? schema.Type,
             CollectionKind = schema.IsArray() ? CodeType.CodeTypeCollectionKind.Array : default,
         };
-
-    private static string FixQueryParameterIdentifier(OpenApiParameter parameter)
-    {
-        // Replace with regexes pulled from settings that are API specific
-
-        return parameter.Name.Replace("$","").ToCamelCase();
-    }
 }

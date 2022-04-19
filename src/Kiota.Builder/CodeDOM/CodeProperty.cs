@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder
 {
@@ -52,6 +53,7 @@ namespace Kiota.Builder
         public string Description {get; set;}
         public string SerializationName { get; set; }
         public string NamePrefix { get; set; }
-        public bool IsNameEscaped { get; set; }
+        public bool IsNameEscaped { get => !string.IsNullOrEmpty(SerializationName); }
+        public string SymbolName { get => IsNameEscaped ? SerializationName.CleanupSymbolName() : Name; }
     }
 }

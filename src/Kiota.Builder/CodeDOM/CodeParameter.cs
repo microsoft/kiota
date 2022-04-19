@@ -36,7 +36,11 @@ namespace Kiota.Builder
         /// <summary>
         /// A parameter representing the parse node to be used for deserialization during discrimination.
         /// </summary>
-        ParseNode
+        ParseNode,
+        /// <summary>
+        /// Parameter representing the original name of the query parameter symbol in the generated class.
+        /// </summary>
+        QueryParametersMapperParameter
     }
 
     public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable, IDocumentedElement
@@ -49,10 +53,7 @@ namespace Kiota.Builder
         public bool Optional {get;set;}= false;
         public string Description {get; set;}
         public string DefaultValue {get; set;}
-        /// <summary>
-        /// The name of the url template parameter this path parameter maps to.
-        /// </summary>
-        public string UrlTemplateParameterName { get; set; }
+        public string SerializationName { get; set; }
         public object Clone()
         {
             return new CodeParameter {
@@ -63,7 +64,7 @@ namespace Kiota.Builder
                 Description = Description?.Clone() as string,
                 DefaultValue = DefaultValue?.Clone() as string,
                 Parent = Parent,
-                UrlTemplateParameterName = UrlTemplateParameterName?.Clone() as string,
+                SerializationName = SerializationName?.Clone() as string,
             };
         }
     }

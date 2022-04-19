@@ -118,7 +118,7 @@ public class ShellCodeMethodWriterTests : IDisposable
             Optional = true
         });
         method.AddPathQueryOrHeaderParameter(new CodeParameter {
-            Name = "p",
+            Name = "test-path",
             Kind = CodeParameterKind.Path,
             Type = stringType
         });
@@ -323,13 +323,13 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var q = (string) parameters[0];", result);
         Assert.Contains("var testHeader = (string) parameters[2];", result);
         Assert.Contains("var requestInfo = CreateGetRequestInformation", result);
-        Assert.Contains("requestInfo.PathParameters.Add(\"p\", p);", result);
+        Assert.Contains("requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("requestInfo.Headers[\"Test-Header\"] = testHeader;", result);
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("var outputFormatterFactory = (IOutputFormatterFactory) parameters[4];", result);
         Assert.Contains("var formatter = outputFormatterFactory.GetFormatter(FormatterType.TEXT);", result);
         Assert.Contains("await formatter.WriteOutputAsync(response, null, cancellationToken);", result);
-        Assert.Contains("}, new CollectionBinding(qOption, pOption, testHeaderOption", result);
+        Assert.Contains("}, new CollectionBinding(qOption, testPathOption, testHeaderOption", result);
         Assert.Contains("return command;", result);
     }
 
@@ -385,7 +385,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("command.SetHandler(async (object[] parameters) => {", result);
         Assert.Contains("var q = (string) parameters[0];", result);
         Assert.Contains("var requestInfo = CreateGetRequestInformation", result);
-        Assert.Contains("requestInfo.PathParameters.Add(\"p\", p);", result);
+        Assert.Contains("requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("var formatterOptions = output.GetOutputFormatterOptions(new FormatterOptionsModel(!jsonNoIndent));", result);
         Assert.Contains("response = await outputFilter?.FilterOutputAsync(response, query, cancellationToken)", result);
@@ -453,7 +453,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("using var stream = new MemoryStream(Encoding.UTF8.GetBytes(body));", result);
         Assert.Contains("var model = parseNode.GetObjectValue<Content>(Content.CreateFromDiscriminatorValue);", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
-        Assert.Contains("requestInfo.PathParameters.Add(\"p\", p);", result);
+        Assert.Contains("requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("return command;", result);
     }
@@ -518,7 +518,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("using var stream = new MemoryStream(Encoding.UTF8.GetBytes(body));", result);
         Assert.Contains("var model = parseNode.GetCollectionOfObjectValues<Content>(Content.CreateFromDiscriminatorValue);", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
-        Assert.Contains("requestInfo.PathParameters.Add(\"p\", p);", result);
+        Assert.Contains("requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("return command;", result);
     }
@@ -575,7 +575,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("command.AddOption(bodyOption);", result);
         Assert.Contains("using var stream = file.OpenRead();", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
-        Assert.Contains("requestInfo.PathParameters.Add(\"p\", p);", result);
+        Assert.Contains("requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("return command;", result);
     }
@@ -614,7 +614,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("qOption.IsRequired = false;", result);
         Assert.Contains("command.AddOption(qOption);", result);
         Assert.Contains("var requestInfo = CreateDeleteRequestInformation", result);
-        Assert.Contains("requestInfo.PathParameters.Add(\"p\", p);", result);
+        Assert.Contains("requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("await RequestAdapter.SendNoContentAsync(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("Console.WriteLine(\"Success\");", result);
         Assert.Contains("return command;", result);
@@ -665,7 +665,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("command.SetHandler(async (object[] parameters) => {", result);
         Assert.Contains("var q = (string) parameters[0];", result);
         Assert.Contains("var requestInfo = CreateGetRequestInformation", result);
-        Assert.Contains("requestInfo.PathParameters.Add(\"p\", p);", result);
+        Assert.Contains("requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("}, new CollectionBinding(qOption,", result);
         Assert.Contains("return command;", result);
@@ -716,7 +716,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("bodyOption.IsRequired = true;", result);
         Assert.Contains("command.AddOption(bodyOption);", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
-        Assert.Contains("requestInfo.PathParameters.Add(\"p\", p);", result);
+        Assert.Contains("requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("await RequestAdapter.SendNoContentAsync(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
         Assert.Contains("Console.WriteLine(\"Success\");", result);
         Assert.Contains("return command;", result);

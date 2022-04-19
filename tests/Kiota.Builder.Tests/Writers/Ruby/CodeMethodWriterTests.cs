@@ -387,7 +387,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             method.Kind = CodeMethodKind.IndexerBackwardCompatibility;
             method.OriginalIndexer = new () {
                 Name = "indx",
-                ParameterName = "id",
+                SerializationName = "id",
                 IndexType = new CodeType {
                     Name = "string",
                     IsNullable = true,

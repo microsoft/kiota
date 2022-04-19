@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -85,11 +85,13 @@ namespace Kiota.Builder.Extensions {
             }
             return prefix + rawClassName?.Split('.', StringSplitOptions.RemoveEmptyEntries)?.LastOrDefault() + suffix;
         }
+        private static readonly Regex descriptionCleanupRegex = new (@"[\r\n\t]", RegexOptions.Compiled);
+        public static string CleanupDescription(this string description) => string.IsNullOrEmpty(description) ? description : descriptionCleanupRegex.Replace(description, string.Empty);
         public static string GetPathItemDescription(this OpenApiUrlTreeNode currentNode, string label, string defaultValue = default) =>
         !string.IsNullOrEmpty(label) && (currentNode?.PathItems.ContainsKey(label) ?? false) ?
-                currentNode.PathItems[label].Description ??
+                (currentNode.PathItems[label].Description ??
                 currentNode.PathItems[label].Summary ??
-                defaultValue :
+                defaultValue).CleanupDescription() :
             defaultValue;
         public static bool DoesNodeBelongToItemSubnamespace(this OpenApiUrlTreeNode currentNode) => currentNode.IsPathSegmentWithSingleSimpleParameter();
         public static bool IsPathSegmentWithSingleSimpleParameter(this OpenApiUrlTreeNode currentNode) =>
@@ -109,32 +111,47 @@ namespace Kiota.Builder.Extensions {
             if(currentNode.HasOperations(Constants.DefaultOpenApiLabel))
             {
                 var pathItem = currentNode.PathItems[Constants.DefaultOpenApiLabel];
-                var parameters = pathItem.Parameters.Where(x => x.In == ParameterLocation.Query).ToList();
-                parameters.AddRange(pathItem.Operations.SelectMany(x => x.Value.Parameters).Where(x => x.In == ParameterLocation.Query));
+                var parameters = pathItem.Parameters
+                                        .Where(x => x.In == ParameterLocation.Query)
+                                        .Union(
+                                            pathItem.Operations
+                                                    .SelectMany(x => x.Value.Parameters)
+                                                    .Where(x => x.In == ParameterLocation.Query))
+                                        .ToArray();
                 if(parameters.Any())
                     queryStringParameters = "{?" + 
                                             parameters.Select(x => 
-                                                                x.Name.TrimStart('$') +
+                                                                x.Name.SanitizeParameterNameForUrlTemplate() +
                                                                 (x.Explode ? 
                                                                     "*" : string.Empty))
                                                     .Aggregate((x, y) => $"{x},{y}") +
                                             '}';
             }
             return "{+baseurl}" + 
-                    SanitizePathParameterNames(currentNode.Path.Replace('\\', '/')) +
+                    SanitizePathParameterNamesForUrlTemplate(currentNode.Path.Replace('\\', '/')) +
                     queryStringParameters;
         }
-        private static readonly Regex pathParamMatcher = new(@"{[\w-]+}",RegexOptions.Compiled);
-        private static string SanitizePathParameterNames(string original) {
+        private static readonly Regex pathParamMatcher = new(@"{(?<paramname>[^}]+)}",RegexOptions.Compiled);
+        private static string SanitizePathParameterNamesForUrlTemplate(string original) {
             if(string.IsNullOrEmpty(original) || !original.Contains('{')) return original;
             var parameters = pathParamMatcher.Matches(original);
-            foreach(var value in parameters.Select(x => x.Value))
-                original = original.SanitizePathParameterName();
+            foreach(var value in parameters.Select(x => x.Groups["paramname"].Value))
+                original = original.Replace(value, value.SanitizeParameterNameForUrlTemplate());
             return original;
         }
-        public static string SanitizePathParameterName(this string original) {
+        public static string SanitizeParameterNameForUrlTemplate(this string original) {
             if(string.IsNullOrEmpty(original)) return original;
-            return original.Replace('-', '_');
+            return Uri.EscapeDataString(original
+                                    .TrimStart('{')
+                                    .TrimEnd('}'))
+                        .Replace("-", "%2D")
+                        .Replace(".", "%2E")
+                        .Replace("~", "%7E");// - . ~ are invalid uri template character but don't get encoded by Uri.EscapeDataString
+        }
+        private static readonly Regex removePctEncodedCharacters = new(@"%[0-9A-F]{2}", RegexOptions.Compiled);
+        public static string SanitizeParameterNameForCodeSymbols(this string original, string replaceEncodedCharactersWith = "") {
+            if(string.IsNullOrEmpty(original)) return original;
+            return removePctEncodedCharacters.Replace(original.ToCamelCase("-", ".", "~").SanitizeParameterNameForUrlTemplate(), replaceEncodedCharactersWith);
         }
     }
 }

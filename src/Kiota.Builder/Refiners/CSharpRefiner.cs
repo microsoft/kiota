@@ -102,6 +102,8 @@ namespace Kiota.Builder.Refiners {
                 "Microsoft.Kiota.Abstractions.Store",  "IBackingStoreFactory", "IBackingStoreFactorySingleton"),
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
                 "Microsoft.Kiota.Abstractions.Store",  "IBackingStore", "IBackedModel", "BackingStoreFactorySingleton" ),
+            new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.QueryParameter) && !string.IsNullOrEmpty(prop.SerializationName),
+                "Microsoft.Kiota.Abstractions", "QueryParameterAttribute"),
         };
         protected static void CapitalizeNamespacesFirstLetters(CodeElement current) {
             if(current is CodeNamespace currentNamespace)
