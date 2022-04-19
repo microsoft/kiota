@@ -441,8 +441,6 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("if c.Q != nil", result);
         Assert.Contains("requestInfo.AddQueryParameters(", result);
         Assert.Contains("requestInfo.AddRequestOptions(", result);
-        Assert.Contains("err != nil", result);
-        Assert.Contains("return nil, err", result);
         Assert.Contains("requestInfo.SetContentFromParsable(m.requestAdapter", result);
         Assert.Contains("return requestInfo, nil", result);
         AssertExtensions.CurlyBracesAreClosed(result);
