@@ -327,8 +327,6 @@ public class GoRefiner : CommonLanguageRefiner
                 currentProperty.Type.IsNullable = false;
                 currentProperty.Type.Name = "RequestOption";
                 currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
-            } else if(currentProperty.IsOfKind(CodePropertyKind.QueryParameter) && currentProperty.Parent is CodeClass parentClass) {
-                currentProperty.Type.Name = $"{parentClass.Name}{currentProperty.Type.Name}";
             } else
                 CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
         }
