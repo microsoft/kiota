@@ -39,7 +39,7 @@ namespace Kiota.Builder.Writers.Go {
                     WriteGeneratorMethodCall(codeElement, requestParams, writer, "return ");
                     break;
                 case CodeMethodKind.RequestGenerator when !codeElement.IsOverload:
-                    WriteRequestGeneratorBody(codeElement, requestParams, writer, parentClass, returnType);
+                    WriteRequestGeneratorBody(codeElement, requestParams, writer, parentClass);
                 break;
                 case CodeMethodKind.RequestExecutor when !codeElement.IsOverload:
                     WriteRequestExecutorBody(codeElement, requestParams, returnType, parentClass, writer);
@@ -419,7 +419,6 @@ namespace Kiota.Builder.Writers.Go {
             writer.WriteLine(template(generatorMethodName, paramsCall));
         }
         private static void WriteExecutorMethodCall(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer) {
-            var responseHandlerParam = codeElement.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.ResponseHandler));
             WriteMethodCall(codeElement, requestParams, writer, CodeMethodKind.RequestExecutor, (name, paramsCall) => 
                 $"return m.{name}({paramsCall});",
                 1
@@ -431,7 +430,7 @@ namespace Kiota.Builder.Writers.Go {
             );
         }
         private const string RequestInfoVarName = "requestInfo";
-        private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, CodeClass parentClass, string returnType) {
+        private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, LanguageWriter writer, CodeClass parentClass) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
             
             var urlTemplateParamsProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
