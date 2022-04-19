@@ -161,7 +161,7 @@ class JsonParseNode implements ParseNode
     }
 
     /**
-     * @inheritDoc
+     * @return array<Enum|null>|null
      */
     public function getCollectionOfEnumValues(string $targetClass): ?array {
         if ($this->jsonNode === null) {
