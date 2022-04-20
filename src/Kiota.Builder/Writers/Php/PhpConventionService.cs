@@ -91,7 +91,7 @@ namespace Kiota.Builder.Writers.Php
             {
                 CodeParameterKind.RequestAdapter => $"RequestAdapter {GetParameterName(parameter)}",
                 CodeParameterKind.ResponseHandler => $"ResponseHandler {GetParameterName(parameter)}",
-                CodeParameterKind.RequestConfiguration => $"{parameter.Type.Name.ToFirstCharacterUpperCase()} {GetParameterName(parameter)}",
+                CodeParameterKind.RequestConfiguration => $"{parameter!.Type.Name.ToFirstCharacterUpperCase()} {GetParameterName(parameter)}",
                 CodeParameterKind.Serializer => $"SerializationWriter {GetParameterName(parameter)}",
                 CodeParameterKind.BackingStore => $"BackingStore {GetParameterName(parameter)}",
                 _ => $"{typeString} {GetParameterName(parameter)}"

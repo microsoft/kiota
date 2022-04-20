@@ -34,7 +34,7 @@ public class GoLanguageRefinerTests {
             },
         };
         executorMethod.AddParameter(executorParameter);
-        var property = model.AddProperty(new CodeProperty{
+        var property = model.AddProperty(new CodeProperty {
             Name = "someProp",
             Kind = CodePropertyKind.Custom,
             Type = new CodeType {
@@ -69,10 +69,10 @@ public class GoLanguageRefinerTests {
             Kind = CodeClassKind.RequestBuilder,
         }).First();
         var responseModel = requestBuilder.AddInnerClass(new CodeClass {
-                Name = "someresponsemodel",
-                Kind = CodeClassKind.Model,
+            Name = "someresponsemodel",
+            Kind = CodeClassKind.Model,
         }).First();
-        
+
 
         var executorMethod = requestBuilder.AddMethod(new CodeMethod {
             Name = "Execute",
@@ -148,9 +148,9 @@ public class GoLanguageRefinerTests {
             },
         }).First();
         requestExecutor.AddErrorMapping("4XX", new CodeType {
-                        Name = "Error4XX",
-                        TypeDefinition = errorClass,
-                    });
+            Name = "Error4XX",
+            TypeDefinition = errorClass,
+        });
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
 
         Assert.Contains("Error4XX", requestBuilder.StartBlock.Usings.Select(x => x.Declaration?.Name));
@@ -178,9 +178,9 @@ public class GoLanguageRefinerTests {
             },
         }).First();
         factoryMethod.AddDiscriminatorMapping("ns.childmodel", new CodeType {
-                        Name = "childModel",
-                        TypeDefinition = childModel,
-                    });
+            Name = "childModel",
+            TypeDefinition = childModel,
+        });
         Assert.Empty(parentModel.StartBlock.Usings);
         root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
@@ -210,9 +210,9 @@ public class GoLanguageRefinerTests {
             },
         }).First();
         factoryMethod.AddDiscriminatorMapping("ns.childmodel", new CodeType {
-                        Name = "childModel",
-                        TypeDefinition = childModel,
-                    });
+            Name = "childModel",
+            TypeDefinition = childModel,
+        });
         var requestBuilderClass = root.AddClass(new CodeClass {
             Name = "somerequestbuilder",
             Kind = CodeClassKind.RequestBuilder,
@@ -400,25 +400,25 @@ public class GoLanguageRefinerTests {
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        model.AddProperty(new () {
+        model.AddProperty(new() {
             Name = "core",
             Kind = CodePropertyKind.RequestAdapter,
             Type = new CodeType {
                 Name = requestAdapterDefaultName
             }
-        }, new () {
+        }, new() {
             Name = "someDate",
             Kind = CodePropertyKind.Custom,
             Type = new CodeType {
                 Name = dateTimeOffsetDefaultName,
             }
-        }, new () {
+        }, new() {
             Name = "additionalData",
             Kind = CodePropertyKind.AdditionalData,
             Type = new CodeType {
                 Name = additionalDataDefaultName
             }
-        },new () {
+        }, new() {
             Name = "headers",
             Kind = CodePropertyKind.Headers,
             Type = new CodeType {
@@ -432,7 +432,7 @@ public class GoLanguageRefinerTests {
             ReturnType = new CodeType {
                 Name = "string"
             }
-        }, new () {
+        }, new() {
             Name = "deserializeFields",
             ReturnType = new CodeType {
                 Name = deserializeDefaultName,
@@ -521,7 +521,7 @@ public class GoLanguageRefinerTests {
             },
             Kind = CodePropertyKind.Custom
         }).First();
-        mainModel.AddMethod(new CodeMethod{
+        mainModel.AddMethod(new CodeMethod {
             Name = $"get{property.Name}",
             Kind = CodeMethodKind.Getter,
             ReturnType = new CodeType {
@@ -530,7 +530,7 @@ public class GoLanguageRefinerTests {
             },
             AccessedProperty = property
         });
-        var setter = mainModel.AddMethod(new CodeMethod{
+        var setter = mainModel.AddMethod(new CodeMethod {
             Name = $"get{property.Name}",
             Kind = CodeMethodKind.Getter,
             ReturnType = new CodeType {
@@ -539,7 +539,7 @@ public class GoLanguageRefinerTests {
             },
             AccessedProperty = property
         }).First();
-        setter.AddParameter(new CodeParameter{
+        setter.AddParameter(new CodeParameter {
             Name = "value",
             Type = new CodeType {
                 Name = "propertyModel",
@@ -549,6 +549,69 @@ public class GoLanguageRefinerTests {
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         Assert.Empty(mainModel.Properties);
         Assert.Empty(mainModel.Methods.Where(x => x.IsAccessor));
+    }
+    [Fact]
+    public void AddsMethodsOverloads()
+    {
+        var builder = root.AddClass(new CodeClass
+        {
+            Name = "model",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
+        var executor = builder.AddMethod(new CodeMethod
+        {
+            Name = "executor",
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        executor.AddParameter(new()
+        {
+            Name = "handler",
+            Kind = CodeParameterKind.ResponseHandler,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        },
+        new()
+        {
+            Name = "config",
+            Kind = CodeParameterKind.RequestConfiguration,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        },
+        new()
+        {
+            Name = "body",
+            Kind = CodeParameterKind.RequestBody,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        var generator = builder.AddMethod(new CodeMethod
+        {
+            Name = "generator",
+            Kind = CodeMethodKind.RequestGenerator,
+            ReturnType = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        generator.AddParameter(executor.Parameters.Where(x => !x.IsOfKind(CodeParameterKind.ResponseHandler)).ToArray());
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        var childMethods = builder.Methods;
+        Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count() == 2);//body + query config
+        Assert.Contains(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count() == 1);//only the body
+        Assert.Contains(childMethods, x => !x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor) && x.Parameters.Count() == 3);// body + query + response handler
+        Assert.Contains(childMethods, x => !x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator) && x.Parameters.Count() == 2);// body + query config
+        Assert.Equal(4, childMethods.Count());
+        Assert.Equal(2, childMethods.Count(x => x.IsOverload));
     }
     #endregion
 }

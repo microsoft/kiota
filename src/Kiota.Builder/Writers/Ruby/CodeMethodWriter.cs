@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -189,7 +189,7 @@ namespace Kiota.Builder.Writers.Ruby {
             {
                 var queryString = requestParams.QueryParameters;
                 var headers = requestParams.Headers;
-                var options = requestParams.Options; //TODO options
+                // TODO options handling => var options = requestParams.Options; 
                 if(headers != null)
                     writer.WriteLine($"request_info.set_headers_from_raw_object({requestParams.requestConfiguration.Name}.{headers.Name.ToSnakeCase()})");
                 if(queryString != null)
