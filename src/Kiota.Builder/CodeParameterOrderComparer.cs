@@ -20,7 +20,7 @@ public class CodeParameterOrderComparer : IComparer<CodeParameter>
             CodeParameterKind.RawUrl => 2,
             CodeParameterKind.RequestAdapter => 3,
             CodeParameterKind.Path => 4,
-            CodeParameterKind.RequestConfiguration => 4,
+            CodeParameterKind.RequestConfiguration => 5,
             CodeParameterKind.RequestBody => 6,
             CodeParameterKind.ResponseHandler => 7,
             CodeParameterKind.Serializer => 8,
