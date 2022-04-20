@@ -235,9 +235,8 @@ namespace Kiota.Builder.Writers.Php
             var additionalDataProperty = parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData).FirstOrDefault();
             var writerParameter = codeMethod.Parameters.FirstOrDefault(x => x.Kind == CodeParameterKind.Serializer);
             var writerParameterName = conventions.GetParameterName(writerParameter);
-            var implementsParsable = parentClass.StartBlock != null &&
-                                     parentClass.StartBlock.Implements.Any(x =>
-                                         x.IsExternal && x.Name.Equals("Parsable"));
+            var implementsParsable = parentClass.StartBlock?.Inherits?.TypeDefinition is CodeClass codeClass &&
+                                     codeClass.IsOfKind(CodeClassKind.Model);
             if(inherits && implementsParsable)
                 writer.WriteLine($"parent::serialize({writerParameterName});");
             var customProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
@@ -385,9 +384,10 @@ namespace Kiota.Builder.Writers.Php
         private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer, CodeMethod method) {
             var inherits = parentClass.StartBlock?.Inherits != null;
             var fieldToSerialize = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom);
-            var canCallParent = inherits && parentClass.StartBlock != null &&
-                                parentClass.StartBlock.Implements.Any(x => x.IsExternal && x.Name.Equals("Parsable"));
-            var currentObjectName = "$currentObject";
+            var implementsParsable = parentClass.StartBlock?.Inherits?.TypeDefinition is CodeClass codeClass &&
+                                     codeClass.IsOfKind(CodeClassKind.Model);
+            var canCallParent = inherits && parentClass.StartBlock != null && implementsParsable;
+            var currentObjectName = "$o";
             writer.WriteLine($"{currentObjectName} = $this;");
             writer.WriteLine($"return {(canCallParent ? "array_merge(parent::getFieldDeserializers()," : string.Empty)} [");
             if(fieldToSerialize.Any()) {
@@ -454,12 +454,12 @@ namespace Kiota.Builder.Writers.Php
                 ? $", array({returnType}::class, '{CreateDiscriminatorMethodName}')"
                 : string.Empty;
             var returnWithCustomType =
-                !returnsVoid && !string.IsNullOrEmpty(returnTypeFactory) && conventions.CustomTypes.Contains(returnType)
+                !returnsVoid && string.IsNullOrEmpty(returnTypeFactory) && conventions.CustomTypes.Contains(returnType)
                     ? $", {returnType}::class"
                     : returnTypeFactory;
             var finalReturn = string.IsNullOrEmpty(returnWithCustomType) && !returnsVoid
                 ? $", '{returnType}'"
-                : returnTypeFactory;
+                : returnWithCustomType;
             if (codeElement.Parameters.Any(x => x.IsOfKind(CodeParameterKind.ResponseHandler)))
             {
                 writer.WriteLine(
