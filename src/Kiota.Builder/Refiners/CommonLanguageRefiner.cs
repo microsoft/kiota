@@ -469,13 +469,27 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName, string queryParametersBaseClassName = "QueryParametersBase", bool addToParentNamespace = false) {
         if(current is CodeClass currentClass) {
             var parentNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
-            foreach(var innerClass in currentClass
+            var innerClasses = currentClass
                                     .Methods
                                     .SelectMany(x => x.Parameters)
-                                    .Where(x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.RequestConfiguration))
+                                    .Where(x => x.Type.ActionOf && (x.IsOfKind(CodeParameterKind.RequestConfiguration)))
                                     .SelectMany(x => x.Type.AllTypes)
                                     .Select(x => x.TypeDefinition)
-                                    .OfType<CodeClass>()) {
+                                    .OfType<CodeClass>();
+
+            // ensure we do not miss out the types present in request configuration objects i.e. the query parameters
+            var nestedQueryParameters = innerClasses
+                                    .SelectMany( x => x.Properties)
+                                    .Where(x => x.IsOfKind(CodePropertyKind.QueryParameters))
+                                    .SelectMany(x => x.Type.AllTypes)
+                                    .Select(x => x.TypeDefinition)
+                                    .OfType<CodeClass>();
+
+            var nestedClasses = new List<CodeClass>();
+            nestedClasses.AddRange(innerClasses);
+            nestedClasses.AddRange(nestedQueryParameters);
+
+            foreach (var innerClass in nestedClasses) {
                 var originalClassName = innerClass.Name;
                 if(prefixClassNameWithParentName && !innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase))
                     innerClass.Name = $"{currentClass.Name}{innerClass.Name}";
