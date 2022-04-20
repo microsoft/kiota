@@ -9,7 +9,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     public TypeScriptRefiner(GenerationConfiguration configuration) : base(configuration) {}
     public override void Refine(CodeNamespace generatedCode)
     {
-        AddDefaultImports(generatedCode, defaultUsingEvaluators);
         ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
         RemoveCancellationParameter(generatedCode);
         CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
@@ -18,6 +17,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             true, 
             string.Empty,
             true);
+        // `AddInnerClasses` will have inner classes moved to their own files, so  we add the imports after so that the files don't miss anything.
+        // This is because imports are added at the file level so nested classes would potentially use the higher level imports.
+        AddDefaultImports(generatedCode, defaultUsingEvaluators);
         DisableActionOf(generatedCode, 
             CodeParameterKind.RequestConfiguration);
         AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
@@ -119,6 +121,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = new AdditionalUsingEvaluator[] { 
         new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             AbstractionsPackageName, "RequestAdapter"),
+        new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Options),
+            AbstractionsPackageName, "RequestOption"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestGenerator),
             AbstractionsPackageName, "HttpMethod", "RequestInformation", "RequestOption"),
         new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
