@@ -106,7 +106,7 @@ namespace Kiota.Builder.Tests.Writers.Php
                 ReturnType = new CodeType()
                 {
                     IsExternal = true,
-                    Name = "returnType"
+                    Name = "StreamInterface"
                 },
                 Description = "This will send a POST request",
                 Kind = CodeMethodKind.RequestExecutor
@@ -134,7 +134,18 @@ namespace Kiota.Builder.Tests.Writers.Php
             };
             codeClass.AddMethod(codeMethod);
             codeClass.AddMethod(codeMethodRequestGenerator);
-            
+            var error4XX = root.AddClass(new CodeClass{
+                Name = "Error4XX",
+            }).First();
+            var error5XX = root.AddClass(new CodeClass{
+                Name = "Error5XX",
+            }).First();
+            var error401 = root.AddClass(new CodeClass{
+                Name = "Error401",
+            }).First();
+            codeMethod.AddErrorMapping("4XX", new CodeType {Name = "Error4XX", TypeDefinition = error4XX});
+            codeMethod.AddErrorMapping("5XX", new CodeType {Name = "Error5XX", TypeDefinition = error5XX});
+            codeMethod.AddErrorMapping("403", new CodeType {Name = "Error403", TypeDefinition = error401});
             _codeMethodWriter.WriteCodeElement(codeMethod, writer);
             var result = tw.ToString();
 
@@ -142,6 +153,8 @@ namespace Kiota.Builder.Tests.Writers.Php
             Assert.Contains("$requestInfo = $this->createPostRequestInformation();", result);
             Assert.Contains("RejectedPromise", result);
             Assert.Contains("catch(Exception $ex)", result);
+            Assert.Contains("'403' => array(Error403::class, 'createFromDiscriminatorValue')", result);
+            Assert.Contains("return $this->requestAdapter->sendPrimitiveAsync($requestInfo, StreamInterface::class, $responseHandler, $errorMappings);", result);
         }
         
         [Fact]
