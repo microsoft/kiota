@@ -189,7 +189,7 @@ namespace Kiota.Builder.Writers.Ruby {
             {
                 var queryString = requestParams.QueryParameters;
                 var headers = requestParams.Headers;
-                // TODO options handling => var options = requestParams.Options; 
+                // TODO add options handling
                 if(headers != null)
                     writer.WriteLine($"request_info.set_headers_from_raw_object({requestParams.requestConfiguration.Name}.{headers.Name.ToSnakeCase()})");
                 if(queryString != null)
