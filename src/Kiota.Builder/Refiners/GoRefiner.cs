@@ -114,13 +114,11 @@ public class GoRefiner : CommonLanguageRefiner
                 var originalExecutorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor)).ToList();
                 var executorMethodsToAdd = originalExecutorMethods
                                     .Select(x => GetMethodClone(x, CodeParameterKind.ResponseHandler, CodeParameterKind.ResponseHandler))
-                                    .Where(x => x != null)
-                                    .ToArray();
+                                    .Where(x => x != null);
                 var originalGeneratorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestGenerator)).ToList();
                 var generatorMethodsToAdd = originalGeneratorMethods
                                     .Select(x => GetMethodClone(x, CodeParameterKind.RequestConfiguration, CodeParameterKind.ResponseHandler))
-                                    .Where(x => x != null)
-                                    .ToArray();
+                                    .Where(x => x != null);
                 originalExecutorMethods.ForEach(x => x.Name = $"{x.Name}With{nameof(CodeParameterKind.ResponseHandler)}");
                 originalGeneratorMethods.ForEach(x => x.Name = $"{x.Name}With{nameof(CodeParameterKind.RequestConfiguration)}");
                 if(executorMethodsToAdd.Any() || generatorMethodsToAdd.Any())
