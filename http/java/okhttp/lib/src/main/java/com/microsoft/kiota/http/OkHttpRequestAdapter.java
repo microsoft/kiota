@@ -313,7 +313,8 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
                                 new RequestBody() {
                                     @Override
                                     public MediaType contentType() {
-                                        final String contentType = requestInfo.getRequestHeaders().containsKey(contentTypeHeaderKey) ? requestInfo.getRequestHeaders().get(contentTypeHeaderKey) : "";
+                                        final Map<String, String> requestHeaders = requestInfo.getRequestHeaders();
+                                        final String contentType = requestHeaders.containsKey(contentTypeHeaderKey) ? requestHeaders.get(contentTypeHeaderKey) : "";
                                         if(contentType.isEmpty()) {
                                             return null;
                                         } else {
