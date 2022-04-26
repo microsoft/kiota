@@ -1,20 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
-using Kiota.Builder.Writers;
-using Kiota.Builder.Writers.Php;
 using Xunit;
-
 namespace Kiota.Builder.Writers.Php.Tests
 {
     public class CodeMethodWriterTests: IDisposable
     {
         private const string DefaultPath = "./";
         private const string DefaultName = "name";
-        private readonly StringWriter tw;
-        private readonly LanguageWriter writer;
+        private readonly StringWriter stringWriter;
+        private readonly LanguageWriter languageWriter;
         private readonly CodeMethod method;
         private readonly CodeClass parentClass;
         private const string MethodName = "methodName";
@@ -24,13 +21,13 @@ namespace Kiota.Builder.Writers.Php.Tests
         private const string ParamName = "paramName";
         private readonly CodeMethodWriter _codeMethodWriter;
         private readonly ILanguageRefiner _refiner;
-        private readonly CodeNamespace root;
+        private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
 
         public CodeMethodWriterTests()
         {
-            writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.PHP, DefaultPath, DefaultName);
-            tw = new StringWriter();
-            writer.SetTextWriter(tw);
+            languageWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.PHP, DefaultPath, DefaultName);
+            stringWriter = new StringWriter();
+            languageWriter.SetTextWriter(stringWriter);
             root = CodeNamespace.InitRootNamespace();
             root.Name = "Microsoft\\Graph";
             _codeMethodWriter = new CodeMethodWriter(new PhpConventionService());
@@ -52,9 +49,8 @@ namespace Kiota.Builder.Writers.Php.Tests
         [Fact]
         public void WriteABasicMethod()
         {
-            var declaration = method;
-            _codeMethodWriter.WriteCodeElement(declaration, writer);
-            var result = tw.ToString();
+            _codeMethodWriter.WriteCodeElement(method, languageWriter);
+            var result = stringWriter.ToString();
             Assert.Contains("public function", result);
         }
 
@@ -71,37 +67,31 @@ namespace Kiota.Builder.Writers.Php.Tests
                 },
                 Parent = parentClass
             };
-            _codeMethodWriter.WriteCodeElement(codeMethod, writer);
-            var result = tw.ToString();
+            _codeMethodWriter.WriteCodeElement(codeMethod, languageWriter);
+            var result = stringWriter.ToString();
             
             Assert.DoesNotContain("/*", result);
         }
 
         public void Dispose()
         {
-            tw?.Dispose();
+            stringWriter?.Dispose();
             GC.SuppressFinalize(this);
         }
 
         [Fact]
         public void WriteRequestExecutor()
         {
-            var codeClass = parentClass;
-            codeClass.AddProperty(new CodeProperty()
+            CodeProperty[] properties =
             {
-                Kind = CodePropertyKind.RequestAdapter, Name = "requestAdapter"
-            });
-            codeClass.AddProperty(new CodeProperty()
-            {
-                Kind = CodePropertyKind.UrlTemplate, Name = "urlTemplate"
-            });
-            codeClass.AddProperty(new CodeProperty()
-            {
-                Kind = CodePropertyKind.PathParameters, Name = "pathParameters"
-            });
+                new CodeProperty { Kind = CodePropertyKind.RequestAdapter, Name = "requestAdapter" },
+                new CodeProperty { Kind = CodePropertyKind.UrlTemplate, Name = "urlTemplate" },
+                new CodeProperty { Kind = CodePropertyKind.PathParameters, Name = "pathParameters" },
+            };
+            parentClass.AddProperty(properties);
             var codeMethod = new CodeMethod()
             {
-                Name = "get",
+                Name = "post",
                 HttpMethod = HttpMethod.Post,
                 ReturnType = new CodeType()
                 {
@@ -132,8 +122,8 @@ namespace Kiota.Builder.Writers.Php.Tests
                     Name = "RequestInformation"
                 }
             };
-            codeClass.AddMethod(codeMethod);
-            codeClass.AddMethod(codeMethodRequestGenerator);
+            parentClass.AddMethod(codeMethod);
+            parentClass.AddMethod(codeMethodRequestGenerator);
             var error4XX = root.AddClass(new CodeClass{
                 Name = "Error4XX",
             }).First();
@@ -146,8 +136,8 @@ namespace Kiota.Builder.Writers.Php.Tests
             codeMethod.AddErrorMapping("4XX", new CodeType {Name = "Error4XX", TypeDefinition = error4XX});
             codeMethod.AddErrorMapping("5XX", new CodeType {Name = "Error5XX", TypeDefinition = error5XX});
             codeMethod.AddErrorMapping("403", new CodeType {Name = "Error403", TypeDefinition = error401});
-            _codeMethodWriter.WriteCodeElement(codeMethod, writer);
-            var result = tw.ToString();
+            _codeMethodWriter.WriteCodeElement(codeMethod, languageWriter);
+            var result = stringWriter.ToString();
 
             Assert.Contains("Promise", result);
             Assert.Contains("$requestInfo = $this->createPostRequestInformation();", result);
@@ -157,127 +147,68 @@ namespace Kiota.Builder.Writers.Php.Tests
             Assert.Contains("return $this->requestAdapter->sendPrimitiveAsync($requestInfo, StreamInterface::class, $responseHandler, $errorMappings);", result);
         }
         
-        [Fact]
-        public void WriteSerializer()
+        public static IEnumerable<object[]> SerializerProperties => new List<object[]>
         {
-            var classHolding = parentClass;
-            classHolding.Kind = CodeClassKind.Model;
-            classHolding.AddProperty(
-                new CodeProperty()
+            new object[]
+            {
+                new CodeProperty { Name = "name", Type = new CodeType { Name = "string" }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
+                "$writer->writeStringValue('name', $this->name);"
+            },
+            new object[]
+            {
+                new CodeProperty { Name = "email", Type = new CodeType
                 {
-                    Type = new CodeType()
-                    {
-                        Name = "string"
-                    },
-                    Name = "name",
-                    Access = AccessModifier.Private,
-                    Kind = CodePropertyKind.Custom
-                });
-            classHolding.AddProperty(
-                new CodeProperty()
+                    Name = "EmailAddress", TypeDefinition = new CodeClass { Name = "EmailAddress", Kind = CodeClassKind.Model}
+                }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
+                "$writer->writeObjectValue('email', $this->email);"
+            },
+            new object[]
+            {
+                new CodeProperty { Name = "status", Type = new CodeType { Name = "Status", TypeDefinition = new CodeEnum
                 {
-                    Name = "email",
-                    Access = AccessModifier.Private,
-                    Type = new CodeType()
-                    {
-                        Name = "EmailAddress",
-                        TypeDefinition = new CodeClass()
-                        {
-                            Name = "EmailAddress",
-                            Kind = CodeClassKind.Model
-                        }
-                    },
-                    Kind = CodePropertyKind.Custom
-                });
-            classHolding.AddProperty(new CodeProperty
+                    Name = "Status", Description = "Status Enum"
+                }}, Access = AccessModifier.Private },
+                "$writer->writeEnumValue('status', $this->status);"
+            },
+            new object[]
             {
-                Name = "status",
-                Access = AccessModifier.Private,
-                Type = new CodeType
+                new CodeProperty { Name = "architectures", Type = new CodeType
                 {
-                    Name = "Status",
-                    TypeDefinition = new CodeEnum {Name = "Status", Description = "Status Enum"}
-                }
-            });
-            classHolding.AddProperty(new CodeProperty
+                    Name = "Architecture", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array, TypeDefinition = new CodeEnum { Name = "Architecture", Description = "Arch Enum, accepts x64, x86, hybrid"}
+                }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
+                "$writer->writeCollectionOfEnumValues('architectures', $this->architectures);"
+            },
+            new object[] { new CodeProperty { Name = "emails", Type = new CodeType
             {
-                Name = "architectures",
-                Access = AccessModifier.Private,
-                Type = new CodeType
-                {
-                    CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-                    Name = "Architecture",
-                    TypeDefinition = new CodeEnum {Name = "Architecture", Description = "Arch Enum, accepts x64, x86, hybrid"}
-                }
-            });
-            classHolding.AddProperty(new CodeProperty
-            {
-                Name = "age", Access = AccessModifier.Private, Type = new CodeType {Name = "int"}
-            });
-            classHolding.AddProperty(new CodeProperty
-            {
-                Name = "height", Access = AccessModifier.Private, Type = new CodeType {Name = "float"}
-            });
-            classHolding.AddProperty(new CodeProperty
-            {
-                Name = "slept", Access = AccessModifier.Private, Type = new CodeType {Name = "bool"}
-            });
-            classHolding.AddProperty(new CodeProperty
-            {
-                Name = "emails",
-                Access = AccessModifier.Private,
-                Type = new CodeType
-                {
-                    CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-                    Name = "Email", TypeDefinition = new CodeClass {Name = "Email", Kind = CodeClassKind.Model}
-                }
-            });
-            classHolding.AddProperty(new CodeProperty
-            {
-                Name = "temperatures",
-                Access = AccessModifier.Private,
-                Type = new CodeType
-                {
-                    CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-                    Name = "int"
-                }
-            });
-            classHolding.AddProperty(new CodeProperty
-            {
-                Name = "dateValue",
-                Access = AccessModifier.Private,
-                Type = new CodeType
-                {
-                    Name = "DateTime"
-                }
-            });
-            classHolding.AddProperty(new CodeProperty
-            {
-                Name = "duration",
-                Access = AccessModifier.Private,
-                Type = new CodeType
-                {
-                    Name = "duration"
-                }
-            });
-            classHolding.AddProperty(new CodeProperty
-            {
-                Name = "stream",
-                Access = AccessModifier.Private,
-                Type = new CodeType
-                {
-                    Name = "streaminterface"
-                }
-            });
-            classHolding.AddProperty(new CodeProperty
-            {
-                Name = "other",
-                Access = AccessModifier.Private,
-                Type = new CodeType
-                {
-                    Name = "other"
-                }
-            });
+                Name = "Email", TypeDefinition = new CodeClass { Name = "Email", Kind = CodeClassKind.Model}, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array }, Access = AccessModifier.Private},
+                "$writer->writeCollectionOfObjectValues('emails', $this->emails);"
+            },
+            new object[] { new CodeProperty { Name = "temperatures", Type = new CodeType { Name = "int", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array }, Access = AccessModifier.Private},
+                "$writer->writeCollectionOfPrimitiveValues('temperatures', $this->temperatures);"
+            },
+            // Primitive int tests
+            new object[] { new CodeProperty { Name = "age", Type = new CodeType { Name = "integer" }, Access = AccessModifier.Private}, "$writer->writeIntegerValue('age', $this->age);" },
+            new object[] { new CodeProperty { Name = "age", Type = new CodeType { Name = "int32" }, Access = AccessModifier.Private}, "$writer->writeIntegerValue('age', $this->age);" },
+            new object[] { new CodeProperty { Name = "age", Type = new CodeType { Name = "int64" }, Access = AccessModifier.Private}, "$writer->writeIntegerValue('age', $this->age);" },
+            new object[] { new CodeProperty { Name = "age", Type = new CodeType { Name = "sbyte" }, Access = AccessModifier.Private}, "$writer->writeIntegerValue('age', $this->age);" },
+            // Float tests
+            new object[] { new CodeProperty { Name = "height", Type = new CodeType { Name = "float" }, Access = AccessModifier.Private}, "$writer->writeFloatValue('height', $this->height);" },
+            new object[] { new CodeProperty { Name = "height", Type = new CodeType { Name = "double" }, Access = AccessModifier.Private}, "$writer->writeFloatValue('height', $this->height);" },
+            // Bool tests
+            new object[] { new CodeProperty { Name = "married", Type = new CodeType { Name = "boolean" }, Access = AccessModifier.Private}, "$writer->writeBooleanValue('married', $this->married);" },
+            new object[] { new CodeProperty { Name = "slept", Type = new CodeType { Name = "bool" }, Access = AccessModifier.Private}, "$writer->writeBooleanValue('slept', $this->slept);" },
+            // Decimal and byte tests
+            new object[] { new CodeProperty { Name = "money", Type = new CodeType { Name = "decimal" }, Access = AccessModifier.Private}, "$writer->writeStringValue('money', $this->money);" },
+            new object[] { new CodeProperty { Name = "money", Type = new CodeType { Name = "byte" }, Access = AccessModifier.Private}, "$writer->writeStringValue('money', $this->money);" },
+            new object[] { new CodeProperty { Name = "dateValue", Type = new CodeType { Name = "DateTime" }, Access = AccessModifier.Private}, "$writer->writeDateTimeValue('dateValue', $this->dateValue);" },
+            new object[] { new CodeProperty { Name = "duration", Type = new CodeType { Name = "duration" }, Access = AccessModifier.Private}, "$writer->writeDateIntervalValue('duration', $this->duration);" },
+            new object[] { new CodeProperty { Name = "stream", Type = new CodeType { Name = "binary" }, Access = AccessModifier.Private}, "$writer->writeBinaryContent('stream', $this->stream);" },
+        };
+        
+        [Theory]
+        [MemberData(nameof(SerializerProperties))]
+        public void WriteSerializer(CodeProperty property, string expected)
+        {
             var codeMethod = new CodeMethod()
             {
                 Name = "serialize",
@@ -296,28 +227,20 @@ namespace Kiota.Builder.Writers.Php.Tests
                     Name = "SerializationWriter"
                 }
             });
-            classHolding.AddMethod(codeMethod);
-            _codeMethodWriter.WriteCodeElement(codeMethod, writer);
-            var result = tw.ToString();
-
-            Assert.Contains("public function serialize(", result);
-            Assert.Contains("$writer->writeStringValue('name', $this->name);", result);
-            Assert.Contains("$writer->writeObjectValue('email', $this->email);", result);
-            Assert.Contains("$writer->writeIntegerValue('age', $this->age", result);
-            Assert.Contains("$writer->writeCollectionOfEnumValues('architectures', $this->architectures);",result);
-            Assert.Contains("$writer->writeCollectionOfObjectValues('emails', $this->emails);", result);
-            Assert.Contains("$writer->writeFloatValue('height', $this->height);", result);
-            Assert.Contains("$writer->writeBooleanValue('slept', $this->slept);", result);
-            Assert.Contains("$writer->writeEnumValue('status', $this->status);", result);
-            Assert.Contains("$writer->writeCollectionOfPrimitiveValues('temperatures', $this->temperatures);", result);
+            parentClass.AddMethod(codeMethod);
+            parentClass.AddProperty(property);
+            parentClass.Kind = CodeClassKind.Model;
+            _codeMethodWriter.WriteCodeElement(codeMethod, languageWriter);
+            var result = stringWriter.ToString();
+            Assert.Contains("public function serialize(SerializationWriter $writer)", result);
+            Assert.Contains(expected, stringWriter.ToString());
         }
 
         [Fact]
         public void WriteRequestGenerator()
         {
-            var methodClass = parentClass;
-            methodClass.Kind = CodeClassKind.RequestBuilder;
-            methodClass.AddProperty(
+            parentClass.Kind = CodeClassKind.RequestBuilder;
+            parentClass.AddProperty(
                 new CodeProperty()
                 {
                     Name = "urlTemplate",
@@ -407,10 +330,10 @@ namespace Kiota.Builder.Writers.Php.Tests
                 });
 
             
-            methodClass.AddMethod(codeMethod);
+            parentClass.AddMethod(codeMethod);
             
-            _codeMethodWriter.WriteCodeElement(codeMethod, writer);
-            var result = tw.ToString();
+            _codeMethodWriter.WriteCodeElement(codeMethod, languageWriter);
+            var result = stringWriter.ToString();
 
             Assert.Contains(
                 "public function createPostRequestInformation(Message $body, ?RequestConfig $requestConfiguration = null): RequestInformation",
@@ -426,9 +349,7 @@ namespace Kiota.Builder.Writers.Php.Tests
         [Fact]
         public void WriteIndexerBody()
         {
-            var currentClass = parentClass;
-
-            currentClass.AddProperty(
+            parentClass.AddProperty(
                 new CodeProperty()
                 {
                     Name = "pathParameters",
@@ -503,181 +424,75 @@ namespace Kiota.Builder.Writers.Php.Tests
                 Kind = CodeParameterKind.Path
             });
 
-            currentClass.AddMethod(codeMethod);
+            parentClass.AddMethod(codeMethod);
             
             _refiner.Refine(parentClass.Parent as CodeNamespace);
-            writer.Write(codeMethod);
-            var result = tw.ToString();
+            languageWriter.Write(codeMethod);
+            var result = stringWriter.ToString();
 
             Assert.Contains("$urlTplParams['message_id'] = $id;", result);
             Assert.Contains("public function messageById(string $id): MessageRequestBuilder {", result);
             Assert.Contains("return new MessageRequestBuilder($urlTplParams, $this->requestAdapter);", result);
 
         }
-
-        [Fact]
-        public void WriteDeserializer()
+        
+        public static IEnumerable<object[]> DeserializerProperties => new List<object[]>
         {
-            var currentClass = parentClass;
-            parentClass.AddUsing(
-                new CodeUsing
+            new object[]
             {
-                Name = "SampleUsing",
-                Declaration = new CodeType
-                {
-                    Name = "SampleUsing",
-                    IsExternal = false,
-                    Parent = parentClass.Parent,
-                    TypeDefinition = new CodeClass
-                    {
-                        Description = "Just a class",
-                        Name = "SampleUsing",
-                        Kind = CodeClassKind.Model,
-                        Parent = currentClass.Parent.Parent
-                    }
-                }
+                new CodeProperty { Name = "name", Type = new CodeType { Name = "string" }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
+                "'name' => function (ParseNode $n) use ($o) { $o->setName($n->getStringValue()); },"
             },
-                new CodeUsing
+            new object[]
+            {
+                new CodeProperty { Name = "age", Type = new CodeType { Name = "int32" }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
+                "'age' => function (ParseNode $n) use ($o) { $o->setAge($n->getIntegerValue()); },"
+            },
+            new object[]
+            {
+                new CodeProperty { Name = "height", Type = new CodeType { Name = "double" }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
+                "'height' => function (ParseNode $n) use ($o) { $o->setHeight($n->getFloatValue()); },"
+            },
+            new object[]
+            {
+                new CodeProperty { Name = "height", Type = new CodeType { Name = "decimal" }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
+                "'height' => function (ParseNode $n) use ($o) { $o->setHeight($n->getStringValue()); },"
+            },
+            new object[]
+            {
+                new CodeProperty { Name = "DOB", Type = new CodeType { Name = "DateTimeOffset" }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
+                "'dOB' => function (ParseNode $n) use ($o) { $o->setDOB($n->getDateTimeValue()); },"
+            },
+            new object[]
+            {
+                new CodeProperty { Name = "story", Type = new CodeType { Name = "binary" }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
+                "'story' => function (ParseNode $n) use ($o) { $o->setStory($n->getBinaryContent()); },"
+            },
+            new object[] { new CodeProperty { Name = "users", Type = new CodeType
                 {
-                    Name = "SampleUsing",
-                    Declaration = new CodeType
+                    Name = "EmailAddress", TypeDefinition = new CodeClass
                     {
-                        Name = "SampleUsing",
-                        IsExternal = false,
-                        Parent = parentClass.Parent,
-                        TypeDefinition = new CodeClass
-                        {
-                            Name = "SampleUsing",
-                            Parent = currentClass.Parent.Parent,
-                            Kind = CodeClassKind.Model
-                        }
-                    }
-                });
-            currentClass.Kind = CodeClassKind.Model;
-            currentClass.AddProperty(
-                new CodeProperty()
-                {
-                    Name = "name",
-                    Access = AccessModifier.Private,
-                    Kind = CodePropertyKind.Custom,
-                    Type = new CodeType() {Name = "string"}
-                },
-                new CodeProperty
-                {
-                    Name = "users",
-                    Access = AccessModifier.Private,
-                    Kind = CodePropertyKind.Custom,
-                    Type = new CodeType
-                    {
-                        CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-                        Name = "EmailAddress",
-                        TypeDefinition = new CodeClass
-                        {
-                            Name = "EmailAddress",
-                            Description = "Email",
-                            Kind = CodeClassKind.Model,
-                            Parent = parentClass.Parent,
-                        }
-                    }
-                },
-                new CodeProperty
-                {
-                    Name = "years",
-                    Access = AccessModifier.Private,
-                    Kind = CodePropertyKind.Custom,
-                    Type = new CodeType
-                    {
-                        CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-                        Name = "int"
-                    }
-                },
-                new CodeProperty
-                {
-                    Name = "archs",
-                    Access = AccessModifier.Private,
-                    Kind = CodePropertyKind.Custom,
-                    Type = new CodeType
-                    {
-                        CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
-                        Name = "Arch",
-                        TypeDefinition = new CodeEnum
-                        {
-                            Parent = parentClass,
-                            Name = "Arch"
-                        }
-                    }
-                },
-                new CodeProperty
-                {
-                    Name = "age",
-                    Access = AccessModifier.Private,
-                    Kind = CodePropertyKind.Custom,
-                    Type = new CodeType
-                    {
-                        Name = "int"
-                    }
-                },
-                new CodeProperty
-                {
-                    Name = "height",
-                    Access = AccessModifier.Private,
-                    Kind = CodePropertyKind.Custom,
-                    Type = new CodeType
-                    {
-                        Name = "double"
-                    }
-                },
-                new CodeProperty
-                {
-                    Name = "height2",
-                    Access = AccessModifier.Private,
-                    Kind = CodePropertyKind.Custom,
-                    Type = new CodeType
-                    {
-                        Name = "decimal"
-                    }
-                },
-                new CodeProperty
-                {
-                    Name = "story",
-                    Access = AccessModifier.Private,
-                    Kind = CodePropertyKind.Custom,
-                    Type = new CodeType
-                    {
-                        Name = "StreamInterface"
-                    }
-                },
-                new CodeProperty
-                {
-                    Name = "likes",
-                    Access = AccessModifier.Private,
-                    Kind = CodePropertyKind.Custom,
-                    Type = new CodeType
-                    {
-                        Name = "number"
-                    }
-                },
-                new CodeProperty
-                {
-                    Name = "custom",
-                    Access = AccessModifier.Private,
-                    Kind = CodePropertyKind.Custom,
-                    Type = new CodeType
-                    {
-                        Name = "Custom"
-                    }
-                },
-                new CodeProperty
-                {
-                    Name = "DOB",
-                    Access = AccessModifier.Private,
-                    Type = new CodeType
-                    {
-                        Name = "DateTimeOffset"
-                    }
-                }
-            );
-            
+                        Name = "EmailAddress", Kind = CodeClassKind.Model, Description = "Email", Parent = GetParentClassInStaticContext()
+                    }, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array }, Access = AccessModifier.Private},
+                "'users' => function (ParseNode $n) use ($o) { $o->setUsers($n->getCollectionOfObjectValues(array(EmailAddress::class, 'createFromDiscriminatorValue')));"
+            },
+            new object[] { new CodeProperty { Name = "years", Type = new CodeType { Name = "int", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array }, Access = AccessModifier.Private},
+                "'years' => function (ParseNode $n) use ($o) { $o->setYears($n->getCollectionOfPrimitiveValues())"
+            },
+        };
+        private static CodeClass GetParentClassInStaticContext()
+        {
+            CodeClass parent = new CodeClass() { Name = "parent" };
+            CodeNamespace rootNamespace = CodeNamespace.InitRootNamespace();
+            rootNamespace.AddClass(parent);
+            return parent;
+        }
+        
+        [Theory]
+        [MemberData(nameof(DeserializerProperties))]
+        public void WriteDeserializer(CodeProperty property, string expected)
+        {
+            parentClass.Kind = CodeClassKind.Model;
             var deserializerMethod = new CodeMethod()
             {
                 Name = "getDeserializationFields",
@@ -690,23 +505,11 @@ namespace Kiota.Builder.Writers.Php.Tests
                     Name = "array"
                 }
             };
-            
-            currentClass.AddMethod(deserializerMethod);
+            parentClass.AddMethod(deserializerMethod);
+            parentClass.AddProperty(property);
             _refiner.Refine(parentClass.Parent as CodeNamespace);
-            writer.Write(deserializerMethod);
-            var result = tw.ToString();
-
-            Assert.Contains("'name' => function (ParseNode $n) use ($o) { $o->setName($n->getStringValue()); },", result);
-            Assert.Contains("'story' => function (ParseNode $n) use ($o) { $o->setStory($n->getBinaryContent()); }", result);
-            Assert.Contains(
-                "'years' => function (ParseNode $n) use ($o) { $o->setYears($n->getCollectionOfPrimitiveValues())",
-                result);
-            Assert.Contains(
-                "'users' => function (ParseNode $n) use ($o) { $o->setUsers($n->getCollectionOfObjectValues(array(EmailAddress::class, 'createFromDiscriminatorValue')));",
-                result);
-            Assert.Contains(
-                "'dOB' => function (ParseNode $n) use ($o) { $o->setDOB($n->getDateTimeValue());",
-                result);
+            languageWriter.Write(deserializerMethod);
+            Assert.Contains(expected, stringWriter.ToString());
         }
 
         [Fact]
@@ -752,9 +555,8 @@ namespace Kiota.Builder.Writers.Php.Tests
             currentClass.AddMethod(deserializerMethod);
             
             _refiner.Refine(parentClass.Parent as CodeNamespace);
-            _codeMethodWriter.WriteCodeElement(deserializerMethod, writer);
-            var result = tw.ToString();
-
+            _codeMethodWriter.WriteCodeElement(deserializerMethod, languageWriter);
+            var result = stringWriter.ToString();
             Assert.Contains("array_merge(parent::getFieldDeserializers()", result);
         }
 
@@ -772,8 +574,8 @@ namespace Kiota.Builder.Writers.Php.Tests
             var closingClass = parentClass;
             parentClass.AddMethod(constructor);
             
-            _codeMethodWriter.WriteCodeElement(constructor, writer);
-            var result = tw.ToString();
+            _codeMethodWriter.WriteCodeElement(constructor, languageWriter);
+            var result = stringWriter.ToString();
 
             Assert.Contains("public function __construct", result);
         }
@@ -798,8 +600,8 @@ namespace Kiota.Builder.Writers.Php.Tests
                 Parent = parentClass
             };
 
-            _codeMethodWriter.WriteCodeElement(getter, writer);
-            var result = tw.ToString();
+            _codeMethodWriter.WriteCodeElement(getter, languageWriter);
+            var result = stringWriter.ToString();
             Assert.Contains(": EmailAddress {", result);
             Assert.Contains("public function getEmailAddress", result);
         }
@@ -828,8 +630,8 @@ namespace Kiota.Builder.Writers.Php.Tests
                 Parent = parentClass
             };
 
-            _codeMethodWriter.WriteCodeElement(getter, writer);
-            var result = tw.ToString();
+            _codeMethodWriter.WriteCodeElement(getter, languageWriter);
+            var result = stringWriter.ToString();
             Assert.Contains("public function getAdditionalData(): array", result);
             Assert.Contains("return $this->additionalData;", result);
         }
@@ -862,8 +664,8 @@ namespace Kiota.Builder.Writers.Php.Tests
                     Name = "emailAddress"
                 }
             });
-            _codeMethodWriter.WriteCodeElement(setter, writer);
-            var result = tw.ToString();
+            _codeMethodWriter.WriteCodeElement(setter, languageWriter);
+            var result = stringWriter.ToString();
 
             Assert.Contains("public function setEmailAddress(EmailAddress $value)", result);
             Assert.Contains(": void {", result);
@@ -894,8 +696,8 @@ namespace Kiota.Builder.Writers.Php.Tests
                 }
             });
             
-            _codeMethodWriter.WriteCodeElement(codeMethod, writer);
-            var result = tw.ToString();
+            _codeMethodWriter.WriteCodeElement(codeMethod, languageWriter);
+            var result = stringWriter.ToString();
             Assert.Contains("function messageById(string $id): MessageRequestBuilder {", result);
             Assert.Contains("return new MessageRequestBuilder($this->pathParameters, $this->requestAdapter, $id);", result);
         }
@@ -957,8 +759,8 @@ namespace Kiota.Builder.Writers.Php.Tests
                 }
             });
 
-            writer.Write(method);
-            var result = tw.ToString();
+            languageWriter.Write(method);
+            var result = stringWriter.ToString();
             Assert.Contains("__construct", result);
             Assert.Contains($"$this->{propName} = {defaultValue};", result);
             Assert.Contains("$this->pathParameters = array_merge($this->pathParameters, $urlTplParams);", result);
@@ -1006,8 +808,8 @@ namespace Kiota.Builder.Writers.Php.Tests
                 Optional = false,
             });
             _refiner.Refine(parentClass.Parent as CodeNamespace);
-            writer.Write(factoryMethod);
-            var result = tw.ToString();
+            languageWriter.Write(factoryMethod);
+            var result = stringWriter.ToString();
             Assert.Contains("case 'childModel': return new ChildModel();", result);
             Assert.Contains("$mappingValueNode = ParseNode::getChildNode(\"@odata.type\");", result);
         }
@@ -1046,8 +848,8 @@ namespace Kiota.Builder.Writers.Php.Tests
             codeMethod.SerializerModules = new() {"Microsoft\\Kiota\\Serialization\\Serializer"};
             parentClass.AddMethod(codeMethod);
             _refiner.Refine(parentClass.Parent as CodeNamespace);
-            writer.Write(codeMethod);
-            var result = tw.ToString();
+            languageWriter.Write(codeMethod);
+            var result = stringWriter.ToString();
             Assert.Contains("$this->requestAdapter = $requestAdapter", result);
             Assert.Contains("public function __construct(RequestAdapter $requestAdapter)", result);
         }
