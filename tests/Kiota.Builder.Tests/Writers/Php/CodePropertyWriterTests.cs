@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Kiota.Builder.Refiners;
 using Xunit;
@@ -139,6 +140,56 @@ namespace Kiota.Builder.Writers.Php.Tests
             var result = tw.ToString();
 
             Assert.Contains("private RequestAdapter $adapter;", result);
+        }
+        
+        [Fact]
+        public void WritePrimitiveFloatProperty()
+        {
+            string propName = "property";
+            CodeProperty property = new CodeProperty()
+            {
+                Name = propName,
+                Type = new CodeType()
+                {
+                    Name = "double"
+                },
+                Access = AccessModifier.Protected
+            };
+            parentClass.AddProperty(property);
+            propertyWriter.WriteCodeElement(property, writer);
+            var result = tw.ToString();
+            Assert.Contains($"protected ?float ${propName} = null;", result);
+        }
+
+        public static IEnumerable<object[]> StringProperties => new List<object[]>
+        {
+            new object[] { new CodeProperty { Name = "property", Type = new CodeType { Name = "decimal" } } },
+            new object[] { new CodeProperty { Name = "property", Type = new CodeType { Name = "byte" } } }
+        };
+        
+        [Theory]
+        [MemberData(nameof(StringProperties))]
+        public void WritePrimitiveStringProperty(CodeProperty property)
+        {
+            parentClass.AddProperty(property);
+            propertyWriter.WriteCodeElement(property, writer);
+            Assert.Contains("public ?string $property = null;", tw.ToString());
+        }
+
+        public static IEnumerable<object[]> IntProperties => new List<object[]> 
+        {
+            new object[] { new CodeProperty { Name = "property", Type = new CodeType { Name = "integer" }, Access = AccessModifier.Protected} },
+            new object[] { new CodeProperty { Name = "property", Type = new CodeType { Name = "int32" }, Access = AccessModifier.Protected} },
+            new object[] { new CodeProperty { Name = "property", Type = new CodeType { Name = "sbyte" }, Access = AccessModifier.Protected} },
+            new object[] { new CodeProperty { Name = "property", Type = new CodeType { Name = "int64" }, Access = AccessModifier.Protected} }
+        };
+        [Theory]
+        [MemberData(nameof(IntProperties))]
+        public void WritePrimitiveIntProperty(CodeProperty property)
+        {
+            parentClass.AddProperty(property);
+            propertyWriter.WriteCodeElement(property, writer);
+            Assert.Contains("protected ?int $property = null;", tw.ToString());
         }
     }
 }
