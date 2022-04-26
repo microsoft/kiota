@@ -14,6 +14,7 @@
             AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeTypeWriter(conventionService));
             AddOrReplaceCodeElementWriter(new CodeNameSpaceWriter(conventionService));
+            AddOrReplaceCodeElementWriter(new CodeInterfaceWriter(conventionService, clientNamespaceName));
         }
     }
 }

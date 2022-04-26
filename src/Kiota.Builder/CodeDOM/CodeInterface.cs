@@ -1,3 +1,5 @@
+﻿using System.ComponentModel.Design;
+
 namespace Kiota.Builder;
 
 public enum CodeInterfaceKind {
@@ -10,4 +12,5 @@ public class CodeInterface : ProprietableBlock<CodeInterfaceKind, InterfaceDecla
 }
 public class InterfaceDeclaration : ProprietableBlockDeclaration
 {
+    public CodeType inherits;
 }
