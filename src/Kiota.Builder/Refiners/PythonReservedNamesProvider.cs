@@ -7,6 +7,8 @@ namespace Kiota.Builder.Refiners {
             "and",
             "as",
             "assert",
+            "async",
+            "await",
             "break",
             "class",
             "continue",
@@ -16,7 +18,7 @@ namespace Kiota.Builder.Refiners {
             "else",
             "except",
             "finally",
-            "false",
+            "False",
             "for",
             "from",
             "global",
@@ -36,7 +38,7 @@ namespace Kiota.Builder.Refiners {
             "try",
             "with",
             "while",
-            "yield",      
+            "yield",       
         });
         public HashSet<string> ReservedNames => _reservedNames.Value;
     }
