@@ -18,6 +18,10 @@ public enum CodeClassKind {
     /// A class used as a placeholder for the barrel file.
     /// </summary>
     BarrelInitializer,
+    /// <summary>
+    /// Configuration for the request to be sent with the headers, query parameters, and middleware options
+    /// </summary>
+    RequestConfiguration,
 }
 /// <summary>
 /// CodeClass represents an instance of a Class to be generated in source code

@@ -152,9 +152,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(current, x => AddGetterAndSetterMethods(x, propertyKindsToAddAccessors, removeProperty, parameterAsOptional, getterPrefix, setterPrefix));
     }
-    protected static void AddConstructorsForDefaultValues(CodeElement current, bool addIfInherited, bool forceAdd = false) {
+    protected static void AddConstructorsForDefaultValues(CodeElement current, bool addIfInherited, bool forceAdd = false, CodeClassKind[] classKindsToExclude = null) {
         if(current is CodeClass currentClass &&
             !currentClass.IsOfKind(CodeClassKind.RequestBuilder, CodeClassKind.QueryParameters) &&
+            !currentClass.IsOfKind(classKindsToExclude) &&
             (forceAdd ||
             currentClass.Properties.Any(x => !string.IsNullOrEmpty(x.DefaultValue)) ||
             addIfInherited && DoesAnyParentHaveAPropertyWithDefaultValue(currentClass)) &&
@@ -168,7 +169,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 IsAsync = false,
                 Description = $"Instantiates a new {current.Name} and sets the default values."
             });
-        CrawlTree(current, x => AddConstructorsForDefaultValues(x, addIfInherited, forceAdd));
+        CrawlTree(current, x => AddConstructorsForDefaultValues(x, addIfInherited, forceAdd, classKindsToExclude));
     }
 
     protected static void ReplaceReservedModelTypes(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement) => 
@@ -468,13 +469,27 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName, string queryParametersBaseClassName = "QueryParametersBase", bool addToParentNamespace = false) {
         if(current is CodeClass currentClass) {
             var parentNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
-            foreach(var innerClass in currentClass
+            var innerClasses = currentClass
                                     .Methods
                                     .SelectMany(x => x.Parameters)
-                                    .Where(x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.QueryParameter))
+                                    .Where(x => x.Type.ActionOf && (x.IsOfKind(CodeParameterKind.RequestConfiguration)))
                                     .SelectMany(x => x.Type.AllTypes)
                                     .Select(x => x.TypeDefinition)
-                                    .OfType<CodeClass>()) {
+                                    .OfType<CodeClass>();
+
+            // ensure we do not miss out the types present in request configuration objects i.e. the query parameters
+            var nestedQueryParameters = innerClasses
+                                    .SelectMany( x => x.Properties)
+                                    .Where(x => x.IsOfKind(CodePropertyKind.QueryParameters))
+                                    .SelectMany(x => x.Type.AllTypes)
+                                    .Select(x => x.TypeDefinition)
+                                    .OfType<CodeClass>();
+
+            var nestedClasses = new List<CodeClass>();
+            nestedClasses.AddRange(innerClasses);
+            nestedClasses.AddRange(nestedQueryParameters);
+
+            foreach (var innerClass in nestedClasses) {
                 var originalClassName = innerClass.Name;
                 if(prefixClassNameWithParentName && !innerClass.Name.StartsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase))
                     innerClass.Name = $"{currentClass.Name}{innerClass.Name}";
@@ -513,7 +528,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                 .Distinct();
             var methodsParametersTypes = methods
                                 .SelectMany(x => x.Parameters)
-                                .Where(x => x.IsOfKind(CodeParameterKind.Custom, CodeParameterKind.RequestBody, CodeParameterKind.QueryParameter))
+                                .Where(x => x.IsOfKind(CodeParameterKind.Custom, CodeParameterKind.RequestBody, CodeParameterKind.RequestConfiguration))
                                 .Select(x => x.Type)
                                 .Distinct();
             var indexerTypes = currentClassChildren
@@ -544,13 +559,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 (currentClass.Parent is CodeClass parentClass ? parentClass : currentClass).AddUsing(usingsToAdd); //lots of languages do not support imports on nested classes
         }
         CrawlTree(current, (x) => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration));
-    }
-    protected static void PatchHeaderParametersType(CodeElement currentElement, string newTypeName) {
-        if(currentElement is CodeMethod currentMethod && currentMethod.Parameters.Any(x => x.IsOfKind(CodeParameterKind.Headers)))
-            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Headers))
-                                    .ToList()
-                                    .ForEach(x => x.Type.Name = newTypeName);
-        CrawlTree(currentElement, (x) => PatchHeaderParametersType(x, newTypeName));
     }
     protected static void CrawlTree(CodeElement currentElement, Action<CodeElement> function) {
         foreach(var childElement in currentElement.GetChildElements())
@@ -762,12 +770,21 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             SetTypeAndAddUsing(CopyClassAsInterface(modelClass, interfaceNamingCallback), type, codeProperty);
         } else if (currentElement is CodeMethod codeMethod &&
-                codeMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
-                codeMethod.ReturnType is CodeType returnType &&
+                codeMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator))
+        {
+            if (codeMethod.ReturnType is CodeType returnType &&
                 returnType.TypeDefinition is CodeClass returnClass &&
                 returnClass.IsOfKind(CodeClassKind.Model))
-        {
-            SetTypeAndAddUsing(CopyClassAsInterface(returnClass, interfaceNamingCallback), returnType, codeMethod);
+            {
+                SetTypeAndAddUsing(CopyClassAsInterface(returnClass, interfaceNamingCallback), returnType, codeMethod);
+            } 
+            if (codeMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.RequestBody)) is CodeParameter requestBodyParameter &&
+                requestBodyParameter.Type is CodeType parameterType &&
+                parameterType.TypeDefinition is CodeClass parameterClass &&
+                parameterClass.IsOfKind(CodeClassKind.Model))
+            {
+                SetTypeAndAddUsing(CopyClassAsInterface(parameterClass, interfaceNamingCallback), parameterType, codeMethod);
+            }
         }
         
         CrawlTree(currentElement, x => CopyModelClassesAsInterfaces(x, interfaceNamingCallback));
@@ -941,5 +958,14 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 });
             }
         CrawlTree(currentElement, (x) => AddQueryParameterMapperMethod(x, methodName, parameterName));
+    }
+    protected static CodeMethod GetMethodClone(CodeMethod currentMethod, params CodeParameterKind[] parameterTypesToExclude) {
+        if(currentMethod.Parameters.Any(x => x.IsOfKind(parameterTypesToExclude))) {
+            var cloneMethod = currentMethod.Clone() as CodeMethod;
+            cloneMethod.RemoveParametersByKind(parameterTypesToExclude);
+            cloneMethod.OriginalMethod = currentMethod;
+            return cloneMethod;
+        }
+        else return null;
     }
 }

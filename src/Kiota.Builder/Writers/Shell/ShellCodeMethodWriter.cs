@@ -408,7 +408,7 @@ namespace Kiota.Builder.Writers.Shell
                 }
             }
 
-            var parametersList = new CodeParameter[] { requestParams.requestBody, requestParams.queryString, requestParams.headers, requestParams.options }
+            var parametersList = new CodeParameter[] { requestParams.requestBody, requestParams.requestConfiguration }
                                 .Select(x => x?.Name).Where(x => x != null).DefaultIfEmpty().Aggregate((x, y) => $"{x}, {y}");
             var separator = string.IsNullOrWhiteSpace(parametersList) ? "" : ", ";
             WriteRequestInformation(writer, generatorMethod, parametersList, separator);
