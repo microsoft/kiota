@@ -4,9 +4,9 @@ using Kiota.Builder.Extensions;
 namespace Kiota.Builder.Writers.Python {
     public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, PythonConventionService>
     {
-        private readonly RelativeImportManager _relativeImportManager;
+        private readonly PythonRelativeImportManager _relativeImportManager;
         public CodeClassDeclarationWriter(PythonConventionService conventionService, string clientNamespaceName) : base(conventionService){
-            _relativeImportManager = new RelativeImportManager(clientNamespaceName, '.');
+            _relativeImportManager = new PythonRelativeImportManager(clientNamespaceName, '.');
         }
         public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
         {
@@ -20,7 +20,7 @@ namespace Kiota.Builder.Writers.Python {
             foreach (var codeUsing in externalImportSymbolsAndPaths) // external imports before internal imports
                 if (!string.IsNullOrWhiteSpace(codeUsing.Key))
                 {
-                    writer.WriteLine($"from {codeUsing.Key.ToSnakeCase().Replace("./", ".").Replace("/", ".")} import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct().OrderBy(x => x).Aggregate((x,y) => x + ", " + y)}");
+                    writer.WriteLine($"from {codeUsing.Key.ToSnakeCase()} import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct().OrderBy(x => x).Aggregate((x,y) => x + ", " + y)}");
                 }
             writer.WriteLine();
             var internalImportSymbolsAndPaths = codeElement.Usings
@@ -32,7 +32,7 @@ namespace Kiota.Builder.Writers.Python {
             foreach (var codeUsing in internalImportSymbolsAndPaths)
                 if (!string.IsNullOrWhiteSpace(codeUsing.Key))
                 {
-                    writer.WriteLine($"from {codeUsing.Key.ToSnakeCase().Replace("./", ".").Replace("/", ".")} import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct().OrderBy(x => x).Aggregate((x,y) => x + ", " + y)}");
+                    writer.WriteLine($"from {codeUsing.Key.ToSnakeCase()} import {codeUsing.Select(x => GetAliasedSymbol(x.Item1, x.Item2)).Distinct().OrderBy(x => x).Aggregate((x,y) => x + ", " + y)}");
                 }
             writer.WriteLine();
             var inheritSymbol = conventions.GetTypeString(codeElement.Inherits, codeElement);
