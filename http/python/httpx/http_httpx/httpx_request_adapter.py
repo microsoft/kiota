@@ -1,4 +1,6 @@
-from datetime import datetime
+import httpx
+
+from datetime import datetime, date, time, timedelta
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, TypeVar
 
 from kiota.abstractions.api_client_builder import (
@@ -21,8 +23,6 @@ from kiota.abstractions.serialization import (
 )
 from kiota.abstractions.store import BackingStoreFactory, BackingStoreFactorySingleton
 
-import httpx
-
 from .kiota_client import KiotaClient
 
 ResponseType = TypeVar("ResponseType", str, int, float, bool, datetime, bytes)
@@ -37,9 +37,19 @@ class HttpxRequestAdapter(RequestAdapter):
         parse_node_factory: ParseNodeFactory = ParseNodeFactoryRegistry(),
         serialization_writer_factory:
         SerializationWriterFactory = SerializationWriterFactoryRegistry(),
-        http_client: KiotaClient = KiotaClient()
-    ) -> None:
+        http_client: KiotaClient = KiotaClient()) -> None:
+        """Instantiates a new http core service
 
+        Args:
+            authentication_provider (AuthenticationProvider): the authentication provider to use.
+            parse_node_factory (ParseNodeFactory, optional): the parse node factory to deserialize 
+            responses. Defaults to ParseNodeFactoryRegistry().
+            serialization_writer_factory (SerializationWriterFactory, optional): the serialization
+            writer factory to use to serialize request bodies. Defaults to
+            SerializationWriterFactoryRegistry().
+            http_client (KiotaClient, optional): the http client to use to execute requests.
+            Defaults to KiotaClient().
+        """
         if not authentication_provider:
             raise TypeError("Authentication provider cannot be null")
         self._authentication_provider = authentication_provider
@@ -53,6 +63,7 @@ class HttpxRequestAdapter(RequestAdapter):
             raise TypeError("Http Client cannot be null")
         self._http_client = http_client
 
+        # The base url for every request.
         self._base_url: str = ''
 
     @property
@@ -111,15 +122,21 @@ class HttpxRequestAdapter(RequestAdapter):
         if not request_info:
             raise TypeError("Request info cannot be null")
 
-        response = await self.get_http_response_message(request_info)
+        response = await self._get_http_response_message(request_info)
 
         if response_handler:
             return await response_handler.handle_response_async(response, error_map)
 
-        await self.throw_failed_responses(response, error_map)
-        root_node = await self.get_root_parse_node(response)
-        result = root_node.get_object_value(model_type)
-        return result
+        try:
+            await self._throw_failed_responses(response, error_map)
+            if self._should_return_none(response):
+                return None
+            
+            root_node = await self.get_root_parse_node(response)
+            result = root_node.get_object_value(model_type)
+            return result
+        finally:
+            self._purge_response_body(response)
 
     async def send_collection_async(
         self, request_info: RequestInformation, model_type: ParsableFactory,
@@ -141,15 +158,29 @@ class HttpxRequestAdapter(RequestAdapter):
         if not request_info:
             raise TypeError("Request info cannot be null")
 
-        response = await self.get_http_response_message(request_info)
+        response = await self._get_http_response_message(request_info)
 
         if response_handler:
             return await response_handler.handle_response_async(response, error_map)
 
-        await self.throw_failed_responses(response, error_map)
-        root_node = await self.get_root_parse_node(response)
-        result = root_node.get_collection_of_object_values(model_type)
-        return result
+        if not request_info:
+            raise TypeError("Request info cannot be null")
+
+        response = await self._get_http_response_message(request_info)
+
+        if response_handler:
+            return await response_handler.handle_response_async(response, error_map)
+        try:
+            await self._throw_failed_responses(response, error_map)
+            if self._should_return_none(response):
+                return None
+            
+            root_node = await self.get_root_parse_node(response)
+            result = root_node.get_collection_of_object_values(model_type)
+            return result
+        finally:
+            self._purge_response_body(response)
+        
 
     async def send_collection_of_primitive_async(
         self, request_info: RequestInformation, response_type: ResponseType,
@@ -172,14 +203,20 @@ class HttpxRequestAdapter(RequestAdapter):
         if not request_info:
             raise TypeError("Request info cannot be null")
 
-        response = await self.get_http_response_message(request_info)
+        response = await self._get_http_response_message(request_info)
 
         if response_handler:
             return await response_handler.handle_response_async(response, error_map)
-
-        await self.throw_failed_responses(response, error_map)
-        root_node = await self.get_root_parse_node(response)
-        return root_node.get_collection_of_primitive_values()
+        try:
+            await self._throw_failed_responses(response, error_map)
+            if self._should_return_none(response):
+                return None
+            
+            if response_type in [str, bool, int, float, date, datetime, time, timedelta]:
+                root_node = await self.get_root_parse_node(response)
+                return root_node.get_collection_of_primitive_values()
+        finally:
+            self._purge_response_body(response)
 
     async def send_primitive_async(
         self, request_info: RequestInformation, response_type: ResponseType,
@@ -202,26 +239,32 @@ class HttpxRequestAdapter(RequestAdapter):
         if not request_info:
             raise TypeError("Request info cannot be null")
 
-        response = await self.get_http_response_message(request_info)
+        response = await self._get_http_response_message(request_info)
 
         if response_handler:
             return await response_handler.handle_response_async(response, error_map)
 
-        await self.throw_failed_responses(response, error_map)
-        root_node = await self.get_root_parse_node(response)
-        if response_type == str:
-            return root_node.get_string_value()
-        if response_type == int:
-            return root_node.get_int_value()
-        if response_type == float:
-            return root_node.get_float_value()
-        if response_type == bool:
-            return root_node.get_boolean_value()
-        if response_type == datetime:
-            return root_node.get_datetime_value()
-        if response_type == bytes:
-            return root_node.get_bytearray_value()
-        raise Exception("Found unexpected type to deserialize")
+        try:
+            await self._throw_failed_responses(response, error_map)
+            if self._should_return_none(response):
+                return None
+            
+            root_node = await self.get_root_parse_node(response)
+            if response_type == str:
+                return root_node.get_string_value()
+            if response_type == int:
+                return root_node.get_int_value()
+            if response_type == float:
+                return root_node.get_float_value()
+            if response_type == bool:
+                return root_node.get_boolean_value()
+            if response_type == datetime:
+                return root_node.get_datetime_value()
+            if response_type == bytes:
+                return root_node.get_bytearray_value()
+            raise Exception("Found unexpected type to deserialize")
+        finally:
+            self._purge_response_body(response)
 
     async def send_no_response_content_async(
         self, request_info: RequestInformation, response_handler: Optional[ResponseHandler],
@@ -239,12 +282,15 @@ class HttpxRequestAdapter(RequestAdapter):
         if not request_info:
             raise TypeError("Request info cannot be null")
 
-        response = await self.get_http_response_message(request_info)
+        response = await self._get_http_response_message(request_info)
 
         if response_handler:
             return await response_handler.handle_response_async(response, error_map)
-        await self.throw_failed_responses(response, error_map)
-
+        try:
+            await self._throw_failed_responses(response, error_map)
+        finally:
+            self._purge_response_body(response)
+            
     def enable_backing_store(self, backing_store_factory: Optional[BackingStoreFactory]) -> None:
         """Enables the backing store proxies for the SerializationWriters and ParseNodes in use.
         Args:
@@ -263,14 +309,22 @@ class HttpxRequestAdapter(RequestAdapter):
 
     async def get_root_parse_node(self, response: httpx.Response) -> ParseNode:
         payload = response.content
-        print(payload)
         response_content_type = self.get_response_content_type(response)
         if not response_content_type:
             raise Exception("No response content type found for deserialization")
 
         return self._parse_node_factory.get_root_parse_node(response_content_type, payload)
 
-    async def throw_failed_responses(
+    async def _should_return_none(response):
+        return response.status_code == 204
+    
+    def _purge_response_body(response):
+        """Purges the response body if it hasn't been read to release the connection
+        to the server
+        """
+        response.close() 
+    
+    async def _throw_failed_responses(
         self, response: httpx.Response, error_map: Dict[str, ParsableFactory]
     ) -> None:
         if response.ok:
@@ -301,22 +355,22 @@ class HttpxRequestAdapter(RequestAdapter):
             raise error
         raise APIError(f"Unexpected error type: {type(error)}")
 
-    async def get_http_response_message(
+    async def _get_http_response_message(
         self, request_info: RequestInformation
     ) -> httpx.Response:
         if not request_info:
             raise Exception("Request info cannot be null")
 
-        self.set_base_url_for_request_information(request_info)
+        self._set_base_url_for_request_information(request_info)
         await self._authentication_provider.authenticate_request(request_info)
 
-        request = self.get_request_from_request_information(request_info)
+        request = self._get_request_from_request_information(request_info)
         return self._http_client.client.send(request)
 
-    def set_base_url_for_request_information(self, request_info: RequestInformation) -> None:
+    def _set_base_url_for_request_information(self, request_info: RequestInformation) -> None:
         request_info.path_parameters["base_url"] = self.base_url
 
-    def get_request_from_request_information(
+    def _get_request_from_request_information(
         self, request_info: RequestInformation
     ) -> httpx.PreparedRequest:
         req = httpx.Request(
