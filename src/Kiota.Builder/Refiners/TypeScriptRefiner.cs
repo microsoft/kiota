@@ -88,7 +88,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         );
         CopyModelClassesAsInterfacesTS(
             generatedCode,
-            x => $"{x.Name}Interface"
+            x => $"{x.Name.ToFirstCharacterUpperCase()}Interface"
         );
 
         RenameInterfacesAndModels(generatedCode);
@@ -122,16 +122,29 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             if (inter.Name.EndsWith("Interface")) {
                 inter.Name = inter.Name.Split("Interface")[0];
             }
-        } 
-        else if (currentElement is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model)) {
-
-            foreach (var impl in codeClass.StartBlock.Implements.Where(x => !x.IsExternal)) {
-                if (impl.Name.EndsWith("Interface"))
-                {
-                    impl.Name = impl.Name.Split("Interface")[0];
-                }
-            }
         }
+        //else if (currentElement is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model))
+        //{
+
+        //    foreach (var impl in codeClass.StartBlock.Implements)
+        //    {
+        //        if (impl.Name.EndsWith("Interface"))
+        //        {
+        //            impl.Name = impl.Name.Split("Interface")[0];
+        //        }
+        //    }
+        //}
+        //else if (currentElement is CodeInterface interBase)
+        //{
+
+        //    if (interBase.StartBlock?.inherits.TypeDefinition is CodeInterface interParent)
+
+        //        if (interParent.Name.EndsWith("Interface"))
+        //        {
+        //            interParent.Name = interParent.Name.Split("Interface")[0];
+        //        }
+        //}
+
 
         CrawlTree(currentElement, x => RenameInterfacesAndModels(x));
     }
@@ -148,13 +161,29 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             SetTypeAndAddUsing(CopyClassAsInterface(modelClass, interfaceNamingCallback), type, codeProperty);
         }
-        else if (currentElement is CodeMethod codeMethod &&
-              codeMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
-              codeMethod.ReturnType is CodeType returnType &&
-              returnType.TypeDefinition is CodeClass returnClass &&
-              returnClass.IsOfKind(CodeClassKind.Model))
+        else if (currentElement is CodeMethod codeMethod)
         {
-            SetTypeAndAddUsing(CopyClassAsInterface(returnClass, interfaceNamingCallback), returnType, codeMethod);
+
+            if(codeMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
+            codeMethod.ReturnType is CodeType returnType &&
+            returnType.TypeDefinition is CodeClass returnClass &&
+            returnClass.IsOfKind(CodeClassKind.Model))
+        {
+                var requestBodyParam = codeMethod.Parameters.OfKind(CodeParameterKind.RequestBody);
+                if (requestBodyParam != null && requestBodyParam.Type is CodeType type1)
+                {
+                    SetTypeAndAddUsing(CopyClassAsInterface(type1.TypeDefinition as CodeClass, interfaceNamingCallback), type1, requestBodyParam);
+                }
+                SetTypeAndAddUsing(CopyClassAsInterface(returnClass, interfaceNamingCallback), returnType, codeMethod);
+            }
+        else if (codeMethod.IsOfKind(CodeMethodKind.RequestGenerator))
+            {
+                var requestBodyParam1 = codeMethod?.Parameters?.OfKind(CodeParameterKind.RequestBody);
+                if (requestBodyParam1 != null && requestBodyParam1.Type is CodeType type1 && type1.TypeDefinition != null)
+                {
+                    SetTypeAndAddUsing(CopyClassAsInterface(type1?.TypeDefinition as CodeClass, interfaceNamingCallback), type1, requestBodyParam1);
+                }
+            }
         }
 
         CrawlTree(currentElement, x => CopyModelClassesAsInterfacesTS(x, interfaceNamingCallback));
@@ -249,8 +278,17 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         modelClass.StartBlock.AddImplements(new CodeType
         {
-            Name = interfaceName.ToFirstCharacterUpperCase(),
+            Name = inter.Name.ToFirstCharacterUpperCase(),
             TypeDefinition = inter,
+        });
+
+        var constructor = modelClass.Methods.FirstOrDefault(x => x is CodeMethod method1 && method1.IsOfKind(CodeMethodKind.Constructor));
+
+        constructor.AddParameter(new CodeParameter
+        {
+            Name = inter.Name.ToFirstCharacterLowerCase(),
+            Type = new CodeType { Name = inter.Name, TypeDefinition = inter },
+            Optional = true
         });
         modelClass.AddUsing(new CodeUsing {
 
@@ -315,18 +353,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                         });
                 }
         }
-
-        //    //if(!method.IsStatic)
-        //    //    inter.AddMethod(method.Clone() as CodeMethod);
-        //}
-        ////foreach (var mProp in classModelChildItems.OfType<CodeProperty>())
-        ////    if (mProp.Type is CodeType propertyType &&
-        ////        !propertyType.IsExternal &&
-        ////        propertyType.TypeDefinition is CodeClass propertyClass)
-        ////    {
-        ////        modelClass.AddUsing(ReplaceTypeByInterfaceType(propertyClass, propertyType, usingsToRemove, interfaceNamingCallback));
-        ////        inter.AddProperty(mProp);
-        ////    }
 
         modelClass.RemoveUsingsByDeclarationName(usingsToRemove.ToArray());
         var externalTypesOnInter = inter.Methods.Select(x => x.ReturnType).OfType<CodeType>().Where(x => x.IsExternal)

@@ -134,7 +134,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 writer.WriteLine($"{methodName}({module});");
     }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits) {
-        if(inherits || parentClass.IsErrorDefinition)
+        if (inherits || parentClass.IsErrorDefinition)
             writer.WriteLine("super();");
         var propertiesWithDefaultValues = new List<CodePropertyKind> {
             CodePropertyKind.AdditionalData,
@@ -143,16 +143,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             CodePropertyKind.UrlTemplate,
             CodePropertyKind.PathParameters,
         };
-        foreach(var propWithDefault in parentClass.GetPropertiesOfKind(propertiesWithDefaultValues.ToArray())
+        foreach (var propWithDefault in parentClass.GetPropertiesOfKind(propertiesWithDefaultValues.ToArray())
                                         .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
                                         .OrderByDescending(x => x.Kind)
                                         .ThenBy(x => x.Name)) {
             writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
         }
-        if(parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
-            if(currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
+        if (parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
+            if (currentMethod.IsOfKind(CodeMethodKind.Constructor)) {
                 var pathParametersParam = currentMethod.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.PathParameters));
-                localConventions.AddParametersAssignment(writer, 
+                localConventions.AddParametersAssignment(writer,
                                                     pathParametersParam.Type.AllTypes.OfType<CodeType>().FirstOrDefault(),
                                                     pathParametersParam.Name.ToFirstCharacterLowerCase(),
                                                     currentMethod.Parameters
@@ -162,6 +162,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
             }
             AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.RequestAdapter, CodePropertyKind.RequestAdapter, writer);
+        }
+
+        if (parentClass.IsOfKind(CodeClassKind.Model))
+        {
+            var interfaceModel = parentClass.StartBlock.Implements.Where(x => x.TypeDefinition is CodeInterface inter && inter.IsOfKind(CodeInterfaceKind.Model));
+            foreach (var prop in parentClass.Properties)
+            {
+                writer.WriteLine($"this.{prop.Name.ToFirstCharacterLowerCase()} = {currentMethod.Parameters.FirstOrDefault(x=> x.Type is CodeType type && type.TypeDefinition is CodeInterface ).Name}.{prop.Name.ToFirstCharacterLowerCase()} ;");
+            }
         }
     }
     private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer, string variableName = default) {
@@ -269,11 +278,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         if(requestParams.queryString != null)
             writer.WriteLines($"{requestParams.queryString.Name} && {RequestInfoVarName}.setQueryStringParametersFromRawObject({requestParams.queryString.Name});");
         if(requestParams.requestBody != null) {
-            if(requestParams.requestBody.Type.Name.Equals(localConventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
+           
+            writer.WriteLine($"const bodyParsable = new {requestParams.requestBody.Type.Name}Impl(body)");
+           
+            if (requestParams.requestBody.Type.Name.Equals(localConventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                 writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name});");
             else {
                 var spreadOperator = requestParams.requestBody.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
-                writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {spreadOperator}{requestParams.requestBody.Name});");
+                writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", bodyParsable);");//{spreadOperator}{requestParams.requestBody.Name});");
             }
         }
         if(requestParams.options != null)
@@ -388,9 +400,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         if(isVoid) return "sendNoResponseContentAsync";
         else if(isCollection) {
             if(conventions.IsPrimitiveType(returnType)) return $"sendCollectionOfPrimitiveAsync<{returnType}>";
-            else return $"sendCollectionAsync<{returnType}>";
+            else return $"sendCollectionAsync<{returnType}Impl>";
         }
         else if(isStream || conventions.IsPrimitiveType(returnType)) return $"sendPrimitiveAsync<{returnType}>";
-        else return $"sendAsync<{returnType}>";
+        else return $"sendAsync<{returnType}Impl>";
     }
 }
