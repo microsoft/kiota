@@ -147,6 +147,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                                         .Where(x => !string.IsNullOrEmpty(x.DefaultValue))
                                         .OrderByDescending(x => x.Kind)
                                         .ThenBy(x => x.Name)) {
+            if (!parentClass.IsOfKind(CodeClassKind.Model)) { }
             writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
         }
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder)) {
@@ -169,7 +170,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             var interfaceModel = parentClass.StartBlock.Implements.Where(x => x.TypeDefinition is CodeInterface inter && inter.IsOfKind(CodeInterfaceKind.Model));
             foreach (var prop in parentClass.Properties)
             {
-                writer.WriteLine($"this.{prop.Name.ToFirstCharacterLowerCase()} = {currentMethod.Parameters.FirstOrDefault(x=> x.Type is CodeType type && type.TypeDefinition is CodeInterface ).Name}.{prop.Name.ToFirstCharacterLowerCase()} ;");
+                var interfaceProperty = $"{currentMethod.Parameters.FirstOrDefault(x => x.Type is CodeType type && type.TypeDefinition is CodeInterface).Name}?.{prop.Name.ToFirstCharacterLowerCase()}";
+                if (prop.IsOfKind(CodePropertyKind.AdditionalData))
+                {
+                    writer.WriteLine($"this.{prop.NamePrefix}{prop.Name.ToFirstCharacterLowerCase()} = {interfaceProperty} ? {prop.DefaultValue} : {interfaceProperty}!");
+                }
+                else
+                {
+                    writer.WriteLine($"this.{prop.Name.ToFirstCharacterLowerCase()} = {interfaceProperty} ;");
+                }
             }
         }
     }
@@ -278,8 +287,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         if(requestParams.queryString != null)
             writer.WriteLines($"{requestParams.queryString.Name} && {RequestInfoVarName}.setQueryStringParametersFromRawObject({requestParams.queryString.Name});");
         if(requestParams.requestBody != null) {
-           
-            writer.WriteLine($"const bodyParsable = new {requestParams.requestBody.Type.Name}Impl(body)");
+
+            if (IsCodeClassOrInterface(requestParams.requestBody.Type)) {
+                writer.WriteLine($"const bodyParsable = new {requestParams.requestBody.Type.Name}Impl(body)");
+            }
            
             if (requestParams.requestBody.Type.Name.Equals(localConventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                 writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name});");
@@ -302,10 +313,35 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
             var otherPropName = otherProp.Name.ToFirstCharacterLowerCase();
             var undefinedPrefix = isCollectionOfEnum ? $"this.{otherPropName} && " : string.Empty;
-            writer.WriteLine($"{undefinedPrefix}writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherPropName}\", {spreadOperator}this.{otherPropName});");
+            var isCollection = otherProp.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None && (otherProp.Type is CodeType currentType && currentType.TypeDefinition != null); 
+            var str = "";
+            if (isCollection)
+            {
+                str = ConvertInterfaceToClassArray(otherPropName, otherProp.Type, writer);
+            }
+            else 
+            {
+                var propertyType = localConventions.TranslateType(otherProp.Type);
+                str = IsPredefinedType(otherProp.Type) || !IsCodeClassOrInterface(otherProp.Type) ? $"this.{otherPropName}" : $"new {propertyType}Impl(this.{otherPropName})" ;
+            }
+            writer.WriteLine($"{undefinedPrefix}writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherPropName}\", {str});");
         }
         if(additionalDataProperty != null)
             writer.WriteLine($"writer.writeAdditionalData(this.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
+    }
+
+    private bool IsCodeClassOrInterface(CodeTypeBase propType)
+    {
+        return (propType is CodeType currentType && (currentType.TypeDefinition is CodeClass || currentType.TypeDefinition is CodeInterface));
+    }
+    private string ConvertInterfaceToClassArray(string propertyName, CodeTypeBase propType, LanguageWriter writer)
+    {
+        var propertyType = localConventions.TranslateType(propType);
+
+        var arrName = $"{propertyName}ArrValue".ToFirstCharacterLowerCase();
+        writer.WriteLine($"const {arrName}: {propertyType}Impl[] = []; this.{propertyName}?.forEach(element => {{{arrName}.push(new {propertyType}Impl(element));}});");
+
+        return arrName;
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, bool isVoid) {
         var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);
@@ -353,23 +389,36 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var returnTypeSuffix = shouldHaveTypeSuffix ? $" : {asyncReturnTypePrefix}{returnType}{nullableSuffix}{asyncReturnTypeSuffix}" : string.Empty;
         writer.WriteLine($"{accessModifier}{functionPrefix}{accessorPrefix}{staticPrefix}{methodName}{asyncPrefix}({parameters}){returnTypeSuffix} {{");
     }
-    private string GetDeserializationMethodName(CodeTypeBase propType) {
+    private string GetDeserializationMethodName(CodeTypeBase propType)
+    {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         var propertyType = localConventions.TranslateType(propType);
-        if(propType is CodeType currentType) {
-            if(currentType.TypeDefinition is CodeEnum currentEnum)
+        if (propType is CodeType currentType)
+        {
+            if (currentType.TypeDefinition is CodeEnum currentEnum)
                 return $"getEnumValue{(currentEnum.Flags || isCollection ? "s" : string.Empty)}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({propertyType.ToFirstCharacterUpperCase()})";
-            else if(isCollection)
-                if(currentType.TypeDefinition == null)
+            else if (isCollection)
+                if (currentType.TypeDefinition == null)
                     return $"getCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>()";
                 else
-                    return $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propertyType)})";
+                    return $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}Impl>({GetFactoryMethodName(propertyType)})";
         }
         return propertyType switch
         {
             "string" or "boolean" or "number" or "Guid" or "Date" or "DateOnly" or "TimeOnly" or "Duration" => $"get{propertyType.ToFirstCharacterUpperCase()}Value()",
-            _ => $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propertyType)})",
+            _ => $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}Impl>({GetFactoryMethodName(propertyType)})",
         };
+    }
+
+    private bool IsPredefinedType(CodeTypeBase propType)
+    {
+        var propertyType = localConventions.TranslateType(propType);
+        return propertyType switch
+        {
+            "string" or "boolean" or "number" or "Guid" or "Date" or "DateOnly" or "TimeOnly" or "Duration" => true,
+            _ => false,
+        };
+
     }
     private static string GetFactoryMethodName(string targetClassName) =>
         $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
@@ -377,18 +426,20 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         var propertyType = localConventions.TranslateType(propType);
         if(propType is CodeType currentType) {
-            if(currentType.TypeDefinition is CodeEnum currentEnum)
+            if (currentType.TypeDefinition is CodeEnum currentEnum)
                 return $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}>";
-            else if(isCollection)
-                if(currentType.TypeDefinition == null)
+            else if (isCollection)
+            {
+                if (currentType.TypeDefinition == null)
                     return $"writeCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>";
                 else
-                    return $"writeCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>";
+                    return $"writeCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}Impl>";
+            }
         }
         return propertyType switch
         {
             "string" or "boolean" or "number" or "Guid" or "Date" or "DateOnly" or "TimeOnly" or "Duration" => $"write{propertyType.ToFirstCharacterUpperCase()}Value",
-            _ => $"writeObjectValue<{propertyType.ToFirstCharacterUpperCase()}>",
+            _ => $"writeObjectValue<{propertyType.ToFirstCharacterUpperCase()}Impl>",
         };
     }
     private string GetTypeFactory(bool isVoid, bool isStream, string returnType) {

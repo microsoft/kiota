@@ -191,6 +191,14 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     SetTypeAndAddUsing(CopyClassAsInterface(type1.TypeDefinition as CodeClass, interfaceNamingCallback), type1, requestBodyParam);
                 }
                 SetTypeAndAddUsing(CopyClassAsInterface(returnClass, interfaceNamingCallback), returnType, codeMethod);
+
+               var parentClass =  codeMethod.GetImmediateParentOfType<CodeClass>();
+
+                if (parentClass != null) 
+                {
+                    parentClass.AddUsing(new CodeUsing { Name = returnClass.Parent.Name, Declaration = new CodeType { Name = returnClass.Name,TypeDefinition =returnClass } });
+                  
+                }
             }
             /*
              * Setting request body parameter type of request generator to model interface.
@@ -201,6 +209,15 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 if (requestBodyParam1 != null && requestBodyParam1.Type is CodeType type1 && type1.TypeDefinition is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model))
                 {
                     SetTypeAndAddUsing(CopyClassAsInterface(codeClass, interfaceNamingCallback), type1, requestBodyParam1);
+
+
+                    var parentClass = codeMethod.GetImmediateParentOfType<CodeClass>();
+
+                    if (parentClass != null)
+                    {
+                        parentClass.AddUsing(new CodeUsing { Name = codeClass.Parent.Name, Declaration = new CodeType { Name = codeClass.Name, TypeDefinition = codeClass } });
+
+                    }
                 }
             }
         }
@@ -231,7 +248,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 Declaration = new CodeType
                 {
                     Name = interfaceElement.Name,
-                    TypeDefinition = nameSpaceOfInterface,
+                    TypeDefinition = interfaceElement,
                 },
             });
         }
@@ -257,7 +274,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                        targetNS.AddInterface(insertValue).First();
 
         //var modelInterface = targetNS.AddInterface(insertValue).First();
-        var usingsToRemove = new List<string>();
+       // var usingsToRemove = new List<string>();
 
         var classModelChildItems = modelClass.GetChildElements(true);
 
@@ -297,10 +314,20 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             if (mProp.Type is CodeType propertyType && propertyType.TypeDefinition is CodeClass propertyClass)
             {
-                var codeUsing = ReplaceTypeByInterfaceType(propertyClass, propertyType, interfaceNamingCallback, usingsToRemove);
+                var codeUsing = ReplaceTypeByInterfaceType(propertyClass, propertyType, interfaceNamingCallback);//, usingsToRemove);
 
                 modelInterface.AddUsing(codeUsing.Item2);
                 modelClass.AddUsing(codeUsing.Item2);
+
+                modelClass.AddUsing(new CodeUsing
+                {
+                    Name = mProp.Parent.Name,
+                    Declaration = new CodeType
+                    {
+                        Name = propertyClass.Name + "Impl",
+                        TypeDefinition = propertyClass,
+                    }
+                });
             }
             else if (mProp.Type is CodeType nonClassPropertyType && !nonClassPropertyType.IsExternal && nonClassPropertyType is CodeType nonClassTypeDef)
             {
@@ -422,7 +449,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         //if (shouldInsertUnderParentClass)
         //    usingsToAdd.AddRange(modelParentClass.Usings.Where(x => x.IsExternal && externalTypesOnInter.Contains(x.Name)));
-        targetUsingBlock.AddUsings(usingsToAdd.ToArray());
+     //   targetUsingBlock.AddUsings(usingsToAdd.ToArray());
         return modelInterface;
     }
     private static (CodeInterface, CodeUsing) ReplaceTypeByInterfaceType(CodeClass sourceClass, CodeType originalType, Func<CodeClass, string> interfaceNamingCallback, List<string> usingsToRemove = null)
@@ -430,10 +457,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var propertyInterfaceType = CopyClassAsInterface(sourceClass, interfaceNamingCallback);
         originalType.Name = propertyInterfaceType.Name;
         originalType.TypeDefinition = propertyInterfaceType;
-        if (usingsToRemove != null) 
-        {
-            usingsToRemove.Add(sourceClass.Name);
-        }
+        //if (usingsToRemove != null) 
+        //{
+        //    usingsToRemove.Add(sourceClass.Name);
+        //}
         return (propertyInterfaceType, new CodeUsing
         {
             Name = propertyInterfaceType.Parent.Name,
