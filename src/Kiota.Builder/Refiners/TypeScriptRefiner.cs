@@ -194,7 +194,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
                var parentClass =  codeMethod.GetImmediateParentOfType<CodeClass>();
 
-                if (parentClass != null) 
+                if (parentClass != null && parentClass.Name != returnClass.Name) 
                 {
                     parentClass.AddUsing(new CodeUsing { Name = returnClass.Parent.Name, Declaration = new CodeType { Name = returnClass.Name,TypeDefinition =returnClass } });
                   
@@ -213,7 +213,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
                     var parentClass = codeMethod.GetImmediateParentOfType<CodeClass>();
 
-                    if (parentClass != null)
+                    if (parentClass != null && parentClass.Name != codeClass.Name)
                     {
                         parentClass.AddUsing(new CodeUsing { Name = codeClass.Parent.Name, Declaration = new CodeType { Name = codeClass.Name, TypeDefinition = codeClass } });
 
@@ -278,8 +278,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         var classModelChildItems = modelClass.GetChildElements(true);
 
-        var targetUsingBlock = shouldInsertUnderParentClass ? modelParentClass.StartBlock as ProprietableBlockDeclaration : modelInterface.StartBlock;
-        //var targetUsingBlock = modelInterface.StartBlock;
+       // var targetUsingBlock = shouldInsertUnderParentClass ? modelParentClass.StartBlock as ProprietableBlockDeclaration : modelInterface.StartBlock;
+        var targetUsingBlock = modelInterface.StartBlock;
         var usingsToAdd = new List<CodeUsing>();
 
         /**
@@ -295,7 +295,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             };
             var parentInterfaceNS = parentInterface.GetImmediateParentOfType<CodeNamespace>();
             //if (parentInterfaceNS != targetNS)
-                usingsToAdd.Add(new CodeUsing
+                modelInterface.AddUsing(new CodeUsing
                 {
                     Name = parentInterfaceNS.Name,
                     Declaration = new CodeType
@@ -316,18 +316,25 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             {
                 var codeUsing = ReplaceTypeByInterfaceType(propertyClass, propertyType, interfaceNamingCallback);//, usingsToRemove);
 
-                modelInterface.AddUsing(codeUsing.Item2);
+                if (modelInterface.Name != codeUsing.Item1.Name) {
+                    modelInterface.AddUsing(codeUsing.Item2);
+                }
                 modelClass.AddUsing(codeUsing.Item2);
 
-                modelClass.AddUsing(new CodeUsing
-                {
-                    Name = mProp.Parent.Name,
-                    Declaration = new CodeType
+                /***
+                 * Add "impl" or model classes in class usings as they will be required by the serializer method. 
+                 */
+                if (modelClass.Name != propertyClass.Name) {
+                    modelClass.AddUsing(new CodeUsing
                     {
-                        Name = propertyClass.Name + "Impl",
-                        TypeDefinition = propertyClass,
-                    }
-                });
+                        Name = mProp.Parent.Name,
+                        Declaration = new CodeType
+                        {
+                            Name = propertyClass.Name + "Impl",
+                            TypeDefinition = propertyClass,
+                        }
+                    });
+                }
             }
             else if (mProp.Type is CodeType nonClassPropertyType && !nonClassPropertyType.IsExternal && nonClassPropertyType is CodeType nonClassTypeDef)
             {
@@ -413,7 +420,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                         }
                     });
             }
-
 
             foreach (var parameter in method.Parameters)
                 if (parameter.Type is CodeType parameterType &&
