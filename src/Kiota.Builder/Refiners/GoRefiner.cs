@@ -113,13 +113,15 @@ public class GoRefiner : CommonLanguageRefiner
             if(codeMethods.Any(x => x.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator))) {
                 var originalExecutorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor)).ToList();
                 var executorMethodsToAdd = originalExecutorMethods
-                                    .Select(x => GetMethodClone(x, CodeParameterKind.ResponseHandler, CodeParameterKind.ResponseHandler))
-                                    .Where(x => x != null);
+                                    .Select(x => GetMethodClone(x, CodeParameterKind.RequestConfiguration, CodeParameterKind.ResponseHandler))
+                                    .Where(x => x != null)
+                                    .ToArray();//otherwise the name change also affects the clones
                 var originalGeneratorMethods = codeMethods.Where(x => x.IsOfKind(CodeMethodKind.RequestGenerator)).ToList();
                 var generatorMethodsToAdd = originalGeneratorMethods
-                                    .Select(x => GetMethodClone(x, CodeParameterKind.RequestConfiguration, CodeParameterKind.ResponseHandler))
-                                    .Where(x => x != null);
-                originalExecutorMethods.ForEach(x => x.Name = $"{x.Name}With{nameof(CodeParameterKind.ResponseHandler)}");
+                                    .Select(x => GetMethodClone(x, CodeParameterKind.RequestConfiguration))
+                                    .Where(x => x != null)
+                                    .ToArray();
+                originalExecutorMethods.ForEach(x => x.Name = $"{x.Name}With{nameof(CodeParameterKind.RequestConfiguration)}And{nameof(CodeParameterKind.ResponseHandler)}");
                 originalGeneratorMethods.ForEach(x => x.Name = $"{x.Name}With{nameof(CodeParameterKind.RequestConfiguration)}");
                 if(executorMethodsToAdd.Any() || generatorMethodsToAdd.Any())
                     currentClass.AddMethod(executorMethodsToAdd

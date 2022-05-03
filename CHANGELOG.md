@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Revamped the api surface for request configuration. [#1494](https://github.com/microsoft/kiota/issues/1494)
+- Fixed a bug in methods naming in Go after request configuration revamp.
 
 ## [0.0.23] - 2022-04-19
 
