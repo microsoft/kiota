@@ -264,7 +264,7 @@ namespace Kiota.Builder.Writers.Php
                 }
             }
 
-            var lowerCaseProp = propertyType.ToLower();
+            var lowerCaseProp = propertyType?.ToLower();
             return lowerCaseProp switch
             {
                 "string" or "guid" => "writeStringValue",
@@ -295,7 +295,7 @@ namespace Kiota.Builder.Writers.Php
                     return $"$n->getEnumValue({propertyType.ToFirstCharacterUpperCase()}::class)";
             }
 
-            var lowerCaseType = propertyType.ToLower();
+            var lowerCaseType = propertyType?.ToLower();
             return lowerCaseType switch
             {
                 "int" => "$n->getIntegerValue()",

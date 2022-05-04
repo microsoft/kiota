@@ -25,7 +25,7 @@ namespace Kiota.Builder {
             ActionOf = source.ActionOf;
             IsNullable = source.IsNullable;
             CollectionKind = source.CollectionKind;
-            Name = source.Name.Clone() as string;
+            Name = source.Name?.Clone() as string;
             Parent = source.Parent;
             return this as ChildType;
         }
