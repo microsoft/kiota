@@ -4,9 +4,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.annotation.Nonnull;
@@ -59,12 +61,102 @@ public class RequestInformation {
     /** The HTTP method for the request */
     @Nullable
     public HttpMethod httpMethod;
-    /** The Query Parameters of the request. */
+
+    private HashMap<String, Object> queryParameters = new HashMap<>();
+    /**
+     * Adds query parameters to the request based on the object passed in and its fields.
+     * @param object The object to add the query parameters from.
+     */
+    public void addQueryParameters(@Nullable final Object parameters) {
+        if (parameters == null) return;
+        final Field[] fields = parameters.getClass().getFields();
+        for(final Field field : fields) {
+            try {
+                final var value = field.get(parameters);
+                var name = field.getName();
+                if (field.isAnnotationPresent(QueryParameter.class)) {
+                    final var annotationName = field.getAnnotation(QueryParameter.class).name();
+                    if(annotationName != null && !annotationName.isEmpty()) {
+                        name = annotationName;
+                    }
+                }
+                if(value != null) {
+                    if(value.getClass().isArray()) {
+                        queryParameters.put(name, Arrays.asList((Object[])value));
+                    } else {
+                        queryParameters.put(name, value);
+                    }
+                }
+            } catch (IllegalAccessException ex) {
+                //TODO log
+            }
+        }
+    }
+    /**
+     * Adds query parameters to the request.
+     * @param name The name of the query parameter.
+     * @param value The value to add the query parameters.
+     */
+    public void addQueryParameter(@Nonnull final String name, @Nullable final Object value) {
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(value);
+        queryParameters.put(name, value);
+    }
+    /**
+     * Removes a query parameter from the request.
+     * @param name The name of the query parameter to remove.
+     */
+    public void removeQueryParameter(@Nonnull final String name) {
+        Objects.requireNonNull(name);
+        queryParameters.remove(name);
+    }
+    /**
+     * Gets the query parameters for the request.
+     * @return The query parameters for the request.
+     */
     @Nonnull
-    public HashMap<String, Object> queryParameters = new HashMap<>(); //TODO case insensitive
-    /** The Request Headers. */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getQueryParameters() {
+        return (Map<String, Object>) queryParameters.clone();
+    }
+    private HashMap<String, String> headers = new HashMap<>();
+    /**
+     * Adds headers to the current request.
+     * @param headersToAdd headers to add to the current request.
+     */
+    public void addRequestHeaders(@Nullable final Map<String, String> headersToAdd) {
+        if (headersToAdd == null || headersToAdd.isEmpty()) return;
+        headersToAdd.entrySet()
+                    .stream()
+                    .forEach(entry -> this.addRequestHeader(entry.getKey(), entry.getValue()));
+    }
+    /**
+     * Adds a header to the current request.
+     * @param key the key of the header to add.
+     * @param value the value of the header to add.
+     */
+    public void addRequestHeader(@Nonnull final String key, @Nonnull final String value) {
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(value);
+        headers.put(key.toLowerCase(), value);
+    }
+    /**
+     * Removes a request header from the current request.
+     * @param key the key of the header to remove.
+     */
+    public void removeRequestHeader(@Nonnull final String key) {
+        Objects.requireNonNull(key);
+        headers.remove(key.toLowerCase());
+    }
+    /** 
+     * Gets the request headers the for current request
+     * @return the request headers for the current request.
+     */
     @Nonnull
-    public HashMap<String, String> headers = new HashMap<>(); // TODO case insensitive
+    @SuppressWarnings("unchecked")
+    public Map<String, String> getRequestHeaders() {
+        return (Map<String, String>) headers.clone();
+    }
     /** The Request Body. */
     @Nullable
     public InputStream content;
@@ -75,11 +167,11 @@ public class RequestInformation {
      */
     public Collection<RequestOption> getRequestOptions() { return _requestOptions.values(); }
     /**
-     * Adds a request option to this request.
-     * @param option the request option to add.
+     * Adds request options to this request.
+     * @param options the request options to add.
      */
-    public void addRequestOptions(@Nullable final RequestOption... options) { 
-        if(options == null || options.length == 0) return;
+    public void addRequestOptions(@Nullable final Collection<RequestOption> options) { 
+        if(options == null || options.isEmpty()) return;
         for(final RequestOption option : options) {
             _requestOptions.put(option.getClass().getCanonicalName(), option);
         }

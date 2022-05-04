@@ -38,10 +38,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
         var returnTypeWithoutCollectionInformation = conventions.GetTypeString(codeElement.ReturnType, codeElement, false);
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
-        var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
-        var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
-        var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
-        var requestParams = new RequestParams(requestBodyParam, queryStringParam, headersParam, optionsParam);
+        var requestConfig = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
+        var requestParams = new RequestParams(requestBodyParam, requestConfig);
         switch (codeElement.Kind)
         {
             case CodeMethodKind.Serializer:
@@ -75,7 +73,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             case CodeMethodKind.CommandBuilder:
                 var origParams = codeElement.OriginalMethod?.Parameters ?? codeElement.Parameters;
                 requestBodyParam = origParams.OfKind(CodeParameterKind.RequestBody);
-                requestParams = new RequestParams(requestBodyParam, null, null, null);
+                requestParams = new RequestParams(requestBodyParam, null);
                 WriteCommandBuilderBody(codeElement, requestParams, isVoid, returnType, writer);
                 break;
             case CodeMethodKind.Factory:
@@ -221,7 +219,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                             .Methods
                                             .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
                                             ?.Name;
-        var parametersList = new CodeParameter[] { requestParams.requestBody, requestParams.queryString, requestParams.headers, requestParams.options }
+        var parametersList = new CodeParameter[] { requestParams.requestBody, requestParams.requestConfiguration }
                             .Select(x => x?.Name).Where(x => x != null).Aggregate((x, y) => $"{x}, {y}");
         writer.WriteLine($"var requestInfo = {generatorMethodName}({parametersList});");
         var errorMappingVarName = "default";
@@ -242,6 +240,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         writer.WriteLine($"{(isVoid ? string.Empty : "return ")}await RequestAdapter.{GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnType)}(requestInfo{returnTypeFactory}, responseHandler, {errorMappingVarName}, cancellationToken);");
     }
     private const string RequestInfoVarName = "requestInfo";
+    private const string RequestConfigVarName = "requestConfig";
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer)
     {
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
@@ -264,20 +263,25 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             else
                 writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable({requestAdapterProperty.Name.ToFirstCharacterUpperCase()}, \"{codeElement.ContentType}\", {requestParams.requestBody.Name});");
         }
-        if (requestParams.queryString != null)
+        
+        if (requestParams.requestConfiguration != null)
         {
-            writer.WriteLine($"if ({requestParams.queryString.Name} != null) {{");
+            writer.WriteLine($"if ({requestParams.requestConfiguration.Name} != null) {{");
             writer.IncreaseIndent();
-            writer.WriteLines($"var qParams = new {operationName?.ToFirstCharacterUpperCase()}QueryParameters();",
-                        $"{requestParams.queryString.Name}.Invoke(qParams);",
-                        $"qParams.AddQueryParameters({RequestInfoVarName}.QueryParameters);");
+            writer.WriteLines($"var {RequestConfigVarName} = new {requestParams.requestConfiguration.Type.Name.ToFirstCharacterUpperCase()}();",
+                            $"{requestParams.requestConfiguration.Name}.Invoke({RequestConfigVarName});");
+            var queryString = requestParams.QueryParameters;
+            var headers = requestParams.Headers;
+            var options = requestParams.Options;
+            if (queryString != null)
+                writer.WriteLine($"{RequestInfoVarName}.AddQueryParameters({RequestConfigVarName}.{queryString.Name.ToFirstCharacterUpperCase()});");
+            if (options != null)
+                writer.WriteLine($"{RequestInfoVarName}.AddRequestOptions({RequestConfigVarName}.{options.Name.ToFirstCharacterUpperCase()});");
+            if (headers != null)
+                writer.WriteLine($"{RequestInfoVarName}.AddHeaders({RequestConfigVarName}.{headers.Name.ToFirstCharacterUpperCase()});");
             writer.DecreaseIndent();
             writer.WriteLine("}");
         }
-        if (requestParams.headers != null)
-            writer.WriteLine($"{requestParams.headers.Name}?.Invoke({RequestInfoVarName}.Headers);");
-        if (requestParams.options != null)
-            writer.WriteLine($"{RequestInfoVarName}.AddRequestOptions({requestParams.options.Name}?.ToArray());");
         writer.WriteLine($"return {RequestInfoVarName};");
     }
     private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"{property.Name.ToFirstCharacterUpperCase()}";

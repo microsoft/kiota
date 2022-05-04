@@ -1,7 +1,6 @@
-using Kiota.Builder.Writers.Go;
 using Xunit;
 
-namespace Kiota.Builder.Tests.Writers.Go {
+namespace Kiota.Builder.Writers.Go.Tests {
     public class NamespaceExtensionsTests {
         [Fact]
         public void Defensive() {

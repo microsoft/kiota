@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -19,8 +19,8 @@ namespace Kiota.Builder.Writers.Ruby {
             var parentClass = codeElement.Parent as CodeClass;
             var inherits = parentClass.StartBlock.Inherits != null;
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
-            var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
-            var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
+            var config = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
+            var requestParams = new RequestParams(requestBodyParam, config);
             switch(codeElement.Kind) {
                 case CodeMethodKind.Serializer:
                     WriteMethodPrototype(codeElement, writer);
@@ -36,11 +36,11 @@ namespace Kiota.Builder.Writers.Ruby {
                 break;
                 case CodeMethodKind.RequestGenerator:
                     WriteMethodPrototype(codeElement, writer);
-                    WriteRequestGeneratorBody(codeElement, requestBodyParam, queryStringParam, headersParam, parentClass, writer);
+                    WriteRequestGeneratorBody(codeElement, requestParams, parentClass, writer);
                 break;
                 case CodeMethodKind.RequestExecutor:
                     WriteMethodPrototype(codeElement, writer);
-                    WriteRequestExecutorBody(codeElement, requestBodyParam, queryStringParam, headersParam, returnType, writer);
+                    WriteRequestExecutorBody(codeElement, requestParams, returnType, writer);
                 break;
                 case CodeMethodKind.Getter:
                     WriteGetterBody(codeElement, writer);
@@ -144,7 +144,7 @@ namespace Kiota.Builder.Writers.Ruby {
             else
                 writer.WriteLine("}");
         }
-        private void WriteRequestExecutorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam , string returnType, LanguageWriter writer) {
+        private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, string returnType, LanguageWriter writer) {
             if(returnType.Equals("void", StringComparison.OrdinalIgnoreCase))
             {
                 if(codeElement.IsOfKind(CodeMethodKind.RequestExecutor))
@@ -161,10 +161,12 @@ namespace Kiota.Builder.Writers.Ruby {
                                                 ?.Name
                                                 ?.ToFirstCharacterLowerCase();
             writer.WriteLine($"request_info = self.{generatorMethodName.ToSnakeCase()}(");
-            var requestInfoParameters = new List<string> { requestBodyParam?.Name, queryStringParam?.Name, headersParam?.Name }.Where(x => x != null);
+            var requestInfoParameters = new CodeParameter[] { requestParams.requestBody, requestParams.requestConfiguration }
+                .Where(x => x != null)
+                .Select(x => x.Name.ToSnakeCase());
             if(requestInfoParameters.Any()) {
                 writer.IncreaseIndent();
-                writer.WriteLine(requestInfoParameters.Aggregate((x,y) => $"{x.ToSnakeCase()}, {y.ToSnakeCase()}"));
+                writer.WriteLine(requestInfoParameters.Aggregate((x,y) => $"{x}, {y}"));
                 writer.DecreaseIndent();
             }
             writer.WriteLine(")");
@@ -173,7 +175,7 @@ namespace Kiota.Builder.Writers.Ruby {
             writer.WriteLine($"return @http_core.{genericTypeForSendMethod}(request_info, {returnType}, response_handler)");
         }
 
-        private void WriteRequestGeneratorBody(CodeMethod codeElement, CodeParameter requestBodyParam, CodeParameter queryStringParam, CodeParameter headersParam, CodeClass parentClass, LanguageWriter writer) {
+        private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer) {
             if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
             var urlTemplateParamsProperty = parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters);
@@ -183,15 +185,21 @@ namespace Kiota.Builder.Writers.Ruby {
                                 $"request_info.url_template = {GetPropertyCall(urlTemplateProperty, "''")}",
                                 $"request_info.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}",
                                 $"request_info.http_method = :{codeElement.HttpMethod?.ToString().ToUpperInvariant()}");
-            if(headersParam != null)
-                writer.WriteLine($"request_info.set_headers_from_raw_object(h)");
-            if(queryStringParam != null)
-                writer.WriteLines($"request_info.set_query_string_parameters_from_raw_object(q)");
-            if(requestBodyParam != null) {
-                if(requestBodyParam.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                    writer.WriteLine($"request_info.set_stream_content({requestBodyParam.Name})");
-                else
-                    writer.WriteLine($"request_info.set_content_from_parsable(self.{requestAdapterProperty.Name.ToSnakeCase()}, \"{codeElement.ContentType}\", {requestBodyParam.Name})");
+            if (requestParams.requestConfiguration != null)
+            {
+                var queryString = requestParams.QueryParameters;
+                var headers = requestParams.Headers;
+                // TODO add options handling
+                if(headers != null)
+                    writer.WriteLine($"request_info.set_headers_from_raw_object({requestParams.requestConfiguration.Name}.{headers.Name.ToSnakeCase()})");
+                if(queryString != null)
+                    writer.WriteLines($"request_info.set_query_string_parameters_from_raw_object({requestParams.requestConfiguration.Name}.{queryString.Name.ToSnakeCase()})");
+                if(requestParams.requestBody != null) {
+                    if(requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
+                        writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name})");
+                    else
+                        writer.WriteLine($"request_info.set_content_from_parsable(self.{requestAdapterProperty.Name.ToSnakeCase()}, \"{codeElement.ContentType}\", {requestParams.requestBody.Name})");
+                }
             }
             writer.WriteLine("return request_info;");
         }

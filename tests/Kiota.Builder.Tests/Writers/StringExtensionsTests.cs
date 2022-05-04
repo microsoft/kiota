@@ -1,7 +1,6 @@
-using Kiota.Builder.Writers;
 using Xunit;
 
-namespace Kiota.Builder.Tests.Writers {
+namespace Kiota.Builder.Writers.Tests {
     public class StringExtensionsTests {
         [Fact]
         public void Defensive() {

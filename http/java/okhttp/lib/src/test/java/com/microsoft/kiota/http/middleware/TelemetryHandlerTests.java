@@ -8,8 +8,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 
+import com.microsoft.kiota.RequestOption;
 import com.microsoft.kiota.HttpMethod;
 import com.microsoft.kiota.RequestInformation;
 import com.microsoft.kiota.authentication.AuthenticationProvider;
@@ -54,7 +56,10 @@ public class TelemetryHandlerTests {
         telemetryHandlerOption.TelemetryConfigurator = (request) -> {
             return request.newBuilder().addHeader("SdkVersion","x.x.x").build();
         };
-        requestInfo.addRequestOptions(telemetryHandlerOption, new RetryHandlerOption());
+        requestInfo.addRequestOptions(new ArrayList<RequestOption>() {{
+            add(telemetryHandlerOption);
+            add(new RetryHandlerOption());
+        }});
         TelemetryHandler telemetryHandler = new TelemetryHandler();
         Interceptor[] interceptors = {telemetryHandler};
 
