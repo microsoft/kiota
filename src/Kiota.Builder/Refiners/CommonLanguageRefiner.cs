@@ -181,9 +181,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if(current is CodeClass currentClass && 
             isNotInExceptions &&
             shouldReplace &&
-            currentClass.StartBlock is ClassDeclaration currentDeclaration)
+            currentClass.StartBlock is ClassDeclaration currentDeclaration) {
             ReplaceReservedCodeUsings(currentDeclaration, provider, replacement);
-        else if(current is CodeNamespace currentNamespace &&
+            if(provider.ReservedNames.Contains(currentDeclaration.Inherits?.Name))
+                currentDeclaration.Inherits.Name = replacement(currentDeclaration.Inherits.Name);
+        } else if(current is CodeNamespace currentNamespace &&
             isNotInExceptions &&
             shouldReplace &&
             !string.IsNullOrEmpty(currentNamespace.Name))
