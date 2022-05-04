@@ -336,18 +336,33 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     });
                 }
             }
-            else if (mProp.Type is CodeType nonClassPropertyType && !nonClassPropertyType.IsExternal && nonClassPropertyType is CodeType nonClassTypeDef)
+            else if (mProp.Type is CodeType nonClassPropertyType && nonClassPropertyType is CodeType nonClassTypeDef)
+            {
+                if (!nonClassPropertyType.IsExternal)
+                {
+                    modelInterface.AddUsing(new CodeUsing
+                    {
+                        Name = mProp.Parent.Name,
+                        Declaration = new CodeType
+                        {
+                            Name = nonClassTypeDef.Name,
+                            TypeDefinition = nonClassTypeDef,
+                        }
+                    });
+                } 
+              
+
+            }
+            else if(mProp.Type is CodeType externalType && externalType.IsExternal)
             {
                 modelInterface.AddUsing(new CodeUsing
                 {
-                    Name = mProp.Parent.Name,
+                    Name = mProp.Name,
                     Declaration = new CodeType
                     {
-                        Name = nonClassTypeDef.Name,
-                        TypeDefinition = nonClassTypeDef,
+                        Name = externalType.Name
                     }
                 });
-
             }
             modelInterface.AddProperty(mProp);
         }

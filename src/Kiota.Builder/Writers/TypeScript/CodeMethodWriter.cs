@@ -318,13 +318,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             if (isCollection)
             {
                 str = ConvertInterfaceToClassArray(otherPropName, otherProp.Type, writer);
+                writer.WriteLine($"if(this.{otherPropName}){{");
             }
             else 
             {
+                writer.WriteLine($"if(this.{otherPropName})");
                 var propertyType = localConventions.TranslateType(otherProp.Type);
                 str = IsPredefinedType(otherProp.Type) || !IsCodeClassOrInterface(otherProp.Type) ? $"this.{otherPropName}" : $"new {propertyType}Impl(this.{otherPropName})" ;
             }
+            
             writer.WriteLine($"{undefinedPrefix}writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherPropName}\", {str});");
+            if (isCollection) writer.WriteLine("}");
         }
         if(additionalDataProperty != null)
             writer.WriteLine($"writer.writeAdditionalData(this.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
@@ -433,7 +437,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 if (currentType.TypeDefinition == null)
                     return $"writeCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>";
                 else
-                    return $"writeCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}Impl>";
+                    return $"writeCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}{(IsCodeClassOrInterface(currentType) ?"Impl":String.Empty)}>";
             }
         }
         return propertyType switch
