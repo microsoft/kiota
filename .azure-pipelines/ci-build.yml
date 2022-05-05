@@ -220,7 +220,7 @@ stages:
           PathtoPublish: '$(Build.ArtifactStagingDirectory)/Kiota-v$(kiotaversion)'
 
 - stage: deploy
-  condition: and(contains(variables['build.sourceBranch'], 'refs/tags/v'), succeeded())
+  # condition: and(contains(variables['build.sourceBranch'], 'refs/tags/v'), succeeded())
   dependsOn: build
   jobs:
     - deployment: deploy_kiota
