@@ -187,10 +187,11 @@ public class ShellCodeMethodWriterTests : IDisposable
         var result = tw.ToString();
 
         Assert.Contains("var builder = new TestRequestBuilder", result);
-        Assert.Contains("var commands = new List<Command>();", result);
-        Assert.Contains("commands.Add(builder.BuildTestMethod1());", result);
-        Assert.Contains("commands.AddRange(builder.BuildTestMethod2());", result);
-        Assert.Contains("return commands;", result);
+        Assert.Contains("var command = new Command(\"item\");", result);
+        Assert.Contains("command.AddCommand(builder.BuildTestMethod1());", result);
+        Assert.Contains("foreach (var cmd in builder.BuildTestMethod2()) {", result);
+        Assert.Contains("command.AddCommand(cmd);", result);
+        Assert.Contains("return command;", result);
     }
 
     [Fact]
