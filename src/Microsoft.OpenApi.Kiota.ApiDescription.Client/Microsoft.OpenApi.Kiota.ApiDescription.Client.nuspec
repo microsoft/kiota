@@ -9,7 +9,7 @@
     <license type="expression">MIT</license>
     <projectUrl>https://microsoft.github.io/kiota</projectUrl>
     <description>Kiota: An OpenAPI SDK generator</description>
-    <copyright>Copyright © Microsoft, 2021</copyright>
+    <copyright>© Microsoft Corporation. All rights reserved.</copyright>
     <tags>OpenAPI Swagger AspNetCore CodeGen TypeScript WebApi AspNet</tags>
     <repository type="git" url="https://github.com/microsoft/kiota.git" branch="main" />
     <dependencies>

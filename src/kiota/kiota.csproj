@@ -9,9 +9,12 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <ToolCommandName>kiota</ToolCommandName>
+    <Authors>Microsoft</Authors>
+    <Company>Microsoft</Company>
+    <Title>Microsoft.OpenApi.Kiota</Title>
     <PackageId>Microsoft.OpenApi.Kiota</PackageId>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <Version>0.1.0</Version>
+    <Version>0.1.0-preview</Version>
     <PackageReleaseNotes>
       - Initial public release
     </PackageReleaseNotes>
