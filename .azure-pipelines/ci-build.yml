@@ -36,10 +36,10 @@ stages:
           cmdLineArgs: '/F:$(Build.SourcesDirectory)/src /T:9 /Sev:"1|2" /PE:2 /O:poli_result_src.xml'
 
       - task: PoliCheck@1
-        displayName: 'Run PoliCheck "/test"'
+        displayName: 'Run PoliCheck "/tests"'
         inputs:
           inputType: CmdLine
-          cmdLineArgs: '/F:$(Build.SourcesDirectory)/test /T:9 /Sev:"1|2" /PE:2 /O:poli_result_test.xml'
+          cmdLineArgs: '/F:$(Build.SourcesDirectory)/tests /T:9 /Sev:"1|2" /PE:2 /O:poli_result_test.xml'
 
       # Install the nuget tool.
       - task: NuGetToolInstaller@0
