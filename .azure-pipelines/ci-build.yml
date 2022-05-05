@@ -153,7 +153,7 @@ stages:
           SessionTimeout: 20
       
       # Pack
-      - pwsh: dotnet pack $(Build.SourcesDirectory)/src/kiota.kiota.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg
+      - pwsh: dotnet pack $(Build.SourcesDirectory)/src/kiota/kiota.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg
         displayName: 'pack kiota'
       
       # Pack
