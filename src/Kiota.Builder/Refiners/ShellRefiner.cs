@@ -118,7 +118,6 @@ namespace Kiota.Builder.Refiners
 
                 // ReturnType setter assigns the parent
                 method.ReturnType = CreateCommandType();
-                method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
                 currentClass.AddMethod(method);
                 currentClass.RemoveChildElement(indexer);
             }
