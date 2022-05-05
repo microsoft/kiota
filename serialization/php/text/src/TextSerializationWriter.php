@@ -214,7 +214,9 @@ class TextSerializationWriter implements SerializationWriter
      */
     public function writeBinaryContent(?string $key, ?StreamInterface $value): void
     {
-        $this->writeStringValue($key, $value->getContents());
+        if ($value) {
+            $this->writeStringValue($key, $value->getContents());
+        }
     }
 
     /**

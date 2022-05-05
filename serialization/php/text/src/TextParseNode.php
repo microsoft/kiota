@@ -175,7 +175,7 @@ class TextParseNode implements ParseNode
      */
     public function getByteValue(): ?Byte
     {
-        return new Byte($this->content);
+        return new Byte((int)$this->content);
     }
 
     /**
