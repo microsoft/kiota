@@ -12,7 +12,7 @@
     <ToolCommandName>kiota</ToolCommandName>
     <PackageId>Microsoft.OpenApi.Kiota</PackageId>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <Version>0.0.23</Version>
+    <Version>0.1.0</Version>
     <PackageReleaseNotes>
       - Initial public release
     </PackageReleaseNotes>
