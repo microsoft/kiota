@@ -6,13 +6,13 @@ on:
     tags: ['v*']
     paths: ['src/**', '.github/workflows/**']
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/generator
+  REGISTRY: msgraphprod.azurecr.io
+  IMAGE_NAME: public/${{ github.repository }}/generator
 jobs:
   push_to_registry:
     environment:
-      name: staging_feeds
-    name: Push Docker image to GitHub Packages
+      name: acr
+    name: Push Docker image
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
@@ -20,8 +20,8 @@ jobs:
       - name: Login to GitHub package feed
         uses: docker/login-action@v1.14.1 
         with:
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
           registry: ${{ env.REGISTRY }}
       - run: |
           $version = $Env:BRANCH_NAME -replace "refs/tags/v",""
