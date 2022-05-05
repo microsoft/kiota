@@ -14,5 +14,5 @@ VOLUME /app/output
 VOLUME /app/openapi.yml
 ENTRYPOINT ["dotnet", "kiota.dll"]
 LABEL description="# Welcome to Kiota Generator \
-To start generating SDKs checkout [the getting started documentation](https://github.com/microsoft/kiota/#running-kiota-with-docker)  \
-[Source dockerfile](https://github.com/microsoft/kiota/blob/main/releases/Dockerfile)"
+To start generating SDKs checkout [the getting started documentation](https://microsoft.github.io/kiota/get-started/#run-in-docker)  \
+[Source dockerfile](https://github.com/microsoft/kiota/blob/main/Dockerfile)"

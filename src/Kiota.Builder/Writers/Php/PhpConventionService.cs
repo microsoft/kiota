@@ -57,7 +57,7 @@ namespace Kiota.Builder.Writers.Php
         public override string TranslateType(CodeType type)
         {
             string typeName = type.Name;
-            return typeName.ToLowerInvariant() switch
+            return typeName?.ToLowerInvariant() switch
             {
                 "boolean" => "bool",
                 "double" or "decimal" => "float",

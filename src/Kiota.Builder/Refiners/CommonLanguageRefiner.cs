@@ -306,7 +306,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 currentMethod.ReturnType.Name = symbol;
                 shouldInsertUsing = !string.IsNullOrWhiteSpace(ns);
             }
-            var binaryParameter = currentMethod.Parameters.FirstOrDefault(x => x.Type.Name.Equals(BinaryType));
+            var binaryParameter = currentMethod.Parameters.FirstOrDefault(x => x.Type?.Name?.Equals(BinaryType) ?? false);
             if(binaryParameter != null) {
                 binaryParameter.Type.Name = symbol;
                 shouldInsertUsing = !string.IsNullOrWhiteSpace(ns);
