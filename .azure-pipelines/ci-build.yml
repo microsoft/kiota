@@ -72,10 +72,10 @@ stages:
           debugMode: false
 
       - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@2
-        displayName: 'Run CredScan - Test'
+        displayName: 'Run CredScan - Tests'
         inputs:
           toolMajorVersion: 'V2'
-          scanFolder: '$(Build.SourcesDirectory)\test'
+          scanFolder: '$(Build.SourcesDirectory)\tests'
           debugMode: false
 
       - task: AntiMalware@3
