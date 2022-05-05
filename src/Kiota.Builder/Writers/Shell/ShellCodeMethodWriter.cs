@@ -455,7 +455,7 @@ namespace Kiota.Builder.Writers.Shell
                         indentParam = false;
                     }
 
-                    writer.Write($"q.{param.Name.ToFirstCharacterUpperCase()} = {paramName};", indentParam);
+                    writer.Write($"q.QueryParameters.{param.Name.ToFirstCharacterUpperCase()} = {paramName};", indentParam);
 
                     writer.WriteLine();
                 }
