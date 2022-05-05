@@ -105,8 +105,8 @@ namespace Kiota {
             loglevel = loglevel > LogLevel.Debug ? LogLevel.Debug : loglevel;
 #endif
 
-            Configuration.OpenAPIFilePath = Path.GetFullPath(Configuration.OpenAPIFilePath);
-            Configuration.OutputPath = Path.GetFullPath(Configuration.OutputPath);
+            Configuration.OpenAPIFilePath = GetAbsolutePath(Configuration.OpenAPIFilePath);
+            Configuration.OutputPath = GetAbsolutePath(Configuration.OutputPath);
             Configuration.CleanOutput = cleanOutput;
 
             var logger = LoggerFactory.Create((builder) => {
@@ -161,6 +161,7 @@ namespace Kiota {
             configuration.Bind(configObject);
             return configObject;
         });
+        private static string GetAbsolutePath(string source) => Path.IsPathRooted(source) || source.StartsWith("http") ? source : Path.Combine(Directory.GetCurrentDirectory(), source);
     }
     
 }
