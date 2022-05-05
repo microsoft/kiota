@@ -197,7 +197,7 @@ stages:
               echo "##vso[task.setvariable variable=kiotaversion]$version"  
 
       # publish kiota as an .exe
-      - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime win-x64 /p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/kiota-v$(kiotaversion) -p:PublishTrimmed=true
+      - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime win-x64 /p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/kiota-v$(kiotaversion)
         displayName: publish kiota as executable
 
       - task: CopyFiles@2

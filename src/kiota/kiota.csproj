@@ -4,7 +4,6 @@
     <OutputType>Exe</OutputType>
     <LangVersion>Latest</LangVersion>
     <TargetFramework>net6.0</TargetFramework>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackAsTool>true</PackAsTool>
     <PackageProjectUrl>https://github.com/microsoft/kiota</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
