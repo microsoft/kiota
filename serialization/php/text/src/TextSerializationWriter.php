@@ -78,7 +78,7 @@ class TextSerializationWriter implements SerializationWriter
      */
     public function writeBooleanValue(?string $key, ?bool $value): void
     {
-        $this->writeStringValue($key, (string) $value);
+        ($value) ? $this->writeStringValue($key, 'true') : $this->writeStringValue($key, 'false');
     }
 
     /**
@@ -128,6 +128,7 @@ class TextSerializationWriter implements SerializationWriter
      */
     public function getSerializedContent(): StreamInterface
     {
+        $this->stream->rewind();
         return $this->stream;
     }
 
