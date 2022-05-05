@@ -153,20 +153,12 @@ stages:
           SessionTimeout: 20
       
       # Pack
-      - task: DotNetCoreCLI@2
+      - pwsh: dotnet pack $(Build.SourcesDirectory)/src/kiota.kiota.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg
         displayName: 'pack kiota'
-        inputs:
-          command: pack
-          arguments: '-o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg'
-          workingDirectory: '$(Build.SourcesDirectory)/src/kiota'
       
       # Pack
-      - task: DotNetCoreCLI@2
+      - pwsh: nuget pack $(Build.SourcesDirectory)/src/Microsoft.OpenApi.Kiota.ApiDescription.Client/Microsoft.OpenApi.Kiota.ApiDescription.Client.nuspec -OutputDirectory $(Build.ArtifactStagingDirectory)
         displayName: 'pack targets'
-        inputs:
-          command: pack
-          arguments: '-o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg'
-          workingDirectory: '$(Build.SourcesDirectory)/src/Microsoft.OpenApi.Kiota.ApiDescription.Client'
       
       - task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@1
         displayName: 'ESRP CodeSigning Nuget Packages'
