@@ -269,14 +269,8 @@ namespace Kiota.Builder.Writers.Php
             var lowerCaseProp = propertyType.ToLower();
             return lowerCaseProp switch
             {
-                "string" or "guid" => "writeStringValue",
-                "enum" or "float" or "date" or "time" => $"write{lowerCaseProp.ToFirstCharacterUpperCase()}Value",
-                "bool" or "boolean" => "writeBooleanValue",
-                "double" or "decimal" => "writeFloatValue",
-                "datetime" or "datetimeoffset" => "writeDateTimeValue",
-                "duration" or "timespan" or "dateinterval" => "writeDateIntervalValue",
-                "int" or "number" => "writeIntegerValue",
                 "streaminterface" => "writeBinaryContent",
+                _ when conventions.PrimitiveTypes.Contains(lowerCaseProp) => $"write{lowerCaseProp.ToFirstCharacterUpperCase()}Value",
                 _ => "writeAnyValue"
             };
         }
