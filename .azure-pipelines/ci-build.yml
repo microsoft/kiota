@@ -43,9 +43,9 @@ stages:
 
       # Install the nuget tool.
       - task: NuGetToolInstaller@0
-        displayName: 'Use NuGet >=5.2.0'
+        displayName: 'Use NuGet >=6.1.0'
         inputs:
-          versionSpec: '>=5.2.0'
+          versionSpec: '>=6.1.0'
           checkLatest: true
 
       # Build the Product project
@@ -157,16 +157,14 @@ stages:
         displayName: 'pack kiota'
         inputs:
           command: pack
-          projects: src/kiota/kiota.csproj
-          arguments: '-o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg'
+          arguments: 'src/kiota/kiota.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg'
       
       # Pack
       - task: DotNetCoreCLI@2
         displayName: 'pack targets'
         inputs:
           command: pack
-          projects: src/Microsoft.OpenApi.Kiota.ApiDescription.Client/Microsoft.OpenApi.Kiota.ApiDescription.Client.nuspec
-          arguments: '-o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg'
+          arguments: 'src/Microsoft.OpenApi.Kiota.ApiDescription.Client/Microsoft.OpenApi.Kiota.ApiDescription.Client.nuspec -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg'
       
       - task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@1
         displayName: 'ESRP CodeSigning Nuget Packages'
