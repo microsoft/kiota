@@ -25,8 +25,9 @@ namespace Kiota {
             outputOption.AddAlias("-o");
             outputOption.ArgumentHelpName = "path";
             
-            var languageOption = new Option<GenerationLanguage>("--language", () => GenerationLanguage.CSharp, "The target language for the generated code files.");
+            var languageOption = new Option<GenerationLanguage>("--language", "The target language for the generated code files.");
             languageOption.AddAlias("-l");
+            languageOption.IsRequired = true;
             AddEnumValidator(languageOption, "language");
 
             var classOption = new Option<string>("--class-name", () => "ApiClient", "The class name to use for the core client class.");
