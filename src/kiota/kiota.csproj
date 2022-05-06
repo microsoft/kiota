@@ -16,7 +16,7 @@
     <PackageOutputPath>./nupkg</PackageOutputPath>
     <Version>0.1.1-preview</Version>
     <PackageReleaseNotes>
-      - Initial public release
+      https://github.com/microsoft/kiota/releases
     </PackageReleaseNotes>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryUrl>https://github.com/microsoft/kiota</RepositoryUrl>
