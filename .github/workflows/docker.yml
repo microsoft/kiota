@@ -7,7 +7,7 @@ on:
     paths: ['src/**', '.github/workflows/**']
 env:
   REGISTRY: msgraphprod.azurecr.io
-  IMAGE_NAME: public/${{ github.repository }}/generator
+  IMAGE_NAME: public/kiota/generator
 jobs:
   push_to_registry:
     environment:
