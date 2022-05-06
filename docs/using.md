@@ -14,14 +14,36 @@ Kiota accepts the following parameters during the generation.
 ```shell
 kiota [--backing-store | -b]
       [--class-name | -c]
-      [--clean-output | -co]
-      [--deserializer | -ds]
+      [--clean-output | --co]
+      [--deserializer | --ds]
       [--language | -l]
-      [--loglevel | -ll]
+      [--loglevel | --ll]
       [--namespace-name | -n]
       [--openapi | -d]
       [--output | -o]
       [--serializer | -s]
+```
+
+## Mandatory parameters
+
+### `--language (-l)`
+
+The target language for the generated code files.
+
+#### Accepted values
+
+- `csharp`
+- `go`
+- `java`
+- `php`
+- `python`
+- `ruby`
+- `shell`
+- `swift`
+- `typescript`
+
+```shell
+kiota --language java
 ```
 
 ## Optional parameters
@@ -38,14 +60,6 @@ kiota --backing-store
 
 The class name to use for the core client class. Defaults to `ApiClient`.
 
-### `--clean-output (-co)`
-
-Delete the output directory before generating the client. Defaults to false.
-
-```shell
-kiota --clean-output
-```
-
 #### Accepted values
 
 The provided name MUST be a valid class name for the target language.
@@ -54,7 +68,15 @@ The provided name MUST be a valid class name for the target language.
 kiota --class-name MyApiClient
 ```
 
-### `--deserializer (-ds)`
+### `--clean-output (--co)`
+
+Delete the output directory before generating the client. Defaults to false.
+
+```shell
+kiota --clean-output
+```
+
+### `--deserializer (--ds)`
 
 The fully qualified class names for deserializers. Defaults to the following values.
 
@@ -74,25 +96,7 @@ One or more module names that implements `IParseNodeFactory`.
 kiota --deserializer Contoso.Json.CustomDeserializer
 ```
 
-### `--language (-l)`
-
-The target language for the generated code files. Defaults to `csharp`.
-
-#### Accepted values
-
-- `csharp`
-- `go`
-- `java`
-- `php`
-- `python`
-- `ruby`
-- `typescript`
-
-```shell
-kiota --language java
-```
-
-### `--loglevel (-ll)`
+### `--loglevel (--ll)`
 
 The log level to use when logging events to the main output. Defaults to `warning`.
 
