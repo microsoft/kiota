@@ -21,7 +21,39 @@ class RequestInformationTest {
     void setsQueryParameters() throws URISyntaxException {
         final var requestInfo = new RequestInformation();
         requestInfo.urlTemplate = "https://graph.microsoft.com/test{?select,expand}";
-        requestInfo.queryParameters.put("select", Arrays.asList("id", "displayName"));
+        requestInfo.addQueryParameter("select", Arrays.asList("id", "displayName"));
         assertEquals("https://graph.microsoft.com/test?select=id,displayName", requestInfo.getUri().toString());
     }
+    @Test
+    void SetsSelectQueryParameters() {
+        var requestInfo = new RequestInformation()
+        {{
+            this.httpMethod = HttpMethod.GET;
+            this.urlTemplate = "http://localhost/me{?%24select}";
+        }};
+        var qParams = new GetQueryParameters() {{
+            this.Select = new String[] { "id", "displayName" };
+        }};
+
+        // Act
+        requestInfo.addQueryParameters(qParams);
+
+        // Assert
+        var result = requestInfo.getQueryParameters();
+        assertTrue(result.containsKey("%24select"));
+        assertFalse(result.containsKey("select"));
+    }
+}
+class GetQueryParameters
+{
+    @QueryParameter(name = "%24select")
+    public String[] Select;
+    @QueryParameter(name = "%24count")
+    public Boolean Count;
+    @QueryParameter(name = "%24filter")
+    public String Filter;
+    @QueryParameter(name = "%24orderby")
+    public String[] Orderby;
+    @QueryParameter(name = "%24search")
+    public String Search;
 }

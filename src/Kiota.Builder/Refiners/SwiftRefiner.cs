@@ -61,8 +61,7 @@ public class SwiftRefiner : CommonLanguageRefiner
     }
     private static void CorrectMethodType(CodeMethod currentMethod) {
         var parentClass = currentMethod.Parent as CodeClass;
-        if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) &&
-            parentClass != null) {
+        if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
             if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
                 currentMethod.Parameters.Where(x => x.Type.Name.Equals("IResponseHandler")).ToList().ForEach(x => {
                     x.Type.Name = "ResponseHandler";
@@ -70,12 +69,6 @@ public class SwiftRefiner : CommonLanguageRefiner
                 });
             else if(currentMethod.IsOfKind(CodeMethodKind.RequestGenerator))
                 currentMethod.ReturnType.IsNullable = true;
-            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => {
-                x.Type.IsNullable = false;
-                x.Type.Name = "RequestOption";
-                x.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
-            });
-            currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.QueryParameter)).ToList().ForEach(x => x.Type.Name = $"{parentClass.Name}{x.Type.Name}");
         }
         else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
             currentMethod.Parameters.Where(x => x.Type.Name.Equals("ISerializationWriter")).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
@@ -147,7 +140,13 @@ public class SwiftRefiner : CommonLanguageRefiner
                 currentProperty.Type.Name = "[String:String]";
                 if(!string.IsNullOrEmpty(currentProperty.DefaultValue))
                     currentProperty.DefaultValue = $"{currentProperty.Type.Name}()";
-            } else
+            } else if(currentProperty.IsOfKind(CodePropertyKind.Options)) {
+                currentProperty.Type.IsNullable = false;
+                currentProperty.Type.Name = "RequestOption";
+                currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
+            } else if(currentProperty.IsOfKind(CodePropertyKind.QueryParameter) && currentProperty.Parent is CodeClass parentClass)
+                currentProperty.Type.Name = $"{parentClass.Name}{currentProperty.Type.Name}";
+            else
                 CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
         }
     }

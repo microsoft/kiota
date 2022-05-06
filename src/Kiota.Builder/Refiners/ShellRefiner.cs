@@ -118,7 +118,6 @@ namespace Kiota.Builder.Refiners
 
                 // ReturnType setter assigns the parent
                 method.ReturnType = CreateCommandType();
-                method.ReturnType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
                 currentClass.AddMethod(method);
                 currentClass.RemoveChildElement(indexer);
             }
@@ -152,7 +151,7 @@ namespace Kiota.Builder.Refiners
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
                 "System.CommandLine",  "Command", "RootCommand", "IConsole"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
-                "Microsoft.Kiota.Cli.Commons.Binding", "CollectionBinding", "TypeBinding"),
+                "Microsoft.Kiota.Cli.Commons.Binding", "CollectionBinding", "TypeBinding", "NullableBooleanBinding"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
                 "Microsoft.Kiota.Cli.Commons.IO", "IOutputFormatter", "IOutputFormatterFactory", "FormatterType"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),

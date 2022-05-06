@@ -11,6 +11,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added text serialization library for PHP. []().
 
 ### Changed
+- Add binder for nullable boolean options. (Shell)
+
+### [0.1.0] - 2022-05-04
+
+### Added
+
+- The dotnet tool is now available on the public feed `dotnet tool install -g Microsoft.OpenApi.Kiota --prerelease`.
+- The dotnet OpenApi reference package is now available `Microsoft.OpenApi.Kiota.ApiDescription.Client`.
+- The container image is now available on mcr. `docker pull mcr.microsoft.com/kiota/generator:latest`.
+
+### Changed
+
+- Revamped the api surface for request configuration. [#1494](https://github.com/microsoft/kiota/issues/1494)
+- Fixed a bug in methods naming in Go after request configuration revamp.
+- Fixes a bug where reserved names would not be updated for inheritance.
+- Add `item` subcommand for indexers. Fixes conflicts when paths have repeating segments. (Shell) [#1541](https://github.com/microsoft/kiota/issues/1541)
 
 ## [0.0.23] - 2022-04-19
 

@@ -1,11 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using Kiota.Builder.Writers;
-using Kiota.Builder.Writers.Php;
 using Xunit;
 
-namespace Kiota.Builder.Tests.Writers.Php
+namespace Kiota.Builder.Writers.Php.Tests
 {
     public class CodeClassEndWriterTests: IDisposable {
         private const string DefaultPath = "./";

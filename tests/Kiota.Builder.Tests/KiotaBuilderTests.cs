@@ -495,9 +495,8 @@ public class KiotaBuilderTests
         var constructorMethod = getEffectivePermissionsRequestBuilder.FindChildByName<CodeMethod>("constructor");
         Assert.NotNull(constructorMethod);
         Assert.Single(constructorMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
-        var parameters = getEffectivePermissionsRequestBuilder.GetChildElements(true)
-            .Where(c => c is CodeMethod)
-            .Select(c => c as CodeMethod)
+        var parameters = getEffectivePermissionsRequestBuilder
+            .Methods
             .SingleOrDefault(cm => cm.IsOfKind(CodeMethodKind.RequestGenerator) && cm.HttpMethod == HttpMethod.Get)?
             .PathQueryAndHeaderParameters;
         Assert.Equal(4, parameters.Count());

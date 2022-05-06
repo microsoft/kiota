@@ -4,7 +4,7 @@ using Moq;
 using System;
 
 
-namespace Kiota.Builder.Tests.Writers {
+namespace Kiota.Builder.Writers.Tests {
     public class CommonLanguageConventionServiceTests {
         [Fact]
         public void TranslatesType() {
