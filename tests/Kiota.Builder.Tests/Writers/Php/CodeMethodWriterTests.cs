@@ -207,10 +207,6 @@ namespace Kiota.Builder.Writers.Php.Tests
             });
             classHolding.AddProperty(new CodeProperty
             {
-                Name = "married", Access = AccessModifier.Private, Type = new CodeType {Name = "boolean"}
-            });
-            classHolding.AddProperty(new CodeProperty
-            {
                 Name = "slept", Access = AccessModifier.Private, Type = new CodeType {Name = "bool"}
             });
             classHolding.AddProperty(new CodeProperty
@@ -235,29 +231,11 @@ namespace Kiota.Builder.Writers.Php.Tests
             });
             classHolding.AddProperty(new CodeProperty
             {
-                Name = "height2",
-                Access = AccessModifier.Private,
-                Type = new CodeType
-                {
-                    Name = "double"
-                }
-            });
-            classHolding.AddProperty(new CodeProperty
-            {
                 Name = "dateValue",
                 Access = AccessModifier.Private,
                 Type = new CodeType
                 {
                     Name = "DateTime"
-                }
-            });
-            classHolding.AddProperty(new CodeProperty
-            {
-                Name = "height3",
-                Access = AccessModifier.Private,
-                Type = new CodeType
-                {
-                    Name = "double"
                 }
             });
             classHolding.AddProperty(new CodeProperty
@@ -314,11 +292,8 @@ namespace Kiota.Builder.Writers.Php.Tests
             Assert.Contains("$writer->writeObjectValue('email', $this->email);", result);
             Assert.Contains("$writer->writeIntegerValue('age', $this->age", result);
             Assert.Contains("$writer->writeCollectionOfEnumValues('architectures', $this->architectures);",result);
-            Assert.Contains("$writer->writeObjectValue('email', $this->email);", result);
             Assert.Contains("$writer->writeCollectionOfObjectValues('emails', $this->emails);", result);
             Assert.Contains("$writer->writeFloatValue('height', $this->height);", result);
-            Assert.Contains("$writer->writeBooleanValue('married', $this->married);", result);
-            Assert.Contains("$writer->writeStringValue('name', $this->name);", result);
             Assert.Contains("$writer->writeBooleanValue('slept', $this->slept);", result);
             Assert.Contains("$writer->writeEnumValue('status', $this->status);", result);
             Assert.Contains("$writer->writeCollectionOfPrimitiveValues('temperatures', $this->temperatures);", result);

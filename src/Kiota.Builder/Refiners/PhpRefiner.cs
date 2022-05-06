@@ -27,8 +27,14 @@ namespace Kiota.Builder.Refiners
             MakeModelPropertiesNullable(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
-            ReplaceDefaultSerializationModules(generatedCode, "Microsoft\\Kiota\\Serialization\\Json\\JsonSerializationWriterFactory");
-            ReplaceDefaultDeserializationModules(generatedCode, "Microsoft\\Kiota\\Serialization\\Json\\JsonParseNodeFactory");
+            ReplaceDefaultSerializationModules(generatedCode,
+                "Microsoft\\Kiota\\Serialization\\Json\\JsonSerializationWriterFactory",
+                "Microsoft\\Kiota\\Serialization\\Text\\TextSerializationWriterFactory"
+            );
+            ReplaceDefaultDeserializationModules(generatedCode, 
+                "Microsoft\\Kiota\\Serialization\\Json\\JsonParseNodeFactory",
+                "Microsoft\\Kiota\\Serialization\\Text\\TextParseNodeFactory"
+            );
             AliasUsingWithSameSymbol(generatedCode);
             AddSerializationModulesImport(generatedCode, new []{"Microsoft\\Kiota\\Abstractions\\ApiClientBuilder"}, null, '\\');
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
