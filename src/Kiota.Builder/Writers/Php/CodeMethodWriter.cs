@@ -257,11 +257,6 @@ namespace Kiota.Builder.Writers.Php
                 {
                     return "writeEnumValue";
                 }
-
-                if (currentType.TypeDefinition is CodeClass cc && cc.IsOfKind(CodeClassKind.Model))
-                {
-                    return "writeObjectValue";
-                }
             }
 
             var lowerCaseProp = propertyType?.ToLower();
@@ -271,7 +266,7 @@ namespace Kiota.Builder.Writers.Php
                 "int" => "writeIntegerValue",
                 "bool" => "writeBooleanValue",
                 _ when conventions.PrimitiveTypes.Contains(lowerCaseProp) => $"write{lowerCaseProp.ToFirstCharacterUpperCase()}Value",
-                _ => "writeAnyValue"
+                _ => "writeObjectValue"
             };
         }
         

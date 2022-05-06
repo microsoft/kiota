@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Added text serialization library for PHP. []().
+- Added text serialization library for PHP. [#1546](https://github.com/microsoft/kiota/pull/1546).
 
 ### Changed
 - Add binder for nullable boolean options. (Shell)
