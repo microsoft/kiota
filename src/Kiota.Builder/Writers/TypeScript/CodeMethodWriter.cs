@@ -322,20 +322,22 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             var undefinedPrefix = isCollectionOfEnum ? $"this.{otherPropName} && " : string.Empty;
             var isCollection = otherProp.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None && (otherProp.Type is CodeType currentType && currentType.TypeDefinition != null); 
             var str = "";
-            if (isCollection)
+            writer.WriteLine($"if(this.{otherPropName}){{");
+            if (isCollection && !isCollectionOfEnum)
             {
                 str = ConvertInterfaceToClassArray(otherPropName, otherProp.Type, writer);
-                writer.WriteLine($"if(this.{otherPropName}){{");
+                
             }
             else 
             {
                 writer.WriteLine($"if(this.{otherPropName})");
                 var propertyType = localConventions.TranslateType(otherProp.Type);
-                str = IsPredefinedType(otherProp.Type) || !IsCodeClassOrInterface(otherProp.Type) ? $"this.{otherPropName}" : $"new {propertyType}Impl(this.{otherPropName})" ;
+                str = IsPredefinedType(otherProp.Type) || !IsCodeClassOrInterface(otherProp.Type) ? $"{spreadOperator}this.{otherPropName}" : $"new {propertyType}Impl(this.{otherPropName})" ;
             }
             
             writer.WriteLine($"{undefinedPrefix}writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherPropName}\", {str});");
-            if (isCollection) writer.WriteLine("}");
+          //  if (isCollection) 
+                writer.WriteLine("}");
         }
         if(additionalDataProperty != null)
             writer.WriteLine($"writer.writeAdditionalData(this.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
@@ -347,10 +349,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     }
     private string ConvertInterfaceToClassArray(string propertyName, CodeTypeBase propType, LanguageWriter writer)
     {
+        
         var propertyType = localConventions.TranslateType(propType);
-
+        if (IsCodeClassOrInterface(propType)) {
+            propertyType = propertyType + "Impl";
+        }
+      
         var arrName = $"{propertyName}ArrValue".ToFirstCharacterLowerCase();
-        writer.WriteLine($"const {arrName}: {propertyType}Impl[] = []; this.{propertyName}?.forEach(element => {{{arrName}.push(new {propertyType}Impl(element));}});");
+        writer.WriteLine($"const {arrName}: {propertyType}[] = []; this.{propertyName}?.forEach(element => {{{arrName}.push(new {propertyType}(element));}});");
 
         return arrName;
     }

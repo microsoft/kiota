@@ -314,7 +314,15 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
          */
         foreach (var mProp in classModelChildItems.OfType<CodeProperty>())
         {
-            if (mProp.Type is CodeType propertyType && propertyType.TypeDefinition is CodeClass propertyClass)
+            if (mProp.Type is CodeType externalType && externalType.IsExternal)
+            {
+                var usingExternal = modelClass.Usings.FirstOrDefault(x => String.Equals(x.Name, externalType.Name, StringComparison.OrdinalIgnoreCase));
+                
+                if (usingExternal != null) {
+                    modelInterface.AddUsing(usingExternal);
+                }
+            }
+            else if (mProp.Type is CodeType propertyType && !propertyType.IsExternal && propertyType.TypeDefinition is CodeClass propertyClass)
             {
                 var codeUsing = ReplaceTypeByInterfaceType(propertyClass, propertyType, interfaceNamingCallback);//, usingsToRemove);
 
@@ -338,34 +346,30 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     });
                 }
             }
-            else if (mProp.Type is CodeType nonClassPropertyType && nonClassPropertyType is CodeType nonClassTypeDef)
+            else if (mProp.Type is CodeType nonClassPropertyType && nonClassPropertyType is CodeType nonClassTypeDef && !(nonClassTypeDef.TypeDefinition is CodeClass))
             {
                 if (!nonClassPropertyType.IsExternal)
                 {
-                    modelInterface.AddUsing(new CodeUsing
+                    var usingExternal = modelClass.Usings.FirstOrDefault(x => String.Equals(x.Declaration.Name , nonClassTypeDef.Name, StringComparison.OrdinalIgnoreCase));
+
+                    if (usingExternal != null)
                     {
-                        Name = mProp.Parent.Name,
-                        Declaration = new CodeType
-                        {
-                            Name = nonClassTypeDef.Name,
-                            TypeDefinition = nonClassTypeDef,
-                        }
-                    });
+                        modelInterface.AddUsing(usingExternal);
+                    }
+                    //modelInterface.AddUsing(new CodeUsing
+                    //{
+                    //    Name = (mProp.GetImmediateParentOfType<CodeNamespace>()).Name,
+                    //    Declaration = new CodeType
+                    //    {
+                    //        Name = nonClassTypeDef.Name,
+                    //        TypeDefinition = nonClassTypeDef,
+                    //    }
+                    //});
                 } 
               
 
             }
-            else if(mProp.Type is CodeType externalType && externalType.IsExternal)
-            {
-                modelInterface.AddUsing(new CodeUsing
-                {
-                    Name = mProp.Name,
-                    Declaration = new CodeType
-                    {
-                        Name = externalType.Name
-                    }
-                });
-            }
+             
             modelInterface.AddProperty(mProp);
         }
 
@@ -394,7 +398,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         constructor.AddParameter(new CodeParameter
         {
-            Name = finalInterfaceName.ToFirstCharacterLowerCase(),
+            Name = finalInterfaceName.ToFirstCharacterLowerCase()+ "ParameterValue",
             Type = new CodeType { Name = finalInterfaceName, TypeDefinition = modelInterface },
             Optional = true
         });
@@ -474,6 +478,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         //    usingsToAdd.AddRange(modelParentClass.Usings.Where(x => x.IsExternal && externalTypesOnInter.Contains(x.Name)));
      //   targetUsingBlock.AddUsings(usingsToAdd.ToArray());
         return modelInterface;
+    }
+
+    private bool IsCodeClassOrInterface(CodeTypeBase propType)
+    {
+        return (propType is CodeType currentType && (currentType.TypeDefinition is CodeClass || currentType.TypeDefinition is CodeInterface));
     }
     private static (CodeInterface, CodeUsing) ReplaceTypeByInterfaceType(CodeClass sourceClass, CodeType originalType, Func<CodeClass, string> interfaceNamingCallback, List<string> usingsToRemove = null)
     {
