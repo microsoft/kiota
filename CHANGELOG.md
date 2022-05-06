@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [0.1.2] - 2022-05-06
+
+### Changed
+
+- Minor changes in the parameters (-co => --co, -ll => --ll, -d is required, -l is required).
+
 ## [0.1.1] - 2022-05-06
 
 ### Changed

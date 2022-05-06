@@ -16,25 +16,38 @@ namespace Kiota {
     public class KiotaHost {
         public RootCommand GetRootCommand()
         {
+            var kiotaInContainerRaw = Environment.GetEnvironmentVariable("KIOTA_CONTAINER");
+            var runsInContainer = !string.IsNullOrEmpty(kiotaInContainerRaw) && bool.TryParse(kiotaInContainerRaw, out var kiotaInContainer) && kiotaInContainer;
+            var descriptionOption = new Option<string>("--openapi", "The path to the OpenAPI description file used to generate the code files.");
+            if(runsInContainer)
+                descriptionOption.SetDefaultValue("openapi.yaml");
+            else
+                descriptionOption.IsRequired = true;
+            descriptionOption.AddAlias("-d");
+            descriptionOption.ArgumentHelpName = "path";
+
             var outputOption = new Option<string>("--output", () => "./output", "The output directory path for the generated code files.");
             outputOption.AddAlias("-o");
+            outputOption.ArgumentHelpName = "path";
             
-            var languageOption = new Option<GenerationLanguage>("--language", () => GenerationLanguage.CSharp, "The target language for the generated code files.");
+            var languageOption = new Option<GenerationLanguage>("--language", "The target language for the generated code files.");
             languageOption.AddAlias("-l");
+            languageOption.IsRequired = true;
             AddEnumValidator(languageOption, "language");
+
             var classOption = new Option<string>("--class-name", () => "ApiClient", "The class name to use for the core client class.");
             classOption.AddAlias("-c");
+            classOption.ArgumentHelpName = "name";
             AddStringRegexValidator(classOption, @"^[a-zA-Z_][\w_-]+", "class name");
 
             var namespaceOption = new Option<string>("--namespace-name", () => "ApiSdk", "The namespace to use for the core client class specified with the --class-name option.");
             namespaceOption.AddAlias("-n");
+            namespaceOption.ArgumentHelpName = "name";
             AddStringRegexValidator(namespaceOption, @"^[\w][\w\._-]+", "namespace name");
 
             var logLevelOption = new Option<LogLevel>("--loglevel", () => LogLevel.Warning, "The log level to use when logging messages to the main output.");
             logLevelOption.AddAlias("--ll");
             AddEnumValidator(logLevelOption, "log level");
-            var descriptionOption = new Option<string>("--openapi", () => "openapi.yml", "The path to the OpenAPI description file used to generate the code files.");
-            descriptionOption.AddAlias("-d");
 
             var backingStoreOption = new Option<bool>("--backing-store", () => false, "Enables backing store for models.");
             backingStoreOption.AddAlias("-b");
@@ -47,6 +60,7 @@ namespace Kiota {
                 },
                 "The fully qualified class names for serializers. Accepts multiple values.");
             serializerOption.AddAlias("-s");
+            serializerOption.ArgumentHelpName = "classes";
 
             var deserializerOption = new Option<List<string>>(
                 "--deserializer",
@@ -56,22 +70,24 @@ namespace Kiota {
                 },
                 "The fully qualified class names for deserializers. Accepts multiple values.");
             deserializerOption.AddAlias("--ds");
+            deserializerOption.ArgumentHelpName = "classes";
 
             var cleanOutputOption = new Option<bool>("--clean-output", () => false, "Removes all files from the output directory before generating the code files.");
-            cleanOutputOption.AddAlias("-co");
+            cleanOutputOption.AddAlias("--co");
 
             var command = new RootCommand {
+                descriptionOption,
                 outputOption,
                 languageOption,
-                descriptionOption,
-                backingStoreOption,
                 classOption,
-                logLevelOption,
                 namespaceOption,
+                logLevelOption,
+                backingStoreOption,
                 serializerOption,
                 deserializerOption,
                 cleanOutputOption,
             };
+            command.Description = "OpenAPI-based HTTP Client SDK code generator";
             command.SetHandler<string, GenerationLanguage, string, bool, string, LogLevel, string, List<string>, List<string>, bool, CancellationToken>(HandleCommandCall, outputOption, languageOption, descriptionOption, backingStoreOption, classOption, logLevelOption, namespaceOption, serializerOption, deserializerOption, cleanOutputOption);
             return command;
         }
@@ -91,9 +107,9 @@ namespace Kiota {
             if(deserializer?.Any() ?? false)
                 Configuration.Deserializers.AddRange(deserializer.Select(x => x.TrimQuotes()));
 
-            #if DEBUG
+#if DEBUG
             loglevel = loglevel > LogLevel.Debug ? LogLevel.Debug : loglevel;
-            #endif
+#endif
 
             Configuration.OpenAPIFilePath = GetAbsolutePath(Configuration.OpenAPIFilePath);
             Configuration.OutputPath = GetAbsolutePath(Configuration.OutputPath);

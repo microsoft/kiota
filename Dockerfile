@@ -12,6 +12,7 @@ COPY --from=build-env /app/kiota/src/kiota/bin/Release/net6.0 ./
 
 VOLUME /app/output
 VOLUME /app/openapi.yml
+ENV KIOTA_CONTAINER=true
 ENTRYPOINT ["dotnet", "kiota.dll"]
 LABEL description="# Welcome to Kiota Generator \
 To start generating SDKs checkout [the getting started documentation](https://microsoft.github.io/kiota/get-started/#run-in-docker)  \

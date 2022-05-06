@@ -12,16 +12,42 @@ nav_order: 2
 Kiota accepts the following parameters during the generation.
 
 ```shell
-kiota [--backing-store | -b]
-      [--class-name | -c]
-      [--clean-output | -co]
-      [--deserializer | -ds]
-      [--language | -l]
-      [--loglevel | -ll]
-      [--namespace-name | -n]
-      [--openapi | -d]
-      [--output | -o]
-      [--serializer | -s]
+kiota (--openapi | -d) <path>
+      (--language | -l) <language>
+      [(--output | -o) <path>]
+      [(--class-name | -c) <name>]
+      [(--namespace-name | -n) <name>]
+      [(--loglevel | --ll) <level>]
+      [--backing-store | -b]
+      [(--serializer | -s) <classes>]
+      [(--deserializer | --ds) <classes>]
+      [--clean-output | --co]
+```
+
+## Mandatory parameters
+
+### `--openapi (-d)`
+
+The location of the OpenAPI description in JSON or YAML format to use to generate the SDK.
+
+### `--language (-l)`
+
+The target language for the generated code files.
+
+#### Accepted values
+
+- `csharp`
+- `go`
+- `java`
+- `php`
+- `python`
+- `ruby`
+- `shell`
+- `swift`
+- `typescript`
+
+```shell
+kiota --language java
 ```
 
 ## Optional parameters
@@ -38,14 +64,6 @@ kiota --backing-store
 
 The class name to use for the core client class. Defaults to `ApiClient`.
 
-### `--clean-output (-co)`
-
-Delete the output directory before generating the client. Defaults to false.
-
-```shell
-kiota --clean-output
-```
-
 #### Accepted values
 
 The provided name MUST be a valid class name for the target language.
@@ -54,7 +72,15 @@ The provided name MUST be a valid class name for the target language.
 kiota --class-name MyApiClient
 ```
 
-### `--deserializer (-ds)`
+### `--clean-output (--co)`
+
+Delete the output directory before generating the client. Defaults to false.
+
+```shell
+kiota --clean-output
+```
+
+### `--deserializer (--ds)`
 
 The fully qualified class names for deserializers. Defaults to the following values.
 
@@ -74,25 +100,7 @@ One or more module names that implements `IParseNodeFactory`.
 kiota --deserializer Contoso.Json.CustomDeserializer
 ```
 
-### `--language (-l)`
-
-The target language for the generated code files. Defaults to `csharp`.
-
-#### Accepted values
-
-- `csharp`
-- `go`
-- `java`
-- `php`
-- `python`
-- `ruby`
-- `typescript`
-
-```shell
-kiota --language java
-```
-
-### `--loglevel (-ll)`
+### `--loglevel (--ll)`
 
 The log level to use when logging events to the main output. Defaults to `warning`.
 
@@ -121,10 +129,6 @@ The provided name MUST be a valid module or namespace name for the target langua
 ```shell
 kiota --namespace-name MyAppNamespace.Clients
 ```
-
-### `--openapi (-d)`
-
-The location of the OpenAPI description in JSON or YAML format to use to generate the SDK. Defaults to `./openapi.yml`.
 
 #### Accepted values
 
