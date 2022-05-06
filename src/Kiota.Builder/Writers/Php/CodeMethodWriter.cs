@@ -270,6 +270,8 @@ namespace Kiota.Builder.Writers.Php
             return lowerCaseProp switch
             {
                 "streaminterface" => "writeBinaryContent",
+                "int" => "writeIntegerValue",
+                "bool" => "writeBooleanValue",
                 _ when conventions.PrimitiveTypes.Contains(lowerCaseProp) => $"write{lowerCaseProp.ToFirstCharacterUpperCase()}Value",
                 _ => "writeAnyValue"
             };
