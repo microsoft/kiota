@@ -21,9 +21,10 @@ namespace Kiota {
             var descriptionOption = new Option<string>("--openapi", "The path to the OpenAPI description file used to generate the code files.");
             if(runsInContainer)
                 descriptionOption.SetDefaultValue("openapi.yaml");
+            else
+                descriptionOption.IsRequired = true;
             descriptionOption.AddAlias("-d");
             descriptionOption.ArgumentHelpName = "path";
-            descriptionOption.IsRequired = !runsInContainer;
 
             var outputOption = new Option<string>("--output", () => "./output", "The output directory path for the generated code files.");
             outputOption.AddAlias("-o");
