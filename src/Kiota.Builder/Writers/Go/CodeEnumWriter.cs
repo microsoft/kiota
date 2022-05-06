@@ -23,8 +23,8 @@ namespace Kiota.Builder.Writers.Go {
                             "const (");
             writer.IncreaseIndent();
             var iotaSuffix = $" {typeName} = iota";
-            foreach (var item in codeElement.Options) {
-                writer.WriteLine($"{item.ToUpperInvariant()}_{typeName.ToUpperInvariant()}{iotaSuffix}");
+            foreach (var item in codeElement.OptionsInternal) {
+                writer.WriteLine($"{item.Key.ToUpperInvariant()}_{typeName.ToUpperInvariant()}{iotaSuffix}");
                 if (!string.IsNullOrEmpty(iotaSuffix))
                     iotaSuffix = string.Empty;
             }
@@ -34,20 +34,20 @@ namespace Kiota.Builder.Writers.Go {
                             $"func (i {typeName}) String() string {{");
             writer.IncreaseIndent();
             var literalOptions = codeElement.Options
-                                            .Select(x => $"\"{x.ToUpperInvariant()}\"")
+                                            .Select(x => $"\"{x.Key.ToUpperInvariant()}\"")
                                             .Aggregate((x, y) => x + ", " + y);
             writer.WriteLine($"return []string{{{literalOptions}}}[i]");
             writer.DecreaseIndent();
             writer.WriteLines("}",
                             $"func Parse{typeName}(v string) (interface{{}}, error) {{");
             writer.IncreaseIndent();
-            writer.WriteLine($"result := {codeElement.Options.First().ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
+            writer.WriteLine($"result := {codeElement.Options.Keys.First().ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
             writer.WriteLine($"switch strings.ToUpper(v) {{");
             writer.IncreaseIndent();
-            foreach (var item in codeElement.Options) {
-                writer.WriteLine($"case \"{item.ToUpperInvariant()}\":");
+            foreach (var item in codeElement.OptionsInternal) {
+                writer.WriteLine($"case \"{item.Key.ToUpperInvariant()}\":");
                 writer.IncreaseIndent();
-                writer.WriteLine($"result = {item.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
+                writer.WriteLine($"result = {item.Key.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
                 writer.DecreaseIndent();
             }
             writer.WriteLine("default:");

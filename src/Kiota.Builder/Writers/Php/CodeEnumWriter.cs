@@ -12,7 +12,7 @@ namespace Kiota.Builder.Writers.Php
         public override void WriteCodeElement(CodeEnum codeElement, LanguageWriter writer)
         {
             conventions.WritePhpDocumentStart(writer);
-            var enumProperties = codeElement.Options;
+            var enumProperties = codeElement.OptionsInternal;
             if (codeElement?.Parent is CodeNamespace enumNamespace)
             {
                 writer.WriteLine($"namespace {enumNamespace.Name.ReplaceDotsWithSlashInNamespaces()};");
@@ -44,7 +44,7 @@ namespace Kiota.Builder.Writers.Php
             writer.IncreaseIndent();
             foreach (var enumProperty     in enumProperties)
             {
-                writer.WriteLine($"public const {GetEnumValueName(enumProperty)} = '{enumProperty}';");
+                writer.WriteLine($"public const {GetEnumValueName(enumProperty.Key)} = '{enumProperty.Key}';");
             }
         }
         

@@ -22,7 +22,7 @@ namespace Kiota.Builder.Writers.CSharp {
             writer.WriteLine($"public enum {codeElement.Name.ToFirstCharacterUpperCase()} {{"); //TODO docs
             writer.IncreaseIndent();
             writer.WriteLines(codeElement.Options
-                            .Select(x => x.ToFirstCharacterUpperCase())
+                            .Select(x => x.Key.ToFirstCharacterUpperCase())
                             .Select((x, idx) => $"{x}{(codeElement.Flags ? " = " + GetEnumFlag(idx) : string.Empty)},")
                             .ToArray());
             if(codeNamespace != null)
