@@ -287,7 +287,14 @@ namespace Kiota.Builder.Writers.Shell
                 writer.WriteLine("};");
                 writer.WriteLine($"{optionName}.IsRequired = {isRequired.ToString().ToFirstCharacterLowerCase()};");
                 writer.WriteLine($"command.AddOption({optionName});");
-                availableOptions.Add(optionName);
+                if (optionType == "bool?")
+                {
+                    availableOptions.Add($"new NullableBooleanBinding({optionName})");
+                }
+                else
+                {
+                    availableOptions.Add(optionName);
+                }
             }
 
             return availableOptions;

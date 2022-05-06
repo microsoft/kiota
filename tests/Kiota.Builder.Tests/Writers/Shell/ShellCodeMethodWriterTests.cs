@@ -304,6 +304,16 @@ public class ShellCodeMethodWriterTests : IDisposable
         AddRequestProperties();
         AddRequestBodyParameters(method.OriginalMethod);
         AddPathQueryAndHeaderParameters(generatorMethod);
+        generatorMethod.AddPathQueryOrHeaderParameter(new CodeParameter
+        {
+            Name = "count",
+            Kind = CodeParameterKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "boolean",
+                IsNullable = true,
+            },
+        });
 
         writer.Write(method);
         var result = tw.ToString();
@@ -323,10 +333,11 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("requestInfo.Headers[\"Test-Header\"] = testHeader;", result);
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
-        Assert.Contains("var outputFormatterFactory = (IOutputFormatterFactory) parameters[4];", result);
+        Assert.Contains("var outputFormatterFactory = (IOutputFormatterFactory) parameters[5];", result);
         Assert.Contains("var formatter = outputFormatterFactory.GetFormatter(FormatterType.TEXT);", result);
         Assert.Contains("await formatter.WriteOutputAsync(response, null, cancellationToken);", result);
         Assert.Contains("}, new CollectionBinding(qOption, testPathOption, testHeaderOption", result);
+        Assert.Contains("new NullableBooleanBinding(countOption)", result);
         Assert.Contains("return command;", result);
     }
 
