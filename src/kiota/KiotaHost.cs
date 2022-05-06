@@ -16,10 +16,14 @@ namespace Kiota {
     public class KiotaHost {
         public RootCommand GetRootCommand()
         {
+            var kiotaInContainerRaw = Environment.GetEnvironmentVariable("KIOTA_CONTAINER");
+            var runsInContainer = !string.IsNullOrEmpty(kiotaInContainerRaw) && bool.TryParse(kiotaInContainerRaw, out var kiotaInContainer) && kiotaInContainer;
             var descriptionOption = new Option<string>("--openapi", "The path to the OpenAPI description file used to generate the code files.");
+            if(runsInContainer)
+                descriptionOption.SetDefaultValue("openapi.yaml");
             descriptionOption.AddAlias("-d");
             descriptionOption.ArgumentHelpName = "path";
-            descriptionOption.IsRequired = true;
+            descriptionOption.IsRequired = !runsInContainer;
 
             var outputOption = new Option<string>("--output", () => "./output", "The output directory path for the generated code files.");
             outputOption.AddAlias("-o");
