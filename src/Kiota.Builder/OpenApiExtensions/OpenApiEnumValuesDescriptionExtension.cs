@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Kiota.Builder.Extensions;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Any;
@@ -20,7 +21,7 @@ namespace Kiota.Builder.OpenApiExtensions;
 /// THIS FILE IS A COPY OF https://github.com/microsoft/OpenAPI.NET.OData/blob/dbcf68683d1e21e00af9bfe5338e74556278419f/src/Microsoft.OpenApi.OData.Reader/OpenApiExtensions/OpenApiEnumValuesDescriptionExtension.cs
 /// except for the parse method
 /// </summary>
-internal class OpenApiEnumValuesDescriptionExtension : IOpenApiExtension
+public class OpenApiEnumValuesDescriptionExtension : IOpenApiExtension
 {
 	/// <summary>
     /// Name of the extension as used in the description.
@@ -72,13 +73,13 @@ internal class OpenApiEnumValuesDescriptionExtension : IOpenApiExtension
     }
 }
 
-internal class EnumDescription : IOpenApiElement
+public class EnumDescription : IOpenApiElement
 {
-    internal EnumDescription()
+    public EnumDescription()
     {
         
     }
-    internal EnumDescription(OpenApiObject source)
+    public EnumDescription(OpenApiObject source)
     {
         if(source.TryGetValue("value", out var rawValue) && rawValue is OpenApiString value)
             Value = value.Value;
