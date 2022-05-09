@@ -956,8 +956,8 @@ public class KiotaBuilder
         foreach(var enumValue in entries) {
             var optionDescription = extensionInformation?.ValuesDescriptions.FirstOrDefault(x => x.Value.Equals(enumValue.Value, StringComparison.OrdinalIgnoreCase));
             target.AddOption(new CodeEnumOption {
-                Name = enumValue.Value,
-                SerializationName = optionDescription?.Name,
+                Name = optionDescription?.Name ?? enumValue.Value,
+                SerializationName = !string.IsNullOrEmpty(optionDescription?.Name) ? enumValue.Value : null,
                 Description = optionDescription?.Description,
             });
         }

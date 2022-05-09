@@ -10,7 +10,6 @@ using Kiota.Builder.Extensions;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
-using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Writers;
 
 namespace Kiota.Builder.OpenApiExtensions;
@@ -62,15 +61,32 @@ internal class OpenApiEnumValuesDescriptionExtension : IOpenApiExtension
 	}
     public static OpenApiEnumValuesDescriptionExtension Parse(IOpenApiAny source)
     {
-        if (source is not OpenApiSchema schema) throw new ArgumentOutOfRangeException(nameof(source));
-
+        if (source is not OpenApiObject rawObject) throw new ArgumentOutOfRangeException(nameof(source));
         var extension = new OpenApiEnumValuesDescriptionExtension();
+        if (rawObject.TryGetValue("values", out var values) && values is OpenApiArray valuesArray) {
+            extension.ValuesDescriptions.AddRange(valuesArray
+                                            .OfType<OpenApiObject>()
+                                            .Select(x => new EnumDescription(x)));
+        }
         return extension;
     }
 }
 
 internal class EnumDescription : IOpenApiElement
 {
+    internal EnumDescription()
+    {
+        
+    }
+    internal EnumDescription(OpenApiObject source)
+    {
+        if(source.TryGetValue("value", out var rawValue) && rawValue is OpenApiString value)
+            Value = value.Value;
+        if(source.TryGetValue("description", out var rawDescription) && rawDescription is OpenApiString description)
+            Description = description.Value;
+        if(source.TryGetValue("name", out var rawName) && rawName is OpenApiString name)
+            Name = name.Value; 
+    }
 	/// <summary>
 	/// The description for the enum symbol
 	/// </summary>
