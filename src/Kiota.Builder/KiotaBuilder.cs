@@ -949,15 +949,15 @@ public class KiotaBuilder
             return existingDeclaration;
     }
     private static void SetEnumOptions(OpenApiSchema schema, CodeEnum target) {
-        var entries = schema.Enum.OfType<OpenApiString>().Where(static x => !x.Value.Equals("null", StringComparison.OrdinalIgnoreCase));
         OpenApiEnumValuesDescriptionExtension extensionInformation = null;
         if (schema.Extensions.TryGetValue(OpenApiEnumValuesDescriptionExtension.Name, out var rawExtension) && rawExtension is OpenApiEnumValuesDescriptionExtension localExtInfo)
             extensionInformation = localExtInfo;
+        var entries = schema.Enum.OfType<OpenApiString>().Where(static x => !x.Value.Equals("null", StringComparison.OrdinalIgnoreCase)).Select(static x => x.Value);
         foreach(var enumValue in entries) {
-            var optionDescription = extensionInformation?.ValuesDescriptions.FirstOrDefault(x => x.Value.Equals(enumValue.Value, StringComparison.OrdinalIgnoreCase));
+            var optionDescription = extensionInformation?.ValuesDescriptions.FirstOrDefault(x => x.Value.Equals(enumValue, StringComparison.OrdinalIgnoreCase));
             target.AddOption(new CodeEnumOption {
-                Name = optionDescription?.Name ?? enumValue.Value,
-                SerializationName = !string.IsNullOrEmpty(optionDescription?.Name) ? enumValue.Value : null,
+                Name = optionDescription?.Name ?? enumValue,
+                SerializationName = !string.IsNullOrEmpty(optionDescription?.Name) ? enumValue : null,
                 Description = optionDescription?.Description,
             });
         }
