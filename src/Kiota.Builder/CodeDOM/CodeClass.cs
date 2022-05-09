@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder;
 
@@ -33,9 +34,14 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
     {
         if(indexer == null)
             throw new ArgumentNullException(nameof(indexer));
-        if(InnerChildElements.Values.OfType<CodeIndexer>().Any())
-            throw new InvalidOperationException("this class already has an indexer, remove it first");
-        AddRange(indexer);
+        if(InnerChildElements.Values.OfType<CodeIndexer>().Any() || InnerChildElements.Values.OfType<CodeMethod>().Any(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility))) {
+            var existingIndexer = InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault();
+            if(existingIndexer != null)
+                RemoveChildElement(existingIndexer);
+            AddRange(CodeMethod.FromIndexer(indexer, this, $"By{indexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", false),
+                CodeMethod.FromIndexer(existingIndexer, this, $"By{existingIndexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", true));
+        } else
+            AddRange(indexer);
     }
     public IEnumerable<CodeClass> AddInnerClass(params CodeClass[] codeClasses)
     {

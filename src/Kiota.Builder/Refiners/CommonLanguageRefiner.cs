@@ -428,35 +428,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         CrawlTree(currentElement, c => ReplaceIndexersByMethodsWithParameter(c, rootNamespace, parameterNullable, methodNameSuffix));
     }
     private static void AddIndexerMethod(CodeElement currentElement, CodeClass targetClass, CodeClass indexerClass, string methodNameSuffix, bool parameterNullable, CodeIndexer currentIndexer) {
-        if(currentElement is CodeProperty currentProperty && currentProperty.Type.AllTypes.Any(x => x.TypeDefinition == targetClass)) {
-            var parentClass = currentElement.Parent as CodeClass;
-            var method = new CodeMethod {
-                IsAsync = false,
-                IsStatic = false,
-                Access = AccessModifier.Public,
-                Kind = CodeMethodKind.IndexerBackwardCompatibility,
-                Name = currentIndexer.PathSegment + methodNameSuffix,
-                Description = currentIndexer.Description,
-                ReturnType = new CodeType {
-                    IsNullable = false,
-                    TypeDefinition = indexerClass,
-                    Name = indexerClass.Name,
-                },
-                OriginalIndexer = currentIndexer,
-            };
-            var parameter = new CodeParameter {
-                Name = "id",
-                Optional = false,
-                Kind = CodeParameterKind.Custom,
-                Description = "Unique identifier of the item",
-                Type = new CodeType {
-                    Name = "String",
-                    IsNullable = parameterNullable,
-                    IsExternal = true,
-                },
-            };
-            method.AddParameter(parameter);
-            parentClass.AddMethod(method);
+        if(currentElement is CodeProperty currentProperty &&
+            currentProperty.Type.AllTypes.Any(x => x.TypeDefinition == targetClass) &&
+            currentProperty.Parent is CodeClass parentClass)
+        {
+            parentClass.AddMethod(CodeMethod.FromIndexer(currentIndexer, indexerClass, methodNameSuffix, parameterNullable));
         }
         CrawlTree(currentElement, c => AddIndexerMethod(c, targetClass, indexerClass, methodNameSuffix, parameterNullable, currentIndexer));
     }

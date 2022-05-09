@@ -44,6 +44,36 @@ public enum HttpMethod {
 
 public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement
 {
+    public static CodeMethod FromIndexer(CodeIndexer originalIndexer, CodeClass indexerClass, string methodNameSuffix, bool parameterNullable)
+    {
+        var method = new CodeMethod {
+            IsAsync = false,
+            IsStatic = false,
+            Access = AccessModifier.Public,
+            Kind = CodeMethodKind.IndexerBackwardCompatibility,
+            Name = originalIndexer.PathSegment + methodNameSuffix,
+            Description = originalIndexer.Description,
+            ReturnType = new CodeType {
+                IsNullable = false,
+                TypeDefinition = indexerClass,
+                Name = indexerClass.Name,
+            },
+            OriginalIndexer = originalIndexer,
+        };
+        var parameter = new CodeParameter {
+            Name = "id",
+            Optional = false,
+            Kind = CodeParameterKind.Custom,
+            Description = "Unique identifier of the item",
+            Type = new CodeType {
+                Name = "String",
+                IsNullable = parameterNullable,
+                IsExternal = true,
+            },
+        };
+        method.AddParameter(parameter);
+        return method;
+    }
     public HttpMethod? HttpMethod {get;set;}
     public string ContentType { get; set; }
     public AccessModifier Access {get;set;} = AccessModifier.Public;
