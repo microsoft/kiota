@@ -25,6 +25,8 @@ namespace Kiota.Builder.Writers.Go {
             var iotaSuffix = $" {typeName} = iota";
             var enumOptions = codeElement.Options;
             foreach (var item in enumOptions) {
+                if(!string.IsNullOrEmpty(item.Description))
+                    writer.WriteLine($"// {item.Description}");
                 writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}{iotaSuffix}");
                 if (!string.IsNullOrEmpty(iotaSuffix))
                     iotaSuffix = string.Empty;
@@ -43,7 +45,7 @@ namespace Kiota.Builder.Writers.Go {
                             $"func Parse{typeName}(v string) (interface{{}}, error) {{");
             writer.IncreaseIndent();
             writer.WriteLine($"result := {enumOptions.First().Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
-            writer.WriteLine($"switch strings.ToUpper(v) {{");
+            writer.WriteLine($"switch v {{");
             writer.IncreaseIndent();
             foreach (var item in enumOptions) {
                 writer.WriteLine($"case \"{item.SerializationName ?? item.Name}\":");

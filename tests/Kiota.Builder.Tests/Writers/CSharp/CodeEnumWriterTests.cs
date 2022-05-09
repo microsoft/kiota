@@ -49,6 +49,15 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
             Assert.Contains("= 2", result);
         }
         [Fact]
+        public void WritesEnumOptionDescription() {
+            Option.Description = "Some option description";
+            currentEnum.AddOption(Option);
+            writer.Write(currentEnum);
+            var result = tw.ToString();
+            Assert.Contains($"<summary>{Option.Description}</summary>", result);
+            AssertExtensions.CurlyBracesAreClosed(result, 1);
+        }
+        [Fact]
         public void DoesntWriteAnythingOnNoOption() {
             writer.Write(currentEnum);
             var result = tw.ToString();
