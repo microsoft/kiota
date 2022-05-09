@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for enum options descriptions (C#/Go/Java/TypeScript). [#90](https://github.com/microsoft/kiota/issues/90)
+
 ### Changed
 
 ## [0.1.3] - 2022-05-06

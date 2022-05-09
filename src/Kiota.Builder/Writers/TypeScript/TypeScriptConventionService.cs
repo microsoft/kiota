@@ -121,6 +121,6 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     public override void WriteShortDescription(string description, LanguageWriter writer)
     {
         if(!string.IsNullOrEmpty(description))
-            writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)} {DocCommentEnd}");
+            writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)}{DocCommentEnd}");
     }
 }
