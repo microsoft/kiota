@@ -41,7 +41,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             Assert.Contains($"[i]", result);
             Assert.Contains($"func Parse", result);
             Assert.Contains($"(v string) (interface{{}}, error)", result);
-            Assert.Contains($"switch strings.ToUpper(v)", result);
+            Assert.Contains($"switch v", result);
             Assert.Contains($"default", result);
             Assert.Contains($"result :=", result);
             Assert.Contains($"return &result, nil", result);
