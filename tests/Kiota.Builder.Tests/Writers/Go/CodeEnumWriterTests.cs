@@ -29,7 +29,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
         [Fact]
         public void WritesEnum() {
             const string optionName = "option1";
-            currentEnum.Options.Add(optionName);
+            currentEnum.AddOption(new CodeEnumOption { Name = optionName});
             writer.Write(currentEnum);
             var result = tw.ToString();
             Assert.Contains($"type {EnumName.ToFirstCharacterUpperCase()} int", result);
@@ -60,7 +60,7 @@ namespace Kiota.Builder.Writers.Go.Tests {
             currentEnum.AddUsing(new CodeUsing {
                 Name = "using1",
             });
-            currentEnum.Options.Add("o");
+            currentEnum.AddOption(new CodeEnumOption{ Name = "o"});
             writer.Write(currentEnum);
             var result = tw.ToString();
             Assert.Contains("using1", result);

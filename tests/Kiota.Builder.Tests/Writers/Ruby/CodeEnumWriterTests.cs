@@ -32,7 +32,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             var module = currentEnum?.Parent?.Parent as CodeNamespace;
             module.Name = "testModule";
             const string optionName = "Option1";
-            currentEnum.Options.Add(optionName);
+            currentEnum.AddOption(new CodeEnumOption { Name = optionName});
             writer.Write(currentEnum);
             var result = tw.ToString();
             Assert.Contains($"= {{", result);
@@ -50,7 +50,7 @@ namespace Kiota.Builder.Writers.Ruby.Tests {
             var module = currentEnum?.Parent as CodeNamespace;
             module.Name = "testModule";
             const string optionName = "Option2";
-            currentEnum.Options.Add(optionName);
+            currentEnum.AddOption(new CodeEnumOption { Name = optionName});
             writer.Write(currentEnum);
             var result = tw.ToString();
             Assert.Contains("module TestModule", result);

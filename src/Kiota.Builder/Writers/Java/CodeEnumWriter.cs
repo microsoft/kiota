@@ -19,7 +19,7 @@ namespace Kiota.Builder.Writers.Java {
             writer.WriteLine($"public enum {enumName} implements ValuedEnum {{");
             writer.IncreaseIndent();
             writer.Write(codeElement.Options
-                        .Select(x => $"{x.Key.ToFirstCharacterUpperCase()}(\"{x}\")")
+                        .Select(x => $"{x.Name.ToFirstCharacterUpperCase()}(\"{x}\")")
                         .Aggregate((x, y) => $"{x},{LanguageWriter.NewLine}{writer.GetIndent()}{y}") + ";" + LanguageWriter.NewLine);
             writer.WriteLines("public final String value;",
                 $"{enumName}(final String value) {{");
@@ -36,7 +36,7 @@ namespace Kiota.Builder.Writers.Java {
                             "switch(searchValue) {");
             writer.IncreaseIndent();
             writer.Write(codeElement.Options
-                        .Select(x => $"case \"{x}\": return {x.Key.ToFirstCharacterUpperCase()};")
+                        .Select(x => $"case \"{x.SerializationName ?? x.Name}\": return {x.Name.ToFirstCharacterUpperCase()};")
                         .Aggregate((x, y) => $"{x}{LanguageWriter.NewLine}{writer.GetIndent()}{y}") + LanguageWriter.NewLine);
             writer.WriteLine("default: return null;");
             writer.CloseBlock();

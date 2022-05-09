@@ -12,7 +12,9 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         private readonly LanguageWriter writer;
         private readonly CodeEnum currentEnum;
         private const string EnumName = "someEnum";
-        private const string OptionName = "Option1";
+        private static readonly CodeEnumOption Option = new () {
+            Name = "Option1",
+        };
         public CodeEnumWriterTests(){
             writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName);
             tw = new StringWriter();
@@ -28,18 +30,18 @@ namespace Kiota.Builder.Writers.CSharp.Tests {
         }
         [Fact]
         public void WritesEnum() {
-            currentEnum.Options.Add(OptionName);
+            currentEnum.AddOption(Option);
             writer.Write(currentEnum);
             var result = tw.ToString();
             Assert.Contains("public enum", result);
             AssertExtensions.CurlyBracesAreClosed(result, 1);
-            Assert.Contains(OptionName, result);
+            Assert.Contains(Option.Name, result);
         }
         [Fact]
         public void WritesFlagsEnum() {
             currentEnum.Flags = true;
-            currentEnum.Options.Add(OptionName);
-            currentEnum.Options.Add("option2");
+            currentEnum.AddOption(Option);
+            currentEnum.AddOption(new CodeEnumOption { Name = "option2"});
             writer.Write(currentEnum);
             var result = tw.ToString();
             Assert.Contains("[Flags]", result);

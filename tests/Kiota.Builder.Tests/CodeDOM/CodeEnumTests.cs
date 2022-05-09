@@ -11,7 +11,7 @@ namespace Kiota.Builder.Tests {
                 Description = "some description",
                 Flags = true,
             }).First();
-            codeEnum.Options.Add("option1");
+            codeEnum.AddOption(new CodeEnumOption { Name = "option1"});
         }
     }
 }

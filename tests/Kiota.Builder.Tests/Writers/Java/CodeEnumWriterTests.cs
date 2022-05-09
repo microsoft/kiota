@@ -28,7 +28,7 @@ namespace Kiota.Builder.Writers.Java.Tests {
         [Fact]
         public void WritesEnum() {
             const string optionName = "option1";
-            currentEnum.Options.Add(optionName);
+            currentEnum.AddOption(new CodeEnumOption { Name = optionName});
             writer.Write(currentEnum);
             var result = tw.ToString();
             Assert.Contains($"public enum", result);

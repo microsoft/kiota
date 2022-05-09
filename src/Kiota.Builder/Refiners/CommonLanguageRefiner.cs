@@ -214,7 +214,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         else if (current is CodeEnum currentEnum &&
                 isNotInExceptions &&
                 shouldReplace &&
-                currentEnum.Options.Keys.Any(x => provider.ReservedNames.Contains(x)))
+                currentEnum.Options.Any(x => provider.ReservedNames.Contains(x.Name)))
             ReplaceReservedEnumNames(currentEnum, provider, replacement);
         // Check if the current name meets the following conditions to be replaced
         // 1. In the list of reserved names
@@ -235,12 +235,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     private static void ReplaceReservedEnumNames(CodeEnum currentEnum, IReservedNamesProvider provider, Func<string, string> replacement)
     {
         currentEnum.Options
-                    .Where(x => provider.ReservedNames.Contains(x.Key))
+                    .Where(x => provider.ReservedNames.Contains(x.Name))
                     .ToList()
                     .ForEach(x => {
-                        var newValue = replacement.Invoke(x.Key);
-                        currentEnum.Options.Remove(x.Key);
-                        currentEnum.Options.Add(newValue, x.Value);
+                        x.SerializationName = x.Name;
+                        x.Name = replacement.Invoke(x.Name);
                     });
     }
     private static void ReplaceReservedCodeUsings(ClassDeclaration currentDeclaration, IReservedNamesProvider provider, Func<string, string> replacement)
