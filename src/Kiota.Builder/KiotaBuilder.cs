@@ -559,6 +559,8 @@ public class KiotaBuilder
     private CodeProperty CreateProperty(string childIdentifier, string childType, string defaultValue = null, OpenApiSchema typeSchema = null, CodeElement typeDefinition = null, CodePropertyKind kind = CodePropertyKind.Custom)
     {
         var propertyName = childIdentifier.CleanupSymbolName(config.PropertiesPrefixToStrip);
+        if(int.TryParse(propertyName, out var _))
+            propertyName = $"{childIdentifier.GetNamespaceImportSymbol()}{propertyName}";
         var prop = new CodeProperty
         {
             Name = propertyName,
@@ -602,6 +604,7 @@ public class KiotaBuilder
                 ("number" or "integer", "uint8") => "byte",
                 ("number" or "integer", "int64") => "int64",
                 ("number", "int32") => "integer",
+                ("number", _) => "int64",
                 ("integer", _) => "integer",
                 ("boolean", _) => "boolean",
                 (_, "byte" or "binary") => "binary",
@@ -953,7 +956,7 @@ public class KiotaBuilder
         OpenApiEnumValuesDescriptionExtension extensionInformation = null;
         if (schema.Extensions.TryGetValue(OpenApiEnumValuesDescriptionExtension.Name, out var rawExtension) && rawExtension is OpenApiEnumValuesDescriptionExtension localExtInfo)
             extensionInformation = localExtInfo;
-        var entries = schema.Enum.OfType<OpenApiString>().Where(static x => !x.Value.Equals("null", StringComparison.OrdinalIgnoreCase)).Select(static x => x.Value);
+        var entries = schema.Enum.OfType<OpenApiString>().Where(static x => !x.Value.Equals("null", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(x.Value)).Select(static x => x.Value.CleanupSymbolName());
         foreach(var enumValue in entries) {
             var optionDescription = extensionInformation?.ValuesDescriptions.FirstOrDefault(x => x.Value.Equals(enumValue, StringComparison.OrdinalIgnoreCase));
             target.AddOption(new CodeEnumOption {

@@ -1564,6 +1564,7 @@ components:
     [InlineData("integer", "int8", "sbyte")]
     [InlineData("number", "uint8", "byte")]
     [InlineData("integer", "uint8", "byte")]
+    [InlineData("number", "", "int64")]
     [InlineData("integer", "", "integer")]
     [InlineData("boolean", "", "boolean")]
     [InlineData("", "byte", "binary")]
