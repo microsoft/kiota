@@ -7,6 +7,7 @@ using Microsoft.OpenApi.Expressions;
 namespace Kiota.Builder.Refiners;
 public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
+    private const string ModelClassSuffix = "Impl";
     public TypeScriptRefiner(GenerationConfiguration configuration) : base(configuration) { }
     public override void Refine(CodeNamespace generatedCode)
     {
@@ -21,22 +22,13 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         // `AddInnerClasses` will have inner classes moved to their own files, so  we add the imports after so that the files don't miss anything.
         // This is because imports are added at the file level so nested classes would potentially use the higher level imports.
         AddDefaultImports(generatedCode, defaultUsingEvaluators);
-        DisableActionOf(generatedCode, 
+        DisableActionOf(generatedCode,
             CodeParameterKind.RequestConfiguration);
         AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
         AliasUsingsWithSameSymbol(generatedCode);
         AddParsableImplementsForModelClasses(generatedCode, "Parsable");
         ReplaceBinaryByNativeType(generatedCode, "ArrayBuffer", null);
         ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
-        //AddGetterAndSetterMethods(generatedCode,
-        //    new() {
-        //        CodePropertyKind.Custom,
-        //        CodePropertyKind.AdditionalData,
-        //    },
-        //    _configuration.UsesBackingStore,
-        //    false,
-        //    string.Empty,
-        //    string.Empty);
         AddConstructorsForDefaultValues(generatedCode, true);
         ReplaceDefaultSerializationModules(
             generatedCode,
@@ -90,89 +82,61 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             generatedCode
         );
         AddModelsInterfaces(generatedCode);
-        ClassToInterface(generatedCode);
+        ReplaceRequestConfigurationsQueryParamsWithInterfaces(generatedCode);
     }
 
-    private static void ClassToInterface(CodeElement currentElement)
+    private static void ReplaceRequestConfigurationsQueryParamsWithInterfaces(CodeElement currentElement)
     {
-        if (currentElement is CodeClass codeClass && (codeClass.IsOfKind(CodeClassKind.QueryParameters) || codeClass.IsOfKind(CodeClassKind.RequestConfiguration))) {
+        if (currentElement is CodeClass codeClass && (codeClass.IsOfKind(CodeClassKind.QueryParameters) || codeClass.IsOfKind(CodeClassKind.RequestConfiguration)))
+        {
 
             var targetNS = codeClass.GetImmediateParentOfType<CodeNamespace>();
             var existing = targetNS.FindChildByName<CodeInterface>(codeClass.Name, false);
             if (existing != null)
                 return;
-         
+
             var insertValue = new CodeInterface
             {
                 Name = codeClass.Name,
-                Kind = codeClass.IsOfKind(CodeClassKind.QueryParameters)? CodeInterfaceKind.QueryParameters : CodeInterfaceKind.RequestConfiguration
+                Kind = codeClass.IsOfKind(CodeClassKind.QueryParameters) ? CodeInterfaceKind.QueryParameters : CodeInterfaceKind.RequestConfiguration
             };
             targetNS.RemoveChildElement(codeClass);
             var codeInterface = targetNS.AddInterface(insertValue).First();
 
-            foreach (var mprop in codeClass.Properties) {
+            foreach (var mprop in codeClass.Properties)
+            {
                 codeInterface.AddProperty(mprop);
             }
 
-            foreach (var codeUsing in codeClass.Usings){
+            foreach (var codeUsing in codeClass.Usings)
+            {
                 codeInterface.AddUsing(codeUsing);
             }
-
-           
-
         }
-        CrawlTree(currentElement, x => ClassToInterface(x));
+        CrawlTree(currentElement, x => ReplaceRequestConfigurationsQueryParamsWithInterfaces(x));
     }
 
-    private static void UpdateMethodParam(CodeElement currentElement)
-    {
-        if (currentElement is CodeParameter codeParameter && codeParameter.IsOfKind(CodeParameterKind.RequestConfiguration)) {
-
-
-            if (codeParameter.Type is CodeType type) {
-                var name = codeParameter.Type.Name;
-
-                var targetNS = currentElement.GetImmediateParentOfType<CodeNamespace>();
-
-                var inter = targetNS.CodeInterfaces.FirstOrDefault(x => x.Name == name);
-                type.TypeDefinition = inter;
-            }
-
-
-        } else if (currentElement is CodeInterface codeInterface && codeInterface.IsOfKind(CodeInterfaceKind.RequestConfiguration)) {
-            foreach (var prop in codeInterface.Properties) {
-                if (prop.Type is CodeType type && !type.IsExternal) {
-
-                   
-                        var name = prop.Type.Name;
-
-                        var targetNS = currentElement.GetImmediateParentOfType<CodeNamespace>();
-
-                        var inter = targetNS.CodeInterfaces.FirstOrDefault(x => x.Name == name);
-                        type.TypeDefinition = inter;
-                    
-                }
-
-            }
-        }
-        CrawlTree(currentElement, x => UpdateMethodParam(x));
-    }
     private static void AddModelsInterfaces(CodeElement generatedCode)
     {
-        CopyModelClassesAsInterfacesTS(
+        GenerateModelInterfaces(
            generatedCode,
            x => $"{x.Name.ToFirstCharacterUpperCase()}Interface".ToFirstCharacterUpperCase()
        );
 
-        RenameInterfacesAndModels(generatedCode);
+       RenameModelInterfacesAndClasses(generatedCode);
 
     }
 
-    private static void RenameInterfacesAndModels(CodeElement currentElement)
+    /// <summary>
+    /// Removes the "Interface" suffix temporarily added to model interface names
+    /// Adds the "Impl" suffix to model class names.
+    /// </summary>
+    /// <param name="currentElement"></param>
+    private static void RenameModelInterfacesAndClasses(CodeElement currentElement)
     {
         if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model))
         {
-            currentClass.Name = currentClass.Name + "Impl";
+            currentClass.Name = currentClass.Name + ModelClassSuffix;
         }
         if (currentElement is CodeInterface modelInterface && modelInterface.IsOfKind(CodeInterfaceKind.Model))
         {
@@ -181,56 +145,15 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 modelInterface.Name = modelInterface.Name.Split("Interface")[0];
             }
         }
-        //else if (currentElement is CodeProperty codeProperty &&
-        //        codeProperty.IsOfKind(CodePropertyKind.RequestBody) &&
-        //        codeProperty.Type is CodeType type &&
-        //        type.TypeDefinition is CodeInterface modelInterface)
-        //{
-        //    if (modelInterface.Name.EndsWith("Interface"))
-        //    {
-        //        modelInterface.Name = modelInterface.Name.Split("Interface")[0];
-        //    }
-        //}
-        //else if (currentElement is CodeMethod codeMethod &&
-        //      codeMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
-        //      codeMethod.ReturnType is CodeType returnType &&
-        //      returnType.TypeDefinition is CodeInterface inter)
-        //{
-        //    if (inter.Name.EndsWith("Interface"))
-        //    {
-        //        inter.Name = inter.Name.Split("Interface")[0];
-        //    }
-        //}
-        //else if (currentElement is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model))
-        //{
 
-        //    foreach (var impl in codeClass.StartBlock.Implements)
-        //    {
-        //        if (impl.Name.EndsWith("Interface"))
-        //        {
-        //            impl.Name = impl.Name.Split("Interface")[0];
-        //        }
-        //    }
-        //}
-        //else if (currentElement is CodeInterface interBase)
-        //{
-
-        //    if (interBase.StartBlock?.inherits.TypeDefinition is CodeInterface interParent)
-
-        //        if (interParent.Name.EndsWith("Interface"))
-        //        {
-        //            interParent.Name = interParent.Name.Split("Interface")[0];
-        //        }
-        //}
-
-        CrawlTree(currentElement, x => RenameInterfacesAndModels(x));
+        CrawlTree(currentElement, x => RenameModelInterfacesAndClasses(x));
     }
 
-    private static void CopyModelClassesAsInterfacesTS(CodeElement currentElement, Func<CodeClass, string> interfaceNamingCallback)
+    private static void GenerateModelInterfaces(CodeElement currentElement, Func<CodeClass, string> interfaceNamingCallback)
     {
         if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model))
         {
-            CopyClassAsInterface(currentClass, interfaceNamingCallback);
+            CreateModelInterface(currentClass, interfaceNamingCallback);
         }
         /*
          * Setting object property type to interface type.
@@ -241,7 +164,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 type.TypeDefinition is CodeClass modelClass &&
                 modelClass.IsOfKind(CodeClassKind.Model))
         {
-            SetTypeAndAddUsing(CopyClassAsInterface(modelClass, interfaceNamingCallback), type, codeProperty);
+            SetTypeAndAddUsing(CreateModelInterface(modelClass, interfaceNamingCallback), type, codeProperty);
         }
         else if (currentElement is CodeMethod codeMethod)
         {
@@ -256,16 +179,16 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 var requestBodyParam = codeMethod.Parameters.OfKind(CodeParameterKind.RequestBody);
                 if (requestBodyParam != null && requestBodyParam.Type is CodeType type1)
                 {
-                    SetTypeAndAddUsing(CopyClassAsInterface(type1.TypeDefinition as CodeClass, interfaceNamingCallback), type1, requestBodyParam);
+                    SetTypeAndAddUsing(CreateModelInterface(type1.TypeDefinition as CodeClass, interfaceNamingCallback), type1, requestBodyParam);
                 }
-                SetTypeAndAddUsing(CopyClassAsInterface(returnClass, interfaceNamingCallback), returnType, codeMethod);
+                SetTypeAndAddUsing(CreateModelInterface(returnClass, interfaceNamingCallback), returnType, codeMethod);
 
-               var parentClass =  codeMethod.GetImmediateParentOfType<CodeClass>();
+                var parentClass = codeMethod.GetImmediateParentOfType<CodeClass>();
 
-                if (parentClass != null && parentClass.Name != returnClass.Name) 
+                if (parentClass != null && parentClass.Name != returnClass.Name)
                 {
-                    parentClass.AddUsing(new CodeUsing { Name = returnClass.Parent.Name, Declaration = new CodeType { Name = returnClass.Name,TypeDefinition =returnClass } });
-                  
+                    parentClass.AddUsing(new CodeUsing { Name = returnClass.Parent.Name, Declaration = new CodeType { Name = returnClass.Name, TypeDefinition = returnClass } });
+
                 }
             }
             /*
@@ -276,7 +199,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 var requestBodyParam1 = codeMethod?.Parameters?.OfKind(CodeParameterKind.RequestBody);
                 if (requestBodyParam1 != null && requestBodyParam1.Type is CodeType type1 && type1.TypeDefinition is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model))
                 {
-                    SetTypeAndAddUsing(CopyClassAsInterface(codeClass, interfaceNamingCallback), type1, requestBodyParam1);
+                    SetTypeAndAddUsing(CreateModelInterface(codeClass, interfaceNamingCallback), type1, requestBodyParam1);
 
 
                     var parentClass = codeMethod.GetImmediateParentOfType<CodeClass>();
@@ -290,7 +213,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
         }
 
-        CrawlTree(currentElement, x => CopyModelClassesAsInterfacesTS(x, interfaceNamingCallback));
+        CrawlTree(currentElement, x => GenerateModelInterfaces(x, interfaceNamingCallback));
     }
     private static void SetTypeAndAddUsing(CodeInterface interfaceElement, CodeType elemType, CodeElement targetElement)
     {
@@ -321,12 +244,16 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             });
         }
     }
-    private static CodeInterface CopyClassAsInterface(CodeClass modelClass, Func<CodeClass, string> interfaceNamingCallback)
+    private static CodeInterface CreateModelInterface(CodeClass modelClass, Func<CodeClass, string> interfaceNamingCallback)
     {
+        /*
+         * Temporarily name the interface with "Interface" suffix 
+         * since adding code elements of the same name in the same namespace causes error. 
+         */
         var finalInterfaceName = modelClass.Name.ToFirstCharacterUpperCase();
         var temporaryInterfaceName = interfaceNamingCallback.Invoke(modelClass);
-        var targetNS = modelClass.GetImmediateParentOfType<CodeNamespace>();
-        var existing = targetNS.FindChildByName<CodeInterface>(temporaryInterfaceName, false);
+        var namespaceOfModel = modelClass.GetImmediateParentOfType<CodeNamespace>();
+        var existing = namespaceOfModel.FindChildByName<CodeInterface>(temporaryInterfaceName, false);
         if (existing != null)
             return existing;
         var modelParentClass = modelClass.Parent as CodeClass;
@@ -339,31 +266,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         var modelInterface = shouldInsertUnderParentClass ?
                        modelParentClass.AddInnerInterface(insertValue).First() :
-                       targetNS.AddInterface(insertValue).First();
-
-        //var modelInterface = targetNS.AddInterface(insertValue).First();
-       // var usingsToRemove = new List<string>();
+                       namespaceOfModel.AddInterface(insertValue).First();
 
         var classModelChildItems = modelClass.GetChildElements(true);
 
-       // var targetUsingBlock = shouldInsertUnderParentClass ? modelParentClass.StartBlock as ProprietableBlockDeclaration : modelInterface.StartBlock;
         var targetUsingBlock = modelInterface.StartBlock;
-        //modelInterface.StartBlock.inherits.Add(
-        //    new CodeType
-        //{
-        //    IsExternal = true,
-        //    Name = "Parsable"
-        //});
-
-        //modelInterface.AddUsing(new CodeUsing
-        //{
-        //    Name = "Parsable",
-        //    Declaration = new CodeType
-        //    {
-        //        Name = AbstractionsPackageName,
-        //        IsExternal = true,
-        //    },
-        //});
         var usingsToAdd = new List<CodeUsing>();
 
         /**
@@ -371,27 +278,27 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
          */
         if (modelClass.StartBlock.Inherits?.TypeDefinition is CodeClass baseClass)
         {
-            var parentInterface = CopyClassAsInterface(baseClass, interfaceNamingCallback);
-            modelInterface.StartBlock.inherits.Add(new CodeType
+            var parentInterface = CreateModelInterface(baseClass, interfaceNamingCallback);
+            modelInterface.StartBlock.Inherits.Add(new CodeType
             {
                 Name = parentInterface.Name,
                 TypeDefinition = parentInterface,
             });
             var parentInterfaceNS = parentInterface.GetImmediateParentOfType<CodeNamespace>();
-            //if (parentInterfaceNS != targetNS)
-                modelInterface.AddUsing(new CodeUsing
+
+            modelInterface.AddUsing(new CodeUsing
+            {
+                Name = parentInterfaceNS.Name,
+                Declaration = new CodeType
                 {
-                    Name = parentInterfaceNS.Name,
-                    Declaration = new CodeType
-                    {
-                        //Name = parentInterface.Name.EndsWith("Interface")? parentInterface.Name.Split("Interface")[0]: parentInterface.Name,
-                        Name = parentInterface.Name,
-                        TypeDefinition = parentInterface,
-                    },
-                });
+                    Name = parentInterface.Name,
+                    TypeDefinition = parentInterface,
+                },
+            });
         }
 
         /**
+         * Add properties to interfaces
          * Replace model classes by interfaces for property types 
          */
         foreach (var mProp in classModelChildItems.OfType<CodeProperty>())
@@ -399,8 +306,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             if (mProp.Type is CodeType externalType && externalType.IsExternal)
             {
                 var usingExternal = modelClass.Usings.FirstOrDefault(x => String.Equals(x.Name, externalType.Name, StringComparison.OrdinalIgnoreCase));
-                
-                if (usingExternal != null) {
+
+                if (usingExternal != null)
+                {
                     modelInterface.AddUsing(usingExternal);
                 }
             }
@@ -408,21 +316,23 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             {
                 var codeUsing = ReplaceTypeByInterfaceType(propertyClass, propertyType, interfaceNamingCallback);//, usingsToRemove);
 
-                if (modelInterface.Name != codeUsing.Item1.Name) {
+                if (modelInterface.Name != codeUsing.Item1.Name)
+                {
                     modelInterface.AddUsing(codeUsing.Item2);
                 }
                 modelClass.AddUsing(codeUsing.Item2);
 
                 /***
-                 * Add "impl" or model classes in class usings as they will be required by the serializer method. 
+                 * Append "impl" and add class property type in  the model class usings as they will be required by the serializer method. 
                  */
-                if (modelClass.Name != propertyClass.Name) {
+                if (modelClass.Name != propertyClass.Name)
+                {
                     modelClass.AddUsing(new CodeUsing
                     {
                         Name = mProp.Parent.Name,
                         Declaration = new CodeType
                         {
-                            Name = propertyClass.Name + "Impl",
+                            Name = propertyClass.Name + ModelClassSuffix,
                             TypeDefinition = propertyClass,
                         }
                     });
@@ -432,41 +342,23 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             {
                 if (!nonClassPropertyType.IsExternal)
                 {
-                    var usingExternal = modelClass.Usings.FirstOrDefault(x => String.Equals(x.Declaration.Name , nonClassTypeDef.Name, StringComparison.OrdinalIgnoreCase));
+                    var usingExternal = modelClass.Usings.FirstOrDefault(x => String.Equals(x.Declaration.Name, nonClassTypeDef.Name, StringComparison.OrdinalIgnoreCase));
 
                     if (usingExternal != null)
                     {
                         modelInterface.AddUsing(usingExternal);
                     }
-                    //modelInterface.AddUsing(new CodeUsing
-                    //{
-                    //    Name = (mProp.GetImmediateParentOfType<CodeNamespace>()).Name,
-                    //    Declaration = new CodeType
-                    //    {
-                    //        Name = nonClassTypeDef.Name,
-                    //        TypeDefinition = nonClassTypeDef,
-                    //    }
-                    //});
-                } 
-              
+                }
+
 
             }
-             
+
             modelInterface.AddProperty(mProp);
         }
 
         /*
-         * Set the model interface in startblock implements of the model class
+         * Model class should implement the model interface
          */
-        //if (modelClass.StartBlock.Implements.Any())
-        //{
-        //    var originalImplements = modelClass.StartBlock.Implements.Where(x => x.TypeDefinition != modelInterface).ToArray();
-        //    modelInterface.StartBlock.AddImplements(originalImplements
-        //                                                .Select(x => x.Clone() as CodeType)
-        //                                                .ToArray());
-        //    //.StartBlock.RemoveImplements(originalImplements);
-        //}
-
         modelClass.StartBlock.AddImplements(new CodeType
         {
             Name = finalInterfaceName,
@@ -480,7 +372,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         constructor.AddParameter(new CodeParameter
         {
-            Name = finalInterfaceName.ToFirstCharacterLowerCase()+ "ParameterValue",
+            Name = finalInterfaceName.ToFirstCharacterLowerCase() + "ParameterValue",
             Type = new CodeType { Name = finalInterfaceName, TypeDefinition = modelInterface },
             Optional = true
         });
@@ -509,7 +401,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 {
                     var resultType = ReplaceTypeByInterfaceType(methodTypeClass, methodReturnType, interfaceNamingCallback);
                     modelClass.AddUsing(resultType.Item2);
-                    if (resultType.Item2.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>() != targetNS)
+                    if (resultType.Item2.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>() != namespaceOfModel)
                         targetUsingBlock.AddUsings(resultType.Item2.Clone() as CodeUsing);
                 }
                 else if (methodReturnType.TypeDefinition is CodeEnum methodEnumType)
@@ -532,7 +424,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     {
                         var resultType = ReplaceTypeByInterfaceType(parameterTypeClass, parameterType, interfaceNamingCallback);
                         modelClass.AddUsing(resultType.Item2);
-                        if (resultType.Item2.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>() != targetNS)
+                        if (resultType.Item2.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>() != namespaceOfModel)
                             targetUsingBlock.AddUsings(resultType.Item2.Clone() as CodeUsing);
                     }
                     else if (parameterType.TypeDefinition is CodeEnum parameterEnumType)
@@ -547,34 +439,20 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                         });
                 }
         }
-
-        //modelClass.RemoveUsingsByDeclarationName(usingsToRemove.ToArray());
         var externalTypesOnInter = modelInterface.Methods.Select(x => x.ReturnType).OfType<CodeType>().Where(x => x.IsExternal)
                                     .Union(modelInterface.StartBlock.Implements.Where(x => x.IsExternal))
                                     .Union(modelInterface.Methods.SelectMany(x => x.Parameters).Select(x => x.Type).OfType<CodeType>().Where(x => x.IsExternal))
                                     .Select(x => x.Name)
                                     .Distinct(StringComparer.OrdinalIgnoreCase)
                                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        //if (shouldInsertUnderParentClass)
-        //    usingsToAdd.AddRange(modelParentClass.Usings.Where(x => x.IsExternal && externalTypesOnInter.Contains(x.Name)));
-     //   targetUsingBlock.AddUsings(usingsToAdd.ToArray());
         return modelInterface;
     }
 
-    private bool IsCodeClassOrInterface(CodeTypeBase propType)
-    {
-        return (propType is CodeType currentType && (currentType.TypeDefinition is CodeClass || currentType.TypeDefinition is CodeInterface));
-    }
     private static (CodeInterface, CodeUsing) ReplaceTypeByInterfaceType(CodeClass sourceClass, CodeType originalType, Func<CodeClass, string> interfaceNamingCallback, List<string> usingsToRemove = null)
     {
-        var propertyInterfaceType = CopyClassAsInterface(sourceClass, interfaceNamingCallback);
+        var propertyInterfaceType = CreateModelInterface(sourceClass, interfaceNamingCallback);
         originalType.Name = propertyInterfaceType.Name;
         originalType.TypeDefinition = propertyInterfaceType;
-        //if (usingsToRemove != null) 
-        //{
-        //    usingsToRemove.Add(sourceClass.Name);
-        //}
         return (propertyInterfaceType, new CodeUsing
         {
             Name = propertyInterfaceType.Parent.Name,
@@ -654,9 +532,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.Name = "RequestAdapter";
         else if (currentProperty.IsOfKind(CodePropertyKind.BackingStore))
             currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
-        else if(currentProperty.IsOfKind(CodePropertyKind.Options))
+        else if (currentProperty.IsOfKind(CodePropertyKind.Options))
             currentProperty.Type.Name = "RequestOption[]";
-        else if(currentProperty.IsOfKind(CodePropertyKind.Headers))
+        else if (currentProperty.IsOfKind(CodePropertyKind.Headers))
             currentProperty.Type.Name = "Record<string, string>";
         else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
         {

@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
-using System.ComponentModel.Design;
 
 namespace Kiota.Builder;
 
-public enum CodeInterfaceKind {
+public enum CodeInterfaceKind
+{
     Custom,
     Model,
     QueryParameters,
@@ -15,5 +15,13 @@ public class CodeInterface : ProprietableBlock<CodeInterfaceKind, InterfaceDecla
 }
 public class InterfaceDeclaration : ProprietableBlockDeclaration
 {
-    public List<CodeType> inherits = new List<CodeType>();
+
+    private List<CodeType> inherits = new List<CodeType>();
+    public List<CodeType> Inherits
+    {
+        get => inherits; set
+        {
+            inherits = value;
+        }
+    }
 }
