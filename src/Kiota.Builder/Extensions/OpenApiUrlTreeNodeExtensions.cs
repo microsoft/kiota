@@ -8,7 +8,7 @@ using Microsoft.OpenApi.Services;
 namespace Kiota.Builder.Extensions {
     public static class OpenApiUrlTreeNodeExtensions {
         private static string GetDotIfBothNotNullOfEmpty(string x, string y) => string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) ? string.Empty : ".";
-        private static readonly Func<string, string> replaceSingleParameterSegementByItem =
+        private static readonly Func<string, string> replaceSingleParameterSegmentByItem =
         x => x.IsPathSegmentWithSingleSimpleParameter() ? "item" : x;
         public static string GetNamespaceFromPath(this string currentPath, string prefix) => 
             prefix + 
@@ -16,12 +16,13 @@ namespace Kiota.Builder.Extensions {
                         (string.IsNullOrEmpty(prefix) ? string.Empty : ".")
                              + currentPath
                                 ?.Split(pathNameSeparator, StringSplitOptions.RemoveEmptyEntries)
-                                ?.Select(replaceSingleParameterSegementByItem)
-                                ?.Select(x => CleanupParametersFromPath((x ?? string.Empty).Split('.', StringSplitOptions.RemoveEmptyEntries)
-                                ?.Select(x => x.TrimStart('$')) //$ref from OData
+                                ?.Select(replaceSingleParameterSegmentByItem)
+                                ?.Select(static x => CleanupParametersFromPath((x ?? string.Empty).Split('.', StringSplitOptions.RemoveEmptyEntries)
+                                ?.Select(static x => x.TrimStart('$')) //$ref from OData
                                                                 .Last()))
+                                ?.Select(static x => x.CleanupSymbolName())
                                 ?.Aggregate(string.Empty, 
-                                    (x, y) => $"{x}{GetDotIfBothNotNullOfEmpty(x, y)}{y}") :
+                                    static (x, y) => $"{x}{GetDotIfBothNotNullOfEmpty(x, y)}{y}") :
                         string.Empty)
                     .ReplaceValueIdentifier();
         public static string GetNodeNamespaceFromPath(this OpenApiUrlTreeNode currentNode, string prefix) =>
