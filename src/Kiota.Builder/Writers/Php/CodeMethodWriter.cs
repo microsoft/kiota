@@ -257,25 +257,16 @@ namespace Kiota.Builder.Writers.Php
                 {
                     return "writeEnumValue";
                 }
-
-                if (currentType.TypeDefinition is CodeClass cc && cc.IsOfKind(CodeClassKind.Model))
-                {
-                    return "writeObjectValue";
-                }
             }
 
-            var lowerCaseProp = propertyType.ToLower();
+            var lowerCaseProp = propertyType?.ToLower();
             return lowerCaseProp switch
             {
-                "string" or "guid" => "writeStringValue",
-                "enum" or "float" or "date" or "time" => $"write{lowerCaseProp.ToFirstCharacterUpperCase()}Value",
-                "bool" or "boolean" => "writeBooleanValue",
-                "double" or "decimal" => "writeFloatValue",
-                "datetime" or "datetimeoffset" => "writeDateTimeValue",
-                "duration" or "timespan" or "dateinterval" => "writeDateIntervalValue",
-                "int" or "number" => "writeIntegerValue",
                 "streaminterface" => "writeBinaryContent",
-                _ => "writeAnyValue"
+                "int" => "writeIntegerValue",
+                "bool" => "writeBooleanValue",
+                _ when conventions.PrimitiveTypes.Contains(lowerCaseProp) => $"write{lowerCaseProp.ToFirstCharacterUpperCase()}Value",
+                _ => "writeObjectValue"
             };
         }
         
@@ -295,7 +286,7 @@ namespace Kiota.Builder.Writers.Php
                     return $"$n->getEnumValue({propertyType.ToFirstCharacterUpperCase()}::class)";
             }
 
-            var lowerCaseType = propertyType.ToLower();
+            var lowerCaseType = propertyType?.ToLower();
             return lowerCaseType switch
             {
                 "int" => "$n->getIntegerValue()",

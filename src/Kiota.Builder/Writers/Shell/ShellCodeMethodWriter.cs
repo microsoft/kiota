@@ -287,7 +287,14 @@ namespace Kiota.Builder.Writers.Shell
                 writer.WriteLine("};");
                 writer.WriteLine($"{optionName}.IsRequired = {isRequired.ToString().ToFirstCharacterLowerCase()};");
                 writer.WriteLine($"command.AddOption({optionName});");
-                availableOptions.Add(optionName);
+                if (optionType == "bool?")
+                {
+                    availableOptions.Add($"new NullableBooleanBinding({optionName})");
+                }
+                else
+                {
+                    availableOptions.Add(optionName);
+                }
             }
 
             return availableOptions;
@@ -350,26 +357,29 @@ namespace Kiota.Builder.Writers.Shell
             }
             else if (codeElement.OriginalIndexer != null)
             {
+                writer.WriteLine($"var command = new Command(\"item\");");
                 var targetClass = conventions.GetTypeString(codeElement.OriginalIndexer.ReturnType, codeElement);
                 var builderMethods = (codeElement.OriginalIndexer.ReturnType as CodeType).TypeDefinition.GetChildElements(true).OfType<CodeMethod>()
                     .Where(m => m.IsOfKind(CodeMethodKind.CommandBuilder))
                     .OrderBy(m => m.Name);
                 conventions.AddRequestBuilderBody(parent, targetClass, writer, prefix: "var builder = ", pathParameters: codeElement.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
-                writer.WriteLine("var commands = new List<Command>();");
 
                 foreach (var method in builderMethods)
                 {
                     if (method.ReturnType.IsCollection)
                     {
-                        writer.WriteLine($"commands.AddRange(builder.{method.Name}());");
+                        writer.WriteLine($"foreach (var cmd in builder.{method.Name}()) {{");
+                        writer.IncreaseIndent();
+                        writer.WriteLine($"command.AddCommand(cmd);");
+                        writer.CloseBlock();
                     }
                     else
                     {
-                        writer.WriteLine($"commands.Add(builder.{method.Name}());");
+                        writer.WriteLine($"command.AddCommand(builder.{method.Name}());");
                     }
                 }
 
-                writer.WriteLine("return commands;");
+                writer.WriteLine("return command;");
             }
         }
 
@@ -452,7 +462,7 @@ namespace Kiota.Builder.Writers.Shell
                         indentParam = false;
                     }
 
-                    writer.Write($"q.{param.Name.ToFirstCharacterUpperCase()} = {paramName};", indentParam);
+                    writer.Write($"q.QueryParameters.{param.Name.ToFirstCharacterUpperCase()} = {paramName};", indentParam);
 
                     writer.WriteLine();
                 }

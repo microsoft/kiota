@@ -37,7 +37,7 @@ namespace Kiota.Builder.Writers.Php
 
         public string DocCommentEnd => "*/";
         
-        internal HashSet<string> PrimitiveTypes = new(StringComparer.OrdinalIgnoreCase) {"string", "boolean", "integer", "float", "date", "datetime", "time", "dateinterval", "int", "double", "decimal", "bool"};
+        internal HashSet<string> PrimitiveTypes = new(StringComparer.OrdinalIgnoreCase) {"string", "float", "date", "datetime", "time", "dateinterval", "int", "bool"};
 
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
         {
@@ -57,7 +57,7 @@ namespace Kiota.Builder.Writers.Php
         public override string TranslateType(CodeType type)
         {
             string typeName = type.Name;
-            return typeName.ToLowerInvariant() switch
+            return typeName?.ToLowerInvariant() switch
             {
                 "boolean" => "bool",
                 "double" or "decimal" => "float",

@@ -214,7 +214,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         else if (current is CodeEnum currentEnum &&
                 isNotInExceptions &&
                 shouldReplace &&
-                currentEnum.Options.Any(x => provider.ReservedNames.Contains(x)))
+                currentEnum.Options.Any(x => provider.ReservedNames.Contains(x.Name)))
             ReplaceReservedEnumNames(currentEnum, provider, replacement);
         // Check if the current name meets the following conditions to be replaced
         // 1. In the list of reserved names
@@ -235,12 +235,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     private static void ReplaceReservedEnumNames(CodeEnum currentEnum, IReservedNamesProvider provider, Func<string, string> replacement)
     {
         currentEnum.Options
-                    .Where(x => provider.ReservedNames.Contains(x))
+                    .Where(x => provider.ReservedNames.Contains(x.Name))
                     .ToList()
                     .ForEach(x => {
-                        var newValue = replacement.Invoke(x);
-                        currentEnum.Options.Remove(x);
-                        currentEnum.Options.Add(newValue);
+                        x.SerializationName = x.Name;
+                        x.Name = replacement.Invoke(x.Name);
                     });
     }
     private static void ReplaceReservedCodeUsings(ClassDeclaration currentDeclaration, IReservedNamesProvider provider, Func<string, string> replacement)
@@ -306,7 +305,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 currentMethod.ReturnType.Name = symbol;
                 shouldInsertUsing = !string.IsNullOrWhiteSpace(ns);
             }
-            var binaryParameter = currentMethod.Parameters.FirstOrDefault(x => x.Type.Name.Equals(BinaryType));
+            var binaryParameter = currentMethod.Parameters.FirstOrDefault(x => x.Type?.Name?.Equals(BinaryType) ?? false);
             if(binaryParameter != null) {
                 binaryParameter.Type.Name = symbol;
                 shouldInsertUsing = !string.IsNullOrWhiteSpace(ns);
@@ -468,7 +467,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
         CrawlTree(current, x => DisableActionOf(x, kinds));
     }
-    internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName, string queryParametersBaseClassName = "QueryParametersBase", bool addToParentNamespace = false) {
+    internal void AddInnerClasses(CodeElement current, bool prefixClassNameWithParentName, string queryParametersBaseClassName = "", bool addToParentNamespace = false) {
         if(current is CodeClass currentClass) {
             var parentNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
             var innerClasses = currentClass

@@ -78,7 +78,7 @@ public class JavaConventionService : CommonLanguageConventionService
     public override void WriteShortDescription(string description, LanguageWriter writer)
     {
         if(!string.IsNullOrEmpty(description))
-            writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)} {DocCommentEnd}");
+            writer.WriteLine($"{DocCommentStart} {RemoveInvalidDescriptionCharacters(description)}{DocCommentEnd}");
     }
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
     #pragma warning disable CA1822 // Method should be static

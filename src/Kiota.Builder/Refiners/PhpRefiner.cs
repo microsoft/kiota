@@ -27,8 +27,14 @@ namespace Kiota.Builder.Refiners
             MakeModelPropertiesNullable(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
-            ReplaceDefaultSerializationModules(generatedCode, "Microsoft\\Kiota\\Serialization\\Json\\JsonSerializationWriterFactory");
-            ReplaceDefaultDeserializationModules(generatedCode, "Microsoft\\Kiota\\Serialization\\Json\\JsonParseNodeFactory");
+            ReplaceDefaultSerializationModules(generatedCode,
+                "Microsoft\\Kiota\\Serialization\\Json\\JsonSerializationWriterFactory",
+                "Microsoft\\Kiota\\Serialization\\Text\\TextSerializationWriterFactory"
+            );
+            ReplaceDefaultDeserializationModules(generatedCode, 
+                "Microsoft\\Kiota\\Serialization\\Json\\JsonParseNodeFactory",
+                "Microsoft\\Kiota\\Serialization\\Text\\TextParseNodeFactory"
+            );
             AliasUsingWithSameSymbol(generatedCode);
             AddSerializationModulesImport(generatedCode, new []{"Microsoft\\Kiota\\Abstractions\\ApiClientBuilder"}, null, '\\');
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
@@ -118,8 +124,8 @@ namespace Kiota.Builder.Refiners
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor), "Http\\Promise", "Promise", "RejectedPromise"),
             new (x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor), "", "Exception"),
             new (x => x is CodeEnum, "Microsoft\\Kiota\\Abstractions\\", "Enum"),
-            new(x => x is CodeProperty property && property.Type.Name.Equals("DateTime", StringComparison.OrdinalIgnoreCase), "", "DateTime"),
-            new(x => x is CodeProperty property && property.Type.Name.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase), "", "DateTime"),
+            new(x => x is CodeProperty property && (property.Type?.Name?.Equals("DateTime", StringComparison.OrdinalIgnoreCase) ?? false), "", "DateTime"),
+            new(x => x is CodeProperty property && (property.Type?.Name?.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase) ?? false), "", "DateTime"),
             new(x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor), "Microsoft\\Kiota\\Abstractions", "ApiClientBuilder")
         };
         private static void CorrectPropertyType(CodeProperty currentProperty) {
@@ -145,7 +151,7 @@ namespace Kiota.Builder.Refiners
             } else if (currentProperty.IsOfKind(CodePropertyKind.RequestBuilder))
             {
                 currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
-            } else if (currentProperty.Type.Name.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase))
+            } else if (currentProperty.Type?.Name?.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase) ?? false)
             {
                 currentProperty.Type.Name = "DateTime";
             } else if (currentProperty.IsOfKind(CodePropertyKind.Options, CodePropertyKind.Headers))

@@ -1,0 +1,299 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+name: $(BuildDefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+
+trigger:
+  tags:
+    include:
+      - v*
+
+pool:
+  name: Azure Pipelines
+  vmImage: windows-latest
+
+variables:
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+  ProductBinPath: '$(Build.SourcesDirectory)\src\kiota\bin\$(BuildConfiguration)' 
+
+
+stages:
+
+- stage: build
+  jobs:
+    - job: build
+      steps:
+      - task: UseDotNet@2
+        displayName: 'Use .NET 6'
+        inputs:
+          version: 6.x
+
+      - task: PoliCheck@1
+        displayName: 'Run PoliCheck "/src"'
+        inputs:
+          inputType: CmdLine
+          cmdLineArgs: '/F:$(Build.SourcesDirectory)/src /T:9 /Sev:"1|2" /PE:2 /O:poli_result_src.xml'
+
+      - task: PoliCheck@1
+        displayName: 'Run PoliCheck "/tests"'
+        inputs:
+          inputType: CmdLine
+          cmdLineArgs: '/F:$(Build.SourcesDirectory)/tests /T:9 /Sev:"1|2" /PE:2 /O:poli_result_test.xml'
+
+      # Install the nuget tool.
+      - task: NuGetToolInstaller@0
+        displayName: 'Use NuGet >=6.1.0'
+        inputs:
+          versionSpec: '>=6.1.0'
+          checkLatest: true
+
+      # Build the Product project
+      - task: DotNetCoreCLI@2
+        displayName: 'build'
+        inputs:
+          projects: '$(Build.SourcesDirectory)\kiota.sln'
+          arguments: '--configuration $(BuildConfiguration) --no-incremental'
+
+      # Run the Unit test
+      - task: DotNetCoreCLI@2
+        displayName: 'test'
+        inputs:
+          command: test
+          projects: '$(Build.SourcesDirectory)\kiota.sln'
+          arguments: '--configuration $(BuildConfiguration) --no-build'
+
+      # CredScan
+      - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@2
+        displayName: 'Run CredScan - Src'
+        inputs:
+          toolMajorVersion: 'V2'
+          scanFolder: '$(Build.SourcesDirectory)\src'
+          debugMode: false
+
+      - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@2
+        displayName: 'Run CredScan - Tests'
+        inputs:
+          toolMajorVersion: 'V2'
+          scanFolder: '$(Build.SourcesDirectory)\tests'
+          debugMode: false
+
+      - task: AntiMalware@3
+        displayName: 'Run MpCmdRun.exe - ProductBinPath'
+        inputs:
+          FileDirPath: '$(ProductBinPath)'
+        enabled: false
+
+      - task: BinSkim@3
+        displayName: 'Run BinSkim - Product Binaries'
+        inputs:
+          InputType: Basic
+          AnalyzeTarget: '$(ProductBinPath)\**\kiota.dll'
+          AnalyzeSymPath: '$(ProductBinPath)'
+          AnalyzeVerbose: true
+          AnalyzeHashes: true
+          AnalyzeEnvironment: true
+
+      - task: PublishSecurityAnalysisLogs@2
+        displayName: 'Publish Security Analysis Logs'
+        inputs:
+          ArtifactName: SecurityLogs
+
+      - task: PostAnalysis@1
+        displayName: 'Post Analysis'
+        inputs:
+          BinSkim: true
+          CredScan: true
+          PoliCheck: true
+
+      - task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@1
+        displayName: 'ESRP CodeSigning'
+        inputs:
+          ConnectedServiceName: 'microsoftgraph ESRP CodeSign DLL and NuGet (AKV)'
+          FolderPath: src
+          signConfigType: inlineSignParams
+          inlineOperation: |
+            [
+                {
+                    "keyCode": "CP-230012",
+                    "operationSetCode": "SigntoolSign",
+                    "parameters": [
+                    {
+                        "parameterName": "OpusName",
+                        "parameterValue": "Microsoft"
+                    },
+                    {
+                        "parameterName": "OpusInfo",
+                        "parameterValue": "http://www.microsoft.com"
+                    },
+                    {
+                        "parameterName": "FileDigest",
+                        "parameterValue": "/fd \"SHA256\""
+                    },
+                    {
+                        "parameterName": "PageHash",
+                        "parameterValue": "/NPH"
+                    },
+                    {
+                        "parameterName": "TimeStamp",
+                        "parameterValue": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
+                    }
+                    ],
+                    "toolName": "sign",
+                    "toolVersion": "1.0"
+                },
+                {
+                    "keyCode": "CP-230012",
+                    "operationSetCode": "SigntoolVerify",
+                    "parameters": [ ],
+                    "toolName": "sign",
+                    "toolVersion": "1.0"
+                }
+            ]
+          SessionTimeout: 20
+      
+      # Pack
+      - pwsh: dotnet pack $(Build.SourcesDirectory)/src/kiota/kiota.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg
+        displayName: 'pack kiota'
+      
+      # Pack
+      - pwsh: nuget pack $(Build.SourcesDirectory)/src/Microsoft.OpenApi.Kiota.ApiDescription.Client/Microsoft.OpenApi.Kiota.ApiDescription.Client.nuspec -OutputDirectory $(Build.ArtifactStagingDirectory)
+        displayName: 'pack targets'
+      
+      - task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@1
+        displayName: 'ESRP CodeSigning Nuget Packages'
+        inputs:
+          ConnectedServiceName: 'microsoftgraph ESRP CodeSign DLL and NuGet (AKV)'
+          FolderPath: '$(Build.ArtifactStagingDirectory)'
+          Pattern: '*.nupkg'
+          signConfigType: inlineSignParams
+          inlineOperation: |
+            [
+                {
+                    "keyCode": "CP-401405",
+                    "operationSetCode": "NuGetSign",
+                    "parameters": [ ],
+                    "toolName": "sign",
+                    "toolVersion": "1.0"
+                },
+                {
+                    "keyCode": "CP-401405",
+                    "operationSetCode": "NuGetVerify",
+                    "parameters": [ ],
+                    "toolName": "sign",
+                    "toolVersion": "1.0"
+                }
+            ]
+          SessionTimeout: 20
+
+      - task: PowerShell@2
+        displayName: "Get Kiota's version-number from .csproj"
+        inputs:
+          targetType: 'inline'
+          script: |
+              $xml = [Xml] (Get-Content .\src\kiota\kiota.csproj)
+              $version = $xml.Project.PropertyGroup.Version
+              echo $version
+              echo "##vso[task.setvariable variable=kiotaversion]$version"  
+
+      # publish kiota as an .exe
+      - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime win-x64 /p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/kiota-v$(kiotaversion)
+        displayName: publish kiota as executable
+
+      - task: CopyFiles@2
+        displayName: Prepare staging folder for upload
+        inputs:
+         targetFolder: $(Build.ArtifactStagingDirectory)/Nugets
+         sourceFolder: $(Build.ArtifactStagingDirectory)
+         content: '*.nupkg'
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Artifact: Nugets'
+        inputs:
+          ArtifactName: Nugets
+          PathtoPublish: '$(Build.ArtifactStagingDirectory)/Nugets'
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Artifact: Kiota'
+        inputs: 
+          ArtifactName: Kiota-v$(kiotaversion)
+          PathtoPublish: '$(Build.ArtifactStagingDirectory)/Kiota-v$(kiotaversion)'
+
+- stage: deploy
+  condition: and(contains(variables['build.sourceBranch'], 'refs/tags/v'), succeeded())
+  dependsOn: build
+  jobs:
+    - deployment: deploy_kiota
+      dependsOn: []
+      environment: nuget-org
+      strategy:
+        runOnce:
+          deploy:
+            pool:
+              vmImage: ubuntu-latest
+            steps:
+            - task: DownloadPipelineArtifact@2
+              displayName: Download nupkg from artifacts
+              inputs:
+                artifact: Nugets
+                source: current
+            - task: DownloadPipelineArtifact@2
+              displayName: Download kiota executable from artifacts
+              inputs:
+                source: current
+            - powershell: |
+                rm "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.ApiDescription.*.nupkg" -Verbose
+              displayName: remove other nupkgs to avoid duplication
+            # - pwsh: |
+            #     $artifactName = Get-ChildItem -Path $(Pipeline.Workspace)\Nugets -Filter Microsoft.OpenApi.Kiota.*.nupkg -recurse | select -First 1
+            #     $artifactVersion= $artifactName.Name -replace "Microsoft.OpenApi.Kiota.", "" -replace ".nupkg", ""
+            #     #Set Variable $artifactName and $artifactVersion
+            #     Write-Host "##vso[task.setvariable variable=artifactVersion; isSecret=false; isOutput=true]$artifactVersion"
+            #     Write-Host "##vso[task.setvariable variable=artifactName; isSecret=false; isOutput=true]$artifactName.FullName"
+            #     echo "$artifactName"
+            #     echo "$artifactVersion"
+            #   displayName: 'Fetch Artifact Name'
+
+            - task: NuGetCommand@2
+              displayName: 'NuGet push'
+              inputs:
+                command: push
+                packagesToPush: '$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.*.nupkg'
+                nuGetFeedType: external
+                publishFeedCredentials: 'OpenAPI Nuget Connection'
+            # - task: GitHubRelease@1
+            #   displayName: 'GitHub release (create)'
+            #   inputs:
+            #     gitHubConnection: 'Github-MaggieKimani1'
+            #     tagSource: userSpecifiedTag
+            #     tag: '$(artifactVersion)'
+            #     title: '$(artifactVersion)'
+            #     releaseNotesSource: inline
+            #     assets: '$(Pipeline.Workspace)\**\*.exe'
+            #     changeLogType: issueBased
+    
+    - deployment: deploy_targets
+      dependsOn: []
+      environment: nuget-org
+      strategy:
+        runOnce:
+          deploy:
+            pool:
+              vmImage: ubuntu-latest
+            steps:
+            - task: DownloadPipelineArtifact@2
+              displayName: Download nupkg from artifacts
+              inputs:
+                artifact: Nugets
+                source: current
+            - powershell: |
+                rm "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.*.nupkg" -Verbose -Exclude "*.ApiDescription.*"
+              displayName: remove other nupkgs to avoid duplication
+            - task: NuGetCommand@2
+              displayName: 'NuGet push'
+              inputs:
+                command: push
+                packagesToPush: '$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.ApiDescription.*.nupkg'
+                nuGetFeedType: external
+                publishFeedCredentials: 'OpenAPI Nuget Connection'
+

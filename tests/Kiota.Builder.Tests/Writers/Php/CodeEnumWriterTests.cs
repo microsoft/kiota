@@ -37,7 +37,7 @@ namespace Kiota.Builder.Writers.Php.Tests
         {
             var declaration = currentEnum.Parent as CodeNamespace;
             const string optionName = "option1";
-            currentEnum.Options.Add(optionName);
+            currentEnum.AddOption(new CodeEnumOption { Name = optionName});
             _languageRefiner.Refine(declaration);
             _codeEnumWriter.WriteCodeElement(currentEnum, writer);
             var result = tw.ToString();
