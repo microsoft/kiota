@@ -329,9 +329,12 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if(currentElement is CodeMethod currentMethod) {
             if(currentMethod.ReturnType is CodeUnionType currentUnionType)
                 currentMethod.ReturnType = ConvertUnionTypeToWrapper(parentClass, currentUnionType, usesBackingStore, supportInnerClasses);
-            if(currentMethod.Parameters.Any(x => x.Type is CodeUnionType))
+            if(currentMethod.Parameters.Any(static x => x.Type is CodeUnionType))
                 foreach(var currentParameter in currentMethod.Parameters.Where(x => x.Type is CodeUnionType))
                     currentParameter.Type = ConvertUnionTypeToWrapper(parentClass, currentParameter.Type as CodeUnionType, usesBackingStore, supportInnerClasses);
+            if(currentMethod.ErrorMappings.Select(static x => x.Value).OfType<CodeUnionType>().Any())
+                foreach(var errorUnionType in currentMethod.ErrorMappings.Select(static x => x.Value).OfType<CodeUnionType>())
+                    currentMethod.ReplaceErrorMapping(errorUnionType, ConvertUnionTypeToWrapper(parentClass, errorUnionType, usesBackingStore, supportInnerClasses));
         }
         else if (currentElement is CodeIndexer currentIndexer && currentIndexer.ReturnType is CodeUnionType currentUnionType)
             currentIndexer.ReturnType = ConvertUnionTypeToWrapper(parentClass, currentUnionType, usesBackingStore);

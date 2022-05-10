@@ -95,7 +95,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         parameters.Clear();
     }
     private readonly CodeParameterOrderComparer parameterOrderComparer = new ();
-    public IEnumerable<CodeParameter> Parameters { get => parameters.Values.OrderBy(x => x, parameterOrderComparer); }
+    public IEnumerable<CodeParameter> Parameters { get => parameters.Values.OrderBy(static x => x, parameterOrderComparer); }
     public bool IsStatic {get;set;} = false;
     public bool IsAsync {get;set;} = true;
     public string Description {get; set;}
@@ -163,7 +163,15 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     {
         get
         {
-            return errorMappings.OrderBy(x => x.Key);
+            return errorMappings.OrderBy(static x => x.Key);
+        }
+    }
+    public void ReplaceErrorMapping(CodeTypeBase oldType, CodeTypeBase newType)
+    {
+        var codes = errorMappings.Where(x => x.Value == oldType).Select(x => x.Key).ToArray();
+        foreach (var code in codes)
+        {
+            errorMappings[code] = newType;
         }
     }
     private ConcurrentDictionary<string, CodeTypeBase> discriminatorMappings = new();
@@ -174,7 +182,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     {
         get
         {
-            return discriminatorMappings.OrderBy(x => x.Key);
+            return discriminatorMappings.OrderBy(static x => x.Key);
         }
     }
     /// <summary>
