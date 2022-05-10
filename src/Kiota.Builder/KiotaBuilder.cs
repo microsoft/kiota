@@ -679,7 +679,7 @@ public class KiotaBuilder
         }
 
         
-        AddRequestBuilderMethodParameters(currentNode, operation, parameterClass, requestConfigClass, executorMethod);
+        AddRequestBuilderMethodParameters(currentNode, operationType, operation, parameterClass, requestConfigClass, executorMethod);
 
         var handlerParam = new CodeParameter {
             Name = "responseHandler",
@@ -710,7 +710,7 @@ public class KiotaBuilder
         }).FirstOrDefault();
         if (config.Language == GenerationLanguage.Shell)
             SetPathAndQueryParameters(generatorMethod, currentNode, operation);
-        AddRequestBuilderMethodParameters(currentNode, operation, parameterClass, requestConfigClass, generatorMethod);
+        AddRequestBuilderMethodParameters(currentNode, operationType, operation, parameterClass, requestConfigClass, generatorMethod);
         logger.LogTrace("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
     }
     private static readonly Func<OpenApiParameter, CodeParameter> GetCodeParameterFromApiParameter = x => {
@@ -747,12 +747,12 @@ public class KiotaBuilder
         target.AddPathQueryOrHeaderParameter(pathAndQueryParameters);
     }
 
-    private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeClass parameterClass, CodeClass requestConfigClass, CodeMethod method) {
+    private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parameterClass, CodeClass requestConfigClass, CodeMethod method) {
         var nonBinaryRequestBody = operation.RequestBody?.Content?.FirstOrDefault(x => !RequestBodyBinaryContentType.Equals(x.Key, StringComparison.OrdinalIgnoreCase));
         if (nonBinaryRequestBody.HasValue && nonBinaryRequestBody.Value.Value != null)
         {
             var requestBodySchema = nonBinaryRequestBody.Value.Value.Schema;
-            var requestBodyType = CreateModelDeclarations(currentNode, requestBodySchema, operation, method, "RequestBody");
+            var requestBodyType = CreateModelDeclarations(currentNode, requestBodySchema, operation, method, $"{operationType}RequestBody");
             method.AddParameter(new CodeParameter {
                 Name = "body",
                 Type = requestBodyType,
@@ -991,6 +991,19 @@ public class KiotaBuilder
         }).First();
         if(inheritsFrom != null)
             newClass.StartBlock.Inherits = new CodeType { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
+        var factoryMethod = AddDiscriminatorMethod(newClass, schema.Discriminator?.PropertyName);
+        if(schema.Discriminator?.Mapping?.Any() ?? false)
+            schema.Discriminator
+                    .Mapping
+                    .Where(x => !x.Key.Equals(schema.Reference?.Id, StringComparison.OrdinalIgnoreCase))
+                    .Select(x => (x.Key, GetCodeTypeForMapping(currentNode, x.Value, currentNamespace, newClass, schema)))
+                    .Where(x => x.Item2 != null)
+                    .ToList()
+                    .ForEach(x => factoryMethod.AddDiscriminatorMapping(x.Key, x.Item2));
+        CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass);
+        return newClass;
+    }
+    public static CodeMethod AddDiscriminatorMethod(CodeClass newClass, string discriminatorPropertyName) {
         var factoryMethod = newClass.AddMethod(new CodeMethod {
             Name = "CreateFromDiscriminatorValue",
             Description = "Creates a new instance of the appropriate class based on discriminator value",
@@ -1006,17 +1019,8 @@ public class KiotaBuilder
             Optional = false,
             Type = new CodeType { Name = ParseNodeInterface, IsExternal = true },
         });
-        factoryMethod.DiscriminatorPropertyName = schema.Discriminator?.PropertyName;
-        if(schema.Discriminator?.Mapping?.Any() ?? false)
-            schema.Discriminator
-                    .Mapping
-                    .Where(x => !x.Key.Equals(schema.Reference?.Id, StringComparison.OrdinalIgnoreCase))
-                    .Select(x => (x.Key, GetCodeTypeForMapping(currentNode, x.Value, currentNamespace, newClass, schema)))
-                    .Where(x => x.Item2 != null)
-                    .ToList()
-                    .ForEach(x => factoryMethod.AddDiscriminatorMapping(x.Key, x.Item2));
-        CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass);
-        return newClass;
+        factoryMethod.DiscriminatorPropertyName = discriminatorPropertyName;
+        return factoryMethod;
     }
     private CodeTypeBase GetCodeTypeForMapping(OpenApiUrlTreeNode currentNode, string referenceId, CodeNamespace currentNamespace, CodeClass currentClass, OpenApiSchema currentSchema) {
         var componentKey = referenceId.Replace("#/components/schemas/", string.Empty);

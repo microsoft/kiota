@@ -371,28 +371,14 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                     Type = x,
                                     Description = $"Union type representation for type {x.Name}"
                                 }).ToArray());
-        if(codeUnionType.Types.All(x => x.TypeDefinition is CodeClass targetClass && targetClass.IsOfKind(CodeClassKind.Model) ||
-                                x.TypeDefinition is CodeEnum))
+        if(codeUnionType.Types.All(static x => x.TypeDefinition is CodeClass targetClass && targetClass.IsOfKind(CodeClassKind.Model) ||
+                                x.TypeDefinition is CodeEnum || x.TypeDefinition is null))
         {
             KiotaBuilder.AddSerializationMembers(newClass, true, usesBackingStore);
             newClass.Kind = CodeClassKind.Model;
         }
-        // Add the discrimnator function to the wrapper as it will be referenced. 
-        var factoryMethod = newClass.AddMethod(new CodeMethod
-        {
-            Name = "CreateFromDiscriminatorValue",
-            ReturnType = new CodeType { TypeDefinition = newClass, Name = newClass.Name, IsNullable = false },
-            Kind = CodeMethodKind.Factory,
-            IsStatic = true,
-            IsAsync = false,
-        }).First();
-        factoryMethod.AddParameter(new CodeParameter
-        {
-            Name = "parseNode",
-            Kind = CodeParameterKind.ParseNode,
-            Optional = false,
-            Type = new CodeType { Name = "IParseNode", IsExternal = true },
-        });
+        // Add the discriminator function to the wrapper as it will be referenced. 
+        KiotaBuilder.AddDiscriminatorMethod(newClass, default); //TODO map the discriminator prop name + type mapping + flag to union/exclusion once the vocabulary is available
         return new CodeType {
             Name = newClass.Name,
             TypeDefinition = newClass,
