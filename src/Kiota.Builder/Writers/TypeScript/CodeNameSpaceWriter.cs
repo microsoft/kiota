@@ -23,6 +23,14 @@ namespace Kiota.Builder.Writers.TypeScript
             {
                 writer.WriteLine($"export * from './{className.ToFirstCharacterLowerCase()}'");
             }
+
+            foreach (var e in codeElement.Enums) {
+                writer.WriteLine($"export * from './{e.Name.ToFirstCharacterLowerCase()}'");
+            }
+            foreach (var c in codeElement.CodeInterfaces)
+            {
+                writer.WriteLine($"export * from './{c.Name.ToFirstCharacterLowerCase()}'");
+            }
         }
 
         /// <summary>

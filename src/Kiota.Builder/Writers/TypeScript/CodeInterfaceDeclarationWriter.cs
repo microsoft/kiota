@@ -26,8 +26,12 @@ namespace Kiota.Builder.Writers.TypeScript
             var parentNamespace = interfaceDeclaration.GetImmediateParentOfType<CodeNamespace>();
             _codeUsingWriter.WriteCodeElement(interfaceDeclaration.Usings, parentNamespace, writer);
 
-            var inheritSymbol = conventions.GetTypeString(interfaceDeclaration.inherits, interfaceDeclaration);
-            var derivation = (inheritSymbol == null ? string.Empty : $" extends {inheritSymbol}");
+            var inheritSymbol = "";
+            foreach (var c in interfaceDeclaration?.inherits) {
+                inheritSymbol = (!String.IsNullOrWhiteSpace(inheritSymbol) ? inheritSymbol + "," : String.Empty) + conventions.GetTypeString(c, interfaceDeclaration);
+            }
+            //var inheritSymbol = conventions.GetTypeString(, interfaceDeclaration);
+            var derivation = (String.IsNullOrWhiteSpace(inheritSymbol) ? string.Empty : $" extends {inheritSymbol}");
             //  conventions.WriteShortDescription((codeInterface.Parent as CodeClass).Description, writer);
 
             writer.WriteLine($"export interface {interfaceDeclaration.Name.ToFirstCharacterUpperCase()}{derivation}{{");

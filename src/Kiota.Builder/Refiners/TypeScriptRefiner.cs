@@ -2,6 +2,7 @@
 using System;
 using Kiota.Builder.Extensions;
 using System.Collections.Generic;
+using Microsoft.OpenApi.Expressions;
 
 namespace Kiota.Builder.Refiners;
 public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
@@ -89,8 +90,73 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             generatedCode
         );
         AddModelsInterfaces(generatedCode);
+        ClassToInterface(generatedCode);
     }
 
+    private static void ClassToInterface(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass codeClass && (codeClass.IsOfKind(CodeClassKind.QueryParameters) || codeClass.IsOfKind(CodeClassKind.RequestConfiguration))) {
+
+            var targetNS = codeClass.GetImmediateParentOfType<CodeNamespace>();
+            var existing = targetNS.FindChildByName<CodeInterface>(codeClass.Name, false);
+            if (existing != null)
+                return;
+         
+            var insertValue = new CodeInterface
+            {
+                Name = codeClass.Name,
+                Kind = codeClass.IsOfKind(CodeClassKind.QueryParameters)? CodeInterfaceKind.QueryParameters : CodeInterfaceKind.RequestConfiguration
+            };
+            targetNS.RemoveChildElement(codeClass);
+            var codeInterface = targetNS.AddInterface(insertValue).First();
+
+            foreach (var mprop in codeClass.Properties) {
+                codeInterface.AddProperty(mprop);
+            }
+
+            foreach (var codeUsing in codeClass.Usings){
+                codeInterface.AddUsing(codeUsing);
+            }
+
+           
+
+        }
+        CrawlTree(currentElement, x => ClassToInterface(x));
+    }
+
+    private static void UpdateMethodParam(CodeElement currentElement)
+    {
+        if (currentElement is CodeParameter codeParameter && codeParameter.IsOfKind(CodeParameterKind.RequestConfiguration)) {
+
+
+            if (codeParameter.Type is CodeType type) {
+                var name = codeParameter.Type.Name;
+
+                var targetNS = currentElement.GetImmediateParentOfType<CodeNamespace>();
+
+                var inter = targetNS.CodeInterfaces.FirstOrDefault(x => x.Name == name);
+                type.TypeDefinition = inter;
+            }
+
+
+        } else if (currentElement is CodeInterface codeInterface && codeInterface.IsOfKind(CodeInterfaceKind.RequestConfiguration)) {
+            foreach (var prop in codeInterface.Properties) {
+                if (prop.Type is CodeType type && !type.IsExternal) {
+
+                   
+                        var name = prop.Type.Name;
+
+                        var targetNS = currentElement.GetImmediateParentOfType<CodeNamespace>();
+
+                        var inter = targetNS.CodeInterfaces.FirstOrDefault(x => x.Name == name);
+                        type.TypeDefinition = inter;
+                    
+                }
+
+            }
+        }
+        CrawlTree(currentElement, x => UpdateMethodParam(x));
+    }
     private static void AddModelsInterfaces(CodeElement generatedCode)
     {
         CopyModelClassesAsInterfacesTS(
@@ -282,6 +348,22 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
        // var targetUsingBlock = shouldInsertUnderParentClass ? modelParentClass.StartBlock as ProprietableBlockDeclaration : modelInterface.StartBlock;
         var targetUsingBlock = modelInterface.StartBlock;
+        //modelInterface.StartBlock.inherits.Add(
+        //    new CodeType
+        //{
+        //    IsExternal = true,
+        //    Name = "Parsable"
+        //});
+
+        //modelInterface.AddUsing(new CodeUsing
+        //{
+        //    Name = "Parsable",
+        //    Declaration = new CodeType
+        //    {
+        //        Name = AbstractionsPackageName,
+        //        IsExternal = true,
+        //    },
+        //});
         var usingsToAdd = new List<CodeUsing>();
 
         /**
@@ -290,11 +372,11 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (modelClass.StartBlock.Inherits?.TypeDefinition is CodeClass baseClass)
         {
             var parentInterface = CopyClassAsInterface(baseClass, interfaceNamingCallback);
-            modelInterface.StartBlock.inherits = new CodeType
+            modelInterface.StartBlock.inherits.Add(new CodeType
             {
                 Name = parentInterface.Name,
                 TypeDefinition = parentInterface,
-            };
+            });
             var parentInterfaceNS = parentInterface.GetImmediateParentOfType<CodeNamespace>();
             //if (parentInterfaceNS != targetNS)
                 modelInterface.AddUsing(new CodeUsing
@@ -376,14 +458,14 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         /*
          * Set the model interface in startblock implements of the model class
          */
-        if (modelClass.StartBlock.Implements.Any())
-        {
-            var originalImplements = modelClass.StartBlock.Implements.Where(x => x.TypeDefinition != modelInterface).ToArray();
-            modelInterface.StartBlock.AddImplements(originalImplements
-                                                        .Select(x => x.Clone() as CodeType)
-                                                        .ToArray());
-            modelClass.StartBlock.RemoveImplements(originalImplements);
-        }
+        //if (modelClass.StartBlock.Implements.Any())
+        //{
+        //    var originalImplements = modelClass.StartBlock.Implements.Where(x => x.TypeDefinition != modelInterface).ToArray();
+        //    modelInterface.StartBlock.AddImplements(originalImplements
+        //                                                .Select(x => x.Clone() as CodeType)
+        //                                                .ToArray());
+        //    //.StartBlock.RemoveImplements(originalImplements);
+        //}
 
         modelClass.StartBlock.AddImplements(new CodeType
         {
