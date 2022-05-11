@@ -6,7 +6,7 @@ namespace Kiota.Builder;
 /// <summary>
 /// The base class for composed types like union or exclusion.
 /// </summary>
-public abstract class CodeComposedTypeBase : CodeTypeBase, ICloneable {
+public abstract class CodeComposedTypeBase : CodeTypeBase {
     public void AddType(params CodeType[] codeTypes) {
         EnsureElementsAreChildren(codeTypes);
         foreach(var codeType in codeTypes.Where(x => x != null && !Types.Contains(x)))

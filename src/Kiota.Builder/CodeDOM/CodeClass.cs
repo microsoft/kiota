@@ -36,10 +36,11 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
             throw new ArgumentNullException(nameof(indexer));
         if(InnerChildElements.Values.OfType<CodeIndexer>().Any() || InnerChildElements.Values.OfType<CodeMethod>().Any(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility))) {
             var existingIndexer = InnerChildElements.Values.OfType<CodeIndexer>().FirstOrDefault();
-            if(existingIndexer != null)
+            if(existingIndexer != null) {
                 RemoveChildElement(existingIndexer);
-            AddRange(CodeMethod.FromIndexer(indexer, this, $"By{indexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", false),
-                CodeMethod.FromIndexer(existingIndexer, this, $"By{existingIndexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", true));
+                AddRange(CodeMethod.FromIndexer(existingIndexer, this, $"By{existingIndexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", true));
+            }
+            AddRange(CodeMethod.FromIndexer(indexer, this, $"By{indexer.SerializationName.CleanupSymbolName().ToFirstCharacterUpperCase()}", false));
         } else
             AddRange(indexer);
     }

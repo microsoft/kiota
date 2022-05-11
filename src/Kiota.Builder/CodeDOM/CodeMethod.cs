@@ -46,6 +46,10 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
 {
     public static CodeMethod FromIndexer(CodeIndexer originalIndexer, CodeClass indexerClass, string methodNameSuffix, bool parameterNullable)
     {
+        if(originalIndexer == null)
+            throw new ArgumentNullException(nameof(originalIndexer));
+        if(indexerClass == null)
+            throw new ArgumentNullException(nameof(indexerClass));
         var method = new CodeMethod {
             IsAsync = false,
             IsStatic = false,
