@@ -193,14 +193,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         var propertyType = conventions.GetTypeString(propType, method, false);
         if (propType is CodeType currentType)
         {
-            if (isCollection)
+            if (isCollection) {
+                var collectionMethod = propType.IsArray ? ".ToArray()" : ".ToList()";
                 if (currentType.TypeDefinition == null)
-                    return $"GetCollectionOfPrimitiveValues<{propertyType}>().ToList()";
+                    return $"GetCollectionOfPrimitiveValues<{propertyType}>(){collectionMethod}";
                 else if (currentType.TypeDefinition is CodeEnum enumType)
-                    return $"GetCollectionOfEnumValues<{enumType.Name.ToFirstCharacterUpperCase()}>().ToList()";
+                    return $"GetCollectionOfEnumValues<{enumType.Name.ToFirstCharacterUpperCase()}>(){collectionMethod}";
                 else
-                    return $"GetCollectionOfObjectValues<{propertyType}>({propertyType}.CreateFromDiscriminatorValue).ToList()";
-            else if (currentType.TypeDefinition is CodeEnum enumType)
+                    return $"GetCollectionOfObjectValues<{propertyType}>({propertyType}.CreateFromDiscriminatorValue){collectionMethod}";
+            } else if (currentType.TypeDefinition is CodeEnum enumType)
                 return $"GetEnumValue<{enumType.Name.ToFirstCharacterUpperCase()}>()";
         }
         return propertyType switch
@@ -260,8 +261,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         {
             if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                 writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({requestParams.requestBody.Name});");
-            else
+            else if (requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass)
                 writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable({requestAdapterProperty.Name.ToFirstCharacterUpperCase()}, \"{codeElement.ContentType}\", {requestParams.requestBody.Name});");
+            else
+                writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar({requestAdapterProperty.Name.ToFirstCharacterUpperCase()}, \"{codeElement.ContentType}\", {requestParams.requestBody.Name});");
         }
         
         if (requestParams.requestConfiguration != null)
