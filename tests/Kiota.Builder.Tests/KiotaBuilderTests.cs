@@ -374,8 +374,10 @@ components:
                                         ["application/json"] = new OpenApiMediaType() {
                                             Schema = new OpenApiSchema {
                                                 Type = "array",
-                                                AnyOf = new List<OpenApiSchema> {
-                                                    permissionSchema,
+                                                Items = new OpenApiSchema {
+                                                    AnyOf = new List<OpenApiSchema> {
+                                                        permissionSchema,
+                                                    }
                                                 }
                                             }
                                         }
