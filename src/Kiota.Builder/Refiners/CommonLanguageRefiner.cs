@@ -327,23 +327,23 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected static void ConvertUnionTypesToWrapper(CodeElement currentElement, bool usesBackingStore, bool supportInnerClasses = true) {
         var parentClass = currentElement.Parent as CodeClass;
         if(currentElement is CodeMethod currentMethod) {
-            if(currentMethod.ReturnType is CodeUnionType currentUnionType)
-                currentMethod.ReturnType = ConvertUnionTypeToWrapper(parentClass, currentUnionType, usesBackingStore, supportInnerClasses);
-            if(currentMethod.Parameters.Any(static x => x.Type is CodeUnionType))
-                foreach(var currentParameter in currentMethod.Parameters.Where(x => x.Type is CodeUnionType))
-                    currentParameter.Type = ConvertUnionTypeToWrapper(parentClass, currentParameter.Type as CodeUnionType, usesBackingStore, supportInnerClasses);
-            if(currentMethod.ErrorMappings.Select(static x => x.Value).OfType<CodeUnionType>().Any())
-                foreach(var errorUnionType in currentMethod.ErrorMappings.Select(static x => x.Value).OfType<CodeUnionType>())
-                    currentMethod.ReplaceErrorMapping(errorUnionType, ConvertUnionTypeToWrapper(parentClass, errorUnionType, usesBackingStore, supportInnerClasses));
+            if(currentMethod.ReturnType is CodeComposedTypeBase currentUnionType)
+                currentMethod.ReturnType = ConvertComposedTypeToWrapper(parentClass, currentUnionType, usesBackingStore, supportInnerClasses);
+            if(currentMethod.Parameters.Any(static x => x.Type is CodeComposedTypeBase))
+                foreach(var currentParameter in currentMethod.Parameters.Where(x => x.Type is CodeComposedTypeBase))
+                    currentParameter.Type = ConvertComposedTypeToWrapper(parentClass, currentParameter.Type as CodeComposedTypeBase, usesBackingStore, supportInnerClasses);
+            if(currentMethod.ErrorMappings.Select(static x => x.Value).OfType<CodeComposedTypeBase>().Any())
+                foreach(var errorUnionType in currentMethod.ErrorMappings.Select(static x => x.Value).OfType<CodeComposedTypeBase>())
+                    currentMethod.ReplaceErrorMapping(errorUnionType, ConvertComposedTypeToWrapper(parentClass, errorUnionType, usesBackingStore, supportInnerClasses));
         }
-        else if (currentElement is CodeIndexer currentIndexer && currentIndexer.ReturnType is CodeUnionType currentUnionType)
-            currentIndexer.ReturnType = ConvertUnionTypeToWrapper(parentClass, currentUnionType, usesBackingStore);
-        else if(currentElement is CodeProperty currentProperty && currentProperty.Type is CodeUnionType currentPropUnionType)
-            currentProperty.Type = ConvertUnionTypeToWrapper(parentClass, currentPropUnionType, usesBackingStore, supportInnerClasses);
+        else if (currentElement is CodeIndexer currentIndexer && currentIndexer.ReturnType is CodeComposedTypeBase currentUnionType)
+            currentIndexer.ReturnType = ConvertComposedTypeToWrapper(parentClass, currentUnionType, usesBackingStore);
+        else if(currentElement is CodeProperty currentProperty && currentProperty.Type is CodeComposedTypeBase currentPropUnionType)
+            currentProperty.Type = ConvertComposedTypeToWrapper(parentClass, currentPropUnionType, usesBackingStore, supportInnerClasses);
 
         CrawlTree(currentElement, x => ConvertUnionTypesToWrapper(x, usesBackingStore, supportInnerClasses));
     }
-    private static CodeTypeBase ConvertUnionTypeToWrapper(CodeClass codeClass, CodeUnionType codeUnionType, bool usesBackingStore, bool supportsInnerClasses = true)
+    private static CodeTypeBase ConvertComposedTypeToWrapper(CodeClass codeClass, CodeComposedTypeBase codeUnionType, bool usesBackingStore, bool supportsInnerClasses = true)
     {
         if(codeClass == null) throw new ArgumentNullException(nameof(codeClass));
         if(codeUnionType == null) throw new ArgumentNullException(nameof(codeUnionType));
@@ -360,6 +360,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }).Last();
         }
         else {
+            if(codeUnionType.Name.Equals(codeClass.Name, StringComparison.OrdinalIgnoreCase))
+                codeUnionType.Name = $"{codeUnionType.Name}Wrapper";
             newClass = codeClass.AddInnerClass(new CodeClass {
             Name = codeUnionType.Name,
             Description = description}).First();
@@ -437,18 +439,18 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             var parentNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
             var innerClasses = currentClass
                                     .Methods
-                                    .SelectMany(x => x.Parameters)
-                                    .Where(x => x.Type.ActionOf && (x.IsOfKind(CodeParameterKind.RequestConfiguration)))
-                                    .SelectMany(x => x.Type.AllTypes)
-                                    .Select(x => x.TypeDefinition)
+                                    .SelectMany(static x => x.Parameters)
+                                    .Where(static x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.RequestConfiguration))
+                                    .SelectMany(static x => x.Type.AllTypes)
+                                    .Select(static x => x.TypeDefinition)
                                     .OfType<CodeClass>();
 
             // ensure we do not miss out the types present in request configuration objects i.e. the query parameters
             var nestedQueryParameters = innerClasses
-                                    .SelectMany( x => x.Properties)
-                                    .Where(x => x.IsOfKind(CodePropertyKind.QueryParameters))
-                                    .SelectMany(x => x.Type.AllTypes)
-                                    .Select(x => x.TypeDefinition)
+                                    .SelectMany(static x => x.Properties)
+                                    .Where(static x => x.IsOfKind(CodePropertyKind.QueryParameters))
+                                    .SelectMany(static x => x.Type.AllTypes)
+                                    .Select(static x => x.TypeDefinition)
                                     .OfType<CodeClass>();
 
             var nestedClasses = new List<CodeClass>();

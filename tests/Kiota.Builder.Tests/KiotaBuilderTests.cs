@@ -1366,7 +1366,7 @@ components:
         Assert.NotNull(requestBuilderClass);
         var requestExecutorMethod = requestBuilderClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(requestExecutorMethod);
-        var executorReturnType = requestExecutorMethod.ReturnType as CodeUnionType;
+        var executorReturnType = requestExecutorMethod.ReturnType as CodeComposedTypeBase;
         Assert.NotNull(executorReturnType);
         Assert.Equal(2, executorReturnType.Types.Count());
         var typeNames = executorReturnType.Types.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -1441,7 +1441,7 @@ components:
         Assert.NotNull(requestBuilderClass);
         var requestExecutorMethod = requestBuilderClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(requestExecutorMethod);
-        var executorReturnType = requestExecutorMethod.ReturnType as CodeUnionType;
+        var executorReturnType = requestExecutorMethod.ReturnType as CodeComposedTypeBase;
         Assert.NotNull(executorReturnType);
         Assert.Equal(2, executorReturnType.Types.Count());
         var typeNames = executorReturnType.Types.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
