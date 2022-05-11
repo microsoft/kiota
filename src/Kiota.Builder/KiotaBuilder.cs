@@ -529,7 +529,7 @@ public class KiotaBuilder
     private static IEnumerable<CodeType> filterUnmappedTypeDefitions(IEnumerable<CodeTypeBase> source) =>
     source.OfType<CodeType>()
             .Union(source
-                    .OfType<CodeUnionType>()
+                    .OfType<CodeComposedTypeBase>()
                     .SelectMany(x => x.Types))
             .Where(x => !x.IsExternal && x.TypeDefinition == null);
     private IEnumerable<CodeType> GetUnmappedTypeDefinitions(CodeElement codeElement) {
@@ -556,7 +556,7 @@ public class KiotaBuilder
         };
     }
 
-    private CodeProperty CreateProperty(string childIdentifier, string childType, string defaultValue = null, OpenApiSchema typeSchema = null, CodeElement typeDefinition = null, CodePropertyKind kind = CodePropertyKind.Custom)
+    private CodeProperty CreateProperty(string childIdentifier, string childType, string defaultValue = null, OpenApiSchema typeSchema = null, CodeTypeBase existingType = null, CodePropertyKind kind = CodePropertyKind.Custom)
     {
         var propertyName = childIdentifier.CleanupSymbolName(config.PropertiesPrefixToStrip);
         if(int.TryParse(propertyName, out var _))
@@ -571,11 +571,14 @@ public class KiotaBuilder
         if(propertyName != childIdentifier)
             prop.SerializationName = childIdentifier;
         
-        var propType = GetPrimitiveType(typeSchema, childType);
-        propType.TypeDefinition = typeDefinition;
-        propType.CollectionKind = typeSchema.IsArray() ? CodeType.CodeTypeCollectionKind.Complex : default;
-        prop.Type = propType;
-        logger.LogTrace("Creating property {name} of {type}", prop.Name, prop.Type.Name);
+        if (existingType != null)
+            prop.Type = existingType;
+        else {
+            var propType = GetPrimitiveType(typeSchema, childType);
+            propType.CollectionKind = typeSchema.IsArray() ? CodeType.CodeTypeCollectionKind.Complex : default;
+            prop.Type = propType;
+            logger.LogTrace("Creating property {name} of {type}", prop.Name, prop.Type.Name);
+        }
         return prop;
     }
     private static readonly HashSet<string> typeNamesToSkip = new(StringComparer.OrdinalIgnoreCase) {"object", "array"};
@@ -860,10 +863,16 @@ public class KiotaBuilder
                         .FirstOrDefault(x => x.Reference?.Id?.EndsWith(title, StringComparison.OrdinalIgnoreCase) ?? false))
             ?.Reference?.Id;
     }
-    private CodeTypeBase CreateUnionModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, string suffixForInlineSchema) {
-        var schemas = schema.AnyOf.Union(schema.OneOf);
-        var unionType = new CodeUnionType {
-            Name = currentNode.GetClassName(operation: operation, suffix: suffixForInlineSchema, schema: schema).CleanupSymbolName(),
+    private CodeTypeBase CreateComposedModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, string suffixForInlineSchema) {
+        var typeName = currentNode.GetClassName(operation: operation, suffix: suffixForInlineSchema, schema: schema).CleanupSymbolName();
+        var (unionType, schemas) = (schema.IsOneOf(), schema.IsAnyOf()) switch {
+            (true, false) => (new CodeExclusionType {
+                Name = typeName,
+            } as CodeComposedTypeBase, schema.OneOf),
+            (false, true) => (new CodeUnionType {
+                Name = typeName,
+            }, schema.AnyOf),
+            (_, _) => throw new InvalidOperationException("Schema is not oneOf nor anyOf"),
         };
         var membersWithNoName = 0;
         foreach(var currentSchema in schemas) {
@@ -899,8 +908,8 @@ public class KiotaBuilder
         } else if(schema.IsAllOf()) {
             return CreateInheritedModelDeclaration(currentNode, schema, operation);
         } else if(schema.IsAnyOf() || schema.IsOneOf()) {
-            return CreateUnionModelDeclaration(currentNode, schema, operation, suffixForInlineSchema);
-        } else if(schema.IsObject()) {
+            return CreateComposedModelDeclaration(currentNode, schema, operation, suffixForInlineSchema);
+        } else if(schema.IsObject() || schema.Properties.Any()) {
             // referenced schema, no inheritance or union type
             var targetNamespace = GetShortestNamespace(codeNamespace, schema);
             return CreateModelDeclarationAndType(currentNode, schema, operation, targetNamespace, response: response);
@@ -909,6 +918,8 @@ public class KiotaBuilder
             return CreateCollectionModelDeclaration(currentNode, schema, operation, codeNamespace);
         } else if(!string.IsNullOrEmpty(schema.Type) || !string.IsNullOrEmpty(schema.Format))
             return GetPrimitiveType(schema, string.Empty);
+        else if((schema.AnyOf.Any() || schema.OneOf.Any() || schema.AllOf.Any()) && schema.Nullable) // we have an empty node because of the nullable property and need to unwrap it.
+            return CreateModelDeclarations(currentNode, schema.AnyOf.FirstOrDefault() ?? schema.OneOf.FirstOrDefault() ?? schema.AllOf.FirstOrDefault(), operation, parentElement, suffixForInlineSchema, response);
         else throw new InvalidOperationException("un handled case, might be object type or array type");
     }
     private CodeTypeBase CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeNamespace codeNamespace)
@@ -1043,18 +1054,15 @@ public class KiotaBuilder
             model.AddProperty(schema
                                 .Properties
                                 .Select(x => {
-                                    var propertyDefinitionSchema = x.Value.GetNonEmptySchemas().FirstOrDefault();
-                                    var className = propertyDefinitionSchema.GetSchemaTitle().CleanupSymbolName();
-                                    CodeElement definition = default;
-                                    if(propertyDefinitionSchema != null) {
-                                        if(string.IsNullOrEmpty(className))
-                                            className = $"{model.Name}_{x.Key}";
-                                        var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertyDefinitionSchema.Reference?.Id);
-                                        var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns : 
-                                                                (rootNamespace.FindNamespaceByName(shortestNamespaceName) ?? rootNamespace.AddNamespace(shortestNamespaceName));
-                                        definition = AddModelDeclarationIfDoesntExist(currentNode, propertyDefinitionSchema, className, targetNamespace, null, !propertyDefinitionSchema.IsReferencedSchema());
-                                    }
-                                    return CreateProperty(x.Key, className ?? x.Value.Type, typeSchema: x.Value, typeDefinition: definition);
+                                    var propertySchema = x.Value;
+                                    var className = propertySchema.GetSchemaTitle().CleanupSymbolName();
+                                    if(string.IsNullOrEmpty(className))
+                                        className = $"{model.Name}_{x.Key}";
+                                    var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.Reference?.Id);
+                                    var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns : 
+                                                            (rootNamespace.FindNamespaceByName(shortestNamespaceName) ?? rootNamespace.AddNamespace(shortestNamespaceName));
+                                    var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, default);
+                                    return CreateProperty(x.Key, className ?? propertySchema.Type, typeSchema: propertySchema, existingType: definition);
                                 })
                                 .ToArray());
         }

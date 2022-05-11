@@ -26,17 +26,6 @@ namespace Kiota.Builder.Extensions {
                 return new string[] {schema.Xml.Name};
             else return Enumerable.Empty<string>();
         }
-        public static IEnumerable<OpenApiSchema> GetNonEmptySchemas(this OpenApiSchema schema) {
-            if(schema == null) return Enumerable.Empty<OpenApiSchema>();
-            else if(!string.IsNullOrEmpty(schema.Reference?.Id)) return new OpenApiSchema[] { schema };
-            else if(schema.Properties?.Any() ?? false) return new OpenApiSchema[] { schema };
-            else if(schema.Items != null) return schema.Items.GetNonEmptySchemas();
-            else if(schema.AdditionalProperties != null) return new OpenApiSchema[] { schema };
-            else if(schema.AnyOf.Any()) return schema.AnyOf.SelectMany(x => x.GetNonEmptySchemas());
-            else if(schema.AllOf.Any()) return schema.AllOf.SelectMany(x => x.GetNonEmptySchemas());
-            else if(schema.OneOf.Any()) return schema.OneOf.SelectMany(x => x.GetNonEmptySchemas());
-            else return Enumerable.Empty<OpenApiSchema>();            
-        }
         private static IEnumerable<string> FlattenIfRequired(this IList<OpenApiSchema> schemas, Func<OpenApiSchema, IList<OpenApiSchema>> subsequentGetter) {
             var resultSet = schemas;
             if(schemas.Count == 1 && string.IsNullOrEmpty(schemas.First().Title))
@@ -64,17 +53,17 @@ namespace Kiota.Builder.Extensions {
         }
         public static bool IsAnyOf(this OpenApiSchema schema)
         {
-            return schema?.AnyOf?.Any() ?? false;
+            return schema?.AnyOf?.Count > 1;
         }
 
         public static bool IsAllOf(this OpenApiSchema schema)
         {
-            return schema?.AllOf?.Any() ?? false;
+            return schema?.AllOf?.Count > 1;
         }
 
         public static bool IsOneOf(this OpenApiSchema schema)
         {
-            return schema?.OneOf?.Any() ?? false;
+            return schema?.OneOf?.Count > 1;
         }
 
         public static IEnumerable<string> GetSchemaReferenceIds(this OpenApiSchema schema, HashSet<OpenApiSchema> visitedSchemas = null) {
