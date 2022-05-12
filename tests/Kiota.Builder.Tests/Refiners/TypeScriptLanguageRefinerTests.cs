@@ -453,19 +453,21 @@ public class TypeScriptLanguageRefinerTests {
     public void ReplaceRequestConfigsQueryParams()
     {
         var testNS = CodeNamespace.InitRootNamespace();
-        var model = testNS.AddClass(new CodeClass
+        var requestConfig = testNS.AddClass(new CodeClass
         {
             Name = "requestConfig",
             Kind = CodeClassKind.RequestConfiguration
         }).First();
 
-        var property = testNS.AddClass(new CodeClass
+        var queryParam = testNS.AddClass(new CodeClass
         {
             Name = "queryParams",
             Kind = CodeClassKind.QueryParameters
         }).First();
 
-        model.AddProperty(new CodeProperty { Name = property.Name, Type = new CodeType { Name = property.Name, TypeDefinition = property } });
+        requestConfig.AddProperty(new CodeProperty { Name = queryParam.Name, Type = new CodeType { Name = queryParam.Name, TypeDefinition = queryParam } });
+        requestConfig.AddProperty(new CodeProperty { Name = queryParam.Name, Type = new CodeType { Name = queryParam.Name, TypeDefinition = queryParam } });
+
 
 
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, testNS);

@@ -102,9 +102,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             };
             targetNS.RemoveChildElement(codeClass);
             var codeInterface = targetNS.AddInterface(insertValue).First();
-
-            codeInterface.AddProperty(codeClass.Properties.ToArray());
-            codeInterface.AddUsing(codeClass.Usings.ToArray());
+            var props= codeClass.Properties?.ToArray();
+            if (props.Any())
+            codeInterface.AddProperty(props);
+            var usings = codeClass.Usings?.ToArray();
+            if (usings.Any())
+                codeInterface.AddUsing(usings);
         }
         CrawlTree(currentElement, x => ReplaceRequestConfigurationsQueryParamsWithInterfaces(x));
     }
@@ -158,52 +161,57 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         else if (currentElement is CodeMethod codeMethod)
         {
-            /*
-             * Setting request body parameter type of request executor to model interface.
-             */
-            if (codeMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
-            codeMethod.ReturnType is CodeType returnType &&
-            returnType.TypeDefinition is CodeClass returnClass &&
-            returnClass.IsOfKind(CodeClassKind.Model))
-            {
-                var requestBodyParam = codeMethod.Parameters.OfKind(CodeParameterKind.RequestBody);
-                if (requestBodyParam != null && requestBodyParam.Type is CodeType type1)
-                {
-                    SetTypeAndAddUsing(CreateModelInterface(type1.TypeDefinition as CodeClass, interfaceNamingCallback), type1, requestBodyParam);
-                }
-                SetTypeAndAddUsing(CreateModelInterface(returnClass, interfaceNamingCallback), returnType, codeMethod);
-
-                var parentClass = codeMethod.GetImmediateParentOfType<CodeClass>();
-
-                if (parentClass != null && parentClass.Name != returnClass.Name)
-                {
-                    parentClass.AddUsing(new CodeUsing { Name = returnClass.Parent.Name, Declaration = new CodeType { Name = returnClass.Name, TypeDefinition = returnClass } });
-
-                }
-            }
-            /*
-             * Setting request body parameter type of request generator to model interface.
-             */
-            else if (codeMethod.IsOfKind(CodeMethodKind.RequestGenerator))
-            {
-                var requestBodyParam1 = codeMethod?.Parameters?.OfKind(CodeParameterKind.RequestBody);
-                if (requestBodyParam1 != null && requestBodyParam1.Type is CodeType type1 && type1.TypeDefinition is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model))
-                {
-                    SetTypeAndAddUsing(CreateModelInterface(codeClass, interfaceNamingCallback), type1, requestBodyParam1);
-
-
-                    var parentClass = codeMethod.GetImmediateParentOfType<CodeClass>();
-
-                    if (parentClass != null && parentClass.Name != codeClass.Name)
-                    {
-                        parentClass.AddUsing(new CodeUsing { Name = codeClass.Parent.Name, Declaration = new CodeType { Name = codeClass.Name, TypeDefinition = codeClass } });
-
-                    }
-                }
-            }
+            ProcessModelClassesAssociatedWithMethods(codeMethod, interfaceNamingCallback);
         }
 
         CrawlTree(currentElement, x => GenerateModelInterfaces(x, interfaceNamingCallback));
+    }
+
+    private static void ProcessModelClassesAssociatedWithMethods(CodeMethod codeMethod, Func<CodeClass, string> interfaceNamingCallback)
+    {
+        /*
+         * Setting request body parameter type of request executor to model interface.
+         */
+        if (codeMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
+        codeMethod.ReturnType is CodeType returnType &&
+        returnType.TypeDefinition is CodeClass returnClass &&
+        returnClass.IsOfKind(CodeClassKind.Model))
+        {
+            var requestBodyParam = codeMethod.Parameters.OfKind(CodeParameterKind.RequestBody);
+            if (requestBodyParam != null && requestBodyParam.Type is CodeType type1)
+            {
+                SetTypeAndAddUsing(CreateModelInterface(type1.TypeDefinition as CodeClass, interfaceNamingCallback), type1, requestBodyParam);
+            }
+            SetTypeAndAddUsing(CreateModelInterface(returnClass, interfaceNamingCallback), returnType, codeMethod);
+
+            var parentClass = codeMethod.GetImmediateParentOfType<CodeClass>();
+
+            if (parentClass != null && parentClass.Name != returnClass.Name)
+            {
+                parentClass.AddUsing(new CodeUsing { Name = returnClass.Parent.Name, Declaration = new CodeType { Name = returnClass.Name, TypeDefinition = returnClass } });
+
+            }
+        }
+        /*
+         * Setting request body parameter type of request generator to model interface.
+         */
+        else if (codeMethod.IsOfKind(CodeMethodKind.RequestGenerator))
+        {
+            var requestBodyParam1 = codeMethod?.Parameters?.OfKind(CodeParameterKind.RequestBody);
+            if (requestBodyParam1 != null && requestBodyParam1.Type is CodeType type1 && type1.TypeDefinition is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.Model))
+            {
+                SetTypeAndAddUsing(CreateModelInterface(codeClass, interfaceNamingCallback), type1, requestBodyParam1);
+
+
+                var parentClass = codeMethod.GetImmediateParentOfType<CodeClass>();
+
+                if (parentClass != null && parentClass.Name != codeClass.Name)
+                {
+                    parentClass.AddUsing(new CodeUsing { Name = codeClass.Parent.Name, Declaration = new CodeType { Name = codeClass.Name, TypeDefinition = codeClass } });
+
+                }
+            }
+        }
     }
     private static void SetTypeAndAddUsing(CodeInterface interfaceElement, CodeType elemType, CodeElement targetElement)
     {
