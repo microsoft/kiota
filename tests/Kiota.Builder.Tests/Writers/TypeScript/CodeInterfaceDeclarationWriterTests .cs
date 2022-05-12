@@ -10,7 +10,6 @@ namespace Kiota.Builder.Writers.TypeScript.Tests
         private const string DefaultName = "name";
         private readonly StringWriter tw;
         private readonly LanguageWriter writer;
-        private readonly CodeClassDeclarationWriter codeElementWriter;
         private readonly CodeInterface parentInterface;
 
         public CodeInterfaceDeclaraterWriterTests()
@@ -42,8 +41,8 @@ namespace Kiota.Builder.Writers.TypeScript.Tests
         [Fact]
         public void WritesInheritance()
         {
-           
-            parentInterface.StartBlock.Inherits.Add( new()
+
+            parentInterface.StartBlock.AddInheritsFrom(new CodeType()
             {
                 Name = "someInterface"
             });

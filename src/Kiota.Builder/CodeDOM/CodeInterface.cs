@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Kiota.Builder;
 
@@ -17,11 +19,21 @@ public class InterfaceDeclaration : ProprietableBlockDeclaration
 {
 
     private List<CodeType> inherits = new List<CodeType>();
-    public List<CodeType> Inherits
+    public IEnumerable<CodeType> Inherits
     {
         get => inherits; set
         {
-            inherits = value;
+            inherits.Clear();
+            inherits.AddRange(value);
         }
+    }
+
+    public void AddInheritsFrom(params CodeType[] inheritsFrom)
+    {
+        if (inheritsFrom == null || inheritsFrom.Any(x => x == null))
+            throw new ArgumentNullException(nameof(inheritsFrom));
+        if (!inheritsFrom.Any())
+            throw new ArgumentOutOfRangeException(nameof(inheritsFrom));
+        this.inherits.AddRange(inheritsFrom);
     }
 }

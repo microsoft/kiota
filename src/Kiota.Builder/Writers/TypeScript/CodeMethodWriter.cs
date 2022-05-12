@@ -156,7 +156,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                                         .OrderByDescending(x => x.Kind)
                                         .ThenBy(x => x.Name))
         {
-            if (!parentClass.IsOfKind(CodeClassKind.Model)) { }
             writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
         }
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))
@@ -370,7 +369,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             }
 
             writer.WriteLine($"{undefinedPrefix}writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherPropName}\", {str});");
-            //  if (isCollection) 
+        
             writer.WriteLine("}");
         }
         if (additionalDataProperty != null)

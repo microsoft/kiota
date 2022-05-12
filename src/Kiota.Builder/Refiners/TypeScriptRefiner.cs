@@ -87,7 +87,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void ReplaceRequestConfigurationsQueryParamsWithInterfaces(CodeElement currentElement)
     {
-        if (currentElement is CodeClass codeClass && (codeClass.IsOfKind(CodeClassKind.QueryParameters) || codeClass.IsOfKind(CodeClassKind.RequestConfiguration)))
+        if (currentElement is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.QueryParameters, CodeClassKind.RequestConfiguration))
         {
 
             var targetNS = codeClass.GetImmediateParentOfType<CodeNamespace>();
@@ -103,15 +103,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             targetNS.RemoveChildElement(codeClass);
             var codeInterface = targetNS.AddInterface(insertValue).First();
 
-            foreach (var mprop in codeClass.Properties)
-            {
-                codeInterface.AddProperty(mprop);
-            }
-
-            foreach (var codeUsing in codeClass.Usings)
-            {
-                codeInterface.AddUsing(codeUsing);
-            }
+            codeInterface.AddProperty(codeClass.Properties.ToArray());
+            codeInterface.AddUsing(codeClass.Usings.ToArray());
         }
         CrawlTree(currentElement, x => ReplaceRequestConfigurationsQueryParamsWithInterfaces(x));
     }
@@ -138,12 +131,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             currentClass.Name = currentClass.Name + ModelClassSuffix;
         }
-        if (currentElement is CodeInterface modelInterface && modelInterface.IsOfKind(CodeInterfaceKind.Model))
+        if (currentElement is CodeInterface modelInterface && modelInterface.IsOfKind(CodeInterfaceKind.Model) && modelInterface.Name.EndsWith("Interface"))
         {
-            if (modelInterface.Name.EndsWith("Interface"))
-            {
-                modelInterface.Name = modelInterface.Name.Split("Interface")[0];
-            }
+            modelInterface.Name = modelInterface.Name.Split("Interface")[0];
         }
 
         CrawlTree(currentElement, x => RenameModelInterfacesAndClasses(x));
@@ -279,7 +269,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (modelClass.StartBlock.Inherits?.TypeDefinition is CodeClass baseClass)
         {
             var parentInterface = CreateModelInterface(baseClass, interfaceNamingCallback);
-            modelInterface.StartBlock.Inherits.Add(new CodeType
+            modelInterface.StartBlock.AddInheritsFrom(new CodeType
             {
                 Name = parentInterface.Name,
                 TypeDefinition = parentInterface,
@@ -314,7 +304,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
             else if (mProp.Type is CodeType propertyType && !propertyType.IsExternal && propertyType.TypeDefinition is CodeClass propertyClass)
             {
-                var codeUsing = ReplaceTypeByInterfaceType(propertyClass, propertyType, interfaceNamingCallback);//, usingsToRemove);
+                var codeUsing = ReplaceTypeByInterfaceType(propertyClass, propertyType, interfaceNamingCallback);
 
                 if (modelInterface.Name != codeUsing.Item1.Name)
                 {
@@ -338,19 +328,14 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     });
                 }
             }
-            else if (mProp.Type is CodeType nonClassPropertyType && nonClassPropertyType is CodeType nonClassTypeDef && !(nonClassTypeDef.TypeDefinition is CodeClass))
+            else if (mProp.Type is CodeType nonClassPropertyType && nonClassPropertyType is CodeType nonClassTypeDef && !(nonClassTypeDef.TypeDefinition is CodeClass) && !nonClassPropertyType.IsExternal)
             {
-                if (!nonClassPropertyType.IsExternal)
+                var usingExternal = modelClass.Usings.FirstOrDefault(x => String.Equals(x.Declaration.Name, nonClassTypeDef.Name, StringComparison.OrdinalIgnoreCase));
+
+                if (usingExternal != null)
                 {
-                    var usingExternal = modelClass.Usings.FirstOrDefault(x => String.Equals(x.Declaration.Name, nonClassTypeDef.Name, StringComparison.OrdinalIgnoreCase));
-
-                    if (usingExternal != null)
-                    {
-                        modelInterface.AddUsing(usingExternal);
-                    }
+                    modelInterface.AddUsing(usingExternal);
                 }
-
-
             }
 
             modelInterface.AddProperty(mProp);
@@ -460,7 +445,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         return modelInterface;
     }
 
-    private static (CodeInterface, CodeUsing) ReplaceTypeByInterfaceType(CodeClass sourceClass, CodeType originalType, Func<CodeClass, string> interfaceNamingCallback, List<string> usingsToRemove = null)
+    private static (CodeInterface, CodeUsing) ReplaceTypeByInterfaceType(CodeClass sourceClass, CodeType originalType, Func<CodeClass, string> interfaceNamingCallback)
     {
         var propertyInterfaceType = CreateModelInterface(sourceClass, interfaceNamingCallback);
         originalType.Name = propertyInterfaceType.Name;
