@@ -261,7 +261,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var classModelChildItems = modelClass.GetChildElements(true);
 
         var targetUsingBlock = modelInterface.StartBlock;
-        var usingsToAdd = new List<CodeUsing>();
 
         /**
          * If a child model class inherits from parent model class, the child interface extends from the parent interface.
@@ -436,12 +435,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                         });
                 }
         }
-        var externalTypesOnInter = modelInterface.Methods.Select(x => x.ReturnType).OfType<CodeType>().Where(x => x.IsExternal)
-                                    .Union(modelInterface.StartBlock.Implements.Where(x => x.IsExternal))
-                                    .Union(modelInterface.Methods.SelectMany(x => x.Parameters).Select(x => x.Type).OfType<CodeType>().Where(x => x.IsExternal))
-                                    .Select(x => x.Name)
-                                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
         return modelInterface;
     }
 

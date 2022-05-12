@@ -177,7 +177,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
 
         if (parentClass.IsOfKind(CodeClassKind.Model))
         {
-            var interfaceModel = parentClass.StartBlock.Implements.Where(x => x.TypeDefinition is CodeInterface inter && inter.IsOfKind(CodeInterfaceKind.Model));
             foreach (var prop in parentClass.Properties)
             {
                 var interfaceProperty = $"{currentMethod.Parameters.FirstOrDefault(x => x.Type is CodeType type && type.TypeDefinition is CodeInterface).Name}?.{prop.Name.ToFirstCharacterLowerCase()}";
@@ -334,8 +333,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name});");
             else
             {
-                var spreadOperator = requestParams.requestBody.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
-                writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", bodyParsable);");//{spreadOperator}{requestParams.requestBody.Name});");
+                writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", bodyParsable);");
             }
         }
 
