@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using Xunit;
 
@@ -421,5 +421,59 @@ public class TypeScriptLanguageRefinerTests {
         Assert.False(method.Parameters.Any());
         Assert.DoesNotContain(cancellationParam, method.Parameters);
     }
-#endregion
+
+    [Fact]
+    public void AddsModelInterfaceForAModelClass()
+    {     
+        var testNS = CodeNamespace.InitRootNamespace();
+        var model = testNS.AddClass(new CodeClass
+        {
+            Name = "modelA",
+            Kind = CodeClassKind.Model
+        }).First();
+
+        var property = testNS.AddClass(new CodeClass
+        {
+            Name = "propertyB",
+            Kind = CodeClassKind.Model
+        }).First();
+
+        model.AddProperty(new CodeProperty { Name = property.Name, Type = new CodeType { Name = property.Name, TypeDefinition = property } });
+
+
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, testNS);
+        Assert.Contains(testNS.CodeInterfaces, x =>x.Name == "ModelA");
+        Assert.Contains(testNS.CodeInterfaces, x => x.Name == "PropertyB");
+        Assert.Contains(testNS.CodeInterfaces.FirstOrDefault(x => x.Name == "ModelA").Properties, x => x.Name == "propertyB");
+        Assert.Contains(testNS.Classes, x => x.Name == "modelAImpl");
+        Assert.Contains(testNS.Classes, x => x.Name == "propertyBImpl");     
+    }
+
+    [Fact]
+    public void ReplaceRequestConfigsQueryParams()
+    {
+        var testNS = CodeNamespace.InitRootNamespace();
+        var model = testNS.AddClass(new CodeClass
+        {
+            Name = "requestConfig",
+            Kind = CodeClassKind.RequestConfiguration
+        }).First();
+
+        var property = testNS.AddClass(new CodeClass
+        {
+            Name = "queryParams",
+            Kind = CodeClassKind.QueryParameters
+        }).First();
+
+        model.AddProperty(new CodeProperty { Name = property.Name, Type = new CodeType { Name = property.Name, TypeDefinition = property } });
+
+
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, testNS);
+        Assert.Contains(testNS.CodeInterfaces, x => x.Name == "requestConfig");
+        Assert.Contains(testNS.CodeInterfaces, x => x.Name == "queryParams");
+        Assert.False(testNS.Classes.Any());
+        Assert.DoesNotContain(testNS.Classes, x => x.Name == "requestConfig");
+        Assert.DoesNotContain(testNS.Classes, x => x.Name == "queryParams");
+    }
+    #endregion
 }

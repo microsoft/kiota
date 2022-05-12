@@ -123,7 +123,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
            x => $"{x.Name.ToFirstCharacterUpperCase()}Interface".ToFirstCharacterUpperCase()
        );
 
-       RenameModelInterfacesAndClasses(generatedCode);
+        RenameModelInterfacesAndClasses(generatedCode);
 
     }
 
@@ -368,8 +368,20 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         /**
          * Set a parameter of model interface type in the model class constructor
          */
-        var constructor = modelClass.Methods.FirstOrDefault(x => x is CodeMethod method1 && method1.IsOfKind(CodeMethodKind.Constructor));
+        var constructor = modelClass.Methods?.FirstOrDefault(x => x is CodeMethod method1 && method1.IsOfKind(CodeMethodKind.Constructor));
+        if (constructor == null)
+        {
+            constructor = modelClass.AddMethod(new CodeMethod
+            {
+                Name = "constructor",
+                Kind = CodeMethodKind.Constructor,
+                IsAsync = false,
+                IsStatic = false,
+                Description = $"Instantiates a new {modelClass.Name.ToFirstCharacterUpperCase()} and sets the default values.",
+                Access = AccessModifier.Public,
+            }).First();
 
+        }
         constructor.AddParameter(new CodeParameter
         {
             Name = finalInterfaceName.ToFirstCharacterLowerCase() + "ParameterValue",
@@ -397,7 +409,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             if (method.ReturnType is CodeType methodReturnType &&
                 !methodReturnType.IsExternal)
             {
-                if (methodReturnType.TypeDefinition is CodeClass methodTypeClass)
+                if (methodReturnType?.TypeDefinition is CodeClass methodTypeClass)
                 {
                     var resultType = ReplaceTypeByInterfaceType(methodTypeClass, methodReturnType, interfaceNamingCallback);
                     modelClass.AddUsing(resultType.Item2);
