@@ -60,7 +60,7 @@ namespace Kiota.Builder.Extensions {
             return Enumerable.Empty<OpenApiParameter>();
         }
         private static readonly char pathNameSeparator = '\\';
-        private static readonly Regex idClassNameCleanup = new(@"Id\d?$", RegexOptions.Compiled);
+        private static readonly Regex idClassNameCleanup = new(@"-id\d?}$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         ///<summary>
         /// Returns the class name for the node with more or less precision depending on the provided arguments
         ///</summary>

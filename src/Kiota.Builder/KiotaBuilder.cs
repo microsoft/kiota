@@ -572,9 +572,8 @@ public class KiotaBuilder
         if (existingType != null)
             prop.Type = existingType;
         else {
-            var propType = GetPrimitiveType(typeSchema, childType);
-            propType.CollectionKind = typeSchema.IsArray() ? CodeType.CodeTypeCollectionKind.Complex : default;
-            prop.Type = propType;
+            prop.Type = GetPrimitiveType(typeSchema, childType);
+            prop.Type.CollectionKind = typeSchema.IsArray() ? CodeType.CodeTypeCollectionKind.Complex : default;
             logger.LogTrace("Creating property {name} of {type}", prop.Name, prop.Type.Name);
         }
         return prop;
@@ -928,7 +927,7 @@ public class KiotaBuilder
             var targetNamespace = schema?.Items == null ? codeNamespace : GetShortestNamespace(codeNamespace, schema.Items);
             type = CreateModelDeclarationAndType(currentNode, schema?.Items, operation, targetNamespace);
         }
-        type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
+        type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
         return type;
     }
     private CodeElement GetExistingDeclaration(bool checkInAllNamespaces, CodeNamespace currentNamespace, OpenApiUrlTreeNode currentNode, string declarationName) {
