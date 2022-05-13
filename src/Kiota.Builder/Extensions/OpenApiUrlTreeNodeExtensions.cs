@@ -65,15 +65,10 @@ namespace Kiota.Builder.Extensions {
         /// Returns the class name for the node with more or less precision depending on the provided arguments
         ///</summary>
         public static string GetClassName(this OpenApiUrlTreeNode currentNode, string suffix = default, string prefix = default, OpenApiOperation operation = default, OpenApiResponse response = default, OpenApiSchema schema = default) {
-            var rawClassName = (schema?.Reference?.GetClassName() ??
+            var rawClassName = schema?.Reference?.GetClassName() ??
                                 response?.GetResponseSchema()?.Reference?.GetClassName() ??
                                 operation?.GetResponseSchema()?.Reference?.GetClassName() ?? 
-                                CleanupParametersFromPath(currentNode.Segment)?.ReplaceValueIdentifier())
-                                .TrimEnd(requestParametersEndChar)
-                                .TrimStart(requestParametersChar)
-                                .TrimStart('$') //$ref from OData
-                                .Split('-')
-                                .First();
+                                CleanupParametersFromPath(currentNode.Segment)?.ReplaceValueIdentifier();
             if((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup.IsMatch(rawClassName)) {
                 rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
                 if(rawClassName == WithKeyword) // in case the single parameter doesn't follow {classname-id} we get the previous segment
@@ -84,7 +79,8 @@ namespace Kiota.Builder.Extensions {
                                             .ToFirstCharacterUpperCase();
 
             }
-            return prefix + rawClassName?.Split('.', StringSplitOptions.RemoveEmptyEntries)?.LastOrDefault() + suffix;
+            return (prefix + rawClassName?.Split('.', StringSplitOptions.RemoveEmptyEntries)?.LastOrDefault() + suffix)
+                    .CleanupSymbolName();
         }
         private static readonly Regex descriptionCleanupRegex = new (@"[\r\n\t]", RegexOptions.Compiled);
         public static string CleanupDescription(this string description) => string.IsNullOrEmpty(description) ? description : descriptionCleanupRegex.Replace(description, string.Empty);
