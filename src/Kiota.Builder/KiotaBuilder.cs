@@ -819,8 +819,8 @@ public class KiotaBuilder
         var namespaceSuffix = lastDotIndex != -1 ? $".{referenceId[..lastDotIndex]}" : string.Empty;
         return $"{modelsNamespace.Name}{namespaceSuffix}";
     }
-    private CodeType CreateModelDeclarationAndType(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeNamespace codeNamespace, string classNameSuffix = "", OpenApiResponse response = default, string classNameForInlineSchema = "") {
-        var className = string.IsNullOrEmpty(classNameForInlineSchema) ? currentNode.GetClassName(operation: operation, suffix: classNameSuffix, response: response, schema: schema).CleanupSymbolName() : classNameForInlineSchema;
+    private CodeType CreateModelDeclarationAndType(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeNamespace codeNamespace, string classNameSuffix = "", OpenApiResponse response = default, string typeNameForInlineSchema = "") {
+        var className = string.IsNullOrEmpty(typeNameForInlineSchema) ? currentNode.GetClassName(operation: operation, suffix: classNameSuffix, response: response, schema: schema).CleanupSymbolName() : typeNameForInlineSchema;
         var codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, schema, className, codeNamespace);
         return new CodeType {
             TypeDefinition = codeDeclaration,
@@ -899,12 +899,12 @@ public class KiotaBuilder
             return unionType.Types.First();// so we don't create unnecessary union types when anyOf was used only for nullable.
         return unionType;
     }
-    private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement, string suffixForInlineSchema, OpenApiResponse response = default, string classNameForInlineSchema = default)
+    private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeElement parentElement, string suffixForInlineSchema, OpenApiResponse response = default, string typeNameForInlineSchema = default)
     {
         var codeNamespace = parentElement.GetImmediateParentOfType<CodeNamespace>();
         
         if (!schema.IsReferencedSchema() && schema.Properties.Any()) { // Inline schema, i.e. specific to the Operation
-            return CreateModelDeclarationAndType(currentNode, schema, operation, codeNamespace, suffixForInlineSchema, classNameForInlineSchema: classNameForInlineSchema);
+            return CreateModelDeclarationAndType(currentNode, schema, operation, codeNamespace, suffixForInlineSchema, typeNameForInlineSchema: typeNameForInlineSchema);
         } else if(schema.IsAllOf()) {
             return CreateInheritedModelDeclaration(currentNode, schema, operation);
         } else if((schema.IsAnyOf() || schema.IsOneOf()) && string.IsNullOrEmpty(schema.Format)) {
@@ -912,14 +912,14 @@ public class KiotaBuilder
         } else if(schema.IsObject() || schema.Properties.Any() || schema.Enum.Any()) {
             // referenced schema, no inheritance or union type
             var targetNamespace = GetShortestNamespace(codeNamespace, schema);
-            return CreateModelDeclarationAndType(currentNode, schema, operation, targetNamespace, response: response);
+            return CreateModelDeclarationAndType(currentNode, schema, operation, targetNamespace, response: response, typeNameForInlineSchema: typeNameForInlineSchema);
         } else if (schema.IsArray()) {
             // collections at root
             return CreateCollectionModelDeclaration(currentNode, schema, operation, codeNamespace);
         } else if(!string.IsNullOrEmpty(schema.Type) || !string.IsNullOrEmpty(schema.Format))
             return GetPrimitiveType(schema, string.Empty);
-        else if((schema.AnyOf.Any() || schema.OneOf.Any() || schema.AllOf.Any()) && schema.Nullable) // we have an empty node because of the nullable property and need to unwrap it.
-            return CreateModelDeclarations(currentNode, schema.AnyOf.FirstOrDefault() ?? schema.OneOf.FirstOrDefault() ?? schema.AllOf.FirstOrDefault(), operation, parentElement, suffixForInlineSchema, response, classNameForInlineSchema);
+        else if(schema.AnyOf.Any() || schema.OneOf.Any() || schema.AllOf.Any()) // we have an empty node because of some local override for schema properties and need to unwrap it.
+            return CreateModelDeclarations(currentNode, schema.AnyOf.FirstOrDefault() ?? schema.OneOf.FirstOrDefault() ?? schema.AllOf.FirstOrDefault(), operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema);
         else throw new InvalidOperationException("un handled case, might be object type or array type");
     }
     private CodeTypeBase CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, OpenApiOperation operation, CodeNamespace codeNamespace)
@@ -1061,7 +1061,7 @@ public class KiotaBuilder
                                     var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.Reference?.Id);
                                     var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns : 
                                                             (rootNamespace.FindNamespaceByName(shortestNamespaceName) ?? rootNamespace.AddNamespace(shortestNamespaceName));
-                                    var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, default, classNameForInlineSchema: className);
+                                    var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, default, typeNameForInlineSchema: className);
                                     return CreateProperty(x.Key, definition.Name, typeSchema: propertySchema, existingType: definition);
                                 })
                                 .ToArray());
