@@ -44,7 +44,7 @@ namespace Kiota.Builder.Extensions {
 
         public static bool IsArray(this OpenApiSchema schema)
         {
-            return schema?.Type?.Equals("array", StringComparison.OrdinalIgnoreCase) ?? false;
+            return (schema?.Type?.Equals("array", StringComparison.OrdinalIgnoreCase) ?? false) && schema?.Items != null;
         }
 
         public static bool IsObject(this OpenApiSchema schema)
