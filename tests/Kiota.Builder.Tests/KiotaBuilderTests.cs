@@ -521,8 +521,10 @@ components:
                                         ["application/json"] = new OpenApiMediaType() {
                                             Schema = new OpenApiSchema {
                                                 Type = "array",
-                                                AnyOf = new List<OpenApiSchema> {
-                                                    permissionSchema,
+                                                Items = new OpenApiSchema {
+                                                    AnyOf = new List<OpenApiSchema> {
+                                                        permissionSchema,
+                                                    }   
                                                 }
                                             }
                                         }
@@ -1373,7 +1375,7 @@ components:
         Assert.Equal(2, executorReturnType.Types.Count());
         var typeNames = executorReturnType.Types.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
         Assert.Contains("simpleObject", typeNames);
-        Assert.Contains("number", typeNames);
+        Assert.Contains("int64", typeNames);
     }
     [Fact]
     public void UnionOfInlineSchemasWorks() {
