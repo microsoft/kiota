@@ -559,8 +559,6 @@ public class KiotaBuilder
     private CodeProperty CreateProperty(string childIdentifier, string childType, string defaultValue = null, OpenApiSchema typeSchema = null, CodeTypeBase existingType = null, CodePropertyKind kind = CodePropertyKind.Custom)
     {
         var propertyName = childIdentifier.CleanupSymbolName(config.PropertiesPrefixToStrip);
-        if(int.TryParse(propertyName, out var _))
-            propertyName = $"{childIdentifier.GetNamespaceImportSymbol()}{propertyName}";
         var prop = new CodeProperty
         {
             Name = propertyName,
@@ -967,14 +965,16 @@ public class KiotaBuilder
         OpenApiEnumValuesDescriptionExtension extensionInformation = null;
         if (schema.Extensions.TryGetValue(OpenApiEnumValuesDescriptionExtension.Name, out var rawExtension) && rawExtension is OpenApiEnumValuesDescriptionExtension localExtInfo)
             extensionInformation = localExtInfo;
-        var entries = schema.Enum.OfType<OpenApiString>().Where(static x => !x.Value.Equals("null", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(x.Value)).Select(static x => x.Value.CleanupSymbolName());
+        var entries = schema.Enum.OfType<OpenApiString>().Where(static x => !x.Value.Equals("null", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(x.Value)).Select(static x => x.Value);
         foreach(var enumValue in entries) {
             var optionDescription = extensionInformation?.ValuesDescriptions.FirstOrDefault(x => x.Value.Equals(enumValue, StringComparison.OrdinalIgnoreCase));
-            target.AddOption(new CodeEnumOption {
-                Name = optionDescription?.Name ?? enumValue,
+            var newOption = new CodeEnumOption {
+                Name = (optionDescription?.Name ?? enumValue).CleanupSymbolName(),
                 SerializationName = !string.IsNullOrEmpty(optionDescription?.Name) ? enumValue : null,
                 Description = optionDescription?.Description,
-            });
+            };
+            if(!string.IsNullOrEmpty(newOption.Name))
+                target.AddOption(newOption);
         }
     }
     private CodeNamespace GetShortestNamespace(CodeNamespace currentNamespace, OpenApiSchema currentSchema) {
