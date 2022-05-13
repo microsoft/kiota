@@ -145,7 +145,7 @@ components:
         Assert.NotNull(tasksRequestBuilder);
         var getMethod = (tasksRequestBuilder.TypeDefinition as CodeClass).Methods.Single(e => e.Name == "Get");
         var returnType = getMethod.ReturnType;
-        Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Array, returnType.CollectionKind);
+        Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Complex, returnType.CollectionKind);
     }
     [Fact]
     public void OData_doubles_as_any_of(){
