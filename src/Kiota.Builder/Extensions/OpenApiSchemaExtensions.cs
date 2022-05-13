@@ -7,13 +7,11 @@ namespace Kiota.Builder.Extensions {
     public static class OpenApiSchemaExtensions {
         private static readonly Func<OpenApiSchema, IList<OpenApiSchema>> classNamesFlattener = (x) =>
         (x.AnyOf ?? Enumerable.Empty<OpenApiSchema>()).Union(x.AllOf).Union(x.OneOf).ToList();
-        public static IEnumerable<string> GetSchemaTitles(this OpenApiSchema schema) {
+        public static IEnumerable<string> GetSchemaNames(this OpenApiSchema schema) {
             if(schema == null)
                 return Enumerable.Empty<string>();
             else if(schema.Items != null)
-                return schema.Items.GetSchemaTitles();
-            else if(!string.IsNullOrEmpty(schema.Title))
-                return new string[] { schema.Title };
+                return schema.Items.GetSchemaNames();
             else if(schema.AnyOf.Any())
                 return schema.AnyOf.FlattenIfRequired(classNamesFlattener);
             else if(schema.AllOf.Any())
@@ -22,6 +20,8 @@ namespace Kiota.Builder.Extensions {
                 return schema.OneOf.FlattenIfRequired(classNamesFlattener);
             else if(!string.IsNullOrEmpty(schema.Reference?.Id))
                 return new string[] {schema.Reference.Id.Split('/').Last().Split('.').Last()};
+            else if(!string.IsNullOrEmpty(schema.Title))
+                return new string[] { schema.Title };
             else if(!string.IsNullOrEmpty(schema.Xml?.Name))
                 return new string[] {schema.Xml.Name};
             else return Enumerable.Empty<string>();
@@ -34,8 +34,8 @@ namespace Kiota.Builder.Extensions {
             return resultSet.Select(x => x.Title).Where(x => !string.IsNullOrEmpty(x));
         }
 
-        public static string GetSchemaTitle(this OpenApiSchema schema) {
-            return schema.GetSchemaTitles().LastOrDefault()?.TrimStart('$');// OData $ref
+        public static string GetSchemaName(this OpenApiSchema schema) {
+            return schema.GetSchemaNames().LastOrDefault()?.TrimStart('$');// OData $ref
         }
 
         public static bool IsReferencedSchema(this OpenApiSchema schema) {
