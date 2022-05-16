@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixes a bug where `Create**RequestInformation` methods would fail to add the baseUrl to the path parameters collection in dotnet.
+
 ## [0.1.3] - 2022-05-06
 
 ### Added
