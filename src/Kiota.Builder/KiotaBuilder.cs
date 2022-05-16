@@ -591,6 +591,7 @@ public class KiotaBuilder
             var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
             var primitiveTypeName = (typeName?.ToLowerInvariant(), format?.ToLowerInvariant()) switch {
                 ("string", "base64url") => "binary",
+                ("file", _) => "binary",
                 ("string", "duration") => "TimeSpan",
                 ("string", "time") => "TimeOnly",
                 ("string", "date") => "DateOnly",

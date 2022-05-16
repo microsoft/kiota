@@ -1568,6 +1568,7 @@ components:
     [InlineData("boolean", "", "boolean")]
     [InlineData("", "byte", "binary")]
     [InlineData("", "binary", "binary")]
+    [InlineData("file", null, "binary")]
     [Theory]
     public void MapsPrimitiveFormats(string type, string format, string expected){
         var document = new OpenApiDocument() {
