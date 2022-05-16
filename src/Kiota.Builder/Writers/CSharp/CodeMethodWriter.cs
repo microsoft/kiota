@@ -256,6 +256,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                         $"PathParameters = {GetPropertyCall(urlTemplateParamsProperty, "string.Empty")},");
         writer.DecreaseIndent();
         writer.WriteLine("};");
+        writer.WriteLine($"if(!{RequestInfoVarName}.PathParameters.ContainsKey(\"baseurl\")) {{");
+        writer.IncreaseIndent();
+        writer.WriteLine($"{RequestInfoVarName}.PathParameters.Add(\"baseurl\", {requestAdapterProperty.Name.ToFirstCharacterUpperCase()}.BaseUrl);");
+        writer.CloseBlock();
         if (requestParams.requestBody != null)
         {
             if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
