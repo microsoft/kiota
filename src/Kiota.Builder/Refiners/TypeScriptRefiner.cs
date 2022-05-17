@@ -102,12 +102,16 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             };
             targetNS.RemoveChildElement(codeClass);
             var codeInterface = targetNS.AddInterface(insertValue).First();
-            var props= codeClass.Properties?.ToArray();
+            var props = codeClass.Properties?.ToArray();
             if (props.Any())
-            codeInterface.AddProperty(props);
+            {
+                codeInterface.AddProperty(props);
+            }
             var usings = codeClass.Usings?.ToArray();
             if (usings.Any())
+            {
                 codeInterface.AddUsing(usings);
+            }
         }
         CrawlTree(currentElement, x => ReplaceRequestConfigurationsQueryParamsWithInterfaces(x));
     }
@@ -120,7 +124,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
        );
 
         RenameModelInterfacesAndClasses(generatedCode);
-
     }
 
     /// <summary>
@@ -172,24 +175,28 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         /*
          * Setting request body parameter type of request executor to model interface.
          */
-        if (codeMethod.IsOfKind(CodeMethodKind.RequestExecutor) &&
-        codeMethod.ReturnType is CodeType returnType &&
-        returnType.TypeDefinition is CodeClass returnClass &&
-        returnClass.IsOfKind(CodeClassKind.Model))
+        if (codeMethod.IsOfKind(CodeMethodKind.RequestExecutor))
         {
-            var requestBodyParam = codeMethod.Parameters.OfKind(CodeParameterKind.RequestBody);
-            if (requestBodyParam != null && requestBodyParam.Type is CodeType type1)
+            var requestBodyParam = codeMethod?.Parameters?.OfKind(CodeParameterKind.RequestBody);
+            if (requestBodyParam != null && requestBodyParam.Type is CodeType type1 && type1.TypeDefinition != null)
             {
                 SetTypeAndAddUsing(CreateModelInterface(type1.TypeDefinition as CodeClass, interfaceNamingCallback), type1, requestBodyParam);
             }
-            SetTypeAndAddUsing(CreateModelInterface(returnClass, interfaceNamingCallback), returnType, codeMethod);
 
-            var parentClass = codeMethod.GetImmediateParentOfType<CodeClass>();
-
-            if (parentClass != null && parentClass.Name != returnClass.Name)
+            if (codeMethod.ReturnType is CodeType returnType &&
+            returnType.TypeDefinition is CodeClass returnClass &&
+            returnClass.IsOfKind(CodeClassKind.Model))
             {
-                parentClass.AddUsing(new CodeUsing { Name = returnClass.Parent.Name, Declaration = new CodeType { Name = returnClass.Name, TypeDefinition = returnClass } });
 
+                SetTypeAndAddUsing(CreateModelInterface(returnClass, interfaceNamingCallback), returnType, codeMethod);
+
+                var parentClass = codeMethod.GetImmediateParentOfType<CodeClass>();
+
+                if (parentClass != null && parentClass.Name != returnClass.Name)
+                {
+                    parentClass.AddUsing(new CodeUsing { Name = returnClass.Parent.Name, Declaration = new CodeType { Name = returnClass.Name, TypeDefinition = returnClass } });
+
+                }
             }
         }
         /*
@@ -294,60 +301,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             });
         }
 
-        /**
-         * Add properties to interfaces
-         * Replace model classes by interfaces for property types 
-         */
-        foreach (var mProp in classModelChildItems.OfType<CodeProperty>())
-        {
-            if (mProp.Type is CodeType externalType && externalType.IsExternal)
-            {
-                var usingExternal = modelClass.Usings.FirstOrDefault(x => String.Equals(x.Name, externalType.Name, StringComparison.OrdinalIgnoreCase));
-
-                if (usingExternal != null)
-                {
-                    modelInterface.AddUsing(usingExternal);
-                }
-            }
-            else if (mProp.Type is CodeType propertyType && !propertyType.IsExternal && propertyType.TypeDefinition is CodeClass propertyClass)
-            {
-                var codeUsing = ReplaceTypeByInterfaceType(propertyClass, propertyType, interfaceNamingCallback);
-
-                if (modelInterface.Name != codeUsing.Item1.Name)
-                {
-                    modelInterface.AddUsing(codeUsing.Item2);
-                }
-                modelClass.AddUsing(codeUsing.Item2);
-
-                /***
-                 * Append "impl" and add class property type in  the model class usings as they will be required by the serializer method. 
-                 */
-                if (modelClass.Name != propertyClass.Name)
-                {
-                    modelClass.AddUsing(new CodeUsing
-                    {
-                        Name = mProp.Parent.Name,
-                        Declaration = new CodeType
-                        {
-                            Name = propertyClass.Name + ModelClassSuffix,
-                            TypeDefinition = propertyClass,
-                        }
-                    });
-                }
-            }
-            else if (mProp.Type is CodeType nonClassPropertyType && nonClassPropertyType is CodeType nonClassTypeDef && !(nonClassTypeDef.TypeDefinition is CodeClass) && !nonClassPropertyType.IsExternal)
-            {
-                var usingExternal = modelClass.Usings.FirstOrDefault(x => String.Equals(x.Declaration.Name, nonClassTypeDef.Name, StringComparison.OrdinalIgnoreCase));
-
-                if (usingExternal != null)
-                {
-                    modelInterface.AddUsing(usingExternal);
-                }
-            }
-
-            modelInterface.AddProperty(mProp);
-        }
-
         /*
          * Model class should implement the model interface
          */
@@ -392,6 +345,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
         });
 
+        var props = classModelChildItems.OfType<CodeProperty>();
+
+        ProcessModelClassProperties(modelClass, modelInterface, props, interfaceNamingCallback);
         foreach (var method in classModelChildItems.OfType<CodeMethod>()
                                                     .Where(x => x.IsOfKind(CodeMethodKind.Getter,
                                                                         CodeMethodKind.Setter,
@@ -446,6 +402,62 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         return modelInterface;
     }
 
+    private static void ProcessModelClassProperties(CodeClass modelClass, CodeInterface modelInterface, IEnumerable<CodeProperty> properties, Func<CodeClass, string> interfaceNamingCallback)
+    {
+        /**
+       * Add properties to interfaces
+       * Replace model classes by interfaces for property types 
+       */
+        foreach (var mProp in properties)
+        {
+            if (mProp.Type is CodeType externalType && externalType.IsExternal)
+            {
+                var usingExternal = modelClass.Usings.FirstOrDefault(x => String.Equals(x.Name, externalType.Name, StringComparison.OrdinalIgnoreCase));
+
+                if (usingExternal != null)
+                {
+                    modelInterface.AddUsing(usingExternal);
+                }
+            }
+            else if (mProp.Type is CodeType propertyType && !propertyType.IsExternal && propertyType.TypeDefinition is CodeClass propertyClass)
+            {
+                var codeUsing = ReplaceTypeByInterfaceType(propertyClass, propertyType, interfaceNamingCallback);
+
+                if (modelInterface.Name != codeUsing.Item1.Name)
+                {
+                    modelInterface.AddUsing(codeUsing.Item2);
+                }
+                modelClass.AddUsing(codeUsing.Item2);
+
+                /***
+                 * Append "impl" and add class property type in  the model class usings as they will be required by the serializer method. 
+                 */
+                if (modelClass.Name != propertyClass.Name)
+                {
+                    modelClass.AddUsing(new CodeUsing
+                    {
+                        Name = mProp.Parent.Name,
+                        Declaration = new CodeType
+                        {
+                            Name = propertyClass.Name + ModelClassSuffix,
+                            TypeDefinition = propertyClass,
+                        }
+                    });
+                }
+            }
+            else if (mProp.Type is CodeType nonClassPropertyType && nonClassPropertyType is CodeType nonClassTypeDef && !(nonClassTypeDef.TypeDefinition is CodeClass) && !nonClassPropertyType.IsExternal)
+            {
+                var usingExternal = modelClass.Usings.FirstOrDefault(x => String.Equals(x.Declaration.Name, nonClassTypeDef.Name, StringComparison.OrdinalIgnoreCase));
+
+                if (usingExternal != null)
+                {
+                    modelInterface.AddUsing(usingExternal);
+                }
+            }
+
+            modelInterface.AddProperty(mProp);
+        }
+    }
     private static (CodeInterface, CodeUsing) ReplaceTypeByInterfaceType(CodeClass sourceClass, CodeType originalType, Func<CodeClass, string> interfaceNamingCallback)
     {
         var propertyInterfaceType = CreateModelInterface(sourceClass, interfaceNamingCallback);
