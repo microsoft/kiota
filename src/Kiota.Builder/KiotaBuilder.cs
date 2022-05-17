@@ -146,7 +146,6 @@ public class KiotaBuilder
         return input;
     }
 
-
     public OpenApiDocument CreateOpenApiDocument(Stream input)
     {
         var stopwatch = new Stopwatch();
@@ -159,7 +158,11 @@ public class KiotaBuilder
                 {
                     OpenApiPagingExtension.Name,
                     (i, _) => OpenApiPagingExtension.Parse(i)
-                }
+                },
+                {
+                    OpenApiEnumValuesDescriptionExtension.Name,
+                    static (i, _ ) => OpenApiEnumValuesDescriptionExtension.Parse(i)
+                },
             }
         });
         var doc = reader.Read(input, out var diag);
@@ -595,6 +598,7 @@ public class KiotaBuilder
             var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
             var primitiveTypeName = (typeName?.ToLowerInvariant(), format?.ToLowerInvariant()) switch {
                 ("string", "base64url") => "binary",
+                ("file", _) => "binary",
                 ("string", "duration") => "TimeSpan",
                 ("string", "time") => "TimeOnly",
                 ("string", "date") => "DateOnly",
@@ -953,15 +957,29 @@ public class KiotaBuilder
         {
             if(schema.Enum.Any()) {
                 var newEnum = new CodeEnum { 
-                    Name = declarationName,
-                    Options = schema.Enum.OfType<OpenApiString>().Select(x => x.Value).Where(x => !"null".Equals(x)).ToHashSet(),//TODO set the flag property
+                    Name = declarationName,//TODO set the flag property
                     Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel),
                 };
+                SetEnumOptions(schema, newEnum);
                 return currentNamespace.AddEnum(newEnum).First();
             } else 
                 return AddModelClass(currentNode, schema, declarationName, currentNamespace, inheritsFrom);
         } else
             return existingDeclaration;
+    }
+    private static void SetEnumOptions(OpenApiSchema schema, CodeEnum target) {
+        OpenApiEnumValuesDescriptionExtension extensionInformation = null;
+        if (schema.Extensions.TryGetValue(OpenApiEnumValuesDescriptionExtension.Name, out var rawExtension) && rawExtension is OpenApiEnumValuesDescriptionExtension localExtInfo)
+            extensionInformation = localExtInfo;
+        var entries = schema.Enum.OfType<OpenApiString>().Where(static x => !x.Value.Equals("null", StringComparison.OrdinalIgnoreCase)).Select(static x => x.Value);
+        foreach(var enumValue in entries) {
+            var optionDescription = extensionInformation?.ValuesDescriptions.FirstOrDefault(x => x.Value.Equals(enumValue, StringComparison.OrdinalIgnoreCase));
+            target.AddOption(new CodeEnumOption {
+                Name = optionDescription?.Name ?? enumValue,
+                SerializationName = !string.IsNullOrEmpty(optionDescription?.Name) ? enumValue : null,
+                Description = optionDescription?.Description,
+            });
+        }
     }
     private CodeNamespace GetShortestNamespace(CodeNamespace currentNamespace, OpenApiSchema currentSchema) {
         if(!string.IsNullOrEmpty(currentSchema.Reference?.Id)) {

@@ -7,6 +7,21 @@ public class JavaLanguageRefinerTests {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
     #region CommonLanguageRefinerTests
     [Fact]
+    public void ReplacesReservedEnumOptions()
+    {
+        var model = root.AddEnum(new CodeEnum
+        {
+            Name = "model",
+        }).First();
+        var option = new CodeEnumOption {
+            Name = "break", // this a keyword
+        };
+        model.AddOption(option);
+        ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        Assert.Equal("break_escaped", option.Name);
+        Assert.Equal("break", option.SerializationName);
+    }
+    [Fact]
     public void AddsExceptionInheritanceOnErrorClasses() {
         var model = root.AddClass(new CodeClass {
             Name = "somemodel",

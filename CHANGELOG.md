@@ -9,10 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for enum options descriptions (C#/Go/Java/TypeScript). [#90](https://github.com/microsoft/kiota/issues/90)
+- Added support for file parameters types. [#221](https://github.com/microsoft/kiota/issues/221)
+
 ### Changed
+
+## [0.1.3] - 2022-05-06
+
+### Added
+
+- Added text serialization library for PHP. [#1546](https://github.com/microsoft/kiota/pull/1546).
+
+### Changed
+
+- Fixed the image name in CI for MCR.
+
+### Changed
+
+## [0.1.2] - 2022-05-06
+
+### Changed
+
+- Minor changes in the parameters (-co => --co, -ll => --ll, -d is required, -l is required).
+
+## [0.1.1] - 2022-05-06
+
+### Changed
+
 - Add binder for nullable boolean options. (Shell)
 
-### [0.1.0] - 2022-05-04
+## [0.1.0] - 2022-05-04
 
 ### Added
 

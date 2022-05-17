@@ -23,8 +23,11 @@ namespace Kiota.Builder.Writers.Go {
                             "const (");
             writer.IncreaseIndent();
             var iotaSuffix = $" {typeName} = iota";
-            foreach (var item in codeElement.Options) {
-                writer.WriteLine($"{item.ToUpperInvariant()}_{typeName.ToUpperInvariant()}{iotaSuffix}");
+            var enumOptions = codeElement.Options;
+            foreach (var item in enumOptions) {
+                if(!string.IsNullOrEmpty(item.Description))
+                    writer.WriteLine($"// {item.Description}");
+                writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}{iotaSuffix}");
                 if (!string.IsNullOrEmpty(iotaSuffix))
                     iotaSuffix = string.Empty;
             }
@@ -33,21 +36,21 @@ namespace Kiota.Builder.Writers.Go {
                             string.Empty,
                             $"func (i {typeName}) String() string {{");
             writer.IncreaseIndent();
-            var literalOptions = codeElement.Options
-                                            .Select(x => $"\"{x.ToUpperInvariant()}\"")
+            var literalOptions = enumOptions
+                                            .Select(x => $"\"{x.SerializationName ?? x.Name}\"")
                                             .Aggregate((x, y) => x + ", " + y);
             writer.WriteLine($"return []string{{{literalOptions}}}[i]");
             writer.DecreaseIndent();
             writer.WriteLines("}",
                             $"func Parse{typeName}(v string) (interface{{}}, error) {{");
             writer.IncreaseIndent();
-            writer.WriteLine($"result := {codeElement.Options.First().ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
-            writer.WriteLine($"switch strings.ToUpper(v) {{");
+            writer.WriteLine($"result := {enumOptions.First().Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
+            writer.WriteLine($"switch v {{");
             writer.IncreaseIndent();
-            foreach (var item in codeElement.Options) {
-                writer.WriteLine($"case \"{item.ToUpperInvariant()}\":");
+            foreach (var item in enumOptions) {
+                writer.WriteLine($"case \"{item.SerializationName ?? item.Name}\":");
                 writer.IncreaseIndent();
-                writer.WriteLine($"result = {item.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
+                writer.WriteLine($"result = {item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
                 writer.DecreaseIndent();
             }
             writer.WriteLine("default:");

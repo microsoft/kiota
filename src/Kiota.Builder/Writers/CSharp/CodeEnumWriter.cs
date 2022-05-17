@@ -19,12 +19,14 @@ namespace Kiota.Builder.Writers.CSharp {
             if (codeElement.Flags)
                 writer.WriteLine("[Flags]");
             conventions.WriteShortDescription(codeElement.Description, writer);
-            writer.WriteLine($"public enum {codeElement.Name.ToFirstCharacterUpperCase()} {{"); //TODO docs
+            writer.WriteLine($"public enum {codeElement.Name.ToFirstCharacterUpperCase()} {{");
             writer.IncreaseIndent();
-            writer.WriteLines(codeElement.Options
-                            .Select(x => x.ToFirstCharacterUpperCase())
-                            .Select((x, idx) => $"{x}{(codeElement.Flags ? " = " + GetEnumFlag(idx) : string.Empty)},")
-                            .ToArray());
+            var idx = 0;
+            foreach(var option in codeElement.Options) {
+                conventions.WriteShortDescription(option.Description, writer);
+                writer.WriteLine($"{option.Name.ToFirstCharacterUpperCase()}{(codeElement.Flags ? " = " + GetEnumFlag(idx) : string.Empty)},");
+                idx++;
+            }
             if(codeNamespace != null)
                 writer.CloseBlock();
         }
