@@ -42,6 +42,24 @@ public enum HttpMethod {
     Trace
 }
 
+public class PagingInformation
+{
+    public string ItemName
+    {
+        get; set;
+    }
+
+    public string NextLinkName
+    {
+        get; set;
+    }
+
+    public string OperationName
+    {
+        get; set;
+    }
+}
+
 public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement
 {
     public HttpMethod? HttpMethod {get;set;}
@@ -69,7 +87,12 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public bool IsStatic {get;set;} = false;
     public bool IsAsync {get;set;} = true;
     public string Description {get; set;}
-    
+
+    public PagingInformation PagingInformation
+    {
+        get; set;
+    }
+
     /// <summary>
     /// The combination of the path, query and header parameters for the current URL.
     /// Only use this property if the language you are generating for doesn't support fluent API style (e.g. Shell/CLI)

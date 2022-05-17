@@ -4,18 +4,19 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Security;
+using System.Threading;
 using System.Threading.Tasks;
+using Kiota.Builder.CodeRenderers;
+using Kiota.Builder.Extensions;
+using Kiota.Builder.OpenApiExtensions;
+using Kiota.Builder.Refiners;
+using Kiota.Builder.Writers;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
-using Kiota.Builder.Extensions;
-using Kiota.Builder.Writers;
-using Microsoft.OpenApi.Any;
-using Kiota.Builder.Refiners;
-using Kiota.Builder.CodeRenderers;
-using System.Security;
 using Microsoft.OpenApi.Services;
-using System.Threading;
 
 namespace Kiota.Builder;
 
@@ -151,7 +152,16 @@ public class KiotaBuilder
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         logger.LogTrace("Parsing OpenAPI file");
-        var reader = new OpenApiStreamReader();
+        var reader = new OpenApiStreamReader(new OpenApiReaderSettings
+        {
+            ExtensionParsers = new()
+            {
+                {
+                    OpenApiPagingExtension.Name,
+                    (i, _) => OpenApiPagingExtension.Parse(i)
+                }
+            }
+        });
         var doc = reader.Read(input, out var diag);
         stopwatch.Stop();
         if (diag.Errors.Count > 0)
@@ -652,6 +662,17 @@ public class KiotaBuilder
             HttpMethod = method,
             Description = (operation.Description ?? operation.Summary).CleanupDescription(),
         }).FirstOrDefault();
+
+        if (operation.Extensions.TryGetValue(OpenApiPagingExtension.Name, out var extension) && extension is OpenApiPagingExtension pagingExtension)
+        {
+            executorMethod.PagingInformation = new PagingInformation
+            {
+                ItemName = pagingExtension.ItemName,
+                NextLinkName = pagingExtension.NextLinkName,
+                OperationName = pagingExtension.OperationName,
+            };
+        }
+
         AddErrorMappingsForExecutorMethod(currentNode, operation, executorMethod);
         if (schema != null)
         {
