@@ -7,7 +7,7 @@ using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Php;
 using Xunit;
 
-namespace Kiota.Builder.Tests.Writers.Php
+namespace Kiota.Builder.Writers.Php.Tests
 {
     public class CodeMethodWriterTests: IDisposable
     {
@@ -220,10 +220,6 @@ namespace Kiota.Builder.Tests.Writers.Php
             });
             classHolding.AddProperty(new CodeProperty
             {
-                Name = "married", Access = AccessModifier.Private, Type = new CodeType {Name = "boolean"}
-            });
-            classHolding.AddProperty(new CodeProperty
-            {
                 Name = "slept", Access = AccessModifier.Private, Type = new CodeType {Name = "bool"}
             });
             classHolding.AddProperty(new CodeProperty
@@ -248,29 +244,11 @@ namespace Kiota.Builder.Tests.Writers.Php
             });
             classHolding.AddProperty(new CodeProperty
             {
-                Name = "height2",
-                Access = AccessModifier.Private,
-                Type = new CodeType
-                {
-                    Name = "double"
-                }
-            });
-            classHolding.AddProperty(new CodeProperty
-            {
                 Name = "dateValue",
                 Access = AccessModifier.Private,
                 Type = new CodeType
                 {
                     Name = "DateTime"
-                }
-            });
-            classHolding.AddProperty(new CodeProperty
-            {
-                Name = "height3",
-                Access = AccessModifier.Private,
-                Type = new CodeType
-                {
-                    Name = "double"
                 }
             });
             classHolding.AddProperty(new CodeProperty
@@ -327,11 +305,8 @@ namespace Kiota.Builder.Tests.Writers.Php
             Assert.Contains("$writer->writeObjectValue('email', $this->email);", result);
             Assert.Contains("$writer->writeIntegerValue('age', $this->age", result);
             Assert.Contains("$writer->writeCollectionOfEnumValues('architectures', $this->architectures);",result);
-            Assert.Contains("$writer->writeObjectValue('email', $this->email);", result);
             Assert.Contains("$writer->writeCollectionOfObjectValues('emails', $this->emails);", result);
             Assert.Contains("$writer->writeFloatValue('height', $this->height);", result);
-            Assert.Contains("$writer->writeBooleanValue('married', $this->married);", result);
-            Assert.Contains("$writer->writeStringValue('name', $this->name);", result);
             Assert.Contains("$writer->writeBooleanValue('slept', $this->slept);", result);
             Assert.Contains("$writer->writeEnumValue('status', $this->status);", result);
             Assert.Contains("$writer->writeCollectionOfPrimitiveValues('temperatures', $this->temperatures);", result);
@@ -383,6 +358,30 @@ namespace Kiota.Builder.Tests.Writers.Php
                 BaseUrl = "https://graph.microsoft.com/v1.0/",
                 Kind = CodeMethodKind.RequestGenerator,
             };
+
+            var stringType = new CodeType {
+                Name = "string",
+                IsNullable = false
+            };
+            var requestConfigClass = parentClass.AddInnerClass(new CodeClass {
+                Name = "RequestConfig",
+                Kind = CodeClassKind.RequestConfiguration,
+            }).First();
+            requestConfigClass.AddProperty(new() {
+                Name = "h",
+                Kind = CodePropertyKind.Headers,
+                Type = stringType,
+            },
+            new () {
+                Name = "q",
+                Kind = CodePropertyKind.QueryParameters,
+                Type = stringType,
+            },
+            new () {
+                Name = "o",
+                Kind = CodePropertyKind.Options,
+                Type = stringType,
+            });
             
             codeMethod.AddParameter(
                 new CodeParameter()
@@ -396,36 +395,15 @@ namespace Kiota.Builder.Tests.Writers.Php
                         IsNullable = false
                     }
                 },
-                new CodeParameter
-                {
+                new CodeParameter{
+                    Name = "config",
+                    Kind = CodeParameterKind.RequestConfiguration,
+                    Type = new CodeType {
+                        Name = "RequestConfig",
+                        TypeDefinition = requestConfigClass,
+                        ActionOf = true,
+                    },
                     Optional = true,
-                    Name = "headers",
-                    Kind = CodeParameterKind.Headers,
-                    Type = new CodeType()
-                    {
-                        Name = "array"
-                    }
-                
-                },
-                new CodeParameter
-                {
-                    Optional = true,
-                    Name = "options",
-                    Kind = CodeParameterKind.Options,
-                    Type = new CodeType
-                    {
-                        Name = "array"
-                    }
-                }, new CodeParameter
-                {
-                    Optional = true,
-                    Name = "queryString",
-                    Kind = CodeParameterKind.QueryParameter,
-                    Type = new CodeType
-                    {
-                        Name = "array",
-                        IsNullable = true
-                    }
                 });
 
             
@@ -435,10 +413,14 @@ namespace Kiota.Builder.Tests.Writers.Php
             var result = tw.ToString();
 
             Assert.Contains(
-                "public function createPostRequestInformation(Message $body, ?array $queryParameters = null, ?array $headers = null, ?array $options = null): RequestInformation",
+                "public function createPostRequestInformation(Message $body, ?RequestConfig $requestConfiguration = null): RequestInformation",
                 result);
+            Assert.Contains("if ($requestConfiguration !== null", result);
+            Assert.Contains("if ($requestConfiguration->h !== null)", result);
+            Assert.Contains("$requestInfo->headers = array_merge($requestInfo->headers, $requestConfiguration->h);", result);
+            Assert.Contains("$requestInfo->setQueryParameters($requestConfiguration->q);", result);
+            Assert.Contains("$requestInfo->addRequestOptions(...$requestConfiguration->o);", result);
             Assert.Contains("return $requestInfo;", result);
-            Assert.Contains("$requestInfo->addRequestOptions(...$options);", result);
         }
 
         [Fact]

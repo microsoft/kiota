@@ -14,6 +14,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
         var setterAccessModifier = codeElement.ReadOnly && codeElement.Access > AccessModifier.Private ? "private " : string.Empty;
         var simpleBody = $"get; {setterAccessModifier}set;";
         var propertyType = conventions.GetTypeString(codeElement.Type, codeElement);
+        var defaultValue = string.Empty;
         conventions.WriteShortDescription(codeElement.Description, writer);
         switch(codeElement.Kind) {
             case CodePropertyKind.RequestBuilder:
@@ -35,8 +36,11 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
             case CodePropertyKind.QueryParameter when codeElement.IsNameEscaped:
                 writer.WriteLine($"[QueryParameter(\"{codeElement.SerializationName}\")]");
                 goto default;
+            case CodePropertyKind.QueryParameters:
+                defaultValue = $" = new {propertyType}();";
+                goto default;
             default:
-                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ {simpleBody} }}");
+                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ {simpleBody} }}{defaultValue}");
             break;
         }
     }

@@ -23,6 +23,69 @@ public class KiotaBuilderTests
         File.Delete(tempFilePath);
     }
     [Fact]
+    public async Task ParsesEnumDescriptions() {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /enumeration:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StorageAccount'
+components:
+  schemas:
+    StorageAccount:
+      type: object
+      properties:
+        accountType:
+          $ref: '#/components/schemas/StorageAccountType'
+    StorageAccountType:
+      type: string
+      enum:
+        - Standard_LRS
+        - Standard_ZRS
+        - Standard_GRS
+        - Standard_RAGRS
+        - Premium_LRS
+      x-ms-enum:
+        name: AccountType
+        modelAsString: false
+        values:
+          - value: Standard_LRS
+            description: Locally redundant storage.
+            name: StandardLocalRedundancy
+          - value: Standard_ZRS
+            description: Zone-redundant storage.
+          - value: Standard_GRS
+            name: StandardGeoRedundancy
+          - value: Standard_RAGRS
+          - value: Premium_LRS");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath });
+        using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = builder.CreateOpenApiDocument(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        var enumDef = modelsNS.FindChildByName<CodeEnum>("StorageAccountType", false);
+        Assert.NotNull(enumDef);
+        var firstOption = enumDef.Options.First();
+        Assert.Equal("Standard_LRS", firstOption.SerializationName);
+        Assert.Equal("StandardLocalRedundancy", firstOption.Name);
+        Assert.NotEmpty(firstOption.Description);
+        File.Delete(tempFilePath);
+    }
+    [Fact]
     public async Task DoesntThrowOnMissingServerForV2() {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await File.WriteAllLinesAsync(tempFilePath, new string[] {"swagger: 2.0", "title: \"Todo API\"", "version: \"1.0.0\"", "host: mytodos.doesntexit", "basePath: v2", "schemes:", " - https"," - http"});
@@ -495,9 +558,8 @@ public class KiotaBuilderTests
         var constructorMethod = getEffectivePermissionsRequestBuilder.FindChildByName<CodeMethod>("constructor");
         Assert.NotNull(constructorMethod);
         Assert.Single(constructorMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Path)));
-        var parameters = getEffectivePermissionsRequestBuilder.GetChildElements(true)
-            .Where(c => c is CodeMethod)
-            .Select(c => c as CodeMethod)
+        var parameters = getEffectivePermissionsRequestBuilder
+            .Methods
             .SingleOrDefault(cm => cm.IsOfKind(CodeMethodKind.RequestGenerator) && cm.HttpMethod == HttpMethod.Get)?
             .PathQueryAndHeaderParameters;
         Assert.Equal(4, parameters.Count());
@@ -1506,6 +1568,7 @@ public class KiotaBuilderTests
     [InlineData("boolean", "", "boolean")]
     [InlineData("", "byte", "binary")]
     [InlineData("", "binary", "binary")]
+    [InlineData("file", null, "binary")]
     [Theory]
     public void MapsPrimitiveFormats(string type, string format, string expected){
         var document = new OpenApiDocument() {

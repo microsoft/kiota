@@ -36,7 +36,6 @@ namespace Kiota.Builder.Writers.Php
         public string DocCommentStart => "/**";
 
         public string DocCommentEnd => "*/";
-        
         internal HashSet<string> PrimitiveTypes = new(StringComparer.OrdinalIgnoreCase) {"string", "boolean", "integer", "float", "date", "datetime", "time", "dateinterval", "int", "double", "decimal", "bool"};
         
         internal readonly HashSet<string> CustomTypes = new(StringComparer.OrdinalIgnoreCase) {"Date", "DateTime", "StreamInterface", "Byte", "Time"};
@@ -58,7 +57,7 @@ namespace Kiota.Builder.Writers.Php
         public override string TranslateType(CodeType type)
         {
             string typeName = type.Name;
-            return (typeName.ToLowerInvariant()) switch
+            return typeName?.ToLowerInvariant() switch
             {
                 "boolean" => "bool",
                 "double" or "decimal" => "float",
@@ -71,12 +70,10 @@ namespace Kiota.Builder.Writers.Php
 
         public string GetParameterName(CodeParameter parameter)
         {
-            return (parameter.Kind) switch
+            return parameter.Kind switch
             {
-                CodeParameterKind.Headers => "$headers",
-                CodeParameterKind.Options => "$options",
+                CodeParameterKind.RequestConfiguration => "$requestConfiguration",
                 CodeParameterKind.BackingStore => "$backingStore",
-                CodeParameterKind.QueryParameter => "$queryParameters",
                 CodeParameterKind.PathParameters => "$pathParameters",
                 CodeParameterKind.RequestAdapter => RequestAdapterPropertyName,
                 CodeParameterKind.RequestBody => "$body",
@@ -90,33 +87,28 @@ namespace Kiota.Builder.Writers.Php
         public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement)
         {
             var typeString = GetTypeString(parameter?.Type, parameter);
-            var methodTarget = targetElement as CodeMethod;
             var parameterSuffix = parameter?.Kind switch
             {
                 CodeParameterKind.RequestAdapter => $"RequestAdapter {GetParameterName(parameter)}",
                 CodeParameterKind.ResponseHandler => $"ResponseHandler {GetParameterName(parameter)}",
-                CodeParameterKind.QueryParameter => $"array {GetParameterName(parameter)}",
+                CodeParameterKind.RequestConfiguration => $"{parameter!.Type.Name.ToFirstCharacterUpperCase()} {GetParameterName(parameter)}",
                 CodeParameterKind.Serializer => $"SerializationWriter {GetParameterName(parameter)}",
                 CodeParameterKind.BackingStore => $"BackingStore {GetParameterName(parameter)}",
                 _ => $"{typeString} {GetParameterName(parameter)}"
 
             };
             var qualified = parameter?.Optional != null && parameter.Optional &&
-                            (methodTarget != null && !methodTarget.IsOfKind(CodeMethodKind.Setter));
+                            targetElement is CodeMethod methodTarget && !methodTarget.IsOfKind(CodeMethodKind.Setter);
             return parameter?.Optional != null && parameter.Optional ? $"?{parameterSuffix} {(qualified ?  "= null" : string.Empty)}" : parameterSuffix;
         }
         public string GetParameterDocNullable(CodeParameter parameter, CodeElement codeElement)
         {
             var parameterSignature = GetParameterSignature(parameter, codeElement).Trim().Split(' ');
-            if (parameter.IsOfKind(CodeParameterKind.PathParameters, CodeParameterKind.Headers))
+            if (parameter.IsOfKind(CodeParameterKind.PathParameters, CodeParameterKind.RequestConfiguration))
             {
                 return $"array<string, mixed>{(parameter.Optional ? "|null": string.Empty)} {parameterSignature[1]}";
             }
 
-            if (parameter.IsOfKind(CodeParameterKind.Options))
-            {
-                return $"array<string, RequestOption>|null {parameterSignature[1]}";
-            }
             var isCollection = parameter.Type.IsCollection;
             var collectionDoc = isCollection ? $"array<{TranslateType(parameter.Type)}>{(parameter.Optional ? "|null" : string.Empty)} {parameterSignature[1]}" : string.Empty;
             return parameter.Optional switch
@@ -130,7 +122,7 @@ namespace Kiota.Builder.Writers.Php
         public override void WriteShortDescription(string description, LanguageWriter writer)
         {
             
-            if (!String.IsNullOrEmpty(description))
+            if (!string.IsNullOrEmpty(description))
             {
                 writer.WriteLine(DocCommentStart);
                 writer.WriteLine(

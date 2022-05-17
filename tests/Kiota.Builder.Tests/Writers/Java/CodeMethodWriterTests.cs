@@ -110,14 +110,23 @@ public class CodeMethodWriterTests : IDisposable {
         var stringType = new CodeType {
             Name = "string",
         };
-        method.AddParameter(new CodeParameter {
+        var requestConfigClass = parentClass.AddInnerClass(new CodeClass {
+            Name = "RequestConfig",
+            Kind = CodeClassKind.RequestConfiguration,
+        }).First();
+        requestConfigClass.AddProperty(new() {
             Name = "h",
-            Kind = CodeParameterKind.Headers,
+            Kind = CodePropertyKind.Headers,
             Type = stringType,
-        });
-        method.AddParameter(new CodeParameter{
+        },
+        new () {
             Name = "q",
-            Kind = CodeParameterKind.QueryParameter,
+            Kind = CodePropertyKind.QueryParameters,
+            Type = stringType,
+        },
+        new () {
+            Name = "o",
+            Kind = CodePropertyKind.Options,
             Type = stringType,
         });
         method.AddParameter(new CodeParameter{
@@ -126,13 +135,18 @@ public class CodeMethodWriterTests : IDisposable {
             Type = stringType,
         });
         method.AddParameter(new CodeParameter{
+            Name = "c",
+            Kind = CodeParameterKind.RequestConfiguration,
+            Type = new CodeType {
+                Name = "RequestConfig",
+                TypeDefinition = requestConfigClass,
+                ActionOf = true,
+            },
+            Optional = true,
+        });
+        method.AddParameter(new CodeParameter{
             Name = "r",
             Kind = CodeParameterKind.ResponseHandler,
-            Type = stringType,
-        });
-        method.AddParameter(new CodeParameter {
-            Name = "o",
-            Kind = CodeParameterKind.Options,
             Type = stringType,
         });
     }
@@ -398,10 +412,13 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("urlTemplate =", result);
         Assert.Contains("pathParameters =", result);
         Assert.Contains("httpMethod = HttpMethod.GET", result);
-        Assert.Contains("h.accept(requestInfo.headers)", result);
-        Assert.Contains("AddQueryParameters", result);
-        Assert.Contains("setContentFromParsable", result);
+        Assert.Contains("if (c != null)", result);
+        Assert.Contains("final RequestConfig requestConfig = new RequestConfig()", result);
+        Assert.Contains("c.accept(requestConfig)", result);
+        Assert.Contains("addQueryParameters", result);
+        Assert.Contains("addRequestHeaders", result);
         Assert.Contains("addRequestOptions", result);
+        Assert.Contains("setContentFromParsable", result);
         Assert.Contains("return requestInfo;", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
@@ -415,12 +432,13 @@ public class CodeMethodWriterTests : IDisposable {
         var result = tw.ToString();
         Assert.DoesNotContain("final RequestInformation requestInfo = new RequestInformation()", result);
         Assert.DoesNotContain("httpMethod = HttpMethod.GET", result);
-        Assert.DoesNotContain("h.accept(requestInfo.headers)", result);
-        Assert.DoesNotContain("AddQueryParameters", result);
-        Assert.DoesNotContain("setContentFromParsable", result);
+        Assert.DoesNotContain("final RequestConfig requestConfig = new RequestConfig()", result);
+        Assert.DoesNotContain("c.accept(requestConfig)", result);
+        Assert.DoesNotContain("addQueryParameters", result);
+        Assert.DoesNotContain("addRequestHeaders", result);
         Assert.DoesNotContain("addRequestOptions", result);
         Assert.DoesNotContain("return requestInfo;", result);
-        Assert.Contains("return methodName(b, q, h, o)", result);
+        Assert.Contains("return methodName(b, c)", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]

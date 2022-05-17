@@ -112,15 +112,33 @@ public class CodeMethodWriterTests : IDisposable {
             Name = "string",
         };
         target ??= method;
-        target.AddParameter(new CodeParameter {
+        var requestConfigClass = (target.Parent as CodeClass).AddInnerClass(new CodeClass {
+            Name = "RequestConfig",
+            Kind = CodeClassKind.RequestConfiguration,
+        }).First();
+        requestConfigClass.AddProperty(new() {
             Name = "h",
-            Kind = CodeParameterKind.Headers,
+            Kind = CodePropertyKind.Headers,
+            Type = stringType,
+        },
+        new () {
+            Name = "q",
+            Kind = CodePropertyKind.QueryParameters,
+            Type = stringType,
+        },
+        new () {
+            Name = "o",
+            Kind = CodePropertyKind.Options,
             Type = stringType,
         });
         target.AddParameter(new CodeParameter{
-            Name = "q",
-            Kind = CodeParameterKind.QueryParameter,
-            Type = stringType,
+            Name = "c",
+            Kind = CodeParameterKind.RequestConfiguration,
+            Type = new CodeType {
+                Name = "RequestConfig",
+                TypeDefinition = requestConfigClass,
+            },
+            Optional = true,
         });
         target.AddParameter(new CodeParameter{
             Name = "b",
@@ -130,11 +148,6 @@ public class CodeMethodWriterTests : IDisposable {
         target.AddParameter(new CodeParameter{
             Name = "r",
             Kind = CodeParameterKind.ResponseHandler,
-            Type = stringType,
-        });
-        target.AddParameter(new CodeParameter {
-            Name = "o",
-            Kind = CodeParameterKind.Options,
             Type = stringType,
         });
     }
@@ -423,12 +436,10 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("requestInfo.UrlTemplate = ", result);
         Assert.Contains("requestInfo.PathParameters", result);
         Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
-        Assert.Contains("err != nil", result);
-        Assert.Contains("H != nil", result);
-        Assert.Contains("requestInfo.Headers =", result);
-        Assert.Contains("Q != nil", result);
-        Assert.Contains("requestInfo.AddQueryParameters(*(options.Q))", result);
-        Assert.Contains("O) != 0", result);
+        Assert.Contains("if c != nil", result);
+        Assert.Contains("requestInfo.AddRequestHeaders(", result);
+        Assert.Contains("if c.Q != nil", result);
+        Assert.Contains("requestInfo.AddQueryParameters(", result);
         Assert.Contains("requestInfo.AddRequestOptions(", result);
         Assert.Contains("requestInfo.SetContentFromParsable(m.requestAdapter", result);
         Assert.Contains("return requestInfo, nil", result);

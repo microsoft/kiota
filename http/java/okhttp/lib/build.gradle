@@ -33,13 +33,13 @@ dependencies {
 
     // Use JUnit Jupiter Engine for testing.
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
-    testImplementation 'org.mockito:mockito-inline:4.5.0'
+    testImplementation 'org.mockito:mockito-inline:4.5.1'
 
 
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation 'com.google.guava:guava:31.1-jre'
     api 'com.squareup.okhttp3:okhttp:4.9.3'
-    api 'com.microsoft.kiota:kiota-abstractions:1.0.32'
+    api 'com.microsoft.kiota:kiota-abstractions:1.0.34'
 }
 
 publishing {
@@ -56,7 +56,7 @@ publishing {
     publications {
         gpr(MavenPublication) {
             artifactId 'kiota-http-okhttplibrary'
-            version '1.0.19'
+            version '1.0.20'
             from(components.java)
         }
     }

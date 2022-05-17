@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<Project>
+
+  <!-- OpenApiReference support for C# -->
+
+  <Target Name="GenerateKiotaCSharp">
+    <ItemGroup>
+      <!-- @(CurrentOpenApiReference) item group will never contain more than one item. -->
+      <CurrentOpenApiReference>
+        <Command>kiota -d %(FullPath) -o %(OutputPath) -l CSharp  -c %(ClassName) -n %(Namespace)</Command>
+      </CurrentOpenApiReference>
+    </ItemGroup>
+
+    <Message Importance="high" Text="%0AGenerateKiotaCSharp:" />
+    <Message Importance="high" Text="  %(CurrentOpenApiReference.Command)" />
+
+    <Exec Command="%(CurrentOpenApiReference.Command)" LogStandardErrorAsError="true" />
+  </Target>
+
+  
+</Project>

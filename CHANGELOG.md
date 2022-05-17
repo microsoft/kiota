@@ -9,7 +9,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for enum options descriptions (C#/Go/Java/TypeScript). [#90](https://github.com/microsoft/kiota/issues/90)
+- Added support for file parameters types. [#221](https://github.com/microsoft/kiota/issues/221)
+
 ### Changed
+
+## [0.1.3] - 2022-05-06
+
+### Added
+
+- Added text serialization library for PHP. [#1546](https://github.com/microsoft/kiota/pull/1546).
+
+### Changed
+
+- Fixed the image name in CI for MCR.
+
+### Changed
+
+## [0.1.2] - 2022-05-06
+
+### Changed
+
+- Minor changes in the parameters (-co => --co, -ll => --ll, -d is required, -l is required).
+
+## [0.1.1] - 2022-05-06
+
+### Changed
+
+- Add binder for nullable boolean options. (Shell)
+
+## [0.1.0] - 2022-05-04
+
+### Added
+
+- The dotnet tool is now available on the public feed `dotnet tool install -g Microsoft.OpenApi.Kiota --prerelease`.
+- The dotnet OpenApi reference package is now available `Microsoft.OpenApi.Kiota.ApiDescription.Client`.
+- The container image is now available on mcr. `docker pull mcr.microsoft.com/kiota/generator:latest`.
+
+### Changed
+
+- Revamped the api surface for request configuration. [#1494](https://github.com/microsoft/kiota/issues/1494)
+- Fixed a bug in methods naming in Go after request configuration revamp.
+- Fixes a bug where reserved names would not be updated for inheritance.
+- Add `item` subcommand for indexers. Fixes conflicts when paths have repeating segments. (Shell) [#1541](https://github.com/microsoft/kiota/issues/1541)
 
 ## [0.0.23] - 2022-04-19
 

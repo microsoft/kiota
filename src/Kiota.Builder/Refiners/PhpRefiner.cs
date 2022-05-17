@@ -31,8 +31,14 @@ namespace Kiota.Builder.Refiners
             MakeModelPropertiesNullable(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
-            ReplaceDefaultSerializationModules(generatedCode, "Microsoft\\Kiota\\Serialization\\Json\\JsonSerializationWriterFactory");
-            ReplaceDefaultDeserializationModules(generatedCode, "Microsoft\\Kiota\\Serialization\\Json\\JsonParseNodeFactory");
+            ReplaceDefaultSerializationModules(generatedCode,
+                "Microsoft\\Kiota\\Serialization\\Json\\JsonSerializationWriterFactory",
+                "Microsoft\\Kiota\\Serialization\\Text\\TextSerializationWriterFactory"
+            );
+            ReplaceDefaultDeserializationModules(generatedCode, 
+                "Microsoft\\Kiota\\Serialization\\Json\\JsonParseNodeFactory",
+                "Microsoft\\Kiota\\Serialization\\Text\\TextParseNodeFactory"
+            );
             AliasUsingWithSameSymbol(generatedCode);
             AddSerializationModulesImport(generatedCode, new []{"Microsoft\\Kiota\\Abstractions\\ApiClientBuilder"}, null, '\\');
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
@@ -152,9 +158,12 @@ namespace Kiota.Builder.Refiners
             } else if (currentProperty.IsOfKind(CodePropertyKind.RequestBuilder))
             {
                 currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
-            } else if (currentProperty.Type.Name.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase))
+            } else if (currentProperty.Type?.Name?.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase) ?? false)
             {
                 currentProperty.Type.Name = "DateTime";
+            } else if (currentProperty.IsOfKind(CodePropertyKind.Options, CodePropertyKind.Headers))
+            {
+                currentProperty.Type.Name = "array";
             }
             CorrectDateTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
         }
@@ -175,10 +184,6 @@ namespace Kiota.Builder.Refiners
             var currentMethod = codeElement as CodeMethod;
             var parameters = currentMethod?.Parameters;
             var codeParameters = parameters as CodeParameter[] ?? parameters?.ToArray();
-            codeParameters?.Where(x => x.IsOfKind(CodeParameterKind.Options, CodeParameterKind.Headers)).ToList().ForEach(x =>
-            {
-                x.Type.Name = "array";
-            });
             codeParameters?.Where(x => x.IsOfKind(CodeParameterKind.ParseNode)).ToList().ForEach(x =>
             {
                 x.Type.Name = "ParseNode";

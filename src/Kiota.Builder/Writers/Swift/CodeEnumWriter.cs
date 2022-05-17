@@ -17,7 +17,7 @@ namespace Kiota.Builder.Writers.Swift {
             writer.WriteLine($"public enum {codeElement.Name.ToFirstCharacterUpperCase()} : String {{"); //TODO docs
             writer.IncreaseIndent();
             writer.WriteLines(codeElement.Options
-                            .Select(x => x.ToFirstCharacterUpperCase())
+                            .Select(x => x.Name.ToFirstCharacterUpperCase())
                             .Select((x, idx) => $"case {x}")
                             .ToArray());
             //TODO static parse function?

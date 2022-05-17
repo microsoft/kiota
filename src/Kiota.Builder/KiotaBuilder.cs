@@ -16,6 +16,7 @@ using Kiota.Builder.CodeRenderers;
 using System.Security;
 using Microsoft.OpenApi.Services;
 using System.Threading;
+using Kiota.Builder.OpenApiExtensions;
 
 namespace Kiota.Builder;
 
@@ -145,13 +146,18 @@ public class KiotaBuilder
         return input;
     }
 
-
     public OpenApiDocument CreateOpenApiDocument(Stream input)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         logger.LogTrace("Parsing OpenAPI file");
-        var reader = new OpenApiStreamReader();
+        var reader = new OpenApiStreamReader(
+            new OpenApiReaderSettings {
+                ExtensionParsers = new() {
+                    { OpenApiEnumValuesDescriptionExtension.Name, static (i, _ ) => OpenApiEnumValuesDescriptionExtension.Parse(i) }
+                }
+            }
+        );
         var doc = reader.Read(input, out var diag);
         stopwatch.Stop();
         if (diag.Errors.Count > 0)
@@ -585,6 +591,7 @@ public class KiotaBuilder
             var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
             var primitiveTypeName = (typeName?.ToLowerInvariant(), format?.ToLowerInvariant()) switch {
                 ("string", "base64url") => "binary",
+                ("file", _) => "binary",
                 ("string", "duration") => "TimeSpan",
                 ("string", "time") => "TimeOnly",
                 ("string", "date") => "DateOnly",
@@ -637,7 +644,12 @@ public class KiotaBuilder
     }
     private void CreateOperationMethods(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
     {
-        var parameterClass = CreateOperationParameter(currentNode, operationType, operation, parentClass);
+        var parameterClass = CreateOperationParameterClass(currentNode, operationType, operation, parentClass);
+        var requestConfigClass = parentClass.AddInnerClass(new CodeClass {
+            Name = $"{parentClass.Name}{operationType}RequestConfiguration",
+            Kind = CodeClassKind.RequestConfiguration,
+            Description = "Configuration for the request such as headers, query parameters, and middleware options.",
+        }).First();
 
         var schema = operation.GetResponseSchema();
         var method = (HttpMethod)Enum.Parse(typeof(HttpMethod), operationType.ToString());
@@ -664,7 +676,7 @@ public class KiotaBuilder
         }
 
         
-        AddRequestBuilderMethodParameters(currentNode, operation, parameterClass, executorMethod);
+        AddRequestBuilderMethodParameters(currentNode, operation, parameterClass, requestConfigClass, executorMethod);
 
         var handlerParam = new CodeParameter {
             Name = "responseHandler",
@@ -695,7 +707,7 @@ public class KiotaBuilder
         }).FirstOrDefault();
         if (config.Language == GenerationLanguage.Shell)
             SetPathAndQueryParameters(generatorMethod, currentNode, operation);
-        AddRequestBuilderMethodParameters(currentNode, operation, parameterClass, generatorMethod);
+        AddRequestBuilderMethodParameters(currentNode, operation, parameterClass, requestConfigClass, generatorMethod);
         logger.LogTrace("Creating method {name} of {type}", generatorMethod.Name, generatorMethod.ReturnType);
     }
     private static readonly Func<OpenApiParameter, CodeParameter> GetCodeParameterFromApiParameter = x => {
@@ -732,7 +744,7 @@ public class KiotaBuilder
         target.AddPathQueryOrHeaderParameter(pathAndQueryParameters);
     }
 
-    private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeClass parameterClass, CodeMethod method) {
+    private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeClass parameterClass, CodeClass requestConfigClass, CodeMethod method) {
         var nonBinaryRequestBody = operation.RequestBody?.Content?.FirstOrDefault(x => !RequestBodyBinaryContentType.Equals(x.Key, StringComparison.OrdinalIgnoreCase));
         if (nonBinaryRequestBody.HasValue && nonBinaryRequestBody.Value.Value != null)
         {
@@ -760,33 +772,34 @@ public class KiotaBuilder
             };
             method.AddParameter(nParam);
         }
+        method.AddParameter(new CodeParameter {
+            Name = "requestConfiguration",
+            Optional = true,
+            Type = new CodeType { Name = requestConfigClass.Name, TypeDefinition = requestConfigClass, ActionOf = true },
+            Kind = CodeParameterKind.RequestConfiguration,
+            Description = "Configuration for the request such as headers, query parameters, and middleware options.",
+        });
         if(parameterClass != null) {
-            var qsParam = new CodeParameter
+            requestConfigClass.AddProperty(new CodeProperty
             {
                 Name = "queryParameters",
-                Optional = true,
-                Kind = CodeParameterKind.QueryParameter,
+                Kind = CodePropertyKind.QueryParameters,
                 Description = "Request query parameters",
-                Type = new CodeType { Name = parameterClass.Name, ActionOf = true, TypeDefinition = parameterClass },
-            };
-            method.AddParameter(qsParam);
+                Type = new CodeType { Name = parameterClass.Name, TypeDefinition = parameterClass },
+            });
         }
-        var headersParam = new CodeParameter {
+        requestConfigClass.AddProperty(new CodeProperty {
             Name = "headers",
-            Optional = true,
-            Kind = CodeParameterKind.Headers,
+            Kind = CodePropertyKind.Headers,
             Description = "Request headers",
-            Type = new CodeType { Name = "IDictionary<string, string>", ActionOf = true, IsExternal = true },
-        };
-        method.AddParameter(headersParam);
-        var optionsParam = new CodeParameter {
+            Type = new CodeType { Name = "IDictionary<string, string>", IsExternal = true },
+        },
+        new CodeProperty {
             Name = "options",
-            Optional = true,
-            Kind = CodeParameterKind.Options,
+            Kind = CodePropertyKind.Options,
             Description = "Request options",
-            Type = new CodeType { Name = "IEnumerable<IRequestOption>", ActionOf = false, IsExternal = true },
-        };
-        method.AddParameter(optionsParam);
+            Type = new CodeType { Name = "IList<IRequestOption>", IsExternal = true },
+        });
     }
     private string GetModelsNamespaceNameFromReferenceId(string referenceId) {
         if (string.IsNullOrEmpty(referenceId)) return referenceId;
@@ -926,15 +939,29 @@ public class KiotaBuilder
         {
             if(schema.Enum.Any()) {
                 var newEnum = new CodeEnum { 
-                    Name = declarationName,
-                    Options = schema.Enum.OfType<OpenApiString>().Select(x => x.Value).Where(x => !"null".Equals(x)).ToHashSet(),//TODO set the flag property
+                    Name = declarationName,//TODO set the flag property
                     Description = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel),
                 };
+                SetEnumOptions(schema, newEnum);
                 return currentNamespace.AddEnum(newEnum).First();
             } else 
                 return AddModelClass(currentNode, schema, declarationName, currentNamespace, inheritsFrom);
         } else
             return existingDeclaration;
+    }
+    private static void SetEnumOptions(OpenApiSchema schema, CodeEnum target) {
+        OpenApiEnumValuesDescriptionExtension extensionInformation = null;
+        if (schema.Extensions.TryGetValue(OpenApiEnumValuesDescriptionExtension.Name, out var rawExtension) && rawExtension is OpenApiEnumValuesDescriptionExtension localExtInfo)
+            extensionInformation = localExtInfo;
+        var entries = schema.Enum.OfType<OpenApiString>().Where(static x => !x.Value.Equals("null", StringComparison.OrdinalIgnoreCase)).Select(static x => x.Value);
+        foreach(var enumValue in entries) {
+            var optionDescription = extensionInformation?.ValuesDescriptions.FirstOrDefault(x => x.Value.Equals(enumValue, StringComparison.OrdinalIgnoreCase));
+            target.AddOption(new CodeEnumOption {
+                Name = optionDescription?.Name ?? enumValue,
+                SerializationName = !string.IsNullOrEmpty(optionDescription?.Name) ? enumValue : null,
+                Description = optionDescription?.Description,
+            });
+        }
     }
     private CodeNamespace GetShortestNamespace(CodeNamespace currentNamespace, OpenApiSchema currentSchema) {
         if(!string.IsNullOrEmpty(currentSchema.Reference?.Id)) {
@@ -1115,13 +1142,13 @@ public class KiotaBuilder
             });
         }
     }
-    private CodeClass CreateOperationParameter(OpenApiUrlTreeNode node, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
+    private CodeClass CreateOperationParameterClass(OpenApiUrlTreeNode node, OperationType operationType, OpenApiOperation operation, CodeClass parentClass)
     {
         var parameters = node.PathItems[Constants.DefaultOpenApiLabel].Parameters.Union(operation.Parameters).Where(p => p.In == ParameterLocation.Query);
         if(parameters.Any()) {
             var parameterClass = parentClass.AddInnerClass(new CodeClass
             {
-                Name = operationType.ToString() + "QueryParameters",
+                Name = $"{parentClass.Name}{operationType}QueryParameters",
                 Kind = CodeClassKind.QueryParameters,
                 Description = (operation.Description ?? operation.Summary).CleanupDescription(),
             }).First();

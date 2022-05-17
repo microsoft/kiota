@@ -313,7 +313,8 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
                                 new RequestBody() {
                                     @Override
                                     public MediaType contentType() {
-                                        final String contentType = requestInfo.headers.containsKey(contentTypeHeaderKey) ? requestInfo.headers.get(contentTypeHeaderKey) : "";
+                                        final Map<String, String> requestHeaders = requestInfo.getRequestHeaders();
+                                        final String contentType = requestHeaders.containsKey(contentTypeHeaderKey) ? requestHeaders.get(contentTypeHeaderKey) : "";
                                         if(contentType.isEmpty()) {
                                             return null;
                                         } else {
@@ -331,7 +332,7 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
         final Request.Builder requestBuilder = new Request.Builder()
                                             .url(requestInfo.getUri().toURL())
                                             .method(requestInfo.httpMethod.toString(), body);
-        for (final Map.Entry<String,String> header : requestInfo.headers.entrySet()) {
+        for (final Map.Entry<String,String> header : requestInfo.getRequestHeaders().entrySet()) {
             requestBuilder.addHeader(header.getKey(), header.getValue());
         }
 

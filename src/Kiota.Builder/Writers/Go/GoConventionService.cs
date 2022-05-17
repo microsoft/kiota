@@ -67,7 +67,7 @@ public class GoConventionService : CommonLanguageConventionService
     #pragma warning disable CA1822 // Method should be static
     public string TranslateType(CodeTypeBase type, bool includeImportSymbol)
     {
-        if(type.Name.StartsWith("map[")) return type.Name; //casing hack
+        if(type.Name?.StartsWith("map[") ?? false) return type.Name; //casing hack
 
         return type.Name switch {
             "void" => string.Empty,
@@ -100,8 +100,8 @@ public class GoConventionService : CommonLanguageConventionService
         };
     }
     public bool IsScalarType(string typeName) {
-        if(typeName.StartsWith("map[")) return true;
-        return typeName.ToLowerInvariant() switch {
+        if(typeName?.StartsWith("map[") ?? false) return true;
+        return typeName?.ToLowerInvariant() switch {
             "binary" or "void" or "[]byte" => true,
             _ => false,
         };
@@ -125,7 +125,7 @@ public class GoConventionService : CommonLanguageConventionService
                                             (targetTypeDef as CodeClass)?.StartBlock as BlockDeclaration ??
                                             (targetTypeDef as CodeInterface)?.StartBlock as BlockDeclaration)
                                                         .Usings
-                                                        .FirstOrDefault(x => currentBaseType.Name.Equals(x.Name, StringComparison.OrdinalIgnoreCase));
+                                                        .FirstOrDefault(x => currentBaseType.Name?.Equals(x.Name, StringComparison.OrdinalIgnoreCase) ?? false);
                         return symbolUsing == null ? string.Empty : symbolUsing.Declaration.Name.GetNamespaceImportSymbol();
                     }
         }
