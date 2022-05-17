@@ -106,7 +106,7 @@ public class CodeMethodWriterTests : IDisposable {
             Name = "someParentClass"
         };
     }
-    private void AddRequestBodyParameters() {
+    private void AddRequestBodyParameters(bool useComplexTypeForBody = false) {
         var stringType = new CodeType {
             Name = "string",
         };
@@ -132,7 +132,13 @@ public class CodeMethodWriterTests : IDisposable {
         method.AddParameter(new CodeParameter{
             Name = "b",
             Kind = CodeParameterKind.RequestBody,
-            Type = stringType,
+            Type = useComplexTypeForBody ? new CodeType {
+                Name = "SomeComplexTypeForRequestBody",
+                TypeDefinition = root.AddClass(new CodeClass {
+                    Name = "SomeComplexTypeForRequestBody",
+                    Kind = CodeClassKind.Model,
+                }).First(),
+            } : stringType,
         });
         method.AddParameter(new CodeParameter{
             Name = "c",
@@ -401,11 +407,33 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void WritesRequestGeneratorBody() {
+    public void WritesRequestGeneratorBodyForScalar() {
         method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Get;
         AddRequestProperties();
         AddRequestBodyParameters();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("final RequestInformation requestInfo = new RequestInformation()", result);
+        Assert.Contains("urlTemplate =", result);
+        Assert.Contains("pathParameters =", result);
+        Assert.Contains("httpMethod = HttpMethod.GET", result);
+        Assert.Contains("if (c != null)", result);
+        Assert.Contains("final RequestConfig requestConfig = new RequestConfig()", result);
+        Assert.Contains("c.accept(requestConfig)", result);
+        Assert.Contains("addQueryParameters", result);
+        Assert.Contains("addRequestHeaders", result);
+        Assert.Contains("addRequestOptions", result);
+        Assert.Contains("setContentFromScalar", result);
+        Assert.Contains("return requestInfo;", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesRequestGeneratorBodyForParsable() {
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Get;
+        AddRequestProperties();
+        AddRequestBodyParameters(true);
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("final RequestInformation requestInfo = new RequestInformation()", result);
