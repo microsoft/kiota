@@ -1,6 +1,8 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.OpenApi;
+using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Writers;
 using Xunit;
 
@@ -21,6 +23,17 @@ public class OpenApiPagingExtensionsTests
         // Assert
         Assert.Equal(expectedName, name);
     }
+    
+    [Fact]
+    public void ThrowsOnMissingWriter()
+    {
+        // Arrange
+        OpenApiPagingExtension extension = new();
+
+        // Act
+        // Assert
+        Assert.Throws<ArgumentNullException>(() => extension.Write(null, OpenApiSpecVersion.OpenApi3_0));
+    }
 
     [Fact]
     public void WritesNothingWhenNoValues()
@@ -39,6 +52,7 @@ public class OpenApiPagingExtensionsTests
         Assert.Equal("nextLink", extension.NextLinkName);
         Assert.Null(extension.OperationName);
     }
+
     [Fact]
     public void WritesPagingInfo()
     {
@@ -58,5 +72,25 @@ public class OpenApiPagingExtensionsTests
         Assert.Contains("itemName\": \"value", result);
         Assert.Contains("nextLinkName\": \"nextLink", result);
         Assert.Contains("operationName\": \"usersGet", result);
+    }
+
+    [Fact]
+    public void ParsesPagingInfo()
+    {
+        // Arrange
+        var obj = new OpenApiObject
+        {
+            ["nextLinkName"] = new OpenApiString("@odata.nextLink"),
+            ["operationName"] = new OpenApiString("more"),
+            ["itemName"] = new OpenApiString("item"),
+        };
+
+        // Act
+        var extension = OpenApiPagingExtension.Parse(obj);
+
+        // Assert
+        Assert.Equal("@odata.nextLink", extension.NextLinkName);
+        Assert.Equal("item", extension.ItemName);
+        Assert.Equal("more", extension.OperationName);
     }
 }
