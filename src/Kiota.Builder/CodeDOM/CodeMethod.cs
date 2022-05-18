@@ -42,7 +42,7 @@ public enum HttpMethod {
     Trace
 }
 
-public class PagingInformation
+public class PagingInformation : ICloneable
 {
     public string ItemName
     {
@@ -57,6 +57,16 @@ public class PagingInformation
     public string OperationName
     {
         get; set;
+    }
+
+    public object Clone()
+    {
+        return new PagingInformation
+        {
+            ItemName = ItemName?.Clone() as string,
+            NextLinkName = NextLinkName?.Clone() as string,
+            OperationName = OperationName?.Clone() as string,
+        };
     }
 }
 
@@ -200,7 +210,8 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             OriginalIndexer = OriginalIndexer,
             errorMappings = errorMappings == null ? null : new (errorMappings),
             discriminatorMappings = discriminatorMappings == null ? null : new (discriminatorMappings),
-            DiscriminatorPropertyName = DiscriminatorPropertyName?.Clone() as string
+            DiscriminatorPropertyName = DiscriminatorPropertyName?.Clone() as string,
+            PagingInformation = PagingInformation.Clone() as PagingInformation,
         };
         if(Parameters?.Any() ?? false)
             method.AddParameter(Parameters.Select(x => x.Clone() as CodeParameter).ToArray());
