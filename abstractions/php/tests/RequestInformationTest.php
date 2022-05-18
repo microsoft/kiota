@@ -29,6 +29,8 @@ class RequestInformationTest extends TestCase {
         $this->requestInformation->urlTemplate = '{?%24select,top}';
 
         $queryParam = new TestQueryParameter();
+        $this->requestInformation->setQueryParameters($queryParam);
+        $this->assertEquals('?top=10', $this->requestInformation->getUri());
         $queryParam->select = ['displayName', 'age'];
         $this->requestInformation->setQueryParameters($queryParam);
         $this->assertArrayHasKey('%24select', $this->requestInformation->queryParameters);
@@ -42,6 +44,6 @@ class TestQueryParameter {
     /**
      * @QueryParameter("%24select")
      */
-    public array $select = [];
+    public ?array $select = null;
     public int $top = 10; // no annotation
 }

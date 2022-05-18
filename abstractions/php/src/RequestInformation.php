@@ -148,17 +148,20 @@ class RequestInformation {
 
     /**
      * Set the query parameters.
-     * @param object $queryParameters
+     * @param object|null $queryParameters
      */
-    public function setQueryParameters(object $queryParameters): void {
+    public function setQueryParameters(?object $queryParameters): void {
+        if (!$queryParameters) return;
         $reflectionClass = new \ReflectionClass($queryParameters);
         foreach ($reflectionClass->getProperties() as $classProperty) {
+            $propertyValue = $classProperty->getValue($queryParameters);
             $propertyAnnotation = self::$annotationReader->getPropertyAnnotation($classProperty, QueryParameter::class);
-            if ($propertyAnnotation) {
-                $this->queryParameters[$propertyAnnotation->name] = $classProperty->getValue($queryParameters);
-                continue;
+            if ($propertyValue) {
+                if ($propertyAnnotation) {
+                    $this->queryParameters[$propertyAnnotation->name] = $propertyValue;
+                }
+                $this->queryParameters[$classProperty->name] = $propertyValue;
             }
-            $this->queryParameters[$classProperty->name] = $classProperty->getValue($queryParameters);
         }
     }
 
