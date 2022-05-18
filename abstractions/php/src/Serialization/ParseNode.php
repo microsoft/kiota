@@ -44,16 +44,16 @@ interface ParseNode {
 
     /**
      * Gets the model object value of the node.
-     * @param string $type The type for the Parsable object.
+     * @param array{string,string} $type The type for the Parsable object.
      * @return Parsable|null the model object value of the node.
      */
-    public function getObjectValue(string $type): ?Parsable;
+    public function getObjectValue(array $type): ?Parsable;
 
     /**
-     * @param string $type The underlying type for the Parsable class.
+     * @param array{string,string} $type The underlying type for the Parsable class.
      * @return array<Parsable>|null An array of Parsable values.
      */
-    public function getCollectionOfObjectValues(string $type): ?array;
+    public function getCollectionOfObjectValues(array $type): ?array;
 
     /**
      * Get a collection of values that are not parsable in Nature.
@@ -92,6 +92,12 @@ interface ParseNode {
      * @return Enum|null the Enum value of the node.
      */
     public function getEnumValue(string $targetEnum): ?Enum;
+
+    /**
+     * @param string $targetClass
+     * @return Enum[]|null
+     */
+    public function getCollectionOfEnumValues(string $targetClass): ?array;
 
     /**
      * Return a byte value.

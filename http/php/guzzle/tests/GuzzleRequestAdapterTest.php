@@ -89,13 +89,13 @@ class GuzzleRequestAdapterTest extends TestCase
         $this->assertEquals($this->requestInformation->httpMethod, $psrRequest->getMethod());
         $this->assertEquals($this->requestInformation->headers['RequestId'], $psrRequest->getHeaderLine('RequestId'));
         $this->assertEquals('body', $psrRequest->getBody()->getContents());
-        $this->assertEquals($this->requestInformation->getUri(), strval($psrRequest->getUri()));
+        $this->assertEquals($this->requestInformation->getUri(), (string)$psrRequest->getUri());
     }
 
     public function testSendAsync(): void
     {
         $requestAdapter = $this->mockRequestAdapter([new Response(200, ['Content-Type' => $this->contentType])]);
-        $promise = $requestAdapter->sendAsync($this->requestInformation, TestUser::class);
+        $promise = $requestAdapter->sendAsync($this->requestInformation, array(TestUser::class, 'createFromDiscriminatorValue'));
         $this->assertInstanceOf(TestUser::class, $promise->wait());
     }
 
@@ -105,16 +105,16 @@ class GuzzleRequestAdapterTest extends TestCase
         $customResponseHandler = $this->createMock(ResponseHandler::class);
         $customResponseHandler->expects($this->once())
             ->method('handleResponseAsync');
-        $requestAdapter->sendAsync($this->requestInformation, TestUser::class, $customResponseHandler);
+        $requestAdapter->sendAsync($this->requestInformation, array(TestUser::class, 'createFromDiscriminatorValue'), $customResponseHandler);
     }
 
     public function testSendCollectionAsync(): void
     {
         $requestAdapter = $this->mockRequestAdapter([new Response(200, ['Content-Type' => $this->contentType])]);
-        $promise = $requestAdapter->sendCollectionAsync($this->requestInformation, TestUser::class);
+        $promise = $requestAdapter->sendCollectionAsync($this->requestInformation, array(TestUser::class, 'createFromDiscriminatorValue'));
         $result = $promise->wait();
         $this->assertIsArray($result);
-        $this->assertTrue(sizeof($result) == 2);
+        $this->assertCount(2, $result);
         $this->assertInstanceOf(TestUser::class, $result[0]);
     }
 
@@ -124,7 +124,7 @@ class GuzzleRequestAdapterTest extends TestCase
         $customResponseHandler = $this->createMock(ResponseHandler::class);
         $customResponseHandler->expects($this->once())
             ->method('handleResponseAsync');
-        $requestAdapter->sendCollectionAsync($this->requestInformation, TestUser::class, $customResponseHandler);
+        $requestAdapter->sendCollectionAsync($this->requestInformation, array(TestUser::class, 'createFromDiscriminatorValue'), $customResponseHandler);
     }
 
     public function testSendPrimitiveAsync(): void
@@ -231,5 +231,8 @@ class TestUser implements Parsable {
     public function setAdditionalData(array $value): void
     {
         $this->additionalData = $value;
+    }
+    public static function createFromDiscriminatorValue(ParseNode $parseNode): TestUser {
+        return new self();
     }
 }

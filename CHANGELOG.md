@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added support for enum options descriptions (C#/Go/Java/TypeScript). [#90](https://github.com/microsoft/kiota/issues/90)
 - Added support for file parameters types. [#221](https://github.com/microsoft/kiota/issues/221)
+- Added support for no content responses in PHP. [#1458](https://github.com/microsoft/kiota/issues/1458)
+- Added support for error handling in php request adapter. [#1157](https://github.com/microsoft/kiota/issues/1157)
+- Added support for discriminator downcast in PHP. [#1255](https://github.com/microsoft/kiota/issues/1255)
 - Added support for multiple collections indexing under the same parent.
 - Added code exclusions placeholder in the generation. (oneOf)
 

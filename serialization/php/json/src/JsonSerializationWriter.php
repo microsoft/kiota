@@ -221,6 +221,29 @@ class JsonSerializationWriter implements SerializationWriter
     /**
      * @inheritDoc
      */
+    public function writeCollectionOfEnumValues(?string $key, ?array $values): void {
+        if ($values !== null) {
+            if($key !== null){
+                $this->writePropertyName($key);
+            }
+            $this->writer [] = '[';
+            foreach ($values as $v) {
+                $this->writeEnumValue(null, $v);
+                $this->writer [] = self::PROPERTY_SEPARATOR;
+            }
+            if (count($values) > 0) {
+                array_pop($this->writer);
+            }
+            $this->writer [] = ']';
+            if ($key !== null) {
+                $this->writer []= self::PROPERTY_SEPARATOR;
+            }
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function writeNullValue(?string $key): void {
         if (!empty($key)) {
             $this->writePropertyName($key);
