@@ -18,7 +18,7 @@ public class CodeInterface : ProprietableBlock<CodeInterfaceKind, InterfaceDecla
 public class InterfaceDeclaration : ProprietableBlockDeclaration
 {
 
-    private List<CodeType> inherits = new List<CodeType>();
+    private readonly List<CodeType> inherits = new List<CodeType>();
     public IEnumerable<CodeType> Inherits
     {
         get => inherits; set
