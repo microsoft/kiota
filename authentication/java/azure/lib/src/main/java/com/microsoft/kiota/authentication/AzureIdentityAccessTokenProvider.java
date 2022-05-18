@@ -2,12 +2,15 @@ package com.microsoft.kiota.authentication;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.credential.TokenRequestContext;
@@ -41,17 +44,31 @@ public class AzureIdentityAccessTokenProvider implements AccessTokenProvider {
             _hostValidator = new AllowedHostsValidator(allowedHosts);
         }
     }
+    private final static String ClaimsKey = "claims";
     @Nonnull
-    public CompletableFuture<String> getAuthorizationToken(@Nonnull final URI uri) {
+    public CompletableFuture<String> getAuthorizationToken(@Nonnull final URI uri, @Nullable final Map<String, Object> additionalAuthenticationContext) {
         if(!_hostValidator.isUrlHostValid(uri)) {
             return CompletableFuture.completedFuture("");
         }
         if(!uri.getScheme().equalsIgnoreCase("https")) {
             return CompletableFuture.failedFuture(new IllegalArgumentException("Only https is supported"));
         }
-        return this.creds.getToken(new TokenRequestContext() {{
+
+        String decodedClaim = null;
+
+        if(additionalAuthenticationContext != null && additionalAuthenticationContext.containsKey(ClaimsKey) && additionalAuthenticationContext.get(ClaimsKey) instanceof String) {
+            final String rawClaim = (String) additionalAuthenticationContext.get(ClaimsKey);
+            decodedClaim = new String(Base64.getDecoder().decode(rawClaim));
+        }
+
+        final TokenRequestContext context = new TokenRequestContext() {{
             this.setScopes(_scopes);
-        }}).toFuture().thenApply(r -> r.getToken());
+            
+        }};
+        if(decodedClaim != null) {
+            context.setClaims(decodedClaim);
+        }
+        return this.creds.getToken(context).toFuture().thenApply(r -> r.getToken());
     }
     @Nonnull
     public AllowedHostsValidator getAllowedHostsValidator() {
