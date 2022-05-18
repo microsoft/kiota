@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for file parameters types. [#221](https://github.com/microsoft/kiota/issues/221)
 - Added support for multiple collections indexing under the same parent.
 - Added code exclusions placeholder in the generation. (oneOf)
+- Added support for paging. [#1569](https://github.com/microsoft/kiota/issues/1569)
 
 ### Changed
 
