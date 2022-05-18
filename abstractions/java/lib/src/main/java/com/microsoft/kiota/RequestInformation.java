@@ -5,11 +5,19 @@ import java.net.URISyntaxException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.Period;
+
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -205,17 +213,69 @@ public class RequestInformation {
      * @param <T> the model type.
      */
     public <T extends Parsable> void setContentFromParsable(@Nonnull final RequestAdapter requestAdapter, @Nonnull final String contentType, @Nonnull final T... values) {
-        Objects.requireNonNull(requestAdapter);
-        Objects.requireNonNull(values);
-        Objects.requireNonNull(contentType);
-        if(values.length == 0) throw new RuntimeException("values cannot be empty");
-
-        try(final SerializationWriter writer = requestAdapter.getSerializationWriterFactory().getSerializationWriter(contentType)) {
+        try(final SerializationWriter writer = getSerializationWriter(requestAdapter, contentType, values)) {
             headers.put(contentTypeHeader, contentType);
             if(values.length == 1) 
                 writer.writeObjectValue(null, values[0]);
             else
                 writer.writeCollectionOfObjectValues(null, Arrays.asList(values));
+            this.content = writer.getSerializedContent();
+        } catch (IOException ex) {
+            throw new RuntimeException("could not serialize payload", ex);
+        }
+    }
+    private <T> SerializationWriter getSerializationWriter(@Nonnull final RequestAdapter requestAdapter, @Nonnull final String contentType, @Nonnull final T... values)
+    {
+        Objects.requireNonNull(requestAdapter);
+        Objects.requireNonNull(values);
+        Objects.requireNonNull(contentType);
+        if(values.length == 0) throw new RuntimeException("values cannot be empty");
+
+        return requestAdapter.getSerializationWriterFactory().getSerializationWriter(contentType);
+    }
+    /**
+     * Sets the request body from a scalar value with the specified content type.
+     * @param values the scalar values to serialize.
+     * @param contentType the content type.
+     * @param requestAdapter The adapter service to get the serialization writer from.
+     * @param <T> the model type.
+     */
+    public <T> void setContentFromScalar(@Nonnull final RequestAdapter requestAdapter, @Nonnull final String contentType, @Nonnull final T... values) {
+        try(final SerializationWriter writer = getSerializationWriter(requestAdapter, contentType, values)) {
+            headers.put(contentTypeHeader, contentType);
+            if(values.length == 1) {
+                final T value = values[0];
+                final Class<?> valueClass = value.getClass();
+                if(valueClass.equals(String.class))
+                    writer.writeStringValue(null, (String)value);
+                else if(valueClass.equals(Boolean.class))
+                    writer.writeBooleanValue(null, (Boolean)value);
+                else if(valueClass.equals(Byte.class))
+                    writer.writeByteValue(null, (Byte)value);
+                else if(valueClass.equals(Short.class))
+                    writer.writeShortValue(null, (Short)value);
+                else if(valueClass.equals(BigDecimal.class))
+                    writer.writeBigDecimalValue(null, (BigDecimal)value);
+                else if(valueClass.equals(Float.class))
+                    writer.writeFloatValue(null, (Float)value);
+                else if(valueClass.equals(Long.class))
+                    writer.writeLongValue(null, (Long)value);
+                else if(valueClass.equals(Integer.class))
+                    writer.writeIntegerValue(null, (Integer)value);
+                else if(valueClass.equals(UUID.class))
+                    writer.writeUUIDValue(null, (UUID)value);
+                else if(valueClass.equals(OffsetDateTime.class))
+                    writer.writeOffsetDateTimeValue(null, (OffsetDateTime)value);
+                else if(valueClass.equals(LocalDate.class))
+                    writer.writeLocalDateValue(null, (LocalDate)value);
+                else if(valueClass.equals(LocalTime.class))
+                    writer.writeLocalTimeValue(null, (LocalTime)value);
+                else if(valueClass.equals(Period.class))
+                    writer.writePeriodValue(null, (Period)value);
+                else
+                    throw new RuntimeException("unknown type to serialize " + valueClass.getName());
+            } else
+                writer.writeCollectionOfPrimitiveValues(null, Arrays.asList(values));
             this.content = writer.getSerializedContent();
         } catch (IOException ex) {
             throw new RuntimeException("could not serialize payload", ex);

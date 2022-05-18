@@ -44,7 +44,7 @@ namespace Kiota.Builder.Extensions.Tests {
 
         }
         [Fact]
-        public void GetSchemaTitleAllOf() {
+        public void GetSchemaNameAllOf() {
             var schema = new OpenApiSchema {
                 AllOf = new List<OpenApiSchema> {
                     new() {
@@ -55,13 +55,13 @@ namespace Kiota.Builder.Extensions.Tests {
                     }
                 }
             };
-            var names = schema.GetSchemaTitles();
+            var names = schema.GetSchemaNames();
             Assert.Contains("microsoft.graph.entity", names);
             Assert.Contains("microsoft.graph.user", names);
-            Assert.Equal("microsoft.graph.user", schema.GetSchemaTitle());
+            Assert.Equal("microsoft.graph.user", schema.GetSchemaName());
         }
         [Fact]
-        public void GetSchemaTitleAllOfNested() {
+        public void GetSchemaNameAllOfNested() {
             var schema = new OpenApiSchema {
                 AllOf = new List<OpenApiSchema> {
                     new() {
@@ -76,13 +76,13 @@ namespace Kiota.Builder.Extensions.Tests {
                     }
                 }
             };
-            var names = schema.GetSchemaTitles();
+            var names = schema.GetSchemaNames();
             Assert.Contains("microsoft.graph.entity", names);
             Assert.Contains("microsoft.graph.user", names);
-            Assert.Equal("microsoft.graph.user", schema.GetSchemaTitle());
+            Assert.Equal("microsoft.graph.user", schema.GetSchemaName());
         }
         [Fact]
-        public void GetSchemaTitleAnyOf() {
+        public void GetSchemaNameAnyOf() {
             var schema = new OpenApiSchema {
                 AnyOf = new List<OpenApiSchema> {
                     new() {
@@ -93,13 +93,13 @@ namespace Kiota.Builder.Extensions.Tests {
                     }
                 }
             };
-            var names = schema.GetSchemaTitles();
+            var names = schema.GetSchemaNames();
             Assert.Contains("microsoft.graph.entity", names);
             Assert.Contains("microsoft.graph.user", names);
-            Assert.Equal("microsoft.graph.user", schema.GetSchemaTitle());
+            Assert.Equal("microsoft.graph.user", schema.GetSchemaName());
         }
         [Fact]
-        public void GetSchemaTitleOneOf() {
+        public void GetSchemaNameOneOf() {
             var schema = new OpenApiSchema {
                 OneOf = new List<OpenApiSchema> {
                     new() {
@@ -110,40 +110,40 @@ namespace Kiota.Builder.Extensions.Tests {
                     }
                 }
             };
-            var names = schema.GetSchemaTitles();
+            var names = schema.GetSchemaNames();
             Assert.Contains("microsoft.graph.entity", names);
             Assert.Contains("microsoft.graph.user", names);
-            Assert.Equal("microsoft.graph.user", schema.GetSchemaTitle());
+            Assert.Equal("microsoft.graph.user", schema.GetSchemaName());
         }
         [Fact]
-        public void GetSchemaTitleItems() {
+        public void GetSchemaNameItems() {
             var schema = new OpenApiSchema {
                 Items = new() {
                     Title = "microsoft.graph.entity"
                 },
             };
-            var names = schema.GetSchemaTitles();
+            var names = schema.GetSchemaNames();
             Assert.Contains("microsoft.graph.entity", names);
-            Assert.Equal("microsoft.graph.entity", schema.GetSchemaTitle());
+            Assert.Equal("microsoft.graph.entity", schema.GetSchemaName());
             Assert.Single(names);
         }
         [Fact]
-        public void GetSchemaTitleTitle() {
+        public void GetSchemaNameTitle() {
             var schema = new OpenApiSchema {
                 Title = "microsoft.graph.entity"
             };
-            var names = schema.GetSchemaTitles();
+            var names = schema.GetSchemaNames();
             Assert.Contains("microsoft.graph.entity", names);
-            Assert.Equal("microsoft.graph.entity", schema.GetSchemaTitle());
+            Assert.Equal("microsoft.graph.entity", schema.GetSchemaName());
             Assert.Single(names);
         }
         [Fact]
-        public void GetSchemaTitleEmpty() {
+        public void GetSchemaNameEmpty() {
             var schema = new OpenApiSchema {
             };
-            var names = schema.GetSchemaTitles();
+            var names = schema.GetSchemaNames();
             Assert.Empty(names);
-            Assert.Null(schema.GetSchemaTitle());
+            Assert.Null(schema.GetSchemaName());
         }
         [Fact]
         public void GetReferenceIdsAllOf() {

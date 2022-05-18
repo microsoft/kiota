@@ -72,6 +72,40 @@ public class PagingInformation : ICloneable
 
 public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement
 {
+    public static CodeMethod FromIndexer(CodeIndexer originalIndexer, CodeClass indexerClass, string methodNameSuffix, bool parameterNullable)
+    {
+        if(originalIndexer == null)
+            throw new ArgumentNullException(nameof(originalIndexer));
+        if(indexerClass == null)
+            throw new ArgumentNullException(nameof(indexerClass));
+        var method = new CodeMethod {
+            IsAsync = false,
+            IsStatic = false,
+            Access = AccessModifier.Public,
+            Kind = CodeMethodKind.IndexerBackwardCompatibility,
+            Name = originalIndexer.PathSegment + methodNameSuffix,
+            Description = originalIndexer.Description,
+            ReturnType = new CodeType {
+                IsNullable = false,
+                TypeDefinition = indexerClass,
+                Name = indexerClass.Name,
+            },
+            OriginalIndexer = originalIndexer,
+        };
+        var parameter = new CodeParameter {
+            Name = "id",
+            Optional = false,
+            Kind = CodeParameterKind.Custom,
+            Description = "Unique identifier of the item",
+            Type = new CodeType {
+                Name = "String",
+                IsNullable = parameterNullable,
+                IsExternal = true,
+            },
+        };
+        method.AddParameter(parameter);
+        return method;
+    }
     public HttpMethod? HttpMethod {get;set;}
     public string ContentType { get; set; }
     public AccessModifier Access {get;set;} = AccessModifier.Public;
@@ -93,7 +127,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         parameters.Clear();
     }
     private readonly CodeParameterOrderComparer parameterOrderComparer = new ();
-    public IEnumerable<CodeParameter> Parameters { get => parameters.Values.OrderBy(x => x, parameterOrderComparer); }
+    public IEnumerable<CodeParameter> Parameters { get => parameters.Values.OrderBy(static x => x, parameterOrderComparer); }
     public bool IsStatic {get;set;} = false;
     public bool IsAsync {get;set;} = true;
     public string Description {get; set;}
@@ -166,7 +200,15 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     {
         get
         {
-            return errorMappings.OrderBy(x => x.Key);
+            return errorMappings.OrderBy(static x => x.Key);
+        }
+    }
+    public void ReplaceErrorMapping(CodeTypeBase oldType, CodeTypeBase newType)
+    {
+        var codes = errorMappings.Where(x => x.Value == oldType).Select(x => x.Key).ToArray();
+        foreach (var code in codes)
+        {
+            errorMappings[code] = newType;
         }
     }
     private ConcurrentDictionary<string, CodeTypeBase> discriminatorMappings = new();
@@ -177,7 +219,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     {
         get
         {
-            return discriminatorMappings.OrderBy(x => x.Key);
+            return discriminatorMappings.OrderBy(static x => x.Key);
         }
     }
     /// <summary>

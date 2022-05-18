@@ -147,7 +147,7 @@ components:
         Assert.NotNull(tasksRequestBuilder);
         var getMethod = (tasksRequestBuilder.TypeDefinition as CodeClass).Methods.Single(e => e.Name == "Get");
         var returnType = getMethod.ReturnType;
-        Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Array, returnType.CollectionKind);
+        Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Complex, returnType.CollectionKind);
     }
     [Fact]
     public void OData_doubles_as_any_of(){
@@ -376,8 +376,10 @@ components:
                                         ["application/json"] = new OpenApiMediaType() {
                                             Schema = new OpenApiSchema {
                                                 Type = "array",
-                                                AnyOf = new List<OpenApiSchema> {
-                                                    permissionSchema,
+                                                Items = new OpenApiSchema {
+                                                    AnyOf = new List<OpenApiSchema> {
+                                                        permissionSchema,
+                                                    }
                                                 }
                                             }
                                         }
@@ -521,8 +523,10 @@ components:
                                         ["application/json"] = new OpenApiMediaType() {
                                             Schema = new OpenApiSchema {
                                                 Type = "array",
-                                                AnyOf = new List<OpenApiSchema> {
-                                                    permissionSchema,
+                                                Items = new OpenApiSchema {
+                                                    AnyOf = new List<OpenApiSchema> {
+                                                        permissionSchema,
+                                                    }   
                                                 }
                                             }
                                         }
@@ -1368,12 +1372,12 @@ components:
         Assert.NotNull(requestBuilderClass);
         var requestExecutorMethod = requestBuilderClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(requestExecutorMethod);
-        var executorReturnType = requestExecutorMethod.ReturnType as CodeUnionType;
+        var executorReturnType = requestExecutorMethod.ReturnType as CodeComposedTypeBase;
         Assert.NotNull(executorReturnType);
         Assert.Equal(2, executorReturnType.Types.Count());
         var typeNames = executorReturnType.Types.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
         Assert.Contains("simpleObject", typeNames);
-        Assert.Contains("number", typeNames);
+        Assert.Contains("int64", typeNames);
     }
     [Fact]
     public void UnionOfInlineSchemasWorks() {
@@ -1443,7 +1447,7 @@ components:
         Assert.NotNull(requestBuilderClass);
         var requestExecutorMethod = requestBuilderClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(requestExecutorMethod);
-        var executorReturnType = requestExecutorMethod.ReturnType as CodeUnionType;
+        var executorReturnType = requestExecutorMethod.ReturnType as CodeComposedTypeBase;
         Assert.NotNull(executorReturnType);
         Assert.Equal(2, executorReturnType.Types.Count());
         var typeNames = executorReturnType.Types.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -1566,6 +1570,7 @@ components:
     [InlineData("integer", "int8", "sbyte")]
     [InlineData("number", "uint8", "byte")]
     [InlineData("integer", "uint8", "byte")]
+    [InlineData("number", "", "int64")]
     [InlineData("integer", "", "integer")]
     [InlineData("boolean", "", "boolean")]
     [InlineData("", "byte", "binary")]

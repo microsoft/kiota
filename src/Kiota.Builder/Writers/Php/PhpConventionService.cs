@@ -41,7 +41,7 @@ namespace Kiota.Builder.Writers.Php
 
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
         {
-            if(code is CodeUnionType) 
+            if(code is CodeComposedTypeBase) 
                 throw new InvalidOperationException($"PHP does not support union types, the union type {code.Name} should have been filtered out by the refiner.");
             if (code is CodeType currentType)
             {
