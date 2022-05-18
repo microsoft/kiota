@@ -253,7 +253,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             errorMappings = errorMappings == null ? null : new (errorMappings),
             discriminatorMappings = discriminatorMappings == null ? null : new (discriminatorMappings),
             DiscriminatorPropertyName = DiscriminatorPropertyName?.Clone() as string,
-            PagingInformation = PagingInformation.Clone() as PagingInformation,
+            PagingInformation = PagingInformation?.Clone() as PagingInformation,
         };
         if(Parameters?.Any() ?? false)
             method.AddParameter(Parameters.Select(x => x.Clone() as CodeParameter).ToArray());
