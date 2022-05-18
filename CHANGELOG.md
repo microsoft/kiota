@@ -14,8 +14,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for no content responses in PHP. [#1458](https://github.com/microsoft/kiota/issues/1458)
 - Added support for error handling in php request adapter. [#1157](https://github.com/microsoft/kiota/issues/1157)
 - Added support for discriminator downcast in PHP. [#1255](https://github.com/microsoft/kiota/issues/1255)
+- Added support for multiple collections indexing under the same parent.
+- Added code exclusions placeholder in the generation. (oneOf)
 
 ### Changed
+
+- Fixed a bug where union types would not work as error types.
+- Fixed a bug where generation names could collide with platform names in CSharp.
+- Fixed missing numbers mapping cases.
+- Fixed multiple bugs enum options invalid symbols generation.
+- Fixed a bug where symbols (classes, enums, properties...) could be only numbers, which is unsupported by most languages.
+- Fixed a bug where union types would be missing serialization information.
+- Fixed a bug where inline request bodies could override each other for the same path item with multiple operations.
+- Fixed simple collections (arrays) support in CSharp.
+- Fixed a bug where code properties could not be union or exclusion types.
+- Fixed a bug where models would fail to generate if the schema type wasn't set to object.
+- Fixed a bug where nullable wrapper schema flattening would ignore some composed type options.
+- Fixed a bug where arrays without items definition would derail generation.
+- Fixed a bug with enums detection for generation. (interpreted as string)
+- Fixes a bug where classes names cleanup could end-up in a collision.
 
 ## [0.1.3] - 2022-05-06
 

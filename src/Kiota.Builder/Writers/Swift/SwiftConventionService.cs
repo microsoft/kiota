@@ -55,7 +55,7 @@ public class SwiftConventionService : CommonLanguageConventionService
     }
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
     {
-        if(code is CodeUnionType)
+        if(code is CodeComposedTypeBase)
             throw new InvalidOperationException($"Swift does not support union types, the union type {code.Name} should have been filtered out by the refiner");
         else if (code is CodeType currentType) {
             var typeName = TranslateTypeAndAvoidUsingNamespaceSegmentNames(currentType, targetElement);

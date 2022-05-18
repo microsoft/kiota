@@ -38,7 +38,7 @@ public class GoConventionService : CommonLanguageConventionService
         GetTypeString(code, targetElement, includeCollectionInformation, true);
     public string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation, bool addPointerSymbol)
     {
-        if(code is CodeUnionType) 
+        if(code is CodeComposedTypeBase) 
             throw new InvalidOperationException($"Go does not support union types, the union type {code.Name} should have been filtered out by the refiner");
         else if (code is CodeType currentType) {
             var importSymbol = GetImportSymbol(code, targetElement);

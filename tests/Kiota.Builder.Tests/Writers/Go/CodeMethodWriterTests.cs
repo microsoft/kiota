@@ -107,7 +107,7 @@ public class CodeMethodWriterTests : IDisposable {
             Name = "someParentClass"
         };
     }
-    private void AddRequestBodyParameters(CodeMethod target = default) {
+    private void AddRequestBodyParameters(CodeMethod target = default, bool useComplexTypeForBody = false) {
         var stringType = new CodeType {
             Name = "string",
         };
@@ -143,7 +143,13 @@ public class CodeMethodWriterTests : IDisposable {
         target.AddParameter(new CodeParameter{
             Name = "b",
             Kind = CodeParameterKind.RequestBody,
-            Type = stringType,
+            Type = useComplexTypeForBody ? new CodeType {
+                Name = "SomeComplexTypeForRequestBody",
+                TypeDefinition = root.AddClass(new CodeClass {
+                    Name = "SomeComplexTypeForRequestBody",
+                    Kind = CodeClassKind.Model,
+                }).First(),
+            } : stringType,
         });
         target.AddParameter(new CodeParameter{
             Name = "r",
@@ -412,7 +418,7 @@ public class CodeMethodWriterTests : IDisposable {
     }
     private const string AbstractionsPackageHash = "i2ae4187f7daee263371cb1c977df639813ab50ffa529013b7437480d1ec0158f";
     [Fact]
-    public void WritesRequestGeneratorBody() {
+    public void WritesRequestGeneratorBodyForScalar() {
         var configurationMock = new Mock<GenerationConfiguration>();
         var refiner = new GoRefiner(configurationMock.Object);
         method.Kind = CodeMethodKind.RequestGenerator;
@@ -428,6 +434,40 @@ public class CodeMethodWriterTests : IDisposable {
         }).First();
         AddRequestBodyParameters(executor);
         AddRequestBodyParameters();
+        AddRequestProperties();
+        refiner.Refine(parentClass.Parent as CodeNamespace);
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"requestInfo := {AbstractionsPackageHash}.NewRequestInformation()", result);
+        Assert.Contains("requestInfo.UrlTemplate = ", result);
+        Assert.Contains("requestInfo.PathParameters", result);
+        Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
+        Assert.Contains("if c != nil", result);
+        Assert.Contains("requestInfo.AddRequestHeaders(", result);
+        Assert.Contains("if c.Q != nil", result);
+        Assert.Contains("requestInfo.AddQueryParameters(", result);
+        Assert.Contains("requestInfo.AddRequestOptions(", result);
+        Assert.Contains("requestInfo.SetContentFromScalar(m.requestAdapter", result);
+        Assert.Contains("return requestInfo, nil", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesRequestGeneratorBodyForParsable() {
+        var configurationMock = new Mock<GenerationConfiguration>();
+        var refiner = new GoRefiner(configurationMock.Object);
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Get;
+        var executor = parentClass.AddMethod(new CodeMethod {
+            Name = "executor",
+            HttpMethod = HttpMethod.Get,
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType {
+                Name = "string",
+                IsExternal = true,
+            }
+        }).First();
+        AddRequestBodyParameters(executor, true);
+        AddRequestBodyParameters(useComplexTypeForBody: true);
         AddRequestProperties();
         refiner.Refine(parentClass.Parent as CodeNamespace);
         writer.Write(method);

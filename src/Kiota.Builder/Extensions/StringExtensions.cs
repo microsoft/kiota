@@ -111,14 +111,18 @@ namespace Kiota.Builder.Extensions {
             if (string.IsNullOrEmpty(original))
                 return original;
 
+            var result = original;
             foreach (var prefix in prefixesToStrip.Where(x => !string.IsNullOrEmpty(x)))
-                original = original.Replace(prefix, string.Empty);
+                result = result.Replace(prefix, string.Empty);
             
-            original = original.ToCamelCase(); //ensure the name is camel cased to strip out any potential '-' characters
+            result = result.ToCamelCase(); //ensure the name is camel cased to strip out any potential '-' characters
 
-            original = propertyCleanupRegex.Replace(original, string.Empty); //strip out any invalid characters
+            result = propertyCleanupRegex.Replace(result, string.Empty); //strip out any invalid characters
 
-            return original;
+            if(int.TryParse(result, out var _)) // in most languages a number is not a valid symbol name
+                result = $"{original.ToString().GetNamespaceImportSymbol()}_{result}";
+
+            return result;
         }
 
         /// <summary>
