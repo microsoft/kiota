@@ -38,7 +38,7 @@ dependencies {
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation 'com.google.guava:guava:31.1-jre'
     api 'com.azure:azure-core:1.28.0'
-    api 'com.microsoft.kiota:kiota-abstractions:1.0.25'
+    api 'com.microsoft.kiota:kiota-abstractions:1.0.36'
 }
 
 publishing {
@@ -55,7 +55,7 @@ publishing {
     publications {
         gpr(MavenPublication) {
             artifactId 'kiota-authentication-azure'
-            version '1.0.6'
+            version '1.0.7'
             from(components.java)
         }
     }

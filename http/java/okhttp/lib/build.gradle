@@ -39,7 +39,7 @@ dependencies {
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation 'com.google.guava:guava:31.1-jre'
     api 'com.squareup.okhttp3:okhttp:4.9.3'
-    api 'com.microsoft.kiota:kiota-abstractions:1.0.34'
+    api 'com.microsoft.kiota:kiota-abstractions:1.0.36'
 }
 
 publishing {
@@ -56,7 +56,7 @@ publishing {
     publications {
         gpr(MavenPublication) {
             artifactId 'kiota-http-okhttplibrary'
-            version '1.0.20'
+            version '1.0.21'
             from(components.java)
         }
     }
