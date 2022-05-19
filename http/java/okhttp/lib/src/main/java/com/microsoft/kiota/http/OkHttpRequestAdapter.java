@@ -323,7 +323,7 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
                 }
             }
             response.close();
-            return this.getHttpResponseMessage(requestInfo, claims);
+            return this.getHttpResponseMessage(requestInfo, responseClaims);
         }
 
         return CompletableFuture.completedFuture(response);

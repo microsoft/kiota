@@ -63,9 +63,8 @@ public class AzureIdentityAccessTokenProvider implements AccessTokenProvider {
 
         final TokenRequestContext context = new TokenRequestContext() {{
             this.setScopes(_scopes);
-            
         }};
-        if(decodedClaim != null) {
+        if(decodedClaim != null && !decodedClaim.isEmpty()) {
             context.setClaims(decodedClaim);
         }
         return this.creds.getToken(context).toFuture().thenApply(r -> r.getToken());
