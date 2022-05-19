@@ -9,6 +9,7 @@ import java.time.OffsetDateTime;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Period;
+import java.util.regex.Pattern;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -102,7 +103,7 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
         Objects.requireNonNull(factory, "parameter factory cannot be null");
 
-        return this.getHttpResponseMessage(requestInfo)
+        return this.getHttpResponseMessage(requestInfo, null)
         .thenCompose(response -> {
             if(responseHandler == null) {
                 try {
@@ -130,7 +131,7 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
         Objects.requireNonNull(factory, "parameter factory cannot be null");
 
-        return this.getHttpResponseMessage(requestInfo)
+        return this.getHttpResponseMessage(requestInfo, null)
         .thenCompose(response -> {
             if(responseHandler == null) {
                 try {
@@ -158,7 +159,7 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
     }
     @Nonnull
     public <ModelType> CompletableFuture<ModelType> sendPrimitiveAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler, @Nullable final HashMap<String, ParsableFactory<? extends Parsable>> errorMappings) {
-        return this.getHttpResponseMessage(requestInfo)
+        return this.getHttpResponseMessage(requestInfo, null)
         .thenCompose(response -> {
             if(responseHandler == null) {
                 try {
@@ -226,7 +227,7 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
     public <ModelType> CompletableFuture<Iterable<ModelType>> sendPrimitiveCollectionAsync(@Nonnull final RequestInformation requestInfo, @Nonnull final Class<ModelType> targetClass, @Nullable final ResponseHandler responseHandler, @Nullable final HashMap<String, ParsableFactory<? extends Parsable>> errorMappings) {
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
 
-        return this.getHttpResponseMessage(requestInfo)
+        return this.getHttpResponseMessage(requestInfo, null)
         .thenCompose(response -> {
             if(responseHandler == null) {
                 try {
@@ -288,10 +289,15 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
             response.close();
         }
     }
-    private CompletableFuture<Response> getHttpResponseMessage(@Nonnull final RequestInformation requestInfo) {
+    private final static String claimsKey = "claims";
+    private CompletableFuture<Response> getHttpResponseMessage(@Nonnull final RequestInformation requestInfo, @Nullable final String claims) {
         Objects.requireNonNull(requestInfo, "parameter requestInfo cannot be null");
         this.setBaseUrlForRequestInformation(requestInfo);
-        return this.authProvider.authenticateRequest(requestInfo).thenCompose(x -> {
+        final Map<String, Object> additionalContext = new HashMap<>();
+        if(claims != null && !claims.isEmpty()) {
+            additionalContext.put(claimsKey, claims);
+        }
+        return this.authProvider.authenticateRequest(requestInfo, additionalContext).thenCompose(x -> {
             try {
                 final OkHttpCallbackFutureWrapper wrapper = new OkHttpCallbackFutureWrapper();
                 this.client.newCall(getRequestFromRequestInformation(requestInfo)).enqueue(wrapper);
@@ -301,8 +307,47 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
                 result.completeExceptionally(ex);
                 return result;
             }
-        });
-        
+        }).thenCompose(x -> this.retryCAEResponseIfRequired(x, requestInfo, claims));
+    }
+    private final static Pattern bearerPattern = Pattern.compile("^Bearer\\s.*", Pattern.CASE_INSENSITIVE);
+    private final static Pattern claimsPattern = Pattern.compile("\\s?claims=\"([^\"]+)\"", Pattern.CASE_INSENSITIVE);
+    private CompletableFuture<Response> retryCAEResponseIfRequired(@Nonnull final Response response, @Nonnull final RequestInformation requestInfo, @Nullable final String claims) {
+        final var responseClaims = this.getClaimsFromResponse(response, requestInfo, claims);
+        if (responseClaims != null && !responseClaims.isEmpty()) {
+            if(requestInfo.content != null && requestInfo.content.markSupported()) {
+                requestInfo.content.reset();
+            }
+            return this.getHttpResponseMessage(requestInfo, claims);
+        }
+
+        return CompletableFuture.completedFuture(response);
+    }
+    String getClaimsFromResponse(@Nonnull final Response response, @Nonnull final RequestInformation requestInfo, @Nullable final String claims) {
+        if(response.code() == 401 &&
+           (claims == null || claims.isEmpty()) && // we avoid infinite loops and retry only once
+           (requestInfo.content == null || requestInfo.content.markSupported())) {
+               final var authenticateHeader = response.headers("WWW-Authenticate");
+               if(authenticateHeader != null && !authenticateHeader.isEmpty()) {
+                    String rawHeaderValue = null;
+                    for(final var authenticateEntry: authenticateHeader) {
+                        final var matcher = bearerPattern.matcher(authenticateEntry);
+                        if(matcher.matches()) {
+                            rawHeaderValue = authenticateEntry.replaceFirst("^Bearer\\s", "");
+                            break;
+                        }
+                    }
+                    if (rawHeaderValue != null) {
+                        final var parameters = rawHeaderValue.split(",");
+                        for(final var parameter: parameters) {
+                            final var matcher = claimsPattern.matcher(parameter);
+                            if(matcher.matches()) {
+                                return matcher.group(1);
+                            }
+                        }
+                    }
+                }
+            }
+            return null;
     }
     private void setBaseUrlForRequestInformation(@Nonnull final RequestInformation requestInfo) {
         Objects.requireNonNull(requestInfo);

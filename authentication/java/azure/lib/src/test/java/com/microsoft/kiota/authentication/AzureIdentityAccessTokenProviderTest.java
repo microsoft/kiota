@@ -25,11 +25,12 @@ import com.microsoft.kiota.HttpMethod;
 import com.microsoft.kiota.RequestInformation;
 
 class AzureIdentityAccessTokenProviderTest {
-    @Test void testAddsClaimsToTheTokenContext() throws URISyntaxException {
+    @Test
+    void testAddsClaimsToTheTokenContext() throws URISyntaxException {
         final var credentialMock = mock(TokenCredential.class);
         when(credentialMock.getToken(any(TokenRequestContext.class))).thenAnswer(r -> {
             final var context = (TokenRequestContext) r.getArgument(0);
-            assertNotNull(context.getClaims());
+            assertEquals(context.getClaims(), "{\"access_token\":{\"nbf\":{\"essential\":true, \"value\":\"1652813508\"}}}");
             return Mono.just(mock(AccessToken.class));
         });
         final var authenticationProvider = new AzureIdentityAuthenticationProvider(credentialMock, null, "User.Read");

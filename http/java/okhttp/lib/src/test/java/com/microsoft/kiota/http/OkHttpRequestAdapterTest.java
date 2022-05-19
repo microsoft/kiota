@@ -6,8 +6,49 @@ package com.microsoft.kiota.http;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import okhttp3.Call;
+import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
+import okhttp3.Response;
+import okhttp3.Request;
+
+import java.lang.InterruptedException;
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletableFuture;
+import java.net.URI;
+import java.net.URISyntaxException;
+
+import com.microsoft.kiota.authentication.AuthenticationProvider;
+import com.microsoft.kiota.RequestInformation;
+import com.microsoft.kiota.HttpMethod;
+
+
 class OkHttpRequestAdapterTest {
-    @Test void testSomeHttpCoreMethod() {
-        assertTrue(true, "someLibraryMethod should return 'true'");
+    @Test
+    void testGetsClaims() throws IOException, URISyntaxException, InterruptedException, ExecutionException {
+        final var authenticationProvider = mock(AuthenticationProvider.class);
+        final var response = new Response.Builder()
+                .code(401)
+                .message("Unauthenticated")
+                .header("WWW-Authenticate", "Bearer realm=\"\", authorization_uri=\"https://login.microsoftonline.com/common/oauth2/authorize\", client_id=\"00000003-0000-0000-c000-000000000000\", error=\"insufficient_claims\", claims=\"eyJhY2Nlc3NfdG9rZW4iOnsibmJmIjp7ImVzc2VudGlhbCI6dHJ1ZSwgInZhbHVlIjoiMTY1MjgxMzUwOCJ9fX0=\"")
+                .protocol(Protocol.HTTP_2)
+                .request(new Request.Builder().url("https://example.com").build())
+                .build();
+
+        final var requestAdapter = new OkHttpRequestAdapter(authenticationProvider);
+        final var requestInfo = new RequestInformation() {{
+            this.httpMethod = HttpMethod.GET;
+            this.setUri(new URI("https://graph.microsoft.com/v1.0/me"));
+        }};
+        final var result = requestAdapter.getClaimsFromResponse(response, requestInfo, null);
+        assertEquals("eyJhY2Nlc3NfdG9rZW4iOnsibmJmIjp7ImVzc2VudGlhbCI6dHJ1ZSwgInZhbHVlIjoiMTY1MjgxMzUwOCJ9fX0=", result);
     }
 }
