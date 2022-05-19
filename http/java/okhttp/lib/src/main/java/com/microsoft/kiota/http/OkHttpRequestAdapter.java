@@ -251,10 +251,11 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
         });
     }
     private ParseNode getRootParseNode(final Response response) throws IOException {
-        final ResponseBody body = response.body();
-        try (final InputStream rawInputStream = body.byteStream()) {
-            final ParseNode rootNode = pNodeFactory.getParseNode(getMediaTypeAndSubType(body.contentType()), rawInputStream);
-            return rootNode;
+        try (final ResponseBody body = response.body()) {
+            try (final InputStream rawInputStream = body.byteStream()) {
+                final ParseNode rootNode = pNodeFactory.getParseNode(getMediaTypeAndSubType(body.contentType()), rawInputStream);
+                return rootNode;
+            }
         }
     }
     private boolean shouldReturnNull(final Response response) {
@@ -315,8 +316,13 @@ public class OkHttpRequestAdapter implements com.microsoft.kiota.RequestAdapter 
         final var responseClaims = this.getClaimsFromResponse(response, requestInfo, claims);
         if (responseClaims != null && !responseClaims.isEmpty()) {
             if(requestInfo.content != null && requestInfo.content.markSupported()) {
-                requestInfo.content.reset();
+                try {
+                    requestInfo.content.reset();
+                } catch (IOException ex) {
+                    return CompletableFuture.failedFuture(ex);
+                }
             }
+            response.close();
             return this.getHttpResponseMessage(requestInfo, claims);
         }
 
