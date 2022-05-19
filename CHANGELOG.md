@@ -34,7 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug with enums detection for generation. (interpreted as string)
 - Fixes a bug where classes names cleanup could end-up in a collision.
 - Fixes a bug where null reference exception would be thrown when trying to lookup type inheritance on discriminators
-- Updated the lookup of model namespaces to only look in the target namespace to avoid reference collissions
+- Fixes the lookup of model namespaces to only look in the target namespace to avoid reference collissions
+- Fixes a bug for the generated send method for paths returning Enums in dotnet.
 
 ## [0.1.3] - 2022-05-06
 
