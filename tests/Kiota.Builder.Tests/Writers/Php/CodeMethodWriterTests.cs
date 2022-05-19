@@ -106,7 +106,7 @@ namespace Kiota.Builder.Writers.Php.Tests
                 ReturnType = new CodeType()
                 {
                     IsExternal = true,
-                    Name = "returnType"
+                    Name = "StreamInterface"
                 },
                 Description = "This will send a POST request",
                 Kind = CodeMethodKind.RequestExecutor
@@ -134,7 +134,18 @@ namespace Kiota.Builder.Writers.Php.Tests
             };
             codeClass.AddMethod(codeMethod);
             codeClass.AddMethod(codeMethodRequestGenerator);
-            
+            var error4XX = root.AddClass(new CodeClass{
+                Name = "Error4XX",
+            }).First();
+            var error5XX = root.AddClass(new CodeClass{
+                Name = "Error5XX",
+            }).First();
+            var error401 = root.AddClass(new CodeClass{
+                Name = "Error401",
+            }).First();
+            codeMethod.AddErrorMapping("4XX", new CodeType {Name = "Error4XX", TypeDefinition = error4XX});
+            codeMethod.AddErrorMapping("5XX", new CodeType {Name = "Error5XX", TypeDefinition = error5XX});
+            codeMethod.AddErrorMapping("403", new CodeType {Name = "Error403", TypeDefinition = error401});
             _codeMethodWriter.WriteCodeElement(codeMethod, writer);
             var result = tw.ToString();
 
@@ -142,6 +153,8 @@ namespace Kiota.Builder.Writers.Php.Tests
             Assert.Contains("$requestInfo = $this->createPostRequestInformation();", result);
             Assert.Contains("RejectedPromise", result);
             Assert.Contains("catch(Exception $ex)", result);
+            Assert.Contains("'403' => array(Error403::class, 'createFromDiscriminatorValue')", result);
+            Assert.Contains("return $this->requestAdapter->sendPrimitiveAsync($requestInfo, StreamInterface::class, $responseHandler, $errorMappings);", result);
         }
         
         [Fact]
@@ -683,16 +696,16 @@ namespace Kiota.Builder.Writers.Php.Tests
             writer.Write(deserializerMethod);
             var result = tw.ToString();
 
-            Assert.Contains("'name' => function (ParseNode $n) use ($currentObject) { $currentObject->setName($n->getStringValue()); },", result);
-            Assert.Contains("'story' => function (ParseNode $n) use ($currentObject) { $currentObject->setStory($n->getBinaryContent()); }", result);
+            Assert.Contains("'name' => function (ParseNode $n) use ($o) { $o->setName($n->getStringValue()); },", result);
+            Assert.Contains("'story' => function (ParseNode $n) use ($o) { $o->setStory($n->getBinaryContent()); }", result);
             Assert.Contains(
-                "'years' => function (ParseNode $n) use ($currentObject) { $currentObject->setYears($n->getCollectionOfPrimitiveValues())",
+                "'years' => function (ParseNode $n) use ($o) { $o->setYears($n->getCollectionOfPrimitiveValues())",
                 result);
             Assert.Contains(
-                "'users' => function (ParseNode $n) use ($currentObject) { $currentObject->setUsers($n->getCollectionOfObjectValues(EmailAddress::class));",
+                "'users' => function (ParseNode $n) use ($o) { $o->setUsers($n->getCollectionOfObjectValues(array(EmailAddress::class, 'createFromDiscriminatorValue')));",
                 result);
             Assert.Contains(
-                "'dOB' => function (ParseNode $n) use ($currentObject) { $currentObject->setDOB($n->getDateTimeValue());",
+                "'dOB' => function (ParseNode $n) use ($o) { $o->setDOB($n->getDateTimeValue());",
                 result);
         }
 
@@ -724,8 +737,21 @@ namespace Kiota.Builder.Writers.Php.Tests
                     Name = "array"
                 }
             };
+            var cls = new CodeClass()
+            {
+                Name = "ModelParent",
+                Kind = CodeClassKind.Model,
+                Parent = root,
+                StartBlock = new ClassDeclaration() {Implements = { }, Name = "ModelParent", Parent = root}
+            };
+            root.AddClass(cls);
+            currentClass.StartBlock.Inherits = new CodeType()
+            {
+                TypeDefinition = cls
+            };
             currentClass.AddMethod(deserializerMethod);
             
+            _refiner.Refine(parentClass.Parent as CodeNamespace);
             _codeMethodWriter.WriteCodeElement(deserializerMethod, writer);
             var result = tw.ToString();
 

@@ -194,8 +194,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             {
                 originalType.Name = "Record<string, unknown>";
                 urlTplParams.Description = "The raw url or the Url template parameters for the request.";
-                var unionType = new CodeUnionType
-                {
+                var unionType = new CodeExclusionType {
                     Name = "rawUrlOrTemplateParameters",
                     IsNullable = true,
                 };

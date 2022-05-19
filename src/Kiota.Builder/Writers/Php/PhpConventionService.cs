@@ -36,12 +36,12 @@ namespace Kiota.Builder.Writers.Php
         public string DocCommentStart => "/**";
 
         public string DocCommentEnd => "*/";
+        internal HashSet<string> PrimitiveTypes = new(StringComparer.OrdinalIgnoreCase) {"string", "boolean", "integer", "float", "date", "datetime", "time", "dateinterval", "int", "double", "decimal", "bool"};
         
-        internal HashSet<string> PrimitiveTypes = new(StringComparer.OrdinalIgnoreCase) {"string", "float", "date", "datetime", "time", "dateinterval", "int", "bool"};
-
+        internal readonly HashSet<string> CustomTypes = new(StringComparer.OrdinalIgnoreCase) {"Date", "DateTime", "StreamInterface", "Byte", "Time"};
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
         {
-            if(code is CodeUnionType) 
+            if(code is CodeComposedTypeBase) 
                 throw new InvalidOperationException($"PHP does not support union types, the union type {code.Name} should have been filtered out by the refiner.");
             if (code is CodeType currentType)
             {

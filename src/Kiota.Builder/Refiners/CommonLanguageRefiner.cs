@@ -327,20 +327,23 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected static void ConvertUnionTypesToWrapper(CodeElement currentElement, bool usesBackingStore, bool supportInnerClasses = true) {
         var parentClass = currentElement.Parent as CodeClass;
         if(currentElement is CodeMethod currentMethod) {
-            if(currentMethod.ReturnType is CodeUnionType currentUnionType)
-                currentMethod.ReturnType = ConvertUnionTypeToWrapper(parentClass, currentUnionType, usesBackingStore, supportInnerClasses);
-            if(currentMethod.Parameters.Any(x => x.Type is CodeUnionType))
-                foreach(var currentParameter in currentMethod.Parameters.Where(x => x.Type is CodeUnionType))
-                    currentParameter.Type = ConvertUnionTypeToWrapper(parentClass, currentParameter.Type as CodeUnionType, usesBackingStore, supportInnerClasses);
+            if(currentMethod.ReturnType is CodeComposedTypeBase currentUnionType)
+                currentMethod.ReturnType = ConvertComposedTypeToWrapper(parentClass, currentUnionType, usesBackingStore, supportInnerClasses);
+            if(currentMethod.Parameters.Any(static x => x.Type is CodeComposedTypeBase))
+                foreach(var currentParameter in currentMethod.Parameters.Where(x => x.Type is CodeComposedTypeBase))
+                    currentParameter.Type = ConvertComposedTypeToWrapper(parentClass, currentParameter.Type as CodeComposedTypeBase, usesBackingStore, supportInnerClasses);
+            if(currentMethod.ErrorMappings.Select(static x => x.Value).OfType<CodeComposedTypeBase>().Any())
+                foreach(var errorUnionType in currentMethod.ErrorMappings.Select(static x => x.Value).OfType<CodeComposedTypeBase>())
+                    currentMethod.ReplaceErrorMapping(errorUnionType, ConvertComposedTypeToWrapper(parentClass, errorUnionType, usesBackingStore, supportInnerClasses));
         }
-        else if (currentElement is CodeIndexer currentIndexer && currentIndexer.ReturnType is CodeUnionType currentUnionType)
-            currentIndexer.ReturnType = ConvertUnionTypeToWrapper(parentClass, currentUnionType, usesBackingStore);
-        else if(currentElement is CodeProperty currentProperty && currentProperty.Type is CodeUnionType currentPropUnionType)
-            currentProperty.Type = ConvertUnionTypeToWrapper(parentClass, currentPropUnionType, usesBackingStore, supportInnerClasses);
+        else if (currentElement is CodeIndexer currentIndexer && currentIndexer.ReturnType is CodeComposedTypeBase currentUnionType)
+            currentIndexer.ReturnType = ConvertComposedTypeToWrapper(parentClass, currentUnionType, usesBackingStore);
+        else if(currentElement is CodeProperty currentProperty && currentProperty.Type is CodeComposedTypeBase currentPropUnionType)
+            currentProperty.Type = ConvertComposedTypeToWrapper(parentClass, currentPropUnionType, usesBackingStore, supportInnerClasses);
 
         CrawlTree(currentElement, x => ConvertUnionTypesToWrapper(x, usesBackingStore, supportInnerClasses));
     }
-    private static CodeTypeBase ConvertUnionTypeToWrapper(CodeClass codeClass, CodeUnionType codeUnionType, bool usesBackingStore, bool supportsInnerClasses = true)
+    private static CodeTypeBase ConvertComposedTypeToWrapper(CodeClass codeClass, CodeComposedTypeBase codeUnionType, bool usesBackingStore, bool supportsInnerClasses = true)
     {
         if(codeClass == null) throw new ArgumentNullException(nameof(codeClass));
         if(codeUnionType == null) throw new ArgumentNullException(nameof(codeUnionType));
@@ -357,6 +360,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }).Last();
         }
         else {
+            if(codeUnionType.Name.Equals(codeClass.Name, StringComparison.OrdinalIgnoreCase))
+                codeUnionType.Name = $"{codeUnionType.Name}Wrapper";
             newClass = codeClass.AddInnerClass(new CodeClass {
             Name = codeUnionType.Name,
             Description = description}).First();
@@ -368,28 +373,14 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                     Type = x,
                                     Description = $"Union type representation for type {x.Name}"
                                 }).ToArray());
-        if(codeUnionType.Types.All(x => x.TypeDefinition is CodeClass targetClass && targetClass.IsOfKind(CodeClassKind.Model) ||
-                                x.TypeDefinition is CodeEnum))
+        if(codeUnionType.Types.All(static x => x.TypeDefinition is CodeClass targetClass && targetClass.IsOfKind(CodeClassKind.Model) ||
+                                x.TypeDefinition is CodeEnum || x.TypeDefinition is null))
         {
             KiotaBuilder.AddSerializationMembers(newClass, true, usesBackingStore);
             newClass.Kind = CodeClassKind.Model;
         }
-        // Add the discrimnator function to the wrapper as it will be referenced. 
-        var factoryMethod = newClass.AddMethod(new CodeMethod
-        {
-            Name = "CreateFromDiscriminatorValue",
-            ReturnType = new CodeType { TypeDefinition = newClass, Name = newClass.Name, IsNullable = false },
-            Kind = CodeMethodKind.Factory,
-            IsStatic = true,
-            IsAsync = false,
-        }).First();
-        factoryMethod.AddParameter(new CodeParameter
-        {
-            Name = "parseNode",
-            Kind = CodeParameterKind.ParseNode,
-            Optional = false,
-            Type = new CodeType { Name = "IParseNode", IsExternal = true },
-        });
+        // Add the discriminator function to the wrapper as it will be referenced. 
+        KiotaBuilder.AddDiscriminatorMethod(newClass, default); //TODO map the discriminator prop name + type mapping + flag to union/exclusion once the vocabulary is available
         return new CodeType {
             Name = newClass.Name,
             TypeDefinition = newClass,
@@ -428,35 +419,11 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         CrawlTree(currentElement, c => ReplaceIndexersByMethodsWithParameter(c, rootNamespace, parameterNullable, methodNameSuffix));
     }
     private static void AddIndexerMethod(CodeElement currentElement, CodeClass targetClass, CodeClass indexerClass, string methodNameSuffix, bool parameterNullable, CodeIndexer currentIndexer) {
-        if(currentElement is CodeProperty currentProperty && currentProperty.Type.AllTypes.Any(x => x.TypeDefinition == targetClass)) {
-            var parentClass = currentElement.Parent as CodeClass;
-            var method = new CodeMethod {
-                IsAsync = false,
-                IsStatic = false,
-                Access = AccessModifier.Public,
-                Kind = CodeMethodKind.IndexerBackwardCompatibility,
-                Name = currentIndexer.PathSegment + methodNameSuffix,
-                Description = currentIndexer.Description,
-                ReturnType = new CodeType {
-                    IsNullable = false,
-                    TypeDefinition = indexerClass,
-                    Name = indexerClass.Name,
-                },
-                OriginalIndexer = currentIndexer,
-            };
-            var parameter = new CodeParameter {
-                Name = "id",
-                Optional = false,
-                Kind = CodeParameterKind.Custom,
-                Description = "Unique identifier of the item",
-                Type = new CodeType {
-                    Name = "String",
-                    IsNullable = parameterNullable,
-                    IsExternal = true,
-                },
-            };
-            method.AddParameter(parameter);
-            parentClass.AddMethod(method);
+        if(currentElement is CodeProperty currentProperty &&
+            currentProperty.Type.AllTypes.Any(x => x.TypeDefinition == targetClass) &&
+            currentProperty.Parent is CodeClass parentClass)
+        {
+            parentClass.AddMethod(CodeMethod.FromIndexer(currentIndexer, indexerClass, methodNameSuffix, parameterNullable));
         }
         CrawlTree(currentElement, c => AddIndexerMethod(c, targetClass, indexerClass, methodNameSuffix, parameterNullable, currentIndexer));
     }
@@ -472,18 +439,18 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             var parentNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
             var innerClasses = currentClass
                                     .Methods
-                                    .SelectMany(x => x.Parameters)
-                                    .Where(x => x.Type.ActionOf && (x.IsOfKind(CodeParameterKind.RequestConfiguration)))
-                                    .SelectMany(x => x.Type.AllTypes)
-                                    .Select(x => x.TypeDefinition)
+                                    .SelectMany(static x => x.Parameters)
+                                    .Where(static x => x.Type.ActionOf && x.IsOfKind(CodeParameterKind.RequestConfiguration))
+                                    .SelectMany(static x => x.Type.AllTypes)
+                                    .Select(static x => x.TypeDefinition)
                                     .OfType<CodeClass>();
 
             // ensure we do not miss out the types present in request configuration objects i.e. the query parameters
             var nestedQueryParameters = innerClasses
-                                    .SelectMany( x => x.Properties)
-                                    .Where(x => x.IsOfKind(CodePropertyKind.QueryParameters))
-                                    .SelectMany(x => x.Type.AllTypes)
-                                    .Select(x => x.TypeDefinition)
+                                    .SelectMany(static x => x.Properties)
+                                    .Where(static x => x.IsOfKind(CodePropertyKind.QueryParameters))
+                                    .SelectMany(static x => x.Type.AllTypes)
+                                    .Select(static x => x.TypeDefinition)
                                     .OfType<CodeClass>();
 
             var nestedClasses = new List<CodeClass>();
