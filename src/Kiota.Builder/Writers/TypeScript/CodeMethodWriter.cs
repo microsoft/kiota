@@ -145,7 +145,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         if (inherits || parentClass.IsErrorDefinition)
             writer.WriteLine("super();");
         var propertiesWithDefaultValues = new List<CodePropertyKind> {
-            CodePropertyKind.AdditionalData,
+            //CodePropertyKind.AdditionalData,
             CodePropertyKind.BackingStore,
             CodePropertyKind.RequestBuilder,
             CodePropertyKind.UrlTemplate,
@@ -332,11 +332,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             if (requestParams.requestBody.Type.Name.Equals(localConventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                 writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name});");
             else {
-              //  var spreadOperator = requestParams.requestBody.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
-              //  var setMethodName = requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass ? "setContentFromParsable" : "setContentFromScalar";
-              //  writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {spreadOperator}{requestParams.requestBody.Name});");
-            
-                writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", bodyParsable);");
+                var spreadOperator = requestParams.requestBody.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
+                var setMethodName = requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass ? "setContentFromParsable" : "setContentFromScalar";
+                writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {spreadOperator}{requestParams.requestBody.Name});");
+
+                // writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", bodyParsable);");
             }
         }
 
@@ -364,7 +364,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             }
             else
             {
-                writer.WriteLine($"if(this.{otherPropName})");
                 var propertyType = localConventions.TranslateType(otherProp.Type);
                 str = IsPredefinedType(otherProp.Type) || !IsCodeClassOrInterface(otherProp.Type) ? $"{spreadOperator}this.{otherPropName}" : $"new {propertyType}{ModelClassSuffix}(this.{otherPropName})";
             }
@@ -479,21 +478,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
 
     }
     private static string GetFactoryMethodName(string targetClassName) =>
-        $"create{targetClassName.ToFirstCharacterUpperCase()}FromDiscriminatorValue";
+        $"create{targetClassName.Split("Impl")[0].ToFirstCharacterUpperCase()}FromDiscriminatorValue";
     private string GetSerializationMethodName(CodeTypeBase propType)
     {
-        var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
+      
         var propertyType = localConventions.TranslateType(propType);
         if (propType is CodeType currentType)
         {
-            if (currentType.TypeDefinition is CodeEnum currentEnum)
-                return $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}>";
-            else if (isCollection)
-            {
-                if (currentType.TypeDefinition == null)
-                    return $"writeCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>";
-                else
-                    return $"writeCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}{(IsCodeClassOrInterface(currentType) ? ModelClassSuffix : String.Empty)}>";
+            var result = GetSerializationMethodNameForCodeType(currentType, propertyType);
+            if (!String.IsNullOrWhiteSpace(result)) {
+                return result;            
             }
         }
         return propertyType switch
@@ -501,6 +495,21 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             "string" or "boolean" or "number" or "Guid" or "Date" or "DateOnly" or "TimeOnly" or "Duration" => $"write{propertyType.ToFirstCharacterUpperCase()}Value",
             _ => $"writeObjectValue<{propertyType.ToFirstCharacterUpperCase()}{ModelClassSuffix}>",
         };
+    }
+
+    private string GetSerializationMethodNameForCodeType(CodeType propType, string propertyType)
+    {
+        var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
+        if (propType.TypeDefinition is CodeEnum currentEnum)
+            return $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}>";
+        else if (isCollection)
+        {
+            if (propType.TypeDefinition == null)
+                return $"writeCollectionOfPrimitiveValues<{propertyType.ToFirstCharacterLowerCase()}>";
+            else
+                return $"writeCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}{(IsCodeClassOrInterface(propType) ? ModelClassSuffix : String.Empty)}>";
+        }
+        return null;
     }
     private string GetTypeFactory(bool isVoid, bool isStream, string returnType)
     {
@@ -514,9 +523,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         else if (isCollection)
         {
             if (conventions.IsPrimitiveType(returnType)) return $"sendCollectionOfPrimitiveAsync<{returnType}>";
-            else return $"sendCollectionAsync<{returnType}{ModelClassSuffix}>";
+            else return $"sendCollectionAsync<{returnType}>";
         }
         else if (isStream || conventions.IsPrimitiveType(returnType)) return $"sendPrimitiveAsync<{returnType}>";
-        else return $"sendAsync<{returnType}{ModelClassSuffix}>";
+        else return $"sendAsync<{returnType}>";
     }
 }

@@ -80,8 +80,19 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         AddQueryParameterMapperMethod(
             generatedCode
         );
+        //MakeAdditonalDataPropertyOptional(generatedCode);
         AddModelsInterfaces(generatedCode);
         ReplaceRequestConfigurationsQueryParamsWithInterfaces(generatedCode);
+
+    }
+
+    private static void MakeAdditonalDataPropertyOptional(CodeElement currentElement)
+    {
+        if (currentElement is CodeProperty codeProperty && codeProperty.IsOfKind(CodePropertyKind.AdditionalData) && codeProperty.Type is CodeType type)
+        {
+            type.IsNullable = true;
+        }
+        CrawlTree(currentElement, MakeAdditonalDataPropertyOptional);
     }
 
     private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
@@ -194,7 +205,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             {
                 originalType.Name = "Record<string, unknown>";
                 urlTplParams.Description = "The raw url or the Url template parameters for the request.";
-                var unionType = new CodeExclusionType {
+                var unionType = new CodeExclusionType
+                {
                     Name = "rawUrlOrTemplateParameters",
                     IsNullable = true,
                 };
@@ -288,7 +300,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, x => ReplaceRequestConfigurationsQueryParamsWithInterfaces(x));
     }
-    private const string TemporaryInterfaceNameSuffix= "Interface";
+    private const string TemporaryInterfaceNameSuffix = "Interface";
     private const string FinalModelClassNameSuffix = "Impl";
     private static void AddModelsInterfaces(CodeElement generatedCode)
     {
@@ -314,6 +326,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         else if (currentElement is CodeInterface modelInterface && modelInterface.IsOfKind(CodeInterfaceKind.Model) && modelInterface.Name.EndsWith(TemporaryInterfaceNameSuffix))
         {
             modelInterface.Name = ReturnFinalInterfaceName(modelInterface.Name);
+        }
+        else if (currentElement is CodeFunction codeFunction) {
+            var s = codeFunction.OriginalLocalMethod?.DiscriminatorMappings?.Select(y => y.Value).Where(y => y is CodeType codeType && codeType.TypeDefinition is CodeClass modelClass && modelClass.IsOfKind(CodeClassKind.Model)).ToList();
+               s.ForEach(x=> { x.Name = x.Name + FinalModelClassNameSuffix; });
         }
 
         CrawlTree(currentElement, x => RenameModelInterfacesAndClasses(x));
@@ -341,7 +357,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             SetTypeAndAddUsing(CreateModelInterface(modelClass, interfaceNamingCallback), type, codeProperty);
         }
-        else if (currentElement is CodeMethod codeMethod && codeMethod.IsOfKind(CodeMethodKind.RequestExecutor,CodeMethodKind.RequestGenerator))
+        else if (currentElement is CodeMethod codeMethod && codeMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator))
         {
             ProcessModelClassesAssociatedWithMethods(codeMethod, interfaceNamingCallback);
         }
@@ -363,17 +379,15 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             if (parentClass != null && parentClass.Name != returnClass.Name)
             {
                 parentClass.AddUsing(new CodeUsing { Name = returnClass.Parent.Name, Declaration = new CodeType { Name = returnClass.Name, TypeDefinition = returnClass } });
-
             }
         }
-
 
         var requestBodyParam = codeMethod?.Parameters?.OfKind(CodeParameterKind.RequestBody);
         if (requestBodyParam != null && requestBodyParam.Type is CodeType paramType && paramType.TypeDefinition is CodeClass paramClass)
         {
             SetTypeAndAddUsing(CreateModelInterface(paramType.TypeDefinition as CodeClass, interfaceNamingCallback), paramType, requestBodyParam);
             if (parentClass != null && parentClass.Name != paramClass.Name)
-            {    
+            {
                 parentClass.AddUsing(new CodeUsing { Name = paramClass.Parent.Name, Declaration = new CodeType { Name = paramClass.Name, TypeDefinition = paramClass } });
 
             }
@@ -531,21 +545,21 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             {
                 if (methodReturnType?.TypeDefinition is CodeClass methodTypeClass)
                 {
-                    var resultType = ReplaceModelClassTypeByInterface(methodTypeClass, methodReturnType, interfaceNamingCallback);
+                    var resultType = ReturnUpdatedModelInterfaceTypeAndUsing(methodTypeClass, methodReturnType, interfaceNamingCallback);
                     modelClass.AddUsing(resultType.Item2);
-                    if (resultType.Item2.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>() != namespaceOfModel)
-                        modelInterface.StartBlock.AddUsings(resultType.Item2.Clone() as CodeUsing);
+                    //if (resultType.Item2.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>() != namespaceOfModel)
+                      // modelInterface.AddUsing(resultType.Item2);
                 }
-                else if (methodReturnType.TypeDefinition is CodeEnum methodEnumType)
-                    modelInterface.StartBlock.AddUsings(new CodeUsing
-                    {
-                        Name = methodEnumType.Parent.Name,
-                        Declaration = new CodeType
-                        {
-                            Name = methodEnumType.Name,
-                            TypeDefinition = methodEnumType,
-                        }
-                    });
+                //else if (methodReturnType.TypeDefinition is CodeEnum methodEnumType)
+                //    modelInterface.StartBlock.AddUsings(new CodeUsing
+                //    {
+                //        Name = methodEnumType.Parent.Name,
+                //        Declaration = new CodeType
+                //        {
+                //            Name = methodEnumType.Name,
+                //            TypeDefinition = methodEnumType,
+                //        }
+                //    });
             }
 
             foreach (var parameter in method.Parameters)
@@ -554,22 +568,49 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 {
                     if (parameterType.TypeDefinition is CodeClass parameterTypeClass)
                     {
-                        var resultType = ReplaceModelClassTypeByInterface(parameterTypeClass, parameterType, interfaceNamingCallback);
+                        var resultType = ReturnUpdatedModelInterfaceTypeAndUsing(parameterTypeClass, parameterType, interfaceNamingCallback);
                         modelClass.AddUsing(resultType.Item2);
-                        if (resultType.Item2.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>() != namespaceOfModel)
-                            modelInterface.StartBlock.AddUsings(resultType.Item2.Clone() as CodeUsing);
+                        //if (resultType.Item2.Declaration.TypeDefinition.GetImmediateParentOfType<CodeNamespace>() != namespaceOfModel)
+                        //    modelInterface.StartBlock.AddUsings(resultType.Item2);
                     }
-                    else if (parameterType.TypeDefinition is CodeEnum parameterEnumType)
-                        modelInterface.StartBlock.AddUsings(new CodeUsing
-                        {
-                            Name = parameterEnumType.Parent.Name,
-                            Declaration = new CodeType
-                            {
-                                Name = parameterEnumType.Name,
-                                TypeDefinition = parameterEnumType,
-                            }
-                        });
+                    //else if (parameterType.TypeDefinition is CodeEnum parameterEnumType)
+                    //    modelInterface.StartBlock.AddUsings(new CodeUsing
+                    //    {
+                    //        Name = parameterEnumType.Parent.Name,
+                    //        Declaration = new CodeType
+                    //        {
+                    //            Name = parameterEnumType.Name,
+                    //            TypeDefinition = parameterEnumType,
+                    //        }
+                    //    });
                 }
+        }
+    }
+
+    private static void UpdatePropertyTypeInModelClass(CodeClass modelClass, CodeClass propertyClass, (CodeInterface, CodeUsing) propertyTypeAndUsing)
+    {
+        modelClass.AddUsing(propertyTypeAndUsing.Item2);
+        /***
+        * Append "impl" and add class property type in  the model class usings as they will be required by the serializer method. 
+        */
+        if (modelClass.Name != propertyClass.Name)
+        {
+            modelClass.AddUsing(new CodeUsing
+            {
+                Name = propertyClass.Parent.Name,
+                Declaration = new CodeType
+                {
+                    Name = propertyClass.Name + (propertyClass.Name.EndsWith(FinalModelClassNameSuffix) ? string.Empty : FinalModelClassNameSuffix),
+                    TypeDefinition = propertyClass,
+                }
+            });
+        }
+    }
+    private static void SetUsingInModelInterface(CodeInterface modelInterface, (CodeInterface, CodeUsing) propertyTypeAndUsing)
+    {
+        if (modelInterface.Name != propertyTypeAndUsing.Item1.Name)
+        {
+            modelInterface.AddUsing(propertyTypeAndUsing.Item2);
         }
     }
     private static void ProcessModelClassProperties(CodeClass modelClass, CodeInterface modelInterface, IEnumerable<CodeProperty> properties, Func<CodeClass, string> interfaceNamingCallback)
@@ -580,12 +621,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
          */
         foreach (var mProp in properties)
         {
-            if (mProp.IsOfKind(CodePropertyKind.AdditionalData) && mProp.Type is CodeType type) { 
-                type.IsNullable = true;
-            }
-            if (mProp.Type is CodeType externalType && externalType.IsExternal)
+            if (mProp.Type is CodeType nonModelClassType && (nonModelClassType.IsExternal || (!(nonModelClassType.TypeDefinition is CodeClass))))
             {
-                var usingExternal = modelClass.Usings.FirstOrDefault(x => String.Equals(x.Name, externalType.Name, StringComparison.OrdinalIgnoreCase));
+                var usingExternal = modelClass.Usings.FirstOrDefault(x => (String.Equals(x.Name, nonModelClassType.Name, StringComparison.OrdinalIgnoreCase) || String.Equals(x.Declaration.Name, nonModelClassType.Name, StringComparison.OrdinalIgnoreCase)));
 
                 if (usingExternal != null)
                 {
@@ -594,44 +632,15 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
             else if (mProp.Type is CodeType propertyType && propertyType.TypeDefinition is CodeClass propertyClass)
             {
-                var codeUsing = ReplaceModelClassTypeByInterface(propertyClass, propertyType, interfaceNamingCallback);
-
-                if (modelInterface.Name != codeUsing.Item1.Name)
-                {
-                    modelInterface.AddUsing(codeUsing.Item2);
-                }
-                modelClass.AddUsing(codeUsing.Item2);
-
-                /***
-                 * Append "impl" and add class property type in  the model class usings as they will be required by the serializer method. 
-                 */
-                if (modelClass.Name != propertyClass.Name)
-                {
-                    modelClass.AddUsing(new CodeUsing
-                    {
-                        Name = mProp.Parent.Name,
-                        Declaration = new CodeType
-                        {
-                            Name = propertyClass.Name + FinalModelClassNameSuffix,
-                            TypeDefinition = propertyClass,
-                        }
-                    });
-                }
-            }
-            else if (mProp.Type is CodeType nonClassPropertyType && nonClassPropertyType is CodeType nonClassTypeDef && !(nonClassTypeDef.TypeDefinition is CodeClass))
-            {
-                var usingExternal = modelClass.Usings.FirstOrDefault(x => String.Equals(x.Declaration.Name, nonClassTypeDef.Name, StringComparison.OrdinalIgnoreCase));
-
-                if (usingExternal != null)
-                {
-                    modelInterface.AddUsing(usingExternal);
-                }
+                var interfaceTypeAndUsing = ReturnUpdatedModelInterfaceTypeAndUsing(propertyClass, propertyType, interfaceNamingCallback);
+                SetUsingInModelInterface(modelInterface, interfaceTypeAndUsing);
+                UpdatePropertyTypeInModelClass(modelClass, propertyClass, interfaceTypeAndUsing);
             }
 
             modelInterface.AddProperty(mProp);
         }
     }
-    private static (CodeInterface, CodeUsing) ReplaceModelClassTypeByInterface(CodeClass sourceClass, CodeType originalType, Func<CodeClass, string> interfaceNamingCallback)
+    private static (CodeInterface, CodeUsing) ReturnUpdatedModelInterfaceTypeAndUsing(CodeClass sourceClass, CodeType originalType, Func<CodeClass, string> interfaceNamingCallback)
     {
         var propertyInterfaceType = CreateModelInterface(sourceClass, interfaceNamingCallback);
         originalType.Name = propertyInterfaceType.Name;
