@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for discriminator downcast in PHP. [#1255](https://github.com/microsoft/kiota/issues/1255)
 - Added support for multiple collections indexing under the same parent.
 - Added code exclusions placeholder in the generation. (oneOf)
+- Added support for continuous access evaluation in Java. [#1179](https://github.com/microsoft/kiota/issues/1179)
 
 ### Changed
 
