@@ -45,7 +45,7 @@ namespace Kiota {
             namespaceOption.ArgumentHelpName = "name";
             AddStringRegexValidator(namespaceOption, @"^[\w][\w\._-]+", "namespace name");
 
-            var logLevelOption = new Option<LogLevel>("--loglevel", () => LogLevel.Warning, "The log level to use when logging messages to the main output.");
+            var logLevelOption = new Option<LogLevel>("--log-level", () => LogLevel.Warning, "The log level to use when logging messages to the main output.");
             logLevelOption.AddAlias("--ll");
             AddEnumValidator(logLevelOption, "log level");
 
