@@ -26,7 +26,6 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
                 }
                 else
                 {
-
                     writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{(codeElement.ReadOnly ? " readonly " : " ")}{codeElement.NamePrefix}{codeElement.Name.ToFirstCharacterLowerCase()}{(codeElement.Type.IsNullable ? "?" : string.Empty)}: {returnType}{(isFlagEnum ? "[]" : string.Empty)}{(codeElement.Type.IsNullable ? " | undefined" : string.Empty)};");
                 }
                 break;

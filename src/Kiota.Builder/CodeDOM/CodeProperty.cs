@@ -56,4 +56,9 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
     public string NamePrefix { get; set; }
     public bool IsNameEscaped { get => !string.IsNullOrEmpty(SerializationName); }
     public string SymbolName { get => IsNameEscaped ? SerializationName.CleanupSymbolName() : Name; }
+
+    public object Clone()
+    {
+        return this.MemberwiseClone();
+    }
 }

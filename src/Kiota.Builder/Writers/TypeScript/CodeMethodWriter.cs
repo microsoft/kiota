@@ -145,7 +145,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         if (inherits || parentClass.IsErrorDefinition)
             writer.WriteLine("super();");
         var propertiesWithDefaultValues = new List<CodePropertyKind> {
-            //CodePropertyKind.AdditionalData,
             CodePropertyKind.BackingStore,
             CodePropertyKind.RequestBuilder,
             CodePropertyKind.UrlTemplate,
@@ -182,7 +181,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 var interfaceProperty = $"{currentMethod.Parameters.FirstOrDefault(x => x.Type is CodeType type && type.TypeDefinition is CodeInterface).Name}?.{prop.Name.ToFirstCharacterLowerCase()}";
                 if (prop.IsOfKind(CodePropertyKind.AdditionalData))
                 {
-                    writer.WriteLine($"this.{prop.NamePrefix}{prop.Name.ToFirstCharacterLowerCase()} = {interfaceProperty} ? {prop.DefaultValue} : {interfaceProperty}!");
+                    writer.WriteLine($"this.{prop.NamePrefix}{prop.Name.ToFirstCharacterLowerCase()} = {interfaceProperty} ? {interfaceProperty}! : {prop.DefaultValue}");
                 }
                 else
                 {
@@ -331,7 +330,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
 
             if (requestParams.requestBody.Type.Name.Equals(localConventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                 writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name});");
-            else {
+            else
+            {
                 var spreadOperator = requestParams.requestBody.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
                 var setMethodName = requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass ? "setContentFromParsable" : "setContentFromScalar";
                 writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {spreadOperator}{requestParams.requestBody.Name});");
@@ -350,50 +350,57 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             writer.WriteLine("super.serialize(writer);");
         foreach (var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom))
         {
-            var isCollectionOfEnum = otherProp.Type is CodeType cType && cType.IsCollection && cType.TypeDefinition is CodeEnum;
-            var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
-            var otherPropName = otherProp.Name.ToFirstCharacterLowerCase();
-            var undefinedPrefix = isCollectionOfEnum ? $"this.{otherPropName} && " : string.Empty;
-            var isCollection = otherProp.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None && (otherProp.Type is CodeType currentType && currentType.TypeDefinition != null);
-            var str = "";
-            writer.WriteLine($"if(this.{otherPropName}){{");
-            if (isCollection && !isCollectionOfEnum)
-            {
-                str = ConvertInterfaceToClassArray(otherPropName, otherProp.Type, writer);
-
-            }
-            else
-            {
-                var propertyType = localConventions.TranslateType(otherProp.Type);
-                str = IsPredefinedType(otherProp.Type) || !IsCodeClassOrInterface(otherProp.Type) ? $"{spreadOperator}this.{otherPropName}" : $"new {propertyType}{ModelClassSuffix}(this.{otherPropName})";
-            }
-
-            writer.WriteLine($"{undefinedPrefix}writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.SerializationName ?? otherPropName}\", {str});");
-        
-            writer.WriteLine("}");
+            WritePropertySerializer(otherProp, writer);
         }
         if (additionalDataProperty != null)
             writer.WriteLine($"writer.writeAdditionalData(this.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
     }
 
+    private void WritePropertySerializer(CodeProperty codeProperty, LanguageWriter writer)
+    {
+        var isCollectionOfEnum = codeProperty.Type is CodeType cType && cType.IsCollection && cType.TypeDefinition is CodeEnum;
+        var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
+        var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
+        var undefinedPrefix = isCollectionOfEnum ? $"this.{codePropertyName} && " : string.Empty;
+        var isCollection = codeProperty.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None && codeProperty.Type is CodeType currentType && currentType.TypeDefinition != null;
+        var str = "";
+
+        if (isCollection && !isCollectionOfEnum)
+        {
+            writer.Write($"if(this.{codePropertyName} && this.{codePropertyName}.length != 0){{");
+            str = ConvertPropertyValueToInstanceArray(codePropertyName, codeProperty.Type, writer);
+        }
+        else
+        {
+            writer.WriteLine($"if(this.{codePropertyName}){{");
+            var propertyType = localConventions.TranslateType(codeProperty.Type);
+            str = IsPredefinedType(codeProperty.Type) || !IsCodeClassOrInterface(codeProperty.Type) ? $"{spreadOperator}this.{codePropertyName}" : $"new {propertyType}{ModelClassSuffix}(this.{codePropertyName})";
+        }
+
+        writer.WriteLine($"{undefinedPrefix}writer.{GetSerializationMethodName(codeProperty.Type)}(\"{codeProperty.SerializationName ?? codePropertyName}\", {str});");
+
+        writer.WriteLine("}");
+    }
+
     private bool IsCodeClassOrInterface(CodeTypeBase propType)
     {
-        return (propType is CodeType currentType && (currentType.TypeDefinition is CodeClass || currentType.TypeDefinition is CodeInterface));
+        return propType is CodeType currentType && (currentType.TypeDefinition is CodeClass || currentType.TypeDefinition is CodeInterface);
     }
-    private string ConvertInterfaceToClassArray(string propertyName, CodeTypeBase propType, LanguageWriter writer)
-    {
 
+    private string ConvertPropertyValueToInstanceArray(string propertyName, CodeTypeBase propType, LanguageWriter writer)
+    {
         var propertyType = localConventions.TranslateType(propType);
         if (IsCodeClassOrInterface(propType))
         {
             propertyType = propertyType + ModelClassSuffix;
         }
 
-        var arrName = $"{propertyName}ArrValue".ToFirstCharacterLowerCase();
-        writer.WriteLine($"const {arrName}: {propertyType}[] = []; this.{propertyName}?.forEach(element => {{{arrName}.push(new {propertyType}(element));}});");
+        var arrayName = $"{propertyName}ArrValue".ToFirstCharacterLowerCase();
 
-        return arrName;
+        writer.WriteLine($"const {arrayName}: {propertyType}[] = []; this.{propertyName}?.forEach(element => {{{arrayName}.push(new {propertyType}(element));}});");
+        return arrayName;
     }
+
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, bool isVoid)
     {
         var isDescriptionPresent = !string.IsNullOrEmpty(code.Description);
@@ -477,17 +484,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         };
 
     }
+
     private static string GetFactoryMethodName(string targetClassName) =>
-        $"create{targetClassName.Split("Impl")[0].ToFirstCharacterUpperCase()}FromDiscriminatorValue";
+        $"create{(targetClassName.EndsWith(ModelClassSuffix) ? targetClassName.Split(ModelClassSuffix)[0] : targetClassName).ToFirstCharacterUpperCase()}FromDiscriminatorValue";
+
     private string GetSerializationMethodName(CodeTypeBase propType)
     {
-      
         var propertyType = localConventions.TranslateType(propType);
         if (propType is CodeType currentType)
         {
             var result = GetSerializationMethodNameForCodeType(currentType, propertyType);
-            if (!String.IsNullOrWhiteSpace(result)) {
-                return result;            
+            if (!String.IsNullOrWhiteSpace(result))
+            {
+                return result;
             }
         }
         return propertyType switch
