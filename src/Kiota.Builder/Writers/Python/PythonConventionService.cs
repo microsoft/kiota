@@ -79,7 +79,7 @@ public class PythonConventionService : CommonLanguageConventionService
         else throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
     }
     #pragma warning restore CA1822 // Method should be static
-    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "#");
+    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription?.Replace("\\", "/");
     public override string TranslateType(CodeType type)
 
     {
@@ -87,7 +87,7 @@ public class PythonConventionService : CommonLanguageConventionService
             "String" or "string" => "str",
             "integer" or "int32" or "int64" => "int",
             "decimal" or "double" => "float",
-            "binary" => "bytes",
+            "bytes" => "bytes",
             "void" => "None",
             "datetime" => "datetime",
             "DateTimeOffset" => "timedelta",
