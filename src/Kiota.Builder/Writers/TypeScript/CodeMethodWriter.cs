@@ -514,7 +514,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         };
     }
 
-    private string GetSerializationMethodNameForCodeType(CodeType propType, string propertyType)
+    private static string GetSerializationMethodNameForCodeType(CodeType propType, string propertyType)
     {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         if (propType.TypeDefinition is CodeEnum currentEnum)
