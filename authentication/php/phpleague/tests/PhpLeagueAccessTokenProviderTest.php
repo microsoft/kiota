@@ -14,6 +14,7 @@ use Microsoft\Kiota\Authentication\Oauth\OnBehalfOfCertificateContext;
 use Microsoft\Kiota\Authentication\Oauth\OnBehalfOfContext;
 use Microsoft\Kiota\Authentication\PhpLeagueAccessTokenProvider;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\RequestInterface;
 
 class PhpLeagueAccessTokenProviderTest extends TestCase
 {
@@ -31,6 +32,23 @@ class PhpLeagueAccessTokenProviderTest extends TestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $tokenProvider = new PhpLeagueAccessTokenProvider(new ClientCredentialContext('', '', ''), []);
+    }
+
+    public function testPassingMultipleScopes(): void
+    {
+        $tokenProvider = new PhpLeagueAccessTokenProvider(new ClientCredentialContext(
+            'tenantId', 'clientId', 'secret'
+        ), ['User.Read', 'Calendar.ReadWrite']);
+        $mockResponses = [
+            function (RequestInterface $request) {
+                parse_str($request->getBody()->getContents(), $requestBodyMap);
+                $this->assertArrayHasKey('scope', $requestBodyMap);
+                $this->assertEquals('User.Read Calendar.ReadWrite', $requestBodyMap['scope']);
+                return new Response(200);
+            }
+        ];
+        $tokenProvider->getOauthProvider()->setHttpClient($this->getMockHttpClient($mockResponses));
+        $tokenProvider->getAuthorizationTokenAsync('https://example.com');
     }
 
     public function testGetAuthorizationTokenWithSuccessfulTokenResponse(): void
