@@ -26,7 +26,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
                 }
                 else
                 {
-                    writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{(codeElement.ReadOnly ? " readonly " : " ")}{codeElement.NamePrefix}{codeElement.Name.ToFirstCharacterLowerCase()}{(codeElement.Type.IsNullable ? "?" : string.Empty)}: {returnType}{(isFlagEnum ? "[]" : string.Empty)}{(codeElement.Type.IsNullable ? " | undefined" : string.Empty)};");
+                    ComposeDefaultCodeProperty(codeElement, writer, returnType, isFlagEnum);
                 }
                 break;
         }
@@ -35,5 +35,10 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
     private void writeCodePropertyOfInterface(CodeProperty codeElement, LanguageWriter writer, string returnType, bool isFlagEnum)
     {
         writer.WriteLine($"{codeElement.NamePrefix}{codeElement.Name.ToFirstCharacterLowerCase()}?:{returnType}{(isFlagEnum ? "[]" : string.Empty)}{(codeElement.Type.IsNullable ? " | undefined" : string.Empty)};");
+    }
+
+    private void ComposeDefaultCodeProperty(CodeProperty codeElement, LanguageWriter writer, string returnType, bool isFlagEnum)
+    {
+        writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{(codeElement.ReadOnly ? " readonly " : " ")}{codeElement.NamePrefix}{codeElement.Name.ToFirstCharacterLowerCase()}{(codeElement.Type.IsNullable ? "?" : string.Empty)}: {returnType}{(isFlagEnum ? "[]" : string.Empty)}{(codeElement.Type.IsNullable ? " | undefined" : string.Empty)};");
     }
 }

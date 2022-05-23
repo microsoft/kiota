@@ -322,25 +322,32 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         }
         if (requestParams.requestBody != null)
         {
-
-            if (IsCodeClassOrInterface(requestParams.requestBody.Type))
-            {
-                writer.WriteLine($"const bodyParsable = new {requestParams.requestBody.Type.Name}{ModelClassSuffix}(body)");
-            }
-
-            if (requestParams.requestBody.Type.Name.Equals(localConventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name});");
-            else
-            {
-                var spreadOperator = requestParams.requestBody.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
-                var setMethodName = requestParams.requestBody.Type is CodeType bodyType && bodyType.TypeDefinition is CodeClass ? "setContentFromParsable" : "setContentFromScalar";
-                writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", {spreadOperator}{requestParams.requestBody.Name});");
-
-                // writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{codeElement.ContentType}\", bodyParsable);");
-            }
+            ComposeContentInRequestGeneratorBody(requestParams.requestBody, requestAdapterProperty, codeElement.ContentType, writer);
         }
 
         writer.WriteLine($"return {RequestInfoVarName};");
+    }
+
+    private void ComposeContentInRequestGeneratorBody(CodeParameter requestBody, CodeProperty requestAdapterProperty, string contentType, LanguageWriter writer)
+    {
+        if (requestBody.Type.Name.Equals(localConventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
+            writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestBody.Name});");
+        else
+        {
+            var spreadOperator = requestBody.Type.AllTypes.First().IsCollection ? "..." : string.Empty;
+            var setMethodName = "";
+            var body = "";
+            if (IsCodeClassOrInterface(requestBody.Type))
+            {
+                setMethodName =  "setContentFromParsable";
+                body = $"const bodyParsable = new {requestBody.Type.Name}{ModelClassSuffix}(body)";
+            }
+            else {
+                setMethodName = "setContentFromScalar";
+                body = $"{spreadOperator}{requestBody.Name}";
+            }
+            writer.WriteLine($"{RequestInfoVarName}.{setMethodName}(this.{requestAdapterProperty.Name.ToFirstCharacterLowerCase()}, \"{contentType}\", {body});");
+        }
     }
     private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"this.{property.Name}";
     private void WriteSerializerBody(bool inherits, CodeClass parentClass, LanguageWriter writer)

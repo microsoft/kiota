@@ -364,12 +364,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var parentClass = codeMethod.GetImmediateParentOfType<CodeClass>();
         if (codeMethod.ReturnType is CodeType returnType &&
             returnType.TypeDefinition is CodeClass returnClass &&
-            returnClass.IsOfKind(CodeClassKind.Model))
+            returnClass.IsOfKind(CodeClassKind.Model) && parentClass != null && parentClass.Name != returnClass.Name)
         {
-            if (parentClass != null && parentClass.Name != returnClass.Name)
-            {
-                parentClass.AddUsing(new CodeUsing { Name = returnClass.Parent.Name, Declaration = new CodeType { Name = returnClass.Name, TypeDefinition = returnClass } });
-            }
+            parentClass.AddUsing(new CodeUsing { Name = returnClass.Parent.Name, Declaration = new CodeType { Name = returnClass.Name, TypeDefinition = returnClass } });
+
         }
 
         var requestBodyParam = codeMethod?.Parameters?.OfKind(CodeParameterKind.RequestBody);
@@ -440,14 +438,14 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         var props = classModelChildItems.OfType<CodeProperty>();
         var methods = classModelChildItems.OfType<CodeMethod>();
-        ProcessModelClassDeclaration(modelClass, modelInterface, finalInterfaceName, interfaceNamingCallback);
+        ProcessModelClassDeclaration(modelClass, modelInterface, interfaceNamingCallback);
         ProcessModelClassProperties(modelClass, modelInterface, props, interfaceNamingCallback);
-        ProcessModelClassMethods(modelClass, modelInterface, methods, interfaceNamingCallback);
+        ProcessModelClassMethods(modelClass, methods, interfaceNamingCallback);
 
         return modelInterface;
     }
 
-    private static void ProcessModelClassDeclaration(CodeClass modelClass, CodeInterface modelInterface, string finalInterfaceName, Func<CodeClass, string> tempInterfaceNamingCallback)
+    private static void ProcessModelClassDeclaration(CodeClass modelClass, CodeInterface modelInterface, Func<CodeClass, string> tempInterfaceNamingCallback)
     {
         /*
          * If a child model class inherits from parent model class, the child interface extends from the parent interface.
@@ -525,7 +523,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
         });
     }
-    private static void ProcessModelClassMethods(CodeClass modelClass, CodeInterface modelInterface, IEnumerable<CodeMethod> methods, Func<CodeClass, string> interfaceNamingCallback)
+    private static void ProcessModelClassMethods(CodeClass modelClass, IEnumerable<CodeMethod> methods, Func<CodeClass, string> interfaceNamingCallback)
     {
         var namespaceOfModel = modelClass.GetImmediateParentOfType<CodeNamespace>();
         foreach (var method in methods)
@@ -602,8 +600,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 SetUsingInModelInterface(modelInterface, interfaceTypeAndUsing);
                 UpdatePropertyTypeInModelClass(modelClass, propertyClass, interfaceTypeAndUsing);
             }
-            var newProperty = new CodeProperty();
-            newProperty = mProp.Clone() as CodeProperty;
+
+            var newProperty = mProp.Clone() as CodeProperty;
             modelInterface.AddProperty(newProperty);
         }
     }
