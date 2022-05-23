@@ -340,7 +340,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             if (IsCodeClassOrInterface(requestBody.Type))
             {
                 setMethodName =  "setContentFromParsable";
-                body = $"const bodyParsable = new {requestBody.Type.Name}{ModelClassSuffix}(body)";
+                writer.WriteLine($"const parsableBody = new {requestBody.Type.Name}{ModelClassSuffix}(body)");
+                body = "parsableBody";
             }
             else {
                 setMethodName = "setContentFromScalar";
@@ -389,7 +390,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         writer.WriteLine("}");
     }
 
-    private bool IsCodeClassOrInterface(CodeTypeBase propType)
+    private static bool IsCodeClassOrInterface(CodeTypeBase propType)
     {
         return propType is CodeType currentType && (currentType.TypeDefinition is CodeClass || currentType.TypeDefinition is CodeInterface);
     }

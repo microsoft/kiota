@@ -318,8 +318,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         else if (currentElement is CodeFunction codeFunction)
         {
-            var s = codeFunction.OriginalLocalMethod?.DiscriminatorMappings?.Select(y => y.Value).Where(y => y is CodeType codeType && codeType.TypeDefinition is CodeClass modelClass && modelClass.IsOfKind(CodeClassKind.Model)).ToList();
-            s.ForEach(x => { x.Name = x.Name + FinalModelClassNameSuffix; });
+            var mappingValueList = codeFunction?.OriginalLocalMethod?.DiscriminatorMappings?.Select(y => y.Value).Where(y => y is CodeType codeType && codeType.TypeDefinition is CodeClass modelClass && modelClass.IsOfKind(CodeClassKind.Model)).ToList();
+            mappingValueList?.ForEach(x => { x.Name = x.Name + FinalModelClassNameSuffix; });
         }
 
         CrawlTree(currentElement, x => RenameModelInterfacesAndClasses(x));
@@ -416,7 +416,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
          * Temporarily name the interface with "Interface" suffix 
          * since adding code elements of the same name in the same namespace causes error. 
          */
-        var finalInterfaceName = modelClass.Name.ToFirstCharacterUpperCase();
+
         var temporaryInterfaceName = interfaceNamingCallback.Invoke(modelClass);
         var namespaceOfModel = modelClass.GetImmediateParentOfType<CodeNamespace>();
         var existing = namespaceOfModel.FindChildByName<CodeInterface>(temporaryInterfaceName, false);
@@ -525,7 +525,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
     private static void ProcessModelClassMethods(CodeClass modelClass, IEnumerable<CodeMethod> methods, Func<CodeClass, string> interfaceNamingCallback)
     {
-        var namespaceOfModel = modelClass.GetImmediateParentOfType<CodeNamespace>();
         foreach (var method in methods)
         {
             if (method.ReturnType is CodeType methodReturnType)

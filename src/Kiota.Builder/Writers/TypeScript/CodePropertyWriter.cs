@@ -22,7 +22,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
             default:
                 if (codeElement.Parent is CodeInterface)
                 {
-                    writeCodePropertyOfInterface(codeElement, writer, returnType, isFlagEnum);
+                    WriteCodePropertyOfInterface(codeElement, writer, returnType, isFlagEnum);
                 }
                 else
                 {
@@ -32,7 +32,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
         }
     }
 
-    private void writeCodePropertyOfInterface(CodeProperty codeElement, LanguageWriter writer, string returnType, bool isFlagEnum)
+    private static void WriteCodePropertyOfInterface(CodeProperty codeElement, LanguageWriter writer, string returnType, bool isFlagEnum)
     {
         writer.WriteLine($"{codeElement.NamePrefix}{codeElement.Name.ToFirstCharacterLowerCase()}?:{returnType}{(isFlagEnum ? "[]" : string.Empty)}{(codeElement.Type.IsNullable ? " | undefined" : string.Empty)};");
     }
