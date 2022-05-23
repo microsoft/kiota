@@ -17,7 +17,7 @@ kiota (--openapi | -d) <path>
       [(--output | -o) <path>]
       [(--class-name | -c) <name>]
       [(--namespace-name | -n) <name>]
-      [(--loglevel | --ll) <level>]
+      [(--log-level | --ll) <level>]
       [--backing-store | -b]
       [(--serializer | -s) <classes>]
       [(--deserializer | --ds) <classes>]
@@ -100,7 +100,7 @@ One or more module names that implements `IParseNodeFactory`.
 kiota --deserializer Contoso.Json.CustomDeserializer
 ```
 
-### `--loglevel (--ll)`
+### `--log-level (--ll)`
 
 The log level to use when logging events to the main output. Defaults to `warning`.
 

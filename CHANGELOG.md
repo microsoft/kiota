@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for discriminator downcast in PHP. [#1255](https://github.com/microsoft/kiota/issues/1255)
 - Added support for multiple collections indexing under the same parent.
 - Added code exclusions placeholder in the generation. (oneOf)
+- Added support for continuous access evaluation in Java. [#1179](https://github.com/microsoft/kiota/issues/1179)
 - Added support for special characters in URL query parameter names. [#1584](https://github.com/microsoft/kiota/pull/1584)
 
 ### Changed
@@ -33,7 +34,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where nullable wrapper schema flattening would ignore some composed type options.
 - Fixed a bug where arrays without items definition would derail generation.
 - Fixed a bug with enums detection for generation. (interpreted as string)
-- Fixes a bug where classes names cleanup could end-up in a collision.
+- Fixed a bug where classes names cleanup could end-up in a collision.
+- Fixed a bug where null reference exception would be thrown when trying to lookup type inheritance on discriminators
+- Fixed the lookup of model namespaces to only look in the target namespace to avoid reference collisions.
+- Fixed a bug for the generated send method for paths returning Enums in dotnet.
+- Breaking: renamed the --loglevel parameter to --log-level.
 
 ## [0.1.3] - 2022-05-06
 
