@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [0.2.0] - 2022-05-24
+
+### Added
+
 - Added support for enum options descriptions (C#/Go/Java/TypeScript). [#90](https://github.com/microsoft/kiota/issues/90)
 - Added support for file parameters types. [#221](https://github.com/microsoft/kiota/issues/221)
 - Added support for no content responses in PHP. [#1458](https://github.com/microsoft/kiota/issues/1458)
