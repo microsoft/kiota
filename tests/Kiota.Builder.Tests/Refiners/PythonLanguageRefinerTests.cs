@@ -283,11 +283,11 @@ public class PythonLanguageRefinerTests {
         }).First();
         var cancellationParam = new CodeParameter
         {
-            Name = "cancelletionToken",
+            Name = "cancellationToken",
             Optional = true,
             Kind = CodeParameterKind.Cancellation,
             Description = "Cancellation token to use when cancelling requests",
-            Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
+            Type = new CodeType { Name = "CancellationToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);
         ILanguageRefiner.Refine(new GenerationConfiguration { Language = GenerationLanguage.Python }, root); //using CSharp so the cancelletionToken doesn't get removed

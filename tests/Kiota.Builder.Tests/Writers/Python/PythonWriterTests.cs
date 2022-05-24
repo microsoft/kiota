@@ -2,7 +2,7 @@ using System;
 using Xunit;
 
 namespace Kiota.Builder.Writers.Python.Tests {
-    public class TypeScriptWriterTests {
+    public class PythonWriterTests {
         [Fact]
         public void Instantiates() {
             var writer =  new PythonWriter("./", "graph");
