@@ -159,6 +159,7 @@ class RequestInformation {
             if ($propertyValue) {
                 if ($propertyAnnotation) {
                     $this->queryParameters[$propertyAnnotation->name] = $propertyValue;
+                    continue;
                 }
                 $this->queryParameters[$classProperty->name] = $propertyValue;
             }

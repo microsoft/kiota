@@ -31,8 +31,10 @@ class RequestInformationTest extends TestCase {
         $queryParam = new TestQueryParameter();
         $this->requestInformation->setQueryParameters($queryParam);
         $this->assertEquals('?top=10', $this->requestInformation->getUri());
+        $this->assertTrue(sizeof($this->requestInformation->queryParameters) == 1);
         $queryParam->select = ['displayName', 'age'];
         $this->requestInformation->setQueryParameters($queryParam);
+        $this->assertTrue(sizeof($this->requestInformation->queryParameters) == 2);
         $this->assertArrayHasKey('%24select', $this->requestInformation->queryParameters);
         $this->assertEquals(['displayName', 'age'], $this->requestInformation->queryParameters['%24select']);
         $this->assertArrayHasKey('top', $this->requestInformation->queryParameters);
