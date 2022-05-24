@@ -85,9 +85,8 @@ public class PythonConventionService : CommonLanguageConventionService
     {
         return type.Name switch  {
             "String" or "string" => "str",
-            "integer" or "int32" or "int64" => "int",
+            "integer" or "int32" or "int64" or "byte" or "sbyte" => "int",
             "decimal" or "double" => "float",
-            "bytes" => "bytes",
             "void" => "None",
             "datetime" => "datetime",
             "DateTimeOffset" => "timedelta",
