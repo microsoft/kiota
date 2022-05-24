@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed the lookup of model namespaces to only look in the target namespace to avoid reference collisions.
 - Fixed a bug for the generated send method for paths returning Enums in dotnet.
 - Breaking: renamed the --loglevel parameter to --log-level.
+- Fixed a bug where some path parameter objects would have empty key values [#1586](https://github.com/microsoft/kiota/issues/1586)
 
 ## [0.1.3] - 2022-05-06
 
