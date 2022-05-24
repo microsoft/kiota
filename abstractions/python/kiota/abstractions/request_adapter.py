@@ -32,7 +32,7 @@ class RequestAdapter(ABC):
     async def send_async(
         self, request_info: RequestInformation, type: ParsableFactory,
         response_handler: Optional[ResponseHandler], error_map: Dict[str, Optional[ParsableFactory]]
-    ) -> ModelType:
+    ) -> Optional[ModelType]:
         """Excutes the HTTP request specified by the given RequestInformation and returns the
         deserialized response model.
 
@@ -56,7 +56,7 @@ class RequestAdapter(ABC):
         type: ParsableFactory,
         response_handler: Optional[ResponseHandler],
         error_map: Dict[str, Optional[ParsableFactory]],
-    ) -> List[ModelType]:
+    ) -> Optional[List[ModelType]]:
         """Excutes the HTTP request specified by the given RequestInformation and returns the
         deserialized response model collection.
 
@@ -102,7 +102,7 @@ class RequestAdapter(ABC):
     async def send_primitive_async(
         self, request_info: RequestInformation, response_type: ResponseType,
         response_handler: Optional[ResponseHandler], error_map: Dict[str, Optional[ParsableFactory]]
-    ) -> ResponseType:
+    ) -> Optional[ResponseType]:
         """Excutes the HTTP request specified by the given RequestInformation and returns the
         deserialized primitive response model.
 
