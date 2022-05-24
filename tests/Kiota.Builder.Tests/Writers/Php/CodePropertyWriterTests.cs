@@ -140,5 +140,28 @@ namespace Kiota.Builder.Writers.Php.Tests
 
             Assert.Contains("private RequestAdapter $adapter;", result);
         }
+
+        [Fact]
+        public void WriteQueryParameter()
+        {
+            var queryParameter = new CodeProperty()
+            {
+                Name = "select",
+                Kind = CodePropertyKind.QueryParameter,
+                SerializationName = "%24select",
+                Access = AccessModifier.Private,
+                Type = new CodeType()
+                {
+                    CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array, Name = "string"
+                }
+            };
+            parentClass.AddProperty(queryParameter);
+            propertyWriter.WriteCodeElement(queryParameter, writer);
+            var result = tw.ToString();
+
+            Assert.Contains("@QueryParameter(\"%24select\")", result);
+            Assert.Contains("@var array<string>|null $select", result);
+            Assert.Contains("private ?array $select", result);
+        }
     }
 }
