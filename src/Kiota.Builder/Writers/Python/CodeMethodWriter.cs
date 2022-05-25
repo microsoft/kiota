@@ -202,7 +202,7 @@ namespace Kiota.Builder.Writers.Python {
             writer.WriteLine("return {");
                 writer.IncreaseIndent();
                 foreach(var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)) {
-                    writer.WriteLine($"\"{otherProp.SerializationName ?? otherProp.Name.ToSnakeCase()}\": lambda o,n : o.set_{otherProp.Name.ToSnakeCase()}(n.{GetDeserializationMethodName(otherProp.Type)}),");
+                    writer.WriteLine($"\"{otherProp.SerializationName ?? otherProp.Name.ToSnakeCase()}\": lambda n : self.set_{otherProp.Name.ToSnakeCase()}(n.{GetDeserializationMethodName(otherProp.Type)}),");
                 }
                 writer.DecreaseIndent();
                 writer.WriteLine($"}}{(inherits? $".update(super().{codeElement.Name.ToSnakeCase()}())": string.Empty)}");
@@ -262,10 +262,16 @@ namespace Kiota.Builder.Writers.Python {
                                 $"{RequestInfoVarName}.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}",
                                 $"{RequestInfoVarName}.http_method = HttpMethod.{codeElement.HttpMethod.ToString().ToUpperInvariant()}");
             if(requestParams.headers != null) {
+                writer.WriteLine($"if {requestParams.headers.Name}:");
+                writer.IncreaseIndent();
                 writer.WriteLine($"{RequestInfoVarName}.headers = {requestParams.headers.Name.ToSnakeCase()}");
+                writer.DecreaseIndent();
             }
             if(requestParams.queryString != null){
+                writer.WriteLine($"if {requestParams.queryString.Name}:");
+                writer.IncreaseIndent();
                 writer.WriteLine($"{RequestInfoVarName}.set_query_string_parameters_from_raw_object({requestParams.queryString.Name.ToSnakeCase()})");
+                writer.DecreaseIndent();
             }
             if(requestParams.requestBody != null) {
                 if(requestParams.requestBody.Type.Name.Equals(localConventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))

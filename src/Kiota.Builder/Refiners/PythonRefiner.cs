@@ -16,7 +16,7 @@ namespace Kiota.Builder.Refiners {
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.__instance.create_backing_store()");
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);            
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
-            ReplaceBinaryByNativeType(generatedCode, "bytes",null, true);
+            ReplaceBinaryByNativeType(generatedCode, "bytes",null);
             ReplaceReservedNames(generatedCode, new PythonReservedNamesProvider(), x => $"{x}_escaped");
             AddGetterAndSetterMethods(generatedCode,
                 new() {
@@ -46,6 +46,9 @@ namespace Kiota.Builder.Refiners {
                     generatedCode,
                     "ApiError",
                     "kiota.abstractions"
+            );
+            AddQueryParameterMapperMethod(
+                generatedCode
             );
         }
 
@@ -103,6 +106,7 @@ namespace Kiota.Builder.Refiners {
                 if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
                     currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ResponseHandler) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => x.Type.Name = "List[RequestOption]");
+                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.QueryParameter)).ToList().ForEach(x => { x.Type.Name = "GetQueryParameters"; x.Type.ActionOf = false; });
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Headers)).ToList().ForEach(x => { x.Type.Name = "Dict[str, str]"; x.Type.ActionOf = false; });
             }
             else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
