@@ -13,11 +13,11 @@ class Parsable(ABC):
     Defines a serializable model object.
     """
     @abstractmethod
-    def get_field_deserializers(self) -> Dict[str, Callable[[T, 'ParseNode'], None]]:
+    def get_field_deserializers(self) -> Dict[str, Callable[['ParseNode'], None]]:
         """Gets the deserialization information for this object.
 
         Returns:
-            Dict[str, Callable[[T, ParseNode], None]]: The deserialization information for this
+            Dict[str, Callable[[ParseNode], None]]: The deserialization information for this
             object where each entry is a property key with its deserialization callback.
         """
         pass
