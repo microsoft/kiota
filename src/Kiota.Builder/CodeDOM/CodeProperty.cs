@@ -1,4 +1,5 @@
-﻿using Kiota.Builder.Extensions;
+﻿using System;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder;
 public enum CodePropertyKind
@@ -39,7 +40,7 @@ public enum CodePropertyKind
     ResponseHandler,
 }
 
-public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedElement
+public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, ICloneable, IDocumentedElement
 {
     public bool ReadOnly {get;set;} = false;
     public AccessModifier Access {get;set;} = AccessModifier.Public;
@@ -59,6 +60,19 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
 
     public object Clone()
     {
-        return this.MemberwiseClone();
+        return new CodeProperty { 
+            Access = Access,
+            Type = Type,
+            Getter = Getter,
+            Setter = Setter,
+            DefaultValue = DefaultValue,
+            Description = Description,
+            NamePrefix = NamePrefix,
+            Parent = Parent,
+            Name = Name,
+            Kind = Kind,
+            ReadOnly = ReadOnly,
+            SerializationName = SerializationName
+        };
     }
 }

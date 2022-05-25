@@ -20,13 +20,14 @@ namespace Kiota.Builder.Writers.TypeScript
             _codeUsingWriter.WriteCodeElement(interfaceDeclaration.Usings, parentNamespace, writer);
 
             var inheritSymbol = "";
-            foreach (var c in interfaceDeclaration?.Inherits) {
+            foreach (var c in interfaceDeclaration?.Inherits)
+            {
                 inheritSymbol = (!String.IsNullOrWhiteSpace(inheritSymbol) ? inheritSymbol + "," : String.Empty) + conventions.GetTypeString(c, interfaceDeclaration);
             }
-           
+
             var derivation = (String.IsNullOrWhiteSpace(inheritSymbol) ? string.Empty : $" extends {inheritSymbol}");
 
-            writer.WriteLine($"export interface {interfaceDeclaration.Name.ToFirstCharacterUpperCase()}{derivation}{{");
+            writer.WriteLine($"export interface {interfaceDeclaration.Name.ToFirstCharacterUpperCase()}{derivation} {{");
             writer.IncreaseIndent();
         }
     }

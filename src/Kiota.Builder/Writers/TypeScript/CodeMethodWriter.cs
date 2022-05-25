@@ -142,8 +142,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
-        if (inherits || parentClass.IsErrorDefinition)
-            writer.WriteLine("super();");
+        ComposeConstructorSuper(parentClass, inherits, writer, currentMethod);
         var propertiesWithDefaultValues = new List<CodePropertyKind> {
             CodePropertyKind.BackingStore,
             CodePropertyKind.RequestBuilder,
@@ -189,6 +188,27 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 }
             }
         }
+    }
+    private static void ComposeConstructorSuper(CodeClass codeClass, bool inherits, LanguageWriter writer, CodeMethod currentMethod)
+    {
+        if (!codeClass.IsOfKind(CodeClassKind.Model) && (inherits || codeClass.IsErrorDefinition))
+            writer.WriteLine("super();");
+
+        if (codeClass.IsOfKind(CodeClassKind.Model) && inherits) {
+            var codeInterfaceName = currentMethod.Parameters.FirstOrDefault().Name;
+            var inheritClass = codeClass.StartBlock.Inherits?.TypeDefinition as CodeClass;
+            var properties = inheritClass.Properties;
+
+            writer.WriteLines("super({");
+            writer.IncreaseIndent();
+
+            foreach (var property in properties) {
+                writer.WriteLines($"{property.Name.ToFirstCharacterLowerCase()}: {codeInterfaceName}?.{property.Name.ToFirstCharacterLowerCase()},");
+            }
+
+            writer.DecreaseIndent();
+            writer.WriteLines("});");
+        }    
     }
     private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer, string variableName = default)
     {
@@ -385,8 +405,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             str = IsPredefinedType(codeProperty.Type) || !IsCodeClassOrInterface(codeProperty.Type) ? $"{spreadOperator}this.{codePropertyName}" : $"new {propertyType}{ModelClassSuffix}(this.{codePropertyName})";
         }
 
+        writer.IncreaseIndent();
         writer.WriteLine($"{undefinedPrefix}writer.{GetSerializationMethodName(codeProperty.Type)}(\"{codeProperty.SerializationName ?? codePropertyName}\", {str});");
-
+        writer.DecreaseIndent();
         writer.WriteLine("}");
     }
 
