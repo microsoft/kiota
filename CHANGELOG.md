@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added missing mappings in PHP for uint8 and int8. [#1473](https://github.com/microsoft/kiota/pull/1473)
 
 ### Changed
 

@@ -12,7 +12,10 @@
   "repositories": [
     {
       "type": "path",
-      "url": "../../../abstractions/php"
+      "url": "../../../abstractions/php",
+      "options": {
+        "symlink": false
+      }
     }
   ],
   "autoload": {

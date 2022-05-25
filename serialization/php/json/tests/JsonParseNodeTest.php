@@ -8,7 +8,6 @@ use Exception;
 use GuzzleHttp\Psr7\Utils;
 use Microsoft\Kiota\Abstractions\Enum;
 use Microsoft\Kiota\Abstractions\Serialization\ParseNode;
-use Microsoft\Kiota\Abstractions\Types\Byte;
 use Microsoft\Kiota\Abstractions\Types\Date;
 use Microsoft\Kiota\Abstractions\Types\Time;
 use Microsoft\Kiota\Serialization\Json\JsonParseNode;
@@ -93,16 +92,6 @@ class JsonParseNodeTest extends TestCase
         $this->assertEquals(12.009, $expectedFloat);
         $this->assertEquals('2022-01-27', (string)$expectedDate);
         $this->assertEquals('Silas Kenneth', $expectedString);
-    }
-
-    public function testGetByteValue(): void {
-        $this->parseNode = new JsonParseNode('23');
-        $expected = $this->parseNode->getByteValue();
-        $this->assertInstanceOf(Byte::class, $expected);
-        $this->assertEquals(23, (string)$expected);
-        $this->expectException(Exception::class);
-        $this->parseNode = new JsonParseNode('-192');
-        $this->parseNode->getByteValue();
     }
 
     public function testGetEnumValue(): void {
