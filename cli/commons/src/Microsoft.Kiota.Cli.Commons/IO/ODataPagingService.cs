@@ -1,6 +1,9 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.Kiota.Abstractions;
 
+[assembly: InternalsVisibleTo("Microsoft.Kiota.Cli.Commons.Tests")]
 namespace Microsoft.Kiota.Cli.Commons.IO;
 
 /// <summary>
@@ -11,8 +14,7 @@ public class ODataPagingService : IPagingService
     /// <inheritdoc />
     public async Task<Uri?> GetNextPageLinkAsync(PageLinkData pageLinkData, CancellationToken cancellationToken = default)
     {
-        var responseFormat = pageLinkData.RequestInformation.Headers["Accept"];
-        if (!string.IsNullOrWhiteSpace(responseFormat) && responseFormat?.Contains("json") == true)
+        if (pageLinkData.ResponseFormat == ResponseFormat.JSON)
         {
             try
             {
@@ -32,5 +34,100 @@ public class ODataPagingService : IPagingService
         }
 
         return null;
+    }
+
+    /// <inheritdoc />
+    public async Task<Stream> GetPagedDataAsync(Func<RequestInformation, CancellationToken, Task<Stream>> requestExecutorAsync, PageLinkData pageLinkData, bool fetchAllPages = false, CancellationToken cancellationToken = default)
+    {
+        var requestInfo = pageLinkData.RequestInformation;
+        var nextLink = requestInfo.URI;
+        Stream? response = null;
+        while (nextLink != null)
+        {
+            var pageData = await requestExecutorAsync(requestInfo, cancellationToken);
+            if (fetchAllPages)
+            {
+                nextLink = await GetNextPageLinkAsync(pageLinkData, cancellationToken);
+                pageLinkData.RequestInformation.URI = nextLink;
+            }
+            else
+            {
+                nextLink = null;
+            }
+            response = await MergeJsonStreamsAsync(response, pageData, pageLinkData.ItemName, cancellationToken);
+        }
+
+        return response ?? Stream.Null;
+    }
+
+    /// <summary>
+    /// Merges 2 streams of JSON on the property defined by <code>itemName</code>. The property should be a JSON array
+    /// </summary>
+    /// <param name="left">The first stream.</param>
+    /// <param name="right">The second stream.</param>
+    /// <param name="itemName">The name of the array property to merge on.</param>
+    internal async Task<Stream?> MergeJsonStreamsAsync(Stream? left, Stream? right, string itemName = "value", CancellationToken cancellationToken = default)
+    {
+        if (left == null || right == null)
+        {
+            return left ?? right;
+        }
+
+        JsonNode? nodeLeft = null;
+        if (left != null)
+        {
+            nodeLeft = JsonNode.Parse(left);
+        }
+        JsonNode? nodeRight = null;
+        if (right != null)
+        {
+            nodeRight = JsonNode.Parse(right);
+        }
+
+        JsonArray? leftArray = null;
+        JsonArray? rightArray = null;
+        if (!string.IsNullOrWhiteSpace(itemName))
+        {
+            if (nodeLeft?[itemName] == null || nodeRight?[itemName] == null)
+            {
+                return left ?? right;
+            }
+
+            leftArray = nodeLeft[itemName]?.AsArray();
+            rightArray = nodeRight[itemName]?.AsArray();
+        }
+        else
+        {
+            leftArray = nodeLeft?.AsArray();
+            rightArray = nodeRight?.AsArray();
+        }
+
+
+        if (leftArray != null && rightArray != null)
+        {
+            var elements = rightArray.Where(i => i != null);
+            var item = elements.FirstOrDefault();
+            while (item != null)
+            {
+                rightArray.Remove(item);
+                leftArray.Add(item);
+                item = elements.FirstOrDefault();
+            }
+        }
+        if (!string.IsNullOrWhiteSpace(itemName) && nodeLeft != null)
+        {
+            nodeLeft[itemName] = leftArray ?? rightArray;
+        }
+        else
+        {
+            nodeLeft = leftArray ?? rightArray;
+        }
+        var stream = new MemoryStream();
+        using var writer = new Utf8JsonWriter(stream);
+        nodeLeft?.WriteTo(writer);
+        await writer.FlushAsync(cancellationToken);
+        stream.Position = 0;
+
+        return stream;
     }
 }

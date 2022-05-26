@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.Kiota.Abstractions;
+﻿using Microsoft.Kiota.Abstractions;
 
 namespace Microsoft.Kiota.Cli.Commons.IO;
 
@@ -15,6 +14,11 @@ public interface IPagingService
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>A Uri of the next page's link or null if there's no next page.</returns>
     Task<Uri?> GetNextPageLinkAsync(PageLinkData pageLinkData, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns the next page
+    /// </summary>
+    Task<Stream> GetPagedDataAsync(Func<RequestInformation, CancellationToken, Task<Stream>> requestExecutorAsync, PageLinkData pageLinkData, bool fetchAllPages = false, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -27,12 +31,24 @@ public readonly struct PageLinkData
     /// </summary>
     /// <param name="requestInformation">The request information. Paging information (top, skip etc) can be extracted from a request.</param>
     /// <param name="response">The response body stream.</param>
+    /// <param name="responseFormat">The response body format.</param>
+    /// <param name="itemName">The name of the property that has the data.</param>
     /// <param name="nextLinkName">The name of the property that holds the next link.</param>
-    public PageLinkData(RequestInformation requestInformation, Stream response, string nextLinkName = "nextLink")
+    public PageLinkData(RequestInformation requestInformation, Stream response, ResponseFormat responseFormat = ResponseFormat.JSON, string itemName = "value", string nextLinkName = "nextLink")
     {
+        ItemName = itemName;
         NextLinkName = nextLinkName;
         Response = response;
+        ResponseFormat = responseFormat;
         RequestInformation = requestInformation;
+    }
+
+    /// <summary>
+    /// The name of the property that has the data.
+    /// </summary>
+    public string ItemName
+    {
+        get; private init;
     }
 
     /// <summary>
@@ -58,4 +74,27 @@ public readonly struct PageLinkData
     {
         get; private init;
     }
+
+    /// <summary>
+    /// The response body format. Used when extracting the next link from the response.
+    /// </summary>
+    public ResponseFormat ResponseFormat
+    {
+        get; private init;
+    }
+}
+
+/// <summary>
+/// The server response body format
+/// </summary>
+public enum ResponseFormat
+{
+    /// <summary>
+    /// JSON Response
+    /// </summary>
+    JSON,
+    /// <summary>
+    /// XML Response
+    /// </summary>
+    XML,
 }

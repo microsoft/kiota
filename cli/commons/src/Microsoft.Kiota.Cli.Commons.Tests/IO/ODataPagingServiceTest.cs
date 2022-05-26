@@ -22,7 +22,6 @@ public class ODataPagingServiceTest
             var pagingService = new ODataPagingService();
             var stream = Stream.Null;
             var requestInfo = new RequestInformation();
-            requestInfo.Headers["Accept"] = "application/json";
             var pagingData = new PageLinkData(requestInfo, stream);
 
             var nextLink = await pagingService.GetNextPageLinkAsync(pagingData);
@@ -37,12 +36,64 @@ public class ODataPagingServiceTest
             var bytes = Encoding.UTF8.GetBytes("{\"nextLink\": \"https://testlink\"}");
             var ms = new MemoryStream(bytes);
             var requestInfo = new RequestInformation();
-            requestInfo.Headers["Accept"] = "application/json";
             var pagingData = new PageLinkData(requestInfo, ms);
 
             var nextLink = await pagingService.GetNextPageLinkAsync(pagingData);
 
             Assert.Equal(new Uri("https://testlink"), nextLink);
+        }
+    }
+
+    public class MergeJsonStreamsFunction_Should
+    {
+        [Fact]
+        public async Task Return_Null_on_Null_Streams()
+        {
+            var pagingService = new ODataPagingService();
+
+            var response = await pagingService.MergeJsonStreamsAsync(null, null);
+
+            Assert.Null(response);
+        }
+
+        [Fact]
+        public async Task Return_Left_on_Null_Right_Stream()
+        {
+            var pagingService = new ODataPagingService();
+
+            using var ms = new MemoryStream(Encoding.UTF8.GetBytes("{\"value\": [20]}"));
+            var response = await pagingService.MergeJsonStreamsAsync(ms, null);
+
+            Assert.Equal(ms, response);
+        }
+
+        [Fact]
+        public async Task Return_Right_on_Null_Left_Stream()
+        {
+            var pagingService = new ODataPagingService();
+
+            using var ms = new MemoryStream(Encoding.UTF8.GetBytes("{\"value\": [20]}"));
+            var response = await pagingService.MergeJsonStreamsAsync(null, ms);
+
+            Assert.Equal(ms, response);
+        }
+
+        [Theory]
+        [InlineData(null, "[20,21,24]", "[30]", "[20,21,24,30]")]
+        [InlineData("", "[20,21,24]", "[30]", "[20,21,24,30]")]
+        [InlineData("value", "{\"value\": [20]}", "{\"value\": [30]}", "{\"value\":[20,30]}")]
+        [InlineData("value", "{\"value\": [{\"a\": 1}, {\"a\": 2}]}", "{\"value\": [{\"b\": 4}]}", "{\"value\":[{\"a\":1},{\"a\":2},{\"b\":4}]}")]
+        public async Task Return_Merged_Stream(string itemName, string left, string right, string expected)
+        {
+            var pagingService = new ODataPagingService();
+
+            using var leftMs = new MemoryStream(Encoding.UTF8.GetBytes(left));
+            using var rightMs = new MemoryStream(Encoding.UTF8.GetBytes(right));
+            var response = await pagingService.MergeJsonStreamsAsync(leftMs, rightMs, itemName);
+            using var reader = new StreamReader(response ?? Stream.Null);
+            var result = await reader.ReadToEndAsync();
+
+            Assert.Equal(expected, result);
         }
     }
 }
