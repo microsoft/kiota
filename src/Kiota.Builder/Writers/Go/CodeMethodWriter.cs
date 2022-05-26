@@ -348,13 +348,8 @@ namespace Kiota.Builder.Writers.Go {
             writer.WriteLine($"{targetVarName}[i] = {derefPrefix}v.({pointerSymbol}{propertyTypeImportName}){derefSuffix}");
             writer.CloseBlock();
         }
-        private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, string returnType, CodeClass parentClass, LanguageWriter writer) {
-            if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
-            if(returnType == null) throw new InvalidOperationException("return type cannot be null"); // string.Empty is a valid return type
-            var isPrimitive = conventions.IsPrimitiveType(returnType);
-            var isBinary = conventions.StreamTypeName.Equals(returnType.TrimStart('*'), StringComparison.OrdinalIgnoreCase);
-            var isEnum = codeElement.ReturnType is CodeType collType && collType.TypeDefinition is CodeEnum;
-            var sendMethodName = returnType switch {
+        private static string getSendMethodName(string returnType, CodeMethod codeElement, bool isPrimitive, bool isBinary, bool isEnum) {
+            return returnType switch {
                 "void" => "SendNoContentAsync",
                 _ when string.IsNullOrEmpty(returnType) => "SendNoContentAsync",
                 _ when codeElement.ReturnType.IsCollection && isPrimitive => "SendPrimitiveCollectionAsync",
@@ -364,6 +359,14 @@ namespace Kiota.Builder.Writers.Go {
                 _ when isEnum => "SendEnumAsync",
                 _ => "SendAsync"
             };
+        }
+        private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, string returnType, CodeClass parentClass, LanguageWriter writer) {
+            if(codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
+            if(returnType == null) throw new InvalidOperationException("return type cannot be null"); // string.Empty is a valid return type
+            var isPrimitive = conventions.IsPrimitiveType(returnType);
+            var isBinary = conventions.StreamTypeName.Equals(returnType.TrimStart('*'), StringComparison.OrdinalIgnoreCase);
+            var isEnum = codeElement.ReturnType is CodeType collType && collType.TypeDefinition is CodeEnum;
+            var sendMethodName = getSendMethodName(returnType, codeElement, isPrimitive, isBinary, isEnum);
             var responseHandlerParam = codeElement.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.ResponseHandler));
             var typeShortName = returnType.Split('.').Last().ToFirstCharacterUpperCase();
             var isVoid = string.IsNullOrEmpty(typeShortName);
