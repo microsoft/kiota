@@ -218,6 +218,47 @@ public class CodeMethodWriterTests : IDisposable {
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesRequestExecutorBodyForEnum() {
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        AddRequestBodyParameters();
+        method.ReturnType = new CodeType {
+            Name = "SomeEnum",
+            TypeDefinition = new CodeEnum {
+                Name = "SomeEnum"
+            }
+        };
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("m.requestAdapter.SendAsync", result);
+        Assert.Contains("m.requestAdapter.SendEnumAsync", result);
+        Assert.Contains("ParseSomeEnum", result);
+        Assert.Contains("res.(*SomeEnum)", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesRequestExecutorBodyForEnumCollection() {
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        AddRequestBodyParameters();
+        method.ReturnType = new CodeType {
+            Name = "SomeEnum",
+            TypeDefinition = new CodeEnum {
+                Name = "SomeEnum"
+            },
+            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+        };
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("m.requestAdapter.SendAsync", result);
+        Assert.DoesNotContain("m.requestAdapter.SendEnumAsync", result);
+        Assert.Contains("m.requestAdapter.SendEnumCollectionAsync", result);
+        Assert.Contains("ParseSomeEnum", result);
+        Assert.DoesNotContain("val[i] = *(v.(*SomeEnum))", result);
+        Assert.Contains("val[i] = v.(SomeEnum)", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void DoesntCreateDictionaryOnEmptyErrorMapping() {
         method.Kind = CodeMethodKind.RequestExecutor;
         method.HttpMethod = HttpMethod.Get;

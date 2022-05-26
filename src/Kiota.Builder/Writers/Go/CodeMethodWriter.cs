@@ -353,12 +353,15 @@ namespace Kiota.Builder.Writers.Go {
             if(returnType == null) throw new InvalidOperationException("return type cannot be null"); // string.Empty is a valid return type
             var isPrimitive = conventions.IsPrimitiveType(returnType);
             var isBinary = conventions.StreamTypeName.Equals(returnType.TrimStart('*'), StringComparison.OrdinalIgnoreCase);
+            var isEnum = codeElement.ReturnType is CodeType collType && collType.TypeDefinition is CodeEnum;
             var sendMethodName = returnType switch {
                 "void" => "SendNoContentAsync",
                 _ when string.IsNullOrEmpty(returnType) => "SendNoContentAsync",
                 _ when codeElement.ReturnType.IsCollection && isPrimitive => "SendPrimitiveCollectionAsync",
                 _ when isPrimitive || isBinary => "SendPrimitiveAsync",
-                _ when codeElement.ReturnType.IsCollection => "SendCollectionAsync",
+                _ when codeElement.ReturnType.IsCollection && !isEnum => "SendCollectionAsync",
+                _ when codeElement.ReturnType.IsCollection && isEnum => "SendEnumCollectionAsync",
+                _ when isEnum => "SendEnumAsync",
                 _ => "SendAsync"
             };
             var responseHandlerParam = codeElement.Parameters.FirstOrDefault(x => x.IsOfKind(CodeParameterKind.ResponseHandler));
@@ -369,6 +372,7 @@ namespace Kiota.Builder.Writers.Go {
             var constructorFunction = returnType switch {
                 _ when isVoid => string.Empty,
                 _ when isPrimitive || isBinary => $"\"{returnType.TrimCollectionAndPointerSymbols()}\", ",
+                _ when isEnum => $"{conventions.GetImportedStaticMethodName(codeElement.ReturnType, codeElement.Parent, "Parse", string.Empty, string.Empty)}, ",
                 _ => $"{conventions.GetImportedStaticMethodName(codeElement.ReturnType, codeElement.Parent, "Create", "FromDiscriminatorValue", "able")}, ",
             };
             var errorMappingVarName = "nil";
@@ -390,7 +394,7 @@ namespace Kiota.Builder.Writers.Go {
             if(codeElement.ReturnType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None) {
                 var propertyTypeImportName = conventions.GetTypeString(codeElement.ReturnType, parentClass, false, false);
                 var isInterface = codeElement.ReturnType.AllTypes.First().TypeDefinition is CodeInterface;
-                WriteCollectionCast(propertyTypeImportName, "res", "val", writer, isInterface ? string.Empty : "*", !isInterface);
+                WriteCollectionCast(propertyTypeImportName, "res", "val", writer, isInterface || isEnum ? string.Empty : "*", !(isInterface || isEnum));
                 valueVarName = "val, ";
             }
             var resultReturnCast = isVoid switch {
