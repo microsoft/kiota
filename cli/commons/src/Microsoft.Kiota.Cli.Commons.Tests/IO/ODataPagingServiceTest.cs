@@ -1,13 +1,9 @@
-using System;
-using System.CommandLine;
+﻿using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using DevLab.JmesPath;
 using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Cli.Commons.IO;
-using Moq;
-using Spectre.Console;
 using Xunit;
 
 namespace Microsoft.Kiota.Cli.Commons.Tests.IO;
@@ -41,6 +37,20 @@ public class ODataPagingServiceTest
             var nextLink = await pagingService.GetNextPageLinkAsync(pagingData);
 
             Assert.Equal(new Uri("https://testlink"), nextLink);
+        }
+
+        [Fact]
+        public async Task Return_Null_On_Next_Link_Missing()
+        {
+            var pagingService = new ODataPagingService();
+            var bytes = Encoding.UTF8.GetBytes("{}");
+            var ms = new MemoryStream(bytes);
+            var requestInfo = new RequestInformation();
+            var pagingData = new PageLinkData(requestInfo, ms);
+
+            var nextLink = await pagingService.GetNextPageLinkAsync(pagingData);
+
+            Assert.Null(nextLink);
         }
     }
 
@@ -90,6 +100,22 @@ public class ODataPagingServiceTest
             using var leftMs = new MemoryStream(Encoding.UTF8.GetBytes(left));
             using var rightMs = new MemoryStream(Encoding.UTF8.GetBytes(right));
             var response = await pagingService.MergeJsonStreamsAsync(leftMs, rightMs, itemName);
+            using var reader = new StreamReader(response ?? Stream.Null);
+            var result = await reader.ReadToEndAsync();
+
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData("{\"value\":[20],\"nextLink\":\"test1\"}", "{\"value\":[30],\"nextLink\":\"test2\"}", "{\"value\":[20,30],\"nextLink\":\"test2\"}")]
+        [InlineData("{\"value\":[{\"a\": 1}],\"nextLink\":\"test2\"}", "{\"value\":[{\"b\":4}],\"nextLink\":\"test2\"}", "{\"value\":[{\"a\":1},{\"b\":4}],\"nextLink\":\"test2\"}")]
+        public async Task Return_With_Next_Link_From_Right_Stream(string left, string right, string expected)
+        {
+            var pagingService = new ODataPagingService();
+
+            using var leftMs = new MemoryStream(Encoding.UTF8.GetBytes(left));
+            using var rightMs = new MemoryStream(Encoding.UTF8.GetBytes(right));
+            var response = await pagingService.MergeJsonStreamsAsync(leftMs, rightMs);
             using var reader = new StreamReader(response ?? Stream.Null);
             var result = await reader.ReadToEndAsync();
 

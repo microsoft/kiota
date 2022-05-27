@@ -1,4 +1,4 @@
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Kiota.Abstractions;
@@ -22,7 +22,9 @@ public class ODataPagingService : IPagingService
                 if (doc.RootElement.ValueKind == JsonValueKind.Object)
                 {
                     var obj = doc.RootElement.EnumerateObject().FirstOrDefault(o => o.Name == pageLinkData.NextLinkName);
-                    var link = obj.Value.GetString();
+                    string? link = null;
+                    if (obj.Value.ValueKind == JsonValueKind.String)
+                        link = obj.Value.GetString();
                     if (!string.IsNullOrWhiteSpace(link)) return new Uri(link);
                 }
             }
@@ -39,23 +41,29 @@ public class ODataPagingService : IPagingService
     /// <inheritdoc />
     public async Task<Stream> GetPagedDataAsync(Func<RequestInformation, CancellationToken, Task<Stream>> requestExecutorAsync, PageLinkData pageLinkData, bool fetchAllPages = false, CancellationToken cancellationToken = default)
     {
+        // Set the page size to 999 if the user asked to fetch all pages and top either isn't specified or is invalid
+        if (fetchAllPages && (!pageLinkData.RequestInformation.QueryParameters.TryGetValue("%24top", out var topVal) || (topVal as int?) < 1))
+        {
+            pageLinkData.RequestInformation.QueryParameters["%24top"] = 999;
+        }
         var requestInfo = pageLinkData.RequestInformation;
-        var nextLink = requestInfo.URI;
+        Uri? nextLink;
         Stream? response = null;
-        while (nextLink != null)
+        do
         {
             var pageData = await requestExecutorAsync(requestInfo, cancellationToken);
             if (fetchAllPages)
             {
+                pageLinkData = new PageLinkData(requestInfo, pageData, pageLinkData.ResponseFormat, pageLinkData.ItemName, pageLinkData.NextLinkName);
                 nextLink = await GetNextPageLinkAsync(pageLinkData, cancellationToken);
-                pageLinkData.RequestInformation.URI = nextLink;
+                if (nextLink != null) pageLinkData.RequestInformation.URI = nextLink;
             }
             else
             {
                 nextLink = null;
             }
-            response = await MergeJsonStreamsAsync(response, pageData, pageLinkData.ItemName, cancellationToken);
-        }
+            response = await MergeJsonStreamsAsync(response, pageData, pageLinkData.ItemName, pageLinkData.NextLinkName, cancellationToken);
+        } while (nextLink != null);
 
         return response ?? Stream.Null;
     }
@@ -66,8 +74,11 @@ public class ODataPagingService : IPagingService
     /// <param name="left">The first stream.</param>
     /// <param name="right">The second stream.</param>
     /// <param name="itemName">The name of the array property to merge on.</param>
-    internal async Task<Stream?> MergeJsonStreamsAsync(Stream? left, Stream? right, string itemName = "value", CancellationToken cancellationToken = default)
+    /// <param name="cancellationToken">The cancellation token.</param>
+    internal async Task<Stream?> MergeJsonStreamsAsync(Stream? left, Stream? right, string itemName = "value", string nextLinkName = "nextLink", CancellationToken cancellationToken = default)
     {
+        if (left?.CanSeek == true) left?.Seek(0, SeekOrigin.Begin);
+        if (right?.CanSeek == true) right?.Seek(0, SeekOrigin.Begin);
         if (left == null || right == null)
         {
             return left ?? right;
@@ -77,11 +88,13 @@ public class ODataPagingService : IPagingService
         if (left != null)
         {
             nodeLeft = JsonNode.Parse(left);
+            if (left?.CanSeek == true) left?.Seek(0, SeekOrigin.Begin);
         }
         JsonNode? nodeRight = null;
         if (right != null)
         {
             nodeRight = JsonNode.Parse(right);
+            if (right?.CanSeek == true) right?.Seek(0, SeekOrigin.Begin);
         }
 
         JsonArray? leftArray = null;
@@ -121,6 +134,20 @@ public class ODataPagingService : IPagingService
         else
         {
             nodeLeft = leftArray ?? rightArray;
+        }
+
+        // Replace next link with new page's next link
+        if (!string.IsNullOrWhiteSpace(nextLinkName))
+        {
+            var obj1 = nodeLeft as JsonObject;
+            if (obj1?[nextLinkName] != null)
+                obj1.Remove(nextLinkName);
+            if (nodeRight is JsonObject obj2 && obj2?[nextLinkName] != null)
+            {
+                var nextLink = obj2[nextLinkName];
+                obj2.Remove(nextLinkName);
+                obj1?.Add(nextLinkName, nextLink);
+            }
         }
         var stream = new MemoryStream();
         using var writer = new Utf8JsonWriter(stream);
