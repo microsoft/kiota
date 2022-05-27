@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where arrays without items definition would derail generation.
 - Fixed a bug with enums detection for generation. (interpreted as string)
 - Fixes a bug where classes names cleanup could end-up in a collision.
+- Fixes a bug on collection binding not treating boolean types as flags. (Shell)
 
 ## [0.1.3] - 2022-05-06
 

@@ -9,9 +9,9 @@ namespace Microsoft.Kiota.Cli.Commons.Binding;
 public class CollectionBinding : BinderBase<object[]>
 {
     private readonly IValueDescriptor[] _symbols;
-    
+
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="symbols">The symbols to resolve. Can be <see cref="Option"/>, <see cref="Argument"/> or any other <see cref="BinderBase{T}"/></param>
     public CollectionBinding(params IValueDescriptor[] symbols)
@@ -39,7 +39,8 @@ public class CollectionBinding : BinderBase<object[]>
         int index,
         BindingContext context)
     {
-        if (symbols.Length <= index) {
+        if (symbols.Length <= index)
+        {
             throw new ArgumentOutOfRangeException(nameof(index), index, "The index is out of range.");
         }
 
@@ -54,11 +55,15 @@ public class CollectionBinding : BinderBase<object[]>
             {
                 if (symbol is Argument argument)
                 {
-                    return context.ParseResult.GetValueForArgument(argument);
+                    var result = context.ParseResult.FindResultFor(argument);
+                    var val = result?.GetValueOrDefault();
+                    return val ?? context.ParseResult.GetValueForArgument(argument);
                 }
                 else if (symbol is Option option)
                 {
-                    return context.ParseResult.GetValueForOption(option);
+                    var result = context.ParseResult.FindResultFor(option);
+                    var val = result?.GetValueOrDefault();
+                    return val ?? context.ParseResult.GetValueForOption(option);
                 }
                 else
                 {
