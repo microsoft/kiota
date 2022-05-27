@@ -16,7 +16,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a bug where the logger would not log all the information. [#1588](https://github.com/microsoft/kiota/issues/1588)
-- Added support for paging. [#1569](https://github.com/microsoft/kiota/issues/1569)
 
 ## [0.2.0] - 2022-05-24
 

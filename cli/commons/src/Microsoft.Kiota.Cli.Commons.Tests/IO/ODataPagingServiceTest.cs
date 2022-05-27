@@ -30,7 +30,7 @@ public class ODataPagingServiceTest
         {
             var pagingService = new ODataPagingService();
             var bytes = Encoding.UTF8.GetBytes("{\"nextLink\": \"https://testlink\"}");
-            var ms = new MemoryStream(bytes);
+            using var ms = new MemoryStream(bytes);
             var requestInfo = new RequestInformation();
             var pagingData = new PageLinkData(requestInfo, ms);
 
@@ -44,7 +44,7 @@ public class ODataPagingServiceTest
         {
             var pagingService = new ODataPagingService();
             var bytes = Encoding.UTF8.GetBytes("{}");
-            var ms = new MemoryStream(bytes);
+            using var ms = new MemoryStream(bytes);
             var requestInfo = new RequestInformation();
             var pagingData = new PageLinkData(requestInfo, ms);
 
