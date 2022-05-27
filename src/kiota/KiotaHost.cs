@@ -115,14 +115,15 @@ namespace Kiota {
             Configuration.OutputPath = GetAbsolutePath(Configuration.OutputPath);
             Configuration.CleanOutput = cleanOutput;
 
-            var logger = LoggerFactory.Create((builder) => {
+            using var loggerFactory = LoggerFactory.Create((builder) => {
                 builder
                     .AddConsole()
 #if DEBUG
                     .AddDebug()
 #endif
                     .SetMinimumLevel(loglevel);
-            }).CreateLogger<KiotaBuilder>();
+            });
+            var logger = loggerFactory.CreateLogger<KiotaBuilder>();
 
             logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration));
 
