@@ -155,6 +155,9 @@ stages:
       # Pack
       - pwsh: dotnet pack $(Build.SourcesDirectory)/src/kiota/kiota.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg
         displayName: 'pack kiota'
+
+      - pwsh: dotnet pack $(Build.SourcesDirectory)/src/Kiota.Builder/Kiota.Builder.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg
+        displayName: 'pack kiota builder'
       
       # Pack
       - pwsh: nuget pack $(Build.SourcesDirectory)/src/Microsoft.OpenApi.Kiota.ApiDescription.Client/Microsoft.OpenApi.Kiota.ApiDescription.Client.nuspec -OutputDirectory $(Build.ArtifactStagingDirectory)
