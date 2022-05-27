@@ -8,7 +8,6 @@ use Exception;
 use GuzzleHttp\Psr7\Utils;
 use Microsoft\Kiota\Abstractions\Enum;
 use Microsoft\Kiota\Abstractions\Serialization\ParseNode;
-use Microsoft\Kiota\Abstractions\Types\Byte;
 use Microsoft\Kiota\Abstractions\Types\Date;
 use Microsoft\Kiota\Abstractions\Types\Time;
 use Microsoft\Kiota\Serialization\Json\JsonParseNode;
@@ -41,7 +40,7 @@ class JsonParseNodeTest extends TestCase
         $this->parseNode = (new JsonParseNodeFactory())->getRootParseNode('application/json', $str);
 
         /** @var array<Person> $expected */
-        $expected = $this->parseNode->getCollectionOfObjectValues(Person::class);
+        $expected = $this->parseNode->getCollectionOfObjectValues(array(Person::class, 'createFromDiscriminatorValue'));
         $this->assertCount(2, $expected);
         $this->assertInstanceOf(Person::class, $expected[1]);
         $this->assertInstanceOf(Person::class, $expected[0]);
@@ -54,7 +53,7 @@ class JsonParseNodeTest extends TestCase
     public function testGetObjectValue(): void {
         $this->parseNode = (new JsonParseNodeFactory())->getRootParseNode('application/json', $this->stream);
         /** @var Person $expected */
-        $expected = $this->parseNode->getObjectValue(Person::class);
+        $expected = $this->parseNode->getObjectValue(array(Person::class, 'createFromDiscriminatorValue'));
         $this->assertInstanceOf(Person::class, $expected);
         $this->assertEquals('Silas Kenneth', $expected->getName());
         $this->assertInstanceOf(Enum::class, $expected->getMaritalStatus());
@@ -93,16 +92,6 @@ class JsonParseNodeTest extends TestCase
         $this->assertEquals(12.009, $expectedFloat);
         $this->assertEquals('2022-01-27', (string)$expectedDate);
         $this->assertEquals('Silas Kenneth', $expectedString);
-    }
-
-    public function testGetByteValue(): void {
-        $this->parseNode = new JsonParseNode('23');
-        $expected = $this->parseNode->getByteValue();
-        $this->assertInstanceOf(Byte::class, $expected);
-        $this->assertEquals(23, (string)$expected);
-        $this->expectException(Exception::class);
-        $this->parseNode = new JsonParseNode('-192');
-        $this->parseNode->getByteValue();
     }
 
     public function testGetEnumValue(): void {
@@ -170,7 +159,7 @@ class JsonParseNodeTest extends TestCase
 
         $child = $this->parseNode->getChildNode('address');
         /** @var Address $address */
-        $address = $child->getObjectValue(Address::class);
+        $address = $child->getObjectValue(array(Address::class, 'createFromDiscriminatorValue'));
         $this->assertInstanceOf(Address::class, $address);
         $this->assertEquals('Nairobi', $address->getCity());
 

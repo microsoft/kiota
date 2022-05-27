@@ -40,6 +40,9 @@ public class ParametersNameDecodingHandler implements Interceptor {
                 return chain.proceed(request);
             }
         var query = originalUri.query();
+        if (query == null || query.isEmpty()) {
+            return chain.proceed(request);
+        }
         final var symbolsToReplace = new ArrayList<SimpleEntry<String, String>>(nameOption.parametersToDecode.length);
         for (final char charToReplace : nameOption.parametersToDecode) {
             symbolsToReplace.add(new SimpleEntry<String,String>("%" + String.format("%x", (int)charToReplace), String.valueOf(charToReplace)));

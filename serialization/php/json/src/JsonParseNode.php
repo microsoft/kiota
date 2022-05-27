@@ -11,7 +11,6 @@ use Microsoft\Kiota\Abstractions\Enum;
 use Microsoft\Kiota\Abstractions\Serialization\AdditionalDataHolder;
 use Microsoft\Kiota\Abstractions\Serialization\Parsable;
 use Microsoft\Kiota\Abstractions\Serialization\ParseNode;
-use Microsoft\Kiota\Abstractions\Types\Byte;
 use Microsoft\Kiota\Abstractions\Types\Date;
 use Microsoft\Kiota\Abstractions\Types\Time;
 use Psr\Http\Message\StreamInterface;
@@ -79,7 +78,7 @@ class JsonParseNode implements ParseNode
      * @return array<Parsable|null>|null
      * @throws Exception
      */
-    public function getCollectionOfObjectValues(string $type): ?array {
+    public function getCollectionOfObjectValues(array $type): ?array {
         if ($this->jsonNode === null) {
             return null;
         }
@@ -94,15 +93,18 @@ class JsonParseNode implements ParseNode
      * @inheritDoc
      * @throws Exception
      */
-    public function getObjectValue(string $type): ?Parsable {
+    public function getObjectValue(array $type): ?Parsable {
         if ($this->jsonNode === null) {
             return null;
         }
-        if (!is_subclass_of($type, Parsable::class)){
-            throw new InvalidArgumentException("Invalid type $type provided.");
+        if (!is_subclass_of($type[0], Parsable::class)){
+            throw new InvalidArgumentException("Invalid type $type[0] provided.");
+        }
+        if (!is_callable($type, true, $callableString)) {
+            throw new \RuntimeException('Undefined method '. $type[1]);
         }
         /** @var Parsable $result */
-        $result = new $type();
+        $result = $callableString($this);
         if($this->onBeforeAssignFieldValues !== null) {
             $this->onBeforeAssignFieldValues($result);
         }
@@ -132,7 +134,7 @@ class JsonParseNode implements ParseNode
             $deserializer = $fieldDeserializers[$key] ?? null;
 
             if ($deserializer !== null){
-                $deserializer($result, new JsonParseNode($value));
+                $deserializer(new JsonParseNode($value));
             } else {
                 $key = (string)$key;
                 $additionalData[$key] = $value;
@@ -155,6 +157,20 @@ class JsonParseNode implements ParseNode
             throw new InvalidArgumentException('Invalid enum provided.');
         }
         return new $targetEnum($this->jsonNode);
+    }
+
+    /**
+     * @return array<Enum|null>|null
+     */
+    public function getCollectionOfEnumValues(string $targetClass): ?array {
+        if ($this->jsonNode === null) {
+            return null;
+        }
+        return array_map(static function ($val) use($targetClass) {
+            return $val->getEnumValue($targetClass);
+        }, array_map(static function ($value) {
+            return new JsonParseNode($value);
+        }, $this->jsonNode));
     }
 
     /**
@@ -221,14 +237,9 @@ class JsonParseNode implements ParseNode
                 return $this->getDateValue();
             case Time::class:
                 return $this->getTimeValue();
-            case Byte::class:
-                return $this->getByteValue();
             default:
                 if (is_subclass_of($type, Enum::class)){
                     return $this->getEnumValue($type);
-                }
-                if (is_subclass_of($type, Parsable::class)){
-                    return $this->getObjectValue($type);
                 }
                 if (is_subclass_of($type, StreamInterface::class)) {
                     return $this->getBinaryContent();
@@ -252,13 +263,6 @@ class JsonParseNode implements ParseNode
      */
     public function getTimeValue(): ?Time {
         return ($this->jsonNode !== null) ? new Time($this->jsonNode) : null;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getByteValue(): ?Byte {
-        return ($this->jsonNode !== null) ? new Byte($this->jsonNode) : null;
     }
 
     /**

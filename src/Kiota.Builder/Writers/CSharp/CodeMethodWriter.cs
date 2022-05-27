@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -143,7 +143,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                                     pathParametersParam.Name.ToFirstCharacterLowerCase(),
                                                     currentMethod.Parameters
                                                                 .Where(x => x.IsOfKind(CodeParameterKind.Path))
-                                                                .Select(x => (x.Type, x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
+                                                                .Select(x => (x.Type, string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
                                                                 .ToArray());
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
             }
@@ -235,10 +235,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             }
             writer.CloseBlock("};");
         }
-        var returnTypeFactory = codeElement.ReturnType is CodeType returnTypeCodeType && returnTypeCodeType.TypeDefinition is CodeClass returnTypeClass
+        var returnTypeCodeType = codeElement.ReturnType as CodeType; 
+        var returnTypeFactory = returnTypeCodeType?.TypeDefinition is CodeClass returnTypeClass
                                 ? $", {returnTypeWithoutCollectionInformation}.CreateFromDiscriminatorValue"
                                 : null;
-        writer.WriteLine($"{(isVoid ? string.Empty : "return ")}await RequestAdapter.{GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnType)}(requestInfo{returnTypeFactory}, responseHandler, {errorMappingVarName}, cancellationToken);");
+        var isEnum = returnTypeCodeType?.TypeDefinition is CodeEnum;
+        writer.WriteLine($"{(isVoid ? string.Empty : "return ")}await RequestAdapter.{GetSendRequestMethodName(isVoid, isStream, codeElement.ReturnType.IsCollection, returnType, isEnum)}(requestInfo{returnTypeFactory}, responseHandler, {errorMappingVarName}, cancellationToken);");
     }
     private const string RequestInfoVarName = "requestInfo";
     private const string RequestConfigVarName = "requestConfig";
@@ -309,10 +311,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         throw new InvalidOperationException("CommandBuilder methods are not implemented in this SDK. They're currently only supported in the shell language.");
     }
 
-    protected string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType)
+    protected string GetSendRequestMethodName(bool isVoid, bool isStream, bool isCollection, string returnType, bool isEnum)
     {
         if (isVoid) return "SendNoContentAsync";
-        else if (isStream || conventions.IsPrimitiveType(returnType))
+        else if (isStream || conventions.IsPrimitiveType(returnType) || isEnum)
             if (isCollection)
                 return $"SendPrimitiveCollectionAsync<{returnType.StripArraySuffix()}>";
             else

@@ -2,11 +2,12 @@
 
 namespace Microsoft\Kiota\Serialization\Tests\Samples;
 
+use Microsoft\Kiota\Abstractions\Serialization\AdditionalDataHolder;
 use Microsoft\Kiota\Abstractions\Serialization\Parsable;
 use Microsoft\Kiota\Abstractions\Serialization\ParseNode;
 use Microsoft\Kiota\Abstractions\Serialization\SerializationWriter;
 
-class Person implements Parsable
+class Person implements Parsable, AdditionalDataHolder
 {
     /** @var array<string, mixed> */
     private array $additionalData = [];
@@ -23,12 +24,13 @@ class Person implements Parsable
      */
     public function getFieldDeserializers(): array
     {
+        $currentObject = $this;
         return [
-            "name" => static function (self $o, ParseNode $n) {$o->setName($n->getStringValue());},
-            "age" => function (self $o, ParseNode $n) {$o->setAge($n->getIntegerValue());},
-            "height" => function (self $o, ParseNode $n) {$o->setHeight($n->getFloatValue());},
-            "maritalStatus" => function (self $o, ParseNode $n) {$o->setMaritalStatus($n->getEnumValue(MaritalStatus::class));},
-            "address" => function (self $o, ParseNode $n) {$o->setAddress($n->getObjectValue(Address::class));}
+            "name" => static function (ParseNode $n) use ($currentObject) {$currentObject->setName($n->getStringValue());},
+            "age" => function (ParseNode $n) use ($currentObject) {$currentObject->setAge($n->getIntegerValue());},
+            "height" => function (ParseNode $n) use ($currentObject) {$currentObject->setHeight($n->getFloatValue());},
+            "maritalStatus" => function (ParseNode $n) use ($currentObject) {$currentObject->setMaritalStatus($n->getEnumValue(MaritalStatus::class));},
+            "address" => function (ParseNode $n) use ($currentObject) {$currentObject->setAddress($n->getObjectValue(array(Address::class, 'createFromDiscriminatorValue')));}
         ];
     }
 
@@ -46,8 +48,12 @@ class Person implements Parsable
     /**
      * @inheritDoc
      */
-    public function getAdditionalData(): ?array {
+    public function getAdditionalData(): array {
         return $this->additionalData;
+    }
+
+    public static function createFromDiscriminatorValue(ParseNode $parseNode): Person {
+        return new self();
     }
 
     /**

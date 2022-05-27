@@ -45,7 +45,7 @@ namespace Kiota {
             namespaceOption.ArgumentHelpName = "name";
             AddStringRegexValidator(namespaceOption, @"^[\w][\w\._-]+", "namespace name");
 
-            var logLevelOption = new Option<LogLevel>("--loglevel", () => LogLevel.Warning, "The log level to use when logging messages to the main output.");
+            var logLevelOption = new Option<LogLevel>("--log-level", () => LogLevel.Warning, "The log level to use when logging messages to the main output.");
             logLevelOption.AddAlias("--ll");
             AddEnumValidator(logLevelOption, "log level");
 
@@ -115,14 +115,15 @@ namespace Kiota {
             Configuration.OutputPath = GetAbsolutePath(Configuration.OutputPath);
             Configuration.CleanOutput = cleanOutput;
 
-            var logger = LoggerFactory.Create((builder) => {
+            using var loggerFactory = LoggerFactory.Create((builder) => {
                 builder
                     .AddConsole()
 #if DEBUG
                     .AddDebug()
 #endif
                     .SetMinimumLevel(loglevel);
-            }).CreateLogger<KiotaBuilder>();
+            });
+            var logger = loggerFactory.CreateLogger<KiotaBuilder>();
 
             logger.LogTrace("configuration: {configuration}", JsonSerializer.Serialize(Configuration));
 

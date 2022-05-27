@@ -10,6 +10,7 @@ namespace Microsoft\Kiota\Http\Middleware;
 
 use Microsoft\Kiota\Http\Middleware\Options\ChaosOption;
 use Microsoft\Kiota\Http\Middleware\Options\CompressionOption;
+use Microsoft\Kiota\Http\Middleware\Options\ParametersDecodingOption;
 use Microsoft\Kiota\Http\Middleware\Options\RetryOption;
 use Microsoft\Kiota\Http\Middleware\Options\TelemetryOption;
 
@@ -76,6 +77,20 @@ class KiotaMiddleware
     {
         return static function (callable $handler) use ($chaosOption): ChaosHandler {
             return new ChaosHandler($handler, $chaosOption);
+        };
+    }
+
+    /**
+     * Middleware that decodes special characters in the request query parameter names that had to be encoded due to RFC 6570
+     * restrictions before executing the request. Configured by the $decodingOption
+     *
+     * @param ParametersDecodingOption|null $decodingOption
+     * @return callable
+     */
+    public static function parameterNamesDecoding(?ParametersDecodingOption $decodingOption = null): callable
+    {
+        return static function (callable $handler) use ($decodingOption): ParametersNameDecodingHandler {
+            return new ParametersNameDecodingHandler($handler, $decodingOption);
         };
     }
 }

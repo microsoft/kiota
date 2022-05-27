@@ -11,7 +11,7 @@ parent: Get started
 
 ## Target project requirements
 
-Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to add references to the [abstraction](https://github.com/microsoft/kiota/tree/main/abstractions/typescript), [authentication](https://github.com/microsoft/kiota/tree/main/authentication/typescript/azure), [http](https://github.com/microsoft/kiota/tree/main/http/typescript/fetch), and [serialization](https://github.com/microsoft/kiota/tree/main/serialization/typescript/json) packages from the GitHub feed.
+Before you can compile and run the target project, you will need to initialize it. After initializing the test project, you will need to install dependencies of the [abstractions](https://www.npmjs.com/package/@microsoft/kiota-abstractions), [authentication](https://www.npmjs.com/package/@microsoft/kiota-authentication-azure), [http fetch](https://www.npmjs.com/package/@microsoft/kiota-http-fetchlibrary), [serialization json](https://www.npmjs.com/package/@microsoft/kiota-serialization-json) and [serialization text](https://www.npmjs.com/package/@microsoft/kiota-serialization-text) packages from the npm registry.
 
 ## Creating target projects
 

@@ -221,6 +221,29 @@ class JsonSerializationWriter implements SerializationWriter
     /**
      * @inheritDoc
      */
+    public function writeCollectionOfEnumValues(?string $key, ?array $values): void {
+        if ($values !== null) {
+            if($key !== null){
+                $this->writePropertyName($key);
+            }
+            $this->writer [] = '[';
+            foreach ($values as $v) {
+                $this->writeEnumValue(null, $v);
+                $this->writer [] = self::PROPERTY_SEPARATOR;
+            }
+            if (count($values) > 0) {
+                array_pop($this->writer);
+            }
+            $this->writer [] = ']';
+            if ($key !== null) {
+                $this->writer []= self::PROPERTY_SEPARATOR;
+            }
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function writeNullValue(?string $key): void {
         if (!empty($key)) {
             $this->writePropertyName($key);
@@ -309,9 +332,6 @@ class JsonSerializationWriter implements SerializationWriter
                 break;
             case Time::class:
                 $this->writeTimeValue($key, $value);
-                break;
-            case Byte::class:
-                $this->writeByteValue($key, $value);
                 break;
             case DateTime::class:
                 $this->writeDateTimeValue($key, $value);
@@ -438,21 +458,6 @@ class JsonSerializationWriter implements SerializationWriter
             }
             $res = "P{$value->y}Y{$value->y}M{$value->d}DT{$value->h}H{$value->i}M{$value->s}S";
             $val = "\"{$res}\"" ;
-            $this->writePropertyValue($key, $val);
-        }
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function writeByteValue(?string $key, ?Byte $value): void {
-
-
-        if ($value !== null) {
-            if (!empty($key)) {
-                $this->writePropertyName($key);
-            }
-            $val = (int)(string)($value);
             $this->writePropertyValue($key, $val);
         }
     }

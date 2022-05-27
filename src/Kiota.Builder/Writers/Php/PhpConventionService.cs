@@ -36,9 +36,9 @@ namespace Kiota.Builder.Writers.Php
         public string DocCommentStart => "/**";
 
         public string DocCommentEnd => "*/";
+        internal HashSet<string> PrimitiveTypes = new(StringComparer.OrdinalIgnoreCase) {"string", "boolean", "integer", "float", "date", "datetime", "time", "dateinterval", "int", "double", "decimal", "bool"};
         
-        internal HashSet<string> PrimitiveTypes = new(StringComparer.OrdinalIgnoreCase) {"string", "float", "date", "datetime", "time", "dateinterval", "int", "bool"};
-
+        internal readonly HashSet<string> CustomTypes = new(StringComparer.OrdinalIgnoreCase) {"Date", "DateTime", "StreamInterface", "Byte", "Time"};
         public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true)
         {
             if(code is CodeComposedTypeBase) 
@@ -60,8 +60,9 @@ namespace Kiota.Builder.Writers.Php
             return typeName?.ToLowerInvariant() switch
             {
                 "boolean" => "bool",
-                "double" or "decimal" => "float",
-                "integer" or "int32" or "int64" => "int",
+                "double" => "float",
+                "decimal" or "byte" => "string",
+                "integer" or "int32" or "int64" or "sbyte" => "int",
                 "object" or "string" or "array" or "float" or "void" => typeName.ToLowerInvariant(),
                 "binary" => "StreamInterface",
                 _ => typeName.ToFirstCharacterUpperCase()
