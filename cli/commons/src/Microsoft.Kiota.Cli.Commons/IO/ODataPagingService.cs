@@ -74,6 +74,7 @@ public class ODataPagingService : IPagingService
     /// <param name="left">The first stream.</param>
     /// <param name="right">The second stream.</param>
     /// <param name="itemName">The name of the array property to merge on.</param>
+    /// <param name="nextLinkName">The name of the property containing the next link name.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     internal async Task<Stream?> MergeJsonStreamsAsync(Stream? left, Stream? right, string itemName = "value", string nextLinkName = "nextLink", CancellationToken cancellationToken = default)
     {
