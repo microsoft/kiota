@@ -342,6 +342,76 @@ public class ShellCodeMethodWriterTests : IDisposable
     }
 
     [Fact]
+    public void WritesExecutableCommandForPagedGetRequestModel()
+    {
+
+        method.Kind = CodeMethodKind.CommandBuilder;
+        method.Description = "Test description";
+        method.SimpleName = "User";
+        method.HttpMethod = HttpMethod.Get;
+        var userClass = root.AddClass(new CodeClass
+        {
+            Name = "User",
+            Kind = CodeClassKind.Model
+        }).First();
+        var stringType = new CodeType
+        {
+            Name = "user",
+            TypeDefinition = userClass,
+        };
+        var generatorMethod = new CodeMethod
+        {
+            Kind = CodeMethodKind.RequestGenerator,
+            Name = "CreateGetRequestInformation",
+            HttpMethod = method.HttpMethod
+        };
+        method.OriginalMethod = new CodeMethod
+        {
+            Kind = CodeMethodKind.RequestExecutor,
+            HttpMethod = method.HttpMethod,
+            ReturnType = stringType,
+            Parent = method.Parent,
+            PagingInformation = new()
+            {
+                NextLinkName = "nextLink",
+                ItemName = "item"
+            },
+        };
+        var codeClass = method.Parent as CodeClass;
+        codeClass.AddMethod(generatorMethod);
+
+        AddRequestProperties();
+        AddRequestBodyParameters(method.OriginalMethod);
+        AddPathQueryAndHeaderParameters(generatorMethod);
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("var command = new Command(\"user\");", result);
+        Assert.Contains("command.Description = \"Test description\";", result);
+        Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
+        Assert.Contains("qOption.IsRequired = false;", result);
+        Assert.Contains("var jsonNoIndentOption = new Option<bool>(\"--json-no-indent\", r => {", result);
+        Assert.Contains("var allOption = new Option<bool>(\"--all\")", result);
+        Assert.Contains("command.AddOption(qOption);", result);
+        Assert.Contains("command.AddOption(jsonNoIndentOption);", result);
+        Assert.Contains("command.AddOption(outputOption);", result);
+        Assert.Contains("command.AddOption(allOption);", result);
+        Assert.Contains("command.SetHandler(async (object[] parameters) => {", result);
+        Assert.Contains("var q = (string) parameters[0];", result);
+        Assert.Contains("var all = (bool) parameters", result);
+        Assert.Contains("var requestInfo = CreateGetRequestInformation", result);
+        Assert.Contains("requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
+        Assert.Contains("var pagingData = new PageLinkData(requestInfo, Stream.Null, responseFormat: ResponseFormat.JSON, itemName: \"item\", nextLinkName: \"nextLink\");", result);
+        Assert.Contains("var response = await pagingService.GetPagedDataAsync((info, token) => RequestAdapter.SendPrimitiveAsync<Stream>(info, errorMapping: default, cancellationToken: token), pagingData, all, cancellationToken);", result);
+        Assert.Contains("var formatterOptions = output.GetOutputFormatterOptions(new FormatterOptionsModel(!jsonNoIndent));", result);
+        Assert.Contains("response = await outputFilter?.FilterOutputAsync(response, query, cancellationToken)", result);
+        Assert.Contains("await formatter.WriteOutputAsync(response, formatterOptions, cancellationToken);", result);
+        Assert.Contains("}, new CollectionBinding(qOption,", result);
+        Assert.Contains("return command;", result);
+    }
+
+    [Fact]
     public void WritesExecutableCommandForGetRequestModel()
     {
 

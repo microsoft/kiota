@@ -13,6 +13,8 @@ namespace Kiota.Builder.Writers.Shell
         private static Regex delimitedRegex = new Regex("(?<=[a-z])[-_\\.]+([A-Za-z])", RegexOptions.Compiled);
         private static Regex camelCaseRegex = new Regex("(?<=[a-z])([A-Z])", RegexOptions.Compiled);
         private static Regex uppercaseRegex = new Regex("([A-Z])", RegexOptions.Compiled);
+        private const string allParamType = "bool";
+        private const string allParamName = "all";
         private const string cancellationTokenParamType = "CancellationToken";
         private const string cancellationTokenParamName = "cancellationToken";
         private const string fileParamType = "FileInfo";
@@ -25,6 +27,8 @@ namespace Kiota.Builder.Writers.Shell
         private const string outputFormatParamName = "output";
         private const string outputFormatterFactoryParamType = "IOutputFormatterFactory";
         private const string outputFormatterFactoryParamName = "outputFormatterFactory";
+        private const string pagingServiceParamType = "IPagingService";
+        private const string pagingServiceParamName = "pagingService";
         private const string jsonNoIndentParamType = "bool";
         private const string jsonNoIndentParamName = "jsonNoIndent";
 
@@ -100,7 +104,7 @@ namespace Kiota.Builder.Writers.Shell
             var isHandlerVoid = conventions.VoidTypeName.Equals(originalMethod.ReturnType.Name, StringComparison.OrdinalIgnoreCase);
             var returnType = conventions.GetTypeString(originalMethod.ReturnType, originalMethod);
 
-            AddCustomCommandOptions(writer, ref availableOptions, ref paramTypes, ref paramNames, returnType, isHandlerVoid);
+            AddCustomCommandOptions(writer, ref availableOptions, ref paramTypes, ref paramNames, returnType, isHandlerVoid, originalMethod.PagingInformation != null);
 
             if (!isHandlerVoid && !conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
             {
@@ -116,6 +120,14 @@ namespace Kiota.Builder.Writers.Shell
                 paramTypes.Add(outputFormatterFactoryParamType);
                 paramNames.Add(outputFormatterFactoryParamName);
                 availableOptions.Add($"new TypeBinding(typeof({outputFormatterFactoryParamType}))");
+            }
+
+            if (originalMethod.PagingInformation != null)
+            {
+                // Add paging service param
+                paramTypes.Add(pagingServiceParamType);
+                paramNames.Add(pagingServiceParamName);
+                availableOptions.Add($"new TypeBinding(typeof({pagingServiceParamType}))");
             }
 
             // Add CancellationToken param
@@ -140,7 +152,7 @@ namespace Kiota.Builder.Writers.Shell
             writer.WriteLine("return command;");
         }
 
-        private void AddCustomCommandOptions(LanguageWriter writer, ref List<string> availableOptions, ref List<string> paramTypes, ref List<string> paramNames, string returnType, bool isHandlerVoid)
+        private void AddCustomCommandOptions(LanguageWriter writer, ref List<string> availableOptions, ref List<string> paramTypes, ref List<string> paramNames, string returnType, bool isHandlerVoid, bool isPageable)
         {
             if (conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
             {
@@ -187,6 +199,17 @@ namespace Kiota.Builder.Writers.Shell
                 paramNames.Add(jsonNoIndentParamName);
                 paramTypes.Add(jsonNoIndentParamType);
                 availableOptions.Add(jsonNoIndentOptionName);
+
+                // Add --all option
+                if (isPageable)
+                {
+                    var allOptionName = $"{allParamName}Option";
+                    writer.WriteLine($"var {allOptionName} = new Option<{allParamType}>(\"--{allParamName}\");");
+                    writer.WriteLine($"command.AddOption({allOptionName});");
+                    paramNames.Add(allParamName);
+                    paramTypes.Add(allParamType);
+                    availableOptions.Add(allOptionName);
+                }
             }
         }
 
@@ -442,7 +465,14 @@ namespace Kiota.Builder.Writers.Shell
                 requestMethod = "SendNoContentAsync";
             }
 
-            writer.WriteLine($"{(isVoid ? string.Empty : "var response = ")}await RequestAdapter.{requestMethod}(requestInfo, errorMapping: {errorMappingVarName}, cancellationToken: {cancellationTokenParamName});");
+            if (codeElement?.PagingInformation != null)
+            {
+                writer.WriteLine($"var pagingData = new PageLinkData(requestInfo, Stream.Null, responseFormat: ResponseFormat.JSON, itemName: \"{pageInfo.ItemName}\", nextLinkName: \"{pageInfo.NextLinkName}\");");
+                writer.WriteLine($"{(isVoid ? string.Empty : "var response = ")}await {pagingServiceParamName}.GetPagedDataAsync((info, token) => RequestAdapter.{requestMethod}(info, errorMapping: {errorMappingVarName}, cancellationToken: token), pagingData, {allParamName}, {cancellationTokenParamName});");
+            } else
+            {
+                writer.WriteLine($"{(isVoid ? string.Empty : "var response = ")}await RequestAdapter.{requestMethod}(requestInfo, errorMapping: {errorMappingVarName}, cancellationToken: {cancellationTokenParamName});");
+            }
         }
 
         private static void WriteRequestInformation(LanguageWriter writer, CodeMethod generatorMethod, string parametersList, string separator)
