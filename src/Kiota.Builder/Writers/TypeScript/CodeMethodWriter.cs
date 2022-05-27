@@ -142,7 +142,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
     }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
-        ComposeConstructorSuper(parentClass, inherits, writer, currentMethod);
+        if (!parentClass.IsOfKind(CodeClassKind.Model) && (inherits || parentClass.IsErrorDefinition))
+            writer.WriteLine("super();");
         var propertiesWithDefaultValues = new List<CodePropertyKind> {
             CodePropertyKind.BackingStore,
             CodePropertyKind.RequestBuilder,
@@ -156,6 +157,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         {
             writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
         }
+            
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))
         {
             if (currentMethod.IsOfKind(CodeMethodKind.Constructor))
@@ -175,40 +177,30 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
 
         if (parentClass.IsOfKind(CodeClassKind.Model))
         {
-            foreach (var prop in parentClass.Properties)
-            {
-                var interfaceProperty = $"{currentMethod.Parameters.FirstOrDefault(x => x.Type is CodeType type && type.TypeDefinition is CodeInterface).Name}?.{prop.Name.ToFirstCharacterLowerCase()}";
-                if (prop.IsOfKind(CodePropertyKind.AdditionalData))
-                {
-                    writer.WriteLine($"this.{prop.NamePrefix}{prop.Name.ToFirstCharacterLowerCase()} = {interfaceProperty} ? {interfaceProperty}! : {prop.DefaultValue}");
-                }
-                else
-                {
-                    writer.WriteLine($"this.{prop.Name.ToFirstCharacterLowerCase()} = {interfaceProperty} ;");
-                }
-            }
+            ConstructorBodyForModelClass(parentClass, inherits, writer, currentMethod);
         }
     }
-    private static void ComposeConstructorSuper(CodeClass codeClass, bool inherits, LanguageWriter writer, CodeMethod currentMethod)
+
+    private static void ConstructorBodyForModelClass(CodeClass codeClass, bool inherits, LanguageWriter writer, CodeMethod currentMethod)
     {
-        if (!codeClass.IsOfKind(CodeClassKind.Model) && (inherits || codeClass.IsErrorDefinition))
-            writer.WriteLine("super();");
+        var codeInterfaceName = currentMethod.Parameters.FirstOrDefault(x => x.Type is CodeType type && type.TypeDefinition is CodeInterface).Name;
+        if (inherits)
 
-        if (codeClass.IsOfKind(CodeClassKind.Model) && inherits) {
-            var codeInterfaceName = currentMethod.Parameters.FirstOrDefault().Name;
-            var inheritClass = codeClass.StartBlock.Inherits?.TypeDefinition as CodeClass;
-            var properties = inheritClass.Properties;
+            writer.WriteLine($"super({codeInterfaceName});");
+       
 
-            writer.WriteLines("super({");
-            writer.IncreaseIndent();
-
-            foreach (var property in properties) {
-                writer.WriteLines($"{property.Name.ToFirstCharacterLowerCase()}: {codeInterfaceName}?.{property.Name.ToFirstCharacterLowerCase()},");
+        foreach (var prop in codeClass.Properties)
+        {
+            var interfaceProperty = $"{codeInterfaceName}?.{prop.Name.ToFirstCharacterLowerCase()}";
+            if (prop.IsOfKind(CodePropertyKind.AdditionalData))
+            {
+                writer.WriteLine($"this.{prop.NamePrefix}{prop.Name.ToFirstCharacterLowerCase()} = {interfaceProperty} ? {interfaceProperty}! : {prop.DefaultValue};");
             }
-
-            writer.DecreaseIndent();
-            writer.WriteLines("});");
-        }    
+            else
+            {
+                writer.WriteLine($"this.{prop.NamePrefix}{prop.Name.ToFirstCharacterLowerCase()} = {interfaceProperty};");
+            }
+        }
     }
     private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer, string variableName = default)
     {

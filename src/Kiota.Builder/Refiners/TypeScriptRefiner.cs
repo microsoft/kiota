@@ -470,10 +470,23 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 },
             });
         }
+
+        foreach (var impl in modelClass.StartBlock.Implements)
+        {
+
+            modelInterface.StartBlock.AddInheritsFrom(new CodeType
+            {
+                Name = impl.Name,
+                TypeDefinition = impl.TypeDefinition,
+            });
+            var parentInterfaceNS = impl.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>();
+
+            modelInterface.AddUsing(modelClass.Usings.FirstOrDefault(x => x.Name == impl.Name));
+        }
         UpdateModelClassImplementationAndConstructor(modelClass, modelInterface);
 
-
     }
+
 
     private static void UpdateModelClassImplementationAndConstructor(CodeClass modelClass, CodeInterface modelInterface)
     {
