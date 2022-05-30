@@ -38,15 +38,20 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         SetSetterParametersToNullable(generatedCode, new Tuple<CodeMethodKind, CodePropertyKind>(CodeMethodKind.Setter, CodePropertyKind.AdditionalData));
         AddConstructorsForDefaultValues(generatedCode, true);
         CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
+        var defaultConfiguration = new GenerationConfiguration();
         ReplaceDefaultSerializationModules(
             generatedCode,
-            "com.microsoft.kiota.serialization.JsonSerializationWriterFactory",
-            "com.microsoft.kiota.serialization.TextSerializationWriterFactory"
+            defaultConfiguration.Serializers,
+            new (StringComparer.OrdinalIgnoreCase) {
+                "com.microsoft.kiota.serialization.JsonSerializationWriterFactory",
+                "com.microsoft.kiota.serialization.TextSerializationWriterFactory"}
         );
         ReplaceDefaultDeserializationModules(
             generatedCode,
-            "com.microsoft.kiota.serialization.JsonParseNodeFactory",
-            "com.microsoft.kiota.serialization.TextParseNodeFactory"
+            defaultConfiguration.Deserializers,
+            new (StringComparer.OrdinalIgnoreCase) {
+                "com.microsoft.kiota.serialization.JsonParseNodeFactory",
+                "com.microsoft.kiota.serialization.TextParseNodeFactory"}
         );
         AddSerializationModulesImport(generatedCode,
                                     new [] { "com.microsoft.kiota.ApiClientBuilder",

@@ -7,6 +7,7 @@ using Microsoft.OpenApi.Models;
 namespace Kiota.Builder.Extensions {
     public static class OpenApiOperationExtensions {
         private static readonly HashSet<string> successCodes = new(StringComparer.OrdinalIgnoreCase) {"200", "201", "202"}; //204 excluded as it won't have a schema
+        [Obsolete("pass the value from configuration instead")]
         private static readonly HashSet<string> structuredMimeTypes = new (StringComparer.OrdinalIgnoreCase) {
             "application/json",
             "application/xml",

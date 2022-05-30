@@ -17,16 +17,17 @@ namespace Kiota {
         public RootCommand GetRootCommand()
         {
             var kiotaInContainerRaw = Environment.GetEnvironmentVariable("KIOTA_CONTAINER");
+            var defaultConfiguration = new GenerationConfiguration();
             var runsInContainer = !string.IsNullOrEmpty(kiotaInContainerRaw) && bool.TryParse(kiotaInContainerRaw, out var kiotaInContainer) && kiotaInContainer;
             var descriptionOption = new Option<string>("--openapi", "The path to the OpenAPI description file used to generate the code files.");
             if(runsInContainer)
-                descriptionOption.SetDefaultValue("openapi.yaml");
+                descriptionOption.SetDefaultValue(defaultConfiguration.OpenAPIFilePath);
             else
                 descriptionOption.IsRequired = true;
             descriptionOption.AddAlias("-d");
             descriptionOption.ArgumentHelpName = "path";
 
-            var outputOption = new Option<string>("--output", () => "./output", "The output directory path for the generated code files.");
+            var outputOption = new Option<string>("--output", () => defaultConfiguration.OutputPath, "The output directory path for the generated code files.");
             outputOption.AddAlias("-o");
             outputOption.ArgumentHelpName = "path";
             
@@ -35,12 +36,12 @@ namespace Kiota {
             languageOption.IsRequired = true;
             AddEnumValidator(languageOption, "language");
 
-            var classOption = new Option<string>("--class-name", () => "ApiClient", "The class name to use for the core client class.");
+            var classOption = new Option<string>("--class-name", () => defaultConfiguration.ClientClassName, "The class name to use for the core client class.");
             classOption.AddAlias("-c");
             classOption.ArgumentHelpName = "name";
             AddStringRegexValidator(classOption, @"^[a-zA-Z_][\w_-]+", "class name");
 
-            var namespaceOption = new Option<string>("--namespace-name", () => "ApiSdk", "The namespace to use for the core client class specified with the --class-name option.");
+            var namespaceOption = new Option<string>("--namespace-name", () => defaultConfiguration.ClientNamespaceName, "The namespace to use for the core client class specified with the --class-name option.");
             namespaceOption.AddAlias("-n");
             namespaceOption.ArgumentHelpName = "name";
             AddStringRegexValidator(namespaceOption, @"^[\w][\w\._-]+", "namespace name");
@@ -49,31 +50,31 @@ namespace Kiota {
             logLevelOption.AddAlias("--ll");
             AddEnumValidator(logLevelOption, "log level");
 
-            var backingStoreOption = new Option<bool>("--backing-store", () => false, "Enables backing store for models.");
+            var backingStoreOption = new Option<bool>("--backing-store", () => defaultConfiguration.UsesBackingStore, "Enables backing store for models.");
             backingStoreOption.AddAlias("-b");
 
             var serializerOption = new Option<List<string>>(
                 "--serializer", 
-                () => new List<string> {
-                    "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory",
-                    "Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory"
-                },
+                () => defaultConfiguration.Serializers.ToList(),
                 "The fully qualified class names for serializers. Accepts multiple values.");
             serializerOption.AddAlias("-s");
             serializerOption.ArgumentHelpName = "classes";
 
             var deserializerOption = new Option<List<string>>(
                 "--deserializer",
-                () => new List<string> {
-                    "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory",
-                    "Microsoft.Kiota.Serialization.Text.TextParseNodeFactory"
-                },
+                () => defaultConfiguration.Deserializers.ToList(),
                 "The fully qualified class names for deserializers. Accepts multiple values.");
             deserializerOption.AddAlias("--ds");
             deserializerOption.ArgumentHelpName = "classes";
 
-            var cleanOutputOption = new Option<bool>("--clean-output", () => false, "Removes all files from the output directory before generating the code files.");
+            var cleanOutputOption = new Option<bool>("--clean-output", () => defaultConfiguration.CleanOutput, "Removes all files from the output directory before generating the code files.");
             cleanOutputOption.AddAlias("--co");
+
+            var structuredMimeTypesOption = new Option<List<string>>(
+                "--structured-mime-types",
+                () => defaultConfiguration.StructuredMimeTypes.ToList(),
+            "The MIME types to use for structured data model generation. Accepts multiple values.");
+            structuredMimeTypesOption.AddAlias("-m");
 
             var command = new RootCommand {
                 descriptionOption,
@@ -86,16 +87,17 @@ namespace Kiota {
                 serializerOption,
                 deserializerOption,
                 cleanOutputOption,
+                structuredMimeTypesOption
             };
             command.Description = "OpenAPI-based HTTP Client SDK code generator";
-            command.SetHandler<string, GenerationLanguage, string, bool, string, LogLevel, string, List<string>, List<string>, bool, CancellationToken>(HandleCommandCall, outputOption, languageOption, descriptionOption, backingStoreOption, classOption, logLevelOption, namespaceOption, serializerOption, deserializerOption, cleanOutputOption);
+            command.SetHandler<string, GenerationLanguage, string, bool, string, LogLevel, string, List<string>, List<string>, bool, List<string>, CancellationToken>(HandleCommandCall, outputOption, languageOption, descriptionOption, backingStoreOption, classOption, logLevelOption, namespaceOption, serializerOption, deserializerOption, cleanOutputOption, structuredMimeTypesOption);
             return command;
         }
         private void AssignIfNotNullOrEmpty(string input, Action<GenerationConfiguration, string> assignment) {
             if (!string.IsNullOrEmpty(input))
                 assignment.Invoke(Configuration, input);
         }
-        private async Task<int> HandleCommandCall(string output, GenerationLanguage language, string openapi, bool backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer, List<string> deserializer, bool cleanOutput, CancellationToken cancellationToken) {
+        private async Task<int> HandleCommandCall(string output, GenerationLanguage language, string openapi, bool backingstore, string classname, LogLevel loglevel, string namespacename, List<string> serializer, List<string> deserializer, bool cleanOutput, List<string> structuredMimeTypes, CancellationToken cancellationToken) {
             AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
             AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
             AssignIfNotNullOrEmpty(classname, (c, s) => c.ClientClassName = s);
@@ -103,9 +105,13 @@ namespace Kiota {
             Configuration.UsesBackingStore = backingstore;
             Configuration.Language = language;
             if(serializer?.Any() ?? false)
-                Configuration.Serializers.AddRange(serializer.Select(x => x.TrimQuotes()));
+                Configuration.Serializers = serializer.Select(x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
             if(deserializer?.Any() ?? false)
-                Configuration.Deserializers.AddRange(deserializer.Select(x => x.TrimQuotes()));
+                Configuration.Deserializers = deserializer.Select(x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            if(structuredMimeTypes?.Any() ?? false)
+                Configuration.StructuredMimeTypes = structuredMimeTypes.SelectMany(x => x.Split(new char[] {' ', ';'}))
+                                                                .Select(x => x.TrimQuotes())
+                                                                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
 #if DEBUG
             loglevel = loglevel > LogLevel.Debug ? LogLevel.Debug : loglevel;
