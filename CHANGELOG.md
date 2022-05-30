@@ -9,8 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [0.2.1] - 2022-05-30
+
+### Added
+
 - Added missing mappings in PHP for uint8 and int8. [#1473](https://github.com/microsoft/kiota/pull/1473)
 - Added support for enum and enum collections responses in Go. [#1578](https://github.com/microsoft/kiota/issues/1578)
+- Added Kiota builder engine as a package for external services integration. [#1582](https://github.com/microsoft/kiota/issues/1582)
 
 ### Changed
 
