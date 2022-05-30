@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added an explicit error message for external references in the schema. [#1580](https://github.com/microsoft/kiota/issues/1580)
+
 ### Changed
 
 ## [0.2.1] - 2022-05-30
