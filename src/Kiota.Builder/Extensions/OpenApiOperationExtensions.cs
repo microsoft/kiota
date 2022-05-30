@@ -19,11 +19,11 @@ namespace Kiota.Builder.Extensions {
 
             return schemas.FirstOrDefault();
         }
-        public static IEnumerable<OpenApiSchema> GetResponseSchemas(this OpenApiResponse response, HashSet<string> structuredMimeTypes)
+        public static IEnumerable<OpenApiSchema> GetValidSchemas(this IDictionary<string, OpenApiMediaType> source, HashSet<string> structuredMimeTypes)
         {
             if(!(structuredMimeTypes?.Any() ?? true))
                 throw new ArgumentNullException(nameof(structuredMimeTypes));
-            var schemas = response.Content
+            var schemas = source
                                 .Where(c => !string.IsNullOrEmpty(c.Key))
                                 .Select(c => (Key: c.Key.Split(';', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault(), c.Value))
                                 .Where(c => structuredMimeTypes.Contains(c.Key) || structuredMimeTypes.Contains(vendorSpecificCleanup.Replace(c.Key, string.Empty)))
@@ -31,6 +31,14 @@ namespace Kiota.Builder.Extensions {
                                 .Where(s => s is not null);
 
             return schemas;
+        }
+        public static IEnumerable<OpenApiSchema> GetResponseSchemas(this OpenApiResponse response, HashSet<string> structuredMimeTypes)
+        {
+            return response.Content.GetValidSchemas(structuredMimeTypes);
+        }
+        public static IEnumerable<OpenApiSchema> GetRequestSchemas(this OpenApiRequestBody requestBody, HashSet<string> structuredMimeTypes)
+        {
+            return requestBody.Content.GetValidSchemas(structuredMimeTypes);
         }
         public static OpenApiSchema GetResponseSchema(this OpenApiResponse response, HashSet<string> structuredMimeTypes)
         {

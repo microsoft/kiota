@@ -620,7 +620,6 @@ public class KiotaBuilder
             IsExternal = isExternal,
         };
     }
-    private const string RequestBodyBinaryContentType = "application/octet-stream";
     private const string RequestBodyPlainTextContentType = "text/plain";
     private static readonly HashSet<string> noContentStatusCodes = new() { "201", "202", "204" };
     private static readonly HashSet<string> errorStatusCodes = new(Enumerable.Range(400, 599).Select(x => x.ToString())
@@ -748,10 +747,8 @@ public class KiotaBuilder
     }
 
     private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, OperationType operationType, OpenApiOperation operation, CodeClass parameterClass, CodeClass requestConfigClass, CodeMethod method) {
-        var nonBinaryRequestBody = operation.RequestBody?.Content?.FirstOrDefault(x => !RequestBodyBinaryContentType.Equals(x.Key, StringComparison.OrdinalIgnoreCase));
-        if (nonBinaryRequestBody.HasValue && nonBinaryRequestBody.Value.Value != null)
+        if (operation.RequestBody?.Content?.GetValidSchemas(config.StructuredMimeTypes)?.FirstOrDefault() is OpenApiSchema requestBodySchema)
         {
-            var requestBodySchema = nonBinaryRequestBody.Value.Value.Schema;
             var requestBodyType = CreateModelDeclarations(currentNode, requestBodySchema, operation, method, $"{operationType}RequestBody");
             method.AddParameter(new CodeParameter {
                 Name = "body",
@@ -760,8 +757,8 @@ public class KiotaBuilder
                 Kind = CodeParameterKind.RequestBody,
                 Description = requestBodySchema.Description.CleanupDescription()
             });
-            method.ContentType = nonBinaryRequestBody.Value.Key;
-        } else if (operation.RequestBody?.Content?.ContainsKey(RequestBodyBinaryContentType) ?? false) {
+            method.ContentType = operation.RequestBody.Content.First(x => x.Value.Schema == requestBodySchema).Key;
+        } else if (operation.RequestBody?.Content?.Any() ?? false) {
             var nParam = new CodeParameter {
                 Name = "body",
                 Optional = false,
