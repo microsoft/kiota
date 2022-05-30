@@ -7,55 +7,105 @@ on:
     types: [opened, labeled, reopened]
 
 env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  MY_GITHUB_TOKEN : ${{ secrets.GITHUB_PROJECT_TOKEN }}
+  triage: Needs Triage 🔍
 
 jobs:
   assign_one_project:
     runs-on: ubuntu-latest
     name: Assign to One Project
     steps:
-    - name: Assign Java issues to Java project
-      uses: srggrs/assign-one-project-github-action@1.3.1
+    - name: Set Java project info
+      run: |
+        echo '$PROJECT_NUMBER='$PROJECT_NB
+        echo '$ORGANIZATION='$ORG
       if: contains(github.event.issue.labels.*.name, 'Java')
       with:
-        project: 'https://github.com/microsoft/kiota/projects/7'
-    - name: Assign Go issues to Go project
-      uses: srggrs/assign-one-project-github-action@1.3.1
+        project_nb: '25'
+        org: 'microsoftgraph'
+    - name: Set Go project info
+      run: |
+        echo '$PROJECT_NUMBER='$PROJECT_NB
+        echo '$ORGANIZATION='$ORG
       if: contains(github.event.issue.labels.*.name, 'Go')
       with:
-        project: 'https://github.com/microsoft/kiota/projects/8'
-    - name: Assign Ruby issues to Ruby project
-      uses: srggrs/assign-one-project-github-action@1.3.1
-      if: contains(github.event.issue.labels.*.name, 'Ruby')
-      with:
-        project: 'https://github.com/microsoft/kiota/projects/6'
-    - name: Assign PHP issues to PHP project
-      uses: srggrs/assign-one-project-github-action@1.3.1
+        project_nb: '26'
+        org: 'microsoftgraph'
+    # - name: Set Ruby project info
+    #   run: |
+    #     echo '$PROJECT_NUMBER='$PROJECT_NB
+    #     echo '$ORGANIZATION='$ORG
+    #   if: contains(github.event.issue.labels.*.name, 'Ruby')
+    #   with:
+    #     project_nb: '6'
+    #     org: 'microsoftgraph'
+    - name: Set PHP project info
+      run: |
+        echo '$PROJECT_NUMBER='$PROJECT_NB
+        echo '$ORGANIZATION='$ORG
       if: contains(github.event.issue.labels.*.name, 'PHP')
       with:
-        project: 'https://github.com/microsoft/kiota/projects/4'
-    - name: Assign Python issues to Python project
-      uses: srggrs/assign-one-project-github-action@1.3.1
+        project_nb: '33'
+        org: 'microsoftgraph'
+    - name: Set Python project info
+      run: |
+        echo '$PROJECT_NUMBER='$PROJECT_NB
+        echo '$ORGANIZATION='$ORG
       if: contains(github.event.issue.labels.*.name, 'Python')
       with:
-        project: 'https://github.com/microsoft/kiota/projects/3'
-    - name: Assign TypeScript issues to TypeScript project
-      uses: srggrs/assign-one-project-github-action@1.3.1
+        project_nb: '34'
+        org: 'microsoftgraph'
+    - name: Set TypeScript project info
+      run: |
+        echo '$PROJECT_NUMBER='$PROJECT_NB
+        echo '$ORGANIZATION='$ORG
       if: contains(github.event.issue.labels.*.name, 'TypeScript')
       with:
-        project: 'https://github.com/microsoft/kiota/projects/2'
-    - name: Assign CSharp issues to CSharp project
-      uses: srggrs/assign-one-project-github-action@1.3.1
+        project_nb: '21'
+        org: 'microsoftgraph'
+    - name: Set CSharp project info
+      run: |
+        echo '$PROJECT_NUMBER='$PROJECT_NB
+        echo '$ORGANIZATION='$ORG
       if: contains(github.event.issue.labels.*.name, 'CSharp')
       with:
-        project: 'https://github.com/microsoft/kiota/projects/5'
-    - name: Assign Generator issues to Generator project
-      uses: srggrs/assign-one-project-github-action@1.3.1
+        project_nb: '28'
+        org: 'microsoftgraph'
+    - name: Set Generator project info
+      run: |
+        echo '$PROJECT_NUMBER='$PROJECT_NB
+        echo '$ORGANIZATION='$ORG
       if: contains(github.event.issue.labels.*.name, 'generator')
       with:
-        project: 'https://github.com/microsoft/kiota/projects/9'
-    - name: Assign Generator issues to Generator project
-      uses: srggrs/assign-one-project-github-action@1.3.1
+        project_nb: '220'
+        org: 'microsoft'
+    - name: Set Generator project info
+      run: |
+        echo '$PROJECT_NUMBER='$PROJECT_NB
+        echo '$ORGANIZATION='$ORG
       if: contains(github.event.issue.labels.*.name, 'CLI')
       with:
-        project: 'https://github.com/microsoft/kiota/projects/10'
+        project_nb: '23'
+        org: 'microsoftgraph'
+    - name: Generate token
+      id: generate_token
+      uses: tibdex/github-app-token@v1.5.2
+      with:
+        app_id: ${{ secrets.GRAPHBOT_APP_ID }}
+        private_key: ${{ secrets.GRAPHBOT_APP_PEM }}
+    - name: Set token for assignment tasks
+      run: echo '$MY_GITHUB_TOKEN=${{ steps.generate_token.outputs.token }}'
+    - name: Assign issue to project
+      uses: srggrs/assign-one-project-github-action@1.3.1
+      if: "${{ env.ORGANIZATION != '' }}"
+      with:
+        project: https://github.com/orgs/${{ env.ORGANIZATION }}/projects/${{ env.PROJECT_NUMBER }}
+    - name: Set Triage
+      uses: leonsteinhaeuser/project-beta-automations@v1.2.1
+      if: "${{ env.ORGANIZATION != '' }}"
+      with:
+        gh_token: ${{ env.MY_GITHUB_TOKEN }}
+        organization: ${{ env.ORGANIZATION }}
+        project_id: ${{ env.PROJECT_NUMBER }}
+        resource_node_id: ${{ github.event.issue.node_id }}
+        status_value: ${{ env.triage }}
