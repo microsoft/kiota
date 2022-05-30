@@ -7,7 +7,6 @@ on:
     types: [opened, labeled, reopened]
 
 env:
-  MY_GITHUB_TOKEN : ${{ secrets.GITHUB_PROJECT_TOKEN }}
   triage: Needs Triage 🔍
 
 jobs:
