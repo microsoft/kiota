@@ -20,7 +20,7 @@ jobs:
         echo '$PROJECT_NUMBER='$PROJECT_NB
         echo '$ORGANIZATION='$ORG
       if: contains(github.event.issue.labels.*.name, 'Java')
-      with:
+      env:
         project_nb: '25'
         org: 'microsoftgraph'
     - name: Set Go project info
@@ -28,7 +28,7 @@ jobs:
         echo '$PROJECT_NUMBER='$PROJECT_NB
         echo '$ORGANIZATION='$ORG
       if: contains(github.event.issue.labels.*.name, 'Go')
-      with:
+      env:
         project_nb: '26'
         org: 'microsoftgraph'
     # - name: Set Ruby project info
@@ -36,7 +36,7 @@ jobs:
     #     echo '$PROJECT_NUMBER='$PROJECT_NB
     #     echo '$ORGANIZATION='$ORG
     #   if: contains(github.event.issue.labels.*.name, 'Ruby')
-    #   with:
+    #   env:
     #     project_nb: '6'
     #     org: 'microsoftgraph'
     - name: Set PHP project info
@@ -44,7 +44,7 @@ jobs:
         echo '$PROJECT_NUMBER='$PROJECT_NB
         echo '$ORGANIZATION='$ORG
       if: contains(github.event.issue.labels.*.name, 'PHP')
-      with:
+      env:
         project_nb: '33'
         org: 'microsoftgraph'
     - name: Set Python project info
@@ -52,7 +52,7 @@ jobs:
         echo '$PROJECT_NUMBER='$PROJECT_NB
         echo '$ORGANIZATION='$ORG
       if: contains(github.event.issue.labels.*.name, 'Python')
-      with:
+      env:
         project_nb: '34'
         org: 'microsoftgraph'
     - name: Set TypeScript project info
@@ -60,7 +60,7 @@ jobs:
         echo '$PROJECT_NUMBER='$PROJECT_NB
         echo '$ORGANIZATION='$ORG
       if: contains(github.event.issue.labels.*.name, 'TypeScript')
-      with:
+      env:
         project_nb: '21'
         org: 'microsoftgraph'
     - name: Set CSharp project info
@@ -68,7 +68,7 @@ jobs:
         echo '$PROJECT_NUMBER='$PROJECT_NB
         echo '$ORGANIZATION='$ORG
       if: contains(github.event.issue.labels.*.name, 'CSharp')
-      with:
+      env:
         project_nb: '28'
         org: 'microsoftgraph'
     - name: Set Generator project info
@@ -76,7 +76,7 @@ jobs:
         echo '$PROJECT_NUMBER='$PROJECT_NB
         echo '$ORGANIZATION='$ORG
       if: contains(github.event.issue.labels.*.name, 'generator')
-      with:
+      env:
         project_nb: '220'
         org: 'microsoft'
     - name: Set Generator project info
@@ -84,7 +84,7 @@ jobs:
         echo '$PROJECT_NUMBER='$PROJECT_NB
         echo '$ORGANIZATION='$ORG
       if: contains(github.event.issue.labels.*.name, 'CLI')
-      with:
+      env:
         project_nb: '23'
         org: 'microsoftgraph'
     - name: Generate token
