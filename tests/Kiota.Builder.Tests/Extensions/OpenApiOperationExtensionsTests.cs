@@ -39,9 +39,10 @@ namespace Kiota.Builder.Extensions.Tests {
                     }}
                 }
             };
-            Assert.NotNull(operation.GetResponseSchema());
-            Assert.Null(operation2.GetResponseSchema());
-            Assert.Null(operation3.GetResponseSchema());
+            var defaultConfiguration = new GenerationConfiguration();
+            Assert.NotNull(operation.GetResponseSchema(defaultConfiguration.StructuredMimeTypes));
+            Assert.Null(operation2.GetResponseSchema(defaultConfiguration.StructuredMimeTypes));
+            Assert.Null(operation3.GetResponseSchema(defaultConfiguration.StructuredMimeTypes));
         }
 
     }

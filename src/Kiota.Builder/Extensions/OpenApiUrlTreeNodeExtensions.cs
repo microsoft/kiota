@@ -64,10 +64,10 @@ namespace Kiota.Builder.Extensions {
         ///<summary>
         /// Returns the class name for the node with more or less precision depending on the provided arguments
         ///</summary>
-        public static string GetClassName(this OpenApiUrlTreeNode currentNode, string suffix = default, string prefix = default, OpenApiOperation operation = default, OpenApiResponse response = default, OpenApiSchema schema = default) {
+        public static string GetClassName(this OpenApiUrlTreeNode currentNode, HashSet<string> structuredMimeTypes, string suffix = default, string prefix = default, OpenApiOperation operation = default, OpenApiResponse response = default, OpenApiSchema schema = default) {
             var rawClassName = schema?.Reference?.GetClassName() ??
-                                response?.GetResponseSchema()?.Reference?.GetClassName() ??
-                                operation?.GetResponseSchema()?.Reference?.GetClassName() ?? 
+                                response?.GetResponseSchema(structuredMimeTypes)?.Reference?.GetClassName() ??
+                                operation?.GetResponseSchema(structuredMimeTypes)?.Reference?.GetClassName() ?? 
                                 CleanupParametersFromPath(currentNode.Segment)?.ReplaceValueIdentifier();
             if((currentNode?.DoesNodeBelongToItemSubnamespace() ?? false) && idClassNameCleanup.IsMatch(rawClassName)) {
                 rawClassName = idClassNameCleanup.Replace(rawClassName, string.Empty);
