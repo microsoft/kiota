@@ -15,7 +15,7 @@ namespace Kiota.Builder.Extensions {
         {
             // Return Schema that represents all the possible success responses!
             var schemas = operation.Responses.Where(r => successCodes.Contains(r.Key))
-                                .SelectMany(re => re.Value.GetResponseSchemas(structuredMimeTypes));
+                                .SelectMany(re => re.Value.Content.GetValidSchemas(structuredMimeTypes));
 
             return schemas.FirstOrDefault();
         }
@@ -32,17 +32,9 @@ namespace Kiota.Builder.Extensions {
 
             return schemas;
         }
-        public static IEnumerable<OpenApiSchema> GetResponseSchemas(this OpenApiResponse response, HashSet<string> structuredMimeTypes)
-        {
-            return response.Content.GetValidSchemas(structuredMimeTypes);
-        }
-        public static IEnumerable<OpenApiSchema> GetRequestSchemas(this OpenApiRequestBody requestBody, HashSet<string> structuredMimeTypes)
-        {
-            return requestBody.Content.GetValidSchemas(structuredMimeTypes);
-        }
         public static OpenApiSchema GetResponseSchema(this OpenApiResponse response, HashSet<string> structuredMimeTypes)
         {
-            return response.GetResponseSchemas(structuredMimeTypes).FirstOrDefault();
+            return response.Content.GetValidSchemas(structuredMimeTypes).FirstOrDefault();
         }
     }
 }
