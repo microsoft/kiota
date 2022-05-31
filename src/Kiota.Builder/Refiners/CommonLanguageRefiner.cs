@@ -397,7 +397,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             newClass.Kind = CodeClassKind.Model;
         }
         // Add the discriminator function to the wrapper as it will be referenced. 
-        KiotaBuilder.AddDiscriminatorMethod(newClass, default); //TODO map the discriminator prop name + type mapping + flag to union/exclusion once the vocabulary is available
+        var factoryMethod = KiotaBuilder.AddDiscriminatorMethod(newClass, codeUnionType.DiscriminatorPropertyName);
+        //TODO mappings
         return new CodeType {
             Name = newClass.Name,
             TypeDefinition = newClass,

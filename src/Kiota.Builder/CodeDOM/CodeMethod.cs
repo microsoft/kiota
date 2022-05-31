@@ -224,7 +224,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             errorMappings[code] = newType;
         }
     }
-    private ConcurrentDictionary<string, CodeTypeBase> discriminatorMappings = new();
+    private ConcurrentDictionary<string, CodeTypeBase> discriminatorMappings = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>
     /// Gets/Sets the discriminator values for the class where the key is the value as represented in the payload.
     /// </summary>
