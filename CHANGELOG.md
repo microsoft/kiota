@@ -9,9 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added a parameter to specify why mime types to evaluate for models. [#134](https://github.com/microsoft/kiota/issues/134)
 - Added an explicit error message for external references in the schema. [#1580](https://github.com/microsoft/kiota/issues/1580)
 
 ### Changed
+
+- Aligned mime types model generation behaviour for request bodies on response content. [#134](https://github.com/microsoft/kiota/issues/134)
 
 ## [0.2.1] - 2022-05-30
 
