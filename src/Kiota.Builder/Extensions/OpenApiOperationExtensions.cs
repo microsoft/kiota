@@ -21,7 +21,7 @@ namespace Kiota.Builder.Extensions {
         }
         public static IEnumerable<OpenApiSchema> GetValidSchemas(this IDictionary<string, OpenApiMediaType> source, HashSet<string> structuredMimeTypes)
         {
-            if(!(structuredMimeTypes?.Any() ?? true))
+            if(!(structuredMimeTypes?.Any() ?? false))
                 throw new ArgumentNullException(nameof(structuredMimeTypes));
             var schemas = source
                                 .Where(c => !string.IsNullOrEmpty(c.Key))

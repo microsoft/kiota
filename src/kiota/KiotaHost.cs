@@ -109,7 +109,7 @@ namespace Kiota {
             if(deserializer?.Any() ?? false)
                 Configuration.Deserializers = deserializer.Select(x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
             if(structuredMimeTypes?.Any() ?? false)
-                Configuration.StructuredMimeTypes = structuredMimeTypes.SelectMany(x => x.Split(new char[] {' ', ';'}))
+                Configuration.StructuredMimeTypes = structuredMimeTypes.SelectMany(x => x.Split(new char[] {' '}))
                                                                 .Select(x => x.TrimQuotes())
                                                                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
