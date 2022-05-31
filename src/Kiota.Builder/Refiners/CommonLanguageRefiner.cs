@@ -200,8 +200,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 currentMethod.Name = replacement.Invoke(currentMethod.Name);
             if(currentMethod.ErrorMappings.Select(x => x.Value.Name).Any(x => provider.ReservedNames.Contains(x)))
                 ReplaceMappingNames(currentMethod.ErrorMappings, provider, replacement);
-            if(currentMethod.DiscriminatorMappings.Select(x => x.Value.Name).Any(x => provider.ReservedNames.Contains(x)))
-                ReplaceMappingNames(currentMethod.DiscriminatorMappings, provider, replacement);
+            if(currentMethod.DiscriminatorInformation.DiscriminatorMappings.Select(x => x.Value.Name).Any(x => provider.ReservedNames.Contains(x)))
+                ReplaceMappingNames(currentMethod.DiscriminatorInformation.DiscriminatorMappings, provider, replacement);
             ReplaceReservedParameterNamesTypes(currentMethod, provider, replacement);
         } else if (current is CodeProperty currentProperty &&
                 isNotInExceptions &&
@@ -397,7 +397,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             newClass.Kind = CodeClassKind.Model;
         }
         // Add the discriminator function to the wrapper as it will be referenced. 
-        var factoryMethod = KiotaBuilder.AddDiscriminatorMethod(newClass, codeUnionType.DiscriminatorPropertyName);
+        var factoryMethod = KiotaBuilder.AddDiscriminatorMethod(newClass, codeUnionType.DiscriminatorInformation.DiscriminatorPropertyName);
         //TODO mappings
         return new CodeType {
             Name = newClass.Name,
@@ -658,9 +658,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             currentMethod.Parent is CodeClass parentClass &&
             parentClass.StartBlock is ClassDeclaration declaration) {
                 if(currentMethod.IsOfKind(CodeMethodKind.Factory) &&
-                    currentMethod.DiscriminatorMappings != null) {
+                    currentMethod.DiscriminatorInformation.DiscriminatorMappings != null) {
                         if(addUsings)
-                            declaration.AddUsings(currentMethod.DiscriminatorMappings
+                            declaration.AddUsings(currentMethod.DiscriminatorInformation.DiscriminatorMappings
                                 .Select(x => x.Value)
                                 .OfType<CodeType>()
                                 .Where(x => x.TypeDefinition != null)
@@ -968,9 +968,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         if (currentElement is CodeMethod currentMethod &&
             currentMethod.IsOfKind(CodeMethodKind.Factory) &&
             currentMethod.Parent is CodeClass currentClass &&
-            currentMethod.DiscriminatorMappings.Any()) {
+            currentMethod.DiscriminatorInformation.DiscriminatorMappings.Any()) {
                 var currentNamespace = currentMethod.GetImmediateParentOfType<CodeNamespace>();
-                var keysToRemove = currentMethod.DiscriminatorMappings
+                var keysToRemove = currentMethod.DiscriminatorInformation.DiscriminatorMappings
                                                 .Where(x => x.Value is CodeType mappingType &&
                                                             mappingType.TypeDefinition is CodeClass mappingClass &&
                                                             mappingClass.Parent is CodeNamespace mappingNamespace &&
@@ -979,7 +979,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                                 .Select(x => x.Key)
                                                 .ToArray();
                 if(keysToRemove.Any())
-                    currentMethod.RemoveDiscriminatorMapping(keysToRemove);
+                    currentMethod.DiscriminatorInformation.RemoveDiscriminatorMapping(keysToRemove);
             }
         CrawlTree(currentElement, RemoveDiscriminatorMappingsTargetingSubNamespaces);
     }

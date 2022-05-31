@@ -70,7 +70,7 @@ public class PagingInformation : ICloneable
     }
 }
 
-public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement
+public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement, IDiscriminatorInformationHolder
 {
     public static CodeMethod FromIndexer(CodeIndexer originalIndexer, CodeClass indexerClass, string methodNameSuffix, bool parameterNullable)
     {
@@ -224,15 +224,17 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             errorMappings[code] = newType;
         }
     }
-    private ConcurrentDictionary<string, CodeTypeBase> discriminatorMappings = new(StringComparer.OrdinalIgnoreCase);
-    /// <summary>
-    /// Gets/Sets the discriminator values for the class where the key is the value as represented in the payload.
-    /// </summary>
-    public IOrderedEnumerable<KeyValuePair<string, CodeTypeBase>> DiscriminatorMappings
-    {
-        get
-        {
-            return discriminatorMappings.OrderBy(static x => x.Key);
+    private DiscriminatorInformation _discriminatorInformation;
+    /// <inheritdoc />
+    public DiscriminatorInformation DiscriminatorInformation { 
+        get {
+            if (_discriminatorInformation == null)
+                _discriminatorInformation = new DiscriminatorInformation();
+            return _discriminatorInformation;
+        } 
+        set {
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
+            _discriminatorInformation = value;
         }
     }
     /// <summary>
@@ -241,7 +243,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public string DiscriminatorPropertyName { get; set; } 
 
     public bool ShouldWriteDiscriminatorSwitch { get {
-        return !string.IsNullOrEmpty(DiscriminatorPropertyName) && DiscriminatorMappings.Any();
+        return !string.IsNullOrEmpty(DiscriminatorPropertyName) && DiscriminatorInformation.DiscriminatorMappings.Any();
     } }
 
     public object Clone()
@@ -264,10 +266,9 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             Parent = Parent,
             OriginalIndexer = OriginalIndexer,
             errorMappings = errorMappings == null ? null : new (errorMappings),
-            discriminatorMappings = discriminatorMappings == null ? null : new (discriminatorMappings),
-            DiscriminatorPropertyName = DiscriminatorPropertyName?.Clone() as string,
             acceptedResponseTypes = acceptedResponseTypes == null ? null : new (acceptedResponseTypes),
             PagingInformation = PagingInformation?.Clone() as PagingInformation,
+            DiscriminatorInformation = DiscriminatorInformation?.Clone() as DiscriminatorInformation,
         };
         if(Parameters?.Any() ?? false)
             method.AddParameter(Parameters.Select(x => x.Clone() as CodeParameter).ToArray());
@@ -288,25 +289,6 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         if(type == null) throw new ArgumentNullException(nameof(type));
         if(string.IsNullOrEmpty(errorCode)) throw new ArgumentNullException(nameof(errorCode));
         errorMappings.TryAdd(errorCode, type);
-    }
-
-    public void AddDiscriminatorMapping(string key, CodeTypeBase type)
-    {
-        if(type == null) throw new ArgumentNullException(nameof(type));
-        if(string.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
-        discriminatorMappings.TryAdd(key, type);
-    }
-    public CodeTypeBase GetDiscriminatorMappingValue(string key)
-    {
-        if(string.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
-        if(discriminatorMappings.TryGetValue(key, out var value))
-            return value;
-        return null;
-    }
-    public void RemoveDiscriminatorMapping(params string[] keys) {
-        ArgumentNullException.ThrowIfNull(keys, nameof(keys));
-        foreach(var key in keys)
-            discriminatorMappings.TryRemove(key, out var _);
     }
     public CodeTypeBase GetErrorMappingValue(string key)
     {

@@ -93,7 +93,7 @@ namespace Kiota.Builder.Writers.Go {
                 writer.WriteLines("mappingStr := *mappingValue",
                                     "switch mappingStr {");
                 writer.IncreaseIndent();
-                foreach(var mappedType in codeElement.DiscriminatorMappings) {
+                foreach(var mappedType in codeElement.DiscriminatorInformation.DiscriminatorMappings) {
                     writer.WriteLine($"case \"{mappedType.Key}\":");
                     writer.IncreaseIndent();
                     writer.WriteLine($"return {conventions.GetImportedStaticMethodName(mappedType.Value, codeElement.Parent)}(), nil");

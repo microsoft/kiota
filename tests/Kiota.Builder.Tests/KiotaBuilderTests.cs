@@ -1386,11 +1386,11 @@ components:
         var factoryMethod = entityClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
         Assert.NotNull(factoryMethod);
         Assert.Equal("@odata.type", factoryMethod.DiscriminatorPropertyName);
-        Assert.NotEmpty(factoryMethod.DiscriminatorMappings);
+        Assert.NotEmpty(factoryMethod.DiscriminatorInformation.DiscriminatorMappings);
         var doFactoryMethod = directoryObjectClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
         Assert.NotNull(doFactoryMethod);
-        Assert.Empty(doFactoryMethod.DiscriminatorMappings);
-        if(factoryMethod.GetDiscriminatorMappingValue("#microsoft.graph.directoryObject") is not CodeType castType)
+        Assert.Empty(doFactoryMethod.DiscriminatorInformation.DiscriminatorMappings);
+        if(factoryMethod.DiscriminatorInformation?.GetDiscriminatorMappingValue("#microsoft.graph.directoryObject") is not CodeType castType)
             throw new InvalidOperationException("Discriminator mapping value is not a CodeType");
         Assert.NotNull(castType.TypeDefinition);
         Assert.Equal(directoryObjectClass, castType.TypeDefinition);

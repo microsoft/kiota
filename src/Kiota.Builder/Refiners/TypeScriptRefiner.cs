@@ -74,7 +74,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         ReplaceLocalMethodsByGlobalFunctions(
             generatedCode,
             x => factoryNameCallbackFromTypeName(x.Parent.Name),
-            x => new List<CodeUsing>(x.DiscriminatorMappings
+            x => new List<CodeUsing>(x.DiscriminatorInformation
+                                    .DiscriminatorMappings
                                     .Select(y => y.Value)
                                     .OfType<CodeType>()
                                     .Select(y => new CodeUsing { Name = y.Name, Declaration = y })) {

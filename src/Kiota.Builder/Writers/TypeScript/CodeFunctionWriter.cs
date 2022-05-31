@@ -40,7 +40,7 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
 
             writer.WriteLine($"switch (mappingValue) {{");
             writer.IncreaseIndent();
-            foreach(var mappedType in codeElement.OriginalLocalMethod.DiscriminatorMappings) {
+            foreach(var mappedType in codeElement.OriginalLocalMethod.DiscriminatorInformation.DiscriminatorMappings) {
                 writer.WriteLine($"case \"{mappedType.Key}\":");
                 writer.IncreaseIndent();
                 writer.WriteLine($"return new {mappedType.Value.Name.ToFirstCharacterUpperCase()}();");

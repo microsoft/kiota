@@ -529,7 +529,7 @@ namespace Kiota.Builder.Writers.Php
                 writer.WriteLines("$mappingValue = $mappingValueNode->getStringValue();");
                 writer.WriteLine("switch ($mappingValue) {");
                 writer.IncreaseIndent();
-                foreach(var mappedType in codeElement.DiscriminatorMappings) {
+                foreach(var mappedType in codeElement.DiscriminatorInformation.DiscriminatorMappings) {
                     writer.WriteLine($"case '{mappedType.Key}': return new {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()}();");
                 }
                 writer.CloseBlock();
