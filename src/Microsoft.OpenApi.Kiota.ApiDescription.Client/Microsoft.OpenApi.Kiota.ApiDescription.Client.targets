@@ -1,5 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
 <Project>
+  <PropertyGroup>
+    <_KiotaCommand Condition="'$(TargetFramework)' == 'net6.0'">dotnet --roll-forward-on-no-candidate-fx 2 "$(KiotaDir_Net60)/kiota.dll"</_KiotaCommand>
+  </PropertyGroup>
 
   <!-- OpenApiReference support for C# -->
 
@@ -7,11 +10,27 @@
     <ItemGroup>
       <!-- @(CurrentOpenApiReference) item group will never contain more than one item. -->
       <CurrentOpenApiReference>
-        <Command>kiota -d %(FullPath) -o %(OutputPath) -l CSharp  -c %(ClassName) -n %(Namespace)</Command>
+        <Command>$(_KiotaCommand) -d %(FullPath) -o %(OutputPath) -l CSharp  -c %(ClassName) -n %(Namespace)</Command>
       </CurrentOpenApiReference>
     </ItemGroup>
 
     <Message Importance="high" Text="%0AGenerateKiotaCSharp:" />
+    <Message Importance="high" Text="  %(CurrentOpenApiReference.Command)" />
+
+    <Exec Command="%(CurrentOpenApiReference.Command)" LogStandardErrorAsError="true" />
+  </Target>
+
+  <!-- OpenApiReference support for TypeScript -->
+
+  <Target Name="GenerateKiotaTypeScript">
+    <ItemGroup>
+      <!-- @(CurrentOpenApiReference) item group will never contain more than one item. -->
+      <CurrentOpenApiReference>
+        <Command>$(_KiotaCommand) -d %(FullPath) -o %(OutputPath) -l TypeScript  -c %(ClassName) -n %(Namespace)</Command>
+      </CurrentOpenApiReference>
+    </ItemGroup>
+
+    <Message Importance="high" Text="%0AGenerateKiotaTypeScript:" />
     <Message Importance="high" Text="  %(CurrentOpenApiReference.Command)" />
 
     <Exec Command="%(CurrentOpenApiReference.Command)" LogStandardErrorAsError="true" />

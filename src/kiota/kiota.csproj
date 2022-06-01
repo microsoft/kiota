@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Kiota.Builder\Kiota.Builder.csproj" />
+    <ProjectReference Include=".\kiota.props" />
   </ItemGroup>
 
   <ItemGroup>
