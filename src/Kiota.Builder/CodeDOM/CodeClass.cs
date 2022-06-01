@@ -30,6 +30,11 @@ public enum CodeClassKind {
 public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITypeDefinition
 {
     public bool IsErrorDefinition { get; set; }
+
+    /// <summary>
+    /// Original composed type this class was generated for.
+    /// </summary>
+    public CodeComposedTypeBase OriginalComposedType { get; set; }
     public void SetIndexer(CodeIndexer indexer)
     {
         if(indexer == null)

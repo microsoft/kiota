@@ -396,6 +396,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             KiotaBuilder.AddSerializationMembers(newClass, true, usesBackingStore);
             newClass.Kind = CodeClassKind.Model;
         }
+        newClass.OriginalComposedType = codeUnionType;
         // Add the discriminator function to the wrapper as it will be referenced. 
         KiotaBuilder.AddDiscriminatorMethod(newClass, codeUnionType.DiscriminatorInformation.DiscriminatorPropertyName, codeUnionType.DiscriminatorInformation.DiscriminatorMappings);
         return new CodeType {
