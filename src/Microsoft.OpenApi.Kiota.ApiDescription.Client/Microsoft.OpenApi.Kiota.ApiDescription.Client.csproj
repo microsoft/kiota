@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <!-- this file is just a placeholder for local builds with 
+    dotnet pack .\Microsoft.OpenApi.Kiota.ApiDescription.Client.csproj -p:NuspecFile=.\Microsoft.OpenApi.Kiota.ApiDescription.Client.nuspec
+    -->
+    <PropertyGroup>
+      <TargetFramework>net6.0</TargetFramework>
+    </PropertyGroup>
+  
+</Project>
