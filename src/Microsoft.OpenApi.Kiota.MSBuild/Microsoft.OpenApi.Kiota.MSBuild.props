@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <KiotaDir_Net60>$(MSBuildThisFileDirectory)../tools/net6.0/any/</KiotaDir_Net60>
+    <KiotaDir_Net60>$(MSBuildThisFileDirectory)../lib/net6.0/</KiotaDir_Net60>
   </PropertyGroup>
 </Project>

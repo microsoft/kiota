@@ -164,15 +164,17 @@ stages:
           SessionTimeout: 20
       
       # Pack
-      - pwsh: dotnet pack $(Build.SourcesDirectory)/src/kiota/kiota.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg
+      - pwsh: dotnet pack $(Build.SourcesDirectory)/src/kiota/kiota.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg /p:ContinuousIntegrationBuild=true
         displayName: 'pack kiota'
 
-      - pwsh: dotnet pack $(Build.SourcesDirectory)/src/Kiota.Builder/Kiota.Builder.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg
+      - pwsh: dotnet pack $(Build.SourcesDirectory)/src/Kiota.Builder/Kiota.Builder.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg /p:ContinuousIntegrationBuild=true
         displayName: 'pack kiota builder'
       
-      # Pack
       - pwsh: nuget pack $(Build.SourcesDirectory)/src/Microsoft.OpenApi.Kiota.ApiDescription.Client/Microsoft.OpenApi.Kiota.ApiDescription.Client.nuspec -OutputDirectory $(Build.ArtifactStagingDirectory)
-        displayName: 'pack targets'
+        displayName: 'pack api description'
+
+      - pwsh: nuget pack $(Build.SourcesDirectory)/src/Microsoft.OpenApi.Kiota.MSBuild/Microsoft.OpenApi.Kiota.MSBuild.nuspec -OutputDirectory $(Build.ArtifactStagingDirectory)
+        displayName: 'pack ms build'
       
       - task: SFP.build-tasks.custom-build-task-1.EsrpCodeSigning@1
         displayName: 'ESRP CodeSigning Nuget Packages'
@@ -258,6 +260,7 @@ stages:
             - powershell: |
                 rm "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.ApiDescription.*.nupkg" -Verbose
                 rm "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.Builder.*.nupkg" -Verbose
+                rm "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.MSBuild.*.nupkg" -Verbose
               displayName: remove other nupkgs to avoid duplication
             # - pwsh: |
             #     $artifactName = Get-ChildItem -Path $(Pipeline.Workspace)\Nugets -Filter Microsoft.OpenApi.Kiota.*.nupkg -recurse | select -First 1
@@ -286,9 +289,34 @@ stages:
             #     releaseNotesSource: inline
             #     assets: '$(Pipeline.Workspace)\**\*.exe'
             #     changeLogType: issueBased
-    
-    - deployment: deploy_targets
+    - deployment: deploy_ms_build
       dependsOn: []
+      environment: nuget-org
+      strategy:
+        runOnce:
+          deploy:
+            pool:
+              vmImage: ubuntu-latest
+            steps:
+            - task: DownloadPipelineArtifact@2
+              displayName: Download nupkg from artifacts
+              inputs:
+                artifact: Nugets
+                source: current
+            - powershell: |
+                rm "$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.*.nupkg" -Verbose -Exclude "*.MSBuild.*"
+              displayName: remove other nupkgs to avoid duplication
+            - task: NuGetCommand@2
+              displayName: 'NuGet push'
+              inputs:
+                command: push
+                packagesToPush: '$(Pipeline.Workspace)/Nugets/Microsoft.OpenApi.Kiota.MSBuild.*.nupkg'
+                nuGetFeedType: external
+                publishFeedCredentials: 'OpenAPI Nuget Connection'    
+
+
+    - deployment: deploy_api_description
+      dependsOn: [deploy_ms_build]
       environment: nuget-org
       strategy:
         runOnce:

@@ -25,11 +25,11 @@
     <PackageTags>OpenAPI .NET CSharp TypeScript Java Go PHP Python REST API</PackageTags>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\Microsoft.OpenApi.snk</AssemblyOriginatorKeyFile>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Kiota.Builder\Kiota.Builder.csproj" />
-    <ProjectReference Include=".\kiota.props" />
   </ItemGroup>
 
   <ItemGroup>

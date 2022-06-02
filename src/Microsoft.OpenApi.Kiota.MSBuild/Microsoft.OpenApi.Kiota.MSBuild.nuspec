@@ -1,8 +1,8 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
-    <id>Microsoft.OpenApi.Kiota.ApiDescription.Client</id>
-    <version>0.5.0-preview8</version>
+    <id>Microsoft.OpenApi.Kiota.MSBuild</id>
+    <version>0.5.0-preview1</version>
     <authors>Microsoft</authors>
     <developmentDependency>true</developmentDependency>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -12,13 +12,12 @@
     <copyright>© Microsoft Corporation. All rights reserved.</copyright>
     <tags>OpenAPI Swagger AspNetCore CodeGen TypeScript WebApi AspNet</tags>
     <repository type="git" url="https://github.com/microsoft/kiota.git" branch="main" />
-    <dependencies>
-      <dependency id="Microsoft.Extensions.ApiDescription.Client" version="6.0.5" />
-      <dependency id="Microsoft.OpenApi.Kiota.MSBuild" version="0.5.0-preview1" />
-    </dependencies>
+    <developmentDependency>true</developmentDependency>
+    <dependencies />
+    <references />
   </metadata>
   <files>
-    <file src="Microsoft.OpenApi.Kiota.ApiDescription.Client.props" target="build\Microsoft.OpenApi.Kiota.ApiDescription.Client.props" />
-    <file src="Microsoft.OpenApi.Kiota.ApiDescription.Client.targets" target="build\Microsoft.OpenApi.Kiota.ApiDescription.Client.targets" />
+    <file src="Microsoft.OpenApi.Kiota.MSBuild.props" target="build\Microsoft.OpenApi.Kiota.MSBuild.props" />
+    <file src="..\kiota\bin\Release\net6.0\publish\**" target="lib/net6.0" />
   </files>
 </package>
