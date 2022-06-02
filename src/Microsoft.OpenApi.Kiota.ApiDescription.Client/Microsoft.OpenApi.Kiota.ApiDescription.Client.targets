@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
 <Project>
   <PropertyGroup>
-    <_KiotaCommand Condition="'$(TargetFramework)' == 'net6.0'">dotnet --roll-forward-on-no-candidate-fx 2 "$(KiotaDir_Net60)/kiota.dll"</_KiotaCommand>
+    <_KiotaCommand Condition="'$(TargetFramework)' == 'net6.0'">dotnet --roll-forward-on-no-candidate-fx 2 "$(KiotaDir_Net60)kiota.dll"</_KiotaCommand>
   </PropertyGroup>
 
   <!-- OpenApiReference support for C# -->
