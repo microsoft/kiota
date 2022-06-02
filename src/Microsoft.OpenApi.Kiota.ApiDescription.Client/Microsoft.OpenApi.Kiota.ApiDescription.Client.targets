@@ -34,6 +34,10 @@
     <Message Importance="high" Text="  %(CurrentOpenApiReference.Command)" />
 
     <Exec Command="%(CurrentOpenApiReference.Command)" LogStandardErrorAsError="true" />
+    <Exec ContinueOnError="True" Command='npm i @microsoft/kiota-abstractions @microsoft/kiota-serialization-json @microsoft/kiota-serialization-text @microsoft/kiota-authentication-azure @microsoft/kiota-http-fetch -S'>
+      <Output TaskParameter="ExitCode" PropertyName="NpmInstallExitCode"/>
+    </Exec>
+    <Message Condition="'$(NpmInstallExitCode)' != '0'" Importance="high" Text="Error installing required dependencies for the API client, please run the following command in the directory package.json is located npm i @microsoft/kiota-abstractions @microsoft/kiota-serialization-json @microsoft/kiota-serialization-text @microsoft/kiota-authentication-azure @microsoft/kiota-http-fetch -S"/>
   </Target>
 
   
