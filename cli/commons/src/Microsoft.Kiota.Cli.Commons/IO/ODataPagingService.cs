@@ -1,7 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Microsoft.Kiota.Abstractions;
 
 [assembly: InternalsVisibleTo("Microsoft.Kiota.Cli.Commons.Tests")]
 namespace Microsoft.Kiota.Cli.Commons.IO;
@@ -9,24 +8,21 @@ namespace Microsoft.Kiota.Cli.Commons.IO;
 /// <summary>
 /// Paging service that supports the x-ms-pageable extension
 /// </summary>
-public class ODataPagingService : IPagingService
+public sealed class ODataPagingService : BasePagingService
 {
     /// <inheritdoc />
-    public async Task<Uri?> GetNextPageLinkAsync(PageLinkData pageLinkData, CancellationToken cancellationToken = default)
+    public override async Task<Uri?> GetNextPageLinkAsync(PageLinkData pageLinkData, CancellationToken cancellationToken = default)
     {
-        if (pageLinkData.ResponseFormat == ResponseFormat.JSON)
+        if (IsJson(pageLinkData))
         {
             try
             {
-                if (pageLinkData.ResponseFormat == ResponseFormat.JSON)
+                var doc = await JsonDocument.ParseAsync(pageLinkData.Response, cancellationToken: cancellationToken);
+                var hasNextLink = doc.RootElement.TryGetProperty(pageLinkData.NextLinkName, out var nextLink);
+                if (hasNextLink && nextLink.ValueKind == JsonValueKind.String)
                 {
-                    var doc = await JsonDocument.ParseAsync(pageLinkData.Response, cancellationToken: cancellationToken);
-                    var hasNextLink = doc.RootElement.TryGetProperty(pageLinkData.NextLinkName, out var nextLink);
-                    if (hasNextLink && nextLink.ValueKind == JsonValueKind.String)
-                    {
-                        string? link = nextLink.GetString();
-                        if (!string.IsNullOrWhiteSpace(link)) return new Uri(link);
-                    }
+                    string? link = nextLink.GetString();
+                    if (!string.IsNullOrWhiteSpace(link)) return new Uri(link);
                 }
             }
             catch (JsonException)
@@ -40,33 +36,30 @@ public class ODataPagingService : IPagingService
     }
 
     /// <inheritdoc />
-    public async Task<Stream> GetPagedDataAsync(Func<RequestInformation, CancellationToken, Task<Stream>> requestExecutorAsync, PageLinkData pageLinkData, bool fetchAllPages = false, CancellationToken cancellationToken = default)
+    public override async Task<Stream?> MergePageAsync(Stream? currentResult, PageLinkData newPageData, CancellationToken cancellationToken = default)
+    {
+        if (IsJson(newPageData))
+        {
+            return await MergeJsonStreamsAsync(currentResult, newPageData.Response, newPageData.ItemName, newPageData.NextLinkName, cancellationToken);
+        }
+
+        return null;
+    }
+
+    /// <inheritdoc />
+    public override bool OnBeforeGetPagedData(PageLinkData pageLinkData, bool fetchAllPages = false)
     {
         // Set the page size to 999 if the user asked to fetch all pages and top either isn't specified or is invalid
         if (fetchAllPages && (!pageLinkData.RequestInformation.QueryParameters.TryGetValue("%24top", out var topVal) || (topVal as int?) < 1))
         {
             pageLinkData.RequestInformation.QueryParameters["%24top"] = 999;
         }
-        var requestInfo = pageLinkData.RequestInformation;
-        Uri? nextLink;
-        Stream? response = null;
-        do
-        {
-            var pageData = await requestExecutorAsync(requestInfo, cancellationToken);
-            if (fetchAllPages)
-            {
-                pageLinkData = new PageLinkData(requestInfo, pageData, pageLinkData.ResponseFormat, pageLinkData.ItemName, pageLinkData.NextLinkName);
-                nextLink = await GetNextPageLinkAsync(pageLinkData, cancellationToken);
-                if (nextLink != null) pageLinkData.RequestInformation.URI = nextLink;
-            }
-            else
-            {
-                nextLink = null;
-            }
-            response = await MergeJsonStreamsAsync(response, pageData, pageLinkData.ItemName, pageLinkData.NextLinkName, cancellationToken);
-        } while (nextLink != null);
+        return true;
+    }
 
-        return response ?? Stream.Null;
+    private bool IsJson(PageLinkData pageLinkData)
+    {
+        return pageLinkData.RequestInformation.Headers.TryGetValue("Accept", out var accepts) && accepts.Contains("json");
     }
 
     /// <summary>

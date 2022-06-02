@@ -16,9 +16,28 @@ public interface IPagingService
     Task<Uri?> GetNextPageLinkAsync(PageLinkData pageLinkData, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Returns the next page
+    /// Returns the next page or all pages if fetch all pages is true
     /// </summary>
+    /// <param name="requestExecutorAsync">Callback to run that returns a stream with the next page of data</param>
+    /// <param name="pageLinkData">Metadata that is used when fetching paging data</param>
+    /// <param name="fetchAllPages">If this is true, the result will be a stream with all available pages</param>
+    /// <param name="cancellationToken">The cancellation token</param>
     Task<Stream> GetPagedDataAsync(Func<RequestInformation, CancellationToken, Task<Stream>> requestExecutorAsync, PageLinkData pageLinkData, bool fetchAllPages = false, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Merges any new page received on each page request.
+    /// </summary>
+    /// <param name="currentResult">Cumulative results up until the previous page.</param>
+    /// <param name="newPageData">The new page data that should be merged.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A stream with the merged new page data.</returns>
+    Task<Stream?> MergePageAsync(Stream currentResult, PageLinkData newPageData, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Runs before getting paging data. Can be used to set request headers or query parameters before making a request
+    /// </summary>
+    /// <returns>A boolean result that if false, cancels the paging</returns>
+    bool OnBeforeGetPagedData(PageLinkData pageLinkData, bool fetchAllPages = false);
 }
 
 /// <summary>
@@ -31,15 +50,13 @@ public readonly struct PageLinkData
     /// </summary>
     /// <param name="requestInformation">The request information. Paging information (top, skip etc) can be extracted from a request.</param>
     /// <param name="response">The response body stream.</param>
-    /// <param name="responseFormat">The response body format.</param>
     /// <param name="itemName">The name of the property that has the data.</param>
     /// <param name="nextLinkName">The name of the property that holds the next link.</param>
-    public PageLinkData(RequestInformation requestInformation, Stream response, ResponseFormat responseFormat = ResponseFormat.JSON, string itemName = "value", string nextLinkName = "nextLink")
+    public PageLinkData(RequestInformation requestInformation, Stream response, string itemName = "value", string nextLinkName = "nextLink")
     {
         ItemName = itemName;
         NextLinkName = nextLinkName;
         Response = response;
-        ResponseFormat = responseFormat;
         RequestInformation = requestInformation;
     }
 
@@ -74,27 +91,4 @@ public readonly struct PageLinkData
     {
         get; private init;
     }
-
-    /// <summary>
-    /// The response body format. Used when extracting the next link from the response.
-    /// </summary>
-    public ResponseFormat ResponseFormat
-    {
-        get; private init;
-    }
-}
-
-/// <summary>
-/// The server response body format
-/// </summary>
-public enum ResponseFormat
-{
-    /// <summary>
-    /// JSON Response
-    /// </summary>
-    JSON,
-    /// <summary>
-    /// XML Response
-    /// </summary>
-    XML,
 }

@@ -32,6 +32,7 @@ public class ODataPagingServiceTest
             var bytes = Encoding.UTF8.GetBytes("{\"nextLink\": \"https://testlink\"}");
             using var ms = new MemoryStream(bytes);
             var requestInfo = new RequestInformation();
+            requestInfo.Headers.Add("Accept", "application/json");
             var pagingData = new PageLinkData(requestInfo, ms);
 
             var nextLink = await pagingService.GetNextPageLinkAsync(pagingData);
