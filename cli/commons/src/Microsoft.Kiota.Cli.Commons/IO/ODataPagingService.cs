@@ -86,18 +86,10 @@ public class ODataPagingService : IPagingService
             return left ?? right;
         }
 
-        JsonNode? nodeLeft = null;
-        if (left != null)
-        {
-            nodeLeft = JsonNode.Parse(left);
-            if (left?.CanSeek == true) left?.Seek(0, SeekOrigin.Begin);
-        }
-        JsonNode? nodeRight = null;
-        if (right != null)
-        {
-            nodeRight = JsonNode.Parse(right);
-            if (right?.CanSeek == true) right?.Seek(0, SeekOrigin.Begin);
-        }
+        JsonNode? nodeLeft = JsonNode.Parse(left);
+        if (left.CanSeek == true) left.Seek(0, SeekOrigin.Begin);
+        JsonNode? nodeRight = JsonNode.Parse(right);
+        if (right.CanSeek == true) right.Seek(0, SeekOrigin.Begin);
 
         JsonArray? leftArray = null;
         JsonArray? rightArray = null;
