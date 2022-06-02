@@ -31,13 +31,18 @@ namespace Kiota.Builder.Refiners
             MakeModelPropertiesNullable(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
+            var defaultConfiguration = new GenerationConfiguration();
             ReplaceDefaultSerializationModules(generatedCode,
-                "Microsoft\\Kiota\\Serialization\\Json\\JsonSerializationWriterFactory",
-                "Microsoft\\Kiota\\Serialization\\Text\\TextSerializationWriterFactory"
+                defaultConfiguration.Serializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "Microsoft\\Kiota\\Serialization\\Json\\JsonSerializationWriterFactory",
+                    "Microsoft\\Kiota\\Serialization\\Text\\TextSerializationWriterFactory"}
             );
             ReplaceDefaultDeserializationModules(generatedCode, 
-                "Microsoft\\Kiota\\Serialization\\Json\\JsonParseNodeFactory",
-                "Microsoft\\Kiota\\Serialization\\Text\\TextParseNodeFactory"
+                defaultConfiguration.Deserializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "Microsoft\\Kiota\\Serialization\\Json\\JsonParseNodeFactory",
+                    "Microsoft\\Kiota\\Serialization\\Text\\TextParseNodeFactory"}
             );
             AliasUsingWithSameSymbol(generatedCode);
             AddSerializationModulesImport(generatedCode, new []{"Microsoft\\Kiota\\Abstractions\\ApiClientBuilder"}, null, '\\');
@@ -132,8 +137,7 @@ namespace Kiota.Builder.Refiners
             new(x => x is CodeProperty {Type.Name: {}} property && property.Type.Name.Equals("DateTime", StringComparison.OrdinalIgnoreCase), "", "DateTime"),
             new(x => x is CodeProperty {Type.Name: {}} property && property.Type.Name.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase), "", "DateTime"),
             new(x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor), "Microsoft\\Kiota\\Abstractions", "ApiClientBuilder"),
-            new(x => (x is CodeMethod {ReturnType.Name: {} } method && method.ReturnType.Name.Equals("Byte", StringComparison.OrdinalIgnoreCase)) || (x is CodeParameter parameter && parameter.Type.Name.Equals("Byte", StringComparison.OrdinalIgnoreCase)), "Microsoft\\Kiota\\Abstractions\\Types", "Byte"),
-            new(x => x is CodeProperty {Type.Name: {}} property && property.Type.Name.Equals("Byte", StringComparison.OrdinalIgnoreCase), "Microsoft\\Kiota\\Abstractions\\Types", "Byte")
+            new(x => x is CodeProperty property && property.IsOfKind(CodePropertyKind.QueryParameter) && !string.IsNullOrEmpty(property.SerializationName), "Microsoft\\Kiota\\Abstractions", "QueryParameter")
         };
         private static void CorrectPropertyType(CodeProperty currentProperty) {
             if(currentProperty.IsOfKind(CodePropertyKind.RequestAdapter)) {

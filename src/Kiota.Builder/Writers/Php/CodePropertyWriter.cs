@@ -34,8 +34,14 @@ namespace Kiota.Builder.Writers.Php
             var typeString = (collectionKind
                 ? GetCollectionDocString(codeProperty)
                 : conventions.GetTypeString(codeProperty.Type, codeProperty));
-            writer.WriteLine($"{conventions.DocCommentStart} @var {typeString}{(codeProperty.Type.IsNullable ? "|null" : string.Empty)} ${codeProperty.Name} " +
-                             $"{(hasDescription ? propertyDescription : string.Empty)} {conventions.DocCommentEnd}");
+            writer.WriteLine(conventions.DocCommentStart);
+            if (codeProperty.IsOfKind(CodePropertyKind.QueryParameter) && codeProperty.IsNameEscaped)
+            {
+                writer.WriteLine($"{conventions.DocCommentPrefix}@QueryParameter(\"{codeProperty.SerializationName}\")");
+            }
+            writer.WriteLine($"{conventions.DocCommentPrefix}@var {typeString}{(codeProperty.Type.IsNullable ? "|null" : string.Empty)} ${codeProperty.Name} " +
+                             $"{(hasDescription ? propertyDescription : string.Empty)}");
+            writer.WriteLine(conventions.DocCommentEnd);
         }
 
         private string GetCollectionDocString(CodeProperty codeProperty)

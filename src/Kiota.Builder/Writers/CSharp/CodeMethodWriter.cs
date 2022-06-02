@@ -118,7 +118,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         if (backingStoreParameter != null)
             writer.WriteLine($"{requestAdapterPropertyName}.EnableBackingStore({backingStoreParameter.Name});");
     }
-    private static void WriteSerializationRegistration(List<string> serializationClassNames, LanguageWriter writer, string methodName)
+    private static void WriteSerializationRegistration(HashSet<string> serializationClassNames, LanguageWriter writer, string methodName)
     {
         if (serializationClassNames != null)
             foreach (var serializationClassName in serializationClassNames)
@@ -143,7 +143,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                                     pathParametersParam.Name.ToFirstCharacterLowerCase(),
                                                     currentMethod.Parameters
                                                                 .Where(x => x.IsOfKind(CodeParameterKind.Path))
-                                                                .Select(x => (x.Type, x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
+                                                                .Select(x => (x.Type, string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
                                                                 .ToArray());
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
             }

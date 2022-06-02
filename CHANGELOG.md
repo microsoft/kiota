@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added a parameter to specify why mime types to evaluate for models. [#134](https://github.com/microsoft/kiota/issues/134)
+- Added an explicit error message for external references in the schema. [#1580](https://github.com/microsoft/kiota/issues/1580)
+
+### Changed
+
+- Aligned mime types model generation behaviour for request bodies on response content. [#134](https://github.com/microsoft/kiota/issues/134)
+- Fixed an issue where some critical errors would not return a failed exit code. [#1605](https://github.com/microsoft/kiota/issues/1605)
+
+## [0.2.1] - 2022-05-30
+
+### Added
+
+- Added missing mappings in PHP for uint8 and int8. [#1473](https://github.com/microsoft/kiota/pull/1473)
+- Added support for enum and enum collections responses in Go. [#1578](https://github.com/microsoft/kiota/issues/1578)
+- Added Kiota builder engine as a package for external services integration. [#1582](https://github.com/microsoft/kiota/issues/1582)
+
+### Changed
+
+- Fixed a bug where the logger would not log all the information. [#1588](https://github.com/microsoft/kiota/issues/1588)
+
+## [0.2.0] - 2022-05-24
+
+### Added
+
 - Added support for enum options descriptions (C#/Go/Java/TypeScript). [#90](https://github.com/microsoft/kiota/issues/90)
 - Added support for file parameters types. [#221](https://github.com/microsoft/kiota/issues/221)
 - Added support for no content responses in PHP. [#1458](https://github.com/microsoft/kiota/issues/1458)
@@ -16,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for discriminator downcast in PHP. [#1255](https://github.com/microsoft/kiota/issues/1255)
 - Added support for multiple collections indexing under the same parent.
 - Added code exclusions placeholder in the generation. (oneOf)
+- Added support for continuous access evaluation in Java. [#1179](https://github.com/microsoft/kiota/issues/1179)
+- Added support for special characters in URL query parameter names. [#1584](https://github.com/microsoft/kiota/pull/1584)
 
 ### Changed
 
@@ -32,10 +58,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where nullable wrapper schema flattening would ignore some composed type options.
 - Fixed a bug where arrays without items definition would derail generation.
 - Fixed a bug with enums detection for generation. (interpreted as string)
-- Fixes a bug where classes names cleanup could end-up in a collision.
-- Fixes a bug where null reference exception would be thrown when trying to lookup type inheritance on discriminators
-- Fixes the lookup of model namespaces to only look in the target namespace to avoid reference collissions
-- Fixes a bug for the generated send method for paths returning Enums in dotnet.
+- Fixed a bug where classes names cleanup could end-up in a collision.
+- Fixed a bug where null reference exception would be thrown when trying to lookup type inheritance on discriminators
+- Fixed the lookup of model namespaces to only look in the target namespace to avoid reference collisions.
+- Fixed a bug for the generated send method for paths returning Enums in dotnet.
+- Breaking: renamed the --loglevel parameter to --log-level.
+- Fixed a bug where some path parameter objects would have empty key values [#1586](https://github.com/microsoft/kiota/issues/1586)
 
 ## [0.1.3] - 2022-05-06
 

@@ -67,6 +67,7 @@ class KiotaClientFactory
     public static function getDefaultHandlerStack(): HandlerStack
     {
         $handlerStack = new HandlerStack(Utils::chooseHandler());
+        $handlerStack->push(KiotaMiddleware::parameterNamesDecoding());
         $handlerStack->push(KiotaMiddleware::retry());
         $handlerStack->push(GuzzleMiddleware::redirect());
         return $handlerStack;

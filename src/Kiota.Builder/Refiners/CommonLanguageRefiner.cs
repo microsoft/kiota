@@ -29,8 +29,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                                     .Union(parseNodeFactoryInterfaceAndRegistrationFullName)
                                                     .Where(x => !string.IsNullOrEmpty(x))
                                                     .ToList();
-                currentMethod.DeserializerModules = currentMethod.DeserializerModules.Select(x => x.Split(separator).Last()).ToList();
-                currentMethod.SerializerModules = currentMethod.SerializerModules.Select(x => x.Split(separator).Last()).ToList();
+                currentMethod.DeserializerModules = currentMethod.DeserializerModules.Select(x => x.Split(separator).Last()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                currentMethod.SerializerModules = currentMethod.SerializerModules.Select(x => x.Split(separator).Last()).ToHashSet(StringComparer.OrdinalIgnoreCase);
                 declaration.AddUsings(cumulatedSymbols.Select(x => new CodeUsing {
                     Name = x.Split(separator).Last(),
                     Declaration = new CodeType {
@@ -42,32 +42,23 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
         CrawlTree(generatedCode, x => AddSerializationModulesImport(x, serializationWriterFactoryInterfaceAndRegistrationFullName, parseNodeFactoryInterfaceAndRegistrationFullName, separator));
     }
-    protected static void ReplaceDefaultSerializationModules(CodeElement generatedCode, params string[] moduleNames) {
-        var defaultValues = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
-            "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory",
-            "Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory",
-        };
-        if(ReplaceSerializationModules(generatedCode, x => x.SerializerModules, defaultValues, moduleNames))
+    protected static void ReplaceDefaultSerializationModules(CodeElement generatedCode, HashSet<string> defaultValues, HashSet<string> newModuleNames) {
+        if(ReplaceSerializationModules(generatedCode, x => x.SerializerModules, (x, y) => x.SerializerModules = y, defaultValues, newModuleNames))
             return;
-        CrawlTree(generatedCode, (x) => ReplaceDefaultSerializationModules(x, moduleNames));
+        CrawlTree(generatedCode, (x) => ReplaceDefaultSerializationModules(x, defaultValues, newModuleNames));
     }
-    protected static void ReplaceDefaultDeserializationModules(CodeElement generatedCode, params string[] moduleNames) {
-        var defaultValues = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
-            "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory",
-            "Microsoft.Kiota.Serialization.Text.TextParseNodeFactory",
-        };
-        if(ReplaceSerializationModules(generatedCode, x => x.DeserializerModules, defaultValues, moduleNames))
+    protected static void ReplaceDefaultDeserializationModules(CodeElement generatedCode, HashSet<string> defaultValues, HashSet<string> newModuleNames) {
+        if(ReplaceSerializationModules(generatedCode, x => x.DeserializerModules, (x, y) => x.DeserializerModules = y, defaultValues, newModuleNames))
             return;
-        CrawlTree(generatedCode, (x) => ReplaceDefaultDeserializationModules(x, moduleNames));
+        CrawlTree(generatedCode, (x) => ReplaceDefaultDeserializationModules(x, defaultValues, newModuleNames));
     }
-    private static bool ReplaceSerializationModules(CodeElement generatedCode, Func<CodeMethod, List<string>> propertyGetter, HashSet<string> initialNames, params string[] moduleNames) {
+    private static bool ReplaceSerializationModules(CodeElement generatedCode, Func<CodeMethod, HashSet<string>> propertyGetter, Action<CodeMethod, HashSet<string>> propertySetter, HashSet<string> initialNames, HashSet<string> moduleNames) {
         if(generatedCode is CodeMethod currentMethod &&
             currentMethod.IsOfKind(CodeMethodKind.ClientConstructor)) {
                 var modules = propertyGetter.Invoke(currentMethod);
                 if(modules.Count == initialNames.Count &&
                     modules.All(x => initialNames.Contains(x))) {
-                    modules.Clear();
-                    modules.AddRange(moduleNames);
+                    propertySetter.Invoke(currentMethod, moduleNames);
                     return true;
             }
         }

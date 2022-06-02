@@ -29,15 +29,22 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         ReplaceBinaryByNativeType(generatedCode, "ArrayBuffer", null);
         ReplaceReservedNames(generatedCode, new TypeScriptReservedNamesProvider(), x => $"{x}_escaped");
         AddConstructorsForDefaultValues(generatedCode, true);
+        var defaultConfiguration = new GenerationConfiguration();
         ReplaceDefaultSerializationModules(
             generatedCode,
-            "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory",
-            "@microsoft/kiota-serialization-text.TextSerializationWriterFactory"
+            defaultConfiguration.Serializers,
+            new (StringComparer.OrdinalIgnoreCase) {
+                "@microsoft/kiota-serialization-json.JsonSerializationWriterFactory",
+                "@microsoft/kiota-serialization-text.TextSerializationWriterFactory"
+            }
         );
         ReplaceDefaultDeserializationModules(
             generatedCode,
-            "@microsoft/kiota-serialization-json.JsonParseNodeFactory",
-            "@microsoft/kiota-serialization-text.TextParseNodeFactory"
+            defaultConfiguration.Deserializers,
+            new (StringComparer.OrdinalIgnoreCase) {
+                "@microsoft/kiota-serialization-json.JsonParseNodeFactory",
+                "@microsoft/kiota-serialization-text.TextParseNodeFactory"
+            }
         );
         AddSerializationModulesImport(generatedCode,
             new[] { $"{AbstractionsPackageName}.registerDefaultSerializer",

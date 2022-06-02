@@ -17,11 +17,12 @@ kiota (--openapi | -d) <path>
       [(--output | -o) <path>]
       [(--class-name | -c) <name>]
       [(--namespace-name | -n) <name>]
-      [(--loglevel | --ll) <level>]
+      [(--log-level | --ll) <level>]
       [--backing-store | -b]
       [(--serializer | -s) <classes>]
       [(--deserializer | --ds) <classes>]
       [--clean-output | --co]
+      [(--structured-mime-types | -m) <mime-types>]
 ```
 
 ## Mandatory parameters
@@ -100,7 +101,7 @@ One or more module names that implements `IParseNodeFactory`.
 kiota --deserializer Contoso.Json.CustomDeserializer
 ```
 
-### `--loglevel (--ll)`
+### `--log-level (--ll)`
 
 The log level to use when logging events to the main output. Defaults to `warning`.
 
@@ -169,6 +170,24 @@ One or more module names that implements `ISerializationWriterFactory`.
 ```shell
 kiota --serializer Contoso.Json.CustomSerializer
 ```
+
+### `--structured-mime-types (-m)`
+
+The MIME types to use for structured data model generation. Accepts multiple values.
+
+Default values :
+
+- `application/json`
+- `application/xml`
+- `text/plain`
+- `text/xml`
+- `text/yaml`
+
+> Note: Only request body types or response types with a defined schema will generate models, other entries will default back to stream/byte array.
+
+#### Accepted values
+
+Any valid MIME type which will match a request body type or a response type in the OpenAPI description.
 
 ## Examples
 

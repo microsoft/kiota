@@ -1,11 +1,14 @@
 <?php
 namespace Microsoft\Kiota\Abstractions;
 
+use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\Common\Annotations\AnnotationRegistry;
 use Exception;
 use InvalidArgumentException;
+use League\Uri\Contracts\UriException;
+use League\Uri\UriTemplate;
 use Microsoft\Kiota\Abstractions\Serialization\Parsable;
 use Psr\Http\Message\StreamInterface;
-use Rize\UriTemplate;
 use RuntimeException;
 
 class RequestInformation {
@@ -37,9 +40,18 @@ class RequestInformation {
     private static string $binaryContentType = 'application/octet-stream';
     /** @var string $contentTypeHeader */
     public static string $contentTypeHeader = 'Content-Type';
+    private static AnnotationReader $annotationReader;
+
+    public function __construct()
+    {
+        // Init annotation utils
+        AnnotationRegistry::registerLoader('class_exists');
+        self::$annotationReader = new AnnotationReader();
+    }
 
     /** Gets the URI of the request.
      * @return string
+     * @throws UriException
      */
     public function getUri(): string {
         if (!empty($this->uri)) {
@@ -49,9 +61,9 @@ class RequestInformation {
             && is_string($this->pathParameters[self::$RAW_URL_KEY])) {
             $this->setUri($this->pathParameters[self::$RAW_URL_KEY]);
         } else {
-            $template = (new UriTemplate());
+            $template = new UriTemplate($this->urlTemplate);
             $params = array_merge($this->pathParameters, $this->queryParameters);
-            return $template->expand($this->urlTemplate, $params);
+            return $template->expand($params);
         }
         return $this->uri;
     }
@@ -136,10 +148,22 @@ class RequestInformation {
 
     /**
      * Set the query parameters.
-     * @param array<string,mixed> $queryParameters
+     * @param object|null $queryParameters
      */
-    public function setQueryParameters(array $queryParameters): void {
-        $this->queryParameters = $queryParameters;
+    public function setQueryParameters(?object $queryParameters): void {
+        if (!$queryParameters) return;
+        $reflectionClass = new \ReflectionClass($queryParameters);
+        foreach ($reflectionClass->getProperties() as $classProperty) {
+            $propertyValue = $classProperty->getValue($queryParameters);
+            $propertyAnnotation = self::$annotationReader->getPropertyAnnotation($classProperty, QueryParameter::class);
+            if ($propertyValue) {
+                if ($propertyAnnotation) {
+                    $this->queryParameters[$propertyAnnotation->name] = $propertyValue;
+                    continue;
+                }
+                $this->queryParameters[$classProperty->name] = $propertyValue;
+            }
+        }
     }
 
     /**

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -129,7 +129,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         if(backingStoreParameter != null)
             writer.WriteLine($"this.{requestAdapterPropertyName}.enableBackingStore({backingStoreParameter.Name});");
     }
-    private static void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, string methodName) {
+    private static void WriteSerializationRegistration(HashSet<string> serializationModules, LanguageWriter writer, string methodName) {
         if(serializationModules != null)
             foreach(var module in serializationModules)
                 writer.WriteLine($"ApiClientBuilder.{methodName}({module}.class);");
@@ -158,7 +158,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
                                                     pathParametersParam.Name.ToFirstCharacterLowerCase(),
                                                     currentMethod.Parameters
                                                                 .Where(x => x.IsOfKind(CodeParameterKind.Path))
-                                                                .Select(x => (x.Type, x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
+                                                                .Select(x => (x.Type, string.IsNullOrEmpty(x.SerializationName) ? x.Name : x.SerializationName, x.Name.ToFirstCharacterLowerCase()))
                                                                 .ToArray());
                 AssignPropertyFromParameter(parentClass, currentMethod, CodeParameterKind.PathParameters, CodePropertyKind.PathParameters, writer, conventions.TempDictionaryVarName);
             }

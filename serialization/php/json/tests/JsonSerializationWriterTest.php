@@ -3,7 +3,6 @@
 namespace Microsoft\Kiota\Serialization\Tests;
 
 use Microsoft\Kiota\Abstractions\Serialization\SerializationWriter;
-use Microsoft\Kiota\Abstractions\Types\Byte;
 use Microsoft\Kiota\Abstractions\Types\Date;
 use Microsoft\Kiota\Abstractions\Types\Time;
 use Microsoft\Kiota\Serialization\Json\JsonSerializationWriter;
@@ -135,9 +134,9 @@ class JsonSerializationWriterTest extends TestCase
 
     public function testWriteAnyValue(): void {
         $this->jsonSerializationWriter = new JsonSerializationWriter();
-        $byte = new Byte(23);
-        $this->jsonSerializationWriter->writeAnyValue("to", $byte);
-        $expected = '"to":23';
+        $time = new Time('11:00:00');
+        $this->jsonSerializationWriter->writeAnyValue("created", $time);
+        $expected = '"created":"11:00:00"';
         $actual = $this->jsonSerializationWriter->getSerializedContent()->getContents();
         $this->assertEquals($expected, $actual);
     }
@@ -194,17 +193,6 @@ class JsonSerializationWriterTest extends TestCase
         $this->jsonSerializationWriter = new JsonSerializationWriter();
         $this->jsonSerializationWriter->writeAnyValue("statement", "This is a string");
         $expected = '"statement":"This is a string"';
-        $actual = $this->jsonSerializationWriter->getSerializedContent()->getContents();
-        $this->assertEquals($expected, $actual);
-    }
-
-    /**
-     */
-    public function testWriteByteValue(): void{
-        $this->jsonSerializationWriter = new JsonSerializationWriter();
-        $byte = new Byte(23);
-        $this->jsonSerializationWriter->writeAnyValue("to", $byte);
-        $expected = '"to":23';
         $actual = $this->jsonSerializationWriter->getSerializedContent()->getContents();
         $this->assertEquals($expected, $actual);
     }
