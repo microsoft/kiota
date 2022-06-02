@@ -76,14 +76,19 @@ public class GoRefiner : CommonLanguageRefiner
             generatedCode);
         AddErrorImportForEnums(
             generatedCode);
+        var defaultConfiguration = new GenerationConfiguration();
         ReplaceDefaultSerializationModules(
             generatedCode,
-            "github.com/microsoft/kiota-serialization-json-go.JsonSerializationWriterFactory",
-            "github.com/microsoft/kiota-serialization-text-go.TextSerializationWriterFactory");
+            defaultConfiguration.Serializers,
+            new (StringComparer.OrdinalIgnoreCase) {
+                "github.com/microsoft/kiota-serialization-json-go.JsonSerializationWriterFactory",
+                "github.com/microsoft/kiota-serialization-text-go.TextSerializationWriterFactory"});
         ReplaceDefaultDeserializationModules(
             generatedCode,
-            "github.com/microsoft/kiota-serialization-json-go.JsonParseNodeFactory",
-            "github.com/microsoft/kiota-serialization-text-go.TextParseNodeFactory");
+            defaultConfiguration.Deserializers,
+            new (StringComparer.OrdinalIgnoreCase) {
+                "github.com/microsoft/kiota-serialization-json-go.JsonParseNodeFactory",
+                "github.com/microsoft/kiota-serialization-text-go.TextParseNodeFactory"});
         AddSerializationModulesImport(
             generatedCode,
             new string[] {"github.com/microsoft/kiota-abstractions-go/serialization.SerializationWriterFactory", "github.com/microsoft/kiota-abstractions-go.RegisterDefaultSerializer"},

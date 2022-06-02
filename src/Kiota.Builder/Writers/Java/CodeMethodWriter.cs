@@ -129,7 +129,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConventionServ
         if(backingStoreParameter != null)
             writer.WriteLine($"this.{requestAdapterPropertyName}.enableBackingStore({backingStoreParameter.Name});");
     }
-    private static void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, string methodName) {
+    private static void WriteSerializationRegistration(HashSet<string> serializationModules, LanguageWriter writer, string methodName) {
         if(serializationModules != null)
             foreach(var module in serializationModules)
                 writer.WriteLine($"ApiClientBuilder.{methodName}({module}.class);");

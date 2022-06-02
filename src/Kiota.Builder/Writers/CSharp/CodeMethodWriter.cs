@@ -118,7 +118,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         if (backingStoreParameter != null)
             writer.WriteLine($"{requestAdapterPropertyName}.EnableBackingStore({backingStoreParameter.Name});");
     }
-    private static void WriteSerializationRegistration(List<string> serializationClassNames, LanguageWriter writer, string methodName)
+    private static void WriteSerializationRegistration(HashSet<string> serializationClassNames, LanguageWriter writer, string methodName)
     {
         if (serializationClassNames != null)
             foreach (var serializationClassName in serializationClassNames)
