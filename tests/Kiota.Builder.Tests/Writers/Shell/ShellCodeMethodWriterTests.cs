@@ -402,7 +402,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var all = (bool) parameters", result);
         Assert.Contains("var requestInfo = CreateGetRequestInformation", result);
         Assert.Contains("requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
-        Assert.Contains("var pagingData = new PageLinkData(requestInfo, Stream.Null, responseFormat: ResponseFormat.JSON, itemName: \"item\", nextLinkName: \"nextLink\");", result);
+        Assert.Contains("var pagingData = new PageLinkData(requestInfo, Stream.Null, itemName: \"item\", nextLinkName: \"nextLink\");", result);
         Assert.Contains("var response = await pagingService.GetPagedDataAsync((info, token) => RequestAdapter.SendPrimitiveAsync<Stream>(info, errorMapping: default, cancellationToken: token), pagingData, all, cancellationToken);", result);
         Assert.Contains("var formatterOptions = output.GetOutputFormatterOptions(new FormatterOptionsModel(!jsonNoIndent));", result);
         Assert.Contains("response = await outputFilter?.FilterOutputAsync(response, query, cancellationToken)", result);

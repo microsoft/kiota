@@ -468,7 +468,7 @@ namespace Kiota.Builder.Writers.Shell
             var pageInfo = codeElement?.PagingInformation;
             if (pageInfo != null)
             {
-                writer.WriteLine($"var pagingData = new PageLinkData(requestInfo, Stream.Null, responseFormat: ResponseFormat.JSON, itemName: \"{pageInfo.ItemName}\", nextLinkName: \"{pageInfo.NextLinkName}\");");
+                writer.WriteLine($"var pagingData = new PageLinkData(requestInfo, Stream.Null, itemName: \"{pageInfo.ItemName}\", nextLinkName: \"{pageInfo.NextLinkName}\");");
                 writer.WriteLine($"{(isVoid ? string.Empty : "var response = ")}await {pagingServiceParamName}.GetPagedDataAsync((info, token) => RequestAdapter.{requestMethod}(info, errorMapping: {errorMappingVarName}, cancellationToken: token), pagingData, {allParamName}, {cancellationTokenParamName});");
             } else
             {
