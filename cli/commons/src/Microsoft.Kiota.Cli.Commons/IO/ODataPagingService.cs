@@ -16,12 +16,23 @@ public class ODataPagingService : IPagingService
     {
         if (pageLinkData.ResponseFormat == ResponseFormat.JSON)
         {
-            var doc = await JsonDocument.ParseAsync(pageLinkData.Response, cancellationToken: cancellationToken);
-            var hasNextLink = doc.RootElement.TryGetProperty(pageLinkData.NextLinkName, out var nextLink);
-            if (hasNextLink && nextLink.ValueKind == JsonValueKind.String)
+            try
             {
-                string? link = nextLink.GetString();
-                if (!string.IsNullOrWhiteSpace(link)) return new Uri(link);
+                if (pageLinkData.ResponseFormat == ResponseFormat.JSON)
+                {
+                    var doc = await JsonDocument.ParseAsync(pageLinkData.Response, cancellationToken: cancellationToken);
+                    var hasNextLink = doc.RootElement.TryGetProperty(pageLinkData.NextLinkName, out var nextLink);
+                    if (hasNextLink && nextLink.ValueKind == JsonValueKind.String)
+                    {
+                        string? link = nextLink.GetString();
+                        if (!string.IsNullOrWhiteSpace(link)) return new Uri(link);
+                    }
+                }
+            }
+            catch (JsonException)
+            {
+                // If the response isn't valid JSON, there will be no next link.
+                // TODO: Log warning once logging story is defined
             }
         }
 
