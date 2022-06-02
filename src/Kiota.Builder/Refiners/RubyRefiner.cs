@@ -29,8 +29,17 @@ namespace Kiota.Builder.Refiners {
             ReplaceReservedNames(generatedCode, new RubyReservedNamesProvider(), x => $"{x}_escaped");
             AddNamespaceModuleImports(generatedCode , _configuration.ClientNamespaceName);
             FixInheritedEntityType(generatedCode);
-            ReplaceDefaultSerializationModules(generatedCode, "microsoft_kiota_serialization.JsonSerializationWriterFactory");
-            ReplaceDefaultDeserializationModules(generatedCode, "microsoft_kiota_serialization.JsonParseNodeFactory");
+            var defaultConfiguration = new GenerationConfiguration();
+            ReplaceDefaultSerializationModules(
+                generatedCode,
+                defaultConfiguration.Serializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "microsoft_kiota_serialization.JsonSerializationWriterFactory"});
+            ReplaceDefaultDeserializationModules(
+                generatedCode,
+                defaultConfiguration.Deserializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "microsoft_kiota_serialization.JsonParseNodeFactory"});
             AddSerializationModulesImport(generatedCode,
                                         new [] { "microsoft_kiota_abstractions.ApiClientBuilder",
                                                 "microsoft_kiota_abstractions.SerializationWriterFactoryRegistry" },

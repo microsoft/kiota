@@ -131,8 +131,8 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public bool IsAccessor { 
         get => IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter);
     }
-    public List<string> SerializerModules { get; set; }
-    public List<string> DeserializerModules { get; set; }
+    public HashSet<string> SerializerModules { get; set; }
+    public HashSet<string> DeserializerModules { get; set; }
     /// <summary>
     /// Indicates whether this method is an overload for another method.
     /// </summary>

@@ -31,13 +31,18 @@ namespace Kiota.Builder.Refiners
             MakeModelPropertiesNullable(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "ById");
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
+            var defaultConfiguration = new GenerationConfiguration();
             ReplaceDefaultSerializationModules(generatedCode,
-                "Microsoft\\Kiota\\Serialization\\Json\\JsonSerializationWriterFactory",
-                "Microsoft\\Kiota\\Serialization\\Text\\TextSerializationWriterFactory"
+                defaultConfiguration.Serializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "Microsoft\\Kiota\\Serialization\\Json\\JsonSerializationWriterFactory",
+                    "Microsoft\\Kiota\\Serialization\\Text\\TextSerializationWriterFactory"}
             );
             ReplaceDefaultDeserializationModules(generatedCode, 
-                "Microsoft\\Kiota\\Serialization\\Json\\JsonParseNodeFactory",
-                "Microsoft\\Kiota\\Serialization\\Text\\TextParseNodeFactory"
+                defaultConfiguration.Deserializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "Microsoft\\Kiota\\Serialization\\Json\\JsonParseNodeFactory",
+                    "Microsoft\\Kiota\\Serialization\\Text\\TextParseNodeFactory"}
             );
             AliasUsingWithSameSymbol(generatedCode);
             AddSerializationModulesImport(generatedCode, new []{"Microsoft\\Kiota\\Abstractions\\ApiClientBuilder"}, null, '\\');

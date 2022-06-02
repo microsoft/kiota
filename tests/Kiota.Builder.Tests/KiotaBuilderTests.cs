@@ -2056,40 +2056,48 @@ components:
         Assert.NotNull(responseClass);
         Assert.Equal("some description", responseClass.Description);
     }
-    [InlineData("application/json", "204", true, "void")]
-    [InlineData("application/json", "204", false, "void")]
-    [InlineData("application/json", "200", true, "Myobject")]
-    [InlineData("application/json", "200", false, "binary")]
-    [InlineData("application/xml", "204", true, "void")]
-    [InlineData("application/xml", "204", false, "void")]
-    [InlineData("application/xml", "200", true, "Myobject")]
-    [InlineData("application/xml", "200", false, "binary")]
-    [InlineData("text/xml", "204", true, "void")]
-    [InlineData("text/xml", "204", false, "void")]
-    [InlineData("text/xml", "200", true, "Myobject")]
-    [InlineData("text/xml", "200", false, "binary")]
-    [InlineData("text/yaml", "204", true, "void")]
-    [InlineData("text/yaml", "204", false, "void")]
-    [InlineData("text/yaml", "200", true, "Myobject")]
-    [InlineData("text/yaml", "200", false, "binary")]
-    [InlineData("application/octet-stream", "204", true, "void")]
-    [InlineData("application/octet-stream", "204", false, "void")]
-    [InlineData("application/octet-stream", "200", true, "binary")]
-    [InlineData("application/octet-stream", "200", false, "binary")]
-    [InlineData("text/html", "204", true, "void")]
-    [InlineData("text/html", "204", false, "void")]
-    [InlineData("text/html", "200", true, "binary")]
-    [InlineData("text/html", "200", false, "binary")]
-    [InlineData("*/*", "204", true, "void")]
-    [InlineData("*/*", "204", false, "void")]
-    [InlineData("*/*", "200", true, "binary")]
-    [InlineData("*/*", "200", false, "binary")]
-    [InlineData("text/plain", "204", true, "void")]
-    [InlineData("text/plain", "204", false, "void")]
-    [InlineData("text/plain", "200", true, "Myobject")]
-    [InlineData("text/plain", "200", false, "string")]
+    [InlineData("application/json", "204", true, "default", "void")]
+    [InlineData("application/json", "204", false, "default", "void")]
+    [InlineData("application/json", "200", true, "default", "Myobject")]
+    [InlineData("application/json", "200", false, "default", "binary")]
+    [InlineData("application/xml", "204", true, "default", "void")]
+    [InlineData("application/xml", "204", false, "default", "void")]
+    [InlineData("application/xml", "200", true, "default", "Myobject")]
+    [InlineData("application/xml", "200", false, "default", "binary")]
+    [InlineData("text/xml", "204", true, "default", "void")]
+    [InlineData("text/xml", "204", false, "default", "void")]
+    [InlineData("text/xml", "200", true, "default", "Myobject")]
+    [InlineData("text/xml", "200", false, "default", "binary")]
+    [InlineData("text/yaml", "204", true, "default", "void")]
+    [InlineData("text/yaml", "204", false, "default", "void")]
+    [InlineData("text/yaml", "200", true, "default", "Myobject")]
+    [InlineData("text/yaml", "200", false, "default", "binary")]
+    [InlineData("application/octet-stream", "204", true, "default", "void")]
+    [InlineData("application/octet-stream", "204", false, "default", "void")]
+    [InlineData("application/octet-stream", "200", true, "default", "binary")]
+    [InlineData("application/octet-stream", "200", false, "default", "binary")]
+    [InlineData("text/html", "204", true, "default", "void")]
+    [InlineData("text/html", "204", false, "default", "void")]
+    [InlineData("text/html", "200", true, "default", "binary")]
+    [InlineData("text/html", "200", false, "default", "binary")]
+    [InlineData("*/*", "204", true, "default", "void")]
+    [InlineData("*/*", "204", false, "default", "void")]
+    [InlineData("*/*", "200", true, "default", "binary")]
+    [InlineData("*/*", "200", false, "default", "binary")]
+    [InlineData("text/plain", "204", true, "default", "void")]
+    [InlineData("text/plain", "204", false, "default", "void")]
+    [InlineData("text/plain", "200", true, "default", "Myobject")]
+    [InlineData("text/plain", "200", false, "default", "string")]
+    [InlineData("text/plain", "204", true, "application/json", "void")]
+    [InlineData("text/plain", "204", false, "application/json", "void")]
+    [InlineData("text/plain", "200", true, "application/json", "string")]
+    [InlineData("text/plain", "200", false, "application/json", "string")]
+    [InlineData("text/yaml", "204", true, "application/json", "void")]
+    [InlineData("text/yaml", "204", false, "application/json", "void")]
+    [InlineData("text/yaml", "200", true, "application/json", "binary")]
+    [InlineData("text/yaml", "200", false, "application/json", "binary")]
     [Theory]
-    public void GeneratesTheRightReturnTypeBasedOnContentAndStatus(string contentType, string statusCode, bool addModel, string returnType) {
+    public void GeneratesTheRightReturnTypeBasedOnContentAndStatus(string contentType, string statusCode, bool addModel, string acceptedContentType, string returnType) {
         var myObjectSchema = new OpenApiSchema {
             Type = "object",
             Properties = new Dictionary<string, OpenApiSchema> {
@@ -2133,7 +2141,16 @@ components:
             }
         };
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var builder = new KiotaBuilder(
+            mockLogger.Object,
+            new GenerationConfiguration() {
+                ClientClassName = "TestClient",
+                ClientNamespaceName = "TestSdk",
+                ApiRootUrl = "https://localhost",
+                StructuredMimeTypes = acceptedContentType.Equals("default", StringComparison.OrdinalIgnoreCase) ? 
+                                            new GenerationConfiguration().StructuredMimeTypes:
+                                            new (StringComparer.OrdinalIgnoreCase) { acceptedContentType }
+        });
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
@@ -2143,6 +2160,92 @@ components:
         var executor = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(executor);
         Assert.Equal(returnType, executor.ReturnType.Name);
+    }
+    [InlineData("application/json", true, "default", "Myobject")]
+    [InlineData("application/json", false, "default", "binary")]
+    [InlineData("application/xml", false, "default", "binary")]
+    [InlineData("application/xml", true, "default", "Myobject")]
+    [InlineData("text/xml", false, "default", "binary")]
+    [InlineData("text/xml", true, "default", "Myobject")]
+    [InlineData("text/yaml", false, "default", "binary")]
+    [InlineData("text/yaml", true, "default", "Myobject")]
+    [InlineData("application/octet-stream", true, "default", "binary")]
+    [InlineData("application/octet-stream", false, "default", "binary")]
+    [InlineData("text/html", true, "default", "binary")]
+    [InlineData("text/html", false, "default", "binary")]
+    [InlineData("*/*", true, "default", "binary")]
+    [InlineData("*/*", false, "default", "binary")]
+    [InlineData("text/plain", false, "default", "binary")]
+    [InlineData("text/plain", true, "default", "Myobject")]
+    [InlineData("text/plain", true, "application/json", "binary")]
+    [InlineData("text/plain", false, "application/json", "binary")]
+    [InlineData("text/yaml", true, "application/json", "binary")]
+    [InlineData("text/yaml", false, "application/json", "binary")]
+    [Theory]
+    public void GeneratesTheRightParameterTypeBasedOnContentAndStatus(string contentType, bool addModel, string acceptedContentType, string parameterType) {
+        var myObjectSchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = "string",
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var document = new OpenApiDocument() {
+            Paths = new OpenApiPaths() {
+                ["answer"] = new OpenApiPathItem() {
+                    Operations = {
+                        [OperationType.Post] = new OpenApiOperation() {
+                            RequestBody = new OpenApiRequestBody {
+                                Content = {
+                                    [contentType] = new OpenApiMediaType {
+                                        Schema = addModel ? myObjectSchema : null
+                                    }
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["204"] = new OpenApiResponse {},
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new() {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", myObjectSchema
+                    }
+                }
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(
+            mockLogger.Object,
+            new GenerationConfiguration() {
+                ClientClassName = "TestClient",
+                ClientNamespaceName = "TestSdk",
+                ApiRootUrl = "https://localhost",
+                StructuredMimeTypes = acceptedContentType.Equals("default", StringComparison.OrdinalIgnoreCase) ? 
+                                            new GenerationConfiguration().StructuredMimeTypes:
+                                            new (StringComparer.OrdinalIgnoreCase) { acceptedContentType }
+        });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
+        Assert.NotNull(rbNS);
+        var rbClass = rbNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.RequestBuilder));
+        Assert.NotNull(rbClass);
+        var executor = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+        Assert.NotNull(executor);
+        Assert.Equal(parameterType, executor.Parameters.OfKind(CodeParameterKind.RequestBody).Type.Name);
     }
     [Fact]
     public void DoesntGenerateVoidExecutorOnMixed204(){
