@@ -12,7 +12,6 @@
     <copyright>© Microsoft Corporation. All rights reserved.</copyright>
     <tags>OpenAPI Swagger AspNetCore CodeGen TypeScript WebApi AspNet</tags>
     <repository type="git" url="https://github.com/microsoft/kiota.git" branch="main" />
-    <developmentDependency>true</developmentDependency>
     <dependencies />
     <references />
   </metadata>
