@@ -48,15 +48,10 @@ public class KiotaBuilder
 
         try {
             CleanOutputDirectory();
-            // doing this verification at the begining to give immediate feedback to the user
+            // doing this verification at the beginning to give immediate feedback to the user
             Directory.CreateDirectory(config.OutputPath);
         } catch (Exception ex) {
-#if DEBUG
-            logger.LogCritical(ex, "Could not open/create output directory {configOutputPath}, reason: {exMessage}", config.OutputPath, ex.Message);
-#else
-            logger.LogCritical("Could not open/create output directory {configOutputPath}, reason: {exMessage}", config.OutputPath, ex.Message);
-#endif
-            return;
+            throw new InvalidOperationException($"Could not open/create output directory {config.OutputPath}, reason: {ex.Message}", ex);
         }
         
         sw.Start();
@@ -117,12 +112,7 @@ public class KiotaBuilder
                 using var httpClient = new HttpClient();
                 input = await httpClient.GetStreamAsync(inputPath, cancellationToken);
             } catch (HttpRequestException ex) {
-#if DEBUG
-                logger.LogCritical(ex, "Could not download the file at {inputPath}, reason: {exMessage}", inputPath, ex.Message);
-#else
-                logger.LogCritical("Could not download the file at {inputPath}, reason: {exMessage}", inputPath, ex.Message);
-#endif
-                return null;
+                throw new InvalidOperationException($"Could not download the file at {inputPath}, reason: {ex.Message}", ex);
             }
         else
             try {
@@ -134,12 +124,7 @@ public class KiotaBuilder
                 ex is UnauthorizedAccessException ||
                 ex is SecurityException ||
                 ex is NotSupportedException) {
-#if DEBUG
-                logger.LogCritical(ex, "Could not open the file at {inputPath}, reason: {exMessage}", inputPath, ex.Message);
-#else
-                logger.LogCritical("Could not open the file at {inputPath}, reason: {exMessage}", inputPath, ex.Message);
-#endif
-                return null;
+                throw new InvalidOperationException($"Could not open the file at {inputPath}, reason: {ex.Message}", ex);
             }
         stopwatch.Stop();
         logger.LogTrace("{timestamp}ms: Read OpenAPI file {file}", stopwatch.ElapsedMilliseconds, inputPath);
