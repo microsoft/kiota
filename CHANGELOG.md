@@ -9,9 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added a parameter to specify why mime types to evaluate for models. [#134](https://github.com/microsoft/kiota/issues/134)
+- Added an explicit error message for external references in the schema. [#1580](https://github.com/microsoft/kiota/issues/1580)
+- Added support for paging. [#1569](https://github.com/microsoft/kiota/issues/1569)
+
+### Changed
+
+- Aligned mime types model generation behaviour for request bodies on response content. [#134](https://github.com/microsoft/kiota/issues/134)
+
+## [0.2.1] - 2022-05-30
+
+### Added
+
 - Added missing mappings in PHP for uint8 and int8. [#1473](https://github.com/microsoft/kiota/pull/1473)
 - Added support for enum and enum collections responses in Go. [#1578](https://github.com/microsoft/kiota/issues/1578)
-- Added support for paging. [#1569](https://github.com/microsoft/kiota/issues/1569)
+- Added Kiota builder engine as a package for external services integration. [#1582](https://github.com/microsoft/kiota/issues/1582)
 
 ### Changed
 

@@ -39,7 +39,10 @@ namespace Kiota.Builder.Extensions {
         }
 
         public static bool IsReferencedSchema(this OpenApiSchema schema) {
-            return schema?.Reference != null;
+            var isReference = schema?.Reference != null;
+            if(isReference && schema.Reference.IsExternal)
+                throw new NotSupportedException("External references are not supported in this version of Kiota. While Kiota awaits on OpenAPI.Net to support inlining external references, you can use https://www.nuget.org/packages/Microsoft.OpenApi.Hidi to generate an OpenAPI description with inlined external references and then use this new reference with Kiota.");
+            return isReference;
         }
 
         public static bool IsArray(this OpenApiSchema schema)
