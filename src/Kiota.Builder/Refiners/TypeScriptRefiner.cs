@@ -479,7 +479,6 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 Name = impl.Name,
                 TypeDefinition = impl.TypeDefinition,
             });
-            var parentInterfaceNS = impl.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>();
 
             modelInterface.AddUsing(modelClass.Usings.FirstOrDefault(x => x.Name == impl.Name));
         }
