@@ -90,13 +90,10 @@ namespace Kiota.Builder.Writers.Shell
             // parameters: (type, name, CodeParameter)
             var parameters = parametersList.Select(p =>
             {
-                var optionAlias = p.Name;
-                // Binary body handling
-                if (p.IsOfKind(CodeParameterKind.RequestBody) && conventions.StreamTypeName.Equals(p.Type?.Name, StringComparison.OrdinalIgnoreCase))
-                {
-                    optionAlias = "file";
-                }
-                return (GetCodeParameterType(p), NormalizeToIdentifier(p.Name), p as CodeParameter);
+                var type = conventions.GetTypeString(p.Type, p);
+                // Accept complex body objects as a JSON string
+                if (p.Kind == CodeParameterKind.RequestBody && (p.Type as CodeType)?.TypeDefinition is CodeClass) type = "string";
+                return (type, NormalizeToIdentifier(p.Name), p as CodeParameter);
             }).ToList();
             var availableOptions = WriteExecutableCommandOptions(writer, parameters);
 
@@ -256,6 +253,12 @@ namespace Kiota.Builder.Writers.Shell
             {
                 var optionName = $"{name.ToFirstCharacterLowerCase()}Option";
 
+                // Binary body handling
+                if (option.IsOfKind(CodeParameterKind.RequestBody) && conventions.StreamTypeName.Equals(option.Type?.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    option.Name = "file";
+                }
+
                 var optionBuilder = new StringBuilder("new Option");
                 if (!string.IsNullOrEmpty(optionType))
                 {
@@ -263,7 +266,7 @@ namespace Kiota.Builder.Writers.Shell
                 }
                 optionBuilder.Append("(\"");
                 if (name.Length > 1) optionBuilder.Append('-');
-                optionBuilder.Append($"-{NormalizeToOption(name)}\"");
+                optionBuilder.Append($"-{NormalizeToOption(option.Name)}\"");
                 if (option.DefaultValue != null)
                 {
                     var defaultValue = optionType == "string" ? $"\"{option.DefaultValue}\"" : option.DefaultValue;
@@ -291,14 +294,7 @@ namespace Kiota.Builder.Writers.Shell
                 writer.WriteLine("};");
                 writer.WriteLine($"{optionName}.IsRequired = {isRequired.ToString().ToFirstCharacterLowerCase()};");
                 writer.WriteLine($"command.AddOption({optionName});");
-                //if (optionType == "bool?")
-                //{
-                //    availableOptions.Add($"new NullableBooleanBinding({optionName})");
-                //}
-                //else
-                {
-                    availableOptions.Add($"{invocationContextParamName}.ParseResult.GetValueForOption({optionName})");
-                }
+                availableOptions.Add($"{invocationContextParamName}.ParseResult.GetValueForOption({optionName})");
             }
 
             return availableOptions;
