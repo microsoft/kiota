@@ -692,6 +692,10 @@ public class KiotaBuilder
             Description = (operation.Description ?? operation.Summary).CleanupDescription(),
             ReturnType = new CodeType { Name = "RequestInformation", IsNullable = false, IsExternal = true},
         }).FirstOrDefault();
+        if (schema != null) {
+            var mediaType = operation.Responses.Values.SelectMany(static x => x.Content).First(x => x.Value.Schema == schema).Key;
+            generatorMethod.AcceptedResponseTypes.Add(mediaType);
+        }
         if (config.Language == GenerationLanguage.Shell)
             SetPathAndQueryParameters(generatorMethod, currentNode, operation);
         AddRequestBuilderMethodParameters(currentNode, operationType, operation, parameterClass, requestConfigClass, generatorMethod);
@@ -742,7 +746,7 @@ public class KiotaBuilder
                 Kind = CodeParameterKind.RequestBody,
                 Description = requestBodySchema.Description.CleanupDescription()
             });
-            method.ContentType = operation.RequestBody.Content.First(x => x.Value.Schema == requestBodySchema).Key;
+            method.RequestBodyContentType = operation.RequestBody.Content.First(x => x.Value.Schema == requestBodySchema).Key;
         } else if (operation.RequestBody?.Content?.Any() ?? false) {
             var nParam = new CodeParameter {
                 Name = "body",
