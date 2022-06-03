@@ -92,7 +92,7 @@ namespace Kiota.Builder.Writers.Shell
             {
                 var type = conventions.GetTypeString(p.Type, p);
                 // Accept complex body objects as a JSON string
-                if (p.Kind == CodeParameterKind.RequestBody && (p.Type as CodeType)?.TypeDefinition is CodeClass) type = "string";
+                if (p.IsOfKind(CodeParameterKind.RequestBody) && p.Type is CodeType parameterType && parameterType.TypeDefinition is CodeClass) type = "string";
                 return (type, NormalizeToIdentifier(p.Name), p);
             }).ToList();
             var availableOptions = WriteExecutableCommandOptions(writer, parameters);
