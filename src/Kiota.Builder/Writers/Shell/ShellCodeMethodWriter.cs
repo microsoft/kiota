@@ -31,6 +31,7 @@ namespace Kiota.Builder.Writers.Shell
         private const string pagingServiceParamName = "pagingService";
         private const string jsonNoIndentParamType = "bool";
         private const string jsonNoIndentParamName = "jsonNoIndent";
+        private const string invocationContextParamName = "invocationContext";
 
         public ShellCodeMethodWriter(CSharpConventionService conventionService) : base(conventionService)
         {
@@ -57,7 +58,8 @@ namespace Kiota.Builder.Writers.Shell
                 {
                     WriteContainerCommand(codeElement, writer, parent, name);
                 }
-            } else
+            }
+            else
             {
                 WriteExecutableCommand(codeElement, requestParams, writer, name);
             }
@@ -74,7 +76,8 @@ namespace Kiota.Builder.Writers.Shell
             var parametersList = pathAndQueryParams?.Where(p => !string.IsNullOrWhiteSpace(p.Name))?.ToList() ?? new List<CodeParameter>();
             if (origParams.Any(p => p.IsOfKind(CodeParameterKind.RequestBody)))
             {
-                parametersList.Add(origParams.OfKind(CodeParameterKind.RequestBody));
+                var bodyParam = origParams.OfKind(CodeParameterKind.RequestBody);
+                parametersList.Add(bodyParam);
             }
             writer.WriteLine($"var command = new Command(\"{name}\");");
             WriteCommandDescription(codeElement, writer);
@@ -84,85 +87,72 @@ namespace Kiota.Builder.Writers.Shell
             // -h A=b -h
             // -h A:B,B:C
             // -h {"A": "B"}
-            var availableOptions = WriteExecutableCommandOptions(writer, parametersList);
-
-            var paramTypes = parametersList.Select(x =>
+            // parameters: (type, name, CodeParameter)
+            var parameters = parametersList.Select(p =>
             {
-                var codeType = x.Type as CodeType;
-                if (x.IsOfKind(CodeParameterKind.RequestBody) && codeType.TypeDefinition is CodeClass)
-                {
-                    return "string";
-                }
-                else if (conventions.StreamTypeName.Equals(x.Type?.Name, StringComparison.OrdinalIgnoreCase))
-                {
-                    return "FileInfo";
-                }
-
-                return conventions.GetTypeString(x.Type, x);
+                var type = conventions.GetTypeString(p.Type, p);
+                // Accept complex body objects as a JSON string
+                if (p.IsOfKind(CodeParameterKind.RequestBody) && p.Type is CodeType parameterType && parameterType.TypeDefinition is CodeClass) type = "string";
+                return (type, NormalizeToIdentifier(p.Name), p);
             }).ToList();
-            var paramNames = parametersList.Select(x => NormalizeToIdentifier(x.Name)).ToList();
+            var availableOptions = WriteExecutableCommandOptions(writer, parameters);
+
             var isHandlerVoid = conventions.VoidTypeName.Equals(originalMethod.ReturnType.Name, StringComparison.OrdinalIgnoreCase);
             var returnType = conventions.GetTypeString(originalMethod.ReturnType, originalMethod);
 
-            AddCustomCommandOptions(writer, ref availableOptions, ref paramTypes, ref paramNames, returnType, isHandlerVoid, originalMethod.PagingInformation != null);
+            AddCustomCommandOptions(writer, ref availableOptions, ref parameters, returnType, isHandlerVoid, originalMethod.PagingInformation != null);
 
             if (!isHandlerVoid && !conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
             {
                 if (!conventions.IsPrimitiveType(returnType))
                 {
                     // Add output filter param
-                    paramNames.Add(outputFilterParamName);
-                    paramTypes.Add(outputFilterParamType);
-                    availableOptions.Add($"new TypeBinding(typeof({outputFilterParamType}))");
+                    parameters.Add((outputFilterParamType, outputFilterParamName, null));
+                    availableOptions.Add($"{invocationContextParamName}.BindingContext.GetRequiredService<IHost>().Services.GetRequiredService<{outputFilterParamType}>()");
                 }
 
                 // Add output formatter factory param
-                paramTypes.Add(outputFormatterFactoryParamType);
-                paramNames.Add(outputFormatterFactoryParamName);
-                availableOptions.Add($"new TypeBinding(typeof({outputFormatterFactoryParamType}))");
+                parameters.Add((outputFormatterFactoryParamType, outputFormatterFactoryParamName, null));
+                availableOptions.Add($"{invocationContextParamName}.BindingContext.GetRequiredService<IHost>().Services.GetRequiredService<{outputFormatterFactoryParamType}>()");
             }
 
             if (originalMethod.PagingInformation != null)
             {
                 // Add paging service param
-                paramTypes.Add(pagingServiceParamType);
-                paramNames.Add(pagingServiceParamName);
-                availableOptions.Add($"new TypeBinding(typeof({pagingServiceParamType}))");
+                parameters.Add((pagingServiceParamType, pagingServiceParamName, null));
+                availableOptions.Add($"{invocationContextParamName}.BindingContext.GetRequiredService<IHost>().Services.GetRequiredService<{pagingServiceParamType}>()");
             }
 
             // Add CancellationToken param
-            paramTypes.Add(cancellationTokenParamType);
-            paramNames.Add(cancellationTokenParamName);
-            availableOptions.Add($"new TypeBinding(typeof({cancellationTokenParamType}))");
+            parameters.Add((cancellationTokenParamType, cancellationTokenParamName, null));
+            availableOptions.Add($"{invocationContextParamName}.GetCancellationToken()");
 
-            var zipped = paramTypes.Zip(paramNames).ToArray();
-            writer.WriteLine($"command.SetHandler(async (object[] parameters) => {{");
+            writer.WriteLine($"command.SetHandler(async ({invocationContextParamName}) => {{");
             writer.IncreaseIndent();
             for (int i = 0; i < availableOptions.Count; i++)
             {
-                var (paramType, paramName) = zipped[i];
-                writer.WriteLine($"var {paramName.ToFirstCharacterLowerCase()} = ({paramType}) parameters[{i}];");
+                var (paramType, paramName, parameter) = parameters[i];
+                writer.WriteLine($"var {paramName.ToFirstCharacterLowerCase()} = {availableOptions[i]};");
             }
 
             WriteCommandHandlerBody(originalMethod, requestParams, isHandlerVoid, returnType, writer);
             // Get request generator method. To call it + get path & query parameters see WriteRequestExecutorBody in CSharp
             WriteCommandHandlerBodyOutput(writer, originalMethod, isHandlerVoid);
             writer.DecreaseIndent();
-            writer.WriteLine($"}}, new CollectionBinding({string.Join(", ", availableOptions)}));");
+            writer.WriteLine($"}});");
             writer.WriteLine("return command;");
         }
 
-        private void AddCustomCommandOptions(LanguageWriter writer, ref List<string> availableOptions, ref List<string> paramTypes, ref List<string> paramNames, string returnType, bool isHandlerVoid, bool isPageable)
+        private void AddCustomCommandOptions(LanguageWriter writer, ref List<string> availableOptions, ref List<(string, string, CodeParameter)> parameters, string returnType, bool isHandlerVoid, bool isPageable)
         {
             if (conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
             {
                 var fileOptionName = "fileOption";
                 writer.WriteLine($"var {fileOptionName} = new Option<{fileParamType}>(\"--{fileParamName}\");");
                 writer.WriteLine($"command.AddOption({fileOptionName});");
-                paramTypes.Add(fileParamType);
-                paramNames.Add(fileParamName);
-                availableOptions.Add(fileOptionName);
-            } 
+                parameters.Add((fileParamType, fileParamName, null));
+                availableOptions.Add($"{invocationContextParamName}.ParseResult.GetValueForOption({fileOptionName})");
+            }
             else if (!isHandlerVoid && !conventions.IsPrimitiveType(returnType))
             {
                 // Add output type param
@@ -172,17 +162,15 @@ namespace Kiota.Builder.Writers.Shell
                 writer.WriteLine("IsRequired = true");
                 writer.CloseBlock("};");
                 writer.WriteLine($"command.AddOption({outputOptionName});");
-                paramTypes.Add(outputFormatParamType);
-                paramNames.Add(outputFormatParamName);
-                availableOptions.Add(outputOptionName);
+                parameters.Add((outputFormatParamType, outputFormatParamName, null));
+                availableOptions.Add($"{invocationContextParamName}.ParseResult.GetValueForOption({outputOptionName})");
 
                 // Add output filter query param
                 var outputFilterQueryOptionName = $"{outputFilterQueryParamName}Option";
                 writer.WriteLine($"var {outputFilterQueryOptionName} = new Option<{outputFilterQueryParamType}>(\"--{outputFilterQueryParamName}\");");
                 writer.WriteLine($"command.AddOption({outputFilterQueryOptionName});");
-                paramNames.Add(outputFilterQueryParamName);
-                paramTypes.Add(outputFilterQueryParamType);
-                availableOptions.Add(outputFilterQueryOptionName);
+                parameters.Add((outputFilterQueryParamType, outputFilterQueryParamName, null));
+                availableOptions.Add($"{invocationContextParamName}.ParseResult.GetValueForOption({outputFilterQueryOptionName})");
 
                 // Add JSON no-indent option
                 var jsonNoIndentOptionName = $"{jsonNoIndentParamName}Option";
@@ -196,9 +184,8 @@ namespace Kiota.Builder.Writers.Shell
                 writer.DecreaseIndent();
                 writer.WriteLine("}, description: \"Disable indentation for the JSON output formatter.\");");
                 writer.WriteLine($"command.AddOption({jsonNoIndentOptionName});");
-                paramNames.Add(jsonNoIndentParamName);
-                paramTypes.Add(jsonNoIndentParamType);
-                availableOptions.Add(jsonNoIndentOptionName);
+                parameters.Add((jsonNoIndentParamType, jsonNoIndentParamName, null));
+                availableOptions.Add($"{invocationContextParamName}.ParseResult.GetValueForOption({jsonNoIndentOptionName})");
 
                 // Add --all option
                 if (isPageable)
@@ -206,9 +193,8 @@ namespace Kiota.Builder.Writers.Shell
                     var allOptionName = $"{allParamName}Option";
                     writer.WriteLine($"var {allOptionName} = new Option<{allParamType}>(\"--{allParamName}\");");
                     writer.WriteLine($"command.AddOption({allOptionName});");
-                    paramNames.Add(allParamName);
-                    paramTypes.Add(allParamType);
-                    availableOptions.Add(allOptionName);
+                    parameters.Add((allParamType, allParamName, null));
+                    availableOptions.Add($"{invocationContextParamName}.ParseResult.GetValueForOption({allOptionName})");
                 }
             }
         }
@@ -232,7 +218,8 @@ namespace Kiota.Builder.Writers.Shell
                     if (conventions.IsPrimitiveType(typeString))
                     {
                         formatterOptionsVar = "null";
-                    } else
+                    }
+                    else
                     {
                         formatterTypeVal = outputFormatParamName;
                         writer.WriteLine($"response = await {outputFilterParamName}?.FilterOutputAsync(response, {outputFilterQueryParamName}, {cancellationTokenParamName}) ?? response;");
@@ -259,15 +246,12 @@ namespace Kiota.Builder.Writers.Shell
             }
         }
 
-        private List<string> WriteExecutableCommandOptions(LanguageWriter writer, List<CodeParameter> parametersList)
+        private List<string> WriteExecutableCommandOptions(LanguageWriter writer, List<(string, string, CodeParameter)> parametersList)
         {
             var availableOptions = new List<string>();
-            foreach (var option in parametersList)
+            foreach (var (optionType, name, option) in parametersList)
             {
-                var type = option.Type as CodeType;
-                var optionName = $"{NormalizeToIdentifier(option.Name).ToFirstCharacterLowerCase()}Option";
-                var optionType = conventions.GetTypeString(option.Type, option);
-                if (option.Kind == CodeParameterKind.RequestBody && type.TypeDefinition is CodeClass) optionType = "string";
+                var optionName = $"{name.ToFirstCharacterLowerCase()}Option";
 
                 // Binary body handling
                 if (option.IsOfKind(CodeParameterKind.RequestBody) && conventions.StreamTypeName.Equals(option.Type?.Name, StringComparison.OrdinalIgnoreCase))
@@ -276,12 +260,12 @@ namespace Kiota.Builder.Writers.Shell
                 }
 
                 var optionBuilder = new StringBuilder("new Option");
-                if (!String.IsNullOrEmpty(optionType))
+                if (!string.IsNullOrEmpty(optionType))
                 {
                     optionBuilder.Append($"<{optionType}>");
                 }
                 optionBuilder.Append("(\"");
-                if (option.Name.Length > 1) optionBuilder.Append('-');
+                if (name.Length > 1) optionBuilder.Append('-');
                 optionBuilder.Append($"-{NormalizeToOption(option.Name)}\"");
                 if (option.DefaultValue != null)
                 {
@@ -310,14 +294,7 @@ namespace Kiota.Builder.Writers.Shell
                 writer.WriteLine("};");
                 writer.WriteLine($"{optionName}.IsRequired = {isRequired.ToString().ToFirstCharacterLowerCase()};");
                 writer.WriteLine($"command.AddOption({optionName});");
-                if (optionType == "bool?")
-                {
-                    availableOptions.Add($"new NullableBooleanBinding({optionName})");
-                }
-                else
-                {
-                    availableOptions.Add(optionName);
-                }
+                availableOptions.Add($"{invocationContextParamName}.ParseResult.GetValueForOption({optionName})");
             }
 
             return availableOptions;
@@ -470,7 +447,8 @@ namespace Kiota.Builder.Writers.Shell
             {
                 writer.WriteLine($"var pagingData = new PageLinkData(requestInfo, Stream.Null, itemName: \"{pageInfo.ItemName}\", nextLinkName: \"{pageInfo.NextLinkName}\");");
                 writer.WriteLine($"{(isVoid ? string.Empty : "var response = ")}await {pagingServiceParamName}.GetPagedDataAsync((info, token) => RequestAdapter.{requestMethod}(info, errorMapping: {errorMappingVarName}, cancellationToken: token), pagingData, {allParamName}, {cancellationTokenParamName});");
-            } else
+            }
+            else
             {
                 writer.WriteLine($"{(isVoid ? string.Empty : "var response = ")}await RequestAdapter.{requestMethod}(requestInfo, errorMapping: {errorMappingVarName}, cancellationToken: {cancellationTokenParamName});");
             }

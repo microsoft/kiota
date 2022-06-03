@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryUrl>https://github.com/microsoft/kiota</RepositoryUrl>
-    <Version>0.1.7-preview.1</Version>
+    <Version>0.1.8-preview.1</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     
@@ -18,7 +18,7 @@
     <PackageReference Include="JmesPath.Net" Version="1.0.182" />
     <PackageReference Include="Microsoft.Kiota.Abstractions" Version="1.0.0-preview.6" />
     <PackageReference Include="Spectre.Console" Version="0.44.0" />
-    <PackageReference Include="System.CommandLine" Version="2.0.0-beta3.22114.1" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
   </ItemGroup>
 
 </Project>
