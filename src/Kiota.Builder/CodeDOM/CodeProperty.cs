@@ -62,9 +62,9 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, ICloneable, 
     {
         return new CodeProperty { 
             Access = Access,
-            Type = Type.Clone() as CodeTypeBase,
-            Getter = Getter.Clone() as CodeMethod,
-            Setter = Setter.Clone() as CodeMethod,
+            Type = Type?.Clone() as CodeTypeBase,
+            Getter = Getter?.Clone() as CodeMethod,
+            Setter = Setter?.Clone() as CodeMethod,
             DefaultValue = DefaultValue,
             Description = Description,
             NamePrefix = NamePrefix,

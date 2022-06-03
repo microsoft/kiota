@@ -20,7 +20,7 @@ namespace Kiota.Builder.Writers.TypeScript
             _codeUsingWriter.WriteCodeElement(interfaceDeclaration.Usings, parentNamespace, writer);
 
             var inheritSymbol = "";
-            foreach (var inherit in interfaceDeclaration?.Inherits)
+            foreach (var inherit in interfaceDeclaration?.Implements)
             {
                 var name = conventions.GetTypeString(inherit, interfaceDeclaration);
                 if (!(inherit.TypeDefinition is CodeInterface))

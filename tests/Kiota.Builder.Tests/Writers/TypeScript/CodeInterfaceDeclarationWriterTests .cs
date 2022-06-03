@@ -42,7 +42,7 @@ namespace Kiota.Builder.Writers.TypeScript.Tests
         public void WritesInheritance()
         {
 
-            parentInterface.StartBlock.AddInheritsFrom(new CodeType()
+            parentInterface.StartBlock.AddImplements(new CodeType()
             {
                 Name = "someInterface"
             });

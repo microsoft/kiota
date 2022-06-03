@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Transactions;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Extensions;
 
@@ -134,9 +135,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         if (backingStoreParameter != null)
             writer.WriteLine($"this.{requestAdapterPropertyName}.enableBackingStore({backingStoreParameter.Name});");
     }
-    private static void WriteSerializationRegistration(HashSet<string> serializationModules, LanguageWriter writer, string methodName) {
-        if(serializationModules != null)
-            foreach(var module in serializationModules)
+    private static void WriteSerializationRegistration(HashSet<string> serializationModules, LanguageWriter writer, string methodName)
+    {
+        if (serializationModules != null)
+            foreach (var module in serializationModules)
                 writer.WriteLine($"{methodName}({module});");
     }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
@@ -156,7 +158,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         {
             writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
         }
-            
+
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))
         {
             if (currentMethod.IsOfKind(CodeMethodKind.Constructor))
@@ -176,17 +178,25 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
 
         if (parentClass.IsOfKind(CodeClassKind.Model))
         {
-            ConstructorBodyForModelClass(parentClass, inherits, writer, currentMethod);
+            ConstructorBodyForModelClass(parentClass, writer, currentMethod);
         }
     }
 
-    private static void ConstructorBodyForModelClass(CodeClass codeClass, bool inherits, LanguageWriter writer, CodeMethod currentMethod)
+    private static void ConstructorBodyForModelClass(CodeClass codeClass, LanguageWriter writer, CodeMethod currentMethod)
     {
         var codeInterfaceName = currentMethod.Parameters.FirstOrDefault(x => x.Type is CodeType type && type.TypeDefinition is CodeInterface).Name;
-        if (inherits)
-
-            writer.WriteLine($"super({codeInterfaceName});");
-       
+        if (codeClass.StartBlock.Inherits != null)
+        {
+            if (codeClass.StartBlock.Inherits.TypeDefinition != null)
+            {
+                writer.WriteLine($"super({codeInterfaceName});");
+            }
+            else
+            {   
+                // For Error Model Classes.
+                writer.WriteLine($"super();");
+            }
+        }
 
         foreach (var prop in codeClass.Properties)
         {
@@ -350,11 +360,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             var body = "";
             if (IsCodeClassOrInterface(requestBody.Type))
             {
-                setMethodName =  "setContentFromParsable";
+                setMethodName = "setContentFromParsable";
                 writer.WriteLine($"const parsableBody = new {requestBody.Type.Name}{ModelClassSuffix}(body)");
                 body = "parsableBody";
             }
-            else {
+            else
+            {
                 setMethodName = "setContentFromScalar";
                 body = $"{spreadOperator}{requestBody.Name}";
             }

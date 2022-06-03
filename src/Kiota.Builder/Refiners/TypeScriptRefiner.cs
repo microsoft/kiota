@@ -2,7 +2,6 @@
 using System;
 using Kiota.Builder.Extensions;
 using System.Collections.Generic;
-using Microsoft.OpenApi.Expressions;
 
 namespace Kiota.Builder.Refiners;
 public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
@@ -152,7 +151,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     };
     private static void CorrectImplements(ProprietableBlockDeclaration block)
     {
-        block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
+        block.ReplaceImplementByName("IAdditionalDataHolder", "AdditionalDataHolder");
     }
     private static void CorrectPropertyType(CodeProperty currentProperty)
     {
@@ -460,7 +459,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (modelClass.StartBlock.Inherits?.TypeDefinition is CodeClass baseClass)
         {
             var parentInterface = CreateModelInterface(baseClass, tempInterfaceNamingCallback);
-            modelInterface.StartBlock.AddInheritsFrom(new CodeType
+            modelInterface.StartBlock.AddImplements(new CodeType
             {
                 Name = parentInterface.Name,
                 TypeDefinition = parentInterface,
@@ -481,13 +480,14 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         foreach (var impl in modelClass.StartBlock.Implements)
         {
 
-            modelInterface.StartBlock.AddInheritsFrom(new CodeType
+            modelInterface.StartBlock.AddImplements(new CodeType
             {
                 Name = impl.Name,
                 TypeDefinition = impl.TypeDefinition,
             });
 
             modelInterface.AddUsing(modelClass.Usings.FirstOrDefault(x => x.Name == impl.Name));
+            modelClass.StartBlock.RemoveImplements(impl as CodeType);
         }
         UpdateModelClassImplementationAndConstructor(modelClass, modelInterface);
 
