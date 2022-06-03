@@ -8,7 +8,7 @@ namespace Microsoft.Kiota.Cli.Commons.IO;
 /// <summary>
 /// Paging service that supports the x-ms-pageable extension
 /// </summary>
-public sealed class ODataPagingService : BasePagingService
+public class ODataPagingService : BasePagingService
 {
     /// <inheritdoc />
     public override async Task<Uri?> GetNextPageLinkAsync(PageLinkData pageLinkData, CancellationToken cancellationToken = default)
