@@ -93,7 +93,7 @@ namespace Kiota.Builder.Writers.Shell
                 var type = conventions.GetTypeString(p.Type, p);
                 // Accept complex body objects as a JSON string
                 if (p.Kind == CodeParameterKind.RequestBody && (p.Type as CodeType)?.TypeDefinition is CodeClass) type = "string";
-                return (type, NormalizeToIdentifier(p.Name), p as CodeParameter);
+                return (type, NormalizeToIdentifier(p.Name), p);
             }).ToList();
             var availableOptions = WriteExecutableCommandOptions(writer, parameters);
 
@@ -493,26 +493,6 @@ namespace Kiota.Builder.Writers.Shell
             {
                 writer.WriteLine("});");
             }
-        }
-
-        private string GetCodeParameterType(CodeParameter codeParameter)
-        {
-            var codeType = codeParameter.Type as CodeType;
-            string typeString;
-            if (codeParameter.IsOfKind(CodeParameterKind.RequestBody) && codeType.TypeDefinition is CodeClass)
-            {
-                typeString = "string";
-            }
-            else if (conventions.StreamTypeName.Equals(codeParameter.Type?.Name, StringComparison.OrdinalIgnoreCase))
-            {
-                typeString = "FileInfo";
-            }
-            else
-            {
-                typeString = conventions.GetTypeString(codeParameter.Type, codeParameter);
-            }
-
-            return typeString;
         }
 
         /// <summary>
