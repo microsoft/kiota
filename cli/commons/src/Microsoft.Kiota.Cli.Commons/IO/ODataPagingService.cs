@@ -17,7 +17,7 @@ public sealed class ODataPagingService : BasePagingService
         {
             try
             {
-                var doc = await JsonDocument.ParseAsync(pageLinkData.Response, cancellationToken: cancellationToken);
+                using var doc = await JsonDocument.ParseAsync(pageLinkData.Response, cancellationToken: cancellationToken);
                 var hasNextLink = doc.RootElement.TryGetProperty(pageLinkData.NextLinkName, out var nextLink);
                 if (hasNextLink && nextLink.ValueKind == JsonValueKind.String)
                 {
@@ -88,9 +88,13 @@ public sealed class ODataPagingService : BasePagingService
         JsonArray? rightArray = null;
         if (!string.IsNullOrWhiteSpace(itemName))
         {
-            if (nodeLeft?[itemName] == null || nodeRight?[itemName] == null)
+            if (nodeLeft?[itemName] == null)
             {
-                return left ?? right;
+                return right;
+            }
+            else if (nodeRight?[itemName] == null)
+            {
+                return left;
             }
 
             leftArray = nodeLeft[itemName]?.AsArray();

@@ -89,6 +89,34 @@ public class ODataPagingServiceTest
             Assert.Equal(ms, response);
         }
 
+        [Fact]
+        public async Task Return_Left_On_Null_Data_In_Right_Stream()
+        {
+            var pagingService = new ODataPagingService();
+
+            using var leftMs = new MemoryStream(Encoding.UTF8.GetBytes("{\"value\": [20]}"));
+            using var rightMs = new MemoryStream(Encoding.UTF8.GetBytes("{\"value\": null}"));
+            var response = await pagingService.MergeJsonStreamsAsync(leftMs, rightMs);
+            using var reader = new StreamReader(response ?? Stream.Null);
+            var result = await reader.ReadToEndAsync();
+
+            Assert.Equal("{\"value\": [20]}", result);
+        }
+
+        [Fact]
+        public async Task Return_Right_On_Null_Data_In_Left_Stream()
+        {
+            var pagingService = new ODataPagingService();
+
+            using var leftMs = new MemoryStream(Encoding.UTF8.GetBytes("{\"value\": null}"));
+            using var rightMs = new MemoryStream(Encoding.UTF8.GetBytes("{\"value\": [20]}"));
+            var response = await pagingService.MergeJsonStreamsAsync(leftMs, rightMs);
+            using var reader = new StreamReader(response ?? Stream.Null);
+            var result = await reader.ReadToEndAsync();
+
+            Assert.Equal("{\"value\": [20]}", result);
+        }
+
         [Theory]
         [InlineData(null, "[20,21,24]", "[30]", "[20,21,24,30]")]
         [InlineData("", "[20,21,24]", "[30]", "[20,21,24,30]")]
