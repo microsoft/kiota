@@ -1,14 +1,16 @@
-﻿using Microsoft.OpenApi.Services;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
+using Kiota.Builder.OpenApiExtensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Any;
+using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Services;
 using Moq;
 using Xunit;
-using System.Collections.Generic;
-using Microsoft.OpenApi.Any;
-using System.Threading.Tasks;
-using System.IO;
-using System;
 
 namespace Kiota.Builder.Tests;
 public class KiotaBuilderTests
@@ -2431,5 +2433,65 @@ components:
         Assert.NotNull(idsParam);
         Assert.Equal("string", idsParam.Type.Name);
         Assert.Equal(CodeType.CodeTypeCollectionKind.None, idsParam.Type.CollectionKind);
+    }
+    
+    [Fact]
+    public void HandlesPagingExtension(){
+        var myObjectSchema = new OpenApiSchema {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> {
+                {
+                    "name", new OpenApiSchema {
+                        Type = "string",
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "myobject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false,
+        };
+        var document = new OpenApiDocument() {
+            Paths = new OpenApiPaths() {
+                ["users"] = new OpenApiPathItem() {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation() {
+                            Extensions = new Dictionary<string, IOpenApiExtension> {
+                                { OpenApiPagingExtension.Name, new OpenApiPagingExtension { NextLinkName = "@odata.nextLink" } }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = myObjectSchema
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    } 
+                }
+            },
+            Components = new() {
+                Schemas = new Dictionary<string, OpenApiSchema> {
+                    {
+                        "myobject", myObjectSchema
+                    }
+                }
+            }
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration() { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" });
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var answersNS = codeModel.FindNamespaceByName("TestSdk.users");
+        Assert.NotNull(answersNS);
+        var rbClass = answersNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.RequestBuilder));
+        Assert.NotNull(rbClass);
+        var executorMethod = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == HttpMethod.Get);
+        Assert.NotNull(executorMethod);
+        Assert.Equal("@odata.nextLink", executorMethod.PagingInformation?.NextLinkName);
     }
 }

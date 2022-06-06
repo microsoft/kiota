@@ -42,6 +42,34 @@ public enum HttpMethod {
     Trace
 }
 
+public class PagingInformation : ICloneable
+{
+    public string ItemName
+    {
+        get; set;
+    }
+
+    public string NextLinkName
+    {
+        get; set;
+    }
+
+    public string OperationName
+    {
+        get; set;
+    }
+
+    public object Clone()
+    {
+        return new PagingInformation
+        {
+            ItemName = ItemName?.Clone() as string,
+            NextLinkName = NextLinkName?.Clone() as string,
+            OperationName = OperationName?.Clone() as string,
+        };
+    }
+}
+
 public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement
 {
     public static CodeMethod FromIndexer(CodeIndexer originalIndexer, CodeClass indexerClass, string methodNameSuffix, bool parameterNullable)
@@ -116,7 +144,12 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public bool IsStatic {get;set;} = false;
     public bool IsAsync {get;set;} = true;
     public string Description {get; set;}
-    
+
+    public PagingInformation PagingInformation
+    {
+        get; set;
+    }
+
     /// <summary>
     /// The combination of the path, query and header parameters for the current URL.
     /// Only use this property if the language you are generating for doesn't support fluent API style (e.g. Shell/CLI)
@@ -234,6 +267,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             discriminatorMappings = discriminatorMappings == null ? null : new (discriminatorMappings),
             DiscriminatorPropertyName = DiscriminatorPropertyName?.Clone() as string,
             acceptedResponseTypes = acceptedResponseTypes == null ? null : new (acceptedResponseTypes),
+            PagingInformation = PagingInformation?.Clone() as PagingInformation,
         };
         if(Parameters?.Any() ?? false)
             method.AddParameter(Parameters.Select(x => x.Clone() as CodeParameter).ToArray());
