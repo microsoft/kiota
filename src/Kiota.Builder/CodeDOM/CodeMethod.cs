@@ -107,7 +107,20 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         return method;
     }
     public HttpMethod? HttpMethod {get;set;}
-    public string ContentType { get; set; }
+    public string RequestBodyContentType { get; set; }
+    private HashSet<string> acceptedResponseTypes;
+    public HashSet<string> AcceptedResponseTypes {
+        get
+        {
+            if(acceptedResponseTypes == null)
+                acceptedResponseTypes = new(StringComparer.OrdinalIgnoreCase);
+            return acceptedResponseTypes;
+        }
+        set
+        {
+            acceptedResponseTypes = value;
+        }
+    }
     public AccessModifier Access {get;set;} = AccessModifier.Public;
     private CodeTypeBase returnType;
     public CodeTypeBase ReturnType {get => returnType;set {
@@ -242,7 +255,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             Access = Access,
             IsStatic = IsStatic,
             Description = Description?.Clone() as string,
-            ContentType = ContentType?.Clone() as string,
+            RequestBodyContentType = RequestBodyContentType?.Clone() as string,
             BaseUrl = BaseUrl?.Clone() as string,
             AccessedProperty = AccessedProperty,
             SerializerModules = SerializerModules == null ? null : new (SerializerModules),
@@ -253,6 +266,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             errorMappings = errorMappings == null ? null : new (errorMappings),
             discriminatorMappings = discriminatorMappings == null ? null : new (discriminatorMappings),
             DiscriminatorPropertyName = DiscriminatorPropertyName?.Clone() as string,
+            acceptedResponseTypes = acceptedResponseTypes == null ? null : new (acceptedResponseTypes),
             PagingInformation = PagingInformation?.Clone() as PagingInformation,
         };
         if(Parameters?.Any() ?? false)

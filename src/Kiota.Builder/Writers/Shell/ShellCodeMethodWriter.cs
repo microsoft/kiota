@@ -395,7 +395,7 @@ namespace Kiota.Builder.Writers.Shell
                 if (requestBodyParamType?.TypeDefinition is CodeClass requestBodyParamTypeDef)
                 {
                     writer.WriteLine($"using var stream = new MemoryStream(Encoding.UTF8.GetBytes({requestBodyParam.Name}));");
-                    writer.WriteLine($"var parseNode = ParseNodeFactoryRegistry.DefaultInstance.GetRootParseNode(\"{generatorMethod.ContentType}\", stream);");
+                    writer.WriteLine($"var parseNode = ParseNodeFactoryRegistry.DefaultInstance.GetRootParseNode(\"{generatorMethod.RequestBodyContentType}\", stream);");
 
                     var typeString = conventions.GetTypeString(requestBodyParamType, requestBodyParam, false);
 
