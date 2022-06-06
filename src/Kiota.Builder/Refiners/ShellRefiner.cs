@@ -151,8 +151,6 @@ namespace Kiota.Builder.Refiners
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
                 "System.CommandLine",  "Command", "RootCommand", "IConsole"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
-                "Microsoft.Kiota.Cli.Commons.Binding", "CollectionBinding", "TypeBinding", "NullableBooleanBinding"),
-            new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
                 "Microsoft.Kiota.Cli.Commons.IO", "IOutputFormatter", "IOutputFormatterFactory", "FormatterType", "PageLinkData", "IPagingService"),
             new (x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.RequestBuilder),
                 "Microsoft.Extensions.Hosting", "IHost"),
