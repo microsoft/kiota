@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Transactions;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Extensions;
 
