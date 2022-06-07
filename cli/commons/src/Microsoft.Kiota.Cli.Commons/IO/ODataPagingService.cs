@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Microsoft.Kiota.Abstractions;
 
 [assembly: InternalsVisibleTo("Microsoft.Kiota.Cli.Commons.Tests")]
 namespace Microsoft.Kiota.Cli.Commons.IO;
@@ -11,9 +12,37 @@ namespace Microsoft.Kiota.Cli.Commons.IO;
 public class ODataPagingService : BasePagingService
 {
     /// <inheritdoc />
+    public override IResponseHandler CreateResponseHandler()
+    {
+        return new NativeResponseHandler();
+    }
+
+    /// <inheritdoc />
+    public override async Task<Stream> ExtractResponseStreamAsync(IResponseHandler responseHandler, CancellationToken cancellationToken = default)
+    {
+        if (responseHandler is NativeResponseHandler nativeResponseHandler && nativeResponseHandler.Value is HttpResponseMessage responseMessage)
+        {
+            return await responseMessage.Content.ReadAsStreamAsync(cancellationToken);
+        }
+
+        throw new NotSupportedException("The provided response handler is not supported.");
+    }
+
+    /// <inheritdoc />
+    public override IDictionary<string, IEnumerable<string>> ExtractResponseHeaders(IResponseHandler responseHandler)
+    {
+        if (responseHandler is NativeResponseHandler nativeResponseHandler && nativeResponseHandler.Value is HttpResponseMessage responseMessage)
+        {
+            return new Dictionary<string, IEnumerable<string>>(responseMessage.Headers);
+        }
+
+        throw new NotSupportedException("The provided response handler is not supported.");
+    }
+
+    /// <inheritdoc />
     public override async Task<Uri?> GetNextPageLinkAsync(PageLinkData pageLinkData, CancellationToken cancellationToken = default)
     {
-        if (IsJson(pageLinkData))
+        if (IsJson(pageLinkData) && pageLinkData.Response != null)
         {
             try
             {
@@ -54,7 +83,7 @@ public class ODataPagingService : BasePagingService
 
     private bool IsJson(PageLinkData pageLinkData)
     {
-        return pageLinkData.RequestInformation.Headers.TryGetValue("Accept", out var accepts) && accepts.Contains("json");
+        return pageLinkData.ResponseHeaders.TryGetValue("ContentType", out var contentType) && contentType.Any(c => c.Contains("json"));
     }
 
     /// <summary>

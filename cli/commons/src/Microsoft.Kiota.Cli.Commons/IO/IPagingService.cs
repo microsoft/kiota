@@ -8,6 +8,28 @@ namespace Microsoft.Kiota.Cli.Commons.IO;
 public interface IPagingService
 {
     /// <summary>
+    /// Create a response handler.
+    /// </summary>
+    IResponseHandler CreateResponseHandler();
+
+    /// <summary>
+    /// Extract a response stream from a response handler.
+    /// </summary>
+    /// <param name="responseHandler">The response handler.</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The response content stream.</returns>
+    /// <exception cref="NotSupportedException">Thrown when the response handler type can't be processed.</exception>
+    Task<Stream> ExtractResponseStreamAsync(IResponseHandler responseHandler, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Extract response headers from a response handler.
+    /// </summary>
+    /// <param name="responseHandler">The response handler.</param>
+    /// <returns>The response headers.</returns>
+    /// <exception cref="NotSupportedException">Thrown when the response handler type can't be processed.</exception>
+    IDictionary<string, IEnumerable<string>> ExtractResponseHeaders(IResponseHandler responseHandler);
+
+    /// <summary>
     /// Gets the next page's link
     /// </summary>
     /// <param name="pageLinkData">Holds data that could be used to extract paging information</param>
@@ -22,7 +44,7 @@ public interface IPagingService
     /// <param name="pageLinkData">Metadata that is used when fetching paging data</param>
     /// <param name="fetchAllPages">If this is true, the result will be a stream with all available pages</param>
     /// <param name="cancellationToken">The cancellation token</param>
-    Task<Stream> GetPagedDataAsync(Func<RequestInformation, CancellationToken, Task<Stream>> requestExecutorAsync, PageLinkData pageLinkData, bool fetchAllPages = false, CancellationToken cancellationToken = default);
+    Task<Stream> GetPagedDataAsync(Func<RequestInformation, IResponseHandler, CancellationToken, Task> requestExecutorAsync, PageLinkData pageLinkData, bool fetchAllPages = false, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Merges any new page received on each page request.
@@ -50,13 +72,15 @@ public readonly struct PageLinkData
     /// </summary>
     /// <param name="requestInformation">The request information. Paging information (top, skip etc) can be extracted from a request.</param>
     /// <param name="response">The response body stream.</param>
+    /// <param name="responseHeaders">The response headers.</param>
     /// <param name="itemName">The name of the property that has the data.</param>
     /// <param name="nextLinkName">The name of the property that holds the next link.</param>
-    public PageLinkData(RequestInformation requestInformation, Stream response, string itemName = "value", string nextLinkName = "nextLink")
+    public PageLinkData(RequestInformation requestInformation, Stream? response, IDictionary<string, IEnumerable<string>>? responseHeaders = null, string itemName = "value", string nextLinkName = "nextLink")
     {
         ItemName = itemName;
         NextLinkName = nextLinkName;
         Response = response;
+        ResponseHeaders = responseHeaders ?? new Dictionary<string, IEnumerable<string>>();
         RequestInformation = requestInformation;
     }
 
@@ -85,9 +109,17 @@ public readonly struct PageLinkData
     }
 
     /// <summary>
-    /// The response body stream. Some responses provide paging data e.g. total item count or next page link
+    /// The response body stream. Some responses provide paging data e.g. total item count or next page link.
     /// </summary>
-    public Stream Response
+    public Stream? Response
+    {
+        get; private init;
+    }
+
+    /// <summary>
+    /// The response body stream. Some responses provide paging data e.g. total item count or next page link.
+    /// </summary>
+    public IDictionary<string, IEnumerable<string>> ResponseHeaders
     {
         get; private init;
     }

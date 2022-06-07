@@ -10,10 +10,19 @@ namespace Microsoft.Kiota.Cli.Commons.IO;
 public abstract class BasePagingService : IPagingService
 {
     /// <inheritdoc />
+    public abstract IResponseHandler CreateResponseHandler();
+
+    /// <inheritdoc />
+    public abstract IDictionary<string, IEnumerable<string>> ExtractResponseHeaders(IResponseHandler responseHandler);
+
+    /// <inheritdoc />
+    public abstract Task<Stream> ExtractResponseStreamAsync(IResponseHandler responseHandler, CancellationToken cancellationToken = default);
+
+    /// <inheritdoc />
     public abstract Task<Uri?> GetNextPageLinkAsync(PageLinkData pageLinkData, CancellationToken cancellationToken = default);
 
     /// <inheritdoc />
-    public virtual async Task<Stream> GetPagedDataAsync(Func<RequestInformation, CancellationToken, Task<Stream>> requestExecutorAsync, PageLinkData pageLinkData, bool fetchAllPages = false, CancellationToken cancellationToken = default)
+    public virtual async Task<Stream> GetPagedDataAsync(Func<RequestInformation, IResponseHandler, CancellationToken, Task> requestExecutorAsync, PageLinkData pageLinkData, bool fetchAllPages = false, CancellationToken cancellationToken = default)
     {
         if (!OnBeforeGetPagedData(pageLinkData, fetchAllPages))
         {
@@ -25,10 +34,13 @@ public abstract class BasePagingService : IPagingService
         Stream? response = null;
         do
         {
-            var pageData = await requestExecutorAsync(requestInfo, cancellationToken);
+            var responseHandler = CreateResponseHandler();
+            await requestExecutorAsync(requestInfo, responseHandler, cancellationToken);
+            var pageData = await ExtractResponseStreamAsync(responseHandler, cancellationToken);
+            var headers = ExtractResponseHeaders(responseHandler);
             if (fetchAllPages)
             {
-                pageLinkData = new PageLinkData(requestInfo, pageData, pageLinkData.ItemName, pageLinkData.NextLinkName);
+                pageLinkData = new PageLinkData(requestInfo, pageData, headers, pageLinkData.ItemName, pageLinkData.NextLinkName);
                 nextLink = await GetNextPageLinkAsync(pageLinkData, cancellationToken);
                 if (nextLink != null) pageLinkData.RequestInformation.URI = nextLink;
             }
