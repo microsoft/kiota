@@ -13,6 +13,9 @@ public abstract class BasePagingService : IPagingService
     public abstract IResponseHandler CreateResponseHandler();
 
     /// <inheritdoc />
+    public abstract IDictionary<string, IEnumerable<string>> ExtractResponseContentHeaders(IResponseHandler responseHandler);
+
+    /// <inheritdoc />
     public abstract IDictionary<string, IEnumerable<string>> ExtractResponseHeaders(IResponseHandler responseHandler);
 
     /// <inheritdoc />
@@ -38,9 +41,10 @@ public abstract class BasePagingService : IPagingService
             await requestExecutorAsync(requestInfo, responseHandler, cancellationToken);
             var pageData = await ExtractResponseStreamAsync(responseHandler, cancellationToken);
             var headers = ExtractResponseHeaders(responseHandler);
+            var contentHeaders = ExtractResponseContentHeaders(responseHandler);
             if (fetchAllPages)
             {
-                pageLinkData = new PageLinkData(requestInfo, pageData, headers, pageLinkData.ItemName, pageLinkData.NextLinkName);
+                pageLinkData = new PageLinkData(requestInfo, pageData, headers, contentHeaders, pageLinkData.ItemName, pageLinkData.NextLinkName);
                 nextLink = await GetNextPageLinkAsync(pageLinkData, cancellationToken);
                 if (nextLink != null) pageLinkData.RequestInformation.URI = nextLink;
             }

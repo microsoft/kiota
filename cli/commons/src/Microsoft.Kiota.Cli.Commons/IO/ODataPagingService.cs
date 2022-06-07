@@ -29,11 +29,22 @@ public class ODataPagingService : BasePagingService
     }
 
     /// <inheritdoc />
+    public override IDictionary<string, IEnumerable<string>> ExtractResponseContentHeaders(IResponseHandler responseHandler)
+    {
+        if (responseHandler is NativeResponseHandler nativeResponseHandler && nativeResponseHandler.Value is HttpResponseMessage responseMessage)
+        {
+            return new Dictionary<string, IEnumerable<string>>(responseMessage.Content.Headers, StringComparer.OrdinalIgnoreCase);
+        }
+
+        throw new NotSupportedException("The provided response handler is not supported.");
+    }
+
+    /// <inheritdoc />
     public override IDictionary<string, IEnumerable<string>> ExtractResponseHeaders(IResponseHandler responseHandler)
     {
         if (responseHandler is NativeResponseHandler nativeResponseHandler && nativeResponseHandler.Value is HttpResponseMessage responseMessage)
         {
-            return new Dictionary<string, IEnumerable<string>>(responseMessage.Headers);
+            return new Dictionary<string, IEnumerable<string>>(responseMessage.Headers, StringComparer.OrdinalIgnoreCase);
         }
 
         throw new NotSupportedException("The provided response handler is not supported.");
@@ -83,7 +94,7 @@ public class ODataPagingService : BasePagingService
 
     private bool IsJson(PageLinkData pageLinkData)
     {
-        return pageLinkData.ResponseHeaders.TryGetValue("ContentType", out var contentType) && contentType.Any(c => c.Contains("json"));
+        return pageLinkData.ResponseHeaders.TryGetValue("Content-Type", out var contentType) && contentType.Any(c => c.Contains("json"));
     }
 
     /// <summary>

@@ -22,6 +22,14 @@ public interface IPagingService
     Task<Stream> ExtractResponseStreamAsync(IResponseHandler responseHandler, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Extract response content headers from a response handler.
+    /// </summary>
+    /// <param name="responseHandler">The response handler.</param>
+    /// <returns>The response content headers.</returns>
+    /// <exception cref="NotSupportedException">Thrown when the response handler type can't be processed.</exception>
+    IDictionary<string, IEnumerable<string>> ExtractResponseContentHeaders(IResponseHandler responseHandler);
+
+    /// <summary>
     /// Extract response headers from a response handler.
     /// </summary>
     /// <param name="responseHandler">The response handler.</param>
@@ -73,14 +81,16 @@ public readonly struct PageLinkData
     /// <param name="requestInformation">The request information. Paging information (top, skip etc) can be extracted from a request.</param>
     /// <param name="response">The response body stream.</param>
     /// <param name="responseHeaders">The response headers.</param>
+    /// <param name="responseContentHeaders">The response content-related headers.</param>
     /// <param name="itemName">The name of the property that has the data.</param>
     /// <param name="nextLinkName">The name of the property that holds the next link.</param>
-    public PageLinkData(RequestInformation requestInformation, Stream? response, IDictionary<string, IEnumerable<string>>? responseHeaders = null, string itemName = "value", string nextLinkName = "nextLink")
+    public PageLinkData(RequestInformation requestInformation, Stream? response, IDictionary<string, IEnumerable<string>>? responseHeaders = null, IDictionary<string, IEnumerable<string>>? responseContentHeaders = null, string itemName = "value", string nextLinkName = "nextLink")
     {
         ItemName = itemName;
         NextLinkName = nextLinkName;
         Response = response;
-        ResponseHeaders = responseHeaders ?? new Dictionary<string, IEnumerable<string>>();
+        ResponseHeaders = responseHeaders ?? new Dictionary<string, IEnumerable<string>>(StringComparer.OrdinalIgnoreCase);
+        ResponseContentHeaders = responseContentHeaders ?? new Dictionary<string, IEnumerable<string>>(StringComparer.OrdinalIgnoreCase);
         RequestInformation = requestInformation;
     }
 
@@ -117,9 +127,17 @@ public readonly struct PageLinkData
     }
 
     /// <summary>
-    /// The response body stream. Some responses provide paging data e.g. total item count or next page link.
+    /// The response headers. Some responses provide paging data in headers e.g. GitHub's next page link.
     /// </summary>
     public IDictionary<string, IEnumerable<string>> ResponseHeaders
+    {
+        get; private init;
+    }
+
+    /// <summary>
+    /// The response content related headers e.g. Content-Type
+    /// </summary>
+    public IDictionary<string, IEnumerable<string>> ResponseContentHeaders
     {
         get; private init;
     }
