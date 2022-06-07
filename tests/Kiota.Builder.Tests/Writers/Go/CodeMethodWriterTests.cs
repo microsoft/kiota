@@ -477,11 +477,13 @@ public class CodeMethodWriterTests : IDisposable {
         AddRequestBodyParameters();
         AddRequestProperties();
         refiner.Refine(parentClass.Parent as CodeNamespace);
+        method.AcceptedResponseTypes.Add("application/json");
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains($"requestInfo := {AbstractionsPackageHash}.NewRequestInformation()", result);
         Assert.Contains("requestInfo.UrlTemplate = ", result);
         Assert.Contains("requestInfo.PathParameters", result);
+        Assert.Contains("requestInfo.Headers[\"Accept\"] = \"application/json\"", result);
         Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
         Assert.Contains("if c != nil", result);
         Assert.Contains("requestInfo.AddRequestHeaders(", result);
@@ -511,11 +513,13 @@ public class CodeMethodWriterTests : IDisposable {
         AddRequestBodyParameters(useComplexTypeForBody: true);
         AddRequestProperties();
         refiner.Refine(parentClass.Parent as CodeNamespace);
+        method.AcceptedResponseTypes.Add("application/json");
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains($"requestInfo := {AbstractionsPackageHash}.NewRequestInformation()", result);
         Assert.Contains("requestInfo.UrlTemplate = ", result);
         Assert.Contains("requestInfo.PathParameters", result);
+        Assert.Contains("requestInfo.Headers[\"Accept\"] = \"application/json\"", result);
         Assert.Contains($"Method = {AbstractionsPackageHash}.GET", result);
         Assert.Contains("if c != nil", result);
         Assert.Contains("requestInfo.AddRequestHeaders(", result);

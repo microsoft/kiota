@@ -4,19 +4,19 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Security;
+using System.Threading;
 using System.Threading.Tasks;
+using Kiota.Builder.CodeRenderers;
+using Kiota.Builder.Extensions;
+using Kiota.Builder.OpenApiExtensions;
+using Kiota.Builder.Refiners;
+using Kiota.Builder.Writers;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
-using Kiota.Builder.Extensions;
-using Kiota.Builder.Writers;
-using Microsoft.OpenApi.Any;
-using Kiota.Builder.Refiners;
-using Kiota.Builder.CodeRenderers;
-using System.Security;
 using Microsoft.OpenApi.Services;
-using System.Threading;
-using Kiota.Builder.OpenApiExtensions;
 
 namespace Kiota.Builder;
 
@@ -136,13 +136,20 @@ public class KiotaBuilder
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         logger.LogTrace("Parsing OpenAPI file");
-        var reader = new OpenApiStreamReader(
-            new OpenApiReaderSettings {
-                ExtensionParsers = new() {
-                    { OpenApiEnumValuesDescriptionExtension.Name, static (i, _ ) => OpenApiEnumValuesDescriptionExtension.Parse(i) }
-                }
+        var reader = new OpenApiStreamReader(new OpenApiReaderSettings
+        {
+            ExtensionParsers = new()
+            {
+                {
+                    OpenApiPagingExtension.Name,
+                    (i, _) => OpenApiPagingExtension.Parse(i)
+                },
+                {
+                    OpenApiEnumValuesDescriptionExtension.Name,
+                    static (i, _ ) => OpenApiEnumValuesDescriptionExtension.Parse(i)
+                },
             }
-        );
+        });
         var doc = reader.Read(input, out var diag);
         stopwatch.Stop();
         if (diag.Errors.Count > 0)
@@ -646,6 +653,17 @@ public class KiotaBuilder
             HttpMethod = method,
             Description = (operation.Description ?? operation.Summary).CleanupDescription(),
         }).FirstOrDefault();
+
+        if (operation.Extensions.TryGetValue(OpenApiPagingExtension.Name, out var extension) && extension is OpenApiPagingExtension pagingExtension)
+        {
+            executorMethod.PagingInformation = new PagingInformation
+            {
+                ItemName = pagingExtension.ItemName,
+                NextLinkName = pagingExtension.NextLinkName,
+                OperationName = pagingExtension.OperationName,
+            };
+        }
+
         AddErrorMappingsForExecutorMethod(currentNode, operation, executorMethod);
         if (schema != null)
         {
@@ -692,6 +710,10 @@ public class KiotaBuilder
             Description = (operation.Description ?? operation.Summary).CleanupDescription(),
             ReturnType = new CodeType { Name = "RequestInformation", IsNullable = false, IsExternal = true},
         }).FirstOrDefault();
+        if (schema != null) {
+            var mediaType = operation.Responses.Values.SelectMany(static x => x.Content).First(x => x.Value.Schema == schema).Key;
+            generatorMethod.AcceptedResponseTypes.Add(mediaType);
+        }
         if (config.Language == GenerationLanguage.Shell)
             SetPathAndQueryParameters(generatorMethod, currentNode, operation);
         AddRequestBuilderMethodParameters(currentNode, operationType, operation, parameterClass, requestConfigClass, generatorMethod);
@@ -742,7 +764,7 @@ public class KiotaBuilder
                 Kind = CodeParameterKind.RequestBody,
                 Description = requestBodySchema.Description.CleanupDescription()
             });
-            method.ContentType = operation.RequestBody.Content.First(x => x.Value.Schema == requestBodySchema).Key;
+            method.RequestBodyContentType = operation.RequestBody.Content.First(x => x.Value.Schema == requestBodySchema).Key;
         } else if (operation.RequestBody?.Content?.Any() ?? false) {
             var nParam = new CodeParameter {
                 Name = "body",
