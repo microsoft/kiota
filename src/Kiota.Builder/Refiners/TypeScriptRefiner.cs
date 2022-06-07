@@ -487,7 +487,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             });
 
             modelInterface.AddUsing(modelClass.Usings.FirstOrDefault(x => x.Name == impl.Name));
-            modelClass.StartBlock.RemoveImplements(impl as CodeType);
+            modelClass.StartBlock.RemoveImplements(impl);
         }
         UpdateModelClassImplementationAndConstructor(modelClass, modelInterface);
 
