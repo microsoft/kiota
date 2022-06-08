@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Aligned mime types model generation behaviour for request bodies on response content. [#134](https://github.com/microsoft/kiota/issues/134)
 - Fixed an issue where some critical errors would not return a failed exit code. [#1605](https://github.com/microsoft/kiota/issues/1605)
+- Moved nested request configuration classes into separate files within the namespace for PHP. [#1620](https://github.com/microsoft/kiota/pull/1620)
 
 ## [0.2.1] - 2022-05-30
 
