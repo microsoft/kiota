@@ -1,6 +1,8 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Microsoft.Kiota.Abstractions;
+using Microsoft.Kiota.Abstractions.Serialization;
 
 [assembly: InternalsVisibleTo("Microsoft.Kiota.Cli.Commons.Tests")]
 namespace Microsoft.Kiota.Cli.Commons.IO;
@@ -11,9 +13,15 @@ namespace Microsoft.Kiota.Cli.Commons.IO;
 public class ODataPagingService : BasePagingService
 {
     /// <inheritdoc />
+    public override IPagingResponseHandler CreateResponseHandler()
+    {
+        return new NativePagingResponseHandler();
+    }
+
+    /// <inheritdoc />
     public override async Task<Uri?> GetNextPageLinkAsync(PageLinkData pageLinkData, CancellationToken cancellationToken = default)
     {
-        if (IsJson(pageLinkData))
+        if (IsJson(pageLinkData) && pageLinkData.Response != null)
         {
             try
             {
@@ -54,7 +62,7 @@ public class ODataPagingService : BasePagingService
 
     private bool IsJson(PageLinkData pageLinkData)
     {
-        return pageLinkData.RequestInformation.Headers.TryGetValue("Accept", out var accepts) && accepts.Contains("json");
+        return pageLinkData.ResponseHeaders.TryGetValue("Content-Type", out var contentType) && contentType.Any(c => c.Contains("json"));
     }
 
     /// <summary>
