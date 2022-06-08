@@ -2,6 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Kiota.Abstractions;
+using Microsoft.Kiota.Abstractions.Serialization;
 
 [assembly: InternalsVisibleTo("Microsoft.Kiota.Cli.Commons.Tests")]
 namespace Microsoft.Kiota.Cli.Commons.IO;
@@ -12,42 +13,9 @@ namespace Microsoft.Kiota.Cli.Commons.IO;
 public class ODataPagingService : BasePagingService
 {
     /// <inheritdoc />
-    public override IResponseHandler CreateResponseHandler()
+    public override IPagingResponseHandler CreateResponseHandler()
     {
-        return new NativeResponseHandler();
-    }
-
-    /// <inheritdoc />
-    public override async Task<Stream> ExtractResponseStreamAsync(IResponseHandler responseHandler, CancellationToken cancellationToken = default)
-    {
-        if (responseHandler is NativeResponseHandler nativeResponseHandler && nativeResponseHandler.Value is HttpResponseMessage responseMessage)
-        {
-            return await responseMessage.Content.ReadAsStreamAsync(cancellationToken);
-        }
-
-        throw new NotSupportedException("The provided response handler is not supported.");
-    }
-
-    /// <inheritdoc />
-    public override IDictionary<string, IEnumerable<string>> ExtractResponseContentHeaders(IResponseHandler responseHandler)
-    {
-        if (responseHandler is NativeResponseHandler nativeResponseHandler && nativeResponseHandler.Value is HttpResponseMessage responseMessage)
-        {
-            return new Dictionary<string, IEnumerable<string>>(responseMessage.Content.Headers, StringComparer.OrdinalIgnoreCase);
-        }
-
-        throw new NotSupportedException("The provided response handler is not supported.");
-    }
-
-    /// <inheritdoc />
-    public override IDictionary<string, IEnumerable<string>> ExtractResponseHeaders(IResponseHandler responseHandler)
-    {
-        if (responseHandler is NativeResponseHandler nativeResponseHandler && nativeResponseHandler.Value is HttpResponseMessage responseMessage)
-        {
-            return new Dictionary<string, IEnumerable<string>>(responseMessage.Headers, StringComparer.OrdinalIgnoreCase);
-        }
-
-        throw new NotSupportedException("The provided response handler is not supported.");
+        return new NativePagingResponseHandler();
     }
 
     /// <inheritdoc />

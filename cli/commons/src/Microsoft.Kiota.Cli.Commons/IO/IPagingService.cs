@@ -8,34 +8,9 @@ namespace Microsoft.Kiota.Cli.Commons.IO;
 public interface IPagingService
 {
     /// <summary>
-    /// Create a response handler.
+    /// Create a paging response handler.
     /// </summary>
-    IResponseHandler CreateResponseHandler();
-
-    /// <summary>
-    /// Extract a response stream from a response handler.
-    /// </summary>
-    /// <param name="responseHandler">The response handler.</param>
-    /// <param name="cancellationToken">The cancellation token</param>
-    /// <returns>The response content stream.</returns>
-    /// <exception cref="NotSupportedException">Thrown when the response handler type can't be processed.</exception>
-    Task<Stream> ExtractResponseStreamAsync(IResponseHandler responseHandler, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Extract response content headers from a response handler.
-    /// </summary>
-    /// <param name="responseHandler">The response handler.</param>
-    /// <returns>The response content headers.</returns>
-    /// <exception cref="NotSupportedException">Thrown when the response handler type can't be processed.</exception>
-    IDictionary<string, IEnumerable<string>> ExtractResponseContentHeaders(IResponseHandler responseHandler);
-
-    /// <summary>
-    /// Extract response headers from a response handler.
-    /// </summary>
-    /// <param name="responseHandler">The response handler.</param>
-    /// <returns>The response headers.</returns>
-    /// <exception cref="NotSupportedException">Thrown when the response handler type can't be processed.</exception>
-    IDictionary<string, IEnumerable<string>> ExtractResponseHeaders(IResponseHandler responseHandler);
+    IPagingResponseHandler CreateResponseHandler();
 
     /// <summary>
     /// Gets the next page's link
@@ -52,7 +27,7 @@ public interface IPagingService
     /// <param name="pageLinkData">Metadata that is used when fetching paging data</param>
     /// <param name="fetchAllPages">If this is true, the result will be a stream with all available pages</param>
     /// <param name="cancellationToken">The cancellation token</param>
-    Task<Stream> GetPagedDataAsync(Func<RequestInformation, IResponseHandler, CancellationToken, Task> requestExecutorAsync, PageLinkData pageLinkData, bool fetchAllPages = false, CancellationToken cancellationToken = default);
+    Task<PageResponse?> GetPagedDataAsync(Func<RequestInformation, IResponseHandler, CancellationToken, Task> requestExecutorAsync, PageLinkData pageLinkData, bool fetchAllPages = false, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Merges any new page received on each page request.
@@ -140,5 +115,36 @@ public readonly struct PageLinkData
     public IDictionary<string, IEnumerable<string>> ResponseContentHeaders
     {
         get; private init;
+    }
+}
+
+/// <summary>
+/// Response for the paging service.
+/// </summary>
+public readonly struct PageResponse
+{
+    ///<summary>
+    /// Creates new instance
+    ///</summary>
+    public PageResponse(int statusCode = 0, Stream? response = null)
+    {
+        Response = response;
+        StatusCode = statusCode;
+    }
+
+    /// <summary>
+    /// The response body stream.
+    /// </summary>
+    public Stream? Response
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The http response status code. Use to check for success or error.
+    /// </summary>
+    public int StatusCode
+    {
+        get; init;
     }
 }
