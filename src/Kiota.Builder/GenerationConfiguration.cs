@@ -13,8 +13,14 @@ namespace Kiota.Builder {
         public string ApiRootUrl { get; set; }
         public string[] PropertiesPrefixToStrip { get; set; } = new string[] { "@odata."};
         public bool UsesBackingStore { get; set; }
-        public List<string> Serializers { get; set; } = new();
-        public List<string> Deserializers { get; set; } = new();
+        public HashSet<string> Serializers { get; set; } = new(StringComparer.OrdinalIgnoreCase){
+            "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory",
+            "Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory"
+        };
+        public HashSet<string> Deserializers { get; set; } = new(StringComparer.OrdinalIgnoreCase) {
+            "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory",
+            "Microsoft.Kiota.Serialization.Text.TextParseNodeFactory"
+        };
         public bool ShouldWriteNamespaceIndices { get { return BarreledLanguages.Contains(Language); } }
         public bool ShouldWriteBarrelsIfClassExists { get { return BarreledLanguagesWithConstantFileName.Contains(Language); } }
         public bool ShouldRenderMethodsOutsideOfClasses { get { return MethodOutsideOfClassesLanguages.Contains(Language); } }
@@ -30,5 +36,12 @@ namespace Kiota.Builder {
             GenerationLanguage.TypeScript
         };
         public bool CleanOutput { get; set;}
+        public HashSet<string> StructuredMimeTypes { get; set; } = new(StringComparer.OrdinalIgnoreCase) {
+            "application/json",
+            "application/xml",
+            "text/plain",
+            "text/xml",
+            "text/yaml",
+        };
     }
 }

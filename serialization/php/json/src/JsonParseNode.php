@@ -11,7 +11,6 @@ use Microsoft\Kiota\Abstractions\Enum;
 use Microsoft\Kiota\Abstractions\Serialization\AdditionalDataHolder;
 use Microsoft\Kiota\Abstractions\Serialization\Parsable;
 use Microsoft\Kiota\Abstractions\Serialization\ParseNode;
-use Microsoft\Kiota\Abstractions\Types\Byte;
 use Microsoft\Kiota\Abstractions\Types\Date;
 use Microsoft\Kiota\Abstractions\Types\Time;
 use Psr\Http\Message\StreamInterface;
@@ -238,8 +237,6 @@ class JsonParseNode implements ParseNode
                 return $this->getDateValue();
             case Time::class:
                 return $this->getTimeValue();
-            case Byte::class:
-                return $this->getByteValue();
             default:
                 if (is_subclass_of($type, Enum::class)){
                     return $this->getEnumValue($type);
@@ -266,13 +263,6 @@ class JsonParseNode implements ParseNode
      */
     public function getTimeValue(): ?Time {
         return ($this->jsonNode !== null) ? new Time($this->jsonNode) : null;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getByteValue(): ?Byte {
-        return ($this->jsonNode !== null) ? new Byte($this->jsonNode) : null;
     }
 
     /**

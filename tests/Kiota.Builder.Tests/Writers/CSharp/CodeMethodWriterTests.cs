@@ -402,6 +402,7 @@ public class CodeMethodWriterTests : IDisposable {
         method.HttpMethod = HttpMethod.Get;
         AddRequestProperties();
         AddRequestBodyParameters();
+        method.AcceptedResponseTypes.Add("application/json");
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("var requestInfo = new RequestInformation", result);
@@ -411,6 +412,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("if (config != null)", result);
         Assert.Contains("var requestConfig = new RequestConfig()", result);
         Assert.Contains("config.Invoke(requestConfig)", result);
+        Assert.Contains("requestInfo.Headers.Add(\"Accept\", \"application/json\")", result);
         Assert.Contains("requestInfo.AddHeaders(requestConfig.H)", result);
         Assert.Contains("requestInfo.AddQueryParameters(requestConfig.Q)", result);
         Assert.Contains("requestInfo.AddRequestOptions(requestConfig.O)", result);
@@ -424,6 +426,7 @@ public class CodeMethodWriterTests : IDisposable {
         method.HttpMethod = HttpMethod.Get;
         AddRequestProperties();
         AddRequestBodyParameters(true);
+        method.AcceptedResponseTypes.Add("application/json");
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("var requestInfo = new RequestInformation", result);
@@ -433,6 +436,7 @@ public class CodeMethodWriterTests : IDisposable {
         Assert.Contains("if (config != null)", result);
         Assert.Contains("var requestConfig = new RequestConfig()", result);
         Assert.Contains("config.Invoke(requestConfig)", result);
+        Assert.Contains("requestInfo.Headers.Add(\"Accept\", \"application/json\")", result);
         Assert.Contains("requestInfo.AddHeaders(requestConfig.H)", result);
         Assert.Contains("requestInfo.AddQueryParameters(requestConfig.Q)", result);
         Assert.Contains("requestInfo.AddRequestOptions(requestConfig.O)", result);

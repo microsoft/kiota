@@ -333,9 +333,6 @@ class JsonSerializationWriter implements SerializationWriter
             case Time::class:
                 $this->writeTimeValue($key, $value);
                 break;
-            case Byte::class:
-                $this->writeByteValue($key, $value);
-                break;
             case DateTime::class:
                 $this->writeDateTimeValue($key, $value);
                 break;
@@ -461,21 +458,6 @@ class JsonSerializationWriter implements SerializationWriter
             }
             $res = "P{$value->y}Y{$value->y}M{$value->d}DT{$value->h}H{$value->i}M{$value->s}S";
             $val = "\"{$res}\"" ;
-            $this->writePropertyValue($key, $val);
-        }
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function writeByteValue(?string $key, ?Byte $value): void {
-
-
-        if ($value !== null) {
-            if (!empty($key)) {
-                $this->writePropertyName($key);
-            }
-            $val = (int)(string)($value);
             $this->writePropertyValue($key, $val);
         }
     }

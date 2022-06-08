@@ -42,6 +42,34 @@ public enum HttpMethod {
     Trace
 }
 
+public class PagingInformation : ICloneable
+{
+    public string ItemName
+    {
+        get; set;
+    }
+
+    public string NextLinkName
+    {
+        get; set;
+    }
+
+    public string OperationName
+    {
+        get; set;
+    }
+
+    public object Clone()
+    {
+        return new PagingInformation
+        {
+            ItemName = ItemName?.Clone() as string,
+            NextLinkName = NextLinkName?.Clone() as string,
+            OperationName = OperationName?.Clone() as string,
+        };
+    }
+}
+
 public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDocumentedElement
 {
     public static CodeMethod FromIndexer(CodeIndexer originalIndexer, CodeClass indexerClass, string methodNameSuffix, bool parameterNullable)
@@ -79,7 +107,20 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         return method;
     }
     public HttpMethod? HttpMethod {get;set;}
-    public string ContentType { get; set; }
+    public string RequestBodyContentType { get; set; }
+    private HashSet<string> acceptedResponseTypes;
+    public HashSet<string> AcceptedResponseTypes {
+        get
+        {
+            if(acceptedResponseTypes == null)
+                acceptedResponseTypes = new(StringComparer.OrdinalIgnoreCase);
+            return acceptedResponseTypes;
+        }
+        set
+        {
+            acceptedResponseTypes = value;
+        }
+    }
     public AccessModifier Access {get;set;} = AccessModifier.Public;
     private CodeTypeBase returnType;
     public CodeTypeBase ReturnType {get => returnType;set {
@@ -103,7 +144,12 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public bool IsStatic {get;set;} = false;
     public bool IsAsync {get;set;} = true;
     public string Description {get; set;}
-    
+
+    public PagingInformation PagingInformation
+    {
+        get; set;
+    }
+
     /// <summary>
     /// The combination of the path, query and header parameters for the current URL.
     /// Only use this property if the language you are generating for doesn't support fluent API style (e.g. Shell/CLI)
@@ -131,8 +177,8 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public bool IsAccessor { 
         get => IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter);
     }
-    public List<string> SerializerModules { get; set; }
-    public List<string> DeserializerModules { get; set; }
+    public HashSet<string> SerializerModules { get; set; }
+    public HashSet<string> DeserializerModules { get; set; }
     /// <summary>
     /// Indicates whether this method is an overload for another method.
     /// </summary>
@@ -209,7 +255,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             Access = Access,
             IsStatic = IsStatic,
             Description = Description?.Clone() as string,
-            ContentType = ContentType?.Clone() as string,
+            RequestBodyContentType = RequestBodyContentType?.Clone() as string,
             BaseUrl = BaseUrl?.Clone() as string,
             AccessedProperty = AccessedProperty,
             SerializerModules = SerializerModules == null ? null : new (SerializerModules),
@@ -219,7 +265,9 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             OriginalIndexer = OriginalIndexer,
             errorMappings = errorMappings == null ? null : new (errorMappings),
             discriminatorMappings = discriminatorMappings == null ? null : new (discriminatorMappings),
-            DiscriminatorPropertyName = DiscriminatorPropertyName?.Clone() as string
+            DiscriminatorPropertyName = DiscriminatorPropertyName?.Clone() as string,
+            acceptedResponseTypes = acceptedResponseTypes == null ? null : new (acceptedResponseTypes),
+            PagingInformation = PagingInformation?.Clone() as PagingInformation,
         };
         if(Parameters?.Any() ?? false)
             method.AddParameter(Parameters.Select(x => x.Clone() as CodeParameter).ToArray());
