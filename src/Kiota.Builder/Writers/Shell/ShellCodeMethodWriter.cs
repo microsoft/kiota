@@ -91,8 +91,18 @@ namespace Kiota.Builder.Writers.Shell
             var parameters = parametersList.Select(p =>
             {
                 var type = conventions.GetTypeString(p.Type, p);
-                // Accept complex body objects as a JSON string
-                if (p.IsOfKind(CodeParameterKind.RequestBody) && p.Type is CodeType parameterType && parameterType.TypeDefinition is CodeClass) type = "string";
+                if (p.IsOfKind(CodeParameterKind.RequestBody))
+                {
+                    // Accept complex body objects as a JSON string
+                    if (p.Type is CodeType parameterType && parameterType.TypeDefinition is CodeClass) type = "string";
+
+                    // Use FileInfo for stream body
+                    if (conventions.StreamTypeName.Equals(p.Type?.Name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        type = fileParamType;
+                        p.Name = fileParamName;
+                    }
+                }
                 return (type, NormalizeToIdentifier(p.Name), p);
             }).ToList();
             var availableOptions = WriteExecutableCommandOptions(writer, parameters);
@@ -252,12 +262,6 @@ namespace Kiota.Builder.Writers.Shell
             foreach (var (optionType, name, option) in parametersList)
             {
                 var optionName = $"{name.ToFirstCharacterLowerCase()}Option";
-
-                // Binary body handling
-                if (option.IsOfKind(CodeParameterKind.RequestBody) && conventions.StreamTypeName.Equals(option.Type?.Name, StringComparison.OrdinalIgnoreCase))
-                {
-                    option.Name = "file";
-                }
 
                 var optionBuilder = new StringBuilder("new Option");
                 if (!string.IsNullOrEmpty(optionType))
