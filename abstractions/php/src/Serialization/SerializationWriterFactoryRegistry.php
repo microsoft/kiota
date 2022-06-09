@@ -22,6 +22,8 @@ class SerializationWriterFactoryRegistry implements SerializationWriterFactory {
      */
     private static ?SerializationWriterFactoryRegistry $defaultInstance = null;
 
+    private const VENDOR_SPECIFIC_CONTENT_TYPE_PATTERN = "/[^\/]+\\+/";
+
     /**
      * @param string $contentType
      * @return SerializationWriter
@@ -32,8 +34,20 @@ class SerializationWriterFactoryRegistry implements SerializationWriterFactory {
             throw new InvalidArgumentException('contentType cannot be empty');
         }
 
-        if (array_key_exists($contentType, $this->contentTypeAssociatedFactories)) {
-            return $this->contentTypeAssociatedFactories[$contentType]->getSerializationWriter($contentType);
+        $vendorSpecificContentType = explode(';', $contentType)[0];
+
+        if (array_key_exists($vendorSpecificContentType, $this->contentTypeAssociatedFactories)) {
+            return $this->contentTypeAssociatedFactories[$vendorSpecificContentType]->getSerializationWriter($vendorSpecificContentType);
+        }
+
+        $cleanedContentType = preg_replace(self::VENDOR_SPECIFIC_CONTENT_TYPE_PATTERN, '', $vendorSpecificContentType);
+
+        if ($cleanedContentType === null) {
+            throw new UnexpectedValueException("An error occurred processing the vendor specific content type.");
+        }
+
+        if (array_key_exists($cleanedContentType, $this->contentTypeAssociatedFactories)) {
+            return $this->contentTypeAssociatedFactories[$cleanedContentType]->getSerializationWriter($cleanedContentType);
         }
         throw new UnexpectedValueException('Content type ' . $contentType . ' does not have a factory to be parsed');
     }
