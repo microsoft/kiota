@@ -34,7 +34,7 @@ public class ODataPagingServiceTest
             var requestInfo = new RequestInformation();
             requestInfo.Headers.Add("Accept", "application/json");
             var pagingData = new PageLinkData(requestInfo, ms);
-            pagingData.ResponseHeaders.Add("Content-Type", new string[] { "application/json" });
+            pagingData.ResponseContentHeaders.Add("Content-Type", new string[] { "application/json" });
 
             var nextLink = await pagingService.GetNextPageLinkAsync(pagingData);
 

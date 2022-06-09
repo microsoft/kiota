@@ -35,9 +35,9 @@ public abstract class BasePagingService : IPagingService
             statusCode = responseHandler.GetStatusCode();
             var headers = responseHandler.GetResponseHeaders();
             var contentHeaders = responseHandler.GetResponseContentHeaders();
+            pageLinkData = new PageLinkData(requestInfo, pageData, headers, contentHeaders, pageLinkData.ItemName, pageLinkData.NextLinkName);
             if (fetchAllPages)
             {
-                pageLinkData = new PageLinkData(requestInfo, pageData, headers, contentHeaders, pageLinkData.ItemName, pageLinkData.NextLinkName);
                 nextLink = await GetNextPageLinkAsync(pageLinkData, cancellationToken);
                 if (nextLink != null) pageLinkData.RequestInformation.URI = nextLink;
             }
