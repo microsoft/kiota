@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Kiota.Builder.Writers.CSharp;
 using Kiota.Builder.Extensions;
-using System.Collections.Generic;
+using Kiota.Builder.Writers.CSharp;
 
 namespace Kiota.Builder.Writers.Shell
 {
@@ -118,19 +118,19 @@ namespace Kiota.Builder.Writers.Shell
                 {
                     // Add output filter param
                     parameters.Add((outputFilterParamType, outputFilterParamName, null));
-                    availableOptions.Add($"{invocationContextParamName}.BindingContext.GetRequiredService<IHost>().Services.GetRequiredService<{outputFilterParamType}>()");
+                    availableOptions.Add($"{invocationContextParamName}.BindingContext.GetRequiredService<{outputFilterParamType}>()");
                 }
 
                 // Add output formatter factory param
                 parameters.Add((outputFormatterFactoryParamType, outputFormatterFactoryParamName, null));
-                availableOptions.Add($"{invocationContextParamName}.BindingContext.GetRequiredService<IHost>().Services.GetRequiredService<{outputFormatterFactoryParamType}>()");
+                availableOptions.Add($"{invocationContextParamName}.BindingContext.GetRequiredService<{outputFormatterFactoryParamType}>()");
             }
 
             if (originalMethod.PagingInformation != null)
             {
                 // Add paging service param
                 parameters.Add((pagingServiceParamType, pagingServiceParamName, null));
-                availableOptions.Add($"{invocationContextParamName}.BindingContext.GetRequiredService<IHost>().Services.GetRequiredService<{pagingServiceParamType}>()");
+                availableOptions.Add($"{invocationContextParamName}.BindingContext.GetRequiredService<{pagingServiceParamType}>()");
             }
 
             // Add CancellationToken param
@@ -221,9 +221,14 @@ namespace Kiota.Builder.Writers.Shell
                 var typeString = conventions.GetTypeString(type, originalMethod);
                 var formatterVar = "formatter";
 
+                var formatterOptionsVar = "formatterOptions";
+                if (originalMethod?.PagingInformation != null)
+                {
+                    writer.WriteLine($"IOutputFormatterOptions? {formatterOptionsVar} = null;");
+                    writer.WriteLine($"IOutputFormatter? {formatterVar} = null;");
+                }
                 if (typeString != "Stream")
                 {
-                    var formatterOptionsVar = "formatterOptions";
                     var formatterTypeVal = "FormatterType.TEXT";
                     if (conventions.IsPrimitiveType(typeString))
                     {
@@ -231,11 +236,36 @@ namespace Kiota.Builder.Writers.Shell
                     }
                     else
                     {
+                        if (originalMethod?.PagingInformation != null)
+                        {
+                            // Special handling for pageable requests
+                            writer.WriteLine("if (pageResponse?.StatusCode >= 200 && pageResponse?.StatusCode < 300) {");
+                            writer.IncreaseIndent();
+                            writer.WriteLine($"{formatterVar} = {outputFormatterFactoryParamName}.GetFormatter({outputFormatParamName});");
+                        }
                         formatterTypeVal = outputFormatParamName;
                         writer.WriteLine($"response = await {outputFilterParamName}?.FilterOutputAsync(response, {outputFilterQueryParamName}, {cancellationTokenParamName}) ?? response;");
-                        writer.WriteLine($"var {formatterOptionsVar} = {outputFormatParamName}.GetOutputFormatterOptions(new FormatterOptionsModel(!{jsonNoIndentParamName}));");
+                        if (originalMethod?.PagingInformation == null)
+                        {
+                            writer.Write("var ");
+                        }
+                        writer.Write($"{formatterOptionsVar} = {outputFormatParamName}.GetOutputFormatterOptions(new FormatterOptionsModel(!{jsonNoIndentParamName}));", originalMethod?.PagingInformation != null);
+                        writer.WriteLine();
+
+                        if (originalMethod?.PagingInformation != null)
+                        {
+                            writer.CloseBlock("} else {");
+                            writer.IncreaseIndent();
+                            writer.WriteLine($"{formatterVar} = {outputFormatterFactoryParamName}.GetFormatter(FormatterType.TEXT);");
+                            writer.CloseBlock();
+                        }
                     }
-                    writer.WriteLine($"var {formatterVar} = {outputFormatterFactoryParamName}.GetFormatter({formatterTypeVal});");
+
+                    if (originalMethod?.PagingInformation == null)
+                    {
+                        writer.WriteLine($"var {formatterVar} = {outputFormatterFactoryParamName}.GetFormatter({formatterTypeVal});");
+                    }
+
                     writer.WriteLine($"await {formatterVar}.WriteOutputAsync(response, {formatterOptionsVar}, {cancellationTokenParamName});");
                 }
                 else
@@ -441,16 +471,17 @@ namespace Kiota.Builder.Writers.Shell
             }
 
             var requestMethod = "SendPrimitiveAsync<Stream>";
-            if (isVoid)
+            var pageInfo = codeElement?.PagingInformation;
+            if (isVoid || pageInfo != null)
             {
                 requestMethod = "SendNoContentAsync";
             }
 
-            var pageInfo = codeElement?.PagingInformation;
             if (pageInfo != null)
             {
-                writer.WriteLine($"var pagingData = new PageLinkData(requestInfo, Stream.Null, itemName: \"{pageInfo.ItemName}\", nextLinkName: \"{pageInfo.NextLinkName}\");");
-                writer.WriteLine($"{(isVoid ? string.Empty : "var response = ")}await {pagingServiceParamName}.GetPagedDataAsync((info, token) => RequestAdapter.{requestMethod}(info, errorMapping: {errorMappingVarName}, cancellationToken: token), pagingData, {allParamName}, {cancellationTokenParamName});");
+                writer.WriteLine($"var pagingData = new PageLinkData(requestInfo, null, itemName: \"{pageInfo.ItemName}\", nextLinkName: \"{pageInfo.NextLinkName}\");");
+                writer.WriteLine($"{(isVoid ? string.Empty : "var pageResponse = ")}await {pagingServiceParamName}.GetPagedDataAsync((info, handler, token) => RequestAdapter.{requestMethod}(info, cancellationToken: token, responseHandler: handler), pagingData, {allParamName}, {cancellationTokenParamName});");
+                writer.WriteLine($"var response = pageResponse?.Response;");
             }
             else
             {
