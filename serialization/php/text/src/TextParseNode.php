@@ -102,7 +102,7 @@ class TextParseNode implements ParseNode
     /**
      * @inheritDoc
      */
-    public function getObjectValue(string $type): ?Parsable
+    public function getObjectValue(array $type): ?Parsable
     {
         throw new \RuntimeException(self::NO_STRUCTURED_DATA_ERR_MSG);
     }
@@ -110,7 +110,7 @@ class TextParseNode implements ParseNode
     /**
      * @inheritDoc
      */
-    public function getCollectionOfObjectValues(string $type): ?array
+    public function getCollectionOfObjectValues(array $type): ?array
     {
         throw new \RuntimeException(self::NO_STRUCTURED_DATA_ERR_MSG);
     }
@@ -168,14 +168,6 @@ class TextParseNode implements ParseNode
             throw new \InvalidArgumentException("Target enum must extend ".Enum::class);
         }
         return new $targetEnum($this->content);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getByteValue(): ?Byte
-    {
-        return new Byte((int)$this->content);
     }
 
     /**
