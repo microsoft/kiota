@@ -337,6 +337,8 @@ namespace Kiota.Builder.Writers.Php
                                 $"{RequestInfoVarName}->urlTemplate = {GetPropertyCall(urlTemplateProperty, "''")};",
                                 $"{RequestInfoVarName}->pathParameters = {GetPropertyCall(pathParametersProperty, "''")};",
                                 $"{RequestInfoVarName}->httpMethod = HttpMethod::{codeElement?.HttpMethod?.ToString().ToUpperInvariant()};");
+            if(codeElement.AcceptedResponseTypes.Any())
+                writer.WriteLine($"{RequestInfoVarName}->headers = array_merge({RequestInfoVarName}->headers, [\"Accept\" => \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\"]);");
             if (requestParams.requestConfiguration != null)
             {
                 var queryString = requestParams.QueryParameters;
@@ -440,10 +442,12 @@ namespace Kiota.Builder.Writers.Php
             {
                 hasErrorMappings = true;
                 writer.WriteLine($"{errorMappingsVarName} = [");
+                writer.IncreaseIndent(2);
                 errorMappings.ToList().ForEach(errorMapping =>
                 {
                     writer.WriteLine($"'{errorMapping.Key}' => array({errorMapping.Value.Name}::class, '{CreateDiscriminatorMethodName}'),");
                 });
+                writer.DecreaseIndent();
                 writer.WriteLine("];");
             }
 
