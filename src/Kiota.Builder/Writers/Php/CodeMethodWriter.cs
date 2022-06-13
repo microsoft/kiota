@@ -337,8 +337,7 @@ namespace Kiota.Builder.Writers.Php
                                 $"{RequestInfoVarName}->urlTemplate = {GetPropertyCall(urlTemplateProperty, "''")};",
                                 $"{RequestInfoVarName}->pathParameters = {GetPropertyCall(pathParametersProperty, "''")};",
                                 $"{RequestInfoVarName}->httpMethod = HttpMethod::{codeElement?.HttpMethod?.ToString().ToUpperInvariant()};");
-            if(codeElement.AcceptedResponseTypes.Any())
-                writer.WriteLine($"{RequestInfoVarName}->headers = array_merge({RequestInfoVarName}->headers, [\"Accept\" => \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\"]);");
+            WriteAcceptHeaderDef(codeElement, writer);
             if (requestParams.requestConfiguration != null)
             {
                 var queryString = requestParams.QueryParameters;
@@ -383,6 +382,12 @@ namespace Kiota.Builder.Writers.Php
             }
 
             writer.WriteLine($"return {RequestInfoVarName};");
+        }
+
+        private void WriteAcceptHeaderDef(CodeMethod codeMethod, LanguageWriter writer)
+        {
+            if(codeMethod.AcceptedResponseTypes.Any())
+                writer.WriteLine($"{RequestInfoVarName}->headers = array_merge({RequestInfoVarName}->headers, [\"Accept\" => \"{string.Join(", ", codeMethod.AcceptedResponseTypes)}\"]);");
         }
         private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer, CodeMethod method) {
             var inherits = parentClass.StartBlock?.Inherits != null;
