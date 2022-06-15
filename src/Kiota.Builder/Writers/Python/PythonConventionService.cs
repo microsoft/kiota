@@ -12,7 +12,7 @@ public class PythonConventionService : CommonLanguageConventionService
         writer = languageWriter;
     }
     private readonly LanguageWriter writer;
-    public override string StreamTypeName => "bytes";
+    public override string StreamTypeName => "bytess";
     public override string VoidTypeName => "None";
     public override string DocCommentPrefix => "";
     public override string ParseNodeInterfaceName => "ParseNode";
@@ -91,7 +91,7 @@ public class PythonConventionService : CommonLanguageConventionService
             "datetime" => "datetime",
             "DateTimeOffset" => "timedelta",
             "boolean" => "bool",
-            "Object" or "object" or "float" => type.Name.ToSnakeCase(),
+            "Object" or "object" or "float" or "bytes" => type.Name,
             _ => type.Name.ToFirstCharacterUpperCase().Replace("IParseNode", "ParseNode") ?? "object",
         };
     }

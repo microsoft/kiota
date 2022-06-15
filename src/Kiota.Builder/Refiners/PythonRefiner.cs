@@ -10,11 +10,13 @@ namespace Kiota.Builder.Refiners {
         public override void Refine(CodeNamespace generatedCode)
         {
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
+            DisableActionOf(generatedCode, 
+            CodeParameterKind.RequestConfiguration);
             ReplaceIndexersByMethodsWithParameter(generatedCode, generatedCode, false, "_by_id");
             RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.__instance.create_backing_store()");
-            AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);            
+            AddPropertiesAndMethodTypesImportsPython(generatedCode, true, true, true);           
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             ReplaceBinaryByNativeType(generatedCode, "bytes",null);
             ReplaceReservedNames(generatedCode, new PythonReservedNamesProvider(), x => $"{x}_escaped");
@@ -28,13 +30,20 @@ namespace Kiota.Builder.Refiners {
                 string.Empty,
                 string.Empty);
             AddConstructorsForDefaultValues(generatedCode, true);
+            var defaultConfiguration = new GenerationConfiguration();
             ReplaceDefaultSerializationModules(
                 generatedCode,
-                "serialization_json.json_serialization_writer_factory.JsonSerializationWriterFactory"
+                defaultConfiguration.Serializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "serialization_json.json_serialization_writer_factory.JsonSerializationWriterFactory"
+                }
             );
             ReplaceDefaultDeserializationModules(
                 generatedCode,
-                "serialization_json.json_parse_node_factory.JsonParseNodeFactory"
+                defaultConfiguration.Deserializers,
+                new (StringComparer.OrdinalIgnoreCase) {
+                    "serialization_json.json_parse_node_factory.JsonParseNodeFactory"
+                }
             );
             AddSerializationModulesImport(generatedCode,
             new[] { $"{AbstractionsPackageName}.api_client_builder.register_default_serializer", 
@@ -81,6 +90,7 @@ namespace Kiota.Builder.Refiners {
                 $"{AbstractionsPackageName}.store", "BackingStoreFactory", "BackingStoreFactorySingleton"),
             new (x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
                 $"{AbstractionsPackageName}.store", "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
+            new (x => x is CodeClass && x.Parent is CodeClass, "dataclasses", "dataclass")
         };
         private static void CorrectImplements(ProprietableBlockDeclaration block) {
             block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
@@ -90,6 +100,12 @@ namespace Kiota.Builder.Refiners {
                 currentProperty.Type.Name = "RequestAdapter";
             else if(currentProperty.IsOfKind(CodePropertyKind.BackingStore))
                 currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
+             else if(currentProperty.IsOfKind(CodePropertyKind.Options))
+            currentProperty.Type.Name = "List[RequestOption]";
+            else if(currentProperty.IsOfKind(CodePropertyKind.Headers))
+            currentProperty.Type.Name = "Dict[str, str]";
+            else if (currentProperty.IsOfKind(CodePropertyKind.QueryParameters))
+            currentProperty.Type.Name = $"{currentProperty.Parent?.Parent.Name}.{currentProperty.Type.Name.ToFirstCharacterUpperCase()}";
             else if(currentProperty.IsOfKind(CodePropertyKind.AdditionalData)) {
                 currentProperty.Type.Name = "Dict[str, Any]";
                 currentProperty.DefaultValue = "{}";
@@ -105,9 +121,6 @@ namespace Kiota.Builder.Refiners {
             if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator)) {
                 if(currentMethod.IsOfKind(CodeMethodKind.RequestExecutor))
                     currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.ResponseHandler) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Options)).ToList().ForEach(x => x.Type.Name = "List[RequestOption]");
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.QueryParameter)).ToList().ForEach(x => { x.Type.Name = "GetQueryParameters"; x.Type.ActionOf = false; });
-                currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Headers)).ToList().ForEach(x => { x.Type.Name = "Dict[str, str]"; x.Type.ActionOf = false; });
             }
             else if(currentMethod.IsOfKind(CodeMethodKind.Serializer))
                 currentMethod.Parameters.Where(x => x.IsOfKind(CodeParameterKind.Serializer) && x.Type.Name.StartsWith("i", StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Type.Name = x.Type.Name[1..]);
@@ -140,6 +153,58 @@ namespace Kiota.Builder.Refiners {
                                                 .Union(new CodeTypeBase[] { currentMethod.ReturnType})
                                                 .ToArray());
         }
+        private static readonly CodeUsingComparer usingComparerWithDeclarations = new(true);
+        private static readonly CodeUsingComparer usingComparerWithoutDeclarations = new(false);
+        private static void AddPropertiesAndMethodTypesImportsPython(CodeElement current, bool includeParentNamespaces, bool includeCurrentNamespace, bool compareOnDeclaration) {
+        if(current is CodeClass currentClass &&
+            currentClass.StartBlock is ClassDeclaration currentClassDeclaration) {
+            var currentClassNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
+            var currentClassChildren = currentClass.GetChildElements(true);
+            var inheritTypes = currentClassDeclaration.Inherits?.AllTypes ?? Enumerable.Empty<CodeType>();
+            var propertiesTypes = currentClass
+                                .Properties
+                                .Where(x => !x.IsOfKind(CodePropertyKind.QueryParameters))
+                                .Select(x => x.Type)
+                                .Distinct();
+            var methods = currentClass.Methods;
+            var methodsReturnTypes = methods
+                                .Select(x => x.ReturnType)
+                                .Distinct();
+            var methodsParametersTypes = methods
+                                .SelectMany(x => x.Parameters)
+                                .Where(x => x.IsOfKind(CodeParameterKind.Custom, CodeParameterKind.RequestBody))
+                                .Select(x => x.Type)
+                                .Distinct();
+            var indexerTypes = currentClassChildren
+                                .OfType<CodeIndexer>()
+                                .Select(x => x.ReturnType)
+                                .Distinct();
+            var errorTypes = currentClassChildren
+                                .OfType<CodeMethod>()
+                                .Where(x => x.IsOfKind(CodeMethodKind.RequestExecutor))
+                                .SelectMany(x => x.ErrorMappings)
+                                .Select(x => x.Value)
+                                .Distinct();
+            var usingsToAdd = propertiesTypes
+                                .Union(methodsParametersTypes)
+                                .Union(methodsReturnTypes)
+                                .Union(indexerTypes)
+                                .Union(inheritTypes)
+                                .Union(errorTypes)
+                                .Where(x => x != null)
+                                .SelectMany(x => x?.AllTypes?.Select(y => (type: y, ns: y?.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())))
+                                .Where(x => x.ns != null && (includeCurrentNamespace || x.ns != currentClassNamespace))
+                                .Where(x => includeParentNamespaces || !currentClassNamespace.IsChildOf(x.ns))
+                                .Select(x => new CodeUsing { Name = x.ns.Name, Declaration = x.type })
+                                .Where(x => x.Declaration?.TypeDefinition != current)
+                                .Distinct(compareOnDeclaration ? usingComparerWithDeclarations : usingComparerWithoutDeclarations)
+                                .ToArray();
+            if(usingsToAdd.Any())
+                (currentClass.Parent is CodeClass parentClass ? parentClass : currentClass).AddUsing(usingsToAdd); //lots of languages do not support imports on nested classes
+        }
+        CrawlTree(current, (x) => AddPropertiesAndMethodTypesImportsPython(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration));
+    }
+        
         private const string DateTimePackageName = "datetime";
         private static readonly Dictionary<string, (string, CodeUsing)> DateTypesReplacements = new (StringComparer.OrdinalIgnoreCase) {
         {"DateTimeOffset", ("datetime", new CodeUsing {

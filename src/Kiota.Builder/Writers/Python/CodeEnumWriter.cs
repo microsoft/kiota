@@ -13,7 +13,10 @@ namespace Kiota.Builder.Writers.Python {
             writer.WriteLine();
             writer.WriteLine($"class {codeElement.Name.ToFirstCharacterUpperCase()}(Enum):");
             writer.IncreaseIndent();
-            codeElement.Options.ToList().ForEach(x => writer.WriteLine($"{x} = '{x}'"));
+            codeElement.Options.ToList().ForEach(x => {
+                conventions.WriteInLineDescription(x.Description, writer);
+                writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()} = \"{x.SerializationName ?? x.Name}\",");
+            });
         }
     }
 }

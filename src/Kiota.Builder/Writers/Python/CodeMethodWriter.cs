@@ -25,10 +25,8 @@ namespace Kiota.Builder.Writers.Python {
             var parentClass = codeElement.Parent as CodeClass;
             var inherits = parentClass.StartBlock.Inherits != null && !parentClass.IsErrorDefinition;
             var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
-            var queryStringParam = codeElement.Parameters.OfKind(CodeParameterKind.QueryParameter);
-            var headersParam = codeElement.Parameters.OfKind(CodeParameterKind.Headers);
-            var optionsParam = codeElement.Parameters.OfKind(CodeParameterKind.Options);
-            var requestParams = new RequestParams(requestBodyParam, queryStringParam, headersParam, optionsParam);
+            var requestConfigParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestConfiguration);
+            var requestParams = new RequestParams(requestBodyParam, requestConfigParam);
             if(!codeElement.IsOfKind(CodeMethodKind.Setter))
                 foreach(var parameter in codeElement.Parameters.Where(x => !x.Optional).OrderBy(x => x.Name)) {
                     var parameterName = parameter.Name.ToSnakeCase();
@@ -122,7 +120,7 @@ namespace Kiota.Builder.Writers.Python {
             }
             writer.WriteLine($"return {parameterName}");
         }
-        private static void WriteSerializationRegistration(List<string> serializationModules, LanguageWriter writer, string methodName) {
+        private static void WriteSerializationRegistration(HashSet<string> serializationModules, LanguageWriter writer, string methodName) {
             if(serializationModules != null)
                 foreach(var module in serializationModules)
                     writer.WriteLine($"{methodName}({module})");
@@ -216,11 +214,11 @@ namespace Kiota.Builder.Writers.Python {
                                                 ?.Name
                                                 ?.ToSnakeCase();
             writer.WriteLine($"request_info = self.{generatorMethodName}(");
-            var requestInfoParameters = new CodeParameter[] { requestParams.requestBody, requestParams.queryString, requestParams.headers, requestParams.options }
-                	                        .Select(x => x?.Name).Where(x => x != null);
+            var requestInfoParameters = new CodeParameter[] { requestParams.requestBody, requestParams.requestConfiguration }
+                	                        .Select(x => x?.Name.ToSnakeCase()).Where(x => x != null);
             if(requestInfoParameters.Any()) {
                 writer.IncreaseIndent();
-                writer.WriteLine(requestInfoParameters.Aggregate((x,y) => $"{x.ToSnakeCase()}, {y.ToSnakeCase()}"));
+                writer.WriteLine(requestInfoParameters.Aggregate((x,y) => $"{x}, {y}"));
                 writer.DecreaseIndent();
             }
             writer.WriteLine(")");
@@ -261,27 +259,27 @@ namespace Kiota.Builder.Writers.Python {
                                 $"{RequestInfoVarName}.url_template = {GetPropertyCall(urlTemplateProperty, "''")}",
                                 $"{RequestInfoVarName}.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}",
                                 $"{RequestInfoVarName}.http_method = HttpMethod.{codeElement.HttpMethod.ToString().ToUpperInvariant()}");
-            if(requestParams.headers != null) {
-                writer.WriteLine($"if {requestParams.headers.Name}:");
+            if(requestParams.requestConfiguration != null) {
+                writer.WriteLine($"if {requestParams.requestConfiguration.Name.ToSnakeCase()}:");
                 writer.IncreaseIndent();
-                writer.WriteLine($"{RequestInfoVarName}.headers = {requestParams.headers.Name.ToSnakeCase()}");
-                writer.DecreaseIndent();
-            }
-            if(requestParams.queryString != null){
-                writer.WriteLine($"if {requestParams.queryString.Name}:");
-                writer.IncreaseIndent();
-                writer.WriteLine($"{RequestInfoVarName}.set_query_string_parameters_from_raw_object({requestParams.queryString.Name.ToSnakeCase()})");
+                var headers = requestParams.Headers;
+                if(headers != null)
+                    writer.WriteLine($"{RequestInfoVarName}.add_request_headers({requestParams.requestConfiguration.Name.ToSnakeCase()}.{headers.Name.ToSnakeCase()})");
+                var queryString = requestParams.QueryParameters;
+                if(queryString != null)
+                    writer.WriteLines($"{RequestInfoVarName}.set_query_string_parameters_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{queryString.Name.ToSnakeCase()})");
+                var options = requestParams.Options;
+                if(options != null)
+                    writer.WriteLine($"{RequestInfoVarName}.add_request_options({requestParams.requestConfiguration.Name.ToSnakeCase()}.{options.Name.ToSnakeCase()})");
                 writer.DecreaseIndent();
             }
             if(requestParams.requestBody != null) {
                 if(requestParams.requestBody.Type.Name.Equals(localConventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                     writer.WriteLine($"{RequestInfoVarName}.set_stream_content({requestParams.requestBody.Name.ToSnakeCase()})");
                 else {
-                    writer.WriteLine($"{RequestInfoVarName}.set_content_from_parsable(self.{requestAdapterProperty.Name.ToSnakeCase()}, \"{codeElement.ContentType}\", {requestParams.requestBody.Name})");
+                    writer.WriteLine($"{RequestInfoVarName}.set_content_from_parsable(self.{requestAdapterProperty.Name.ToSnakeCase()}, \"{codeElement.RequestBodyContentType}\", {requestParams.requestBody.Name})");
                 }
             }
-            if(requestParams.options != null)
-                writer.WriteLine($"{RequestInfoVarName}.add_request_options({requestParams.options.Name.ToSnakeCase()})");
             writer.WriteLine($"return {RequestInfoVarName}");
         }
         private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"self.{property.Name.ToSnakeCase()}";

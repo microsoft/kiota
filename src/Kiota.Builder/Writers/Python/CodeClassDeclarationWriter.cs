@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Kiota.Builder.Extensions;
 
@@ -10,8 +11,10 @@ namespace Kiota.Builder.Writers.Python {
         }
         public override void WriteCodeElement(ClassDeclaration codeElement, LanguageWriter writer)
         {
-            AddStandardImports(writer);
+            if(codeElement == null) throw new ArgumentNullException(nameof(codeElement));
+            if(writer == null) throw new ArgumentNullException(nameof(writer));
             var parentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
+            AddStandardImports(writer);
             var externalImportSymbolsAndPaths = codeElement.Usings
                                                             .Where(x => x.IsExternal)
                                                             .Select(x => (x.Name, string.Empty, x.Declaration?.Name))
@@ -41,6 +44,9 @@ namespace Kiota.Builder.Writers.Python {
             var inheritSymbol = conventions.GetTypeString(codeElement.Inherits, codeElement);
             var abcClass = !codeElement.Implements.Any() ? string.Empty : $"{codeElement.Implements.Select(x => x.Name.ToFirstCharacterUpperCase()).Aggregate((x,y) => x + ", " + y)}";
             var derivation = inheritSymbol == null ? abcClass : $"{inheritSymbol.ToFirstCharacterUpperCase()}";
+            if(codeElement.Parent?.Parent is CodeClass){
+                writer.WriteLine($"@dataclass");
+            }
             writer.WriteLine($"class {codeElement.Name.ToFirstCharacterUpperCase()}({derivation}):");
             writer.IncreaseIndent();
             conventions.WriteShortDescription((codeElement.Parent as CodeClass).Description, writer);
