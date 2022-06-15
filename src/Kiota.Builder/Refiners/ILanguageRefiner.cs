@@ -30,6 +30,9 @@
                 case GenerationLanguage.Swift:
                     new SwiftRefiner(config).Refine(generatedCode);
                     break;
+                case GenerationLanguage.Python:
+                    new PythonRefiner(config).Refine(generatedCode);
+                    break;
                 default:
                     break; //Do nothing
             }
