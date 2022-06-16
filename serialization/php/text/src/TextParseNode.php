@@ -15,7 +15,6 @@ use GuzzleHttp\Psr7\Utils;
 use Microsoft\Kiota\Abstractions\Enum;
 use Microsoft\Kiota\Abstractions\Serialization\Parsable;
 use Microsoft\Kiota\Abstractions\Serialization\ParseNode;
-use Microsoft\Kiota\Abstractions\Types\Byte;
 use Microsoft\Kiota\Abstractions\Types\Date;
 use Microsoft\Kiota\Abstractions\Types\Time;
 use Psr\Http\Message\StreamInterface;
@@ -111,6 +110,14 @@ class TextParseNode implements ParseNode
      * @inheritDoc
      */
     public function getCollectionOfObjectValues(array $type): ?array
+    {
+        throw new \RuntimeException(self::NO_STRUCTURED_DATA_ERR_MSG);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getCollectionOfEnumValues(string $targetClass): ?array
     {
         throw new \RuntimeException(self::NO_STRUCTURED_DATA_ERR_MSG);
     }
