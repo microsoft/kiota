@@ -151,15 +151,15 @@ class GuzzleRequestAdapter implements RequestAdapter
                             return $rootParseNode->getBooleanValue();
                         case 'string':
                             return $rootParseNode->getStringValue();
-                        case \DateTime::class:
+                        case strtolower(\DateTime::class):
                             return $rootParseNode->getDateTimeValue();
-                        case \DateInterval::class:
+                        case strtolower(\DateInterval::class):
                             return $rootParseNode->getDateIntervalValue();
-                        case Date::class:
+                        case strtolower(Date::class):
                             return $rootParseNode->getDateValue();
-                        case Time::class:
+                        case strtolower(Time::class):
                             return $rootParseNode->getTimeValue();
-                        case StreamInterface::class:
+                        case strtolower(StreamInterface::class):
                             return $result->getBody();
                         default:
                             throw new \InvalidArgumentException("Unsupported primitive type $primitiveType");
