@@ -13,7 +13,6 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
 use Http\Promise\FulfilledPromise;
 use Http\Promise\Promise;
-use Http\Promise\RejectedPromise;
 use Microsoft\Kiota\Abstractions\ApiException;
 use Microsoft\Kiota\Abstractions\Authentication\AuthenticationProvider;
 use Microsoft\Kiota\Abstractions\RequestAdapter;
@@ -93,9 +92,6 @@ class GuzzleRequestAdapter implements RequestAdapter
                 }
                 if (!$responseHandler) {
                     $rootNode = $this->getRootParseNode($result);
-                    if ($targetCallable[0] === StreamInterface::class || is_subclass_of($targetCallable[0],StreamInterface::class, $targetCallable[0])) {
-                        return $result->getBody();
-                    }
                     return $rootNode->getObjectValue($targetCallable);
                 }
                 return $responseHandler->handleResponseAsync($result);
@@ -163,6 +159,8 @@ class GuzzleRequestAdapter implements RequestAdapter
                             return $rootParseNode->getDateValue();
                         case Time::class:
                             return $rootParseNode->getTimeValue();
+                        case StreamInterface::class:
+                            return $result->getBody();
                         default:
                             throw new \InvalidArgumentException("Unsupported primitive type $primitiveType");
                     }
