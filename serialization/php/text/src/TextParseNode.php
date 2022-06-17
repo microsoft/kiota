@@ -79,7 +79,8 @@ class TextParseNode implements ParseNode
      */
     public function getBooleanValue(): ?bool
     {
-        return (bool) $this->content;
+        $boolMap = ["true" => true, "false" => false];
+        return array_key_exists($this->content, $boolMap) ? $boolMap[$this->content] : null;
     }
 
     /**
@@ -87,7 +88,7 @@ class TextParseNode implements ParseNode
      */
     public function getIntegerValue(): ?int
     {
-        return (int) $this->content;
+        return (int) filter_var($this->content, FILTER_SANITIZE_NUMBER_INT);
     }
 
     /**
@@ -95,7 +96,7 @@ class TextParseNode implements ParseNode
      */
     public function getFloatValue(): ?float
     {
-        return (float) $this->content;
+        return (float) filter_var($this->content, FILTER_SANITIZE_NUMBER_FLOAT, ['flags' => FILTER_FLAG_ALLOW_FRACTION]);
     }
 
     /**

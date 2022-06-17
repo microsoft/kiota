@@ -28,18 +28,18 @@ class TextParseNodeTest extends TestCase
     /**
      * @dataProvider invalidMethodNamesProvider
      */
-    function testInvalidMethodsThrowException(string $methodName)
+    function testInvalidMethodsThrowException(string $methodName, $args = '')
     {
         $this->expectException(\Exception::class);
-        call_user_func([$this->parseNode, $methodName], '');
+        call_user_func([$this->parseNode, $methodName], $args);
     }
 
     public function invalidMethodNamesProvider(): array
     {
         return [
             ['getChildNode'],
-            ['getObjectValue'],
-            ['getCollectionOfObjectValues'],
+            ['getObjectValue', ['Message', 'createFromDiscriminatorValue']],
+            ['getCollectionOfObjectValues', ['Message', 'createFromDiscriminatorValue']],
             ['getCollectionOfPrimitiveValues']
         ];
     }
@@ -47,7 +47,9 @@ class TextParseNodeTest extends TestCase
     function testValidMethods()
     {
         $this->assertEquals('content', (new TextParseNode('content'))->getStringValue());
-        $this->assertTrue((new TextParseNode('true'))->getBooleanValue());
+        $this->assertFalse((new TextParseNode('false'))->getBooleanValue());
+        $number = utf8_decode('ï»¿123'); // some graph $count endpoints return extra Unicode chars
+        $this->assertEquals(123, (new TextParseNode($number))->getIntegerValue());
         $this->assertEquals(123, (new TextParseNode('123'))->getIntegerValue());
         $this->assertEquals(1.23, (new TextParseNode('1.23'))->getFloatValue());
         $this->assertInstanceOf(\DateTime::class, (new TextParseNode('2022-05-05 13:56'))->getDateTimeValue());
@@ -57,7 +59,6 @@ class TextParseNodeTest extends TestCase
         $this->assertInstanceOf(TestEnum::class, (new TextParseNode('valueA'))->getEnumValue(TestEnum::class));
         $binaryContent = (new TextParseNode('content'))->getBinaryContent();
         $this->assertEquals('content', $binaryContent->getContents());
-        $this->assertInstanceOf(Byte::class, (new TextParseNode('235'))->getByteValue());
     }
 
 }
