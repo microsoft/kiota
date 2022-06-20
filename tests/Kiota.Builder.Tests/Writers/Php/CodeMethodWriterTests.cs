@@ -811,7 +811,7 @@ namespace Kiota.Builder.Writers.Php.Tests
             languageWriter.Write(factoryMethod);
             var result = stringWriter.ToString();
             Assert.Contains("case 'childModel': return new ChildModel();", result);
-            Assert.Contains("$mappingValueNode = ParseNode::getChildNode(\"@odata.type\");", result);
+            Assert.Contains("$mappingValueNode = $parseNode->getChildNode(\"@odata.type\");", result);
         }
         [Fact]
         public void WriteApiConstructor()

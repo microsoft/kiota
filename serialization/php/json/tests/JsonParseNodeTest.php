@@ -164,4 +164,15 @@ class JsonParseNodeTest extends TestCase
         $this->assertEquals('Nairobi', $address->getCity());
 
     }
+
+    public function testCallbacksAreCalled(): void {
+        $this->parseNode = (new JsonParseNodeFactory())->getRootParseNode('application/json', $this->stream);
+        $assigned = false;
+        $onAfterAssignValues = function ($result) use (&$assigned) {
+            $assigned = true;
+        };
+        $this->parseNode->setOnAfterAssignFieldValues($onAfterAssignValues);
+        $person = $this->parseNode->getObjectValue([Person::class, 'createFromDiscriminatorValue']);
+        $this->assertTrue($assigned);
+    }
 }

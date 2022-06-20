@@ -15,7 +15,6 @@ use GuzzleHttp\Psr7\Utils;
 use Microsoft\Kiota\Abstractions\Enum;
 use Microsoft\Kiota\Abstractions\Serialization\Parsable;
 use Microsoft\Kiota\Abstractions\Serialization\ParseNode;
-use Microsoft\Kiota\Abstractions\Types\Byte;
 use Microsoft\Kiota\Abstractions\Types\Date;
 use Microsoft\Kiota\Abstractions\Types\Time;
 use Psr\Http\Message\StreamInterface;
@@ -80,7 +79,8 @@ class TextParseNode implements ParseNode
      */
     public function getBooleanValue(): ?bool
     {
-        return (bool) $this->content;
+        $boolMap = ["true" => true, "false" => false];
+        return array_key_exists($this->content, $boolMap) ? $boolMap[$this->content] : null;
     }
 
     /**
@@ -88,7 +88,7 @@ class TextParseNode implements ParseNode
      */
     public function getIntegerValue(): ?int
     {
-        return (int) $this->content;
+        return (int) filter_var($this->content, FILTER_SANITIZE_NUMBER_INT);
     }
 
     /**
@@ -96,13 +96,13 @@ class TextParseNode implements ParseNode
      */
     public function getFloatValue(): ?float
     {
-        return (float) $this->content;
+        return (float) filter_var($this->content, FILTER_SANITIZE_NUMBER_FLOAT, ['flags' => FILTER_FLAG_ALLOW_FRACTION]);
     }
 
     /**
      * @inheritDoc
      */
-    public function getObjectValue(string $type): ?Parsable
+    public function getObjectValue(array $type): ?Parsable
     {
         throw new \RuntimeException(self::NO_STRUCTURED_DATA_ERR_MSG);
     }
@@ -110,7 +110,15 @@ class TextParseNode implements ParseNode
     /**
      * @inheritDoc
      */
-    public function getCollectionOfObjectValues(string $type): ?array
+    public function getCollectionOfObjectValues(array $type): ?array
+    {
+        throw new \RuntimeException(self::NO_STRUCTURED_DATA_ERR_MSG);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getCollectionOfEnumValues(string $targetClass): ?array
     {
         throw new \RuntimeException(self::NO_STRUCTURED_DATA_ERR_MSG);
     }
@@ -168,14 +176,6 @@ class TextParseNode implements ParseNode
             throw new \InvalidArgumentException("Target enum must extend ".Enum::class);
         }
         return new $targetEnum($this->content);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getByteValue(): ?Byte
-    {
-        return new Byte((int)$this->content);
     }
 
     /**

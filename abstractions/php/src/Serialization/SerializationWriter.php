@@ -66,13 +66,6 @@ interface SerializationWriter {
     public function getSerializedContent(): StreamInterface;
 
     /**
-     * Writes the specified enum set value to the stream with an optional given key.
-     * @param string|null $key the key to write the value with.
-     * @param array<Enum>|null $values the value to write to the stream.
-     */
-    public function writeEnumSetValue(?string $key, ?array $values): void;
-
-    /**
      * Writes the specified enum value to the stream with an optional given key.
      * @param string|null $key the key to write the value with.
      * @param Enum|null $value the value to write to the stream.
