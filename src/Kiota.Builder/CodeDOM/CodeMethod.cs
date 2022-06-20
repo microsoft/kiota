@@ -237,15 +237,6 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             _discriminatorInformation = value;
         }
     }
-    /// <summary>
-    /// Gets/Sets the name of the property to use for discrimination during deserialization.
-    /// </summary>
-    public string DiscriminatorPropertyName { get; set; } 
-
-    public bool ShouldWriteDiscriminatorSwitch { get {
-        return !string.IsNullOrEmpty(DiscriminatorPropertyName) && DiscriminatorInformation.DiscriminatorMappings.Any();
-    } }
-
     public object Clone()
     {
         var method = new CodeMethod {

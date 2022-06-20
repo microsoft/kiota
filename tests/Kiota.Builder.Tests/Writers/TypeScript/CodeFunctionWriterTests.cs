@@ -66,7 +66,7 @@ public class CodeFunctionWriterTests : IDisposable {
                         Name = "childModel",
                         TypeDefinition = childModel,
                     });
-        factoryMethod.DiscriminatorPropertyName = "@odata.type";
+        factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
         factoryMethod.AddParameter(new CodeParameter {
             Name = "parseNode",
             Kind = CodeParameterKind.ParseNode,
@@ -119,7 +119,7 @@ public class CodeFunctionWriterTests : IDisposable {
                         Name = "childModel",
                         TypeDefinition = childModel,
                     });
-        factoryMethod.DiscriminatorPropertyName = "@odata.type";
+        factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
         var factoryFunction = root.AddFunction(new CodeFunction(factoryMethod)).First();
         writer.Write(factoryFunction);
         var result = tw.ToString();
@@ -160,7 +160,7 @@ public class CodeFunctionWriterTests : IDisposable {
                         Name = "childModel",
                         TypeDefinition = childModel,
                     });
-        factoryMethod.DiscriminatorPropertyName = string.Empty;
+        factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName = string.Empty;
         factoryMethod.AddParameter(new CodeParameter {
             Name = "parseNode",
             Kind = CodeParameterKind.ParseNode,
@@ -201,7 +201,7 @@ public class CodeFunctionWriterTests : IDisposable {
             },
             IsStatic = true,
         }).First();
-        factoryMethod.DiscriminatorPropertyName = "@odata.type";
+        factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
         factoryMethod.AddParameter(new CodeParameter {
             Name = "parseNode",
             Kind = CodeParameterKind.ParseNode,

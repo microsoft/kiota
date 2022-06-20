@@ -86,8 +86,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     }
     private void WriteFactoryMethodBody(CodeMethod codeElement, LanguageWriter writer){
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
-        if(codeElement.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
-            writer.WriteLine($"var mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{codeElement.DiscriminatorPropertyName}\");");
+        if(codeElement.DiscriminatorInformation.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
+            writer.WriteLine($"var mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{codeElement.DiscriminatorInformation.DiscriminatorPropertyName}\");");
             writer.WriteLines($"var mappingValue = mappingValueNode?.GetStringValue();");
             writer.WriteLine("return mappingValue switch {");
             writer.IncreaseIndent();

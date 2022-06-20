@@ -30,8 +30,8 @@ public class CodeFunctionWriter : BaseElementWriter<CodeFunction, TypeScriptConv
     private static void WriteFactoryMethodBody(CodeFunction codeElement, string returnType, LanguageWriter writer)
     {
         var parseNodeParameter = codeElement.OriginalLocalMethod.Parameters.OfKind(CodeParameterKind.ParseNode);
-        if(codeElement.OriginalLocalMethod.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
-            writer.WriteLines($"const mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode(\"{codeElement.OriginalLocalMethod.DiscriminatorPropertyName}\");",
+        if(codeElement.OriginalLocalMethod.DiscriminatorInformation.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
+            writer.WriteLines($"const mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.getChildNode(\"{codeElement.OriginalLocalMethod.DiscriminatorInformation.DiscriminatorPropertyName}\");",
                                 $"if (mappingValueNode) {{");
             writer.IncreaseIndent();
             writer.WriteLines($"const mappingValue = mappingValueNode.getStringValue();",

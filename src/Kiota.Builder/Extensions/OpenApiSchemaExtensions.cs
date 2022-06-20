@@ -12,14 +12,14 @@ namespace Kiota.Builder.Extensions {
                 return Enumerable.Empty<string>();
             else if(schema.Items != null)
                 return schema.Items.GetSchemaNames();
+            else if(!string.IsNullOrEmpty(schema.Reference?.Id))
+                return new string[] {schema.Reference.Id.Split('/').Last().Split('.').Last()};
             else if(schema.AnyOf.Any())
                 return schema.AnyOf.FlattenIfRequired(classNamesFlattener);
             else if(schema.AllOf.Any())
                 return schema.AllOf.FlattenIfRequired(classNamesFlattener);
             else if(schema.OneOf.Any())
                 return schema.OneOf.FlattenIfRequired(classNamesFlattener);
-            else if(!string.IsNullOrEmpty(schema.Reference?.Id))
-                return new string[] {schema.Reference.Id.Split('/').Last().Split('.').Last()};
             else if(!string.IsNullOrEmpty(schema.Title))
                 return new string[] { schema.Title };
             else if(!string.IsNullOrEmpty(schema.Xml?.Name))

@@ -810,7 +810,7 @@ namespace Kiota.Builder.Writers.Php.Tests
                 Name = "childModel",
                 TypeDefinition = childModel,
             });
-            factoryMethod.DiscriminatorPropertyName = "@odata.type";
+            factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
             factoryMethod.AddParameter(new CodeParameter {
                 Name = "ParseNode",
                 Kind = CodeParameterKind.ParseNode,

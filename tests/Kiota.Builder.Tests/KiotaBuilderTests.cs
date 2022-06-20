@@ -1385,8 +1385,8 @@ components:
         Assert.NotNull(entityClass);
         var factoryMethod = entityClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
         Assert.NotNull(factoryMethod);
-        Assert.Equal("@odata.type", factoryMethod.DiscriminatorPropertyName);
-        Assert.NotEmpty(factoryMethod.DiscriminatorInformation.DiscriminatorMappings);
+        Assert.Equal("@odata.type", factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName);
+        Assert.Single(factoryMethod.DiscriminatorInformation.DiscriminatorMappings);
         var doFactoryMethod = directoryObjectClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
         Assert.NotNull(doFactoryMethod);
         Assert.Empty(doFactoryMethod.DiscriminatorInformation.DiscriminatorMappings);
@@ -1671,8 +1671,8 @@ components:
         Assert.NotNull(secondLevelDerivedObject);
         var factoryMethod = secondLevelDerivedClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
         Assert.NotNull(factoryMethod);
-        Assert.Equal("kind", factoryMethod.DiscriminatorPropertyName);
-        Assert.NotEmpty(factoryMethod.DiscriminatorMappings);
+        Assert.Equal("kind", factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName);
+        Assert.NotEmpty(factoryMethod.DiscriminatorInformation.DiscriminatorMappings);
     }
     [InlineData("string", "", "string")]// https://spec.openapis.org/registry/format/
     [InlineData("string", "commonmark", "string")]

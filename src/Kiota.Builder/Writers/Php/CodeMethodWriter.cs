@@ -522,8 +522,8 @@ namespace Kiota.Builder.Writers.Php
         
         private static void WriteFactoryMethodBody(CodeMethod codeElement, LanguageWriter writer){
             var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
-            if(codeElement.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
-                writer.WriteLines($"$mappingValueNode = ${parseNodeParameter.Name.ToFirstCharacterLowerCase()}->getChildNode(\"{codeElement.DiscriminatorPropertyName}\");",
+            if(codeElement.DiscriminatorInformation.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
+                writer.WriteLines($"$mappingValueNode = ${parseNodeParameter.Name.ToFirstCharacterLowerCase()}->getChildNode(\"{codeElement.DiscriminatorInformation.DiscriminatorPropertyName}\");",
                     "if ($mappingValueNode !== null) {");
                 writer.IncreaseIndent();
                 writer.WriteLines("$mappingValue = $mappingValueNode->getStringValue();");

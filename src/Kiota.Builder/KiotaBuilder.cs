@@ -1049,7 +1049,8 @@ public class KiotaBuilder
             else if (schema.AnyOf.Any())
                 return schema.AnyOf.SelectMany(x => GetDiscriminatorMappings(currentNode, x, currentNamespace, baseClass));
             else if (schema.AllOf.Any())
-                return GetDiscriminatorMappings(currentNode, schema.AllOf.Last(), currentNamespace, baseClass);
+                return GetDiscriminatorMappings(currentNode, schema.AllOf.Last(), currentNamespace, baseClass)
+                    .Where(x => !x.Key.TrimStart('#').Equals(schema.Reference?.Id, StringComparison.OrdinalIgnoreCase));
             else
                 return Enumerable.Empty<KeyValuePair<string, CodeTypeBase>>();
 
@@ -1077,7 +1078,7 @@ public class KiotaBuilder
             Optional = false,
             Type = new CodeType { Name = ParseNodeInterface, IsExternal = true },
         });
-        factoryMethod.DiscriminatorPropertyName = discriminatorPropertyName;
+        factoryMethod.DiscriminatorInformation.DiscriminatorPropertyName = discriminatorPropertyName;
         return factoryMethod;
     }
     private CodeTypeBase GetCodeTypeForMapping(OpenApiUrlTreeNode currentNode, string referenceId, CodeNamespace currentNamespace, CodeClass baseClass, OpenApiSchema currentSchema) {
