@@ -106,11 +106,11 @@ class JsonParseNode implements ParseNode
         /** @var Parsable $result */
         $result = $callableString($this);
         if($this->onBeforeAssignFieldValues !== null) {
-            $this->getOnBeforeAssignFieldValues()($result);
+            $this->onBeforeAssignFieldValues($result)();
         }
         $this->assignFieldValues($result);
         if ($this->onAfterAssignFieldValues !== null){
-            $this->getOnAfterAssignFieldValues()($result);
+            $this->onAfterAssignFieldValues($result)();
         }
         return $result;
     }
