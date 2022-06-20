@@ -158,19 +158,19 @@ class JsonSerializationWriter implements SerializationWriter
             if(!empty($key)) {
                 $this->writePropertyName($key);
             }
-            if ($this->onBeforeObjectSerialization !== null) {
-                $this->onBeforeObjectSerialization($value)();
+            if ($this->getOnBeforeObjectSerialization() !== null) {
+                $this->getOnBeforeObjectSerialization()($value);
             }
             $this->writer [] = '{';
-            if ($this->onStartObjectSerialization !== null) {
-                $this->onStartObjectSerialization($value, $this)();
+            if ($this->getOnStartObjectSerialization() !== null) {
+                $this->getOnStartObjectSerialization()($value, $this);
             }
             $value->serialize($this);
             if ($this->writer[count($this->writer) - 1] === ',') {
                 array_pop($this->writer);
             }
-            if ($this->onAfterObjectSerialization !== null) {
-                $this->onAfterObjectSerialization($value)();
+            if ($this->getOnAfterObjectSerialization() !== null) {
+                $this->getOnAfterObjectSerialization()($value);
             }
             $this->writer [] = '}';
         }
