@@ -62,7 +62,7 @@ public class ODataPagingService : BasePagingService
 
     private bool IsJson(PageLinkData pageLinkData)
     {
-        return pageLinkData.ResponseHeaders.TryGetValue("Content-Type", out var contentType) && contentType.Any(c => c.Contains("json"));
+        return pageLinkData.ResponseContentHeaders.TryGetValue("Content-Type", out var contentType) && contentType.Any(c => c.Contains("json"));
     }
 
     /// <summary>
