@@ -1,4 +1,5 @@
 from io import BytesIO
+from dataclasses import fields
 from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Tuple, TypeVar
 
 from uritemplate import URITemplate
@@ -133,3 +134,13 @@ class RequestInformation(Generic[QueryParams]):
         """
         self.headers[self.CONTENT_TYPE_HEADER] = self.BINARY_CONTENT_TYPE
         self.content = value
+        
+    def set_query_string_parameters_from_raw_object(self, q: object) -> None:
+        for field in fields(q):
+            key = field
+            if hasattr(q, 'get_query_parameter'):
+                serialization_key = q.get_query_parameter(key)
+                if serialization_key:
+                    key = serialization_key
+            self.query_parameters[key] = getattr(q, field.name)
+                
