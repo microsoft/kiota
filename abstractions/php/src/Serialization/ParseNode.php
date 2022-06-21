@@ -93,6 +93,12 @@ interface ParseNode {
     public function getEnumValue(string $targetEnum): ?Enum;
 
     /**
+     * @param string $targetClass
+     * @return Enum[]|null
+     */
+    public function getCollectionOfEnumValues(string $targetClass): ?array;
+
+    /**
      * Get a Stream from node.
      * @return StreamInterface|null
      */

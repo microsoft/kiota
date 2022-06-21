@@ -105,7 +105,7 @@ namespace Kiota.Builder.Writers.Php
         public string GetParameterDocNullable(CodeParameter parameter, CodeElement codeElement)
         {
             var parameterSignature = GetParameterSignature(parameter, codeElement).Trim().Split(' ');
-            if (parameter.IsOfKind(CodeParameterKind.PathParameters, CodeParameterKind.RequestConfiguration))
+            if (parameter.IsOfKind(CodeParameterKind.PathParameters))
             {
                 return $"array<string, mixed>{(parameter.Optional ? "|null": string.Empty)} {parameterSignature[1]}";
             }
