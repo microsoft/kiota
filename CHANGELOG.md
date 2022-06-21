@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added an explicit error message for external references in the schema. [#1580](https://github.com/microsoft/kiota/issues/1580)
 - Added accept header for all schematized requests. [#1607](https://github.com/microsoft/kiota/issues/1607)
 - Added support for paging. [#1569](https://github.com/microsoft/kiota/issues/1569)
+- Added typescript interfaces for models and request config params. [#1013](https://github.com/microsoft/kiota/issues/1013) and [#1521](https://github.com/microsoft/kiota/issues/1521)
 
 ### Changed
 
