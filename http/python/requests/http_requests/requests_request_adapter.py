@@ -333,7 +333,7 @@ class RequestsRequestAdapter(RequestAdapter):
         req = requests.Request(
             method=str(request_info.http_method),
             url=request_info.get_url(),
-            headers=request_info.headers,
+            headers=request_info.get_request_headers(),
             data=request_info.content,
             params=request_info.query_parameters,
         )
