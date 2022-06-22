@@ -52,7 +52,7 @@ publishing {
     publications {
         gpr(MavenPublication) {
             artifactId 'kiota-serialization-text'
-            version '1.0.10'
+            version '1.0.11'
             from(components.java)
         }
     }
