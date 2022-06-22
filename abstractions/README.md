@@ -8,5 +8,5 @@ Your project will need a reference to the abstraction package to build and run, 
 - [Go](https://github.com/microsoft/kiota-abstractions-go)
 - [Ruby](./ruby/microsoft_kiota_abstractions)
 - [TypeScript](https://github.com/microsoft/kiota-typescript/tree/main/packages/abstractions)
-- [PHP](./php)
+- [PHP](https://github.com/microsoft/kiota-abstractions-php)
 - [Python](./python)
