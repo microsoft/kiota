@@ -6,7 +6,7 @@ parent: Get started
 
 ## Required tools
 
-- [PHP 7.4](https://www.php.net/downloads)
+- [PHP ^7.4 or ^8.0](https://www.php.net/downloads)
 
 ## Target project requirements
 
@@ -19,7 +19,7 @@ Before you can run the target project, you will need to initialize it. After ini
 Execute the following commands in the directory where you want to create a new project.
 
 ```bash
-composer init getUser
+composer init
 ```
 
 ## Adding dependencies
@@ -30,6 +30,15 @@ composer require microsoft/kiota-http-guzzle
 composer require microsoft/kiota-authentication-phpleague
 composer require microsoft/kiota-serialization-json
 composer require microsoft/kiota-serialization-text
+```
+
+Add the following to your `composer.json` to set your namespaces correctly:
+```shell
+"autoload": {
+    "psr-4": {
+        "GetUser\\Client\\": "client/"
+    }
+}
 ```
 
 Only the first package, `microsoft/kiota-abstractions`, is required. The other packages provide default implementations that you can choose to replace with your own implementations if you wish.
@@ -44,6 +53,12 @@ You can then use the Kiota command line tool to generate the SDK classes.
 kiota -l PHP -d ../getme.yml -c GraphApiClient -n GetUser\Client -o ./client
 ```
 
+To ensure the newly generated classes can be imported, update the autoload paths using:
+
+```shell
+composer dumpautoload
+```
+
 ## Creating an application registration
 
 > **Note:** this step is required if your client will be calling APIs that are protected by the Microsoft Identity Platform like Microsoft Graph.
@@ -56,16 +71,21 @@ Create a file in the root of the project named **GetUser.php** and add the follo
 with your credentials from the previous step and update `$userPrincipalName` to that of the user you'd like to fetch. 
 
 ```php
+<?php
 
+use GetUser\Client\GraphApiClient;
 use Microsoft\Kiota\Abstractions\ApiException;
 use Microsoft\Kiota\Authentication\Oauth\ClientCredentialContext;
 use Microsoft\Kiota\Authentication\PhpLeagueAuthenticationProvider;
 use Microsoft\Kiota\Http\GuzzleRequestAdapter;
 
+require __DIR__.'/vendor/autoload.php';
+
 try {
     $tenantId = 'tenantId';
     $clientId = 'clientId';
     $clientSecret = 'secret';
+    $userId = 'userPrincipalName';
 
     $allowedHosts = ['graph.microsoft.com'];
     $scopes = ['https://graph.microsoft.com/.default'];
@@ -78,10 +98,10 @@ try {
 
     $authProvider = new PhpLeagueAuthenticationProvider($tokenRequestContext, $scopes, $allowedHosts);
     $requestAdapter = new GuzzleRequestAdapter($authProvider);
-    $client = new GraphApiClient();
+    $client = new GraphApiClient($requestAdapter);
 
-    $me = $client->usersById('[userPrincipalName]')->wait();
-    echo "Hello {$me->getDisplayName()}, your ID is {$me->getId()}";
+    $user = $client->usersById($userId)->get()->wait();
+    echo "Hello {$user->getDisplayName()}, your ID is {$user->getId()}";
 
 } catch (ApiException $ex) {
     echo $ex->getMessage();
