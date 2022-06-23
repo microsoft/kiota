@@ -68,14 +68,15 @@ Follow the instructions in [Register an application for Microsoft identity platf
 ## Creating the client application
 
 Create a file in the root of the project named **GetUser.php** and add the following code. Replace the `$tenantId`, `$clientId`, `$clientSecret`
-with your credentials from the previous step and update `$userPrincipalName` to that of the user you'd like to fetch. 
+with your credentials from the previous step. See [Get access on behalf of a user](https://docs.microsoft.com/en-us/graph/auth-v2-user?context=graph%2Fapi%2F1.0&view=graph-rest-1.0) for details on
+how to get the `$authorizationCode` and set the `$redirectUri`.
 
 ```php
 <?php
 
 use GetUser\Client\GraphApiClient;
 use Microsoft\Kiota\Abstractions\ApiException;
-use Microsoft\Kiota\Authentication\Oauth\ClientCredentialContext;
+use Microsoft\Kiota\Authentication\Oauth\AuthorizationCodeContext;
 use Microsoft\Kiota\Authentication\PhpLeagueAuthenticationProvider;
 use Microsoft\Kiota\Http\GuzzleRequestAdapter;
 
@@ -85,23 +86,25 @@ try {
     $tenantId = 'tenantId';
     $clientId = 'clientId';
     $clientSecret = 'secret';
-    $userId = 'userPrincipalName';
+    $authorizationCode = 'authCode';
+    $redirectUri = 'uri';
 
-    $allowedHosts = ['graph.microsoft.com'];
-    $scopes = ['https://graph.microsoft.com/.default'];
+    $scopes = ['User.Read'];
 
-    $tokenRequestContext = new ClientCredentialContext(
+    $tokenRequestContext = new AuthorizationCodeContext(
         $tenantId,
         $clientId,
-        $clientSecret
+        $clientSecret,
+        $authorizationCode,
+        $redirectUri
     );
 
-    $authProvider = new PhpLeagueAuthenticationProvider($tokenRequestContext, $scopes, $allowedHosts);
+    $authProvider = new PhpLeagueAuthenticationProvider($tokenRequestContext, $scopes);
     $requestAdapter = new GuzzleRequestAdapter($authProvider);
     $client = new GraphApiClient($requestAdapter);
 
-    $user = $client->usersById($userId)->get()->wait();
-    echo "Hello {$user->getDisplayName()}, your ID is {$user->getId()}";
+    $me = $client->me()->get()->wait();
+    echo "Hello {$me->getDisplayName()}, your ID is {$me->getId()}";
 
 } catch (ApiException $ex) {
     echo $ex->getMessage();
