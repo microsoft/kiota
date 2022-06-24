@@ -181,7 +181,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         }
     }
 
-    private static void ConstructorBodyForModelClass(CodeClass codeClass, LanguageWriter writer, CodeMethod currentMethod)
+    private void ConstructorBodyForModelClass(CodeClass codeClass, LanguageWriter writer, CodeMethod currentMethod)
     {
         var codeInterfaceName = currentMethod.Parameters.FirstOrDefault(x => x.Type is CodeType type && type.TypeDefinition is CodeInterface).Name;
         if (codeClass.StartBlock.Inherits != null)
@@ -200,15 +200,23 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         foreach (var prop in codeClass.Properties)
         {
             var interfaceProperty = $"{codeInterfaceName}?.{prop.Name.ToFirstCharacterLowerCase()}";
+            var s = prop.Type is CodeType type && type.TypeDefinition is CodeInterface @interface? @interface.Name: "";
+  
             if (prop.IsOfKind(CodePropertyKind.AdditionalData))
             {
                 writer.WriteLine($"this.{prop.NamePrefix}{prop.Name.ToFirstCharacterLowerCase()} = {interfaceProperty} ? {interfaceProperty}! : {prop.DefaultValue};");
             }
             else
-            {
-                writer.WriteLine($"this.{prop.NamePrefix}{prop.Name.ToFirstCharacterLowerCase()} = {interfaceProperty};");
+            {   
+                var property = IsCodePropertyCollection(prop) ? ConvertPropertyValueToInstanceArray(prop.Name, prop.Type, writer) : (!String.IsNullOrWhiteSpace(s) ? $"{interfaceProperty} instanceof {s}{ModelClassSuffix}? {interfaceProperty}:new {s}{ModelClassSuffix}({interfaceProperty})":interfaceProperty );
+                writer.WriteLine($"this.{prop.NamePrefix}{prop.Name.ToFirstCharacterLowerCase()} = {property};");
             }
         }
+    }
+
+    private static bool IsCodePropertyCollection(CodeProperty property)
+    {
+        return( property.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None && property.Type is CodeType currentType && currentType.TypeDefinition != null);
     }
     private static void AssignPropertyFromParameter(CodeClass parentClass, CodeMethod currentMethod, CodeParameterKind parameterKind, CodePropertyKind propertyKind, LanguageWriter writer, string variableName = default)
     {
@@ -392,7 +400,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
         var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
         var undefinedPrefix = isCollectionOfEnum ? $"this.{codePropertyName} && " : string.Empty;
-        var isCollection = codeProperty.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None && codeProperty.Type is CodeType currentType && currentType.TypeDefinition != null;
+        var isCollection = IsCodePropertyCollection(codeProperty);
         var str = "";
 
         if (isCollection && !isCollectionOfEnum)
@@ -428,7 +436,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
 
         var arrayName = $"{propertyName}ArrValue".ToFirstCharacterLowerCase();
 
-        writer.WriteLine($"const {arrayName}: {propertyType}[] = []; this.{propertyName}?.forEach(element => {{{arrayName}.push(new {propertyType}(element));}});");
+        writer.WriteLine($"const {arrayName}: {propertyType}[] = []; this.{propertyName}?.forEach(element => {{{arrayName}.push(element instanceof {propertyType}? element : new {propertyType}(element));}});");
         return arrayName;
     }
 
