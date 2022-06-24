@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -999,15 +999,24 @@ public class KiotaBuilder
         }).First();
         if(inheritsFrom != null)
             newClass.StartBlock.Inherits = new CodeType { TypeDefinition = inheritsFrom, Name = inheritsFrom.Name };
-        var factoryMethod = AddDiscriminatorMethod(newClass, schema.Discriminator?.PropertyName);
-        if(schema.Discriminator?.Mapping?.Any() ?? false)
-            schema.Discriminator
-                    .Mapping
-                    .Where(x => !x.Key.Equals(schema.Reference?.Id, StringComparison.OrdinalIgnoreCase))
-                    .Select(x => (x.Key, GetCodeTypeForMapping(currentNode, x.Value, currentNamespace, newClass, schema)))
-                    .Where(x => x.Item2 != null)
-                    .ToList()
-                    .ForEach(x => factoryMethod.AddDiscriminatorMapping(x.Key, x.Item2));
+
+        // Find the correct discriminator instance to use
+        OpenApiDiscriminator discriminator = null;
+        if (schema.Discriminator?.Mapping?.Any() ?? false) 
+            discriminator = schema.Discriminator; // use the discriminator directly in the schema  
+        else if(schema.AllOf?.LastOrDefault(x => x.IsObject())?.Discriminator?.Mapping?.Any() ?? false)  
+            discriminator = schema.AllOf.Last(x => x.IsObject()).Discriminator; // discriminator mapping in the last AllOf object representation
+
+        var factoryMethod = AddDiscriminatorMethod(newClass, discriminator?.PropertyName);
+        
+        if (discriminator?.Mapping?.Any() ?? false)
+            discriminator.Mapping
+                .Where(x => !x.Key.TrimStart('#').Equals(schema.Reference?.Id, StringComparison.OrdinalIgnoreCase))
+                .Select(x => (x.Key, GetCodeTypeForMapping(currentNode, x.Value, currentNamespace, newClass, schema)))
+                .Where(x => x.Item2 != null)
+                .ToList()
+                .ForEach(x => factoryMethod.AddDiscriminatorMapping(x.Key, x.Item2));
+
         CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass);
         return newClass;
     }

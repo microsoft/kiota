@@ -10,25 +10,34 @@ namespace Microsoft.Kiota.Cli.Commons.IO;
 public abstract class BasePagingService : IPagingService
 {
     /// <inheritdoc />
+    public abstract IPagingResponseHandler CreateResponseHandler();
+
+    /// <inheritdoc />
     public abstract Task<Uri?> GetNextPageLinkAsync(PageLinkData pageLinkData, CancellationToken cancellationToken = default);
 
     /// <inheritdoc />
-    public virtual async Task<Stream> GetPagedDataAsync(Func<RequestInformation, CancellationToken, Task<Stream>> requestExecutorAsync, PageLinkData pageLinkData, bool fetchAllPages = false, CancellationToken cancellationToken = default)
+    public virtual async Task<PageResponse?> GetPagedDataAsync(Func<RequestInformation, IResponseHandler, CancellationToken, Task> requestExecutorAsync, PageLinkData pageLinkData, bool fetchAllPages = false, CancellationToken cancellationToken = default)
     {
         if (!OnBeforeGetPagedData(pageLinkData, fetchAllPages))
         {
-            return Stream.Null;
+            return null;
         }
 
         var requestInfo = pageLinkData.RequestInformation;
         Uri? nextLink;
         Stream? response = null;
+        int? statusCode;
         do
         {
-            var pageData = await requestExecutorAsync(requestInfo, cancellationToken);
+            var responseHandler = CreateResponseHandler();
+            await requestExecutorAsync(requestInfo, responseHandler, cancellationToken);
+            var pageData = await responseHandler.GetResponseStreamAsync(cancellationToken);
+            statusCode = responseHandler.GetStatusCode();
+            var headers = responseHandler.GetResponseHeaders();
+            var contentHeaders = responseHandler.GetResponseContentHeaders();
+            pageLinkData = new PageLinkData(requestInfo, pageData, headers, contentHeaders, pageLinkData.ItemName, pageLinkData.NextLinkName);
             if (fetchAllPages)
             {
-                pageLinkData = new PageLinkData(requestInfo, pageData, pageLinkData.ItemName, pageLinkData.NextLinkName);
                 nextLink = await GetNextPageLinkAsync(pageLinkData, cancellationToken);
                 if (nextLink != null) pageLinkData.RequestInformation.URI = nextLink;
             }
@@ -40,7 +49,7 @@ public abstract class BasePagingService : IPagingService
             response = await MergePageAsync(response, pageLinkData, cancellationToken);
         } while (nextLink != null);
 
-        return response ?? Stream.Null;
+        return new PageResponse(statusCode ?? 0, response);
     }
 
     /// <inheritdoc />

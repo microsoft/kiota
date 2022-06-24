@@ -1496,11 +1496,40 @@ components:
                                 Type = "string"
                             }
                         }
-                    }
+                    },
+                    Discriminator = new OpenApiDiscriminator {
+                        PropertyName = "kind",
+                        Mapping = new Dictionary<string, string> {
+                            {
+                                "secondLevelDerivedObject", "#/components/schemas/subNS.secondLevelDerivedObject"
+                            }
+                        }
+                    },
                 }
             },
             Reference = new OpenApiReference {
                 Id = "subNS.derivedObject",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        var secondLevelDerivedObject = new OpenApiSchema {
+            Type = "object",
+            AllOf = new List<OpenApiSchema> {
+                derivedObjet,
+                new OpenApiSchema {
+                    Type = "object",
+                    Properties = new Dictionary<string, OpenApiSchema> {
+                        {
+                            "moreSpecial", new OpenApiSchema {
+                                Type = "string"
+                            }
+                        }
+                    }
+                }
+            },
+            Reference = new OpenApiReference {
+                Id = "subNS.secondLevelDerivedObject",
                 Type = ReferenceType.Schema
             },
             UnresolvedReference = false
@@ -1531,6 +1560,9 @@ components:
                     },
                     {
                         "subNS.derivedObject", derivedObjet
+                    },
+                    {
+                        "subNS.secondLevelDerivedObject", secondLevelDerivedObject
                     }
                 }
             },
@@ -1548,6 +1580,12 @@ components:
         var executorReturnType = requestExecutorMethod.ReturnType as CodeType;
         Assert.NotNull(executorReturnType);
         Assert.Contains("DerivedObject", requestExecutorMethod.ReturnType.Name);
+        var secondLevelDerivedClass = codeModel.FindChildByName<CodeClass>("derivedObject", true);
+        Assert.NotNull(secondLevelDerivedObject);
+        var factoryMethod = secondLevelDerivedClass.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.Factory));
+        Assert.NotNull(factoryMethod);
+        Assert.Equal("kind", factoryMethod.DiscriminatorPropertyName);
+        Assert.NotEmpty(factoryMethod.DiscriminatorMappings);
     }
     [InlineData("string", "", "string")]// https://spec.openapis.org/registry/format/
     [InlineData("string", "commonmark", "string")]

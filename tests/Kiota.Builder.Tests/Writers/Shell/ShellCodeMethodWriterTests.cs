@@ -333,7 +333,7 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
         Assert.Contains("requestInfo.Headers[\"Test-Header\"] = testHeader;", result);
         Assert.Contains("var response = await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, errorMapping: default, cancellationToken: cancellationToken);", result);
-        Assert.Contains("var outputFormatterFactory = invocationContext.BindingContext.GetRequiredService<IHost>().Services.GetRequiredService<IOutputFormatterFactory>();", result);
+        Assert.Contains("var outputFormatterFactory = invocationContext.BindingContext.GetRequiredService<IOutputFormatterFactory>();", result);
         Assert.Contains("var formatter = outputFormatterFactory.GetFormatter(FormatterType.TEXT);", result);
         Assert.Contains("await formatter.WriteOutputAsync(response, null, cancellationToken);", result);
         Assert.Contains("});", result);
@@ -401,10 +401,14 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var all = invocationContext.ParseResult.GetValueForOption(allOption)", result);
         Assert.Contains("var requestInfo = CreateGetRequestInformation", result);
         Assert.Contains("requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
-        Assert.Contains("var pagingData = new PageLinkData(requestInfo, Stream.Null, itemName: \"item\", nextLinkName: \"nextLink\");", result);
-        Assert.Contains("var response = await pagingService.GetPagedDataAsync((info, token) => RequestAdapter.SendPrimitiveAsync<Stream>(info, errorMapping: default, cancellationToken: token), pagingData, all, cancellationToken);", result);
-        Assert.Contains("var formatterOptions = output.GetOutputFormatterOptions(new FormatterOptionsModel(!jsonNoIndent));", result);
+        Assert.Contains("var pagingData = new PageLinkData(requestInfo, null, itemName: \"item\", nextLinkName: \"nextLink\");", result);
+        Assert.Contains("var pageResponse = await pagingService.GetPagedDataAsync((info, handler, token) => RequestAdapter.SendNoContentAsync(info, cancellationToken: token, responseHandler: handler), pagingData, all, cancellationToken);", result);
+        Assert.Contains("formatterOptions = output.GetOutputFormatterOptions(new FormatterOptionsModel(!jsonNoIndent));", result);
+        Assert.Contains("IOutputFormatter? formatter = null;", result);
+        Assert.Contains("if (pageResponse?.StatusCode >= 200 && pageResponse?.StatusCode < 300) {", result);
+        Assert.Contains("formatter = outputFormatterFactory.GetFormatter(output);", result);
         Assert.Contains("response = await outputFilter?.FilterOutputAsync(response, query, cancellationToken)", result);
+        Assert.Contains("formatter = outputFormatterFactory.GetFormatter(FormatterType.TEXT);", result);
         Assert.Contains("await formatter.WriteOutputAsync(response, formatterOptions, cancellationToken);", result);
         Assert.Contains("});", result);
         Assert.Contains("return command;", result);
@@ -647,9 +651,10 @@ public class ShellCodeMethodWriterTests : IDisposable
         Assert.Contains("var qOption = new Option<string>(\"-q\", getDefaultValue: ()=> \"test\", description: \"The q option\")", result);
         Assert.Contains("qOption.IsRequired = false;", result);
         Assert.Contains("command.AddOption(qOption);", result);
-        Assert.Contains("var bodyOption = new Option<Stream>(\"--file\")", result);
-        Assert.Contains("bodyOption.IsRequired = true;", result);
-        Assert.Contains("command.AddOption(bodyOption);", result);
+        Assert.Contains("var fileOption = new Option<FileInfo>(\"--file\")", result);
+        Assert.Contains("fileOption.IsRequired = true;", result);
+        Assert.Contains("command.AddOption(fileOption);", result);
+        Assert.Contains("var file = invocationContext.ParseResult.GetValueForOption(fileOption);", result);
         Assert.Contains("using var stream = file.OpenRead();", result);
         Assert.Contains("var requestInfo = CreatePostRequestInformation", result);
         Assert.Contains("requestInfo.PathParameters.Add(\"test%2Dpath\", testPath);", result);
@@ -659,7 +664,7 @@ public class ShellCodeMethodWriterTests : IDisposable
 
     [Fact]
     public void WritesExecutableCommandForDeleteRequest() {
-        
+
         method.Kind = CodeMethodKind.CommandBuilder;
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Delete;
@@ -750,7 +755,7 @@ public class ShellCodeMethodWriterTests : IDisposable
 
     [Fact]
     public void WritesExecutableCommandForPostVoidRequest() {
-        
+
         method.Kind = CodeMethodKind.CommandBuilder;
         method.SimpleName = "User";
         method.HttpMethod = HttpMethod.Post;

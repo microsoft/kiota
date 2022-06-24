@@ -15,7 +15,6 @@ use GuzzleHttp\Psr7\Utils;
 use Microsoft\Kiota\Abstractions\Enum;
 use Microsoft\Kiota\Abstractions\Serialization\Parsable;
 use Microsoft\Kiota\Abstractions\Serialization\SerializationWriter;
-use Microsoft\Kiota\Abstractions\Types\Byte;
 use Microsoft\Kiota\Abstractions\Types\Date;
 use Microsoft\Kiota\Abstractions\Types\Time;
 use Psr\Http\Message\StreamInterface;
@@ -135,7 +134,7 @@ class TextSerializationWriter implements SerializationWriter
     /**
      * @inheritDoc
      */
-    public function writeEnumSetValue(?string $key, ?array $values): void
+    public function writeCollectionOfEnumValues(?string $key, ?array $values): void
     {
         throw new \RuntimeException(TextParseNode::NO_STRUCTURED_DATA_ERR_MSG);
     }
@@ -265,10 +264,5 @@ class TextSerializationWriter implements SerializationWriter
     public function getOnStartObjectSerialization(): ?callable
     {
         return $this->onStartObjectSerialization;
-    }
-
-    public function writeByteValue(?string $key, ?Byte $value): void
-    {
-        $this->writeStringValue($key, (string) $value);
     }
 }

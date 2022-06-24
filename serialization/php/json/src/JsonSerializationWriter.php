@@ -9,7 +9,6 @@ use GuzzleHttp\Psr7\Utils;
 use Microsoft\Kiota\Abstractions\Enum;
 use Microsoft\Kiota\Abstractions\Serialization\Parsable;
 use Microsoft\Kiota\Abstractions\Serialization\SerializationWriter;
-use Microsoft\Kiota\Abstractions\Types\Byte;
 use Microsoft\Kiota\Abstractions\Types\Date;
 use Microsoft\Kiota\Abstractions\Types\Time;
 use Psr\Http\Message\StreamInterface;
@@ -159,19 +158,19 @@ class JsonSerializationWriter implements SerializationWriter
             if(!empty($key)) {
                 $this->writePropertyName($key);
             }
-            if ($this->onBeforeObjectSerialization !== null) {
-                $this->onBeforeObjectSerialization($value);
+            if ($this->getOnBeforeObjectSerialization() !== null) {
+                $this->getOnBeforeObjectSerialization()($value);
             }
             $this->writer [] = '{';
-            if ($this->onStartObjectSerialization !== null) {
-                $this->onStartObjectSerialization($value, $this);
+            if ($this->getOnStartObjectSerialization() !== null) {
+                $this->getOnStartObjectSerialization()($value, $this);
             }
             $value->serialize($this);
             if ($this->writer[count($this->writer) - 1] === ',') {
                 array_pop($this->writer);
             }
-            if ($this->onAfterObjectSerialization !== null) {
-                $this->onAfterObjectSerialization($value);
+            if ($this->getOnAfterObjectSerialization() !== null) {
+                $this->getOnAfterObjectSerialization()($value);
             }
             $this->writer [] = '}';
         }
@@ -188,22 +187,6 @@ class JsonSerializationWriter implements SerializationWriter
             array_pop($this->writer);
         }
         return Utils::streamFor(implode('', $this->writer));
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function writeEnumSetValue(?string $key, ?array $values): void {
-        if ($values !== null) {
-            if (!empty($key)) {
-                $this->writePropertyName($key);
-            }
-            $valS = [];
-            foreach ($values as $value){
-                $valS []= $value->value();
-            }
-            $this->writeStringValue($key, implode(',', $valS));
-        }
     }
 
     /**

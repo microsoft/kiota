@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,9 +17,8 @@ public class ODataPagingServiceTest
         public async Task Return_Null_on_No_Next_Link()
         {
             var pagingService = new ODataPagingService();
-            var stream = Stream.Null;
             var requestInfo = new RequestInformation();
-            var pagingData = new PageLinkData(requestInfo, stream);
+            var pagingData = new PageLinkData(requestInfo, null);
 
             var nextLink = await pagingService.GetNextPageLinkAsync(pagingData);
 
@@ -34,6 +34,7 @@ public class ODataPagingServiceTest
             var requestInfo = new RequestInformation();
             requestInfo.Headers.Add("Accept", "application/json");
             var pagingData = new PageLinkData(requestInfo, ms);
+            pagingData.ResponseContentHeaders.Add("Content-Type", new string[] { "application/json" });
 
             var nextLink = await pagingService.GetNextPageLinkAsync(pagingData);
 

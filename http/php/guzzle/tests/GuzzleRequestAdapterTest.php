@@ -7,6 +7,7 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\Utils;
 use Http\Promise\FulfilledPromise;
+use Microsoft\Kiota\Abstractions\ApiException;
 use Microsoft\Kiota\Abstractions\Authentication\AuthenticationProvider;
 use Microsoft\Kiota\Abstractions\RequestInformation;
 use Microsoft\Kiota\Abstractions\ResponseHandler;
@@ -172,7 +173,7 @@ class GuzzleRequestAdapterTest extends TestCase
 
     public function testSendNoContentAsync(): void
     {
-        $requestAdapter = $this->mockRequestAdapter([new Response(200, ['Content-Type' => 'application/json'])]);
+        $requestAdapter = $this->mockRequestAdapter([new Response(204, ['Content-Type' => 'application/json'])]);
         $promise = $requestAdapter->sendNoContentAsync($this->requestInformation);
         $this->assertNull($promise->wait());
     }
@@ -184,6 +185,13 @@ class GuzzleRequestAdapterTest extends TestCase
         $customResponseHandler->expects($this->once())
             ->method('handleResponseAsync');
         $requestAdapter->sendNoContentAsync($this->requestInformation,  $customResponseHandler);
+    }
+
+    public function testExceptionThrownOnErrorResponses(): void
+    {
+        $this->expectException(ApiException::class);
+        $requestAdapter = $this->mockRequestAdapter([new Response(400, ['Content-Type' => 'application/json'])]);
+        $requestAdapter->sendAsync($this->requestInformation, array(TestUser::class, 'createFromDiscriminatorValue'))->wait();
     }
 
 }

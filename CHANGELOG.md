@@ -13,11 +13,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added an explicit error message for external references in the schema. [#1580](https://github.com/microsoft/kiota/issues/1580)
 - Added accept header for all schematized requests. [#1607](https://github.com/microsoft/kiota/issues/1607)
 - Added support for paging. [#1569](https://github.com/microsoft/kiota/issues/1569)
+- Added support for vendor specific content types(PHP) [#1464](https://github.com/microsoft/kiota/issues/1464)
+- Added support for accept request header (PHP) [#1616](https://github.com/microsoft/kiota/issues/1616)
+- Added typescript interfaces for models and request config params. [#1013](https://github.com/microsoft/kiota/issues/1013) and [#1521](https://github.com/microsoft/kiota/issues/1521)
 
 ### Changed
 
 - Aligned mime types model generation behaviour for request bodies on response content. [#134](https://github.com/microsoft/kiota/issues/134)
 - Fixed an issue where some critical errors would not return a failed exit code. [#1605](https://github.com/microsoft/kiota/issues/1605)
+- Moved nested request configuration classes into separate files within the namespace for PHP. [#1620](https://github.com/microsoft/kiota/pull/1620)
+- Fixed wrong parameter type for Request config for request executors(PHP). [#1629](https://github.com/microsoft/kiota/pull/1629)
+- Increased indentation for errorMappings in the request executor (PHP). [#1629](https://github.com/microsoft/kiota/pull/1629)
+- Fixed bugs in PHP discriminator factory methods, Guzzle request adapter send methods, stream and plain text response handling. [#1634](https://github.com/microsoft/kiota/pull/1634)
 
 ## [0.2.1] - 2022-05-30
 
