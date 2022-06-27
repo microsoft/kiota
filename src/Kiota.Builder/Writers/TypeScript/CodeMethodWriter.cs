@@ -200,7 +200,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         foreach (var prop in codeClass.Properties)
         {
             var interfaceProperty = $"{codeInterfaceName}?.{prop.Name.ToFirstCharacterLowerCase()}";
-            var s = prop.Type is CodeType type && type.TypeDefinition is CodeInterface @interface? @interface.Name: "";
+            var properyType = prop.Type is CodeType type && type.TypeDefinition is CodeInterface @interface? @interface.Name: "";
   
             if (prop.IsOfKind(CodePropertyKind.AdditionalData))
             {
@@ -208,7 +208,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
             }
             else
             {   
-                var property = IsCodePropertyCollection(prop) ? ConvertPropertyValueToInstanceArray(prop.Name, prop.Type, writer) : (!String.IsNullOrWhiteSpace(s) ? $"{interfaceProperty} instanceof {s}{ModelClassSuffix}? {interfaceProperty}:new {s}{ModelClassSuffix}({interfaceProperty})":interfaceProperty );
+                var property = IsCodePropertyCollection(prop) ? ConvertPropertyValueToInstanceArray(prop.Name, prop.Type, writer, codeInterfaceName) : (!String.IsNullOrWhiteSpace(properyType) ? $"{interfaceProperty} instanceof {properyType}{ModelClassSuffix}? {interfaceProperty}:new {properyType}{ModelClassSuffix}({interfaceProperty})":interfaceProperty );
                 writer.WriteLine($"this.{prop.NamePrefix}{prop.Name.ToFirstCharacterLowerCase()} = {property};");
             }
         }
@@ -406,7 +406,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         if (isCollection && !isCollectionOfEnum)
         {
             writer.Write($"if(this.{codePropertyName} && this.{codePropertyName}.length != 0){{");
-            str = ConvertPropertyValueToInstanceArray(codePropertyName, codeProperty.Type, writer);
+            str = ConvertPropertyValueToInstanceArray(codePropertyName, codeProperty.Type, writer, "this");
         }
         else
         {
@@ -426,7 +426,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         return propType is CodeType currentType && (currentType.TypeDefinition is CodeClass || currentType.TypeDefinition is CodeInterface);
     }
 
-    private string ConvertPropertyValueToInstanceArray(string propertyName, CodeTypeBase propType, LanguageWriter writer)
+    private string ConvertPropertyValueToInstanceArray(string propertyName, CodeTypeBase propType, LanguageWriter writer, string propertySource)
     {
         var propertyType = localConventions.TranslateType(propType);
         if (IsCodeClassOrInterface(propType))
@@ -436,7 +436,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
 
         var arrayName = $"{propertyName}ArrValue".ToFirstCharacterLowerCase();
 
-        writer.WriteLine($"const {arrayName}: {propertyType}[] = []; this.{propertyName}?.forEach(element => {{{arrayName}.push(element instanceof {propertyType}? element : new {propertyType}(element));}});");
+        writer.WriteLine($"const {arrayName}: {propertyType}[] = []; {propertySource}.{propertyName.ToFirstCharacterLowerCase()}?.forEach(element => {{{arrayName}.push(element instanceof {propertyType}? element : new {propertyType}(element));}});");
         return arrayName;
     }
 
