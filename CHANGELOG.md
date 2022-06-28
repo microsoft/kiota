@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved nested request configuration classes into separate files within the namespace for PHP. [#1620](https://github.com/microsoft/kiota/pull/1620)
 - Fixed wrong parameter type for Request config for request executors(PHP).
 - Increased indentation for errorMappings in the request executor (PHP).
+- Fixed an issue where duplicate 'require' statements are generated for inner classes in the middle of the file (Ruby). [#1649](https://github.com/microsoft/kiota/issues/1649)
 
 ## [0.2.1] - 2022-05-30
 
