@@ -84,7 +84,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 break;
         }
     }
-    private static void WriteFactoryMethodBody(CodeMethod codeElement, LanguageWriter writer){
+    private void WriteFactoryMethodBody(CodeMethod codeElement, LanguageWriter writer){
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode);
         if(codeElement.ShouldWriteDiscriminatorSwitch && parseNodeParameter != null) {
             writer.WriteLine($"var mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{codeElement.DiscriminatorPropertyName}\");");
@@ -92,7 +92,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             writer.WriteLine("return mappingValue switch {");
             writer.IncreaseIndent();
             foreach(var mappedType in codeElement.DiscriminatorMappings) {
-                writer.WriteLine($"\"{mappedType.Key}\" => new {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()}(),");
+                writer.WriteLine($"\"{mappedType.Key}\" => new {conventions.GetTypeString(mappedType.Value.AllTypes.First() ,codeElement)}(),");
             }
             writer.WriteLine($"_ => new {codeElement.Parent.Name.ToFirstCharacterUpperCase()}(),");
             writer.CloseBlock("};");
