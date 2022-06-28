@@ -94,19 +94,18 @@ namespace Kiota.Builder.Writers.CSharp {
             {
                 parentElements.AddRange(parentClass.Methods.Select(x => x.Name).Union(parentClass.Properties.Select(x => x.Name)));
                 
-                var discriminatorMethod = parentClass.Methods.FirstOrDefault(method => method.IsOfKind(CodeMethodKind.Factory));
-                if (discriminatorMethod != null)
+                if (targetElement is CodeMethod discriminatorMethod && discriminatorMethod.IsOfKind(CodeMethodKind.Factory))
                 {
                     // Get the discriminator mappings that refer to types  are in a different namespace that are have the same name
                     // E.g. DataSource from Microsoft.Graph.Beta.Models.Ediscovery and DataSource from Microsoft.Graph.Beta.Models.Security will need to be disambiguated.
-                    var mappingTypes = discriminatorMethod.DiscriminatorMappings.Select(x => x.Value).OfType<CodeType>()
+                    var duplicateMappingTypes = discriminatorMethod.DiscriminatorMappings.Select(x => x.Value).OfType<CodeType>()
                         .Where(x => !DoesTypeExistsInSameNamesSpaceAsTarget(x, targetElement))
                         .Select(x => x.Name)
                         .GroupBy(x => x)
                         .Where(group => group.Count() > 1)
                         .Select(x => x.Key);
                     
-                    parentElements.AddRange(mappingTypes);
+                    parentElements.AddRange(duplicateMappingTypes);
                 }
             }
             
