@@ -229,11 +229,12 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public DiscriminatorInformation DiscriminatorInformation { 
         get {
             if (_discriminatorInformation == null)
-                _discriminatorInformation = new DiscriminatorInformation();
+                DiscriminatorInformation = new DiscriminatorInformation();
             return _discriminatorInformation;
         } 
         set {
             ArgumentNullException.ThrowIfNull(value, nameof(value));
+            EnsureElementsAreChildren(value);
             _discriminatorInformation = value;
         }
     }
