@@ -98,7 +98,7 @@ namespace Kiota.Builder.Writers.CSharp {
                 {
                     // Get the discriminator mappings that refer to types  are in a different namespace that are have the same name
                     // E.g. DataSource from Microsoft.Graph.Beta.Models.Ediscovery and DataSource from Microsoft.Graph.Beta.Models.Security will need to be disambiguated.
-                    var duplicateMappingTypes = discriminatorMethod.DiscriminatorMappings.Select(x => x.Value).OfType<CodeType>()
+                    var duplicateMappingTypes = discriminatorMethod.DiscriminatorInformation.DiscriminatorMappings.Select(x => x.Value).OfType<CodeType>()
                         .Where(x => !DoesTypeExistsInSameNamesSpaceAsTarget(x, targetElement))
                         .Select(x => x.Name)
                         .GroupBy(static x => x, StringComparer.OrdinalIgnoreCase)
