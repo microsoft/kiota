@@ -9,7 +9,7 @@ Your project will need a reference to the abstraction package to build and run, 
 - [Go](https://github.com/microsoft/kiota-serialization-json-go): relies on [encoding/json](https://pkg.go.dev/encoding/json) for JSON serialization/deserialization.
 - [Java](./java/json) : relies on [Gson](https://github.com/google/gson) for JSON serialization/deserialization.
 - [TypeScript](https://github.com/microsoft/kiota-typescript/tree/main/packages/serialization/json) : relies on the native JSON capabilities for JSON serialization/deserialization.
-- [PHP](./php/json) : relies on the native JSON capabilities for JSON deserialization
+- [PHP](https://github.com/microsoft/kiota-serialization-json-php) : relies on the native JSON capabilities for JSON deserialization
 
 ## Text/plain
 
@@ -17,3 +17,4 @@ Your project will need a reference to the abstraction package to build and run, 
 - [Go](https://github.com/microsoft/kiota-serialization-text-go)
 - [Java](./java/text)
 - [TypeScript](https://github.com/microsoft/kiota-typescript/tree/main/packages/serialization/text)
+- [PHP](https://github.com/microsoft/kiota-serialization-text-php)

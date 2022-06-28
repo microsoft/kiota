@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
@@ -42,8 +42,7 @@ namespace Kiota.Builder.Refiners {
             );
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
-                "IParseNode",
-                addUsings: false
+                "IParseNode"
             );
         }
         protected static void DisambiguatePropertiesWithClassNames(CodeElement currentElement) {
