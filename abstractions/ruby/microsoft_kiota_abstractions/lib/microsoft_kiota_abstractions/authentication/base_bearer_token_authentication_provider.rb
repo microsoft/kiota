@@ -1,22 +1,22 @@
+# frozen_string_literal: true
+
 require 'concurrent'
 
 module MicrosoftKiotaAbstractions
- class BaseBearerTokenAuthenticationProvider
+  # Provides a base class for implementing AuthenticationProvider for Bearer token scheme
+  class BaseBearerTokenAuthenticationProvider
     include MicrosoftKiotaAbstractions::AuthenticationProvider
     include Concurrent::Async
 
     AUTHORIZATION_HEADER_KEY = 'Authorization'
     def authenticate_request(request)
-      if !request
-        raise StandardError, 'request cannot be null'
-      end
-      if !request.headers.has_key?(AUTHORIZATION_HEADER_KEY) 
-        token = self.get_authorization_token(request)
-        if !token
-          raise StandardError, 'Could not get an authorization token'
-        end
-        request.headers[AUTHORIZATION_HEADER_KEY] = 'Bearer ' + token
-      end
+      raise StandardError, 'Request cannot be null' unless request
+      return if request.headers.key?(AUTHORIZATION_HEADER_KEY)
+
+      token = get_authorization_token(request)
+      raise StandardError, 'Could not get an authorization token' unless token
+
+      request.headers[AUTHORIZATION_HEADER_KEY] = "Bearer #{token}"
     end
 
     def get_authorization_token(request)
@@ -24,4 +24,3 @@ module MicrosoftKiotaAbstractions
     end
   end
 end
-  
