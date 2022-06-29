@@ -19,13 +19,41 @@ updates:
   open-pull-requests-limit: 10
   labels:
     - Ruby
-- package-ecosystem: composer
-  directory: "/abstractions/php"
+- package-ecosystem: bundler
+  directory: "/serialization/ruby/json/microsoft_kiota_serialization"
   schedule:
     interval: daily
   open-pull-requests-limit: 10
   labels:
-    - PHP
+    - Ruby
+- package-ecosystem: bundler
+  directory: "/http/ruby/nethttp/microsoft_kiota_nethttplibrary"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  labels:
+    - Ruby
+- package-ecosystem: pip
+  directory: "/abstractions/python"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  labels:
+    - Python
+- package-ecosystem: pip
+  directory: "/serialization/python/json"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  labels:
+    - Python
+- package-ecosystem: pip
+  directory: "/http/python/requests"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  labels:
+    - Python
 - package-ecosystem: nuget
   directory: "/cli/commons"
   schedule:
