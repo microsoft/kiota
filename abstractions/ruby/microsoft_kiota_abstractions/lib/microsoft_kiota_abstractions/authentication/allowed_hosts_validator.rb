@@ -26,7 +26,9 @@ module MicrosoftKiotaAbstractions
 
       o = URI(url)
 
-      return @allowed_hosts.include? o.host.downcase if o.host
+      return false if o.host.nil?
+
+      @allowed_hosts.include? o.host.downcase
     end
 
     # gets the list of valid hosts
