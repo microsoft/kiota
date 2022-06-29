@@ -6,7 +6,7 @@ parent: Get started
 
 ## Required tools
 
-- [JDK 17](https://adoptopenjdk.net/)
+- [JDK 16](https://adoptopenjdk.net/)
 - [Gradle 7.4](https://gradle.org/install/)
 
 ## Target project requirements
