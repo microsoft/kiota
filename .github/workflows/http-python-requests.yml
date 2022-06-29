@@ -6,7 +6,7 @@ on:
     branches: [ main ]
     paths: ['http/python/requests/**', '.github/workflows/**']
   pull_request:
-    paths: [http/python/request/**', '.github/workflows/**']
+    paths: ['http/python/request/**', '.github/workflows/**']
 
 jobs:
   build:
