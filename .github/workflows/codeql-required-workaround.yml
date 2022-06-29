@@ -12,7 +12,7 @@ on:
 
 jobs:
   analyze: #names must match the original workflow
-    name: Analyze
+    name: Analyze (csharp)
     runs-on: ubuntu-latest
     steps:
       - run: 'echo "No CodeQL Analysis required"'
