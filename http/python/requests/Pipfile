@@ -21,7 +21,7 @@ mypy = {version="0.961", index="pypi"}
 yapf = {version="0.31.0", index="pypi"}
 isort = {version="5.10.1", index="pypi"}
 pytest = {version="7.0.1", index="pypi"}
-pytest-asyncio = {version="0.18.1", index="pypi"}
+pytest-asyncio = {version="0.18.3", index="pypi"}
 pytest-cov = {version="3.0.0", index="pypi"}
 pytest-mock = {version="3.8.1", index="pypi"}
 asyncmock = {version="0.4.2", index="pypi"}
