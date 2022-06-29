@@ -6,7 +6,7 @@ on:
     branches: [ main ]
     paths: ['serialization/python/json/**', '.github/workflows/**']
   pull_request:
-    paths: [serialization/python/json/**', '.github/workflows/**']
+    paths: ['serialization/python/json/**', '.github/workflows/**']
 
 jobs:
   build:
