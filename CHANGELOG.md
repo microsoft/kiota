@@ -27,7 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Increased indentation for errorMappings in the request executor (PHP). [#1629](https://github.com/microsoft/kiota/pull/1629)
 - Fixed bugs in PHP discriminator factory methods, Guzzle request adapter send methods, stream and plain text response handling. [#1634](https://github.com/microsoft/kiota/pull/1634)
 - Removed abstractions, authentication, http and serialization packages for PHP. [#1637](https://github.com/microsoft/kiota/pull/1637)
-- Fixes a bug where generated discriminator methods would reference types in other namespaces without proper resolution. [#1670](https://github.com/microsoft/kiota/issues/1670)
+- Fixed a bug where generated discriminator methods would reference types in other namespaces without proper resolution. [#1670](https://github.com/microsoft/kiota/issues/1670)
+- Fixed a bug where additional data and backing store properties would be duplicated. [#1671](https://github.com/microsoft/kiota/issues/1671)
 
 ## [0.2.1] - 2022-05-30
 

@@ -1009,6 +1009,8 @@ public class KiotaBuilder
 
         var factoryMethod = AddDiscriminatorMethod(newClass, discriminator?.PropertyName);
         
+        CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass); // order matters since we might be recursively generating ancestors for discriminator mappings and duplicating additional data/backing store properties
+        
         if (discriminator?.Mapping?.Any() ?? false)
             discriminator.Mapping
                 .Where(x => !x.Key.TrimStart('#').Equals(schema.Reference?.Id, StringComparison.OrdinalIgnoreCase))
@@ -1017,7 +1019,6 @@ public class KiotaBuilder
                 .ToList()
                 .ForEach(x => factoryMethod.AddDiscriminatorMapping(x.Key, x.Item2));
 
-        CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass);
         return newClass;
     }
     public static CodeMethod AddDiscriminatorMethod(CodeClass newClass, string discriminatorPropertyName) {
