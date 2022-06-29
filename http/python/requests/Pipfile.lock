@@ -45,11 +45,11 @@
         },
         "kiota-abstractions": {
             "hashes": [
-                "sha256:69fdc7a01c6bcea4df5d0290b500f641645bc391843e163c38cf94432a397173",
-                "sha256:92df8d0dde0d433b9c79a4955303f9a94a2070ab27e248d4a9db93ca9ec4d0c3"
+                "sha256:28cc3acf20cacd22c7723470fd5d80967645c1526e5bdaa1ebc0060940d87d5b",
+                "sha256:f956105a774e22d849b66e8a27bf219c66f6d0f6f67fcd4d7ddba746061e06bf"
             ],
             "index": "testpypi",
-            "version": "==0.2.0"
+            "version": "==0.3.0"
         },
         "python-dateutil": {
             "hashes": [
