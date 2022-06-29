@@ -20,12 +20,11 @@ module MicrosoftKiotaAbstractions
 
     # checks whether the provided host is valid
     def url_host_valid?(url)
-      return false unless url
+      return false unless url =~ URI::DEFAULT_PARSER.regexp[:ABS_URI]
 
       return true if @allowed_hosts.empty?
 
       o = URI(url)
-      puts o.host
 
       return @allowed_hosts.include? o.host.downcase if o.host
     end
