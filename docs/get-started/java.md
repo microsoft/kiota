@@ -6,8 +6,8 @@ parent: Get started
 
 ## Required tools
 
-- [JDK 16](https://adoptopenjdk.net/)
-- [Gradle 7](https://gradle.org/install/)
+- [JDK 17](https://adoptopenjdk.net/)
+- [Gradle 7.4](https://gradle.org/install/)
 
 ## Target project requirements
 
@@ -27,31 +27,10 @@ gradle init --dsl groovy --test-framework junit --type java-application --projec
 
 ### Getting access to the packages
 
-> **Note:** This is a temporary requirement while Kiota is in preview.
-
-1. Navigate to [New personal access token](https://github.com/settings/tokens/new) and generate a new token. (permissions: `package:read`, `repo`).
-1. Copy the token, you will need it later.
-1. Enable SSO for the Microsoft org on the token if you are a Microsoft employee.
-
-1. Create a new file **./gradle.properties**. Add the following contents.
-
-    ```groovy
-    gpr.user = YOUR_GITHUB_USERNAME
-    gpr.key = YOUR_PERSONAL_ACCESS_TOKEN
-    ```
-
-    > **Note:** Add **gradle.properties** to your **.gitignore** to avoid committing your PAT!
-
 1. Open **./app/build.gradle** and add the following inside the `repositories` value.
 
     ```groovy
-    maven {
-        url = uri("https://maven.pkg.github.com/microsoft/kiota")
-        credentials {
-            username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
-            password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
-        }
-    }
+    maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
     ```
 
 ### Add Kiota and dependencies
@@ -61,11 +40,11 @@ Edit **./app/build.gradle** to add the following dependencies.
 > **Note:** Find current version numbers for Kiota packages at [GitHub](https://github.com/orgs/microsoft/packages?repo_name=kiota&ecosystem=maven).
 
 ```groovy
-implementation 'com.microsoft.kiota:kiota-abstractions:1.+'
-implementation 'com.microsoft.kiota.serialization:kiota-serialization-json:1.+'
-implementation 'com.microsoft.kiota.serialization:kiota-serialization-text:1.+'
-implementation 'com.microsoft.kiota.authentication:kiota-authentication-azure:1.+'
-implementation 'com.microsoft.kiota.http:kiota-http-okhttplibrary:1.+'
+implementation 'com.microsoft.kiota:microsoft-kiota-abstractions:0.0.1-SNAPSHOT'
+implementation 'com.microsoft.kiota:microsoft-kiota-authentication-azure:0.0.1-SNAPSHOT'
+implementation 'com.microsoft.kiota:microsoft-kiota-http-okHttp:0.0.1-SNAPSHOT'
+implementation 'com.microsoft.kiota:microsoft-kiota-serialization-json:0.0.1-SNAPSHOT'
+implementation 'com.microsoft.kiota:microsoft-kiota-serialization-text:0.0.1-SNAPSHOT'
 implementation 'com.azure:azure-identity:1.+'
 ```
 
