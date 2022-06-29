@@ -13,7 +13,7 @@ updates:
     interval: daily
   open-pull-requests-limit: 10
 - package-ecosystem: bundler
-  directory: "/abstractions/ruby"
+  directory: "/abstractions/ruby/microsoft_kiota_abstractions"
   schedule:
     interval: daily
   open-pull-requests-limit: 10
