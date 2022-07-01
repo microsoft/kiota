@@ -222,14 +222,29 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 writer.WriteLine($"this.{property.Name.ToFirstCharacterLowerCase()} = {parameter.Name};");
         }
     }
-    private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
+    private void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
+        writer.WriteLine("if(value) {");
+        writer.IncreaseIndent();
         var backingStore = parentClass.GetBackingStoreProperty();
+        var property = codeElement.AccessedProperty;
+        var properyType = property.Type is CodeType type && type.TypeDefinition is CodeInterface @interface ? @interface.Name : "";
+
+        var propertyValue = IsCodePropertyCollection(property) ? ConvertPropertyValueToInstanceArray(property.Name, property.Type, writer) : (!String.IsNullOrWhiteSpace(properyType) ? $"value instanceof {properyType}{ModelClassSuffix}? value as {properyType}{ModelClassSuffix}: new {properyType}{ModelClassSuffix}(value)" : "value");
+        
         if (backingStore == null)
-            writer.WriteLine($"this.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()} = value;");
+            writer.WriteLine($"this.{codeElement.AccessedProperty?.NamePrefix}{property?.Name?.ToFirstCharacterLowerCase()} = {propertyValue};");
         else
-            writer.WriteLine($"this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.set(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\", value);");
+            writer.WriteLine($"this.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.set(\"{property?.Name?.ToFirstCharacterLowerCase()}\", {propertyValue});");
+        writer.DecreaseIndent();
+        writer.WriteLine("}");
     }
+
+    private static bool IsCodePropertyCollection(CodeProperty property)
+    {
+        return (property.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None && property.Type is CodeType currentType && currentType.TypeDefinition != null);
+    }
+
     private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
         var backingStore = parentClass.GetBackingStoreProperty();
@@ -404,7 +419,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         {
             writer.WriteLine($"if(this.{codePropertyName}){{");
             var propertyType = localConventions.TranslateType(codeProperty.Type);
-            str = IsPredefinedType(codeProperty.Type) || !IsCodeClassOrInterface(codeProperty.Type) ? $"{spreadOperator}this.{codePropertyName}" : $"new {propertyType}{ModelClassSuffix}(this.{codePropertyName})";
+            str = IsPredefinedType(codeProperty.Type) || !IsCodeClassOrInterface(codeProperty.Type) ? $"{spreadOperator}this.{codePropertyName}" : $"(this.{codePropertyName} instanceof {propertyType}{ModelClassSuffix}? this.{codePropertyName} as {propertyType}{ModelClassSuffix}: new {propertyType}{ModelClassSuffix}(this.{codePropertyName}))";
         }
 
         writer.IncreaseIndent();
@@ -428,7 +443,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
 
         var arrayName = $"{propertyName}ArrValue".ToFirstCharacterLowerCase();
 
-        writer.WriteLine($"const {arrayName}: {propertyType}[] = []; this.{propertyName}?.forEach(element => {{{arrayName}.push(new {propertyType}(element));}});");
+        writer.WriteLine($"const {arrayName}: {propertyType}[] = [];"); 
+        writer.WriteLine($"this.{propertyName.ToFirstCharacterLowerCase()}?.forEach(element => {{");
+        writer.IncreaseIndent();
+        writer.WriteLine($"{arrayName}.push((element instanceof {propertyType}? element as {propertyType}:new {propertyType}(element)));");
+        writer.DecreaseIndent();
+        writer.WriteLine("});");
         return arrayName;
     }
 

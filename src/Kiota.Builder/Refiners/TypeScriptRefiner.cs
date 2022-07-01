@@ -88,6 +88,15 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         );
         AddModelsInterfaces(generatedCode);
         ReplaceRequestConfigurationsQueryParamsWithInterfaces(generatedCode);
+        AddGetterAndSetterMethods(generatedCode,
+        new() {
+                CodePropertyKind.Custom,
+                CodePropertyKind.AdditionalData,
+        },
+        _configuration.UsesBackingStore,
+        false,
+        string.Empty,
+        string.Empty);
 
     }
 
@@ -167,7 +176,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             currentProperty.Type.Name = "Record<string, unknown>";
             currentProperty.DefaultValue = "{}";
-            currentProperty.Type.IsNullable = false;
+            currentProperty.Type.IsNullable = true;
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.PathParameters))
         {
