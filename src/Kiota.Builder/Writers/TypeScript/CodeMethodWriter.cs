@@ -191,7 +191,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                 writer.WriteLine($"super({codeInterfaceName});");
             }
             else
-            {   
+            {
                 // For Error Model Classes.
                 writer.WriteLine($"super();");
             }
@@ -230,8 +230,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
         var property = codeElement.AccessedProperty;
         var properyType = property.Type is CodeType type && type.TypeDefinition is CodeInterface @interface ? @interface.Name : "";
 
-        var propertyValue = IsCodePropertyCollection(property) ? ConvertPropertyValueToInstanceArray(property.Name, property.Type, writer) : (!String.IsNullOrWhiteSpace(properyType) ? $"value instanceof {properyType}{ModelClassSuffix}? value as {properyType}{ModelClassSuffix}: new {properyType}{ModelClassSuffix}(value)" : "value");
-        
+        var propertyValue = "";
+        if (IsCodePropertyCollection(property))
+        {
+            propertyValue = ConvertPropertyValueToInstanceArray(property.Name, property.Type, writer);
+        }
+        else
+        {
+            propertyValue = !String.IsNullOrWhiteSpace(properyType) ? $"value instanceof {properyType}{ModelClassSuffix}? value as {properyType}{ModelClassSuffix}: new {properyType}{ModelClassSuffix}(value)" : "value";
+        }
+
         if (backingStore == null)
             writer.WriteLine($"this.{codeElement.AccessedProperty?.NamePrefix}{property?.Name?.ToFirstCharacterLowerCase()} = {propertyValue};");
         else
@@ -242,7 +250,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
 
     private static bool IsCodePropertyCollection(CodeProperty property)
     {
-        return property?.Type?.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None && property?.Type is CodeType currentType && (currentType != null &&currentType?.TypeDefinition != null);
+        return property?.Type?.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None && property?.Type is CodeType currentType && (currentType != null && currentType?.TypeDefinition != null);
     }
 
     private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
@@ -340,9 +348,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
                             $"{RequestInfoVarName}.urlTemplate = {GetPropertyCall(urlTemplateProperty, "''")};",
                             $"{RequestInfoVarName}.pathParameters = {GetPropertyCall(urlTemplateParamsProperty, "''")};",
                             $"{RequestInfoVarName}.httpMethod = HttpMethod.{codeElement.HttpMethod.ToString().ToUpperInvariant()};");
-        if(codeElement.AcceptedResponseTypes.Any())
+        if (codeElement.AcceptedResponseTypes.Any())
             writer.WriteLine($"{RequestInfoVarName}.headers[\"Accept\"] = \"{string.Join(", ", codeElement.AcceptedResponseTypes)}\";");
-        if(requestParams.requestConfiguration != null) {
+        if (requestParams.requestConfiguration != null)
+        {
             writer.WriteLine($"if ({requestParams.requestConfiguration.Name}) {{");
             writer.IncreaseIndent();
             var headers = requestParams.Headers;
@@ -443,7 +452,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, TypeScriptConventi
 
         var arrayName = $"{propertyName}ArrValue".ToFirstCharacterLowerCase();
 
-        writer.WriteLine($"const {arrayName}: {propertyType}[] = [];"); 
+        writer.WriteLine($"const {arrayName}: {propertyType}[] = [];");
         writer.WriteLine($"this.{propertyName.ToFirstCharacterLowerCase()}?.forEach(element => {{");
         writer.IncreaseIndent();
         writer.WriteLine($"{arrayName}.push((element instanceof {propertyType}? element as {propertyType}:new {propertyType}(element)));");
